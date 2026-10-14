@@ -10,7 +10,7 @@ export async function login(id: string, password: string): Promise<Session> {
   if (id.trim() !== DEMO_USER.id || password !== DEMO_USER.password) {
     throw new Error("Identifiant ou mot de passe incorrect.");
   }
-  const s: Session = { user: id, displayName: "Ingénieur Démo", expiresAt: Date.now() + TTL };
+  const s: Session = { user: id, displayName: "Jean Dupont", expiresAt: Date.now() + TTL };
   localStorage.setItem(KEY, JSON.stringify(s));
   return s;
 }
