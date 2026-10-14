@@ -31,7 +31,7 @@ export const PROJECTS: Project[] = [
   },
 ];
 
-const pick = <T,>(arr: readonly T[], r: () => number): T => pick(arr, r) as T;
+const pick = <T,>(arr: readonly T[], r: () => number): T => arr[Math.floor(r() * arr.length)] as T;
 
 const OP_BIAS: Record<Operator, number> = { Orange: 1.15, SFR: 0.95, Bouygues: 1.0, Free: 0.88 };
 const pointCache = new Map<string, MeasurementPoint[]>();
