@@ -17,6 +17,7 @@ import { Route as AppKpiRouteImport } from './routes/_app.kpi'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRrcRouteImport } from './routes/_app.rrc'
+import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -57,6 +58,11 @@ const AppRrcRoute = AppRrcRouteImport.update({
   path: '/rrc',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -66,6 +72,7 @@ export interface FileRoutesByFullPath {
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRoute
   '/rrc': typeof AppRrcRoute
+  '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,6 +82,7 @@ export interface FileRoutesByTo {
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRoute
   '/rrc': typeof AppRrcRoute
+  '/settings': typeof AppSettingsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,14 +94,29 @@ export interface FileRoutesById {
   '/_app/overview': typeof AppOverviewRoute
   '/_app/projects': typeof AppProjectsRoute
   '/_app/rrc': typeof AppRrcRoute
+  '/_app/settings': typeof AppSettingsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/login' | '/assistant' | '/kpi' | '/overview' | '/projects' | '/rrc'
+    | '/'
+    | '/login'
+    | '/assistant'
+    | '/kpi'
+    | '/overview'
+    | '/projects'
+    | '/rrc'
+    | '/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/login' | '/assistant' | '/kpi' | '/overview' | '/projects' | '/rrc'
+    | '/'
+    | '/login'
+    | '/assistant'
+    | '/kpi'
+    | '/overview'
+    | '/projects'
+    | '/rrc'
+    | '/settings'
   id:
     | '__root__'
     | '/'
@@ -104,6 +127,7 @@ export interface FileRouteTypes {
     | '/_app/overview'
     | '/_app/projects'
     | '/_app/rrc'
+    | '/_app/settings'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -170,6 +194,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRrcRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings': {
+      id: '/_app/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
@@ -179,6 +210,7 @@ interface AppRouteChildren {
   AppOverviewRoute: typeof AppOverviewRoute
   AppProjectsRoute: typeof AppProjectsRoute
   AppRrcRoute: typeof AppRrcRoute
+  AppSettingsRoute: typeof AppSettingsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -187,6 +219,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOverviewRoute: AppOverviewRoute,
   AppProjectsRoute: AppProjectsRoute,
   AppRrcRoute: AppRrcRoute,
+  AppSettingsRoute: AppSettingsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
