@@ -188,7 +188,7 @@ export async function runEngine(project: Project, question: string, f: Assistant
             if (top) doms.add(d.matrix.bins[top.bin_index]!);
             row[o] = label;
           }
-          row.diff = doms.size > 1 ? "Oui" : doms.size === 1 ? "Non" : null;
+          row["diff"] = doms.size > 1 ? "Oui" : doms.size === 1 ? "Non" : null;
           rows.push(row);
         } catch {
           base.warnings.push(`Paramètre ${id} indisponible (service d'agrégation).`);
@@ -197,7 +197,7 @@ export async function runEngine(project: Project, question: string, f: Assistant
       base.evidence.push({ source_id: dsid, source_type: "rrc_dictionary", label: "Dictionnaire RRC — matrice par opérateur", sample_count: total, aggregation: "Valeur dominante par opérateur (part des observations)", period });
       base.blocks.push({ type: "table", heading: "Valeurs dominantes par opérateur", source_id: dsid, formula: "Valeur dominante = bin le plus fréquent dans la matrice opérateur du dictionnaire",
         columns: [{ key: "param", label: "Paramètre" }, { key: "path", label: "Chemin ASN.1" }, ...ops.map((o) => ({ key: o, label: o })), { key: "diff", label: "Diffère" }], rows });
-      const diff = rows.filter((r) => r.diff === "Oui").map((r) => String(r.param));
+      const diff = rows.filter((r) => r["diff"] === "Oui").map((r) => String(r["param"]));
       base.blocks.push({ type: "text", heading: "Analyse", claims: [
         { text: diff.length ? `Paramètres dont la valeur dominante diffère entre opérateurs : ${diff.join(", ")}.` : "Aucune différence de valeur dominante entre opérateurs.", kind: "OBSERVED", source_id: dsid },
         { text: "Une différence de paramétrage reflète une stratégie opérateur ; son impact sur les KPI n'est pas démontré par ces seules données.", kind: "INTERPRETED" },
