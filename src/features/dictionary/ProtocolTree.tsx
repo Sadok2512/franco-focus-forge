@@ -64,7 +64,7 @@ export function ProtocolTree({ projectId, filters, sel, onMessage, onParam }: {
         if (searching && !msgs.length) continue;
         shown++;
         out.push({ id: cid, depth: 1, label: c.name, kind: "channel", parent: b.techno, expandable: true, techno: b.techno });
-        if (!isOpen(cid)) continue;
+        if (!searching && open.has(`closed:${cid}`)) continue;
         for (const m of msgs) {
           const mid = `m:${m.msg_id}`;
           out.push({ id: mid, depth: 2, label: m.name, kind: "message", parent: cid, expandable: true, techno: b.techno, msgId: m.msg_id, msgName: m.name, count: m.count });
@@ -92,10 +92,10 @@ export function ProtocolTree({ projectId, filters, sel, onMessage, onParam }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tree.data, open, searching, needle, paramQs.map((p) => p.dataUpdatedAt + ":" + p.status).join("|")]);
 
-  const isExpanded = (r: Row) => r.kind === "ie" ? (searching || !open.has(`closed:${r.id}`)) : (searching || open.has(r.id));
+  const isExpanded = (r: Row) => (r.kind === "ie" || r.kind === "channel") ? (searching || !open.has(`closed:${r.id}`)) : (searching || open.has(r.id));
   const toggle = (r: Row) => setOpen((s) => {
     const n = new Set(s);
-    if (r.kind === "ie") { const k = `closed:${r.id}`; n.has(k) ? n.delete(k) : n.add(k); }
+    if (r.kind === "ie" || r.kind === "channel") { const k = `closed:${r.id}`; n.has(k) ? n.delete(k) : n.add(k); }
     else n.has(r.id) ? n.delete(r.id) : n.add(r.id);
     return n;
   });
