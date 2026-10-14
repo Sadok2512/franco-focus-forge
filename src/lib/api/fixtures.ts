@@ -94,49 +94,6 @@ export function pointsFor(project: Project): MeasurementPoint[] {
 }
 
 
-/* ---------- Dictionnaire RRC (démo) ---------- */
-export type RrcNode = { id: string; label: string; children?: RrcNode[] };
-export const RRC_TREE: RrcNode[] = [
-  { id: "lte", label: "LTE", children: [
-    { id: "lte-ul", label: "UL-CCCH", children: [
-      { id: "rrcreq", label: "RRCConnectionRequest", children: [
-        { id: "crit", label: "criticalExtensions", children: [
-          { id: "r8", label: "rrcConnectionRequest-r8", children: [
-            { id: "establishmentCause", label: "establishmentCause" },
-            { id: "spare", label: "spare" },
-            { id: "ue-Identity", label: "ue-Identity" },
-            { id: "dedicatedInfoNAS", label: "dedicatedInfoNAS" },
-          ] },
-        ] },
-      ] },
-      { id: "rrcsetup", label: "RRCConnectionSetup" },
-      { id: "rrccomplete", label: "RRCConnectionSetupComplete" },
-      { id: "rrcreconf", label: "RRCConnectionReconfiguration" },
-    ] },
-  ] },
-  { id: "nr", label: "NR", children: [
-    { id: "nr-ul", label: "UL-CCCH" },
-    { id: "nr-dl", label: "DL-DCCH" },
-    { id: "nr-reconf", label: "RRCReconfiguration" },
-  ] },
-];
-export const RRC_FIELD = {
-  id: "establishmentCause", name: "establishmentCause", tech: "LTE",
-  description: "Cause de l'établissement de la connexion RRC.",
-  message: "RRCConnectionRequest",
-  path: "criticalExtensions > rrcConnectionRequest-r8 > establishmentCause",
-  type: "ENUMERATED",
-  values: "Valeurs possibles : mo-Signalling, mo-Data, highPriorityAccess…",
-  dominant: "mo-Data (54,2 %)", occurrences: 1324523, unresolvedPct: 0.8,
-  distribution: [
-    { value: "mo-Data", pct: 54.2, byOp: { Orange: 52.1, SFR: 56.3, Bouygues: 54.8, Free: 53.6 } },
-    { value: "mo-Signalling", pct: 28.1, byOp: { Orange: 29.4, SFR: 24.1, Bouygues: 27.8, Free: 29.1 } },
-    { value: "emergency", pct: 8.4, byOp: { Orange: 8.1, SFR: 8.7, Bouygues: 8.2, Free: 8.6 } },
-    { value: "highPriorityAccess", pct: 6.1, byOp: { Orange: 6.3, SFR: 5.8, Bouygues: 6.4, Free: 5.9 } },
-    { value: "autres", pct: 3.2, byOp: { Orange: 4.1, SFR: 3.1, Bouygues: 2.8, Free: 2.8 } },
-  ],
-};
-
 /* ---------- Catalogue KPI (démo) ---------- */
 export const KPI_CATALOG = [
   { group: "Accessibilité", items: ["RRC Success Rate", "RRC Setup Time", "Initial Attach Success"] },
