@@ -1,4 +1,4 @@
-import { KPI_CATALOG, KPI_RRC, CONVERSATIONS, SUGGESTIONS, ASSISTANT_ANSWER } from "./fixtures";
+import { KPI_CATALOG, KPI_RRC } from "./fixtures";
 // Typed mock API adapter. UI only talks to these functions.
 import { PROJECTS, pointsFor } from "./fixtures";
 import {
@@ -142,9 +142,7 @@ export async function getKpiCatalog(signal?: AbortSignal) {
   await delay(150, signal);
   return { catalog: KPI_CATALOG, kpi: KPI_RRC };
 }
-export async function getAssistant(signal?: AbortSignal) {
-  await delay(150, signal);
-  return { conversations: CONVERSATIONS, suggestions: SUGGESTIONS, answer: ASSISTANT_ANSWER };
-}
 
 export * from "./dictionary";
+export * from "./assistant";
+export type * from "./assistant-schemas";
