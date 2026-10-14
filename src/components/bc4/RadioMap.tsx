@@ -66,8 +66,9 @@ export function RadioMap({
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl.css")]).then(([ml]) => {
+    Promise.all([import("maplibre-gl"), import("maplibre-gl/dist/maplibre-gl-worker.mjs?url"), import("maplibre-gl/dist/maplibre-gl.css")]).then(([ml, worker]) => {
       if (cancelled || !el.current) return;
+      ml.setWorkerUrl(worker.default);
       const m = new ml.Map({
         container: el.current, center, zoom: 11, attributionControl: { compact: true },
         style: {
