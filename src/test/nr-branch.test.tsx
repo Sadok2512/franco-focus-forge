@@ -6,7 +6,16 @@ import { ProtocolTree } from "@/features/dictionary/ProtocolTree";
 import { renderQ } from "./dictionary-helpers";
 
 const sel = { msgId: null, msgName: null, techno: null, paramId: null };
-const tree = (id: string, filters = {}) => renderQ(<ProtocolTree projectId={id} filters={filters} sel={sel} onMessage={() => {}} onParam={() => {}} />);
+const tree = (id: string, filters = {}) =>
+  renderQ(
+    <ProtocolTree
+      projectId={id}
+      filters={filters}
+      sel={sel}
+      onMessage={() => {}}
+      onParam={() => {}}
+    />,
+  );
 
 describe("G3 NR branch", () => {
   it("fixture A shows a populated NR branch", async () => {
@@ -27,6 +36,8 @@ describe("G3 NR branch", () => {
 
   it("NR filtered out keeps an explicit NR branch", async () => {
     tree("idf-t3-2026", { tech: ["LTE"] });
-    await waitFor(() => expect(screen.getByText("Aucune observation NR avec les filtres actifs")).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByText("Aucune observation NR avec les filtres actifs")).toBeInTheDocument(),
+    );
   });
 });

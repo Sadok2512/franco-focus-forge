@@ -2,14 +2,24 @@ import { KPI_CATALOG, KPI_RRC, CONVERSATIONS, SUGGESTIONS, ASSISTANT_ANSWER } fr
 // Typed mock API adapter. UI only talks to these functions.
 import { PROJECTS, pointsFor } from "./fixtures";
 import {
-  METRICS, ProjectSchema, type FilterContext, type MeasurementPoint, type MetricKey,
-  type MetricValue, type Operator, type Project, type SourceReference,
+  METRICS,
+  ProjectSchema,
+  type FilterContext,
+  type MeasurementPoint,
+  type MetricKey,
+  type MetricValue,
+  type Operator,
+  type Project,
+  type SourceReference,
 } from "./schemas";
 
 const delay = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((res, rej) => {
     const t = setTimeout(res, ms);
-    signal?.addEventListener("abort", () => { clearTimeout(t); rej(new DOMException("Aborted", "AbortError")); });
+    signal?.addEventListener("abort", () => {
+      clearTimeout(t);
+      rej(new DOMException("Aborted", "AbortError"));
+    });
   });
 
 export async function getProjects(signal?: AbortSignal): Promise<Project[]> {
@@ -25,24 +35,37 @@ export async function getProject(id: string, signal?: AbortSignal): Promise<Proj
 }
 
 export function applyFilters(pts: MeasurementPoint[], f: FilterContext) {
-  return pts.filter((p) =>
-    (!f.op?.length || f.op.includes(p.operator)) &&
-    (!f.tech?.length || f.tech.includes(p.tech)) &&
-    (!f.svc?.length || f.svc.includes(p.service)) &&
-    (!f.band?.length || f.band.includes(p.band)) &&
-    (!f.dep?.length || f.dep.includes(p.dep)));
+  return pts.filter(
+    (p) =>
+      (!f.op?.length || f.op.includes(p.operator)) &&
+      (!f.tech?.length || f.tech.includes(p.tech)) &&
+      (!f.svc?.length || f.svc.includes(p.service)) &&
+      (!f.band?.length || f.band.includes(p.band)) &&
+      (!f.dep?.length || f.dep.includes(p.dep)),
+  );
 }
 
 function mean(vals: (number | null)[]) {
   const v = vals.filter((x): x is number => x != null);
-  return { value: v.length ? +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : null, n: v.length, missing: vals.length - v.length };
+  return {
+    value: v.length ? +(v.reduce((a, b) => a + b, 0) / v.length).toFixed(1) : null,
+    n: v.length,
+    missing: vals.length - v.length,
+  };
 }
 
 export type OverviewData = {
   project: Project;
   points: MeasurementPoint[];
   kpis: MetricValue[];
-  byOperator: { operator: Operator; samples: number; dl: number | null; rsrp: number | null; sinr: number | null; latency: number | null }[];
+  byOperator: {
+    operator: Operator;
+    samples: number;
+    dl: number | null;
+    rsrp: number | null;
+    sinr: number | null;
+    latency: number | null;
+  }[];
   trend: { day: string; series: Partial<Record<Operator, number | null>> }[];
   source: SourceReference;
 };
@@ -51,7 +74,13 @@ export async function getOverview(f: FilterContext, signal?: AbortSignal): Promi
   await delay(300, signal);
   const project = await getProject(f.project!, signal);
   const points = applyFilters(pointsFor(project), f);
-  const mk = (key: string, label: string, unit: string, sel: (p: MeasurementPoint) => number | null, pop = points): MetricValue => {
+  const mk = (
+    key: string,
+    label: string,
+    unit: string,
+    sel: (p: MeasurementPoint) => number | null,
+    pop = points,
+  ): MetricValue => {
     const m = mean(pop.map(sel));
     return { key, label, unit, value: m.value, sampleCount: m.n, missingCount: m.missing };
   };
@@ -70,25 +99,39 @@ export async function getOverview(f: FilterContext, signal?: AbortSignal): Promi
   const byOperator = project.operators.map((operator) => {
     const pop = points.filter((p) => p.operator === operator);
     return {
-      operator, samples: pop.length,
-      dl: mean(pop.map((p) => p.dl)).value, rsrp: mean(pop.map((p) => p.rsrp)).value,
-      sinr: mean(pop.map((p) => p.sinr)).value, latency: mean(pop.map((p) => p.latency)).value,
+      operator,
+      samples: pop.length,
+      dl: mean(pop.map((p) => p.dl)).value,
+      rsrp: mean(pop.map((p) => p.rsrp)).value,
+      sinr: mean(pop.map((p) => p.sinr)).value,
+      latency: mean(pop.map((p) => p.latency)).value,
     };
   });
   const metric: MetricKey = f.metric ?? "dl";
   const days = [...new Set(points.map((p) => p.ts.slice(0, 10)))].sort();
   const trend = days.map((day) => ({
     day,
-    series: Object.fromEntries(project.operators.map((op) => [
-      op, mean(points.filter((p) => p.operator === op && p.ts.startsWith(day)).map((p) => p[metric])).value,
-    ])) as Partial<Record<Operator, number | null>>,
+    series: Object.fromEntries(
+      project.operators.map((op) => [
+        op,
+        mean(points.filter((p) => p.operator === op && p.ts.startsWith(day)).map((p) => p[metric]))
+          .value,
+      ]),
+    ) as Partial<Record<Operator, number | null>>,
   }));
   const missing = points.filter((p) => p[metric] == null).length;
   return {
-    project, points, kpis, byOperator, trend,
+    project,
+    points,
+    kpis,
+    byOperator,
+    trend,
     source: {
-      label: `Fixture démo — ${project.name}`, population: `${points.length} points de mesure filtrés`,
-      sampleCount: points.length - missing, missingCount: missing, demo: true,
+      label: `Fixture démo — ${project.name}`,
+      population: `${points.length} points de mesure filtrés`,
+      sampleCount: points.length - missing,
+      missingCount: missing,
+      demo: true,
     },
   };
 }

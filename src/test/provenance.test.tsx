@@ -13,7 +13,16 @@ afterEach(() => resetDictStore());
 
 async function assertCardsMatchApi() {
   const api = await getDictParams(P, "lte-mr", {});
-  const view = renderQ(<MessageParameterCards projectId={P} filters={{}} msgId="lte-mr" msgName="MeasurementReport" selected={null} onSelect={() => {}} />);
+  const view = renderQ(
+    <MessageParameterCards
+      projectId={P}
+      filters={{}}
+      msgId="lte-mr"
+      msgName="MeasurementReport"
+      selected={null}
+      onSelect={() => {}}
+    />,
+  );
   for (const p of api.params) {
     const card = await screen.findByRole("button", { name: new RegExp(`^${p.leaf}`) });
     const c = within(card);
@@ -27,7 +36,9 @@ async function assertCardsMatchApi() {
 }
 
 describe("G2 provenance", () => {
-  it("parameter cards display exactly the API response", async () => { await assertCardsMatchApi(); });
+  it("parameter cards display exactly the API response", async () => {
+    await assertCardsMatchApi();
+  });
 
   it("mutated fixture changes the displayed values (no hardcoded business numbers)", async () => {
     const before = await assertCardsMatchApi();
@@ -50,10 +61,14 @@ describe("G2 provenance", () => {
   it("matrix totals equal the sum of their cells (validated contract)", async () => {
     const d = await getDictParamDetail(P, "lte-mr-rsrp", "operator,band", {});
     for (const r of d.matrix.rows) expect(r.cells.reduce((a, c) => a + c.n, 0)).toBe(r.total);
-    expect(d.histogram.reduce((a, b) => a + b.count, 0)).toBe(d.matrix.rows.reduce((a, r) => a + r.total, 0));
+    expect(d.histogram.reduce((a, b) => a + b.count, 0)).toBe(
+      d.matrix.rows.reduce((a, r) => a + r.total, 0),
+    );
   });
 });
 
 // Clear generated observations without restoring the mutated definitions.
 import { reseedDictStore } from "@/mocks/dictionary";
-function resetCacheOnly() { reseedDictStore(DICT_STORE.seedSalt); }
+function resetCacheOnly() {
+  reseedDictStore(DICT_STORE.seedSalt);
+}

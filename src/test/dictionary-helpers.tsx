@@ -8,4 +8,5 @@ export function renderQ(ui: ReactNode) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } });
   return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
 }
-export const pct = (s: number) => `${(s * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;
+export const pct = (s: number) =>
+  `${(s * 100).toLocaleString("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} %`;

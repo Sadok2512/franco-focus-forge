@@ -81,9 +81,17 @@ export const ApiErrorSchema = z.object({ code: z.string(), message: z.string() }
 export type ApiError = z.infer<typeof ApiErrorSchema>;
 
 export type MetricKey = "dl" | "rsrp" | "sinr" | "latency";
-export const METRICS: Record<MetricKey, { label: string; unit: string; thresholds: [number, number, number]; higherIsBetter: boolean }> = {
+export const METRICS: Record<
+  MetricKey,
+  { label: string; unit: string; thresholds: [number, number, number]; higherIsBetter: boolean }
+> = {
   dl: { label: "Débit DL", unit: "Mbit/s", thresholds: [10, 50, 150], higherIsBetter: true },
-  rsrp: { label: "RSRP / SS-RSRP", unit: "dBm", thresholds: [-110, -100, -90], higherIsBetter: true },
+  rsrp: {
+    label: "RSRP / SS-RSRP",
+    unit: "dBm",
+    thresholds: [-110, -100, -90],
+    higherIsBetter: true,
+  },
   sinr: { label: "SINR", unit: "dB", thresholds: [0, 10, 20], higherIsBetter: true },
   latency: { label: "Latence", unit: "ms", thresholds: [30, 50, 80], higherIsBetter: false },
 };
