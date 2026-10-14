@@ -15,3 +15,4 @@
 - `_app` routes are client-only (`ssr: false`) because mock auth lives in localStorage.
 - maplibre-gl is excluded from Vite optimizeDeps; prebundling breaks its module worker.
 - Missing measurements are `null` and rendered "N/D", never coerced to zero.
+- RRC Dictionary lives in `src/features/dictionary/`, its fixtures in `src/mocks/dictionary.ts` and its adapter in `src/lib/api/dictionary.ts` (re-exported by client.ts); the mock aggregates raw observations so every displayed number traces to a response, and conversions are computed only from the API `conversion_rule`.
