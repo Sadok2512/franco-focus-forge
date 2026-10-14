@@ -10,33 +10,94 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppRouteImport } from './routes/_app'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
+import { Route as AppKpiRouteImport } from './routes/_app.kpi'
+import { Route as AppProjectsRouteImport } from './routes/_app.projects'
+import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppRoute = AppRouteImport.update({
+  id: '/_app',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppAssistantRoute = AppAssistantRouteImport.update({
+  id: '/assistant',
+  path: '/assistant',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppKpiRoute = AppKpiRouteImport.update({
+  id: '/kpi',
+  path: '/kpi',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProjectsRoute = AppProjectsRouteImport.update({
+  id: '/projects',
+  path: '/projects',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppRrcRoute = AppRrcRouteImport.update({
+  id: '/rrc',
+  path: '/rrc',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/assistant': typeof AppAssistantRoute
+  '/kpi': typeof AppKpiRoute
+  '/projects': typeof AppProjectsRoute
+  '/rrc': typeof AppRrcRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/assistant': typeof AppAssistantRoute
+  '/kpi': typeof AppKpiRoute
+  '/projects': typeof AppProjectsRoute
+  '/rrc': typeof AppRrcRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/_app/assistant': typeof AppAssistantRoute
+  '/_app/kpi': typeof AppKpiRoute
+  '/_app/projects': typeof AppProjectsRoute
+  '/_app/rrc': typeof AppRrcRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths: '/' | '/login' | '/assistant' | '/kpi' | '/projects' | '/rrc'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to: '/' | '/login' | '/assistant' | '/kpi' | '/projects' | '/rrc'
+  id:
+    | '__root__'
+    | '/'
+    | '/_app'
+    | '/login'
+    | '/_app/assistant'
+    | '/_app/kpi'
+    | '/_app/projects'
+    | '/_app/rrc'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,11 +109,71 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_app': {
+      id: '/_app'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_app/assistant': {
+      id: '/_app/assistant'
+      path: '/assistant'
+      fullPath: '/assistant'
+      preLoaderRoute: typeof AppAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/kpi': {
+      id: '/_app/kpi'
+      path: '/kpi'
+      fullPath: '/kpi'
+      preLoaderRoute: typeof AppKpiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/projects': {
+      id: '/_app/projects'
+      path: '/projects'
+      fullPath: '/projects'
+      preLoaderRoute: typeof AppProjectsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/rrc': {
+      id: '/_app/rrc'
+      path: '/rrc'
+      fullPath: '/rrc'
+      preLoaderRoute: typeof AppRrcRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAssistantRoute: typeof AppAssistantRoute
+  AppKpiRoute: typeof AppKpiRoute
+  AppProjectsRoute: typeof AppProjectsRoute
+  AppRrcRoute: typeof AppRrcRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAssistantRoute: AppAssistantRoute,
+  AppKpiRoute: AppKpiRoute,
+  AppProjectsRoute: AppProjectsRoute,
+  AppRrcRoute: AppRrcRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
