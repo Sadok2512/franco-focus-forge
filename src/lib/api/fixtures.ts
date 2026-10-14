@@ -189,34 +189,3 @@ export const KPI_RRC = {
 };
 
 /* ---------- Assistant IA (démo) ---------- */
-export const CONVERSATIONS = [
-  { id: "c1", title: "Comparaison NR Orange vs SFR", date: "Aujourd'hui, 10:24" },
-  { id: "c2", title: "Analyse EN-DC par bande", date: "Hier, 16:15" },
-  { id: "c3", title: "Paramètres RRC différents", date: "12/05/2026" },
-  { id: "c4", title: "Zones faible SINR", date: "10/05/2026" },
-  { id: "c5", title: "Débits UL les plus faibles", date: "08/05/2026" },
-];
-export const SUGGESTIONS = [
-  "Compare les débits NR entre Orange et SFR",
-  "Quels paramètres RRC diffèrent ?",
-  "Montre les zones avec un faible SINR",
-  "Analyse les performances EN-DC",
-];
-export const ASSISTANT_ANSWER = {
-  question: "Compare les débits NR entre Orange et SFR sur Paris.",
-  intro:
-    "Voici la comparaison des débits NR entre Orange et SFR sur Paris, basée sur les mesures disponibles dans votre projet.",
-  box: { Orange: [40, 120, 245, 420, 560], SFR: [30, 90, 180, 300, 700] } as Record<
-    string,
-    number[]
-  >,
-  stats: [
-    { m: "P10", o: "85", s: "62" },
-    { m: "P50", o: "245", s: "180" },
-    { m: "P90", o: "520", s: "410" },
-    { m: "Moyenne", o: "268", s: "195" },
-    { m: "Échantillons", o: "412 564", s: "298 761" },
-  ],
-  analysis:
-    "Orange présente un débit NR médian supérieur de +36 % par rapport à SFR sur Paris, avec une meilleure stabilité (P90 plus élevé).",
-};
