@@ -33,7 +33,7 @@ function KpiPage() {
     grid: { left: 40, right: 10, top: 24, bottom: 28 },
     xAxis: { type: "category" as const, data: [...OPERATORS], axisLabel: { color: c.muted, fontSize: 11 }, axisLine: { lineStyle: { color: c.border } } },
     yAxis: { type: "value" as const, min: 90, max: 100, axisLabel: { color: c.muted, fontSize: 10, formatter: "{value}%" }, splitLine: { lineStyle: { color: c.border } } },
-    series: [{ type: "bar" as const, barWidth: "62%", label: { show: true, position: "top" as const, fontSize: 11, fontWeight: "bold" as const, formatter: (p: { value: number }) => `${fr(p.value)} %` },
+    series: [{ type: "bar" as const, barWidth: "62%", label: { show: true, position: "top" as const, fontSize: 11, fontWeight: "bold" as const, formatter: (p: { value?: unknown }) => `${fr(Number(p.value))} %` },
       data: OPERATORS.map((o) => ({ value: k?.byOp[o] ?? 0, itemStyle: { color: css(OP_VAR[o]) } })) }],
   }), [k]);
   const lines = useCallback((c: { muted: string; border: string }) => {
