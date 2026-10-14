@@ -8,7 +8,7 @@ import { dictQ, errMsg, fmtInt, type Selection } from "./shared";
 
 type Row = {
   id: string; depth: number; label: string; kind: "branch" | "channel" | "message" | "ie" | "leaf" | "note";
-  parent: string | null; expandable: boolean; techno: "LTE" | "NR"; msgId?: string; msgName?: string; count?: number; paramId?: string; tone?: "muted" | "warn";
+  parent: string | null; expandable: boolean; techno: "LTE" | "NR"; msgId?: string; msgName?: string; count?: number; paramId?: string | undefined; tone?: "muted" | "warn";
 };
 
 type Trie = { seg: string; children: Map<string, Trie>; paramId?: string };
