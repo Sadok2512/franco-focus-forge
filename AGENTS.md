@@ -16,3 +16,4 @@
 - maplibre-gl is excluded from Vite optimizeDeps; prebundling breaks its module worker.
 - Missing measurements are `null` and rendered "N/D", never coerced to zero.
 - RRC Dictionary lives in `src/features/dictionary/`, its fixtures in `src/mocks/dictionary.ts` and its adapter in `src/lib/api/dictionary.ts` (re-exported by client.ts); the mock aggregates raw observations so every displayed number traces to a response, and conversions are computed only from the API `conversion_rule`.
+- Assistant IA lives in `src/features/assistant/`, its deterministic engine in `src/mocks/assistant.ts` and its adapter in `src/lib/api/assistant.ts` (re-exported by client.ts); every claim carries an evidence kind (OBSERVED/CALCULATED/INTERPRETED/UNAVAILABLE) and numbers are computed from mock points or the dictionary adapter, so unsupported questions answer UNAVAILABLE instead of inventing data.

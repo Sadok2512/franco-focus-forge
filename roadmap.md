@@ -7,5 +7,5 @@
 - [x] U5 Overview
 - [x] U6 RRC Dictionary (C1) — OPEN: hierarchical geo (Plaque>DR>Dép>Site) & period filters, per-branch tree loading/error
 - [ ] U7 KPI Analytics
-- [ ] U8 Assistant (6 mock scenarios)
+- [x] U8 Assistant IA (6 scenarios + empty/error/cancelled) — OPEN: route /projects/:id/assistant (kept ?project= like other modules), period + Plaque>DR>Site filters
 - [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
