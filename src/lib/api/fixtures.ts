@@ -14,7 +14,7 @@ export const PROJECTS: Project[] = [
   {
     id: "idf-t3-2026", name: "Paris 2026 Q1", geography: "Île-de-France (Paris + Petite Couronne)",
     center: [2.35, 48.86], operators: ["Orange", "SFR", "Bouygues", "Free"], technologies: ["LTE", "NR", "EN-DC"],
-    services: ["Data", "SMS", "Voice"], bands: ["B3", "B7", "B20", "n78"], departements: ["75", "92", "93", "94"],
+    services: ["Data", "SMS", "Voice"], bands: ["B3", "B7", "B20", "B28", "n78", "n28"], departements: ["75", "92", "93", "94"],
     periodStart: "2026-01-01", periodEnd: "2026-03-31", captures: 2400000, importedAt: "2026-04-02", status: "ready",
   },
   {
@@ -28,6 +28,12 @@ export const PROJECTS: Project[] = [
     center: [5.37, 43.296], operators: ["Orange", "Bouygues", "Free"], technologies: ["NR"],
     services: ["Data"], bands: ["n78", "n28"], departements: ["13"],
     periodStart: "2026-01-01", periodEnd: "2026-01-31", captures: 1200000, importedAt: "2026-02-03", status: "ready",
+  },
+  {
+    id: "rennes-lte-2026", name: "Rennes LTE (sans NR)", geography: "Bretagne",
+    center: [-1.68, 48.11], operators: ["Orange", "SFR", "Bouygues"], technologies: ["LTE"],
+    services: ["Data", "Voice"], bands: ["B3", "B20", "B28"], departements: ["35"],
+    periodStart: "2026-03-01", periodEnd: "2026-03-15", captures: 410000, importedAt: "2026-03-17", status: "ready",
   },
   {
     id: "lille-indoor-2026", name: "Tests Indoor", geography: "Bâtiment Orange Village",
