@@ -1,3 +1,4 @@
+import { RRC_TREE, RRC_FIELD, KPI_CATALOG, KPI_RRC, CONVERSATIONS, SUGGESTIONS, ASSISTANT_ANSWER } from "./fixtures";
 // Typed mock API adapter. UI only talks to these functions.
 import { PROJECTS, pointsFor } from "./fixtures";
 import {
@@ -93,3 +94,16 @@ export async function getOverview(f: FilterContext, signal?: AbortSignal): Promi
 }
 
 export { METRICS };
+
+export async function getRrcDictionary(signal?: AbortSignal) {
+  await delay(150, signal);
+  return { tree: RRC_TREE, field: RRC_FIELD };
+}
+export async function getKpiCatalog(signal?: AbortSignal) {
+  await delay(150, signal);
+  return { catalog: KPI_CATALOG, kpi: KPI_RRC };
+}
+export async function getAssistant(signal?: AbortSignal) {
+  await delay(150, signal);
+  return { conversations: CONVERSATIONS, suggestions: SUGGESTIONS, answer: ASSISTANT_ANSWER };
+}

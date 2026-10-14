@@ -25,7 +25,7 @@ export function Chart({
       inst.current = echarts.init(el.current, undefined, { renderer: "canvas" });
       const c = { fg: cssVar("--foreground"), muted: cssVar("--muted-foreground"), border: cssVar("--border") };
       inst.current.setOption({
-        textStyle: { fontFamily: "IBM Plex Sans", color: c.fg },
+        textStyle: { fontFamily: "Inter", color: c.fg },
         animationDuration: 180,
         ...build(c),
       });
