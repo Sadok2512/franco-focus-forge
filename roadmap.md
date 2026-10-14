@@ -5,7 +5,7 @@
 - [~] U3 shared filters in URL (period & geography hierarchy pending)
 - [~] U4 charts/map/table (TanStack Table, SVG export, clusters pending)
 - [x] U5 Overview
-- [ ] U6 RRC Dictionary
+- [x] U6 RRC Dictionary (C1) — OPEN: hierarchical geo (Plaque>DR>Dép>Site) & period filters, per-branch tree loading/error
 - [ ] U7 KPI Analytics
 - [ ] U8 Assistant (6 mock scenarios)
 - [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
