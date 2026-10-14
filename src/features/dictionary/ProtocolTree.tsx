@@ -254,10 +254,9 @@ export function ProtocolTree({
   const toggle = (r: Row) =>
     setOpen((s) => {
       const n = new Set(s);
-      if (r.kind === "ie" || r.kind === "channel") {
-        const k = `closed:${r.id}`;
-        n.has(k) ? n.delete(k) : n.add(k);
-      } else n.has(r.id) ? n.delete(r.id) : n.add(r.id);
+      const k = r.kind === "ie" || r.kind === "channel" ? `closed:${r.id}` : r.id;
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
       return n;
     });
   const activate = (r: Row) => {
