@@ -5,9 +5,9 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-sans: "Work Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  --font-display: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
   --radius-lg: calc(var(--radius) + 2px);
@@ -55,8 +55,9 @@
   --color-sidebar-primary-foreground: var(--primary-foreground);
 }
 
-/* ---- Console RF : thème sombre par défaut ---- */
-:root {
+/* ---- thème sombre (bascule) ---- */
+.dark {
+  color-scheme: dark;
   --radius: 0.25rem;
   --background: oklch(0.188 0.029 254);        /* #0A1420 */
   --foreground: oklch(0.876 0.027 250);        /* #C9D8E8 */
@@ -93,9 +94,14 @@
   --warning-foreground: oklch(0.2 0.03 254);
 }
 
-/* ---- Thème clair (bascule) ---- */
-.light {
+/* ---- Thème clair par défaut ---- */
+:root {
   color-scheme: light;
+  --radius: 0.5rem;
+  --op-orange: oklch(0.72 0.17 55);
+  --op-sfr: oklch(0.58 0.22 25);
+  --op-bouygues: oklch(0.6 0.18 250);
+  --op-free: oklch(0.6 0.02 250);
   --background: oklch(0.975 0.006 255);
   --foreground: oklch(0.255 0.035 255);
   --card: oklch(1 0 0);
@@ -126,23 +132,19 @@
 
 @layer base {
   * { border-color: var(--color-border); }
-  html { color-scheme: dark; }
+  
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     font-family: var(--font-sans);
-    font-size: 12px;
+    font-size: 13px;
     line-height: 1.45;
     -webkit-font-smoothing: antialiased;
-    background-image:
-      linear-gradient(to right, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px),
-      linear-gradient(to bottom, color-mix(in oklab, var(--border) 55%, transparent) 1px, transparent 1px);
-    background-size: 44px 44px;
   }
   h1, h2, h3, h4 {
-    font-family: var(--font-mono);
-    font-weight: 600;
-    letter-spacing: -0.015em;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    letter-spacing: -0.01em;
   }
   .num { font-variant-numeric: tabular-nums; }
   *:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
@@ -165,16 +167,15 @@
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, white 5%, transparent);
+  box-shadow: 0 1px 2px color-mix(in oklab, var(--foreground) 6%, transparent);
 }
 
 @utility panel-title {
-  font-family: var(--font-mono);
-  font-size: 10px;
+  font-family: var(--font-sans);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted-foreground);
+  letter-spacing: 0;
+  color: var(--foreground);
 }
 
 @utility mono-tag {
