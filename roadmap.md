@@ -1,0 +1,11 @@
+# BC4 roadmap
+- [x] U0 foundation (tokens, shell, routes, mock API)
+- [x] U1 mock login / protected routes / logout
+- [~] U2 projects table (import wizard pending)
+- [~] U3 shared filters in URL (period & geography hierarchy pending)
+- [~] U4 charts/map/table (TanStack Table, SVG export, clusters pending)
+- [x] U5 Overview
+- [ ] U6 RRC Dictionary
+- [ ] U7 KPI Analytics
+- [ ] U8 Assistant (6 mock scenarios)
+- [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
