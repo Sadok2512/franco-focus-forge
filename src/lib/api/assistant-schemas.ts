@@ -19,7 +19,11 @@ export type AssistantRequest = z.infer<typeof AssistantRequestSchema>;
 
 const Cell = z.union([z.string(), z.number(), z.null()]);
 
-const ClaimSchema = z.object({ text: z.string(), kind: EvidenceKindSchema, source_id: z.string().optional() });
+const ClaimSchema = z.object({
+  text: z.string(),
+  kind: EvidenceKindSchema,
+  source_id: z.string().optional(),
+});
 
 export const BlockSchema = z.discriminatedUnion("type", [
   z.object({ type: z.literal("text"), heading: z.string(), claims: z.array(ClaimSchema) }),
@@ -40,7 +44,14 @@ export const BlockSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("table"),
     heading: z.string(),
-    columns: z.array(z.object({ key: z.string(), label: z.string(), unit: z.string().optional(), numeric: z.boolean().optional() })),
+    columns: z.array(
+      z.object({
+        key: z.string(),
+        label: z.string(),
+        unit: z.string().optional(),
+        numeric: z.boolean().optional(),
+      }),
+    ),
     rows: z.array(z.record(z.string(), Cell)),
     source_id: z.string(),
     formula: z.string().optional(),
@@ -54,7 +65,12 @@ export const BlockSchema = z.discriminatedUnion("type", [
     unit: z.string(),
     categories: z.array(z.string()),
     /** bar/line: one number|null per category. boxplot: [P10,P25,P50,P75,P90] per category. */
-    series: z.array(z.object({ name: z.string(), data: z.array(z.union([z.number(), z.null(), z.array(z.number())])) })),
+    series: z.array(
+      z.object({
+        name: z.string(),
+        data: z.array(z.union([z.number(), z.null(), z.array(z.number())])),
+      }),
+    ),
     sample_count: z.number().int().nonnegative(),
     source_id: z.string(),
   }),
@@ -79,7 +95,11 @@ export const EvidenceSchema = z.object({
 });
 export type Evidence = z.infer<typeof EvidenceSchema>;
 
-export const StepSchema = z.object({ id: z.string(), label: z.string(), duration_ms: z.number().int().nonnegative() });
+export const StepSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  duration_ms: z.number().int().nonnegative(),
+});
 export type ExecStep = z.infer<typeof StepSchema>;
 
 export const AssistantResponseSchema = z.object({
@@ -101,7 +121,12 @@ export type AssistantResponse = z.infer<typeof AssistantResponseSchema>;
 
 export const MessageSchema = z.discriminatedUnion("role", [
   z.object({ role: z.literal("user"), id: z.string(), at: z.string(), text: z.string() }),
-  z.object({ role: z.literal("assistant"), id: z.string(), at: z.string(), response: AssistantResponseSchema }),
+  z.object({
+    role: z.literal("assistant"),
+    id: z.string(),
+    at: z.string(),
+    response: AssistantResponseSchema,
+  }),
 ]);
 export type ChatMessage = z.infer<typeof MessageSchema>;
 

@@ -28,7 +28,10 @@ const wait = (ms: number, signal?: AbortSignal) =>
   });
 
 /** Drops filter values that do not exist in the project (project change must invalidate them). */
-export function effectiveFilters(p: Project, f: FilterContext | AssistantFilters): { filters: AssistantFilters; dropped: string[] } {
+export function effectiveFilters(
+  p: Project,
+  f: FilterContext | AssistantFilters,
+): { filters: AssistantFilters; dropped: string[] } {
   const dropped: string[] = [];
   const keep = <T extends string>(k: string, v: T[] | undefined, allowed: readonly string[]) => {
     if (!v?.length) return undefined;
@@ -43,7 +46,8 @@ export function effectiveFilters(p: Project, f: FilterContext | AssistantFilters
     band: keep("band", f.band, p.bands),
     dep: keep("dep", f.dep, p.departements),
   };
-  for (const k of Object.keys(filters) as (keyof AssistantFilters)[]) if (filters[k] === undefined) delete filters[k];
+  for (const k of Object.keys(filters) as (keyof AssistantFilters)[])
+    if (filters[k] === undefined) delete filters[k];
   return { filters, dropped };
 }
 
@@ -65,7 +69,8 @@ export async function postAssistant(
     await wait(s.duration_ms, opts.signal);
   }
   const warnings = [...out.warnings];
-  if (dropped.length) warnings.unshift(`Filtres incompatibles avec ce projet ignorés : ${dropped.join(", ")}.`);
+  if (dropped.length)
+    warnings.unshift(`Filtres incompatibles avec ce projet ignorés : ${dropped.join(", ")}.`);
   return AssistantResponseSchema.parse({
     conversation_id: r.conversation_id,
     message_id: uid("msg"),
@@ -85,9 +90,18 @@ export async function postAssistant(
 
 export function cancelledResponse(req: AssistantRequest): AssistantResponse {
   return {
-    conversation_id: req.conversation_id, message_id: uid("msg"), status: "cancelled", project_id: req.project_id,
-    scenario: "cancelled", effective_filters: req.filters, blocks: [], evidence: [], follow_ups: [],
-    execution_steps: [], warnings: [], demo: true,
+    conversation_id: req.conversation_id,
+    message_id: uid("msg"),
+    status: "cancelled",
+    project_id: req.project_id,
+    scenario: "cancelled",
+    effective_filters: req.filters,
+    blocks: [],
+    evidence: [],
+    follow_ups: [],
+    execution_steps: [],
+    warnings: [],
+    demo: true,
   };
 }
 
@@ -105,31 +119,57 @@ function read(projectId: string): Conversation[] {
 }
 function write(projectId: string, list: Conversation[]) {
   memory.set(projectId, list);
-  if (typeof localStorage !== "undefined") localStorage.setItem(key(projectId), JSON.stringify(list));
+  if (typeof localStorage !== "undefined")
+    localStorage.setItem(key(projectId), JSON.stringify(list));
 }
 
 export async function listConversations(projectId: string): Promise<Conversation[]> {
   await wait(60);
   return read(projectId).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 }
-export async function createConversation(projectId: string, title = "Nouvelle conversation"): Promise<Conversation> {
+export async function createConversation(
+  projectId: string,
+  title = "Nouvelle conversation",
+): Promise<Conversation> {
   const now = new Date().toISOString();
-  const c: Conversation = { id: uid("conv"), project_id: projectId, title, created_at: now, updated_at: now, messages: [] };
+  const c: Conversation = {
+    id: uid("conv"),
+    project_id: projectId,
+    title,
+    created_at: now,
+    updated_at: now,
+    messages: [],
+  };
   write(projectId, [c, ...read(projectId)]);
   return c;
 }
 export async function renameConversation(projectId: string, id: string, title: string) {
-  write(projectId, read(projectId).map((c) => (c.id === id ? { ...c, title: title.trim() || c.title } : c)));
+  write(
+    projectId,
+    read(projectId).map((c) => (c.id === id ? { ...c, title: title.trim() || c.title } : c)),
+  );
 }
 export async function deleteConversation(projectId: string, id: string) {
-  write(projectId, read(projectId).filter((c) => c.id !== id));
+  write(
+    projectId,
+    read(projectId).filter((c) => c.id !== id),
+  );
 }
 export async function appendMessages(projectId: string, id: string, msgs: ChatMessage[]) {
-  write(projectId, read(projectId).map((c) => {
-    if (c.id !== id) return c;
-    const first = msgs.find((m) => m.role === "user");
-    const title = c.messages.length === 0 && first?.role === "user" ? first.text.slice(0, 60) : c.title;
-    return { ...c, title, updated_at: new Date().toISOString(), messages: [...c.messages, ...msgs] };
-  }));
+  write(
+    projectId,
+    read(projectId).map((c) => {
+      if (c.id !== id) return c;
+      const first = msgs.find((m) => m.role === "user");
+      const title =
+        c.messages.length === 0 && first?.role === "user" ? first.text.slice(0, 60) : c.title;
+      return {
+        ...c,
+        title,
+        updated_at: new Date().toISOString(),
+        messages: [...c.messages, ...msgs],
+      };
+    }),
+  );
 }
 export const newId = uid;
