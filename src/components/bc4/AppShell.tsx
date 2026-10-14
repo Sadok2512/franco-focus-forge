@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookOpen, ChevronDown, HelpCircle, Lightbulb, LogOut, Moon, Radio, Sun } from "lucide-react";
+import { BookOpen, ChevronDown, HelpCircle, Lightbulb, LogOut, Moon, Radio, Settings, Sun } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { getProjects } from "@/lib/api/client";
 import type { FilterContext, Operator } from "@/lib/api/schemas";
@@ -82,6 +82,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </button>
             {menu && (
               <div role="menu" className="absolute right-0 top-11 w-44 rounded-md border bg-popover p-1 shadow-lg">
+                <button role="menuitem" onClick={() => { setMenu(false); navigate({ to: "/settings" }); }} className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted">
+                  <Settings className="h-3.5 w-3.5" /> Paramètres
+                </button>
+
                 <button role="menuitem" onClick={() => { logout(); navigate({ to: "/login" }); }} className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted">
                   <LogOut className="h-3.5 w-3.5" /> Se déconnecter
                 </button>
