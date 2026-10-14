@@ -15,7 +15,8 @@ function toRgb(cssColor: string) {
 export function MapLegend({ metric }: { metric: MetricKey }) {
   const m = METRICS[metric];
   const [a, b, c] = m.thresholds;
-  const rows = m.higherIsBetter
+  type K = "good" | "fair" | "poor" | "bad";
+  const rows: [K, string][] = m.higherIsBetter
     ? [["good", `≥ ${c}`], ["fair", `${b} – ${c}`], ["poor", `${a} – ${b}`], ["bad", `< ${a}`]]
     : [["good", `≤ ${a}`], ["fair", `${a} – ${b}`], ["poor", `${b} – ${c}`], ["bad", `> ${c}`]];
   const cls = { good: "bg-sev-good", fair: "bg-sev-fair", poor: "bg-sev-poor", bad: "bg-sev-bad" } as Record<string, string>;
@@ -89,11 +90,11 @@ export function RadioMap({
         const popup = new ml.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
         m.on("mousemove", "pts", (e) => {
           m.getCanvas().style.cursor = "pointer";
-          const p = e.features?.[0]?.properties;
-          if (p) popup.setLngLat(e.lngLat).setHTML(`<div style="font:12px IBM Plex Sans"><b>${p.op}</b> · ${p.tech} ${p.band}<br/>${METRICS[metric].label}: <b>${p.v}</b> ${p.v === "N/D" ? "" : METRICS[metric].unit}</div>`).addTo(m);
+          const p = e.features?.[0]?.properties as Record<string, string> | undefined;
+          if (p) popup.setLngLat(e.lngLat).setHTML(`<div style="font:12px IBM Plex Sans"><b>${p["op"]}</b> · ${p["tech"]} ${p["band"]}<br/>${METRICS[metric].label}: <b>${p["v"]}</b> ${p["v"] === "N/D" ? "" : METRICS[metric].unit}</div>`).addTo(m);
         });
         m.on("mouseleave", "pts", () => { m.getCanvas().style.cursor = ""; popup.remove(); });
-        m.on("click", "pts", (e) => onSelect?.(String(e.features?.[0]?.properties?.id ?? "")));
+        m.on("click", "pts", (e) => onSelect?.(String(e.features?.[0]?.properties?.["id"] ?? "")));
         setReady(true);
       });
       map.current = m;

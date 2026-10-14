@@ -37,7 +37,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const session = getSession();
 
   useEffect(() => {
-    if (!filters.project && projects?.length) set({ project: projects[0].id });
+    if (!filters.project && projects?.length) set({ project: projects[0]!.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, filters.project]);
 

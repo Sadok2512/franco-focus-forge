@@ -31,6 +31,8 @@ export const PROJECTS: Project[] = [
   },
 ];
 
+const pick = <T,>(arr: readonly T[], r: () => number): T => pick(arr, r) as T;
+
 const OP_BIAS: Record<Operator, number> = { Orange: 1.15, SFR: 0.95, Bouygues: 1.0, Free: 0.88 };
 const pointCache = new Map<string, MeasurementPoint[]>();
 
@@ -43,14 +45,14 @@ export function pointsFor(project: Project): MeasurementPoint[] {
   const days = Math.max(1, (Date.parse(project.periodEnd) - Date.parse(project.periodStart)) / 864e5 + 1);
   const pts: MeasurementPoint[] = [];
   for (let i = 0; i < n; i++) {
-    const operator = project.operators[Math.floor(r() * project.operators.length)];
-    const tech: Tech = project.technologies[Math.floor(r() * project.technologies.length)];
-    const service: Service = project.services[Math.floor(r() * project.services.length)];
+    const operator = pick(project.operators, r);
+    const tech: Tech = pick(project.technologies, r);
+    const service: Service = pick(project.services, r);
     const nrBands = project.bands.filter((b) => b.startsWith("n"));
     const lteBands = project.bands.filter((b) => !b.startsWith("n"));
     const pool = tech === "LTE" ? lteBands : nrBands.length ? nrBands : lteBands;
-    const band = pool[Math.floor(r() * pool.length)];
-    const dep = project.departements[Math.floor(r() * project.departements.length)];
+    const band = pick(pool, r);
+    const dep = pick(project.departements, r);
     const dx = (r() - 0.5) * 0.28, dy = (r() - 0.5) * 0.16;
     // a deliberate weak zone in the NE quadrant to be "discovered"
     const weak = dx > 0.06 && dy > 0.03 ? 0.45 : 1;
