@@ -11,13 +11,17 @@ export function useFilters() {
   const search = useSearch({ strict: false }) as FilterContext;
   const navigate = useNavigate();
   const set = (patch: Partial<FilterContext>) =>
-    navigate({ to: ".", search: (prev: FilterContext) => {
-      const next = { ...prev, ...patch };
-      for (const k of Object.keys(next) as (keyof FilterContext)[]) {
-        const v = next[k];
-        if (v === undefined || (Array.isArray(v) && v.length === 0)) delete next[k];
-      }
-      return next;
-    }, replace: true } as never);
+    navigate({
+      to: ".",
+      search: (prev: FilterContext) => {
+        const next = { ...prev, ...patch };
+        for (const k of Object.keys(next) as (keyof FilterContext)[]) {
+          const v = next[k];
+          if (v === undefined || (Array.isArray(v) && v.length === 0)) delete next[k];
+        }
+        return next;
+      },
+      replace: true,
+    } as never);
   return { filters: search, set };
 }

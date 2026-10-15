@@ -1,3 +1,4 @@
+import { exportMetadata } from "@/lib/api/settings";
 import { queryOptions } from "@tanstack/react-query";
 import {
   getDictParamDetail,
@@ -55,7 +56,11 @@ export const errMsg = (e: unknown) =>
     : "Erreur inconnue";
 
 export function downloadCsv(name: string, rows: (string | number)[][]) {
-  const csv = rows
+  const meta = exportMetadata();
+  const head: (string | number)[][] = [
+    [`# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""}`],
+  ];
+  const csv = [...head, ...rows]
     .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
     .join("\n");
   const a = document.createElement("a");

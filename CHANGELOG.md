@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0 (major)
+- Page Paramètres / Administration avec 7 sous-onglets à URL partageable : Utilisateurs, Géographie, Catalogue KPI, Configuration IA, Apparence, Organisation, À propos & Version.
+- Matrice de permissions centralisée (Administrateur / Éditeur / Lecteur) appliquée aussi dans l'API mock ; rôle simulé pour la démonstration.
+- Import géographique CSV/XLSX avec mapping de colonnes, validation (doublons, coordonnées, cohérence parent-enfant), rapport d'erreurs et référentiels versionnés.
+- Catalogue KPI versionné : formule stockée en texte non exécutable, historique, duplication, archivage.
+- Configuration IA sans stockage de secret, test de connexion explicitement simulé ; l'Assistant affiche « Service non activé » si l'IA est désactivée.
+- Apparence : clair/sombre/système, densité, couleur principale avec contrôle de contraste ; thème d'organisation.
+- Organisation : nom, logo, visibilité dans la barre supérieure et sur les exports CSV.
+- Version affichée lue depuis package.json ; nouveautés lues depuis ce changelog.
+
 ## 0.2.0 (minor)
 - Assistant IA standalone page: history (search, rename, delete, per-project storage), composer with stop/retry, structured response renderer (tables, bar/line/boxplot charts, maps), evidence labels, analysis panel with shared filters, report export.
 - Mock POST /projects/{id}/assistant + mock-only history methods; 6 scenarios + empty/error/cancelled.

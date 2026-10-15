@@ -185,3 +185,5 @@
   letter-spacing: 0.1em;
   text-transform: uppercase;
 }
+
+html[data-density="comfortable"] body { font-size: 14px; }
