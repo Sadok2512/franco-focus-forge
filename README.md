@@ -38,3 +38,9 @@ npx vitest run src/test/nr-branch.test.tsx            # G3
 npx vitest run src/test/conversion.test.tsx           # G4
 ```
 Projet A : « Paris 2026 Q1 » (LTE + NR). Projet B : « Rennes LTE (sans NR) ».
+
+## Synchronisation
+
+Ce dépôt est tenu en synchronisation continue avec le projet Lovable : les
+modifications faites dans Lovable arrivent ici automatiquement, et celles
+poussées ici remontent dans Lovable.
