@@ -378,6 +378,23 @@ export function xhrPayloadOrThrow(xhr: XMLHttpRequest): unknown {
 
 /** POST /auth/login — stocke la session complète (token+expiry+user). */
 export async function login(email: string, password: string): Promise<Session> {
+  // Compte de démonstration local (demo / demo) : fonctionne sans backend.
+  if (email.trim().toLowerCase() === "demo" && password === "demo") {
+    const s: Session = {
+      token: "demo-local-token",
+      token_type: "Bearer",
+      expires_at: new Date(Date.now() + 8 * 3600_000).toISOString(),
+      user: {
+        id: "demo",
+        email: "demo",
+        role: "admin",
+        active: true,
+        created_at: new Date().toISOString(),
+      },
+    };
+    setSession(s);
+    return s;
+  }
   const res = await apiFetch("/auth/login", LoginResponseSchema, {
     method: "POST",
     body: JSON.stringify({ email, password }),
