@@ -1,7 +1,7 @@
-// Mock adapter for the Dictionary endpoints (§6). Swap the body of `request` for a
-// real fetch to `/projects/{id}/...` when the backend exists; UI code stays the same.
+// Dictionary adapter. Dispatch: VITE_BC4_DATA=api → HTTP, sinon → mock.
 import { DICT_STORE, observationsFor, type Observation, type ParamDef } from "@/mocks/dictionary";
 import { PROJECTS } from "./fixtures";
+import { apiFetch, apiOrMock, buildQuery } from "./http";
 import type { FilterContext } from "./schemas";
 import {
   DictProjectSchema,
@@ -18,7 +18,7 @@ import {
   type ParamMap,
 } from "./dictionary-schemas";
 
-export type DictFilters = Pick<FilterContext, "op" | "tech" | "svc" | "band" | "dep">;
+export type DictFilters = Pick<FilterContext, "op" | "tech" | "svc" | "band" | "dep" | "arcep">;
 
 const delay = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((res, rej) => {
@@ -63,7 +63,9 @@ function filtered(id: string, f: DictFilters): Observation[] {
       (!f.op?.length || f.op.includes(o.operator)) &&
       (!f.svc?.length || f.svc.includes(o.service)) &&
       (!f.band?.length || f.band.includes(o.band)) &&
-      (!f.dep?.length || f.dep.includes(o.dep))
+      (!f.dep?.length || f.dep.includes(o.dep)) &&
+      // Zone ARCEP : filtre strict sur le libellé (incluant `"N/D"` pour les NULL).
+      (!f.arcep?.length || f.arcep.includes(o.arcep))
     );
   });
 }
@@ -129,8 +131,16 @@ const getDef = (param_id: string) => {
   return d;
 };
 
-/** GET /projects/{id} */
+/** GET /projects/{id}/dict */
 export async function getDictProject(id: string, signal?: AbortSignal): Promise<DictProject> {
+  return apiOrMock(
+    () => apiFetch(`/projects/${encodeURIComponent(id)}/dict`, DictProjectSchema, { signal }),
+    () => _mockGetDictProject(id, signal),
+    "getDictProject",
+  );
+}
+
+async function _mockGetDictProject(id: string, signal?: AbortSignal): Promise<DictProject> {
   await delay(DICT_LATENCY.ms, signal);
   const { p, dims } = projectDims(id);
   const res = {
@@ -172,6 +182,28 @@ export async function getDictTree(
   f: DictFilters,
   signal?: AbortSignal,
 ): Promise<DictTree> {
+  return apiOrMock(
+    () => {
+      const qs = buildQuery({
+        op: f.op,
+        tech: f.tech,
+        svc: f.svc,
+        band: f.band,
+        dep: f.dep,
+        arcep: f.arcep,
+      });
+      return apiFetch(`/projects/${encodeURIComponent(id)}/dict/tree${qs}`, TreeSchema, { signal });
+    },
+    () => _mockGetDictTree(id, f, signal),
+    "getDictTree",
+  );
+}
+
+async function _mockGetDictTree(
+  id: string,
+  f: DictFilters,
+  signal?: AbortSignal,
+): Promise<DictTree> {
   await delay(DICT_LATENCY.ms, signal);
   const { dims } = projectDims(id);
   const obs = filtered(id, f);
@@ -194,8 +226,34 @@ export async function getDictTree(
   return TreeSchema.parse({ branches });
 }
 
-/** GET /projects/{id}/dict/param?message={msg_id} */
+/** GET /projects/{id}/dict/params?msg_id={msg_id} */
 export async function getDictParams(
+  id: string,
+  msg_id: string,
+  f: DictFilters,
+  signal?: AbortSignal,
+): Promise<ParamList> {
+  return apiOrMock(
+    () => {
+      const qs = buildQuery({
+        msg_id,
+        op: f.op,
+        tech: f.tech,
+        svc: f.svc,
+        band: f.band,
+        dep: f.dep,
+        arcep: f.arcep,
+      });
+      return apiFetch(`/projects/${encodeURIComponent(id)}/dict/params${qs}`, ParamListSchema, {
+        signal,
+      });
+    },
+    () => _mockGetDictParams(id, msg_id, f, signal),
+    "getDictParams",
+  );
+}
+
+async function _mockGetDictParams(
   id: string,
   msg_id: string,
   f: DictFilters,
@@ -221,6 +279,34 @@ export async function getDictParams(
 
 /** GET /projects/{id}/dict/param?param_id={id}&group_by=... */
 export async function getDictParamDetail(
+  id: string,
+  param_id: string,
+  group_by: GroupBy,
+  f: DictFilters,
+  signal?: AbortSignal,
+): Promise<ParamDetail> {
+  return apiOrMock(
+    () => {
+      const qs = buildQuery({
+        param_id,
+        group_by,
+        op: f.op,
+        tech: f.tech,
+        svc: f.svc,
+        band: f.band,
+        dep: f.dep,
+        arcep: f.arcep,
+      });
+      return apiFetch(`/projects/${encodeURIComponent(id)}/dict/param${qs}`, ParamDetailSchema, {
+        signal,
+      });
+    },
+    () => _mockGetDictParamDetail(id, param_id, group_by, f, signal),
+    "getDictParamDetail",
+  );
+}
+
+async function _mockGetDictParamDetail(
   id: string,
   param_id: string,
   group_by: GroupBy,
@@ -275,6 +361,32 @@ export async function getDictParamDetail(
 
 /** GET /projects/{id}/dict/param/map?param_id={id} */
 export async function getDictParamMap(
+  id: string,
+  param_id: string,
+  f: DictFilters,
+  signal?: AbortSignal,
+): Promise<ParamMap> {
+  return apiOrMock(
+    () => {
+      const qs = buildQuery({
+        param_id,
+        op: f.op,
+        tech: f.tech,
+        svc: f.svc,
+        band: f.band,
+        dep: f.dep,
+        arcep: f.arcep,
+      });
+      return apiFetch(`/projects/${encodeURIComponent(id)}/dict/param/map${qs}`, ParamMapSchema, {
+        signal,
+      });
+    },
+    () => _mockGetDictParamMap(id, param_id, f, signal),
+    "getDictParamMap",
+  );
+}
+
+async function _mockGetDictParamMap(
   id: string,
   param_id: string,
   f: DictFilters,

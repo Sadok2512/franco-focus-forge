@@ -1,6 +1,9 @@
-// Assistant IA mock adapter. POST /projects/{id}/assistant + MOCK-ONLY history methods
-// (list/create/rename/delete) persisted in localStorage per project until backend contracts exist.
+// Assistant IA adapter. POST /projects/{id}/assistant → backend HTTP si
+// VITE_BC4_DATA=api, sinon mock. Les endpoints d'historique
+// (list/create/rename/delete/append) restent MOCK-ONLY tant que le backend
+// ne les expose pas (écart ouvert déclaré dans le CHANGELOG).
 import { runEngine } from "@/mocks/assistant";
+import { apiFetch, apiOrMock, isApiMode } from "./http";
 import {
   AssistantRequestSchema,
   AssistantResponseSchema,
@@ -60,6 +63,37 @@ export async function postAssistant(
   opts: { signal?: AbortSignal; onStep?: (s: ExecStep, i: number) => void } = {},
 ): Promise<AssistantResponse> {
   const r = AssistantRequestSchema.parse(req);
+  return apiOrMock(
+    () => _apiPostAssistant(r, opts),
+    () => _mockPostAssistant(r, opts),
+    "postAssistant",
+  );
+}
+
+async function _apiPostAssistant(
+  r: AssistantRequest,
+  opts: { signal?: AbortSignal; onStep?: (s: ExecStep, i: number) => void },
+): Promise<AssistantResponse> {
+  // Backend B0 : scénarios complets reportés à B2 (voir CHANGELOG). On
+  // appelle quand même l'API, elle renvoie un scenario neutre et les
+  // étapes d'exécution issues de sa table assistant_exec_steps.
+  const out = await apiFetch(
+    `/projects/${encodeURIComponent(r.project_id)}/assistant`,
+    AssistantResponseSchema,
+    { method: "POST", body: JSON.stringify(r), signal: opts.signal },
+  );
+  // Rejouer les étapes côté client pour animer la UI, comme le mock.
+  for (const [i, s] of out.execution_steps.entries()) {
+    opts.onStep?.(s, i);
+    await wait(s.duration_ms, opts.signal);
+  }
+  return out;
+}
+
+async function _mockPostAssistant(
+  r: AssistantRequest,
+  opts: { signal?: AbortSignal; onStep?: (s: ExecStep, i: number) => void },
+): Promise<AssistantResponse> {
   const project = PROJECTS.find((p) => p.id === r.project_id);
   if (!project) throw { code: "NOT_FOUND", message: "Projet introuvable" };
   const { filters, dropped } = effectiveFilters(project, r.filters);
@@ -124,6 +158,22 @@ function write(projectId: string, list: Conversation[]) {
 }
 
 export async function listConversations(projectId: string): Promise<Conversation[]> {
+  // Backend B0 : /conversations renvoie []. Les historiques réels sont
+  // conservés en localStorage côté front jusqu'à ce que B2 expose un
+  // backend conversationnel (déclaré écart ouvert).
+  if (isApiMode()) {
+    try {
+      const remote = await apiFetch(
+        `/projects/${encodeURIComponent(projectId)}/conversations`,
+        ConversationSchema.array(),
+      );
+      // Si le backend renvoie [] (B0), on complète avec le store local.
+      if (remote.length) return remote;
+    } catch {
+      // Repli local sans bruit : le backend B0 n'implémente pas encore
+      // la persistance côté serveur.
+    }
+  }
   await wait(60);
   return read(projectId).sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 }

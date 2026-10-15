@@ -22,6 +22,7 @@ import {
 } from "@/lib/appearance";
 import type { FilterContext, Operator } from "@/lib/api/schemas";
 import { getSession, logout } from "@/lib/auth";
+import { UNAUTH_EVENT } from "@/lib/api/http";
 import { useFilters } from "@/lib/filters";
 
 const NAV = [
@@ -87,6 +88,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     if (!filters.project && projects?.length) set({ project: projects[0]!.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projects, filters.project]);
+
+  // 401 attrapé par `apiFetch` (token expiré/invalide) ou appel explicite
+  // à `logout()` : purge locale déjà faite, on redirige vers /login.
+  useEffect(() => {
+    const onUnauth = () => navigate({ to: "/login" });
+    window.addEventListener(UNAUTH_EVENT, onUnauth);
+    return () => window.removeEventListener(UNAUTH_EVENT, onUnauth);
+  }, [navigate]);
 
   const name = session?.displayName ?? "Jean Dupont";
   const initials = name

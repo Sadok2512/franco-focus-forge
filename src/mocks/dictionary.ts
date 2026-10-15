@@ -2,6 +2,7 @@
 // The mock adapter aggregates these raw observations so every displayed number is
 // traceable to a response computed from this file.
 import type { Operator, Service } from "@/lib/api/schemas";
+import { CANNED_SUMMARY } from "@/mocks/reference";
 
 export type ConversionRule = {
   formula: string;
@@ -297,10 +298,21 @@ export type Observation = {
   band: string;
   service: Service;
   dep: string;
+  // Zone ARCEP (bc4-back 0.7.1) : libellé source LITTÉRAL de `cat_arcep_code`
+  // (ex. `"01/ Top15"`) ou `"N/D"` quand NULL. Jamais 0, jamais une fausse
+  // catégorie. En mock, le libellé est tiré de la liste cannée des buckets
+  // `arcep_breakdown` de `CANNED_SUMMARY`, cohérent avec `/reference/cell/summary`.
+  arcep: string;
   lat: number | null;
   lng: number | null;
   raw: number | string;
 };
+
+// Pool de libellés ARCEP consommé par les observations canned : extrait
+// des buckets `arcep_breakdown` du `CANNED_SUMMARY` — même source que la
+// liste exposée par `getCellArcepZones()` en mode mock. Les 11 valeurs
+// réelles + bucket "N/D" ne vivent jamais en dur dans le code applicatif.
+const ARCEP_POOL: string[] = CANNED_SUMMARY.arcep_breakdown.map((b) => b.key);
 
 function mulberry32(seed: number) {
   return () => {
@@ -363,6 +375,9 @@ export function observationsFor(p: DictProjectDims): Observation[] {
         band,
         service: pick(p.services, r),
         dep: pick(p.departements, r),
+        // Tirage déterministe dans le pool `CANNED_SUMMARY.arcep_breakdown`
+        // (ordre et distribution reproductibles via `mulberry32`).
+        arcep: pick(ARCEP_POOL, r),
         raw,
         lat: gps ? +(p.center[1] + (r() - 0.5) * 0.16).toFixed(5) : null,
         lng: gps ? +(p.center[0] + (r() - 0.5) * 0.28).toFixed(5) : null,

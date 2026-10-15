@@ -1,0 +1,44 @@
+// Contrats B1-ingest. Alignés 1:1 avec le Pydantic `NmfImportReport` du
+// bc4-back. Toute dérive côté backend doit faire LEVER la validation Zod :
+// un rapport mal formé n'est jamais lissé par un défaut.
+//
+// Règles dures côté UI :
+//   - `error_msg` est `string | null` : on affiche la chaîne telle quelle,
+//     jamais tronquée en silence.
+//   - `gps_coverage_pct` est `number | null` : la UI affiche « N/D »
+//     quand c'est `null`, jamais 0.
+import { z } from "zod";
+
+export const NmfFileStatusSchema = z.enum(["pending", "decoding", "done", "error"]);
+export type NmfFileStatus = z.infer<typeof NmfFileStatusSchema>;
+
+// Côté back la ligne par fichier s'appelle `NmfFileEntry`. On expose les
+// deux noms pour que le code UI puisse rester lisible ("report par fichier")
+// tout en gardant l'alignement 1:1 avec le Pydantic.
+export const NmfFileReportSchema = z.object({
+  filename: z.string(),
+  status: NmfFileStatusSchema,
+  n_captures: z.number().int(),
+  n_events: z.number().int(),
+  n_gps: z.number().int(),
+  // Le back permet un décodeur "unknown" tant que l'erreur frappe très tôt :
+  // la valeur peut être `null`. On n'invente pas de version factice.
+  decoder_version: z.string().nullable(),
+  error_msg: z.string().nullable(),
+});
+export type NmfFileReport = z.infer<typeof NmfFileReportSchema>;
+export const NmfFileEntrySchema = NmfFileReportSchema;
+export type NmfFileEntry = NmfFileReport;
+
+export const NmfImportReportSchema = z.object({
+  files_received: z.number().int(),
+  files_done: z.number().int(),
+  files_error: z.number().int(),
+  by_file: z.array(NmfFileReportSchema),
+  n_captures: z.number().int(),
+  n_events: z.number().int(),
+  gps_coverage_pct: z.number().nullable(),
+  operators_seen: z.record(z.string(), z.number().int()),
+  technos_seen: z.record(z.string(), z.number().int()),
+});
+export type NmfImportReport = z.infer<typeof NmfImportReportSchema>;

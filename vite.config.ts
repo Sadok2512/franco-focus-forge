@@ -6,11 +6,34 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+// Backend upstream for the dev proxy. Resolution order :
+//   1. VITE_BC4_API_UPSTREAM si défini (ex: http://api:8000 en compose,
+//      http://localhost:8000 hors container, http://127.0.0.1:8000 ailleurs)
+//   2. http://api:8000  (nom de service docker-compose, cas par défaut
+//      quand le front tourne dans `bc4-front-1`).
+// Le navigateur, lui, ne voit que /api/* — même origine, pas de CORS.
+const API_UPSTREAM = process.env["VITE_BC4_API_UPSTREAM"] || "http://api:8000";
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
   },
-  vite: { optimizeDeps: { exclude: ["maplibre-gl"] } },
+  vite: {
+    optimizeDeps: { exclude: ["maplibre-gl"] },
+    server: {
+      proxy: {
+        "/api": {
+          target: API_UPSTREAM,
+          changeOrigin: true,
+          // 10 minutes : upload 128 Mo + ingest CSV ≈ 2 min aujourd'hui.
+          // Marge large pour éviter que le proxy ne coupe la connexion.
+          timeout: 600_000,
+          proxyTimeout: 600_000,
+          rewrite: (p: string) => p.replace(/^\/api/, ""),
+        },
+      },
+    },
+  },
 });

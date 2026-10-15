@@ -10,7 +10,14 @@ import {
 } from "@/lib/api/client";
 import type { GroupBy } from "@/lib/api/dictionary-schemas";
 
-const fk = (f: DictFilters) => [f.op ?? [], f.tech ?? [], f.svc ?? [], f.band ?? [], f.dep ?? []];
+const fk = (f: DictFilters) => [
+  f.op ?? [],
+  f.tech ?? [],
+  f.svc ?? [],
+  f.band ?? [],
+  f.dep ?? [],
+  f.arcep ?? [],
+];
 
 export const dictQ = {
   project: (id: string) =>

@@ -18,10 +18,12 @@ import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppProjectsProjectIdRouteImport } from './routes/_app.projects.$projectId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
 import { Route as AppSettingsAboutRouteImport } from './routes/_app.settings.about'
 import { Route as AppSettingsAiRouteImport } from './routes/_app.settings.ai'
 import { Route as AppSettingsAppearanceRouteImport } from './routes/_app.settings.appearance'
+import { Route as AppSettingsCellularReferenceRouteImport } from './routes/_app.settings.cellular-reference'
 import { Route as AppSettingsGeographyRouteImport } from './routes/_app.settings.geography'
 import { Route as AppSettingsKpiCatalogRouteImport } from './routes/_app.settings.kpi-catalog'
 import { Route as AppSettingsOrganizationRouteImport } from './routes/_app.settings.organization'
@@ -71,6 +73,11 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppProjectsProjectIdRoute = AppProjectsProjectIdRouteImport.update({
+  id: '/$projectId',
+  path: '/$projectId',
+  getParentRoute: () => AppProjectsRoute,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -91,6 +98,12 @@ const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
   path: '/appearance',
   getParentRoute: () => AppSettingsRoute,
 } as any)
+const AppSettingsCellularReferenceRoute =
+  AppSettingsCellularReferenceRouteImport.update({
+    id: '/cellular-reference',
+    path: '/cellular-reference',
+    getParentRoute: () => AppSettingsRoute,
+  } as any)
 const AppSettingsGeographyRoute = AppSettingsGeographyRouteImport.update({
   id: '/geography',
   path: '/geography',
@@ -118,12 +131,14 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
-  '/projects': typeof AppProjectsRoute
+  '/projects': typeof AppProjectsRouteWithChildren
   '/rrc': typeof AppRrcRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/cellular-reference': typeof AppSettingsCellularReferenceRoute
   '/settings/geography': typeof AppSettingsGeographyRoute
   '/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
@@ -136,11 +151,13 @@ export interface FileRoutesByTo {
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
-  '/projects': typeof AppProjectsRoute
+  '/projects': typeof AppProjectsRouteWithChildren
   '/rrc': typeof AppRrcRoute
+  '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/cellular-reference': typeof AppSettingsCellularReferenceRoute
   '/settings/geography': typeof AppSettingsGeographyRoute
   '/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
   '/settings/organization': typeof AppSettingsOrganizationRoute
@@ -155,12 +172,14 @@ export interface FileRoutesById {
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/kpi': typeof AppKpiRoute
   '/_app/overview': typeof AppOverviewRoute
-  '/_app/projects': typeof AppProjectsRoute
+  '/_app/projects': typeof AppProjectsRouteWithChildren
   '/_app/rrc': typeof AppRrcRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/settings/about': typeof AppSettingsAboutRoute
   '/_app/settings/ai': typeof AppSettingsAiRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/cellular-reference': typeof AppSettingsCellularReferenceRoute
   '/_app/settings/geography': typeof AppSettingsGeographyRoute
   '/_app/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
   '/_app/settings/organization': typeof AppSettingsOrganizationRoute
@@ -178,9 +197,11 @@ export interface FileRouteTypes {
     | '/projects'
     | '/rrc'
     | '/settings'
+    | '/projects/$projectId'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
+    | '/settings/cellular-reference'
     | '/settings/geography'
     | '/settings/kpi-catalog'
     | '/settings/organization'
@@ -195,9 +216,11 @@ export interface FileRouteTypes {
     | '/overview'
     | '/projects'
     | '/rrc'
+    | '/projects/$projectId'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
+    | '/settings/cellular-reference'
     | '/settings/geography'
     | '/settings/kpi-catalog'
     | '/settings/organization'
@@ -214,9 +237,11 @@ export interface FileRouteTypes {
     | '/_app/projects'
     | '/_app/rrc'
     | '/_app/settings'
+    | '/_app/projects/$projectId'
     | '/_app/settings/about'
     | '/_app/settings/ai'
     | '/_app/settings/appearance'
+    | '/_app/settings/cellular-reference'
     | '/_app/settings/geography'
     | '/_app/settings/kpi-catalog'
     | '/_app/settings/organization'
@@ -295,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/projects/$projectId': {
+      id: '/_app/projects/$projectId'
+      path: '/$projectId'
+      fullPath: '/projects/$projectId'
+      preLoaderRoute: typeof AppProjectsProjectIdRouteImport
+      parentRoute: typeof AppProjectsRoute
+    }
     '/_app/settings/': {
       id: '/_app/settings/'
       path: '/'
@@ -321,6 +353,13 @@ declare module '@tanstack/react-router' {
       path: '/appearance'
       fullPath: '/settings/appearance'
       preLoaderRoute: typeof AppSettingsAppearanceRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/cellular-reference': {
+      id: '/_app/settings/cellular-reference'
+      path: '/cellular-reference'
+      fullPath: '/settings/cellular-reference'
+      preLoaderRoute: typeof AppSettingsCellularReferenceRouteImport
       parentRoute: typeof AppSettingsRoute
     }
     '/_app/settings/geography': {
@@ -354,10 +393,23 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AppProjectsRouteChildren {
+  AppProjectsProjectIdRoute: typeof AppProjectsProjectIdRoute
+}
+
+const AppProjectsRouteChildren: AppProjectsRouteChildren = {
+  AppProjectsProjectIdRoute: AppProjectsProjectIdRoute,
+}
+
+const AppProjectsRouteWithChildren = AppProjectsRoute._addFileChildren(
+  AppProjectsRouteChildren,
+)
+
 interface AppSettingsRouteChildren {
   AppSettingsAboutRoute: typeof AppSettingsAboutRoute
   AppSettingsAiRoute: typeof AppSettingsAiRoute
   AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsCellularReferenceRoute: typeof AppSettingsCellularReferenceRoute
   AppSettingsGeographyRoute: typeof AppSettingsGeographyRoute
   AppSettingsKpiCatalogRoute: typeof AppSettingsKpiCatalogRoute
   AppSettingsOrganizationRoute: typeof AppSettingsOrganizationRoute
@@ -369,6 +421,7 @@ const AppSettingsRouteChildren: AppSettingsRouteChildren = {
   AppSettingsAboutRoute: AppSettingsAboutRoute,
   AppSettingsAiRoute: AppSettingsAiRoute,
   AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsCellularReferenceRoute: AppSettingsCellularReferenceRoute,
   AppSettingsGeographyRoute: AppSettingsGeographyRoute,
   AppSettingsKpiCatalogRoute: AppSettingsKpiCatalogRoute,
   AppSettingsOrganizationRoute: AppSettingsOrganizationRoute,
@@ -384,7 +437,7 @@ interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
   AppKpiRoute: typeof AppKpiRoute
   AppOverviewRoute: typeof AppOverviewRoute
-  AppProjectsRoute: typeof AppProjectsRoute
+  AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppRrcRoute: typeof AppRrcRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
 }
@@ -393,7 +446,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
   AppKpiRoute: AppKpiRoute,
   AppOverviewRoute: AppOverviewRoute,
-  AppProjectsRoute: AppProjectsRoute,
+  AppProjectsRoute: AppProjectsRouteWithChildren,
   AppRrcRoute: AppRrcRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
 }

@@ -1,22 +1,45 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AlertTriangle,
   CheckCircle2,
+  CheckCircle2 as CheckSuccess,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronRight as ChevronRowClosed,
   Clock,
   FolderOpen,
   MoreHorizontal,
   Plus,
   Search,
+  Trash2,
   XCircle,
 } from "lucide-react";
-import { useMemo, useState } from "react";
-import { getProjects } from "@/lib/api/client";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { createProject, deleteProject, getProjects } from "@/lib/api/client";
+import type { ProjectIngestView } from "@/lib/api/client";
 import { OPERATORS, TECHNOLOGIES, type Project } from "@/lib/api/schemas";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
-import { OpBadge, TechPill } from "@/components/bc4/AppShell";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { CreateProjectDialog } from "@/features/projects/CreateProjectDialog";
+import { DeleteProjectDialog } from "@/features/projects/DeleteProjectDialog";
+import {
+  ProjectRowNmfAction,
+  type ProjectRowNmfReport,
+} from "@/features/projects/ProjectRowNmfAction";
+import { ProjectRowDetails } from "@/features/projects/ProjectRowDetails";
+import {
+  OperatorChip,
+  TechBadge,
+  selectOperatorLabels,
+  selectTechLabels,
+} from "@/features/projects/shared";
 
 export const Route = createFileRoute("/_app/projects")({
   head: () => ({
@@ -38,10 +61,19 @@ export const Route = createFileRoute("/_app/projects")({
   component: ProjectsPage,
 });
 
-const STATUS: Record<Project["status"], { l: string; c: string; i: typeof Clock }> = {
+// Les codes `processing` et `error` NE sont PAS exposés en tant que code
+// brut dans la UI : chaque libellé est explicite (« Traitement »,
+// « Échec »). Le code reste côté état.
+const STATUS: Record<Project["status"] | "error", { l: string; c: string; i: typeof Clock }> = {
   ready: { l: "Prêt", c: "text-sev-good", i: CheckCircle2 },
   processing: { l: "Traitement", c: "border border-primary text-primary", i: Clock },
   failed: { l: "Échec", c: "text-destructive", i: XCircle },
+  // Statut local déduit du rapport d'import (`files_error > 0`) : la
+  // colonne Statut doit refléter l'échec SANS attendre un refetch du
+  // back. Le libellé reste « Échec » comme pour `failed`, mais tracé
+  // séparément dans l'override local pour qu'un refetch postérieur
+  // puisse « réparer » la ligne sans écraser l'état du back.
+  error: { l: "Échec", c: "text-destructive", i: XCircle },
 };
 const fmtDate = (d: string) => d.split("-").reverse().join("/");
 const fmtCount = (n: number) =>
@@ -79,26 +111,143 @@ function Select({
   );
 }
 
+/** Overlay local par projectId appliqué par-dessus la ligne du listing
+ *  pendant / après un upload NMF. Rafraîchi en priorité par refetch de
+ *  `getProjects`, mais le rapport est faisant foi sur `n_captures`
+ *  (évite de montrer un chiffre stale pendant 1-2 secondes). */
+type RowOverlay = {
+  /** « processing » pendant l'envoi, « error » après échec métier
+   *  (files_error > 0). `null` → la UI retombe sur `p.status`. */
+  status: Project["status"] | "error" | null;
+  /** Captures du dernier rapport (prioritaire sur `p.captures`). */
+  captures: number | null;
+  /** Erreur HTTP affichée en badge. `null` quand clear. */
+  errorMsg: string | null;
+};
+
+function emptyOverlay(): RowOverlay {
+  return { status: null, captures: null, errorMsg: null };
+}
+
 function ProjectsPage() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const q = useQuery({ queryKey: ["projects"], queryFn: ({ signal }) => getProjects(signal) });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [op, setOp] = useState("");
   const [tech, setTech] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  // 1.6.0 — Modale de confirmation de suppression (shadcn AlertDialog).
+  // On garde `pendingDelete` SÉPARÉ de l'overlay NMF : la suppression
+  // peut concerner un projet en erreur ou en traitement, sans croiser
+  // les overlays d'upload.
+  const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
+  // Notification discrète (succès suppression). Pas de dépendance
+  // sonner — on garde un state local qui s'auto-efface au bout de 4s.
+  const [notice, setNotice] = useState<string | null>(null);
+  useEffect(() => {
+    if (!notice) return;
+    const t = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(t);
+  }, [notice]);
+  // Overlay local par projectId pour afficher la progression / le résultat
+  // de l'upload NMF SANS attendre un refetch complet des projets.
+  const [overlays, setOverlays] = useState<Record<string, RowOverlay>>({});
+  // 1.5.1 — Accordéon par ligne (expand/collapse) : set d'ids ouverts
+  // pour permettre plusieurs lignes ouvertes simultanément. Le fetch du
+  // rapport d'import est PARESSEUX côté `ProjectRowDetails`.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const toggleExpand = useCallback((id: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+  const createM = useMutation<ProjectIngestView, Error, string>({
+    mutationFn: (name: string) => createProject(name),
+    onSuccess: (p) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setShowCreate(false);
+      navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
+    },
+  });
 
   const rows = useMemo(() => {
     const s = search.toLowerCase();
-    return (q.data ?? []).filter(
-      (p) =>
-        (!s || `${p.name} ${p.geography}`.toLowerCase().includes(s)) &&
-        (!status || p.status === status) &&
-        (!op || p.operators.includes(op as never)) &&
-        (!tech || p.technologies.includes(tech as never)),
-    );
+    return (q.data ?? []).filter((p) => {
+      if (s && !`${p.name} ${p.geography}`.toLowerCase().includes(s)) return false;
+      if (status && p.status !== status) return false;
+      // 1.6.0 — filtre opérateur sur les LABELS effectifs (B0 d'abord,
+      // fallback PLMN sinon). Les filtres déroulants listent toujours
+      // l'enum fermé `OPERATORS`/`TECHNOLOGIES` : un projet dont la
+      // seule source est `operators_plmn` (clés PLMN) ne matche pas
+      // le filtre « Orange » tant que la table PLMN→opérateur côté
+      // back ne résout pas le libellé. Jamais inventer côté front.
+      if (op) {
+        const ops = selectOperatorLabels(p);
+        if (!ops.includes(op)) return false;
+      }
+      if (tech) {
+        const techs = selectTechLabels(p);
+        if (!techs.includes(tech)) return false;
+      }
+      return true;
+    });
   }, [q.data, search, status, op, tech]);
 
-  const open = (p: Project) => navigate({ to: "/overview", search: { project: p.id } });
+  const open = (p: Project) =>
+    navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
+
+  const setOverlay = useCallback((id: string, patch: Partial<RowOverlay>) => {
+    setOverlays((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyOverlay()), ...patch } }));
+  }, []);
+
+  const handleStart = useCallback(
+    (id: string) => setOverlay(id, { status: "processing", errorMsg: null }),
+    [setOverlay],
+  );
+
+  const handleReport = useCallback(
+    (id: string, r: ProjectRowNmfReport) => {
+      // Captures = n_captures du rapport (jamais n_events — règle dure).
+      setOverlay(id, {
+        status: r.derivedStatus,
+        captures: r.report.n_captures,
+        errorMsg: r.derivedStatus === "error" ? r.firstErrorMsg : null,
+      });
+      // Rafraîchit la liste en arrière-plan pour aligner `p.status` du
+      // back (le projet passe à `ready` quand tous les fichiers sont
+      // décodés). L'overlay prime visuellement tant qu'il n'est pas
+      // écrasé par un overlay postérieur.
+      qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+    [qc, setOverlay],
+  );
+
+  const handleError = useCallback(
+    (id: string, userMsg: string) =>
+      // L'erreur HTTP ne doit pas « verrouiller » la ligne en Traitement :
+      // on efface le statut dérivé pour que la ligne retombe sur
+      // `p.status` et on expose l'erreur en badge local.
+      setOverlay(id, { status: null, errorMsg: userMsg }),
+    [setOverlay],
+  );
+
+  // 1.6.0 — Suppression projet. L'invalidation `projects` provoque un
+  // refetch complet (plus simple et moins propice au drift qu'une
+  // mutation locale du cache). La modale reste ouverte en cas d'échec
+  // — voir `DeleteProjectDialog.handleConfirm`.
+  const deleteM = useMutation<void, Error, { id: string; name: string }>({
+    mutationFn: ({ id }) => deleteProject(id),
+    onSuccess: (_v, { name }) => {
+      qc.invalidateQueries({ queryKey: ["projects"] });
+      setPendingDelete(null);
+      setNotice(`Projet « ${name} » supprimé.`);
+    },
+  });
 
   return (
     <div className="mx-auto max-w-[1600px] p-6">
@@ -110,7 +259,14 @@ function ProjectsPage() {
               Gérez vos campagnes de mesures et accédez à vos analyses.
             </p>
           </div>
-          <button className="flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90">
+          <button
+            type="button"
+            onClick={() => {
+              createM.reset();
+              setShowCreate(true);
+            }}
+            className="flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
             <Plus className="h-4 w-4" /> Nouveau projet
           </button>
         </div>
@@ -167,6 +323,7 @@ function ProjectsPage() {
               <thead className="bg-muted text-xs text-muted-foreground">
                 <tr>
                   {[
+                    "", // chevron accordéon
                     "Nom du projet",
                     "Périmètre",
                     "Opérateurs",
@@ -175,51 +332,118 @@ function ProjectsPage() {
                     "Captures",
                     "Statut",
                     "Actions",
-                  ].map((h) => (
-                    <th key={h} className="px-4 py-2.5 text-left font-medium">
+                  ].map((h, i) => (
+                    <th
+                      key={h || `col-${i}`}
+                      className={`px-4 py-2.5 text-left font-medium ${i === 0 ? "w-8" : ""}`}
+                      aria-hidden={h === ""}
+                    >
                       {h}
                     </th>
                   ))}
                 </tr>
               </thead>
-              <tbody>
-                {rows.map((p) => {
-                  const S = STATUS[p.status];
-                  return (
-                    <tr key={p.id} className="border-t hover:bg-muted/50">
+              {rows.map((p) => {
+                const ov = overlays[p.id] ?? emptyOverlay();
+                const effectiveStatus = ov.status ?? p.status;
+                const S = STATUS[effectiveStatus];
+                // Captures : l'overlay (rapport NMF) prime quand il
+                // existe. Jamais 0 par défaut — on retombe sur
+                // `p.captures` du listing si pas d'overlay.
+                const effectiveCaptures = ov.captures ?? p.captures;
+                // 1.6.0 — Opérateurs / Technologies : LABELS visibles.
+                // Préférence B0 (`project.operators` / `project.technologies`
+                // qui portent déjà les libellés Orange/SFR/LTE/NR), fallback
+                // sur les clés B1-ingest (`operators_plmn` / `technos_seen`)
+                // dont les clés PLMN restent BRUTES — on n'invente jamais
+                // un libellé opérateur depuis un PLMN. Les deux sources
+                // vides → « N/D ».
+                //
+                // Diagnostic 1.5.1 : la UI lisait UNIQUEMENT
+                // `operators_plmn`/`technos_seen` → N/D pour tous les
+                // projets seedés B0 live (dont `operators` était peuplé
+                // mais `operators_plmn` absent du listing). 1.6.0 inverse
+                // la priorité.
+                const operatorLabels = selectOperatorLabels(p);
+                const techLabels = selectTechLabels(p);
+                const isOpen = expanded.has(p.id);
+                // On émet un <tbody> par projet (groupant la ligne
+                // principale + la ligne "détail" quand elle est
+                // ouverte) pour garder la sémantique HTML
+                // <table>→<tbody>→<tr> sans wrapper <div>.
+                return (
+                  <tbody key={p.id}>
+                    <tr className="border-t hover:bg-muted/50">
+                      <td className="px-2 py-3 align-top">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(p.id)}
+                          aria-expanded={isOpen}
+                          aria-controls={`project-row-details-${p.id}`}
+                          aria-label={
+                            isOpen
+                              ? `Masquer le détail d'ingestion de ${p.name}`
+                              : `Afficher le détail d'ingestion de ${p.name}`
+                          }
+                          className="flex h-8 w-8 items-center justify-center rounded-md border hover:bg-muted"
+                        >
+                          {isOpen ? (
+                            <ChevronDown className="h-4 w-4" aria-hidden />
+                          ) : (
+                            <ChevronRowClosed className="h-4 w-4" aria-hidden />
+                          )}
+                        </button>
+                      </td>
                       <td className="px-4 py-3 font-semibold">{p.name}</td>
                       <td className="max-w-48 px-4 py-3 text-xs text-muted-foreground">
-                        {p.geography}
+                        {p.geography || "N/D"}
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex flex-wrap gap-1">
-                          {p.operators.map((o) => (
-                            <OpBadge key={o} op={o} />
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
-                          {p.technologies
-                            .filter((t) => t !== "EN-DC")
-                            .map((t) => (
-                              <TechPill key={t} t={t} />
+                      <td className="px-4 py-3 text-xs">
+                        {operatorLabels.length === 0 ? (
+                          <span className="text-muted-foreground">N/D</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {operatorLabels.map((label) => (
+                              <OperatorChip key={label} label={label} />
                             ))}
-                        </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {techLabels.length === 0 ? (
+                          <span className="text-muted-foreground">N/D</span>
+                        ) : (
+                          <div className="flex flex-wrap gap-1">
+                            {techLabels.map((label) => (
+                              <TechBadge key={label} label={label} />
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td className="num px-4 py-3 text-xs leading-tight text-muted-foreground">
                         {fmtDate(p.periodStart)}
                         <br />
                         {fmtDate(p.periodEnd)}
                       </td>
-                      <td className="num px-4 py-3">{fmtCount(p.captures)}</td>
+                      <td className="num px-4 py-3">{fmtCount(effectiveCaptures)}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${S.c}`}
-                        >
-                          <S.i className="h-3.5 w-3.5" />
-                          {S.l}
-                        </span>
+                        <div className="flex flex-col gap-1">
+                          <span
+                            className={`inline-flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${S.c}`}
+                          >
+                            <S.i className="h-3.5 w-3.5" />
+                            {S.l}
+                          </span>
+                          {ov.errorMsg && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[11px] text-destructive"
+                              title={ov.errorMsg}
+                            >
+                              <AlertTriangle className="h-3 w-3" aria-hidden />
+                              <span className="max-w-56 truncate font-mono">{ov.errorMsg}</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
@@ -229,18 +453,52 @@ function ProjectsPage() {
                           >
                             <FolderOpen className="h-3.5 w-3.5" /> Ouvrir
                           </button>
-                          <button
-                            aria-label="Plus d'actions"
-                            className="flex h-8 w-8 items-center justify-center rounded-md border hover:bg-muted"
-                          >
-                            <MoreHorizontal className="h-4 w-4" />
-                          </button>
+                          <ProjectRowNmfAction
+                            projectId={p.id}
+                            projectName={p.name}
+                            onStart={() => handleStart(p.id)}
+                            onReport={(r) => handleReport(p.id, r)}
+                            onError={(m) => handleError(p.id, m)}
+                          />
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                aria-label={`Plus d'actions pour ${p.name}`}
+                                className="flex h-8 w-8 items-center justify-center rounded-md border hover:bg-muted"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuItem
+                                onSelect={(e) => {
+                                  // Empêche la fermeture synchrone qui
+                                  // casse le focus de l'AlertDialog qu'on
+                                  // va ouvrir juste après — on diffère
+                                  // l'ouverture d'un tick.
+                                  e.preventDefault();
+                                  setTimeout(() => setPendingDelete(p), 0);
+                                }}
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                              >
+                                <Trash2 className="h-4 w-4" aria-hidden />
+                                Supprimer le projet
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
-              </tbody>
+                    {isOpen && (
+                      <tr id={`project-row-details-${p.id}`} className="border-t">
+                        <td colSpan={9} className="p-0">
+                          <ProjectRowDetails project={p} open={isOpen} />
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                );
+              })}
             </table>
           )}
         </div>
@@ -261,6 +519,39 @@ function ProjectsPage() {
           </div>
         </div>
       </div>
+      <CreateProjectDialog
+        open={showCreate}
+        onClose={() => {
+          if (createM.status !== "pending") setShowCreate(false);
+        }}
+        onCreate={(name) => createM.mutate(name)}
+        busy={createM.status === "pending"}
+        error={createM.status === "error" ? createM.error : null}
+      />
+      {/* 1.6.0 — Dialog de confirmation de suppression. L'instance est
+          montée en permanence et pilotée par `pendingDelete` : la
+          promesse `onConfirm` RÉSOUT en succès (invalide la liste
+          projets, émet la notif) et REJETTE en erreur (reste ouverte
+          avec un message `toUserMessage`). */}
+      <DeleteProjectDialog
+        open={pendingDelete !== null}
+        projectName={pendingDelete?.name ?? ""}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          await deleteM.mutateAsync({ id: pendingDelete.id, name: pendingDelete.name });
+        }}
+      />
+      {notice && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="pointer-events-none fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-md border border-sev-good/40 bg-background px-3 py-2 text-sm shadow-lg"
+        >
+          <CheckSuccess className="h-4 w-4 text-sev-good" aria-hidden />
+          <span>{notice}</span>
+        </div>
+      )}
     </div>
   );
 }

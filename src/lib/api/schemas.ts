@@ -11,6 +11,17 @@ export type Operator = z.infer<typeof OperatorSchema>;
 export type Tech = z.infer<typeof TechSchema>;
 export type Service = z.infer<typeof ServiceSchema>;
 
+// Champs d'ingestion ajoutés en 1.5.1 : exposés par le back sur `/projects`
+// et `/projects/{id}` lorsqu'un NMF a été ingéré. Tous sont `.optional()`
+// pour rester compatibles avec les fixtures héritées B0 qui ne les ont
+// pas, et `.nullable()` pour respecter la règle « null → N/D » (jamais 0).
+//
+// Pourquoi `operators_plmn` et pas `operators` (enum) ? Les PLMN (`20801`,
+// `20810`…) viennent BRUTS du décodeur `bc4-decoder 1.0.0`. On n'invente
+// aucun libellé Orange/SFR tant qu'une table de référence PLMN→opérateur
+// n'est pas câblée côté back (écart déclaré au CHANGELOG). Idem
+// `technos_seen` : clés `LTE`/`UMTS`/`NR` strings, pas un enum fermé —
+// le back peut renvoyer `UMTS` (hors enum front historique).
 export const ProjectSchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -26,6 +37,12 @@ export const ProjectSchema = z.object({
   captures: z.number().int(),
   importedAt: z.string(),
   status: z.enum(["ready", "processing", "failed"]),
+  operators_plmn: z.record(z.string(), z.number().int()).nullable().optional(),
+  technos_seen: z.record(z.string(), z.number().int()).nullable().optional(),
+  n_captures_ingest: z.number().int().nullable().optional(),
+  n_events_ingest: z.number().int().nullable().optional(),
+  gps_coverage_pct: z.number().nullable().optional(),
+  status_ingest: z.enum(["draft", "importing", "ready", "error"]).nullable().optional(),
 });
 export type Project = z.infer<typeof ProjectSchema>;
 
@@ -36,6 +53,10 @@ export const FilterContextSchema = z.object({
   svc: z.array(ServiceSchema).optional(),
   band: z.array(z.string()).optional(),
   dep: z.array(z.string()).optional(),
+  // Zone ARCEP (bc4-back 0.7.1) — dimension orthogonale à la géo (jamais
+  // dans `/geo/tree`). Les 11 libellés viennent de `/reference/cell/summary`.
+  // La clé `"N/D"` cible les cellules dont `cat_arcep_code` est NULL.
+  arcep: z.array(z.string()).optional(),
   metric: z.enum(["dl", "rsrp", "sinr", "latency"]).optional(),
 });
 export type FilterContext = z.infer<typeof FilterContextSchema>;

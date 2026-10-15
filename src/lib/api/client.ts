@@ -1,6 +1,10 @@
+// Typed API adapter. UI only talks to these functions.
+// Dispatch: VITE_BC4_DATA=api → HTTP vers bc4-back, sinon → mock local.
+// Les schémas Zod existants sont la source de parité au runtime.
+import { apiFetch, apiOrMock, buildQuery, isApiMode } from "./http";
 import { KPI_CATALOG, KPI_RRC } from "./fixtures";
-// Typed mock API adapter. UI only talks to these functions.
 import { PROJECTS, pointsFor } from "./fixtures";
+import { findMockProjectForDemo, listMockProjectsForDemo } from "./projects";
 import {
   METRICS,
   ProjectSchema,
@@ -12,6 +16,7 @@ import {
   type Project,
   type SourceReference,
 } from "./schemas";
+import { z } from "zod";
 
 const delay = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((res, rej) => {
@@ -23,15 +28,28 @@ const delay = (ms: number, signal?: AbortSignal) =>
   });
 
 export async function getProjects(signal?: AbortSignal): Promise<Project[]> {
-  await delay(250, signal);
-  return ProjectSchema.array().parse(PROJECTS);
+  return apiOrMock(
+    () => apiFetch("/projects", ProjectSchema.array(), { signal }),
+    async () => {
+      await delay(250, signal);
+      // Fusionne les créations mock (localStorage) devant les seeds.
+      return ProjectSchema.array().parse(listMockProjectsForDemo());
+    },
+    "getProjects",
+  );
 }
 
 export async function getProject(id: string, signal?: AbortSignal): Promise<Project> {
-  await delay(120, signal);
-  const p = PROJECTS.find((x) => x.id === id);
-  if (!p) throw { code: "NOT_FOUND", message: "Projet introuvable" };
-  return p;
+  return apiOrMock(
+    () => apiFetch(`/projects/${encodeURIComponent(id)}`, ProjectSchema, { signal }),
+    async () => {
+      await delay(120, signal);
+      const p = findMockProjectForDemo(id) ?? PROJECTS.find((x) => x.id === id);
+      if (!p) throw { code: "NOT_FOUND", message: "Projet introuvable" };
+      return ProjectSchema.parse(p);
+    },
+    "getProject",
+  );
 }
 
 export function applyFilters(pts: MeasurementPoint[], f: FilterContext) {
@@ -70,7 +88,63 @@ export type OverviewData = {
   source: SourceReference;
 };
 
+// Zod shape for the overview response — mirrors OverviewData for the HTTP
+// branch. Mock branch keeps its historical construction.
+const OverviewSchema = z.object({
+  project: ProjectSchema,
+  points: z.array(z.any()),
+  kpis: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+      unit: z.string(),
+      value: z.number().nullable(),
+      sampleCount: z.number().int(),
+      missingCount: z.number().int(),
+    }),
+  ),
+  byOperator: z.array(
+    z.object({
+      operator: z.enum(["Orange", "SFR", "Bouygues", "Free"]),
+      samples: z.number().int(),
+      dl: z.number().nullable(),
+      rsrp: z.number().nullable(),
+      sinr: z.number().nullable(),
+      latency: z.number().nullable(),
+    }),
+  ),
+  trend: z.array(
+    z.object({ day: z.string(), series: z.record(z.string(), z.number().nullable()) }),
+  ),
+  source: z.object({
+    label: z.string(),
+    population: z.string(),
+    sampleCount: z.number().int(),
+    missingCount: z.number().int(),
+    demo: z.literal(true),
+  }),
+});
+
 export async function getOverview(f: FilterContext, signal?: AbortSignal): Promise<OverviewData> {
+  return apiOrMock(
+    async () => {
+      const qs = buildQuery({
+        op: f.op,
+        tech: f.tech,
+        svc: f.svc,
+        band: f.band,
+        dep: f.dep,
+        metric: f.metric,
+      });
+      const path = `/projects/${encodeURIComponent(f.project!)}/overview${qs}`;
+      return (await apiFetch(path, OverviewSchema, { signal })) as OverviewData;
+    },
+    async () => _mockGetOverview(f, signal),
+    "getOverview",
+  );
+}
+
+async function _mockGetOverview(f: FilterContext, signal?: AbortSignal): Promise<OverviewData> {
   await delay(300, signal);
   const project = await getProject(f.project!, signal);
   const points = applyFilters(pointsFor(project), f);
@@ -138,9 +212,30 @@ export async function getOverview(f: FilterContext, signal?: AbortSignal): Promi
 
 export { METRICS };
 
+// Shape for GET /kpi/catalog — the Zod match of the mock-returned object.
+const KpiCatalogSchema = z.object({
+  catalog: z.array(z.object({ group: z.string(), items: z.array(z.string()) })),
+  kpi: z.object({
+    name: z.string(),
+    description: z.string(),
+    value: z.number(),
+    delta: z.number(),
+    samples: z.number().int(),
+    techs: z.string(),
+    unit: z.string(),
+    byOp: z.record(z.string(), z.number()),
+  }),
+});
+
 export async function getKpiCatalog(signal?: AbortSignal) {
-  await delay(150, signal);
-  return { catalog: KPI_CATALOG, kpi: KPI_RRC };
+  return apiOrMock(
+    () => apiFetch("/kpi/catalog", KpiCatalogSchema, { signal }),
+    async () => {
+      await delay(150, signal);
+      return { catalog: KPI_CATALOG, kpi: KPI_RRC };
+    },
+    "getKpiCatalog",
+  );
 }
 
 export * from "./dictionary";
@@ -148,3 +243,9 @@ export * from "./assistant";
 export type * from "./assistant-schemas";
 export * from "./settings";
 export type * from "./settings-schemas";
+export * from "./reference";
+export type * from "./reference-schemas";
+export { createProject, deleteProject, getImportReport, uploadNmfFiles } from "./projects";
+export type { NmfPerFileProgress, NmfUploadOptions } from "./projects";
+export type * from "./nmf-schemas";
+export type * from "./project-schemas";

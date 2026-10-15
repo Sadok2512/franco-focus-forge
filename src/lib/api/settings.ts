@@ -1,7 +1,10 @@
-// Mock adapter for /settings/* (v0.1.0 proposals). Permissions are re-checked here so
-// forbidden mutations are really blocked in the mock; production must enforce them server-side.
+// /settings/* adapter. Dispatch: VITE_BC4_DATA=api → HTTP, sinon → mock.
+// Les permissions mock sont ré-évaluées côté client en mode mock ;
+// production impose un contrôle serveur dans tous les cas.
 import { can, type Action } from "../permissions";
 import { APP_VERSION } from "../version";
+import { apiFetch, apiOrMock, buildQuery } from "./http";
+import { z } from "zod";
 import {
   AI_PROVIDERS,
   API_PERMISSIONS,
@@ -68,13 +71,19 @@ export function passwordProblems(pw: string, p: PasswordPolicy): string[] {
 }
 
 export async function getUsers(actor: Actor): Promise<UsersResponse> {
-  await wait();
-  guard(actor, "users.read");
-  return UsersResponseSchema.parse({
-    users: S.users,
-    policy: PASSWORD_POLICY,
-    permissions: API_PERMISSIONS,
-  });
+  return apiOrMock(
+    () => apiFetch("/settings/users", UsersResponseSchema),
+    async () => {
+      await wait();
+      guard(actor, "users.read");
+      return UsersResponseSchema.parse({
+        users: S.users,
+        policy: PASSWORD_POLICY,
+        permissions: API_PERMISSIONS,
+      });
+    },
+    "getUsers",
+  );
 }
 export async function getApiPermissions() {
   await wait();
@@ -143,9 +152,15 @@ export async function resetPassword(
 
 /* ---------- Geography ---------- */
 export async function getGeoReferences(actor: Actor): Promise<GeoReference[]> {
-  await wait();
-  guard(actor, "geo.read");
-  return GeoReferenceSchema.array().parse(S.geo);
+  return apiOrMock(
+    () => apiFetch("/settings/geo", GeoReferenceSchema.array()),
+    async () => {
+      await wait();
+      guard(actor, "geo.read");
+      return GeoReferenceSchema.array().parse(S.geo);
+    },
+    "getGeoReferences",
+  );
 }
 
 export function validateGeo(
@@ -286,13 +301,19 @@ export async function postGeoImport(actor: Actor, req: GeoImportRequest): Promis
 
 /* ---------- KPI catalogue ---------- */
 export async function getKpiCatalogSettings(actor: Actor): Promise<KpiCatalogResponse> {
-  await wait();
-  guard(actor, "kpi.read");
-  return KpiCatalogResponseSchema.parse({
-    items: S.kpis,
-    statuses: ["draft", "validated", "published", "archived"],
-    formula_engine: null,
-  });
+  return apiOrMock(
+    () => apiFetch("/settings/kpi", KpiCatalogResponseSchema),
+    async () => {
+      await wait();
+      guard(actor, "kpi.read");
+      return KpiCatalogResponseSchema.parse({
+        items: S.kpis,
+        statuses: ["draft", "validated", "published", "archived"],
+        formula_engine: null,
+      });
+    },
+    "getKpiCatalogSettings",
+  );
 }
 function checkKpi(b: KpiInput) {
   if (!/^[A-Z0-9_]{2,32}$/.test(b.code))
@@ -351,14 +372,26 @@ export function urlCheck(u: string): { ok: boolean; https: boolean; message: str
 }
 const aiOut = (): AiConfig => AiConfigSchema.parse({ ...S.ai, providers: AI_PROVIDERS });
 export async function getAiConfig(actor?: Actor): Promise<AiConfig> {
-  await wait();
-  if (actor) guard(actor, "ai.read");
-  return aiOut();
+  return apiOrMock(
+    () => apiFetch("/settings/ai", AiConfigSchema),
+    async () => {
+      await wait();
+      if (actor) guard(actor, "ai.read");
+      return aiOut();
+    },
+    "getAiConfig",
+  );
 }
 /** Public, read-only: does the assistant run? (no config details) */
 export async function getAiEnabled(): Promise<boolean> {
-  await wait();
-  return S.ai.enabled;
+  return apiOrMock(
+    () => apiFetch("/settings/ai/enabled", z.boolean()),
+    async () => {
+      await wait();
+      return S.ai.enabled;
+    },
+    "getAiEnabled",
+  );
 }
 export async function putAiConfig(actor: Actor, b: AiConfigInput): Promise<AiConfig> {
   await wait();
@@ -399,9 +432,16 @@ export async function testAiConnection(actor: Actor): Promise<AiConfig> {
 
 /* ---------- Appearance ---------- */
 export const HEX_RE = /^#[0-9a-f]{6}$/i;
+const AppearanceSchemaLocal = z.object({ org_primary_hex: z.string().nullable() });
 export async function getAppearance(): Promise<Appearance> {
-  await wait();
-  return { ...S.appearance };
+  return apiOrMock(
+    () => apiFetch("/settings/appearance", AppearanceSchemaLocal),
+    async () => {
+      await wait();
+      return { ...S.appearance };
+    },
+    "getAppearance",
+  );
 }
 export async function putAppearance(actor: Actor, b: Appearance): Promise<Appearance> {
   await wait();
@@ -415,8 +455,14 @@ export async function putAppearance(actor: Actor, b: Appearance): Promise<Appear
 /* ---------- Organization ---------- */
 const orgOut = (): Organization => OrganizationSchema.parse({ ...S.org, limits: ORG_LIMITS });
 export async function getOrganization(): Promise<Organization> {
-  await wait();
-  return orgOut();
+  return apiOrMock(
+    () => apiFetch("/settings/organization", OrganizationSchema),
+    async () => {
+      await wait();
+      return orgOut();
+    },
+    "getOrganization",
+  );
 }
 export async function putOrganization(actor: Actor, b: OrganizationInput): Promise<Organization> {
   await wait();
@@ -446,16 +492,22 @@ export function exportMetadata(): { organization: string | null; generator: stri
 
 /* ---------- About ---------- */
 export async function getAbout(): Promise<About> {
-  await wait();
-  return AboutSchema.parse({
-    app_name: "BC4",
-    version: APP_VERSION,
-    build_number: null,
-    build_date: null,
-    environment: "mock", // fixtures only — never "production"
-    api_contracts_version: "0.1.0 (proposition mock)",
-    api_client_status: "Adaptateur mock local — aucun backend connecté",
-    organization: S.org.name || null,
-    license: null,
-  });
+  return apiOrMock(
+    () => apiFetch("/settings/about", AboutSchema),
+    async () => {
+      await wait();
+      return AboutSchema.parse({
+        app_name: "BC4",
+        version: APP_VERSION,
+        build_number: null,
+        build_date: null,
+        environment: "mock", // fixtures only — never "production"
+        api_contracts_version: "0.1.0 (proposition mock)",
+        api_client_status: "Adaptateur mock local — aucun backend connecté",
+        organization: S.org.name || null,
+        license: null,
+      });
+    },
+    "getAbout",
+  );
 }

@@ -8,6 +8,7 @@ import { inputCls, useActor } from "./shared";
 export const SETTINGS_TABS = [
   { to: "/settings/users", label: "Utilisateurs" },
   { to: "/settings/geography", label: "Géographie" },
+  { to: "/settings/cellular-reference", label: "Référence cellulaire" },
   { to: "/settings/kpi-catalog", label: "Catalogue KPI" },
   { to: "/settings/ai", label: "Configuration IA" },
   { to: "/settings/appearance", label: "Apparence" },

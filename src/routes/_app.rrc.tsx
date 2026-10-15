@@ -33,11 +33,11 @@ function RrcPage() {
         <LoadingSkeleton className="h-96" />
       </div>
     );
-  const { op, tech, svc, band, dep } = filters;
+  const { op, tech, svc, band, dep, arcep } = filters;
   return (
     <DictionaryPage
       projectId={filters.project}
-      filters={{ op, tech, svc, band, dep }}
+      filters={{ op, tech, svc, band, dep, arcep }}
       setFilters={set}
     />
   );

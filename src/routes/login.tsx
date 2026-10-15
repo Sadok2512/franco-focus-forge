@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import tower from "@/assets/login-tower.jpg";
-import { DEMO_USER, login } from "@/lib/auth";
+import { login } from "@/lib/auth";
 
 export const Route = createFileRoute("/login")({
   head: () => ({
@@ -125,12 +125,13 @@ function LoginPage() {
           </p>
 
           <label className="mt-8 block">
-            <span className="text-sm font-semibold">Identifiant</span>
+            <span className="text-sm font-semibold">Adresse e-mail</span>
             <input
+              type="email"
               value={id}
               onChange={(e) => setId(e.target.value)}
-              placeholder="votre.identifiant"
-              autoComplete="username"
+              placeholder="admin@bc4.local"
+              autoComplete="email"
               required
               className="mt-2 h-11 w-full rounded-md border border-input bg-card px-3 text-sm placeholder:text-muted-foreground"
             />
@@ -197,8 +198,11 @@ function LoginPage() {
             SSO Orange (à venir)
           </button>
           <p className="mt-6 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Démo : <code className="font-mono text-foreground">{DEMO_USER.id}</code> /{" "}
-            <code className="font-mono text-foreground">{DEMO_USER.password}</code>
+            Les identifiants d&apos;administration sont provisionnés côté
+            serveur via les variables d&apos;environnement
+            <code className="mx-1 font-mono text-foreground">BC4_ADMIN_EMAIL</code> /
+            <code className="mx-1 font-mono text-foreground">BC4_ADMIN_PASSWORD</code>
+            (seed idempotent au démarrage de l&apos;API).
           </p>
         </form>
         <p className="absolute bottom-6 right-8 text-[11px] text-muted-foreground">

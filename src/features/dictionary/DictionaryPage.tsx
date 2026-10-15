@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { MultiSelect } from "@/components/bc4/MultiSelect";
 import { DemoBadge, EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import type { DictFilters } from "@/lib/api/client";
+import { getCellArcepZones, type DictFilters } from "@/lib/api/client";
 import type { GroupBy } from "@/lib/api/dictionary-schemas";
 import type { Operator, Service, Tech } from "@/lib/api/schemas";
 import { PROJECTS_CENTER } from "./center";
@@ -75,6 +75,14 @@ export function DictionaryPage({
     setSel(EMPTY_SEL);
   }, [projectId]);
   const proj = useQuery(dictQ.project(projectId));
+  // Zone ARCEP (bc4-back 0.7.1) : liste orthogonale à la géo, hors
+  // `/geo/tree`. Options issues de `/reference/cell/summary.arcep_breakdown`
+  // via `getCellArcepZones()` — jamais hardcodées côté UI.
+  const arcepZonesQ = useQuery({
+    queryKey: ["reference", "cell", "arcep-zones"],
+    queryFn: ({ signal }) => getCellArcepZones(signal),
+    staleTime: 5 * 60_000,
+  });
   const detail = useQuery({
     ...dictQ.detail(projectId, sel.paramId ?? "", groupBy, filters),
     enabled: !!sel.paramId,
@@ -87,7 +95,7 @@ export function DictionaryPage({
   const dims = proj.data?.dimensions;
   const deps =
     dims?.geo_tree.flatMap((p) => p.children.flatMap((d) => d.children.map((x) => x.id))) ?? [];
-  const activeCount = (["op", "tech", "svc", "band", "dep"] as const).reduce(
+  const activeCount = (["op", "tech", "svc", "band", "dep", "arcep"] as const).reduce(
     (a, k) => a + (filters[k]?.length ?? 0),
     0,
   );
@@ -238,6 +246,12 @@ export function DictionaryPage({
               onChange={(v) => setFilters({ band: v })}
             />
             <MultiSelect
+              label="Zone ARCEP"
+              options={arcepZonesQ.data ?? []}
+              value={filters.arcep ?? []}
+              onChange={(v) => setFilters({ arcep: v })}
+            />
+            <MultiSelect
               label="Département"
               options={deps}
               value={filters.dep ?? []}
@@ -257,6 +271,7 @@ export function DictionaryPage({
                 svc: undefined,
                 band: undefined,
                 dep: undefined,
+                arcep: undefined,
               })
             }
             className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] text-primary hover:bg-muted"
