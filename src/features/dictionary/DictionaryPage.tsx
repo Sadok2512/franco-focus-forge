@@ -43,7 +43,6 @@ import {
 import {
   GROUP_LABELS,
   groupDistribution,
-  measureOf,
   type GroupBy,
   type Grouped,
   type Measure,
@@ -67,12 +66,6 @@ const OP_VAR: Record<string, string> = {
   Bouygues: "--op-bouygues",
   Free: "--op-free",
 };
-function seriesColor(op: string | undefined, i: number) {
-  const token = op ? OP_VAR[op] : undefined;
-  if (token) return cssVar(token);
-  return cssVar(`--chart-${(i % 5) + 1}`) || cssVar("--primary");
-}
-
 function useWidth() {
   const [w, setW] = useState(() => (typeof window === "undefined" ? 1440 : window.innerWidth));
   useEffect(() => {

@@ -32,7 +32,10 @@ export function filterDistribution(g: Grouped, query: string, colorBy: ColorBy, 
       const counts = indices.map((i) => s.counts[i] ?? 0);
       return { ...s, counts, total: counts.reduce((sum, n) => sum + n, 0) };
     });
-  const bins = indices.map((i, j) => ({ ...g.bins[i], total: series.reduce((sum, s) => sum + (s.counts[j] ?? 0), 0) }));
+  const bins = indices.flatMap((i, j) => {
+    const bin = g.bins[i];
+    return bin ? [{ ...bin, total: series.reduce((sum, s) => sum + (s.counts[j] ?? 0), 0) }] : [];
+  });
   return { ...g, bins, series, population: bins.reduce((sum, bin) => sum + bin.total, 0) };
 }
 
