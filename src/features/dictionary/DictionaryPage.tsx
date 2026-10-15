@@ -28,6 +28,7 @@ import type { Operator } from "@/lib/api/schemas";
 import type { DictTreeMessage, ParamRow } from "@/lib/api/dictionary-schemas";
 import type { Map as MlMap } from "maplibre-gl";
 import { PROJECTS_CENTER } from "./center";
+import { chartDistribution, chartMeasure, CHART_TYPE_LABELS, COLOR_LABELS, type ChartType, type ColorBy } from "./chart-data";
 import {
   EMPTY_SELECTION,
   dictQ,
@@ -67,7 +68,8 @@ const OP_VAR: Record<string, string> = {
   Free: "--op-free",
 };
 function seriesColor(op: string | undefined, i: number) {
-  if (op && OP_VAR[op]) return cssVar(OP_VAR[op]!);
+  const token = op ? OP_VAR[op] : undefined;
+  if (token) return cssVar(token);
   return cssVar(`--chart-${(i % 5) + 1}`) || cssVar("--primary");
 }
 
@@ -446,8 +448,6 @@ function unitLabel(row: ParamRow, g: Grouped) {
   return g.isEnum ? "Valeur ASN.1 brute" : `Valeur${row.unit_converted ? ` (${row.unit_converted})` : ""}`;
 }
 
-export type ChartType = "grouped" | "stacked" | "stacked100";
-const CHART_TYPE_LABELS: Record<ChartType, string> = { grouped: "Groupé", stacked: "Empilé", stacked100: "Empilé 100 %" };
 
 function HistogramChart({
   row,
@@ -455,6 +455,7 @@ function HistogramChart({
   series,
   measure,
   chartType,
+  colorBy,
   highlight,
   title,
   height,
@@ -464,11 +465,18 @@ function HistogramChart({
   series: Grouped["series"];
   measure: Measure;
   chartType: ChartType;
+  colorBy: ColorBy;
   highlight: string | null;
   title: string;
   height: number;
 }) {
   const hiIdx = highlight == null ? -1 : g.bins.findIndex((b) => b.raw === highlight);
+  const color = useCallback((s: Grouped["series"][number], si: number, binIndex: number) => {
+    const bands = [...new Set(g.series.flatMap((item) => item.band ? [item.band] : []))].sort();
+    return colorBy === "value" ? seriesColor(undefined, binIndex)
+      : colorBy === "band" ? seriesColor(undefined, Math.max(0, bands.indexOf(s.band ?? "")))
+        : seriesColor(s.operator, si);
+  }, [g, colorBy]);
   const build = useCallback(
     (c: { fg: string; muted: string; border: string }) => ({
       grid: { left: 52, right: 12, top: 16, bottom: series.length > 1 ? 70 : 50 },
@@ -477,14 +485,16 @@ function HistogramChart({
         : {}),
       tooltip: {
         trigger: "axis" as const,
-        axisPointer: { type: "shadow" as const, shadowStyle: { color: "rgba(100,116,139,0.08)" }, z: 0 },
+        axisPointer: { type: "line" as const, lineStyle: { color: c.border }, z: 0 },
         formatter: (raw: unknown) => {
           const ps = raw as { seriesIndex: number; dataIndex: number; marker: string }[];
           const i = ps[0]?.dataIndex ?? 0;
-          const bin = g.bins[i]!;
+          const bin = g.bins[i];
+          if (!bin) return "";
           const lines = ps.map((p) => {
-            const s = series[p.seriesIndex]!;
-            const n = s.counts[i]!;
+            const s = series[p.seriesIndex];
+            if (!s) return "";
+            const n = s.counts[i] ?? 0;
             const share = s.total ? ((n / s.total) * 100).toFixed(1) : "N/D";
             return `${p.marker}${s.key === "Total" ? "Total" : s.key} : <b>${fmtInt(n)}</b> (${share} % du groupe, n=${fmtInt(s.total)})`;
           });
@@ -514,20 +524,14 @@ function HistogramChart({
         name: s.key,
         barMaxWidth: chartType === "grouped" ? 22 : 36,
         ...(chartType !== "grouped" ? { stack: "total" } : {}),
-        itemStyle: { color: seriesColor(s.operator, si) },
+        itemStyle: { color: color(s, si, 0) },
         data: s.counts.map((n, i) => ({
-          value:
-            chartType === "stacked100"
-              ? (() => {
-                  const t = series.reduce((a, x) => a + (x.counts[i] ?? 0), 0);
-                  return t ? (n / t) * 100 : 0;
-                })()
-              : measureOf(n, measure, g.population, s.total),
-          itemStyle: { opacity: hiIdx >= 0 && i !== hiIdx ? 0.25 : 1 },
+          value: chartMeasure(n, i, series, chartType, measure, g.population, s.total),
+          itemStyle: { color: color(s, si, i), opacity: hiIdx >= 0 && i !== hiIdx ? 0.25 : 1 },
         })),
       })),
     }),
-    [row, g, series, measure, chartType, hiIdx],
+    [row, g, series, measure, chartType, color, hiIdx],
   );
   return <Chart title={title} subtitle={`Mesure : ${MEASURE_LABELS[measure]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
 }
@@ -538,6 +542,7 @@ function Histogram({
   groupBy,
   measure,
   chartType,
+  colorBy,
   highlight,
 }: {
   row: ParamRow;
@@ -545,6 +550,7 @@ function Histogram({
   groupBy: GroupBy;
   measure: Measure;
   chartType: ChartType;
+  colorBy: ColorBy;
   highlight: string | null;
 }) {
   if (groupBy === "operator_band" && g.series.length > MAX_SERIES) {
@@ -559,6 +565,7 @@ function Histogram({
             series={g.series.filter((s) => s.operator === op)}
             measure={measure}
             chartType={chartType}
+      colorBy={colorBy}
             highlight={highlight}
             title={`Distribution des valeurs — ${op} (par bande)`}
             height={220}
@@ -574,6 +581,7 @@ function Histogram({
       series={g.series}
       measure={measure}
       chartType={chartType}
+      colorBy={colorBy}
       highlight={highlight}
       title="Distribution des valeurs"
       height={300}
@@ -968,7 +976,9 @@ function Toolbar({
   measure,
   setMeasure,
   chartType,
+  colorBy,
   setChartType,
+  setColorBy,
   showMap,
   infoOpen,
   setInfoOpen,
@@ -990,7 +1000,9 @@ function Toolbar({
   measure: Measure;
   setMeasure: (m: Measure) => void;
   chartType: ChartType;
+  colorBy: ColorBy;
   setChartType: (t: ChartType) => void;
+  setColorBy: (v: ColorBy) => void;
   showMap: boolean;
   infoOpen: boolean;
   setInfoOpen: (v: boolean) => void;
@@ -1066,6 +1078,14 @@ function Toolbar({
           options={(Object.keys(CHART_TYPE_LABELS) as ChartType[]).map((v) => ({ v, l: CHART_TYPE_LABELS[v] }))}
         />
       </Labeled>
+      <Labeled label="Colorer par">
+        <SelectBox
+          label="Colorer par"
+          value={colorBy}
+          onChange={setColorBy}
+          options={(Object.keys(COLOR_LABELS) as ColorBy[]).map((v) => ({ v, l: COLOR_LABELS[v] }))}
+        />
+      </Labeled>
       <Labeled label="Afficher">
         <SelectBox
           label="Mesure affichée"
@@ -1133,6 +1153,7 @@ export function DictionaryPage({
   const [groupBy, setGroupBy] = useState<GroupBy>("operator");
   const [measure, setMeasure] = useState<Measure>("count");
   const [chartType, setChartType] = useState<ChartType>("grouped");
+  const [colorBy, setColorBy] = useState<ColorBy>("operator");
   const [showMap, setShowMap] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -1161,6 +1182,8 @@ export function DictionaryPage({
   });
   const g = useMemo(() => (row ? groupDistribution(row, groupBy) : null), [row, groupBy]);
 
+  const chartG = useMemo(() => row ? chartDistribution(row, groupBy, colorBy) : null, [row, groupBy, colorBy]);
+
   const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
   const dirty = draft.techno !== techno || !same(draft.op, filters.op ?? []) || !same(draft.band, filters.band ?? []);
   const apply = () => {
@@ -1171,6 +1194,8 @@ export function DictionaryPage({
     setDraft({ techno: "LTE+NR", op: [], band: [] });
     setTechno("LTE+NR");
     setGroupBy("operator");
+    setColorBy("operator");
+    setChartType("grouped");
     setMeasure("count");
     setShowMap(false);
     setFilters({ op: undefined, band: undefined, dr: undefined, plaque: undefined, arcep: undefined });
@@ -1192,7 +1217,9 @@ export function DictionaryPage({
       measure={measure}
       setMeasure={setMeasure}
       chartType={chartType}
+      colorBy={colorBy}
       setChartType={setChartType}
+      setColorBy={setColorBy}
       showMap={showMap}
       infoOpen={infoOpen}
       setInfoOpen={setInfoOpen}
@@ -1252,7 +1279,7 @@ export function DictionaryPage({
   ) : (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <Histogram row={row} g={g} groupBy={groupBy} measure={measure} chartType={chartType} highlight={highlight} />
+        <Histogram row={row} g={chartG ?? g} groupBy={groupBy} measure={measure} chartType={chartType} colorBy={colorBy} highlight={highlight} />
       </div>
       {!g.groupingSupported && groupBy !== "none" && (
         <p className="px-1 text-[11px] text-muted-foreground">

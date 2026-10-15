@@ -1,4 +1,5 @@
 # BC4 roadmap
+- [ ] RRC chart types and independent value/band/operator colors — implement and verify.
 - [x] U0 foundation (tokens, shell, routes, mock API)
 - [x] U1 mock login / protected routes / logout
 - [~] U2 projects table (import wizard pending)
