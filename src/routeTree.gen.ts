@@ -18,6 +18,14 @@ import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
+import { Route as AppSettingsAboutRouteImport } from './routes/_app.settings.about'
+import { Route as AppSettingsAiRouteImport } from './routes/_app.settings.ai'
+import { Route as AppSettingsAppearanceRouteImport } from './routes/_app.settings.appearance'
+import { Route as AppSettingsGeographyRouteImport } from './routes/_app.settings.geography'
+import { Route as AppSettingsKpiCatalogRouteImport } from './routes/_app.settings.kpi-catalog'
+import { Route as AppSettingsOrganizationRouteImport } from './routes/_app.settings.organization'
+import { Route as AppSettingsUsersRouteImport } from './routes/_app.settings.users'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -63,6 +71,46 @@ const AppSettingsRoute = AppSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAboutRoute = AppSettingsAboutRouteImport.update({
+  id: '/about',
+  path: '/about',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAiRoute = AppSettingsAiRouteImport.update({
+  id: '/ai',
+  path: '/ai',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsAppearanceRoute = AppSettingsAppearanceRouteImport.update({
+  id: '/appearance',
+  path: '/appearance',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsGeographyRoute = AppSettingsGeographyRouteImport.update({
+  id: '/geography',
+  path: '/geography',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsKpiCatalogRoute = AppSettingsKpiCatalogRouteImport.update({
+  id: '/kpi-catalog',
+  path: '/kpi-catalog',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsOrganizationRoute = AppSettingsOrganizationRouteImport.update({
+  id: '/organization',
+  path: '/organization',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
+const AppSettingsUsersRoute = AppSettingsUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AppSettingsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -72,7 +120,15 @@ export interface FileRoutesByFullPath {
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRoute
   '/rrc': typeof AppRrcRoute
-  '/settings': typeof AppSettingsRoute
+  '/settings': typeof AppSettingsRouteWithChildren
+  '/settings/about': typeof AppSettingsAboutRoute
+  '/settings/ai': typeof AppSettingsAiRoute
+  '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/geography': typeof AppSettingsGeographyRoute
+  '/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
+  '/settings/organization': typeof AppSettingsOrganizationRoute
+  '/settings/users': typeof AppSettingsUsersRoute
+  '/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,7 +138,14 @@ export interface FileRoutesByTo {
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRoute
   '/rrc': typeof AppRrcRoute
-  '/settings': typeof AppSettingsRoute
+  '/settings/about': typeof AppSettingsAboutRoute
+  '/settings/ai': typeof AppSettingsAiRoute
+  '/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/settings/geography': typeof AppSettingsGeographyRoute
+  '/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
+  '/settings/organization': typeof AppSettingsOrganizationRoute
+  '/settings/users': typeof AppSettingsUsersRoute
+  '/settings': typeof AppSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -94,7 +157,15 @@ export interface FileRoutesById {
   '/_app/overview': typeof AppOverviewRoute
   '/_app/projects': typeof AppProjectsRoute
   '/_app/rrc': typeof AppRrcRoute
-  '/_app/settings': typeof AppSettingsRoute
+  '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/settings/about': typeof AppSettingsAboutRoute
+  '/_app/settings/ai': typeof AppSettingsAiRoute
+  '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
+  '/_app/settings/geography': typeof AppSettingsGeographyRoute
+  '/_app/settings/kpi-catalog': typeof AppSettingsKpiCatalogRoute
+  '/_app/settings/organization': typeof AppSettingsOrganizationRoute
+  '/_app/settings/users': typeof AppSettingsUsersRoute
+  '/_app/settings/': typeof AppSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -107,6 +178,14 @@ export interface FileRouteTypes {
     | '/projects'
     | '/rrc'
     | '/settings'
+    | '/settings/about'
+    | '/settings/ai'
+    | '/settings/appearance'
+    | '/settings/geography'
+    | '/settings/kpi-catalog'
+    | '/settings/organization'
+    | '/settings/users'
+    | '/settings/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,6 +195,13 @@ export interface FileRouteTypes {
     | '/overview'
     | '/projects'
     | '/rrc'
+    | '/settings/about'
+    | '/settings/ai'
+    | '/settings/appearance'
+    | '/settings/geography'
+    | '/settings/kpi-catalog'
+    | '/settings/organization'
+    | '/settings/users'
     | '/settings'
   id:
     | '__root__'
@@ -128,6 +214,14 @@ export interface FileRouteTypes {
     | '/_app/projects'
     | '/_app/rrc'
     | '/_app/settings'
+    | '/_app/settings/about'
+    | '/_app/settings/ai'
+    | '/_app/settings/appearance'
+    | '/_app/settings/geography'
+    | '/_app/settings/kpi-catalog'
+    | '/_app/settings/organization'
+    | '/_app/settings/users'
+    | '/_app/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -201,8 +295,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppSettingsRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/': {
+      id: '/_app/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AppSettingsIndexRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/about': {
+      id: '/_app/settings/about'
+      path: '/about'
+      fullPath: '/settings/about'
+      preLoaderRoute: typeof AppSettingsAboutRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/ai': {
+      id: '/_app/settings/ai'
+      path: '/ai'
+      fullPath: '/settings/ai'
+      preLoaderRoute: typeof AppSettingsAiRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/appearance': {
+      id: '/_app/settings/appearance'
+      path: '/appearance'
+      fullPath: '/settings/appearance'
+      preLoaderRoute: typeof AppSettingsAppearanceRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/geography': {
+      id: '/_app/settings/geography'
+      path: '/geography'
+      fullPath: '/settings/geography'
+      preLoaderRoute: typeof AppSettingsGeographyRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/kpi-catalog': {
+      id: '/_app/settings/kpi-catalog'
+      path: '/kpi-catalog'
+      fullPath: '/settings/kpi-catalog'
+      preLoaderRoute: typeof AppSettingsKpiCatalogRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/organization': {
+      id: '/_app/settings/organization'
+      path: '/organization'
+      fullPath: '/settings/organization'
+      preLoaderRoute: typeof AppSettingsOrganizationRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
+    '/_app/settings/users': {
+      id: '/_app/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AppSettingsUsersRouteImport
+      parentRoute: typeof AppSettingsRoute
+    }
   }
 }
+
+interface AppSettingsRouteChildren {
+  AppSettingsAboutRoute: typeof AppSettingsAboutRoute
+  AppSettingsAiRoute: typeof AppSettingsAiRoute
+  AppSettingsAppearanceRoute: typeof AppSettingsAppearanceRoute
+  AppSettingsGeographyRoute: typeof AppSettingsGeographyRoute
+  AppSettingsKpiCatalogRoute: typeof AppSettingsKpiCatalogRoute
+  AppSettingsOrganizationRoute: typeof AppSettingsOrganizationRoute
+  AppSettingsUsersRoute: typeof AppSettingsUsersRoute
+  AppSettingsIndexRoute: typeof AppSettingsIndexRoute
+}
+
+const AppSettingsRouteChildren: AppSettingsRouteChildren = {
+  AppSettingsAboutRoute: AppSettingsAboutRoute,
+  AppSettingsAiRoute: AppSettingsAiRoute,
+  AppSettingsAppearanceRoute: AppSettingsAppearanceRoute,
+  AppSettingsGeographyRoute: AppSettingsGeographyRoute,
+  AppSettingsKpiCatalogRoute: AppSettingsKpiCatalogRoute,
+  AppSettingsOrganizationRoute: AppSettingsOrganizationRoute,
+  AppSettingsUsersRoute: AppSettingsUsersRoute,
+  AppSettingsIndexRoute: AppSettingsIndexRoute,
+}
+
+const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
+  AppSettingsRouteChildren,
+)
 
 interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
@@ -210,7 +386,7 @@ interface AppRouteChildren {
   AppOverviewRoute: typeof AppOverviewRoute
   AppProjectsRoute: typeof AppProjectsRoute
   AppRrcRoute: typeof AppRrcRoute
-  AppSettingsRoute: typeof AppSettingsRoute
+  AppSettingsRoute: typeof AppSettingsRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -219,7 +395,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppOverviewRoute: AppOverviewRoute,
   AppProjectsRoute: AppProjectsRoute,
   AppRrcRoute: AppRrcRoute,
-  AppSettingsRoute: AppSettingsRoute,
+  AppSettingsRoute: AppSettingsRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

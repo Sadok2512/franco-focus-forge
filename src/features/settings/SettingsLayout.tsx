@@ -1,7 +1,8 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { setDemoRole } from "@/lib/auth";
-import { ROLE_LABEL, RoleSchema, type FilterContext, type Role } from "@/lib/api/client";
+import type { FilterContext } from "@/lib/api/schemas";
+import { ROLE_LABEL, RoleSchema, type Role } from "@/lib/api/settings-schemas";
 import { inputCls, useActor } from "./shared";
 
 export const SETTINGS_TABS = [
