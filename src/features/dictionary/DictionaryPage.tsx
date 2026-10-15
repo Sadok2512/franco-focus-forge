@@ -477,7 +477,7 @@ function HistogramChart({
         : {}),
       tooltip: {
         trigger: "axis" as const,
-        axisPointer: { type: "shadow" as const },
+        axisPointer: { type: "shadow" as const, shadowStyle: { color: "rgba(100,116,139,0.08)" }, z: 0 },
         formatter: (raw: unknown) => {
           const ps = raw as { seriesIndex: number; dataIndex: number; marker: string }[];
           const i = ps[0]?.dataIndex ?? 0;
