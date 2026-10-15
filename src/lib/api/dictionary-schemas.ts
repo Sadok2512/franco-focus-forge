@@ -134,6 +134,15 @@ export const ParamDistributionEntrySchema = z.object({
 });
 export type ParamDistributionEntry = z.infer<typeof ParamDistributionEntrySchema>;
 
+export const ParamValueCellSchema = z.object({
+  value_raw: z.string(),
+  value_converted: z.string().nullable(),
+  operator: z.string(),
+  band: z.string(),
+  count: z.number().int().nonnegative(),
+});
+export type ParamValueCell = z.infer<typeof ParamValueCellSchema>;
+
 export const ParamRowSchema = z.object({
   system: z.enum(["LTE", "NR"]),
   message: z.string(),
@@ -164,6 +173,11 @@ export const ParamRowSchema = z.object({
   // normalise systématiquement via `?? []` / `?? "exact"`.
   value_distribution: z.array(ParamDistributionEntrySchema).optional(),
   value_distribution_mode: z.enum(["exact", "binned"]).optional(),
+  // 1.9.0 — Extension du contrat (mock) : comptes par valeur × opérateur ×
+  // bande, nécessaires au regroupement « Opérateur / Bande / Opérateur +
+  // Bande » de l'histogramme ET de la table. Changement back à prévoir :
+  // `/dict/params` doit servir ce champ. Absent → seul « Aucun » est proposé.
+  value_matrix: z.array(ParamValueCellSchema).optional(),
 });
 export type ParamRow = z.infer<typeof ParamRowSchema>;
 

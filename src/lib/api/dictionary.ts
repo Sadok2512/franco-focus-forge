@@ -333,7 +333,25 @@ async function _mockGetDictParams(
         if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
         return a.value_raw.localeCompare(b.value_raw);
       });
+    const cellCounts = new Map<string, { raw: string | number; operator: string; band: string; count: number }>();
+    for (const o of paramObs) {
+      const k = `${String(o.raw)}|${o.operator}|${o.band}`;
+      const c = cellCounts.get(k);
+      if (c) c.count += 1;
+      else cellCounts.set(k, { raw: o.raw, operator: o.operator, band: o.band, count: 1 });
+    }
+    const value_matrix = [...cellCounts.values()].map((c) => {
+      const convertedNum = typeof c.raw === "number" ? convNum(d.conversion_rule, c.raw) : null;
+      return {
+        value_raw: String(c.raw),
+        value_converted: convertedNum != null && d.conversion_rule ? String(convertedNum) : null,
+        operator: c.operator,
+        band: c.band,
+        count: c.count,
+      };
+    });
     return {
+      value_matrix,
       system: d.techno,
       message: d.message,
       path: d.path,
