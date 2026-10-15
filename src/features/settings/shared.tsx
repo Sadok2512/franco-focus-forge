@@ -29,10 +29,11 @@ export function useFormState<T>(persisted: T | undefined) {
   const [draft, setDraftRaw] = useState<T | undefined>(persisted);
   const [status, setStatus] = useState<FormStatus>("pristine");
   const [error, setError] = useState<{ message: string; field: string | null } | null>(null);
+  const key = JSON.stringify(persisted ?? null);
   useEffect(() => {
     if (persisted !== undefined && (status === "pristine" || status === "saved"))
       setDraftRaw(persisted);
-  }, [persisted]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [key]); // eslint-disable-line react-hooks/exhaustive-deps
   const setDraft = useCallback((patch: Partial<T>) => {
     setDraftRaw((d) => ({ ...(d as T), ...patch }));
     setStatus("dirty");
