@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.9.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC : espace de travail dynamique unique
+
+- Page unique sans onglets ni bandeau KPI : arbre ASN.1 à gauche, histogramme + table détaillée au centre, carte optionnelle à droite.
+- Barre d'outils unique : Technologie, Opérateur, Bande, Zone géographique, Période, « Regrouper par » (Aucun / Opérateur / Bande / Opérateur + Bande), mesure (occurrences / % population / % groupe), bouton « Carte », Appliquer, Réinitialiser.
+- Fiche technique du paramètre uniquement à la demande (bouton « Infos »).
+- Clic sur une ligne de la table : surligne la valeur dans l'histogramme et sur la carte.
+- Contrat mock étendu : `value_matrix` (valeur × opérateur × bande) dans `/dict/params` — changement back à prévoir.
+- Zone géographique et période affichées mais non filtrantes : l'API du dictionnaire ne les prend pas en charge.
+
 ## 1.8.1 (patch) — bc4-front 2026-10-15 — Dictionnaire RRC : histogramme câblé sur `value_distribution` — Agent BC1
 
 ### Modifié
