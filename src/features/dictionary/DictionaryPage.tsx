@@ -479,9 +479,9 @@ function HistogramChart({
   }, [g, colorBy]);
   const build = useCallback(
     (c: { fg: string; muted: string; border: string }) => ({
-      grid: { left: 52, right: 12, top: 16, bottom: series.length > 1 ? 70 : 50 },
-      ...(series.length > 1
-        ? { legend: { bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } } }
+      grid: { left: 52, right: 12, top: 16, bottom: colorBy !== "value" && series.length > 1 ? 75 : 50 },
+      ...(colorBy !== "value" && series.length > 1
+        ? { legend: { type: "scroll" as const, bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } } }
         : {}),
       tooltip: {
         trigger: "axis" as const,
@@ -521,7 +521,7 @@ function HistogramChart({
       },
       series: series.map((s, si) => ({
         type: "bar" as const,
-        name: s.key,
+        name: colorBy === "band" ? (s.band ?? s.key) : colorBy === "operator" ? (s.operator ?? s.key) : s.key,
         barMaxWidth: chartType === "grouped" ? 22 : 36,
         ...(chartType !== "grouped" ? { stack: "total" } : {}),
         itemStyle: { color: color(s, si, 0) },
@@ -531,9 +531,9 @@ function HistogramChart({
         })),
       })),
     }),
-    [row, g, series, measure, chartType, color, hiIdx],
+    [row, g, series, measure, chartType, colorBy, color, hiIdx],
   );
-  return <Chart title={title} subtitle={`Mesure : ${MEASURE_LABELS[measure]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
+  return <Chart title={title} subtitle={`Mesure : ${chartType === "stacked100" ? "% par valeur" : MEASURE_LABELS[measure]} · Couleurs : ${COLOR_LABELS[colorBy]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
 }
 
 function Histogram({
