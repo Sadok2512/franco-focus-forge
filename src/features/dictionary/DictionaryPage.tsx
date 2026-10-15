@@ -515,7 +515,7 @@ function HistogramChart({
         itemStyle: { color: seriesColor(s.operator, si) },
         data: s.counts.map((n, i) => ({
           value: measureOf(n, measure, g.population, s.total),
-          itemStyle: hiIdx >= 0 && i !== hiIdx ? { opacity: 0.25 } : undefined,
+          itemStyle: { opacity: hiIdx >= 0 && i !== hiIdx ? 0.25 : 1 },
         })),
       })),
     }),
