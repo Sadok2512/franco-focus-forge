@@ -451,11 +451,15 @@ function unitLabel(row: ParamRow, g: Grouped) {
   return g.isEnum ? "Valeur ASN.1 brute" : `Valeur${row.unit_converted ? ` (${row.unit_converted})` : ""}`;
 }
 
+export type ChartType = "grouped" | "stacked" | "stacked100";
+const CHART_TYPE_LABELS: Record<ChartType, string> = { grouped: "Groupé", stacked: "Empilé", stacked100: "Empilé 100 %" };
+
 function HistogramChart({
   row,
   g,
   series,
   measure,
+  chartType,
   highlight,
   title,
   height,
@@ -464,6 +468,7 @@ function HistogramChart({
   g: Grouped;
   series: Grouped["series"];
   measure: Measure;
+  chartType: ChartType;
   highlight: string | null;
   title: string;
   height: number;
@@ -503,7 +508,8 @@ function HistogramChart({
       },
       yAxis: {
         type: "value" as const,
-        name: measure === "count" ? "Occurrences" : "%",
+        name: chartType === "stacked100" || measure !== "count" ? "%" : "Occurrences",
+        ...(chartType === "stacked100" ? { max: 100 } : {}),
         nameTextStyle: { color: c.muted, fontSize: 10 },
         axisLabel: { color: c.muted, fontSize: 10 },
         splitLine: { lineStyle: { color: c.border } },
@@ -511,15 +517,22 @@ function HistogramChart({
       series: series.map((s, si) => ({
         type: "bar" as const,
         name: s.key,
-        barMaxWidth: 22,
+        barMaxWidth: chartType === "grouped" ? 22 : 36,
+        ...(chartType !== "grouped" ? { stack: "total" } : {}),
         itemStyle: { color: seriesColor(s.operator, si) },
         data: s.counts.map((n, i) => ({
-          value: measureOf(n, measure, g.population, s.total),
+          value:
+            chartType === "stacked100"
+              ? (() => {
+                  const t = series.reduce((a, x) => a + (x.counts[i] ?? 0), 0);
+                  return t ? (n / t) * 100 : 0;
+                })()
+              : measureOf(n, measure, g.population, s.total),
           itemStyle: { opacity: hiIdx >= 0 && i !== hiIdx ? 0.25 : 1 },
         })),
       })),
     }),
-    [row, g, series, measure, hiIdx],
+    [row, g, series, measure, chartType, hiIdx],
   );
   return <Chart title={title} subtitle={`Mesure : ${MEASURE_LABELS[measure]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
 }
@@ -529,12 +542,14 @@ function Histogram({
   g,
   groupBy,
   measure,
+  chartType,
   highlight,
 }: {
   row: ParamRow;
   g: Grouped;
   groupBy: GroupBy;
   measure: Measure;
+  chartType: ChartType;
   highlight: string | null;
 }) {
   if (groupBy === "operator_band" && g.series.length > MAX_SERIES) {
@@ -548,6 +563,7 @@ function Histogram({
             g={g}
             series={g.series.filter((s) => s.operator === op)}
             measure={measure}
+            chartType={chartType}
             highlight={highlight}
             title={`Distribution des valeurs — ${op} (par bande)`}
             height={220}
@@ -562,6 +578,7 @@ function Histogram({
       g={g}
       series={g.series}
       measure={measure}
+      chartType={chartType}
       highlight={highlight}
       title="Distribution des valeurs"
       height={300}
@@ -955,6 +972,8 @@ function Toolbar({
   setGroupBy,
   measure,
   setMeasure,
+  chartType,
+  setChartType,
   showMap,
   setShowMap,
   dirty,
@@ -973,6 +992,8 @@ function Toolbar({
   setGroupBy: (g: GroupBy) => void;
   measure: Measure;
   setMeasure: (m: Measure) => void;
+  chartType: ChartType;
+  setChartType: (t: ChartType) => void;
   showMap: boolean;
   setShowMap: (b: boolean) => void;
   dirty: boolean;
@@ -1038,6 +1059,14 @@ function Toolbar({
           options={(Object.keys(GROUP_LABELS) as GroupBy[]).map((v) => ({ v, l: GROUP_LABELS[v] }))}
         />
       </Labeled>
+      <Labeled label="Type">
+        <SelectBox
+          label="Type de graphique"
+          value={chartType}
+          onChange={setChartType}
+          options={(Object.keys(CHART_TYPE_LABELS) as ChartType[]).map((v) => ({ v, l: CHART_TYPE_LABELS[v] }))}
+        />
+      </Labeled>
       <Labeled label="Afficher">
         <SelectBox
           label="Mesure affichée"
@@ -1093,6 +1122,7 @@ export function DictionaryPage({
   const [draft, setDraft] = useState<Draft>({ techno: "LTE+NR", op: filters.op ?? [], band: filters.band ?? [] });
   const [groupBy, setGroupBy] = useState<GroupBy>("operator");
   const [measure, setMeasure] = useState<Measure>("count");
+  const [chartType, setChartType] = useState<ChartType>("grouped");
   const [showMap, setShowMap] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -1151,6 +1181,8 @@ export function DictionaryPage({
       setGroupBy={setGroupBy}
       measure={measure}
       setMeasure={setMeasure}
+      chartType={chartType}
+      setChartType={setChartType}
       showMap={showMap}
       setShowMap={setShowMap}
       dirty={dirty}
@@ -1208,7 +1240,7 @@ export function DictionaryPage({
   ) : (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <Histogram row={row} g={g} groupBy={groupBy} measure={measure} highlight={highlight} />
+        <Histogram row={row} g={g} groupBy={groupBy} measure={measure} chartType={chartType} highlight={highlight} />
         <button
           onClick={() => setInfoOpen(true)}
           className="absolute right-20 top-2 inline-flex h-6 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-medium hover:bg-muted"
