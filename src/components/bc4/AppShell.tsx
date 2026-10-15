@@ -2,7 +2,8 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { BookOpen, ChevronDown, HelpCircle, Lightbulb, LogOut, Moon, Radio, Settings, Sun } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { getProjects } from "@/lib/api/client";
+import { getAppearance, getOrganization, getProjects } from "@/lib/api/client";
+import { applyAppearance, DEFAULT_PREFS, readPrefs, writePrefs, type Prefs } from "@/lib/appearance";
 import type { FilterContext, Operator } from "@/lib/api/schemas";
 import { getSession, logout } from "@/lib/auth";
 import { useFilters } from "@/lib/filters";
@@ -16,13 +17,18 @@ const NAV = [
 ] as const;
 
 function useTheme() {
-  const [dark, setDark] = useState(false);
-  useEffect(() => { setDark(localStorage.getItem("bc4.theme") === "dark"); }, []);
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
+  const { data: app } = useQuery({ queryKey: ["settings", "appearance"], queryFn: () => getAppearance() });
   useEffect(() => {
-    document.documentElement.classList.toggle("dark", dark);
-    localStorage.setItem("bc4.theme", dark ? "dark" : "light");
-  }, [dark]);
-  return [dark, setDark] as const;
+    const sync = () => setPrefs(readPrefs());
+    sync();
+    window.addEventListener("bc4-appearance", sync);
+    return () => window.removeEventListener("bc4-appearance", sync);
+  }, []);
+  useEffect(() => { applyAppearance(prefs, app?.org_primary_hex ?? null); }, [prefs, app]);
+  const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  const toggle = () => writePrefs({ ...prefs, mode: dark ? "light" : "dark" });
+  return [dark, toggle] as const;
 }
 
 export function Logo({ className = "" }: { className?: string }) {
@@ -35,7 +41,8 @@ export function Logo({ className = "" }: { className?: string }) {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const [dark, setDark] = useTheme();
+  const [dark, toggleTheme] = useTheme();
+  const { data: org } = useQuery({ queryKey: ["settings", "organization"], queryFn: () => getOrganization() });
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const { filters, set } = useFilters();
@@ -54,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-40 flex h-14 items-center gap-6 border-b bg-card px-5">
-        <Link to="/projects" search={(s: FilterContext) => s} className="text-lg"><Logo /></Link>
+        <Link to="/projects" search={(s: FilterContext) => s} className="flex items-center gap-2 text-lg"><Logo />{org?.show_in_header && org.name && (<span className="hidden max-w-40 truncate border-l pl-2 text-xs font-medium text-muted-foreground lg:inline">{org.short_name || org.name}</span>)}</Link>
         <nav aria-label="Navigation principale" className="flex h-full items-center gap-1 overflow-x-auto">
           {NAV.map((n) => {
             const active = path.startsWith(n.to);
@@ -67,7 +74,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-1">
-          <button aria-label={dark ? "Thème clair" : "Thème sombre"} onClick={() => setDark((d) => !d)} className="rounded-full p-2 text-op-orange hover:bg-muted">
+          <button aria-label={dark ? "Thème clair" : "Thème sombre"} onClick={toggleTheme} className="rounded-full p-2 text-op-orange hover:bg-muted">
             {dark ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
           </button>
           <button aria-label="Astuces" className="rounded-full p-2 text-op-orange hover:bg-muted"><Lightbulb className="h-[18px] w-[18px]" /></button>
