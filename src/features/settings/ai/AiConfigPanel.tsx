@@ -27,7 +27,7 @@ function AiForm({ cfg }: { cfg: AiConfig }) {
   const test = useMutation({ mutationFn: () => testAiConnection(actor), onSuccess: () => qc.invalidateQueries({ queryKey: ["settings", "ai"] }) });
   const d = form.draft!;
   const url = urlCheck(d.endpoint_url);
-  const save = () => form.save(async (v) => { await putAiConfig(actor, { ...v, secret: secret || undefined }); setSecret(""); await qc.invalidateQueries({ queryKey: ["settings"] }); });
+  const save = () => form.save(async (v) => { await putAiConfig(actor, secret ? { ...v, secret } : v); setSecret(""); await qc.invalidateQueries({ queryKey: ["settings"] }); });
   const conn = cfg.connection;
 
   return (
@@ -45,7 +45,7 @@ function AiForm({ cfg }: { cfg: AiConfig }) {
             <Switch id="ai-on" checked={d.enabled} disabled={!write} onCheckedChange={(v) => form.setDraft({ enabled: v })} />
             <label htmlFor="ai-on" className="text-sm font-medium">Activer l'Assistant IA</label>
           </div>
-          <Field label="URL endpoint du modèle" htmlFor="ai-url" error={form.error?.field === "endpoint_url" ? form.error.message : d.endpoint_url && !url.ok ? url.message : null} hint={url.ok && !url.https ? undefined : "HTTPS recommandé."}>
+          <Field label="URL endpoint du modèle" htmlFor="ai-url" error={form.error?.field === "endpoint_url" ? form.error.message : d.endpoint_url && !url.ok ? url.message : null} hint="HTTPS recommandé.">
             <input id="ai-url" className={inputCls} disabled={!write} value={d.endpoint_url} onChange={(e) => form.setDraft({ endpoint_url: e.target.value })} placeholder="https://…" />
           </Field>
           <Field label="Code / identifiant du modèle" htmlFor="ai-model" error={form.error?.field === "model_code" ? form.error.message : null}>

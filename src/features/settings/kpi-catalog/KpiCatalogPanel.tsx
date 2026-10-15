@@ -78,7 +78,7 @@ function KpiForm({ base, dup, statuses, onClose, onDone }: { base: Kpi | null; d
   });
   const [err, setErr] = useState<{ field: string | null; message: string } | null>(null);
   const m = useMutation({
-    mutationFn: () => (creating ? createKpi(actor, f) : patchKpi(actor, base!.code, { ...f, code: undefined })),
+    mutationFn: () => (creating ? createKpi(actor, f) : patchKpi(actor, base!.code, (({ code: _c, ...rest }) => rest)(f))),
     onSuccess: onDone, onError: (e) => setErr({ field: errField(e), message: errMsg(e) }),
   });
   const e = (k: string) => (err?.field === k ? err.message : null);

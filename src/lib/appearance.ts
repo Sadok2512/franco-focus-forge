@@ -37,7 +37,7 @@ export function onColor(hex: string) {
 export function applyAppearance(p: Prefs, orgHex: string | null, root = document.documentElement) {
   const dark = p.mode === "dark" || (p.mode === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", !!dark);
-  root.dataset.density = p.density;
+  root.dataset["density"] = p.density;
   const hex = p.primary_hex ?? orgHex;
   for (const v of ["--primary", "--ring", "--primary-foreground"]) root.style.removeProperty(v);
   if (hex) {

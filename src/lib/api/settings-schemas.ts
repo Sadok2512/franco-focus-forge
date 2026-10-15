@@ -154,4 +154,4 @@ export const AboutSchema = z.object({
 });
 export type About = z.infer<typeof AboutSchema>;
 
-export type ApiError = { code: "FORBIDDEN" | "VALIDATION" | "CONFLICT" | "NOT_FOUND"; message: string; field?: string };
+export type ApiError = { code: "FORBIDDEN" | "VALIDATION" | "CONFLICT" | "NOT_FOUND"; message: string; field?: string | undefined };
