@@ -57,8 +57,26 @@ const MEASURE_LABELS: Record<Measure, string> = {
 /** Au-delà, on bascule en petits multiples (une vignette par opérateur). */
 const MAX_SERIES = 8;
 
+const rgbCache = new Map<string, string>();
+/** Resolve a CSS color token to rgb(): ECharts cannot parse oklch(), so hover
+ * emphasis on an oklch color produces an invalid color and the bar vanishes. */
+function toRgb(color: string) {
+  if (!color || typeof document === "undefined") return color;
+  const hit = rgbCache.get(color);
+  if (hit) return hit;
+  const ctx = document.createElement("canvas").getContext("2d", { willReadFrequently: true });
+  if (!ctx) return color;
+  ctx.canvas.width = ctx.canvas.height = 1;
+  ctx.clearRect(0, 0, 1, 1);
+  ctx.fillStyle = color;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r = 0, g = 0, b = 0, a = 255] = ctx.getImageData(0, 0, 1, 1).data;
+  const out = a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
+  rgbCache.set(color, out);
+  return out;
+}
 function cssVar(name: string) {
-  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  return toRgb(getComputedStyle(document.documentElement).getPropertyValue(name).trim());
 }
 const OP_VAR: Record<string, string> = {
   Orange: "--op-orange",
