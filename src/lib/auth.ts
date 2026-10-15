@@ -1,7 +1,8 @@
 // Mock authentication only — no real identity provider.
 const KEY = "bc4.session";
 const TTL = 8 * 3600 * 1000;
-export type Session = { user: string; displayName: string; expiresAt: number };
+import type { Actor, Role } from "./api/settings-schemas";
+export type Session = { user: string; displayName: string; expiresAt: number; role?: Role };
 
 export const DEMO_USER = { id: "demo.ingenieur", password: "bc4-demo" };
 
@@ -10,7 +11,7 @@ export async function login(id: string, password: string): Promise<Session> {
   if (id.trim() !== DEMO_USER.id || password !== DEMO_USER.password) {
     throw new Error("Identifiant ou mot de passe incorrect.");
   }
-  const s: Session = { user: id, displayName: "Jean Dupont", expiresAt: Date.now() + TTL };
+  const s: Session = { user: id, displayName: "Jean Dupont", role: "admin", expiresAt: Date.now() + TTL };
   localStorage.setItem(KEY, JSON.stringify(s));
   return s;
 }
@@ -25,3 +26,13 @@ export function getSession(): Session | null {
 }
 
 export function logout() { localStorage.removeItem(KEY); }
+
+export function getActor(): Actor {
+  const s = getSession();
+  return { login: s?.user ?? "anonyme", role: s?.role ?? "admin" };
+}
+/** Demo only: switch the simulated role to exercise permissions. */
+export function setDemoRole(role: Role) {
+  const s = getSession();
+  if (s) localStorage.setItem(KEY, JSON.stringify({ ...s, role }));
+}
