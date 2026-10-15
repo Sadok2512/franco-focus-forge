@@ -12,7 +12,9 @@ export function readPrefs(): Prefs {
     const p = JSON.parse(localStorage.getItem(KEY) ?? "null") as Partial<Prefs> | null;
     const legacy = localStorage.getItem("bc4.theme");
     return { ...DEFAULT_PREFS, ...(legacy ? { mode: legacy as Mode } : {}), ...(p ?? {}) };
-  } catch { return DEFAULT_PREFS; }
+  } catch {
+    return DEFAULT_PREFS;
+  }
 }
 export function writePrefs(p: Prefs) {
   localStorage.setItem(KEY, JSON.stringify(p));
@@ -21,7 +23,9 @@ export function writePrefs(p: Prefs) {
 }
 
 function lum(hex: string) {
-  const c = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255).map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
+  const c = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((v) => (v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4));
   return 0.2126 * c[0]! + 0.7152 * c[1]! + 0.0722 * c[2]!;
 }
 export function contrast(a: string, b: string) {
@@ -30,12 +34,15 @@ export function contrast(a: string, b: string) {
 }
 /** Best text colour on `hex` and its ratio. */
 export function onColor(hex: string) {
-  const w = contrast(hex, "#FFFFFF"), k = contrast(hex, "#0B1220");
+  const w = contrast(hex, "#FFFFFF"),
+    k = contrast(hex, "#0B1220");
   return w >= k ? { fg: "#FFFFFF", ratio: w } : { fg: "#0B1220", ratio: k };
 }
 
 export function applyAppearance(p: Prefs, orgHex: string | null, root = document.documentElement) {
-  const dark = p.mode === "dark" || (p.mode === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
+  const dark =
+    p.mode === "dark" ||
+    (p.mode === "system" && window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   root.classList.toggle("dark", !!dark);
   root.dataset["density"] = p.density;
   const hex = p.primary_hex ?? orgHex;

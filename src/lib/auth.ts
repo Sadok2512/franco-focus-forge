@@ -11,7 +11,12 @@ export async function login(id: string, password: string): Promise<Session> {
   if (id.trim() !== DEMO_USER.id || password !== DEMO_USER.password) {
     throw new Error("Identifiant ou mot de passe incorrect.");
   }
-  const s: Session = { user: id, displayName: "Jean Dupont", role: "admin", expiresAt: Date.now() + TTL };
+  const s: Session = {
+    user: id,
+    displayName: "Jean Dupont",
+    role: "admin",
+    expiresAt: Date.now() + TTL,
+  };
   localStorage.setItem(KEY, JSON.stringify(s));
   return s;
 }
@@ -20,12 +25,19 @@ export function getSession(): Session | null {
   if (typeof window === "undefined") return null;
   try {
     const s = JSON.parse(localStorage.getItem(KEY) ?? "null") as Session | null;
-    if (!s || s.expiresAt < Date.now()) { localStorage.removeItem(KEY); return null; }
+    if (!s || s.expiresAt < Date.now()) {
+      localStorage.removeItem(KEY);
+      return null;
+    }
     return s;
-  } catch { return null; }
+  } catch {
+    return null;
+  }
 }
 
-export function logout() { localStorage.removeItem(KEY); }
+export function logout() {
+  localStorage.removeItem(KEY);
+}
 
 export function getActor(): Actor {
   const s = getSession();

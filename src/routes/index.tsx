@@ -9,9 +9,15 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "BC4 — Benchmark radio LTE/NR" },
-      { name: "description", content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs." },
+      {
+        name: "description",
+        content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs.",
+      },
       { property: "og:title", content: "BC4 — Benchmark radio LTE/NR" },
-      { property: "og:description", content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs." },
+      {
+        property: "og:description",
+        content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs.",
+      },
     ],
   }),
 });

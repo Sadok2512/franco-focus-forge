@@ -3,7 +3,11 @@ import { z } from "zod";
 
 export const RoleSchema = z.enum(["admin", "editor", "viewer"]);
 export type Role = z.infer<typeof RoleSchema>;
-export const ROLE_LABEL: Record<Role, string> = { admin: "Administrateur", editor: "Éditeur", viewer: "Lecteur" };
+export const ROLE_LABEL: Record<Role, string> = {
+  admin: "Administrateur",
+  editor: "Éditeur",
+  viewer: "Lecteur",
+};
 
 export type Actor = { login: string; role: Role };
 
@@ -24,7 +28,10 @@ export const PasswordPolicySchema = z.object({
   require_upper: z.boolean(),
 });
 export type PasswordPolicy = z.infer<typeof PasswordPolicySchema>;
-export const ApiPermissionsSchema = z.object({ editor_can_edit_geo: z.boolean(), editor_can_edit_kpi: z.boolean() });
+export const ApiPermissionsSchema = z.object({
+  editor_can_edit_geo: z.boolean(),
+  editor_can_edit_kpi: z.boolean(),
+});
 export type ApiPermissions = z.infer<typeof ApiPermissionsSchema>;
 export const UsersResponseSchema = z.object({
   users: UserSchema.array(),
@@ -32,7 +39,13 @@ export const UsersResponseSchema = z.object({
   permissions: ApiPermissionsSchema,
 });
 export type UsersResponse = z.infer<typeof UsersResponseSchema>;
-export type UserCreate = { login: string; display_name: string; role: Role; password: string; password_confirm: string };
+export type UserCreate = {
+  login: string;
+  display_name: string;
+  role: Role;
+  password: string;
+  password_confirm: string;
+};
 export type UserPatch = Partial<Pick<User, "display_name" | "role" | "active">>;
 
 /* ---- Geography ---- */
@@ -72,16 +85,28 @@ export const GeoImportReportSchema = z.object({
   rejected: z.number().int(),
   warnings: z.number().int(),
   issues: GeoIssueSchema.array(),
-  points: z.object({ site_id: z.string(), site: z.string(), lat: z.number(), lng: z.number() }).array(),
+  points: z
+    .object({ site_id: z.string(), site: z.string(), lat: z.number(), lng: z.number() })
+    .array(),
   committed: GeoReferenceSchema.nullable(),
 });
 export type GeoImportReport = z.infer<typeof GeoImportReportSchema>;
-export type GeoImportRequest = { filename: string; mapping: GeoMapping; rows: Record<string, string>[]; commit: boolean };
+export type GeoImportRequest = {
+  filename: string;
+  mapping: GeoMapping;
+  rows: Record<string, string>[];
+  commit: boolean;
+};
 
 /* ---- KPI catalogue ---- */
 export const KpiStatusSchema = z.enum(["draft", "validated", "published", "archived"]);
 export type KpiStatus = z.infer<typeof KpiStatusSchema>;
-export const KPI_STATUS_LABEL: Record<KpiStatus, string> = { draft: "Brouillon", validated: "Validé", published: "Publié", archived: "Archivé" };
+export const KPI_STATUS_LABEL: Record<KpiStatus, string> = {
+  draft: "Brouillon",
+  validated: "Validé",
+  published: "Publié",
+  archived: "Archivé",
+};
 export const KpiSchema = z.object({
   code: z.string(),
   name: z.string(),
@@ -93,7 +118,9 @@ export const KpiSchema = z.object({
   status: KpiStatusSchema,
   version: z.number().int(),
   source_events: z.string().array(),
-  history: z.object({ version: z.number().int(), at: z.string(), author: z.string(), change: z.string() }).array(),
+  history: z
+    .object({ version: z.number().int(), at: z.string(), author: z.string(), change: z.string() })
+    .array(),
 });
 export type Kpi = z.infer<typeof KpiSchema>;
 export const KpiCatalogResponseSchema = z.object({
@@ -102,7 +129,10 @@ export const KpiCatalogResponseSchema = z.object({
   formula_engine: z.null(), // engine not specified yet
 });
 export type KpiCatalogResponse = z.infer<typeof KpiCatalogResponseSchema>;
-export type KpiInput = Pick<Kpi, "code" | "name" | "description" | "family" | "tech" | "unit" | "formula" | "source_events"> & { status?: KpiStatus };
+export type KpiInput = Pick<
+  Kpi,
+  "code" | "name" | "description" | "family" | "tech" | "unit" | "formula" | "source_events"
+> & { status?: KpiStatus };
 
 /* ---- AI ---- */
 export const AiConfigSchema = z.object({
@@ -123,7 +153,10 @@ export const AiConfigSchema = z.object({
   }),
 });
 export type AiConfig = z.infer<typeof AiConfigSchema>;
-export type AiConfigInput = Pick<AiConfig, "enabled" | "endpoint_url" | "model_code" | "provider" | "auth_method"> & { secret?: string };
+export type AiConfigInput = Pick<
+  AiConfig,
+  "enabled" | "endpoint_url" | "model_code" | "provider" | "auth_method"
+> & { secret?: string };
 
 /* ---- Appearance / Organization / About ---- */
 export const AppearanceSchema = z.object({ org_primary_hex: z.string().nullable() });
@@ -137,7 +170,11 @@ export const OrganizationSchema = z.object({
   domain: z.string(),
   show_in_header: z.boolean(),
   show_in_exports: z.boolean(),
-  limits: z.object({ name_max: z.number().int(), logo_max_bytes: z.number().int(), logo_types: z.string().array() }),
+  limits: z.object({
+    name_max: z.number().int(),
+    logo_max_bytes: z.number().int(),
+    logo_types: z.string().array(),
+  }),
 });
 export type Organization = z.infer<typeof OrganizationSchema>;
 export type OrganizationInput = Omit<Organization, "limits">;
@@ -154,4 +191,8 @@ export const AboutSchema = z.object({
 });
 export type About = z.infer<typeof AboutSchema>;
 
-export type ApiError = { code: "FORBIDDEN" | "VALIDATION" | "CONFLICT" | "NOT_FOUND"; message: string; field?: string | undefined };
+export type ApiError = {
+  code: "FORBIDDEN" | "VALIDATION" | "CONFLICT" | "NOT_FOUND";
+  message: string;
+  field?: string | undefined;
+};

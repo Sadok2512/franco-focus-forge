@@ -57,7 +57,9 @@ export const errMsg = (e: unknown) =>
 
 export function downloadCsv(name: string, rows: (string | number)[][]) {
   const meta = exportMetadata();
-  const head: (string | number)[][] = [[`# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""}`]];
+  const head: (string | number)[][] = [
+    [`# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""}`],
+  ];
   const csv = [...head, ...rows]
     .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
     .join("\n");
