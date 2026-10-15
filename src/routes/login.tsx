@@ -127,7 +127,7 @@ function LoginPage() {
           <label className="mt-8 block">
             <span className="text-sm font-semibold">Adresse e-mail</span>
             <input
-              type="email"
+              type="text"
               value={id}
               onChange={(e) => setId(e.target.value)}
               placeholder="admin@bc4.local"
