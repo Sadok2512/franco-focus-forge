@@ -14,9 +14,13 @@ export function GeoPreviewMap({ points }: { points: GeoImportReport["points"] })
     ]).then(([ml, worker]) => {
       if (cancelled || !el.current) return;
       ml.setWorkerUrl(worker.default);
-      const color =
+      const ctx = document.createElement("canvas").getContext("2d")!;
+      ctx.fillStyle =
         getComputedStyle(document.documentElement).getPropertyValue("--primary").trim() ||
         "#1F5FD6";
+      ctx.fillRect(0, 0, 1, 1);
+      const [r, g, bl] = ctx.getImageData(0, 0, 1, 1).data;
+      const color = `rgb(${r},${g},${bl})`;
       const m = new ml.Map({
         container: el.current,
         center: [points[0]!.lng, points[0]!.lat],
