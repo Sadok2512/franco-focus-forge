@@ -41,6 +41,9 @@ for f in "${changed[@]}"; do
     # Zone ARCEP est orthogonale à la géo (jamais dans `/geo/tree`).
     src/features/dictionary/DictionaryPage.tsx) ;;
     src/features/dictionary/shared.ts) ;;
+    # 1.7.1 — Retrait du composant V2 : la UI historique B0 est restaurée,
+    # le mapping entre endpoints et composants vit intégralement dans
+    # `src/lib/api/dictionary.ts` + schémas Zod — aucun composant pont.
     src/routes/_app.rrc.tsx) ;;
     src/routes/_app.kpi.tsx) ;;
     src/mocks/dictionary.ts) ;;

@@ -33,11 +33,14 @@ function RrcPage() {
         <LoadingSkeleton className="h-96" />
       </div>
     );
-  const { op, tech, svc, band, dep, arcep } = filters;
+  // 1.8.0 — Dict ne piloté QUE 5 filtres : Opérateur, Bande, DR, Plaque,
+  // Zone ARCEP. Les autres (tech/svc/dep/metric) de la FilterContext
+  // partagée restent dans l'URL mais ne sont PAS consommés ici.
+  const { op, band, dr, plaque, arcep } = filters;
   return (
     <DictionaryPage
       projectId={filters.project}
-      filters={{ op, tech, svc, band, dep, arcep }}
+      filters={{ op, band, dr, plaque, arcep }}
       setFilters={set}
     />
   );

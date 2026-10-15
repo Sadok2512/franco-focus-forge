@@ -1,7 +1,19 @@
 import { z } from "zod";
 
-// Exact contract shapes from the C1 spec (§6). conversion_rule is an object or null;
-// `formula` is the human-readable rule, scale/offset make it machine-checkable.
+// -------------------------------------------------------------------
+// 1.8.0 — Dictionnaire RRC, forme unifiée V2.
+//
+// Les trois endpoints `/dict/tree`, `/dict/params`, `/dict/param/map`
+// servent côté back deux « shapes » historiques :
+//   • V2 (projet ingéré) : `branches[].system/count/messages[].params[]`
+//   • B0 (projet seedé)  : `branches[].techno/channels[].messages[]`
+//
+// La UI 1.8.0 ne consomme QU'UNE forme — la V2 — pour avoir une seule
+// vue de rendu. Côté adaptateur (`dictionary.ts`), la forme B0 est
+// mappée en V2 (avec `params: []` quand aucune donnée n'est disponible)
+// avant d'être exposée au composant.
+// -------------------------------------------------------------------
+
 export const ConversionRuleSchema = z.object({
   formula: z.string(),
   scale: z.number(),
@@ -40,126 +52,114 @@ export const DictProjectSchema = z.object({
 });
 export type DictProject = z.infer<typeof DictProjectSchema>;
 
+// --------- Shape V2 brute servie par `/dict/tree` (projet ingéré) ---------
+export const TreeV2ParamSchema = z.object({
+  param: z.string(),
+  count: z.number().int().nonnegative(),
+});
+export const TreeV2MessageSchema = z.object({
+  message: z.string(),
+  count: z.number().int().nonnegative(),
+  params: z.array(TreeV2ParamSchema),
+});
+export const TreeV2BranchSchema = z.object({
+  system: z.enum(["LTE", "NR"]),
+  count: z.number().int().nonnegative(),
+  messages: z.array(TreeV2MessageSchema),
+});
+export const TreeV2Schema = z.object({
+  branches: z.array(TreeV2BranchSchema),
+});
+
+// --------- Shape B0 brute servie par `/dict/tree` (projet seedé) ---------
+export const TreeB0MessageSchema = z.object({
+  msg_id: z.string(),
+  name: z.string(),
+  count: z.number().int().nonnegative(),
+});
+export const TreeB0ChannelSchema = z.object({
+  name: z.string(),
+  messages: z.array(TreeB0MessageSchema),
+});
+export const TreeB0BranchSchema = z.object({
+  techno: z.enum(["LTE", "NR"]),
+  channels: z.array(TreeB0ChannelSchema),
+});
+export const TreeB0Schema = z.object({
+  branches: z.array(TreeB0BranchSchema),
+});
+
+// --------- Shape unifiée (ce que la UI consomme) ---------
+// Mêmes clés que la V2 brute, mais toujours deux branches LTE + NR
+// (la B0 est repliée en V2 avec `params: []` et `count` agrégé).
 export const TreeSchema = z
   .object({
-    branches: z.array(
-      z.object({
-        techno: z.enum(["LTE", "NR"]),
-        channels: z.array(
-          z.object({
-            name: z.string(),
-            messages: z.array(
-              z.object({
-                msg_id: z.string(),
-                name: z.string(),
-                count: z.number().int().nonnegative(),
-              }),
-            ),
-          }),
-        ),
-      }),
-    ),
+    branches: z.array(TreeV2BranchSchema),
   })
   .refine(
-    (t) => t.branches.some((b) => b.techno === "LTE") && t.branches.some((b) => b.techno === "NR"),
+    (t) => t.branches.some((b) => b.system === "LTE") && t.branches.some((b) => b.system === "NR"),
     "LTE et NR doivent toujours être présents",
   );
 export type DictTree = z.infer<typeof TreeSchema>;
+export type DictTreeBranch = z.infer<typeof TreeV2BranchSchema>;
+export type DictTreeMessage = z.infer<typeof TreeV2MessageSchema>;
+export type DictTreeParam = z.infer<typeof TreeV2ParamSchema>;
 
-const DominantSchema = z.object({
-  value: z.union([z.string(), z.number()]).nullable(),
-  conversion: z.string().nullable(),
-  share: z.number().min(0).max(1).nullable(),
+// --------- /dict/params?system=&message=&operator=&band= ---------
+// Chaque entrée = un paramètre (identifié par son `path` ASN.1) avec
+// ses occurrences totales + répartition par (opérateur, bande).
+export const ParamBucketSchema = z.object({
+  operator: z.string(),
+  band: z.string(),
+  count: z.number().int().nonnegative(),
+  avg_converted: z.number().nullable(),
 });
+export const ParamRowSchema = z.object({
+  system: z.enum(["LTE", "NR"]),
+  message: z.string(),
+  path: z.string(),
+  count: z.number().int().nonnegative(),
+  // Unité convertie (règle 3GPP). `null` = pas de règle de conversion,
+  // la valeur reste brute. On n'invente JAMAIS une unité.
+  unit_converted: z.string().nullable(),
+  // Type ASN.1 : optionnel côté back actuel (peut être absent). Si
+  // présent, utilisé dans la table de détail.
+  type: z.string().nullable().optional(),
+  // Valeur brute dominante + conversion dominante + part dominante :
+  // optionnels côté back. Si manquants, la UI affiche « aucune valeur
+  // observée » / « N/D » sur ces cellules.
+  value_raw_dominant: z.union([z.string(), z.number()]).nullable().optional(),
+  value_converted_dominant: z.union([z.string(), z.number()]).nullable().optional(),
+  share_dominant: z.number().min(0).max(1).nullable().optional(),
+  // Règle de conversion 3GPP (si connue côté back). Nullable = pas de
+  // règle (valeur brute telle quelle, PAS de « conversion indisponible »).
+  conversion_rule: ConversionRuleSchema.nullable().optional(),
+  // Répartition par opérateur × bande.
+  buckets: z.array(ParamBucketSchema),
+});
+export type ParamRow = z.infer<typeof ParamRowSchema>;
 
 export const ParamListSchema = z.object({
-  params: z.array(
-    z.object({
-      param_id: z.string(),
-      leaf: z.string(),
-      path: z.string(),
-      n: z.number().int().nonnegative(),
-      distinct: z.number().int().nonnegative(),
-      dominant: DominantSchema,
-    }),
-  ),
+  params: z.array(ParamRowSchema),
 });
 export type ParamList = z.infer<typeof ParamListSchema>;
-export type ParamSummary = ParamList["params"][number];
 
-export const ParamDetailSchema = z
-  .object({
-    fiche: z.object({
-      techno: z.enum(["LTE", "NR"]),
-      message: z.string(),
-      path: z.string(),
-      leaf: z.string(),
-      type: z.string(),
-      dominant: DominantSchema,
-      conversion_rule: ConversionRuleSchema.nullable(),
-    }),
-    histogram: z.array(
-      z.object({
-        label: z.string(),
-        value_num: z.number().nullable(),
-        count: z.number().int().nonnegative(),
-      }),
-    ),
-    matrix: z.object({
-      bins: z.array(z.string()),
-      rows: z.array(
-        z.object({
-          key: z.string(),
-          total: z.number().int().nonnegative(),
-          cells: z.array(
-            z.object({
-              bin_index: z.number().int().nonnegative(),
-              pct: z.number().min(0).max(100),
-              n: z.number().int().nonnegative(),
-            }),
-          ),
-        }),
-      ),
-    }),
-  })
-  .superRefine((d, ctx) => {
-    for (const r of d.matrix.rows) {
-      let sum = 0;
-      for (const c of r.cells) {
-        if (c.bin_index >= d.matrix.bins.length)
-          ctx.addIssue({
-            code: "custom",
-            message: `bin_index ${c.bin_index} hors bornes (${r.key})`,
-          });
-        sum += c.n;
-      }
-      if (sum !== r.total)
-        ctx.addIssue({
-          code: "custom",
-          message: `Total incohérent pour ${r.key}: ${sum} ≠ ${r.total}`,
-        });
-    }
-  });
-export type ParamDetail = z.infer<typeof ParamDetailSchema>;
-
+// --------- /dict/param/map?path=&system=&operator=&band= ---------
+// Liste de points lat/lon + valeur brute + valeur convertie.
+export const ParamMapPointSchema = z.object({
+  lat: z.number(),
+  lon: z.number(),
+  // Les valeurs peuvent arriver en string (back actuel) ou en number.
+  // `null` = valeur absente, N/D (jamais 0).
+  value_raw: z.union([z.string(), z.number()]).nullable(),
+  value_converted: z.union([z.string(), z.number()]).nullable(),
+  operator: z.string().nullable(),
+  band: z.string().nullable(),
+});
 export const ParamMapSchema = z.object({
-  type: z.literal("FeatureCollection"),
-  features: z.array(
-    z.object({
-      type: z.literal("Feature").optional(),
-      geometry: z.object({
-        type: z.literal("Point"),
-        coordinates: z.tuple([z.number(), z.number()]),
-      }),
-      properties: z.object({ value: z.union([z.number(), z.string()]), display: z.string() }),
-    }),
-  ),
-  legend: z.object({
-    kind: z.enum(["numeric", "categorical"]),
-    stops: z.array(z.object({ value: z.number(), label: z.string() })).optional(),
-    classes: z.array(z.object({ value: z.string(), label: z.string() })).optional(),
-  }),
+  path: z.string(),
+  system: z.enum(["LTE", "NR"]),
+  points: z.array(ParamMapPointSchema),
 });
 export type ParamMap = z.infer<typeof ParamMapSchema>;
-
-export type GroupBy = "operator" | "band" | "operator,band";
+export type ParamMapPoint = z.infer<typeof ParamMapPointSchema>;

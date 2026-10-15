@@ -57,6 +57,12 @@ export const FilterContextSchema = z.object({
   // dans `/geo/tree`). Les 11 libellés viennent de `/reference/cell/summary`.
   // La clé `"N/D"` cible les cellules dont `cat_arcep_code` est NULL.
   arcep: z.array(z.string()).optional(),
+  // 1.8.0 (Dict) — DR et Plaque viennent de `cell_ref` (dimension
+  // cellulaire, orthogonale à la géo). Tant que `cell_ref` est vide,
+  // les filtres restent présents dans l'URL/UI mais grisés visuellement
+  // et NON propagés en query string. Pas de 400 silencieux.
+  dr: z.array(z.string()).optional(),
+  plaque: z.array(z.string()).optional(),
   metric: z.enum(["dl", "rsrp", "sinr", "latency"]).optional(),
 });
 export type FilterContext = z.infer<typeof FilterContextSchema>;

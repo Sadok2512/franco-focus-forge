@@ -11,6 +11,7 @@ cd "$(dirname "$HERE")"
 echo "[G1] lint src/lib/api/* + src/mocks/* + pages Projet / Référence / Dict / KPI"
 bun_run x eslint \
   src/lib/api/http.ts src/lib/api/client.ts src/lib/api/dictionary.ts \
+  src/lib/api/dictionary-schemas.ts \
   src/lib/api/assistant.ts src/lib/api/settings.ts \
   src/lib/api/reference.ts src/lib/api/reference-schemas.ts \
   src/lib/api/projects.ts src/lib/api/project-schemas.ts \

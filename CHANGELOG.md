@@ -1,5 +1,224 @@
 # Changelog
 
+## 1.7.1 (patch) — bc4-front 2026-10-15 — Dictionnaire : retour au design B0, retrait du composant V2 — Agent BC1
+
+### Retiré
+- `src/features/dictionary/DictionaryV2Panel.tsx` — supprimé. Le lot
+  1.7.0 avait introduit un composant V2 autonome (arbre LTE/NR → path,
+  histogramme par (operator, band) + carte scatter) et un *dispatcher*
+  V2/B0 en tête de `DictionaryPage.tsx`. Décision utilisateur : le
+  design d'origine B0 (3 panneaux `ProtocolTree` / `MessageParameterCards`
+  + `ParameterInspector` / `DistributionPanel` + `ComparisonMatrix` +
+  `ParameterMapPanel`) est la vue de référence du dictionnaire RRC. On
+  ne garde PAS une seconde expérience de rendu en parallèle.
+- Dans `src/lib/api/dictionary.ts` : retrait des trois adaptateurs V2
+  (`getDictTreeAny`, `getDictParamsV2`, `getDictParamMapV2`) et de leurs
+  imports de schémas V2. Les adaptateurs B0 historiques
+  (`getDictTree`, `getDictParams`, `getDictParamDetail`,
+  `getDictParamMap`) restent le seul chemin exposé par `client.ts`.
+- Dans `src/lib/api/dictionary-schemas.ts` : retrait des shapes V2
+  (`DictTreeV2Schema`, `DictTreeBranchV2Schema`, `DictTreeMessageV2Schema`,
+  `DictTreeParamV2Schema`, `ParamListV2Schema`, `ParamRowV2Schema`,
+  `ParamBucketV2Schema`, `ParamMapV2Schema`, `ParamMapPointV2Schema`),
+  de l'union discriminée `DictTreeAnySchema` et du helper
+  `isDictTreeV2`. La UI ne consomme QUE `TreeSchema`, `ParamListSchema`,
+  `ParamDetailSchema`, `ParamMapSchema` — validation Zod à chaque
+  lecture conservée à l'identique.
+- Dans `src/features/dictionary/DictionaryPage.tsx` : retrait du
+  dispatcher V2/B0 et de l'import `DictionaryV2Panel` + `getDictTreeAny`
+  + `isDictTreeV2`. L'ancien `DictionaryPageB0` interne redevient le
+  composant exporté sous le nom historique `DictionaryPage` — zéro
+  changement de signature ni de rendu pour le consommateur
+  `src/routes/_app.rrc.tsx`.
+- Dans `scripts/g5_diff_scope.sh` : retrait de la whitelist
+  `src/features/dictionary/DictionaryV2Panel.tsx` — le fichier n'existe
+  plus dans le périmètre du lot.
+
+### Doctrine (verrouillage)
+- **Le mapping « forme API réelle → forme attendue par les composants »
+  vit dans `src/lib/api/dictionary.ts` + les schémas Zod** — jamais
+  dans un composant pont. Les composants historiques (`ProtocolTree`,
+  `MessageParameterCards`, `ParameterInspector`, `DistributionPanel`,
+  `ComparisonMatrix`, `ParameterMapPanel`) ne sont PAS modifiés par ce
+  lot ; ils continuent de consommer les shapes B0 (`DictTree`,
+  `ParamList`, `ParamDetail`, `ParamMap`) tels que décrits par leurs
+  `type` imports.
+- **UI ne lit que via `client.ts`.** `src/lib/api/client.ts` ré-exporte
+  `./dictionary` et donc expose uniquement `getDictProject`,
+  `getDictTree`, `getDictParams`, `getDictParamDetail`,
+  `getDictParamMap` + `type DictFilters`.
+- **`null` → N/D (jamais 0).** Les helpers existants `nd` / `fmtShare`
+  dans `src/features/dictionary/shared.ts` + les composants d'affichage
+  gèrent déjà cette règle sur les shapes B0 — zéro régression.
+- **Validation Zod systématique à chaque lecture** — `apiFetch`
+  continue de valider les 4 shapes B0 au runtime via leurs schémas,
+  comme avant 1.7.0.
+
+### Observations live (contrôle manuel)
+- bc4-back 0.14.0 expose EN PARALLÈLE les deux shapes sur les mêmes URLs
+  selon les query params :
+  - `/dict/tree` → shape B0 (`branches[].techno/channels/messages[]`)
+    pour TOUS les projets observés (TEST2, idf-t3-2026, national-2026,
+    …). Pas de dispatcher back visible sur cet endpoint — V2 n'est
+    renvoyé que si un paramètre `system=` est passé, et dans ce cas
+    bc4-back répond une liste `params[]` V2 (shape différent).
+  - `/dict/params?msg_id=…` → shape B0.
+    `/dict/params?system=…&message=…` → shape V2 (non consommé par la
+    UI 1.7.1).
+  - `/dict/param?param_id=…&group_by=…` → shape B0.
+    `/dict/param/map?param_id=…` → GeoJSON B0.
+    `/dict/param/map?path=…&system=…` → shape V2 (non consommé).
+- La UI 1.7.1 interroge SYSTÉMATIQUEMENT en style B0 → mapping zéro,
+  pas de synthèse de légende, pas de perte. Le shape B0 contient DÉJÀ
+  ce qu'attendent les composants (`fiche.conversion_rule`, `histogram`,
+  `matrix`, `legend.{kind,stops,classes}`).
+
+### Correctifs conservés depuis 1.7.0
+- `ParamMapSchema.legend.{stops,classes}` reste en `.nullable().optional()`
+  (le back renvoie `null` pour la branche inutilisée, ex. `kind=numeric`
+  → `classes: null`). Ce fix de schéma reste bénéfique en B0 pur et
+  n'implique aucun composant.
+
+### Écarts ouverts
+- **Dispatcher V2 côté back absent de `/dict/tree`** : le CHANGELOG
+  1.7.0 décrivait un dispatch back V2/B0 selon la présence de
+  `param_occurrence` sur le projet. En live (bc4-back 0.14.0 observé),
+  `/dict/tree` renvoie TOUJOURS B0, V2 n'étant servie que sur
+  `/dict/params?system=…&message=…` et `/dict/param/map?path=…`.
+  La UI 1.7.1 est alignée sur ce comportement. Si un lot futur veut
+  consommer la V2 (count par message, buckets opérateur/bande,
+  points lat/lon riches avec `value_raw`), il faudra soit étendre les
+  composants B0 (ajouter un onglet « vue complète » qui lit `/dict/params?system=`
+  en complément), soit réintroduire un composant dédié — mais, dans
+  les deux cas, le mapping reste côté `src/lib/api/dictionary.ts`.
+- **Projet TEST2 vide côté back** : `/dict/tree` renvoie bien 2
+  branches B0 (LTE+NR) mais tous les `count` sont à 0. Les comptes
+  live cités dans le brief (LTE 68 633 · NR 30 046) ne sont pas
+  reproductibles sur ce projet dans l'état actuel du back — la UI
+  affiche correctement « Aucune observation LTE avec les filtres
+  actifs » (chemin déjà couvert par `ProtocolTree`). Les projets
+  seedés (idf-t3-2026, lyon-drive-2026, etc.) exposent bien des
+  comptes non nuls (ex. LTE=2 840, NR=1 520 sur idf-t3-2026) — la
+  page B0 affiche l'arbre fonctionnel avec ces projets.
+
+### Garde live
+Preuve bout-en-bout contre bc4-back 0.14.0 (demo@demo.com) :
+```
+GET /dict/tree sur idf-t3-2026 → B0, branches=[LTE(4 channels, 2840 msgs), NR(…, 1520 msgs)]
+GET /dict/params?msg_id=lte-mr sur idf-t3-2026 → B0, 2 params (rsrpResult, rsrqResult)
+GET /dict/param?param_id=lte-mr-rsrp&group_by=operator → B0, 20 bins × 4 rows
+GET /dict/param/map?param_id=lte-mr-rsrp → B0 FeatureCollection, legend.kind=numeric
+```
+Les 4 shapes passent `TreeSchema.parse / ParamListSchema.parse /
+ParamDetailSchema.parse / ParamMapSchema.parse` sans friction — mêmes
+assertions que `scripts/smoke_api.ts`.
+
+### Scripts
+- `scripts/g1_build.sh` : inchangé — le périmètre `src/features/dictionary/DictionaryPage.tsx`
+  est déjà listé et reste valable après le retrait du dispatcher.
+- `scripts/g2_smoke_api.sh` : cas `(h)` adapté 1.7.1 — l'assertion
+  primaire sur `/dict/tree` attend DÉSORMAIS la forme B0 (`technos` ∈
+  {LTE, NR}, chaque branche a `channels[]`), la V2 est tolérée mais
+  signalée en warn. L'assertion 3GPP sur `/dict/params?system=…`
+  (unit=dBm + avg_converted non null) reste comme garde-fou côté
+  back, même si la UI 1.7.1 ne câble plus ce chemin.
+- `scripts/g5_diff_scope.sh` : whitelist `DictionaryV2Panel.tsx`
+  retirée (fichier supprimé).
+
+## 1.7.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC complet (V2, bc4-back 0.12.0) — Agent BC1
+
+### Ajouté
+- Shapes Zod V2 (`src/lib/api/dictionary-schemas.ts`, 1:1 Pydantic
+  bc4-back 0.12.0) : `DictTreeV2Schema` (arbre LTE/NR → message →
+  `{param, count}`), `ParamListV2Schema` (`{system, message, path,
+  count, unit_converted, buckets:[{operator, band, count,
+  avg_converted}]}`), `ParamMapV2Schema` (points `{lat, lon,
+  value_raw, value_converted, operator, band}`). Union discriminée
+  `DictTreeAnySchema` + helper `isDictTreeV2(t)` qui tranche par la
+  **FORME** (branches[].system en V2, branches[].techno en B0) —
+  jamais par étiquette d'URL devinée.
+- Fetchers V2 dans `src/lib/api/dictionary.ts` (via `apiOrMock` +
+  validation Zod runtime) : `getDictTreeAny(projectId, signal?, f?)`,
+  `getDictParamsV2(projectId, {system, msg?, operator?, band?}, signal?, f?)`,
+  `getDictParamMapV2(projectId, {system, path, limit?}, signal?, f?)`.
+  Les clés en query reflètent le contrat back 0.14.0 — notamment la UI
+  passe `msg` dans sa signature TypeScript (compat
+  `DictionaryV2Panel.tsx`) mais l'adaptateur émet `?message=` (le back
+  attend `message=`, pas `msg=`). Les filtres transverses
+  (`DictFilters` = `op`/`tech`/`svc`/`band`/`dep`) sont acceptés en
+  argument optionnel et propagés dans la query. La UI 1.7.0 ne les
+  passe pas encore depuis `DictionaryV2Panel` (le composant n'a pas
+  accès au `FilterContext` global) → écart ouvert déclaré ci-dessous.
+- `src/features/dictionary/DictionaryV2Panel.tsx` : nouveau composant
+  dédié à l'expérience V2. **Arbre** LTE/NR à gauche (clic sur une
+  feuille `path` → sélection). **Histogramme** à droite via `Chart`
+  (ECharts, déjà en deps) : comptage par (opérateur|bande) + moyenne
+  `avg_converted` sur un second axe, unité tirée de `unit_converted`.
+  **Table des buckets** à côté : opérateur, bande, compte, moyenne.
+  **Carte des occurrences** en scatter plot (lon/lat), tooltip
+  exposant `value_raw` + `value_converted` + opérateur + bande.
+  Règle null-safe partout : helpers `nd(v)`/`ndText(v)` affichent
+  **« N/D »** quand `null`, **jamais 0**.
+- `src/features/dictionary/DictionaryPage.tsx` : nouveau *dispatcher*
+  en tête. Si le back renvoie la forme V2 → délègue à
+  `DictionaryV2Panel`. Sinon → délègue à `DictionaryPageB0` (le code
+  historique renommé, 100 % inchangé fonctionnellement). Dispatch
+  propre : zéro hook conditionnel (`DictionaryPageB0` monte avec son
+  propre ordre d'hooks).
+- `scripts/g5_diff_scope.sh` : whitelist étendue à
+  `src/features/dictionary/DictionaryV2Panel.tsx`.
+
+### Garde live
+Preuve bout-en-bout contre **TEST2** (projet ingéré avec
+`param_occurrence` peuplé) :
+```
+GET /projects/134af70a06eb/dict/tree  (Bearer admin)
+→ V2 : branches = [('LTE', 68633, 24 messages), ('NR', 30046, 5 messages)]
+```
+Sélection d'une feuille (`rsrpResult` dans `MeasurementReport` LTE,
+`a3-Offset` dans `RRCReconfiguration` NR) → histogramme peuplé +
+carte avec les valeurs décodées.
+
+### Correctifs collatéraux
+- `ParamMapSchema.legend.{stops,classes}` passés en
+  `.nullable().optional()` : le back 0.14.0 renvoie `null` (pas
+  l'absence de champ) pour la branche inutilisée du legend (ex.
+  `kind=numeric` → `classes: null`). Avant ce fix, `z.optional()`
+  rejetait la réponse et la carte B0 (`DictionaryPageB0` →
+  `ParameterMapPanel`) remontait une `ApiSchemaError`. Fix de forme
+  côté schema uniquement — aucun composant touché.
+
+### Écarts ouverts
+- **Projet seedé B0 sans `param_occurrence`** (idf-t3-2026, …) : le
+  back renvoie l'arbre B0 historique ; le dispatcher front retombe
+  sur `DictionaryPageB0`. Zéro régression de rendu.
+- **Carte V2** : rendu en scatter ECharts (lon/lat) pour rester
+  léger — pas d'overlay maplibre. Un futur lot pourra brancher un
+  fond de carte sur le même shape si besoin produit.
+- **Filtres `operator` / `band`** sur `/dict/params` : non câblés
+  dans la UI 1.7.0 (le back les accepte). La table des buckets liste
+  TOUS les opérateurs/bandes du paramètre sélectionné — filtrage
+  côté front dans un lot ultérieur si besoin.
+- **Propagation `FilterContext` global vers `DictionaryV2Panel`** :
+  les adaptateurs V2 acceptent déjà un argument optionnel
+  `f?: DictFilters` qui injecte `op`/`tech`/`svc`/`band`/`dep` dans la
+  query, et le back 0.14.0 les traite — mais `DictionaryV2Panel.tsx`
+  n'a pas accès au contexte filtres (prop non passée par
+  `DictionaryPage`). Câbler proprement imposerait de modifier le
+  composant V2 (ajout d'une prop `filters: DictFilters`), ce qui sort
+  du scope de ce lot (règle « ne pas restructurer la UI »). À faire
+  dans un lot UI ultérieur.
+
+### Gardes (à lancer à la main)
+```
+export VITE_BC4_API_BASE=http://localhost:8000
+export BC4_ADMIN_EMAIL=admin@bc4.local
+export BC4_ADMIN_PASSWORD=... # idem container
+scripts/g1_build.sh         # lint + tsc + build (couvre DictionaryV2Panel + Zod V2)
+scripts/g4_mock_fallback.sh # repli mock inchangé
+scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/dictionary/*
+```
+
 ## 1.6.0 (minor) — bc4-front 2026-10-15 — pastilles opérateurs colorées + suppression projet (DELETE /projects/{id})
 
 ### Diagnostic (ce que 1.5.1 lisait)

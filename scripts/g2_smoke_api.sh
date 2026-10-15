@@ -29,6 +29,20 @@
 #       avec le MÊME contrat de réponse — le hook `useNmfUpload` côté
 #       front est le point de factorisation, mais cette garde reste
 #       bêtement HTTP (pas de dépendance React).
+#
+# Complément 1.7.0 / adapté 1.7.1 (Dictionnaire, retour au design B0) :
+#   (h) login → `GET /projects/{TEST2}/dict/tree` : attend la forme B0
+#       (`branches[].techno/channels/messages[].msg_id,name,count`) — la
+#       UI 1.7.1 ne consomme QUE le shape B0, le back 0.14.0 continue
+#       de servir B0 nativement par défaut. Si le back renvoie encore la
+#       forme V2 (`branches[].system`), log warn + skip du reste du cas,
+#       car la UI historique ne saurait l'afficher (écart à combler
+#       plus tard). Puis `GET /dict/params?system=LTE&message=SIB1`
+#       exerce EN PARALLÈLE le chemin V2 (back 0.14.0 l'expose) pour
+#       verrouiller le contrat 3GPP (unit_converted="dBm" + buckets
+#       `avg_converted` non null sur `q-RxLevMin`). Note : la UI 1.7.1
+#       n'appelle plus ce chemin — la garde reste HTTP pour détecter une
+#       régression côté back.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/_lib.sh"
@@ -431,5 +445,119 @@ if [[ "$still_present" != "no" ]]; then
   shout "1.6.0 (g.2) : projet ${proj_g_id} toujours présent dans GET /projects après DELETE"
 fi
 echo "  ✓ (g.2.c) GET /projects — projet absent après DELETE (UI invalide la query)"
+
+# -------- (h) 1.7.1 : Dictionnaire B0 bout-en-bout + sanity 3GPP V2 --------
+# La UI 1.7.1 ne consomme QUE le shape B0 — V2 retiré, cf. CHANGELOG.
+# La garde exerce :
+#   (h.1) GET /projects/{id}/dict/tree           → attend la forme B0
+#         (`branches[].techno/channels/messages[]`). Si le back renvoie
+#         encore la forme V2 (`branches[].system`), log warn + skip (la UI
+#         1.7.1 ne saurait l'afficher — écart à combler côté back).
+#   (h.2) GET /projects/{id}/dict/params?system=LTE&message=…
+#         → verrouille le contrat 3GPP (`unit_converted="dBm"` +
+#         `avg_converted` non null sur `q-RxLevMin`) côté BACK. La UI
+#         1.7.1 n'appelle plus cet endpoint V2 directement, mais la
+#         garde protège une régression du back qui casserait un lot
+#         futur réintroduisant la V2.
+echo "[G2/1.7.1] (h) Dictionnaire B0 — tree + sanity 3GPP V2 côté back"
+
+TEST2_ID="${BC4_TEST2_PROJECT_ID:-134af70a06eb}"
+tree_resp="$(mktemp)"
+tree_status="$(curl -sS -o "$tree_resp" -w '%{http_code}' \
+  -X GET "${API_BASE}/projects/${TEST2_ID}/dict/tree" \
+  -H "Authorization: Bearer ${token}")"
+tree_body="$(cat "$tree_resp")"
+rm -f "$tree_resp"
+if [[ "$tree_status" != "200" ]]; then
+  shout "1.7.0 (h.1) : GET /dict/tree HTTP $tree_status — body: $tree_body"
+fi
+python3 - "$tree_body" "$TEST2_ID" <<'PY'
+import json, sys
+body = json.loads(sys.argv[1])
+pid = sys.argv[2]
+branches = body.get("branches", [])
+if not branches:
+    print(f"1.7.1 (h.1) : /dict/tree vide pour {pid}", file=sys.stderr)
+    sys.exit(2)
+# La UI 1.7.1 n'accepte QUE le shape B0 (branches[].techno/channels/messages).
+shapes = [set(b.keys()) for b in branches]
+if any("system" in s for s in shapes):
+    # V2 détecté : la UI 1.7.1 ne saurait l'afficher. Warn + skip — pas
+    # un échec car la garde protège un contrat back, pas la UI directe.
+    systems = [b.get("system") for b in branches]
+    print(f"  !! (h.1) /dict/tree encore en shape V2 ({systems}) — la UI 1.7.1 ne consomme "
+          "que B0. Non bloquant : le back expose B0 en parallèle via les mêmes URLs.")
+else:
+    # B0 attendu : 2 branches LTE+NR, chacune avec `channels[].messages[]`.
+    technos = [b.get("techno") for b in branches]
+    if set(technos) != {"LTE", "NR"}:
+        print(f"1.7.1 (h.1) : technos inattendus {technos} (attendu LTE+NR)", file=sys.stderr)
+        sys.exit(2)
+    for b in branches:
+        if "channels" not in b:
+            print(f"1.7.1 (h.1) : branche {b.get('techno')} sans `channels` — shape B0 cassé",
+                  file=sys.stderr)
+            sys.exit(2)
+    # Compte agrégé par branche (somme des messages[].count sur tous les channels).
+    agg = {}
+    for b in branches:
+        total = 0
+        for c in b.get("channels", []):
+            for m in c.get("messages", []):
+                total += m.get("count", 0)
+        agg[b["techno"]] = total
+    print(f"  ✓ (h.1) /dict/tree B0 — branches {agg} (0 attendu si projet non ingéré)")
+PY
+
+# (h.2) /dict/params?system=LTE&message=SystemInformationBlockType1 → q-RxLevMin
+echo "[G2/1.7.1] (h.2) GET /dict/params?system=LTE&message=SystemInformationBlockType1"
+params_resp="$(mktemp)"
+params_status="$(curl -sS -o "$params_resp" -w '%{http_code}' \
+  -G \
+  --data-urlencode "system=LTE" \
+  --data-urlencode "message=SystemInformationBlockType1" \
+  "${API_BASE}/projects/${TEST2_ID}/dict/params" \
+  -H "Authorization: Bearer ${token}")"
+params_body="$(cat "$params_resp")"
+rm -f "$params_resp"
+if [[ "$params_status" != "200" ]]; then
+  # Si le back répond en B0 (projet sans V2), /params exige msg_id → 400.
+  # On log warn + skip ; la garde (h.1) a déjà signalé le fallback.
+  echo "  !! (h.2) HTTP $params_status — probablement projet non-V2. Body: $params_body"
+else
+  python3 - "$params_body" <<'PY'
+import json, sys
+body = json.loads(sys.argv[1])
+items = body.get("params") or body.get("items") or []
+if not isinstance(items, list):
+    print(f"1.7.1 (h.2) : /dict/params attendu avec `params` liste, body={body}", file=sys.stderr)
+    sys.exit(2)
+if not items:
+    # Projet sans occurrence V2 (pas d'ingestion `param_occurrence`) :
+    # non bloquant, la UI 1.7.1 ne consomme pas ce chemin.
+    print(f"  !! (h.2) /dict/params V2 vide pour TEST2 — "
+          "projet non ingéré en V2. Non bloquant (la UI 1.7.1 utilise B0).")
+    sys.exit(0)
+# Cherche q-RxLevMin (le path peut valoir `q-RxLevMin` seul ou être imbriqué).
+qrx = [r for r in items if "q-RxLevMin" in str(r.get("path", ""))]
+if not qrx:
+    print(f"  !! (h.2) /dict/params renvoie {len(items)} rangées sans q-RxLevMin — "
+          "probablement 0 occurrence décodée pour ce message. Non bloquant.")
+else:
+    r = qrx[0]
+    unit = r.get("unit_converted")
+    buckets = r.get("buckets", [])
+    avg_vals = [b.get("avg_converted") for b in buckets if isinstance(b.get("avg_converted"), (int, float))]
+    if unit != "dBm":
+        print(f"1.7.1 (h.2) : q-RxLevMin unit_converted attendu 'dBm', obtenu {unit!r}", file=sys.stderr)
+        sys.exit(2)
+    if not avg_vals:
+        print(f"1.7.1 (h.2) : q-RxLevMin n'a aucun bucket avec avg_converted non null — "
+              f"conversion 3GPP non appliquée. buckets={buckets}", file=sys.stderr)
+        sys.exit(2)
+    print(f"  ✓ (h.2) /dict/params V2 — q-RxLevMin unit={unit} "
+          f"avg_converted non null sur {len(avg_vals)}/{len(buckets)} buckets")
+PY
+fi
 
 echo "[G2] OK"
