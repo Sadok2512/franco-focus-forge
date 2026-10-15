@@ -383,7 +383,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-function InfoSheet({ row, open, onOpenChange }: { row: ParamRow; open: boolean; onOpenChange: (o: boolean) => void }) {
+function InfoPanel({ row }: { row: ParamRow }) {
   const nd = <span className="text-muted-foreground">N/D</span>;
   const conv = row.value_converted_dominant;
   const items: [string, ReactNode][] = [
@@ -424,22 +424,17 @@ function InfoSheet({ row, open, onOpenChange }: { row: ParamRow; open: boolean; 
     ["Occurrences (filtres actifs)", fmtInt(row.count)],
   ];
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[420px] sm:max-w-[420px]">
-        <SheetHeader>
-          <SheetTitle className="font-mono">{leafOf(row.path)}</SheetTitle>
-          <SheetDescription>Informations techniques du paramètre</SheetDescription>
-        </SheetHeader>
-        <dl className="mt-4 divide-y text-[12.5px]">
-          {items.map(([k, v]) => (
-            <div key={k} className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 py-2">
-              <dt className="text-muted-foreground">{k}</dt>
-              <dd className="min-w-0">{v}</dd>
-            </div>
-          ))}
-        </dl>
-      </SheetContent>
-    </Sheet>
+    <Panel title={leafOf(row.path)} icon={<Info className="h-4 w-4" />} className="h-full">
+      <p className="px-3 pt-2 text-xs text-muted-foreground">Informations techniques du paramètre</p>
+      <dl className="divide-y px-3 pb-2 text-[12.5px]">
+        {items.map(([k, v]) => (
+          <div key={k} className="grid grid-cols-[130px_minmax(0,1fr)] gap-2 py-2">
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd className="min-w-0">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </Panel>
   );
 }
 
@@ -975,6 +970,8 @@ function Toolbar({
   chartType,
   setChartType,
   showMap,
+  infoOpen,
+  setInfoOpen,
   setShowMap,
   dirty,
   onApply,
@@ -995,6 +992,8 @@ function Toolbar({
   chartType: ChartType;
   setChartType: (t: ChartType) => void;
   showMap: boolean;
+  infoOpen: boolean;
+  setInfoOpen: (v: boolean) => void;
   setShowMap: (b: boolean) => void;
   dirty: boolean;
   onApply: () => void;
@@ -1075,6 +1074,17 @@ function Toolbar({
           options={(Object.keys(MEASURE_LABELS) as Measure[]).map((v) => ({ v, l: MEASURE_LABELS[v] }))}
         />
       </Labeled>
+      <button
+        role="switch"
+        aria-checked={infoOpen}
+        onClick={() => setInfoOpen(!infoOpen)}
+        className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${infoOpen ? "border-primary bg-accent text-accent-foreground" : "bg-card hover:bg-muted"}`}
+      >
+        <Info className="h-3.5 w-3.5" /> Infos
+        <span className={`ml-1 inline-block h-3.5 w-6 rounded-full p-0.5 ${infoOpen ? "bg-primary" : "bg-muted-foreground/40"}`}>
+          <span className={`block h-2.5 w-2.5 rounded-full bg-card transition-transform ${infoOpen ? "translate-x-2.5" : ""}`} />
+        </span>
+      </button>
       <button
         role="switch"
         aria-checked={showMap}
@@ -1184,6 +1194,8 @@ export function DictionaryPage({
       chartType={chartType}
       setChartType={setChartType}
       showMap={showMap}
+      infoOpen={infoOpen}
+      setInfoOpen={setInfoOpen}
       setShowMap={setShowMap}
       dirty={dirty}
       onApply={apply}
@@ -1241,13 +1253,6 @@ export function DictionaryPage({
     <div className="flex flex-col gap-2">
       <div className="relative">
         <Histogram row={row} g={g} groupBy={groupBy} measure={measure} chartType={chartType} highlight={highlight} />
-        <button
-          onClick={() => setInfoOpen(true)}
-          className="absolute right-20 top-2 inline-flex h-6 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-medium hover:bg-muted"
-          aria-label="Informations techniques du paramètre"
-        >
-          <Info className="h-3.5 w-3.5 text-primary" /> Infos
-        </button>
       </div>
       {!g.groupingSupported && groupBy !== "none" && (
         <p className="px-1 text-[11px] text-muted-foreground">
@@ -1255,7 +1260,6 @@ export function DictionaryPage({
         </p>
       )}
       <ValuesTable row={row} g={g} measure={measure} highlight={highlight} onHighlight={setHighlight} />
-      <InfoSheet row={row} open={infoOpen} onOpenChange={setInfoOpen} />
     </div>
   );
 
@@ -1273,6 +1277,21 @@ export function DictionaryPage({
         <OccurrenceMap points={mapQ.data?.points ?? []} center={PROJECTS_CENTER(projectId)} unit={row.unit_converted} highlight={highlight} />
       )}
     </Panel>
+  );
+
+  const infoNode = row ? (
+    <InfoPanel row={row} />
+  ) : (
+    <Panel title="Infos" icon={<Info className="h-4 w-4" />} className="h-full">
+      <EmptyState title="Aucun paramètre">Sélectionnez un paramètre.</EmptyState>
+    </Panel>
+  );
+  const sideShown = showMap || infoOpen;
+  const sideNode = (
+    <div className="flex h-full flex-col gap-2">
+      {infoOpen && <div className={showMap ? "shrink-0" : "min-h-0 flex-1"}>{infoNode}</div>}
+      {showMap && <div className="min-h-[300px] flex-1">{mapNode}</div>}
+    </div>
   );
 
   if (width < 1024) {
@@ -1293,6 +1312,7 @@ export function DictionaryPage({
           </SheetContent>
         </Sheet>
         {analysis}
+        {infoOpen && <div>{infoNode}</div>}
         {showMap && <div className="h-[420px]">{mapNode}</div>}
       </div>
     );
@@ -1301,21 +1321,21 @@ export function DictionaryPage({
   return (
     <div className="flex h-[calc(100vh-56px)] flex-col gap-2 p-2">
       {toolbar}
-      <ResizablePanelGroup key={showMap ? "map" : "nomap"} orientation="horizontal" className="min-h-0 flex-1">
+      <ResizablePanelGroup key={sideShown ? "side" : "noside"} orientation="horizontal" className="min-h-0 flex-1">
         <ResizablePanel defaultSize="20%" minSize="14%" collapsible>
           <Panel title="Paramètres RRC" className="h-full">
             {treeNode}
           </Panel>
         </ResizablePanel>
         <ResizableHandle withHandle className="mx-1" />
-        <ResizablePanel defaultSize={showMap ? "52%" : "80%"} minSize="35%">
+        <ResizablePanel defaultSize={sideShown ? "52%" : "80%"} minSize="35%">
           <div className="h-full overflow-auto pr-0.5">{analysis}</div>
         </ResizablePanel>
-        {showMap && (
+        {sideShown && (
           <>
             <ResizableHandle withHandle className="mx-1" />
             <ResizablePanel defaultSize="28%" minSize="20%">
-              {mapNode}
+              {sideNode}
             </ResizablePanel>
           </>
         )}
