@@ -1,5 +1,5 @@
 # BC4 roadmap
-- [ ] Synchronize RRC table filters, groups, measures and colors with the chart.
+- [x] Synchronize RRC table filters, groups, measures and colors with the chart — eight tests and browser search/legend checks passed.
 - [x] RRC chart types and independent value/band/operator colors — six tests and nine browser combinations verified.
 - [x] U0 foundation (tokens, shell, routes, mock API)
 - [x] U1 mock login / protected routes / logout
