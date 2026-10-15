@@ -21,7 +21,7 @@ export type ValueBin = {
   total: number;
 };
 
-export type Series = { key: string; operator?: string; band?: string; counts: number[]; total: number };
+export type Series = { key: string; operator?: string | undefined; band?: string | undefined; counts: number[]; total: number };
 
 export type Grouped = {
   bins: ValueBin[];

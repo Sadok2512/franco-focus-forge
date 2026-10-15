@@ -158,7 +158,7 @@ function SelectBox<T extends string>({
   options: { v: T; l: string }[];
   onChange: (v: T) => void;
   disabled?: boolean;
-  title?: string;
+  title?: string | undefined;
 }) {
   return (
     <select
@@ -472,14 +472,14 @@ function HistogramChart({
   const build = useCallback(
     (c: { fg: string; muted: string; border: string }) => ({
       grid: { left: 52, right: 12, top: 16, bottom: series.length > 1 ? 70 : 50 },
-      legend:
-        series.length > 1
-          ? { bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } }
-          : undefined,
+      ...(series.length > 1
+        ? { legend: { bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } } }
+        : {}),
       tooltip: {
         trigger: "axis" as const,
         axisPointer: { type: "shadow" as const },
-        formatter: (ps: { seriesIndex: number; dataIndex: number; marker: string }[]) => {
+        formatter: (raw: unknown) => {
+          const ps = raw as { seriesIndex: number; dataIndex: number; marker: string }[];
           const i = ps[0]?.dataIndex ?? 0;
           const bin = g.bins[i]!;
           const lines = ps.map((p) => {
