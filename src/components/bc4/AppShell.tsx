@@ -26,7 +26,7 @@ function useTheme() {
     return () => window.removeEventListener("bc4-appearance", sync);
   }, []);
   useEffect(() => { applyAppearance(prefs, app?.org_primary_hex ?? null); }, [prefs, app]);
-  const dark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
+  const dark = prefs.mode === "dark" || (prefs.mode === "system" && typeof window !== "undefined" && !!window.matchMedia?.("(prefers-color-scheme: dark)").matches);
   const toggle = () => writePrefs({ ...prefs, mode: dark ? "light" : "dark" });
   return [dark, toggle] as const;
 }
