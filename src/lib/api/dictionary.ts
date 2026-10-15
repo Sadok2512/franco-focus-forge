@@ -313,6 +313,26 @@ async function _mockGetDictParams(
       dominantConverted = typeof best === "number" ? convNum(d.conversion_rule, best) : best;
       share = +(bn / paramObs.length).toFixed(4);
     }
+    // 1.8.1 — Mock de `value_distribution` : agrège les observations par
+    // valeur brute, applique la conversion 3GPP si disponible. Les enums
+    // laissent `value_converted = null` (parité avec le back 0.15.0).
+    const distCounts = new Map<string | number, number>();
+    for (const o of paramObs) distCounts.set(o.raw, (distCounts.get(o.raw) ?? 0) + 1);
+    const value_distribution = [...distCounts.entries()]
+      .map(([raw, count]) => {
+        const convertedNum = typeof raw === "number" ? convNum(d.conversion_rule, raw) : null;
+        return {
+          value_raw: String(raw),
+          value_converted: convertedNum != null && d.conversion_rule ? String(convertedNum) : null,
+          count,
+        };
+      })
+      .sort((a, b) => {
+        const na = Number(a.value_converted ?? a.value_raw);
+        const nb = Number(b.value_converted ?? b.value_raw);
+        if (Number.isFinite(na) && Number.isFinite(nb)) return na - nb;
+        return a.value_raw.localeCompare(b.value_raw);
+      });
     return {
       system: d.techno,
       message: d.message,
@@ -325,6 +345,8 @@ async function _mockGetDictParams(
       share_dominant: share,
       conversion_rule: d.conversion_rule,
       buckets,
+      value_distribution,
+      value_distribution_mode: "exact" as const,
     };
   });
   return ParamListSchema.parse({ params });

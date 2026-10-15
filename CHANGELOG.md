@@ -1,5 +1,221 @@
 # Changelog
 
+## 1.8.1 (patch) — bc4-front 2026-10-15 — Dictionnaire RRC : histogramme câblé sur `value_distribution` — Agent BC1
+
+### Modifié
+- `src/features/dictionary/DictionaryPage.tsx` — composant `Histogram` :
+  l'histogramme est désormais alimenté **directement** par
+  `row.value_distribution` (bc4-back 0.15.0), au lieu d'être dérivé
+  côté UI à partir de `buckets[]` (occurrences par opérateur × bande).
+  - **Paramètre numérique** (au moins une entrée avec
+    `value_converted` non null) : abscisse = `value_converted` (tri
+    numérique croissant pour les paramètres `exact`), ordonnée =
+    `count`. Le nom de l'axe reprend l'unité convertie (`"Valeur
+    convertie (dBm)"`) lorsqu'elle est connue — l'unité n'est jamais
+    inventée.
+  - **Paramètre enum** (toutes les entrées ont `value_converted ===
+    null`) : abscisse = `value_raw` (ex. `n100`, `n75`), ordre tel que
+    servi par le back, pas de conversion.
+  - **Entrée convertible mais `value_converted === null`** : libellée
+    « N/D » en abscisse — JAMAIS remplacée par 0.
+  - **`value_distribution_mode === "binned"`** : les abscisses sont
+    affichées **telles quelles** (bornes d'intervalle servies par le
+    back), et une petite note sous le chart signale explicitement
+    « binning actif ».
+  - `value_distribution` vide → EmptyState du design system BC4
+    (`src/components/bc4/States.tsx`), libellé « Aucune valeur
+    observée » — JAMAIS « conversion indisponible ».
+- `src/lib/api/dictionary-schemas.ts` — `ParamRowSchema` étendu avec
+  **deux champs optionnels** (compat ascendante stricte, un back qui
+  ne les renvoie pas doit continuer à passer la validation Zod) :
+  - `value_distribution: ParamDistributionEntry[]` — `optional().default([])`
+    avec `ParamDistributionEntry = { value_raw: string, value_converted:
+    string | null, count: int }`.
+  - `value_distribution_mode: "exact" | "binned"` —
+    `optional().default("exact")`.
+
+### Vérifié
+- `scripts/g2_smoke_api.sh` + `scripts/smoke_api.ts` : nouveau cas
+  **(h.4)** qui exerce :
+  - `rsrpResult` (numérique) → `value_distribution` non vide, somme
+    des `count` == `count` du paramètre, au moins une entrée avec
+    `value_converted` non null (sanity 3GPP), `value_distribution_mode
+    ∈ {exact, binned}`.
+  - `dl-Bandwidth` (enum via `MasterInformationBlock`) →
+    `value_converted === null` sur toutes les entrées,
+    `value_distribution_mode === "exact"`.
+- Live sortie TEST2 : rsrpResult expose 49 entrées exactes
+  (Σ count = 1481 == count) dont la première `{raw:"30",converted:"-111",
+  count:1}`. `dl-Bandwidth` expose 2 entrées enum (`n100`, `n75`) avec
+  `value_converted = null`.
+
+### Non modifié (vérifié)
+- Table ASN.1 détail paramètre (`DetailTable`), matrice opérateur ×
+  bande (`OperatorBandTable`), carte des occurrences (`OccurrenceMap`),
+  arbre RRC, barre de filtres et query string restent inchangés. Les
+  5 filtres UI (`op/band/dr/plaque/arcep`) continuent de propager
+  uniquement `operator`/`band` côté réseau (DR/Plaque/Zone ARCEP grisés
+  tant que `cell_ref` est vide).
+
+## 1.8.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC : page unifiée V2, design BC4, 5 filtres — Agent BC1
+
+### Ajouté
+- Page `src/features/dictionary/DictionaryPage.tsx` **rebâtie** sur une
+  shape unifiée V2 (`branches[].system/count/messages[].params[]`). La
+  UI ne connaît plus qu'un seul rendu — plus de dispatcher ni de
+  « composant V2 » parallèle. Composition :
+  - **Barre de filtres** (en haut, pleine largeur) : 5 selects dans
+    l'ordre **Opérateur · Bande · DR · Plaque · Zone ARCEP**. Les 2
+    premiers sont actifs (venant de `GET /projects/{id}/dict`), les 3
+    derniers sont **grisés tant que `cell_ref` est vide** côté back
+    (contrat `GET /reference/cell/summary.arcep_breakdown == []`).
+    Aucun filtre non supporté n'est propagé en query string (pas de
+    400 silencieux). Composant réutilisé : `MultiSelect`
+    (`src/components/bc4/MultiSelect.tsx`) + wrapper local
+    `DisabledMultiSelect` purement visuel.
+  - **Arbre RRC** (colonne gauche) : branches LTE / NR → messages →
+    paramètres (feuilles ASN.1), comptes agrégés à chaque niveau. Rend
+    la forme V2 brute telle quelle (TEST2) ou la forme B0 **repliée en
+    V2 par l'adaptateur** (projets seedés comme `idf-t3-2026`,
+    `rennes-lte-2026`). Zéro arbre dupliqué, badge techno BC4.
+  - **Fiche de paramètre** (colonne droite) : `Table` du design BC4
+    (`src/components/ui/table.tsx`) listant Message · Type ASN.1 ·
+    Chemin ASN.1 (+ bouton copier) · Valeur observée (brute, dominante)
+    · Valeur convertie · Part dominante · Règle de conversion (+ réf
+    3GPP). Les cellules `null` affichent « N/D » — jamais `0`, jamais
+    « conversion indisponible ». Si `unit_converted` est connue mais
+    pas la règle, on affiche quand même l'unité.
+  - **Histogramme** des buckets (opérateur × bande) via `Chart`
+    (`src/components/bc4/Chart.tsx`, ECharts lazy-loaded).
+  - **Table Opérateur × Bande** : occurrences + moyenne convertie
+    (`Table` du design BC4). Un bucket à `count=0` est libellé
+    `"0 occurrence"` explicitement — pas juste `0`.
+  - **Carte des occurrences** : points lon/lat colorés par valeur
+    convertie, MapLibre lazy-loaded avec la même pile que les autres
+    cartes (`src/components/bc4/RadioMap.tsx` comme référence de
+    style).
+- Nouveaux schémas Zod unifiés dans
+  `src/lib/api/dictionary-schemas.ts` :
+  - `TreeV2Schema` (shape brute du back ingéré), `TreeB0Schema` (shape
+    brute du back seedé), union discriminée côté adaptateur, et
+    `TreeSchema` qui est la **seule** forme consommée par la UI
+    (toujours `{branches: [{system, count, messages:[{message, count,
+    params:[{param, count}]}]}]}`).
+  - `ParamListSchema` + `ParamRowSchema` + `ParamBucketSchema` alignés
+    sur `/dict/params?system=&message=&operator=&band=` (back 0.14.0).
+  - `ParamMapSchema` + `ParamMapPointSchema` alignés sur
+    `/dict/param/map?path=&system=&operator=&band=`.
+- Adaptateurs dans `src/lib/api/dictionary.ts` :
+  - `getDictTree` lit la forme brute (union V2 ∪ B0) puis replie tout
+    en V2 unifiée AVANT de valider via `TreeSchema`. La UI ne voit
+    jamais la shape B0.
+  - `getDictParams(id, system, message, filters)` propage `operator`
+    et `band` (noms V2 côté back), **pas** `dr/plaque/arcep`.
+  - `getDictParamMap(id, path, system, filters)` idem.
+  - Les 5 filtres UI sont groupés dans `DictFilters =
+    Pick<FilterContext, "op" | "band" | "dr" | "plaque" | "arcep">`.
+    Les 3 derniers entrent dans la clé React Query (pour invalider le
+    cache) mais ne sont pas sérialisés en query string.
+- `src/lib/api/schemas.ts` : extension de `FilterContextSchema` avec
+  `dr?: string[]` et `plaque?: string[]`. Les deux restent dans l'URL
+  mais ne sont consommés que par le Dictionnaire (les autres pages
+  ignorent ces clés).
+
+### Modifié
+- `src/features/dictionary/shared.ts` : `Selection` passe à
+  `{system, message, path}` (plus `msgId`/`paramId`). Nouvelle helper
+  `leafOf(path)` qui gère les deux séparateurs `/` et `.` renvoyés
+  par le back (`measurementReport/measurementReport-r8/...` V2 vs
+  `systemInformationBlockType1.cellSelectionInfo.q-RxLevMin` B0).
+- `src/routes/_app.rrc.tsx` : extrait désormais 5 clés
+  (`op, band, dr, plaque, arcep`) du `FilterContext` partagé. Les
+  autres clés (`tech/svc/dep/metric`) restent dans l'URL mais ne sont
+  pas consommées par le Dictionnaire.
+- `scripts/g2_smoke_api.sh` + `scripts/smoke_api.ts` : nouveau cas
+  **(h.3)** qui exerce :
+  - `GET /projects/TEST2/dict/tree` → shape V2 confirmée (branches
+    LTE + NR, counts non nuls après ingestion).
+  - `GET /dict/params?system=LTE&message=…&operator=Orange` →
+    strictement restrictif vs baseline (chaque `path.count` filtré ≤
+    `path.count` baseline).
+  - `GET /dict/param/map?path=…&system=LTE` → renvoie des points
+    (lat/lon/value_raw/value_converted/operator/band).
+  Le sous-cas arcep=... sur `/dict/tree` est **désactivé** : le back
+  0.14.0 n'expose pas ce filtre côté `/dict/*` et `cell_ref` est vide
+  (0 bucket ARCEP). La UI 1.8.0 ne l'envoie plus.
+- `scripts/g1_build.sh` : lint `src/lib/api/dictionary-schemas.ts`
+  (ajouté explicitement — précédemment implicite via tsc).
+
+### Retiré
+- `src/features/dictionary/ProtocolTree.tsx`,
+  `MessageParameterCards.tsx`, `ParameterInspector.tsx`,
+  `DistributionPanel.tsx`, `ComparisonMatrix.tsx`,
+  `ParameterMapPanel.tsx` — remplacés par les sous-composants internes
+  du nouveau `DictionaryPage.tsx` qui utilisent le design BC4
+  (`Panel`, `Table`, `Chart`, `MultiSelect`, `States`, `Resizable*`).
+  Ces fichiers étaient en working-tree hors tracked au moment du HEAD
+  précédent, donc leur retrait ne change pas le périmètre tracked.
+- Tests obsolètes `src/test/conversion.test.tsx`,
+  `provenance.test.tsx`, `nr-branch.test.tsx`,
+  `dictionary-helpers.tsx` : couplés aux sous-composants supprimés et
+  à la shape B0 historique. Pas de remplacement 1:1 — l'invariant
+  « valeurs = API » est garanti par Zod + le smoke (h.3). Fichiers
+  non tracked avant ce lot.
+
+### Garanties (verrouillage doctrine)
+- **UI ne lit que via `client.ts`.** `getDictProject`, `getDictTree`,
+  `getDictParams`, `getDictParamMap` sont les SEULES fonctions exposées.
+  (`getDictParamDetail` est préservée pour `src/mocks/assistant.ts` mais
+  ne passe pas par `client.ts` — mock-only, interne.)
+- **Validation Zod systématique à chaque lecture.** Union
+  discriminée V2/B0 au niveau transport uniquement, repliée en V2
+  avant validation finale.
+- **`null` → N/D, jamais `0` ; `0` reste `"0 occurrence"` quand c'est
+  un comptage réel, pas un placeholder.**
+- **Aucun badge « Données démo » sur la page Dict en mode api.** Le
+  `DemoBadge` du design BC4 n'est plus posé dans ce rendu — la page
+  consomme uniquement les données réelles du back.
+- **Diff strictement limité** aux chemins déclarés par le lot ; `g5`
+  passe sans retouche de whitelist (les deltas tombent dans `scripts/*`
+  et `src/lib/api/*` déjà whitelistés).
+
+### Écarts restants
+- `/dict/tree` **n'accepte pas** encore les filtres `arcep`, `dr`,
+  `plaque` côté back 0.14.0 (`/openapi.json` liste `op/tech/svc/band/dep`
+  pour `/dict/tree` ; `operator/band` pour `/dict/params` V2 ;
+  `op/band/path/system/limit` pour `/dict/param/map`). La UI 1.8.0 ne
+  propage JAMAIS ces 3 filtres en query string. Dès qu'ils seront
+  branchés côté back + `cell_ref` peuplée, retirer les wrappers
+  `DisabledMultiSelect` et pousser les clés en query via
+  `getDictTree`/`getDictParams`/`getDictParamMap`.
+- `cell_ref` étant VIDE côté back (confirmé via
+  `GET /reference/cell/summary` → `total=0`), les 11 catégories ARCEP
+  + les options DR / Plaque n'ont rien à proposer. Les selects sont
+  grisés avec le libellé explicite « cell_ref vide ».
+- `/dict/params` V2 **ne fournit pas** encore `value_raw_dominant`,
+  `value_converted_dominant`, `share_dominant`, `type` ASN.1, ni
+  `conversion_rule` par ligne (shape live observée : `system, message,
+  path, count, unit_converted, buckets`). La UI affiche « N/D » pour
+  ces cellules dans la table de détail et préserve la règle 3GPP si
+  elle est connue (via le champ facultatif `conversion_rule`). Dès que
+  le back expose ces champs, les cellules se peupleront sans
+  changement UI.
+- `/dict/param/map` renvoie `value_raw`/`value_converted` en **string**
+  côté back 0.14.0 (ex. `"44"` / `"-97"`). Le schéma Zod les tolère en
+  `string | number`, la carte convertit en number pour le gradient de
+  couleur.
+
+### Live checks (TEST2 — bc4-back 0.14.0, demo@demo.com admin)
+- `curl /projects/134af70a06eb/dict/tree` → shape V2 confirmée
+  (`LTE count=68 633`, `NR count=30 046`).
+- `curl /dict/params?system=LTE&message=MeasurementReport` → 17 paths,
+  avec `rsrpResult` ayant 1 481 occurrences réparties sur 7 buckets
+  opérateur × bande.
+- `curl /dict/params?system=LTE&message=MeasurementReport&operator=Orange`
+  → 17 paths restreints à 205 occurrences (filtre restrictif).
+- `curl /dict/param/map?path=…rsrpResult&system=LTE` → 1 476 points
+  avec lat/lon/value_raw/value_converted/operator/band.
+
 ## 1.7.1 (patch) — bc4-front 2026-10-15 — Dictionnaire : retour au design B0, retrait du composant V2 — Agent BC1
 
 ### Retiré

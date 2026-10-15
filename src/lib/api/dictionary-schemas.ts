@@ -114,6 +114,26 @@ export const ParamBucketSchema = z.object({
   count: z.number().int().nonnegative(),
   avg_converted: z.number().nullable(),
 });
+
+// 1.8.1 — Distribution exacte (ou binnée) des valeurs observées pour
+// le paramètre, servie par `/dict/params` (bc4-back 0.15.0). Chaque
+// entrée est triée côté back et déjà filtrée au périmètre
+// opérateur/bande actif. La UI alimente l'histogramme avec ce champ
+// SANS retouche.
+//   • `value_raw`       — chaîne : valeur ASN.1 brute (ex. "25",
+//                         "n100") ou borne d'intervalle (`"[-98, -97)"`)
+//                         si `value_distribution_mode === "binned"`.
+//   • `value_converted` — chaîne : valeur convertie 3GPP (ex. "-116")
+//                         ou `null` quand aucune règle n'est appliquée
+//                         (paramètre enum). On n'invente JAMAIS 0.
+//   • `count`           — nombre d'occurrences du bucket.
+export const ParamDistributionEntrySchema = z.object({
+  value_raw: z.string(),
+  value_converted: z.string().nullable(),
+  count: z.number().int().nonnegative(),
+});
+export type ParamDistributionEntry = z.infer<typeof ParamDistributionEntrySchema>;
+
 export const ParamRowSchema = z.object({
   system: z.enum(["LTE", "NR"]),
   message: z.string(),
@@ -136,6 +156,14 @@ export const ParamRowSchema = z.object({
   conversion_rule: ConversionRuleSchema.nullable().optional(),
   // Répartition par opérateur × bande.
   buckets: z.array(ParamBucketSchema),
+  // 1.8.1 — Distribution des valeurs (histogramme) servie directement
+  // par le back (bc4-back 0.15.0). Optionnels pour conserver la compat
+  // ascendante : un back qui ne les renvoie pas doit continuer à passer
+  // la validation Zod — la UI affichera l'EmptyState « aucune valeur
+  // observée » dans ce cas, sans crasher. Côté consommation UI, on
+  // normalise systématiquement via `?? []` / `?? "exact"`.
+  value_distribution: z.array(ParamDistributionEntrySchema).optional(),
+  value_distribution_mode: z.enum(["exact", "binned"]).optional(),
 });
 export type ParamRow = z.infer<typeof ParamRowSchema>;
 

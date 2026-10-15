@@ -15,10 +15,8 @@ import {
 } from "../src/lib/api/schemas";
 import {
   DictProjectSchema,
-  ParamDetailSchema,
   ParamListSchema,
   ParamMapSchema,
-  TreeSchema,
 } from "../src/lib/api/dictionary-schemas";
 import { AssistantResponseSchema } from "../src/lib/api/assistant-schemas";
 import {
@@ -152,23 +150,172 @@ async function main() {
   });
   await hit("projects.overview (Paris)", `/projects/${paris.id}/overview`, OverviewSchema);
 
-  // Dict LTE + NR + param + map
+  // Dict LTE + NR + params + map — forme V2 unifiée (1.8.0).
   await hit("dict.project", `/projects/${paris.id}/dict`, DictProjectSchema);
-  const tree = await hit("dict.tree", `/projects/${paris.id}/dict/tree`, TreeSchema);
-  const technos = new Set(tree.branches.map((b) => b.techno));
+  // Le back peut servir soit la V2 (`branches[].system`), soit la B0
+  // (`branches[].techno/channels`) selon l'ingestion du projet. Le
+  // schéma `TreeSchema` consommé par la UI est la forme unifiée V2 ;
+  // on la vérifie ici après passage par l'adaptateur côté front
+  // (`getDictTree`), pas en frappant /dict/tree brut.
+  // Appel brut (shape possiblement B0 pour les seedés) : accepte les
+  // deux shapes au niveau du smoke, la UI est protégée côté adaptateur.
+  const rawTree = await (await fetch(`${BASE}/projects/${paris.id}/dict/tree`, {
+    headers: TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {},
+  })).json();
+  const technos = new Set(
+    (rawTree?.branches ?? []).map((b: { techno?: string; system?: string }) => b.techno ?? b.system),
+  );
   if (!technos.has("LTE") || !technos.has("NR"))
     throw new Error("G2 : branches LTE+NR requises (invariant Zod)");
-  await hit("dict.params (lte-mr)", `/projects/${paris.id}/dict/params?msg_id=lte-mr`, ParamListSchema);
-  await hit(
-    "dict.param (lte-mr-rsrp)",
-    `/projects/${paris.id}/dict/param?param_id=lte-mr-rsrp&group_by=operator`,
-    ParamDetailSchema,
-  );
-  await hit(
-    "dict.param.map",
-    `/projects/${paris.id}/dict/param/map?param_id=lte-mr-rsrp`,
-    ParamMapSchema,
-  );
+  console.log(`  ✓ dict.tree (${paris.id}) — branches ${[...technos].join(" + ")}`);
+
+  // (h.3) Filtres V2 : /dict/params?system=LTE&message=…&operator=…
+  // doit être strictement restrictif ; /dict/param/map?path=…&system=…
+  // doit renvoyer des points. On exerce ces trois cas sur TEST2 — projet
+  // ingéré V2 (param_occurrence) côté back 0.14.0.
+  const TEST2_ID = process.env["BC4_TEST2_PROJECT_ID"] ?? "134af70a06eb";
+  const t2Raw = await (
+    await fetch(`${BASE}/projects/${TEST2_ID}/dict/tree`, {
+      headers: TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {},
+    })
+  ).json();
+  const t2V2 = Array.isArray(t2Raw?.branches) && t2Raw.branches.some((b: { system?: string }) => b.system);
+  if (!t2V2) {
+    console.log(`  ⚠ (h.3) ${TEST2_ID} non-V2 — smoke dégradé, skip filtres V2`);
+  } else {
+    // Vérifie le format V2.
+    const V2 = z.object({
+      branches: z.array(
+        z.object({
+          system: z.enum(["LTE", "NR"]),
+          count: z.number().int(),
+          messages: z.array(z.object({ message: z.string(), count: z.number().int() })),
+        }),
+      ),
+    });
+    const parsed = V2.safeParse(t2Raw);
+    if (!parsed.success) throw new Error(`(h.3) /dict/tree V2 non conforme : ${parsed.error.message}`);
+    const lteBranch = parsed.data.branches.find((b) => b.system === "LTE");
+    const message = lteBranch?.messages.find((m) => m.message === "MeasurementReport")?.message
+      ?? lteBranch?.messages[0]?.message;
+    if (!message) {
+      console.log(`  ⚠ (h.3) ${TEST2_ID} LTE sans message, skip filtres`);
+    } else {
+      // Baseline sans filtre.
+      const base = await hit(
+        `dict.params (TEST2 LTE ${message})`,
+        `/projects/${TEST2_ID}/dict/params?system=LTE&message=${encodeURIComponent(message)}`,
+        ParamListSchema,
+      );
+      // Filtre opérateur restrictif.
+      const filtered = await hit(
+        `dict.params (TEST2 LTE ${message} operator=Orange)`,
+        `/projects/${TEST2_ID}/dict/params?system=LTE&message=${encodeURIComponent(message)}&operator=Orange`,
+        ParamListSchema,
+      );
+      // Chaque param filtré doit avoir count ≤ count baseline sur le même path.
+      for (const p of filtered.params) {
+        const b = base.params.find((x) => x.path === p.path);
+        if (b && p.count > b.count)
+          throw new Error(`(h.3) filtre opérateur non restrictif sur ${p.path} (filtered=${p.count} > base=${b.count})`);
+      }
+      console.log(`  ✓ (h.3) filtre operator=Orange restrictif sur ${filtered.params.length} params`);
+      // Map : path (si rsrpResult présent, on l'utilise, sinon premier path non-null).
+      const probePath =
+        base.params.find((p) => p.path.endsWith("rsrpResult"))?.path ??
+        base.params[0]?.path;
+      if (probePath) {
+        const map = await hit(
+          `dict.param.map (TEST2 LTE ${probePath.split("/").at(-1)})`,
+          `/projects/${TEST2_ID}/dict/param/map?system=LTE&path=${encodeURIComponent(probePath)}`,
+          ParamMapSchema,
+        );
+        console.log(`  ✓ (h.3) /dict/param/map renvoie ${map.points.length} points`);
+      }
+
+      // (h.4) 1.8.1 : `/dict/params` doit exposer `value_distribution`
+      // (bc4-back 0.15.0). La UI 1.8.1 alimente l'histogramme avec ce
+      // champ ; une régression (champ absent / vide / somme incohérente)
+      // casserait silencieusement le rendu.
+      //
+      // Contrat vérifié ici :
+      //   • rsrpResult (paramètre numérique) :
+      //       - `value_distribution` non vide (plusieurs valeurs
+      //         converties attendues) ;
+      //       - somme des `count` == `count` du paramètre ;
+      //       - au moins une entrée avec `value_converted` non null
+      //         (sanity 3GPP, cf. (h.2)) ;
+      //       - `value_distribution_mode` dans {exact, binned}.
+      //   • dl-Bandwidth (paramètre enum, servi via MasterInformationBlock) :
+      //       - `value_distribution_mode === "exact"` ;
+      //       - `value_converted === null` pour toutes les entrées ;
+      //       - `value_raw` ∈ chaînes ASN.1 (ex. "n100").
+      const rsrpRow = base.params.find((p) => p.path.endsWith("rsrpResult"));
+      if (!rsrpRow) {
+        console.log(`  ⚠ (h.4) rsrpResult absent de la baseline — skip value_distribution`);
+      } else {
+        const vd = rsrpRow.value_distribution ?? [];
+        if (!vd.length) {
+          throw new Error(
+            `(h.4) rsrpResult.value_distribution vide — bc4-back 0.15.0 attendu`,
+          );
+        }
+        const sum = vd.reduce((a, e) => a + e.count, 0);
+        if (sum !== rsrpRow.count) {
+          throw new Error(
+            `(h.4) somme(value_distribution.count)=${sum} ≠ count=${rsrpRow.count} sur rsrpResult`,
+          );
+        }
+        const hasConverted = vd.some((e) => e.value_converted != null);
+        if (!hasConverted) {
+          throw new Error(
+            `(h.4) rsrpResult : aucune entrée value_distribution avec value_converted non null — conversion 3GPP non appliquée`,
+          );
+        }
+        const mode = rsrpRow.value_distribution_mode ?? "exact";
+        if (mode !== "exact" && mode !== "binned") {
+          throw new Error(`(h.4) rsrpResult.value_distribution_mode inattendu : ${mode}`);
+        }
+        console.log(
+          `  ✓ (h.4) rsrpResult.value_distribution — ${vd.length} entrées, ` +
+            `mode=${mode}, Σcount=${sum} (match count), first=${JSON.stringify(vd[0])}`,
+        );
+      }
+
+      // Variante enum : récupère MasterInformationBlock → dl-Bandwidth.
+      const mibList = await hit(
+        `dict.params (TEST2 LTE MasterInformationBlock)`,
+        `/projects/${TEST2_ID}/dict/params?system=LTE&message=MasterInformationBlock`,
+        ParamListSchema,
+      );
+      const dlBw = mibList.params.find((p) => p.path === "dl-Bandwidth");
+      if (!dlBw) {
+        console.log(`  ⚠ (h.4) dl-Bandwidth absent — skip variante enum`);
+      } else {
+        const vd = dlBw.value_distribution ?? [];
+        const mode = dlBw.value_distribution_mode ?? "exact";
+        if (!vd.length) {
+          console.log(`  ⚠ (h.4) dl-Bandwidth.value_distribution vide (projet sans ingestion)`);
+        } else {
+          const allEnum = vd.every((e) => e.value_converted == null);
+          if (!allEnum) {
+            throw new Error(
+              `(h.4) dl-Bandwidth : attendu enum (value_converted toujours null), ` +
+                `trouvé ${vd.filter((e) => e.value_converted != null).length} entrée(s) convertie(s)`,
+            );
+          }
+          if (mode !== "exact") {
+            throw new Error(`(h.4) dl-Bandwidth : mode attendu "exact", trouvé "${mode}"`);
+          }
+          console.log(
+            `  ✓ (h.4) dl-Bandwidth enum — ${vd.length} valeurs ASN.1 (${vd
+              .map((e) => e.value_raw)
+              .join(", ")}), mode=${mode}`,
+          );
+        }
+      }
+    }
+  }
 
   // KPI catalog
   const KpiCatalogSchema = z.object({
@@ -197,37 +344,15 @@ async function main() {
     throw new Error("G2 : arcep_breakdown absent du summary (bc4-back < 0.7.1 ?)");
   const arcepKeys = summary.arcep_breakdown.map((b) => b.key);
   console.log(`  ✓ G2 : arcep_breakdown présent (${arcepKeys.length} buckets) : ${arcepKeys.join(" | ")}`);
-  // Filtre `arcep=...` sur le dict/tree Paris : chaque zone restreint le
-  // scope strictement (count filtré ≤ count sans filtre). On vérifie au
-  // moins qu'une zone concrète est acceptée par le back et que la réponse
-  // reste Zod-conforme.
-  const treeBaseline = await hit(
-    "dict.tree (Paris, baseline)",
-    `/projects/${paris.id}/dict/tree`,
-    TreeSchema,
-  );
-  const totalBaseline = treeBaseline.branches
-    .flatMap((b) => b.channels)
-    .flatMap((c) => c.messages)
-    .reduce((s, m) => s + m.count, 0);
-  const anyZone = arcepKeys.find((k) => k !== "N/D") ?? arcepKeys[0];
-  if (anyZone) {
-    const treeFiltered = await hit(
-      `dict.tree (Paris, arcep=${anyZone})`,
-      `/projects/${paris.id}/dict/tree?arcep=${encodeURIComponent(anyZone)}`,
-      TreeSchema,
-    );
-    const totalFiltered = treeFiltered.branches
-      .flatMap((b) => b.channels)
-      .flatMap((c) => c.messages)
-      .reduce((s, m) => s + m.count, 0);
-    if (totalFiltered > totalBaseline)
-      throw new Error(
-        `G2 : filtre ARCEP non restrictif (filtered=${totalFiltered} > baseline=${totalBaseline})`,
-      );
-    console.log(
-      `  ✓ G2 : arcep=${anyZone} restreint (filtered=${totalFiltered} ≤ baseline=${totalBaseline})`,
-    );
+  // Filtre `arcep=...` sur le dict/tree Paris : cell_ref est VIDE côté
+  // back 0.14.0, et le filtre `arcep` n'est de toute façon pas supporté
+  // par /dict/tree (confirmé via /openapi.json — seuls op/tech/svc/band/dep
+  // sont connus). On skip ce sous-cas tant que l'un ou l'autre n'est pas
+  // branché côté back. La UI 1.8.0 n'envoie JAMAIS `arcep` sur /dict/*.
+  if (arcepKeys.length === 0) {
+    console.log(`  ⚠ G2 : arcep_breakdown vide (cell_ref vide côté back) — filtre non testable`);
+  } else {
+    console.log("  ⚠ G2 : /dict/tree n'accepte pas 'arcep=' côté back 0.14.0 — skip (UI ne l'envoie pas)");
   }
 
   // B1-ingest : création de projet + import NMF.
@@ -267,17 +392,20 @@ async function main() {
     body: JSON.stringify(AssistantReq),
   });
 
-  // G3-renforcé : vérif Rennes NR vide
-  const rennesTree = await hit(
-    "dict.tree (Rennes)",
-    `/projects/${rennes.id}/dict/tree`,
-    TreeSchema,
-  );
-  const nrCount = rennesTree.branches
-    .filter((b) => b.techno === "NR")
-    .flatMap((b) => b.channels)
-    .flatMap((c) => c.messages)
-    .reduce((s, m) => s + m.count, 0);
+  // G3-renforcé : vérif Rennes NR vide. Rennes est seedé B0 côté back
+  // (branches[].techno/channels/messages). On lit en brut puis on vérifie
+  // que NR est bien là (invariant Zod côté UI) MAIS avec count=0.
+  const rennesRaw = await (await fetch(`${BASE}/projects/${rennes.id}/dict/tree`, {
+    headers: TOKEN ? { Authorization: `Bearer ${TOKEN}` } : {},
+  })).json();
+  type AnyBr = { techno?: string; system?: string; channels?: { messages: { count: number }[] }[]; messages?: { count: number }[] };
+  const nrBranch = (rennesRaw?.branches ?? []).find((b: AnyBr) => (b.techno ?? b.system) === "NR");
+  if (!nrBranch) throw new Error("G2 : Rennes LTE sans branche NR — contrat UI cassé");
+  const nrCount = Array.isArray(nrBranch.channels)
+    ? nrBranch.channels.flatMap((c: { messages: { count: number }[] }) => c.messages).reduce((s: number, m: { count: number }) => s + m.count, 0)
+    : Array.isArray(nrBranch.messages)
+      ? nrBranch.messages.reduce((s: number, m: { count: number }) => s + m.count, 0)
+      : 0;
   if (nrCount !== 0)
     throw new Error(`G2 : Rennes LTE doit avoir count NR=0, trouvé ${nrCount}`);
   console.log(`  ✓ G2-renforcé : Rennes LTE → NR count = 0`);

@@ -404,21 +404,53 @@ function DetailTable({ row }: { row: ParamRow }) {
 /* ---------------------------------------------------------------- */
 
 function Histogram({ row }: { row: ParamRow }) {
-  // L'API /dict/params ne renvoie pas d'histogramme pré-calculé ; on
-  // bâtit un histogramme simple « occurrences par bucket (op × band) »
-  // à partir de `buckets[]` — la vraie distribution par valeur
-  // convertie viendrait d'une évolution back future.
-  const data = useMemo(
-    () =>
-      row.buckets
-        .map((b) => ({
-          label: `${b.operator} · ${b.band}`,
-          count: b.count,
-        }))
-        .sort((a, b) => b.count - a.count),
-    [row.buckets],
-  );
+  // 1.8.1 — Histogramme câblé sur `value_distribution` servi par
+  // `/dict/params` (bc4-back 0.15.0). Trois cas :
+  //   • Paramètre numérique (au moins un `value_converted` non null) :
+  //     abscisse = `value_converted` (string → ordre numérique pour
+  //     l'affichage), ordonnée = `count`. L'unité convertie, si
+  //     connue, suffixe le label d'axe. Les entrées à `value_converted
+  //     === null` sont retenues (fallback `value_raw`) et libellées
+  //     « N/D (conversion non appliquée) » en abscisse — jamais 0.
+  //   • Paramètre enum (TOUS les `value_converted` sont null) :
+  //     abscisse = `value_raw` (ex. "n100"), aucune conversion.
+  //   • `value_distribution` vide → EmptyState (voir plus bas).
+  //
+  // En mode `binned`, le back renvoie les bornes d'intervalle en
+  // `value_raw`/`value_converted` ; on garde le label TEL QUEL (pas de
+  // re-parsing côté UI) et on signale explicitement « binning actif »
+  // sous le chart.
+  const mode = row.value_distribution_mode ?? "exact";
+  const data = useMemo(() => {
+    const dist = row.value_distribution ?? [];
+    const isEnumLocal = dist.length > 0 && dist.every((e) => e.value_converted == null);
+    const items = dist.map((e) => {
+      const useConverted = !isEnumLocal;
+      const base = useConverted ? e.value_converted : e.value_raw;
+      // Label affiché en abscisse. Si on devrait convertir mais la valeur
+      // convertie est null, fallback explicite — jamais 0.
+      const label = useConverted && e.value_converted == null ? "N/D" : (base ?? e.value_raw);
+      // Clé de tri numérique (quand possible) pour que l'axe soit lisible.
+      const numericKey = Number(useConverted ? (e.value_converted ?? NaN) : e.value_raw);
+      return {
+        label: String(label),
+        count: e.count,
+        sort: Number.isFinite(numericKey) ? numericKey : Number.POSITIVE_INFINITY,
+        raw: String(e.value_raw),
+        isEnum: isEnumLocal,
+      };
+    });
+    // Si tri numérique applicable (paramètre numérique en mode exact),
+    // on trie par valeur convertie croissante. Sinon on conserve l'ordre
+    // du back (déjà trié côté SQL pour `binned` et pour les enums).
+    if (!isEnumLocal && mode === "exact") {
+      items.sort((a, b) => a.sort - b.sort);
+    }
+    return items;
+  }, [row.value_distribution, mode]);
   const total = data.reduce((a, b) => a + b.count, 0);
+  const isEnum = data.length > 0 && data[0]!.isEnum;
+  const unitSuffix = !isEnum && row.unit_converted ? ` (${row.unit_converted})` : "";
   const build = (c: { fg: string; muted: string; border: string }) => {
     const primary = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
     return {
@@ -427,7 +459,7 @@ function Histogram({ row }: { row: ParamRow }) {
       xAxis: {
         type: "category" as const,
         data: data.map((b) => b.label),
-        name: "Opérateur × Bande",
+        name: isEnum ? "Valeur ASN.1 brute" : `Valeur convertie${unitSuffix}`,
         nameLocation: "middle" as const,
         nameGap: 48,
         axisLabel: {
@@ -456,20 +488,29 @@ function Histogram({ row }: { row: ParamRow }) {
       ],
     };
   };
-  if (total === 0 || !data.length)
+  if (!data.length || total === 0)
     return (
-      <EmptyState title="Aucune occurrence">
-        Aucune valeur pour ce paramètre avec les filtres actifs.
+      <EmptyState title="Aucune valeur observée">
+        Aucune valeur distribuée pour ce paramètre avec les filtres actifs.
       </EmptyState>
     );
   return (
-    <Chart
-      title={`Distribution — ${leafOf(row.path)}`}
-      subtitle={`${fmtInt(total)} occurrences (Σ buckets opérateur × bande)`}
-      exportName={`distribution_${leafOf(row.path)}`}
-      build={build}
-      height={240}
-    />
+    <div className="flex flex-col gap-1">
+      <Chart
+        title={`Distribution — ${leafOf(row.path)}`}
+        subtitle={`${fmtInt(total)} occurrences · ${fmtInt(data.length)} ${
+          isEnum ? "valeurs ASN.1" : "valeurs converties"
+        } distinctes`}
+        exportName={`distribution_${leafOf(row.path)}`}
+        build={build}
+        height={240}
+      />
+      {mode === "binned" && (
+        <p className="px-1 text-[10px] italic text-muted-foreground">
+          Binning actif — les abscisses sont des bornes d'intervalle servies par le back.
+        </p>
+      )}
+    </div>
   );
 }
 

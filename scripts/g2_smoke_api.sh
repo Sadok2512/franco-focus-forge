@@ -43,6 +43,31 @@
 #       `avg_converted` non null sur `q-RxLevMin`). Note : la UI 1.7.1
 #       n'appelle plus ce chemin — la garde reste HTTP pour détecter une
 #       régression côté back.
+#
+# Complément 1.8.0 (Dictionnaire V2 unifiée) : la UI 1.8.0 consomme
+# NATIVEMENT la forme V2 (TEST2) via l'adaptateur `src/lib/api/dictionary.ts`
+# qui replie la B0 → V2 pour les projets seedés. Le smoke
+# `scripts/smoke_api.ts` ajoute le cas (h.3) :
+#   • `/dict/tree` TEST2 → shape V2 (branches[].system/count/messages[]).
+#   • `/dict/params?system=LTE&message=…&operator=Orange` doit être
+#     strictement restrictif vs la baseline sans filtre.
+#   • `/dict/param/map?path=…&system=LTE` doit renvoyer des points
+#     (lon/lat/value_raw/value_converted/operator/band).
+# Les filtres DR/Plaque/Zone ARCEP ne sont PAS propagés sur /dict/* tant
+# que `cell_ref` est vide (back 0.14.0 ne les exerce pas). Pas de 400
+# silencieux côté UI.
+#
+# Complément 1.8.1 (histogramme sur `value_distribution`) : la UI 1.8.1
+# alimente l'histogramme avec `value_distribution` renvoyé par
+# `/dict/params` (bc4-back 0.15.0). Le smoke ajoute (h.4) :
+#   • rsrpResult (numérique) : `value_distribution` non vide,
+#     somme(count) == count du paramètre, au moins une entrée avec
+#     `value_converted` non null, `value_distribution_mode ∈ {exact,
+#     binned}`.
+#   • dl-Bandwidth (enum MasterInformationBlock) : toutes les entrées
+#     ont `value_converted === null`, `value_distribution_mode === "exact"`.
+# Compat ascendante : si le back ne renvoyait pas `value_distribution`,
+# la UI 1.8.1 affiche l'EmptyState (`.default([])` côté Zod) sans crasher.
 set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 source "$HERE/_lib.sh"
