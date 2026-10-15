@@ -8,10 +8,11 @@ function cssVar(name: string) {
 
 /** Lazy-loaded ECharts wrapper. Options builder receives resolved theme colors. */
 export function Chart({
-  title, subtitle, build, height = 220, exportName,
+  title, subtitle, build, height = 220, exportName, onLegendChange,
 }: {
   title: string; subtitle?: string; height?: number; exportName: string;
   build: (c: { fg: string; muted: string; border: string }) => EChartsOption;
+  onLegendChange?: (selected: Record<string, boolean>) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const inst = useRef<ECharts | null>(null);
@@ -29,11 +30,15 @@ export function Chart({
         animationDuration: 180,
         ...build(c),
       });
+      if (onLegendChange) inst.current.on("legendselectchanged", (event: unknown) => {
+        const selection = event as { selected: Record<string, boolean> };
+        onLegendChange(selection.selected);
+      });
       ro = new ResizeObserver(() => inst.current?.resize());
       ro.observe(el.current);
     });
     return () => { disposed = true; ro?.disconnect(); inst.current?.dispose(); inst.current = null; };
-  }, [build]);
+  }, [build, onLegendChange]);
 
   useEffect(() => { setTimeout(() => inst.current?.resize(), 20); }, [full]);
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDictParams, getDictTree } from "@/lib/api/dictionary";
 import { groupDistribution, measureOf } from "@/features/dictionary/grouping";
-import { chartDistribution, chartMeasure } from "@/features/dictionary/chart-data";
+import { chartDistribution, chartMeasure, colorToken, filterDistribution } from "@/features/dictionary/chart-data";
 
 async function firstRow() {
   const tree = await getDictTree("idf-t3-2026", {});
@@ -12,6 +12,31 @@ async function firstRow() {
 }
 
 describe("Dictionnaire RRC — regroupement (G6)", () => {
+  it("value and legend filters produce the same surviving bins, series and totals for both views", async () => {
+    const row = await firstRow();
+    const source = chartDistribution(row, "none", "operator");
+    const bin = source.bins[0];
+    if (!bin) throw new Error("Missing demo value");
+    const filtered = filterDistribution(source, bin.raw, "operator", ["Orange"]);
+    expect(filtered.bins.map((b) => b.raw)).toEqual([bin.raw]);
+    expect(filtered.series.some((s) => s.operator === "Orange")).toBe(false);
+    const expected = source.series.filter((s) => s.operator !== "Orange").reduce((sum, s) => sum + (s.counts[0] ?? 0), 0);
+    expect(filtered.population).toBe(expected);
+    expect(filtered.bins[0]?.total).toBe(expected);
+    expect(filterDistribution(source, "does-not-exist", "operator", []).population).toBe(0);
+  });
+
+  it("semantic colors remain tied to their dimension after filtering", async () => {
+    const source = chartDistribution(await firstRow(), "operator", "band");
+    const series = source.series.find((s) => s.operator === "Orange");
+    if (!series) throw new Error("Missing Orange series");
+    expect(colorToken(source, "operator", series, 0)).toBe("--op-orange");
+    const sameBand = source.series.filter((s) => s.band === series.band);
+    expect(new Set(sameBand.map((s) => colorToken(source, "band", s, 0))).size).toBe(1);
+    expect(colorToken(source, "value", series, 0)).toBe("--chart-1");
+    expect(colorToken(source, "value", series, 1)).toBe("--chart-2");
+  });
+
   it("coloring by band or operator preserves observations and splits the requested dimension", async () => {
     const row = await firstRow();
     for (const colorBy of ["value", "band", "operator"] as const) {
