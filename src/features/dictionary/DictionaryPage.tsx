@@ -28,7 +28,7 @@ import type { Operator } from "@/lib/api/schemas";
 import type { DictTreeMessage, ParamRow } from "@/lib/api/dictionary-schemas";
 import type { Map as MlMap } from "maplibre-gl";
 import { PROJECTS_CENTER } from "./center";
-import { chartDistribution, chartMeasure, CHART_TYPE_LABELS, COLOR_LABELS, type ChartType, type ColorBy } from "./chart-data";
+import { chartDistribution, chartMeasure, colorKey, colorToken, filterDistribution, CHART_TYPE_LABELS, COLOR_LABELS, type ChartType, type ColorBy } from "./chart-data";
 import {
   EMPTY_SELECTION,
   dictQ,
@@ -457,6 +457,9 @@ function HistogramChart({
   chartType,
   colorBy,
   highlight,
+  palette,
+  hidden,
+  onHiddenChange,
   title,
   height,
 }: {
@@ -467,21 +470,26 @@ function HistogramChart({
   chartType: ChartType;
   colorBy: ColorBy;
   highlight: string | null;
+  palette: Grouped;
+  hidden: string[];
+  onHiddenChange: (hidden: string[]) => void;
   title: string;
   height: number;
 }) {
   const hiIdx = highlight == null ? -1 : g.bins.findIndex((b) => b.raw === highlight);
-  const color = useCallback((s: Grouped["series"][number], si: number, binIndex: number) => {
-    const bands = [...new Set(g.series.flatMap((item) => item.band ? [item.band] : []))].sort();
-    return colorBy === "value" ? seriesColor(undefined, binIndex)
-      : colorBy === "band" ? seriesColor(undefined, Math.max(0, bands.indexOf(s.band ?? "")))
-        : seriesColor(s.operator, si);
-  }, [g, colorBy]);
+  const color = useCallback((s: Grouped["series"][number], _si: number, binIndex: number) => {
+    const originalIndex = palette.bins.findIndex((bin) => bin.raw === g.bins[binIndex]?.raw);
+    return cssVar(colorToken(palette, colorBy, s, originalIndex));
+  }, [palette, g, colorBy]);
+  const legendChange = useCallback((selected: Record<string, boolean>) => {
+    onHiddenChange(Object.keys(selected).filter((key) => !selected[key]));
+  }, [onHiddenChange]);
+  const legendKeys = [...new Set(palette.series.map((item) => colorKey(palette, colorBy, item, 0)))];
   const build = useCallback(
     (c: { fg: string; muted: string; border: string }) => ({
-      grid: { left: 52, right: 12, top: 16, bottom: colorBy !== "value" && series.length > 1 ? 75 : 50 },
-      ...(colorBy !== "value" && series.length > 1
-        ? { legend: { type: "scroll" as const, bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } } }
+      grid: { left: 52, right: 12, top: 16, bottom: colorBy !== "value" && legendKeys.length > 1 ? 75 : 50 },
+      ...(colorBy !== "value" && legendKeys.length > 1
+        ? { legend: { type: "scroll" as const, data: legendKeys, selected: Object.fromEntries(legendKeys.map((key) => [key, !hidden.includes(key)])), bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } } }
         : {}),
       tooltip: {
         trigger: "axis" as const,
@@ -526,14 +534,14 @@ function HistogramChart({
         ...(chartType !== "grouped" ? { stack: "total" } : {}),
         itemStyle: { color: color(s, si, 0) },
         data: s.counts.map((n, i) => ({
-          value: chartMeasure(n, i, series, chartType, measure, g.population, s.total),
+          value: hidden.includes(colorKey(palette, colorBy, s, i)) ? null : chartMeasure(n, i, g.series, chartType, measure, g.population, s.total),
           itemStyle: { color: color(s, si, i), opacity: hiIdx >= 0 && i !== hiIdx ? 0.25 : 1 },
         })),
       })),
     }),
-    [row, g, series, measure, chartType, colorBy, color, hiIdx],
+    [row, g, series, measure, chartType, colorBy, color, hiIdx, hidden, palette],
   );
-  return <Chart title={title} subtitle={`Mesure : ${chartType === "stacked100" ? "% par valeur" : MEASURE_LABELS[measure]} · Couleurs : ${COLOR_LABELS[colorBy]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
+  return <Chart title={title} subtitle={`Mesure : ${chartType === "stacked100" ? "% par valeur" : MEASURE_LABELS[measure]} · Couleurs : ${COLOR_LABELS[colorBy]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} onLegendChange={legendChange} />;
 }
 
 function Histogram({
@@ -544,6 +552,9 @@ function Histogram({
   chartType,
   colorBy,
   highlight,
+  palette,
+  hidden,
+  onHiddenChange,
 }: {
   row: ParamRow;
   g: Grouped;
@@ -552,6 +563,9 @@ function Histogram({
   chartType: ChartType;
   colorBy: ColorBy;
   highlight: string | null;
+  palette: Grouped;
+  hidden: string[];
+  onHiddenChange: (hidden: string[]) => void;
 }) {
   if (groupBy === "operator_band" && g.series.length > MAX_SERIES) {
     const ops = [...new Set(g.series.map((s) => s.operator ?? ""))];
@@ -562,11 +576,12 @@ function Histogram({
             key={op}
             row={row}
             g={g}
-            series={g.series.filter((s) => s.operator === op)}
+            series={palette.series.filter((s) => s.operator === op).map((s) => g.series.find((item) => item.key === s.key) ?? { ...s, counts: g.bins.map(() => 0), total: 0 })}
             measure={measure}
             chartType={chartType}
       colorBy={colorBy}
             highlight={highlight}
+            palette={palette} hidden={hidden} onHiddenChange={onHiddenChange}
             title={`Distribution des valeurs — ${op} (par bande)`}
             height={220}
           />
@@ -578,11 +593,12 @@ function Histogram({
     <HistogramChart
       row={row}
       g={g}
-      series={g.series}
+      series={palette.series.map((s) => g.series.find((item) => item.key === s.key) ?? { ...s, counts: g.bins.map(() => 0), total: 0 })}
       measure={measure}
       chartType={chartType}
       colorBy={colorBy}
       highlight={highlight}
+            palette={palette} hidden={hidden} onHiddenChange={onHiddenChange}
       title="Distribution des valeurs"
       height={300}
     />
@@ -599,41 +615,50 @@ function ValuesTable({
   row,
   g,
   measure,
+  chartType,
+  colorBy,
+  palette,
+  query,
+  onQuery,
   highlight,
   onHighlight,
 }: {
   row: ParamRow;
   g: Grouped;
   measure: Measure;
+  chartType: ChartType;
+  colorBy: ColorBy;
+  palette: Grouped;
+  query: string;
+  onQuery: (query: string) => void;
   highlight: string | null;
   onHighlight: (raw: string | null) => void;
 }) {
   const [sort, setSort] = useState<{ k: SortKey; desc: boolean }>({ k: "total", desc: true });
-  const [q, setQ] = useState("");
   const grouped = g.series.length > 1 || g.series[0]?.key !== "Total";
   const rows = useMemo(() => {
     const list = g.bins.map((b, i) => ({ b, i }));
-    const filteredList = q ? list.filter(({ b }) => `${b.label} ${b.raw}`.toLowerCase().includes(q.toLowerCase())) : list;
+    const filteredList = list;
     if (sort.k === "total") filteredList.sort((a, b) => (sort.desc ? b.b.total - a.b.total : a.b.total - b.b.total));
     else if (sort.desc) filteredList.reverse();
     return filteredList;
-  }, [g, q, sort]);
+  }, [g, sort]);
   const max = Math.max(1, ...g.bins.map((b) => b.total));
   const unit = !g.isEnum && row.unit_converted ? ` (${row.unit_converted})` : "";
-  const fmtCell = (n: number, groupTotal: number) => {
-    const v = measureOf(n, measure, g.population, groupTotal);
+  const fmtCell = (n: number, groupTotal: number, index: number) => {
+    const v = chartMeasure(n, index, g.series, chartType, measure, g.population, groupTotal);
     if (v == null) return "N/D";
-    return measure === "count" ? fmtInt(v) : `${fmtNum(v, 1)} %`;
+    return measure === "count" && chartType !== "stacked100" ? fmtInt(v) : `${fmtNum(v, 1)} %`;
   };
   const exportCsv = () =>
     downloadCsv(`valeurs_${leafOf(row.path)}`, [
       [`# Paramètre : ${row.path} — mesure : ${MEASURE_LABELS[measure]} — population filtrée : ${g.population}`],
       ["valeur_brute", `valeur${unit}`, "total", ...g.series.filter(() => grouped).map((s) => s.key), "pct_total"],
-      ...g.bins.map((b, i) => [
+      ...rows.map(({ b, i }) => [
         b.raw,
         b.label,
         b.total,
-        ...g.series.filter(() => grouped).map((s) => s.counts[i]!),
+        ...g.series.filter(() => grouped).map((s) => s.counts[i] ?? 0),
         g.population ? ((b.total / g.population) * 100).toFixed(2) : "N/D",
       ]),
     ]);
@@ -654,8 +679,8 @@ function ValuesTable({
       actions={
         <>
           <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            value={query}
+            onChange={(e) => onQuery(e.target.value)}
             placeholder="Filtrer une valeur…"
             aria-label="Filtrer les valeurs du tableau"
             className="h-7 w-36 rounded-md border bg-card px-2 text-xs"
@@ -674,7 +699,7 @@ function ValuesTable({
               <th className={th}>{sortBtn("value", `Valeur${unit}`)}</th>
               {!g.isEnum && <th className={th}>Brut</th>}
               <th className={`${th} text-right`}>{sortBtn("total", "Total")}</th>
-              {grouped && g.series.map((s) => <th key={s.key} className={`${th} text-right`}>{s.key}</th>)}
+              {grouped && g.series.map((s) => <th key={s.key} className={`${th} text-right`}><span className="inline-block h-2 w-2 rounded-sm mr-1" style={{ backgroundColor: `var(${colorToken(palette, colorBy, s, 0)})` }} />{s.key}</th>)}
               <th className={`${th} text-right`}>% du total</th>
               <th className={`${th} w-32`} aria-label="Part visuelle" />
             </tr>
@@ -698,14 +723,16 @@ function ValuesTable({
                   className={`cursor-pointer border-b outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-accent" : "hover:bg-muted/60"}`}
                 >
                   <td className="px-2 py-1 text-muted-foreground">{n + 1}</td>
-                  <td className="px-2 py-1 font-mono font-semibold">{b.label}</td>
+                  <td className="px-2 py-1 font-mono font-semibold">{colorBy === "value" && <span className="inline-block h-2 w-2 rounded-sm mr-1" style={{ backgroundColor: `var(${colorToken(palette, colorBy, g.series[0] ?? { key: "Total", counts: [], total: 0 }, palette.bins.findIndex((bin) => bin.raw === b.raw))})` }} />}{b.label}</td>
                   {!g.isEnum && <td className="px-2 py-1 font-mono text-muted-foreground">{b.raw}</td>}
                   <td className="px-2 py-1 text-right font-semibold">{fmtInt(b.total)}</td>
-                  {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1 text-right">{fmtCell(s.counts[i]!, s.total)}</td>)}
+                  {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1 text-right">{fmtCell(s.counts[i] ?? 0, s.total, i)}</td>)}
                   <td className="px-2 py-1 text-right">{pct == null ? "N/D" : `${fmtNum(pct, 1)} %`}</td>
                   <td className="px-2 py-1">
                     <div className="h-2 rounded bg-muted">
-                      <div className="h-2 rounded bg-primary" style={{ width: `${(b.total / max) * 100}%` }} />
+                      <div className="flex h-2 overflow-hidden rounded" style={{ width: `${(b.total / max) * 100}%` }}>
+                        {g.series.map((series) => <span key={series.key} className="h-2" style={{ width: `${b.total ? (series.counts[i] ?? 0) / b.total * 100 : 0}%`, backgroundColor: `var(${colorToken(palette, colorBy, series, palette.bins.findIndex((bin) => bin.raw === b.raw))})` }} />)}
+                      </div>
                     </div>
                   </td>
                 </tr>
@@ -1154,6 +1181,9 @@ export function DictionaryPage({
   const [measure, setMeasure] = useState<Measure>("count");
   const [chartType, setChartType] = useState<ChartType>("grouped");
   const [colorBy, setColorBy] = useState<ColorBy>("operator");
+  const [valueQuery, setValueQuery] = useState("");
+  const [hiddenColors, setHiddenColors] = useState<string[]>([]);
+  useEffect(() => { setHiddenColors([]); setValueQuery(""); }, [sel.path, colorBy, groupBy, filters.op, filters.band]);
   const [showMap, setShowMap] = useState(false);
   const [highlight, setHighlight] = useState<string | null>(null);
   const [infoOpen, setInfoOpen] = useState(false);
@@ -1183,6 +1213,8 @@ export function DictionaryPage({
   const g = useMemo(() => (row ? groupDistribution(row, groupBy) : null), [row, groupBy]);
 
   const chartG = useMemo(() => row ? chartDistribution(row, groupBy, colorBy) : null, [row, groupBy, colorBy]);
+
+  const visibleG = useMemo(() => chartG ? filterDistribution(chartG, valueQuery, colorBy, hiddenColors) : null, [chartG, valueQuery, colorBy, hiddenColors]);
 
   const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
   const dirty = draft.techno !== techno || !same(draft.op, filters.op ?? []) || !same(draft.band, filters.band ?? []);
@@ -1279,14 +1311,14 @@ export function DictionaryPage({
   ) : (
     <div className="flex flex-col gap-2">
       <div className="relative">
-        <Histogram row={row} g={chartG ?? g} groupBy={groupBy} measure={measure} chartType={chartType} colorBy={colorBy} highlight={highlight} />
+        <Histogram row={row} g={visibleG ?? g} palette={chartG ?? g} hidden={hiddenColors} onHiddenChange={setHiddenColors} groupBy={groupBy} measure={measure} chartType={chartType} colorBy={colorBy} highlight={highlight} />
       </div>
       {!g.groupingSupported && groupBy !== "none" && (
         <p className="px-1 text-[11px] text-muted-foreground">
           Regroupement indisponible : l'API ne fournit pas le détail par opérateur/bande — totaux affichés.
         </p>
       )}
-      <ValuesTable row={row} g={g} measure={measure} highlight={highlight} onHighlight={setHighlight} />
+      <ValuesTable row={row} g={visibleG ?? g} palette={chartG ?? g} measure={measure} chartType={chartType} colorBy={colorBy} query={valueQuery} onQuery={setValueQuery} highlight={highlight} onHighlight={setHighlight} />
     </div>
   );
 

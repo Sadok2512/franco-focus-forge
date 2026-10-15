@@ -19,4 +19,4 @@
 - Assistant IA lives in `src/features/assistant/`, its deterministic engine in `src/mocks/assistant.ts` and its adapter in `src/lib/api/assistant.ts` (re-exported by client.ts); every claim carries an evidence kind (OBSERVED/CALCULATED/INTERPRETED/UNAVAILABLE) and numbers are computed from mock points or the dictionary adapter, so unsupported questions answer UNAVAILABLE instead of inventing data.
 - RRC Dictionary grouping (none/operator/band/operator+band) is computed in `src/features/dictionary/grouping.ts` from the API `value_matrix` so histogram and table always share one dataset; without `value_matrix` only totals are shown.
 
-- RRC chart color dimensions and normalization use `chart-data.ts` over the same API matrix; chart splits can refine table grouping without changing its totals.
+- RRC chart and table share effective grouping, value/legend filtering, normalization and semantic color mapping from `chart-data.ts` so displayed cells and marks remain synchronized.
