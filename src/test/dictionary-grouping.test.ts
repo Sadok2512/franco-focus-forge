@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getDictParams, getDictTree } from "@/lib/api/dictionary";
 import { groupDistribution, measureOf } from "@/features/dictionary/grouping";
+import { chartDistribution, chartMeasure } from "@/features/dictionary/chart-data";
 
 async function firstRow() {
   const tree = await getDictTree("idf-t3-2026", {});
@@ -11,6 +12,26 @@ async function firstRow() {
 }
 
 describe("Dictionnaire RRC — regroupement (G6)", () => {
+  it("coloring by band or operator preserves observations and splits the requested dimension", async () => {
+    const row = await firstRow();
+    for (const colorBy of ["value", "band", "operator"] as const) {
+      const chart = chartDistribution(row, "none", colorBy);
+      expect(chart.population).toBe(row.count);
+      expect(chart.series.reduce((sum, s) => sum + s.total, 0)).toBe(row.count);
+      if (colorBy === "band") expect(chart.series.map((s) => s.band).sort()).toEqual([...new Set(row.value_matrix?.map((cell) => cell.band))].sort());
+      if (colorBy === "operator") expect(chart.series.map((s) => s.operator).sort()).toEqual([...new Set(row.value_matrix?.map((cell) => cell.operator))].sort());
+    }
+  });
+
+  it("100% stacked columns total 100 while ordinary bars retain counts", () => {
+    const series = [{ key: "Orange", counts: [25], total: 25 }, { key: "SFR", counts: [75], total: 75 }];
+    expect(chartMeasure(25, 0, series, "stacked100", "count", 100, 25)).toBe(25);
+    expect(series.reduce((sum, s) => sum + (chartMeasure(s.counts[0] ?? 0, 0, series, "stacked100", "count", 100, s.total) ?? 0), 0)).toBe(100);
+    expect(chartMeasure(75, 0, series, "grouped", "count", 100, 75)).toBe(75);
+    expect(chartMeasure(75, 0, series, "stacked", "count", 100, 75)).toBe(75);
+    expect(chartMeasure(0, 1, series, "stacked100", "count", 100, 75)).toBeNull();
+  });
+
   it("each grouping mode reconciles to the API total", async () => {
     const row = await firstRow();
     for (const mode of ["none", "operator", "band", "operator_band"] as const) {
