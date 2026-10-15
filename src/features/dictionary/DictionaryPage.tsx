@@ -1,30 +1,29 @@
-import { useQueries, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
-  BookOpen,
   Check,
   ChevronDown,
   ChevronRight,
   Copy,
   Crosshair,
+  Download,
+  FileText,
+  Folder,
+  Info,
+  Map as MapIcon,
   Maximize2,
   Minimize2,
-  X,
+  RotateCcw,
+  Search,
+  SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MultiSelect } from "@/components/bc4/MultiSelect";
 import { Chart } from "@/components/bc4/Chart";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { getCellArcepZones, type DictFilters } from "@/lib/api/client";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
+import type { DictFilters } from "@/lib/api/client";
 import type { Operator } from "@/lib/api/schemas";
 import type { DictTreeMessage, ParamRow } from "@/lib/api/dictionary-schemas";
 import type { Map as MlMap } from "maplibre-gl";
@@ -40,10 +39,37 @@ import {
   leafOf,
   type Selection,
 } from "./shared";
+import {
+  GROUP_LABELS,
+  groupDistribution,
+  measureOf,
+  type GroupBy,
+  type Grouped,
+  type Measure,
+} from "./grouping";
 
-/* ---------------------------------------------------------------- */
-/* Layout utilitaires                                               */
-/* ---------------------------------------------------------------- */
+type Techno = "LTE" | "NR" | "LTE+NR";
+const MEASURE_LABELS: Record<Measure, string> = {
+  count: "Occurrences",
+  pct_total: "% de la population filtrée",
+  pct_group: "% au sein du groupe",
+};
+/** Au-delà, on bascule en petits multiples (une vignette par opérateur). */
+const MAX_SERIES = 8;
+
+function cssVar(name: string) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+const OP_VAR: Record<string, string> = {
+  Orange: "--op-orange",
+  SFR: "--op-sfr",
+  Bouygues: "--op-bouygues",
+  Free: "--op-free",
+};
+function seriesColor(op: string | undefined, i: number) {
+  if (op && OP_VAR[op]) return cssVar(OP_VAR[op]!);
+  return cssVar(`--chart-${(i % 5) + 1}`) || cssVar("--primary");
+}
 
 function useWidth() {
   const [w, setW] = useState(() => (typeof window === "undefined" ? 1440 : window.innerWidth));
@@ -57,60 +83,121 @@ function useWidth() {
 
 function Panel({
   title,
+  icon,
   actions,
   children,
   className = "",
 }: {
   title: string;
+  icon?: ReactNode;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
-    <section
-      aria-label={title}
-      className={`panel flex min-h-0 flex-col overflow-hidden ${className}`}
-    >
-      <header className="flex h-8 shrink-0 items-center justify-between gap-2 border-b px-3">
-        <h2 className="truncate text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+    <section aria-label={title} className={`panel flex min-h-0 flex-col overflow-hidden ${className}`}>
+      <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b px-3">
+        <h2 className="flex min-w-0 items-center gap-2 truncate text-sm font-semibold">
+          {icon}
           {title}
         </h2>
-        {actions}
+        <div className="flex shrink-0 items-center gap-1">{actions}</div>
       </header>
       <div className="min-h-0 flex-1 overflow-auto">{children}</div>
     </section>
   );
 }
 
-/** Badge techno (LTE / NR) utilisant les couleurs du design BC4. */
-function TechBadge({ system }: { system: "LTE" | "NR" }) {
+function Seg<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { v: T; l: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
   return (
-    <span
-      className={`rounded px-1.5 py-px text-[10px] font-bold tracking-wider ${system === "LTE" ? "bg-primary text-primary-foreground" : "bg-sev-good text-primary-foreground"}`}
+    <div role="radiogroup" aria-label={label} className="inline-flex h-7 overflow-hidden rounded-md border">
+      {options.map((o) => (
+        <button
+          key={o.v}
+          role="radio"
+          aria-checked={value === o.v}
+          onClick={() => onChange(o.v)}
+          className={`px-2.5 text-xs font-medium ${value === o.v ? "bg-primary text-primary-foreground" : "bg-card hover:bg-muted"}`}
+        >
+          {o.l}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Labeled({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <span className="text-[10.5px] font-medium text-muted-foreground">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function SelectBox<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+  title,
+}: {
+  label: string;
+  value: T;
+  options: { v: T; l: string }[];
+  onChange: (v: T) => void;
+  disabled?: boolean;
+  title?: string;
+}) {
+  return (
+    <select
+      aria-label={label}
+      title={title}
+      disabled={disabled}
+      value={value}
+      onChange={(e) => onChange(e.target.value as T)}
+      className="h-7 rounded-md border bg-card px-2 text-xs disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {system}
-    </span>
+      {options.map((o) => (
+        <option key={o.v} value={o.v}>
+          {o.l}
+        </option>
+      ))}
+    </select>
   );
 }
 
 /* ---------------------------------------------------------------- */
-/* Arbre RRC (colonne gauche)                                       */
+/* Arbre ASN.1                                                       */
 /* ---------------------------------------------------------------- */
 
 function Tree({
   projectId,
   filters,
+  techno,
   sel,
   onPick,
 }: {
   projectId: string;
   filters: DictFilters;
+  techno: Techno;
   sel: Selection;
   onPick: (s: Selection) => void;
 }) {
   const tree = useQuery(dictQ.tree(projectId, filters));
   const [open, setOpen] = useState<Set<string>>(() => new Set(["LTE", "NR"]));
-
+  const [q, setQ] = useState("");
   const toggle = (k: string) =>
     setOpen((s) => {
       const n = new Set(s);
@@ -119,67 +206,93 @@ function Tree({
       return n;
     });
 
-  if (tree.isPending)
-    return (
-      <div className="space-y-1.5 p-2">
-        {[0, 1, 2, 3, 4].map((i) => (
-          <LoadingSkeleton key={i} className="h-5" />
-        ))}
-      </div>
-    );
-  if (tree.isError)
-    return <ErrorState message={errMsg(tree.error)} onRetry={() => tree.refetch()} />;
+  // Ouvre automatiquement le message contenant la sélection (état conservé ensuite).
+  useEffect(() => {
+    if (sel.system && sel.message)
+      setOpen((s) => new Set([...s, sel.system!, `m:${sel.system}:${sel.message}`]));
+  }, [sel.system, sel.message]);
+
+  const body = tree.isPending ? (
+    <div className="space-y-1.5 p-2">
+      {[0, 1, 2, 3, 4].map((i) => (
+        <LoadingSkeleton key={i} className="h-5" />
+      ))}
+    </div>
+  ) : tree.isError ? (
+    <ErrorState message={errMsg(tree.error)} onRetry={() => tree.refetch()} />
+  ) : (
+    <ul role="tree" aria-label="Arbre ASN.1 des paramètres RRC" className="p-1.5 text-[12.5px]">
+      {tree.data.branches
+        .filter((b) => techno === "LTE+NR" || b.system === techno)
+        .map((branch) => {
+          const needle = q.trim().toLowerCase();
+          const messages = needle
+            ? branch.messages
+                .map((m) => ({
+                  ...m,
+                  params: m.params.filter((p) => p.param.toLowerCase().includes(needle)),
+                }))
+                .filter((m) => m.params.length || m.message.toLowerCase().includes(needle))
+            : branch.messages;
+          const branchOpen = open.has(branch.system) || !!needle;
+          return (
+            <li key={branch.system} role="none">
+              <button
+                role="treeitem"
+                aria-expanded={branchOpen}
+                aria-level={1}
+                onClick={() => toggle(branch.system)}
+                className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left font-semibold hover:bg-muted"
+              >
+                {branchOpen ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+                <Folder className="h-3.5 w-3.5 text-primary" />
+                {branch.system}
+                <span className="ml-auto font-mono text-[10px] font-normal text-muted-foreground">
+                  {fmtInt(branch.count)}
+                </span>
+              </button>
+              {branchOpen && (
+                <ul role="group" className="ml-3">
+                  {branch.messages.length === 0 && (
+                    <li role="none" className="py-1 pl-5 pr-2 text-[11px] italic text-muted-foreground">
+                      Aucune donnée {branch.system} dans ce projet avec les filtres actifs
+                    </li>
+                  )}
+                  {messages.map((m) => (
+                    <TreeMessage
+                      key={m.message}
+                      system={branch.system}
+                      message={m}
+                      sel={sel}
+                      open={open.has(`m:${branch.system}:${m.message}`) || !!needle}
+                      toggle={toggle}
+                      onPick={onPick}
+                    />
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
+    </ul>
+  );
 
   return (
-    <ul role="tree" aria-label="Explorateur de protocole RRC" className="p-1.5">
-      {tree.data.branches.map((branch) => {
-        const branchOpen = open.has(branch.system);
-        return (
-          <li key={branch.system} role="none">
-            <button
-              role="treeitem"
-              aria-expanded={branchOpen}
-              aria-level={1}
-              onClick={() => toggle(branch.system)}
-              className="flex w-full items-center gap-1 rounded px-1 py-1 text-left hover:bg-muted"
-            >
-              {branchOpen ? (
-                <ChevronDown className="h-3 w-3 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
-              )}
-              <TechBadge system={branch.system} />
-              <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                {fmtInt(branch.count)}
-              </span>
-            </button>
-            {branchOpen && (
-              <ul role="group" className="ml-2">
-                {branch.messages.length === 0 && (
-                  <li
-                    role="none"
-                    className="pl-5 pr-2 py-1 text-[11px] italic text-muted-foreground"
-                  >
-                    Aucune observation {branch.system} avec les filtres actifs
-                  </li>
-                )}
-                {branch.messages.map((m) => (
-                  <TreeMessage
-                    key={`${branch.system}:${m.message}`}
-                    system={branch.system}
-                    message={m}
-                    sel={sel}
-                    open={open}
-                    toggle={toggle}
-                    onPick={onPick}
-                  />
-                ))}
-              </ul>
-            )}
-          </li>
-        );
-      })}
-    </ul>
+    <div className="flex h-full flex-col">
+      <div className="border-b p-2">
+        <label className="relative block">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Rechercher un paramètre…"
+            aria-label="Rechercher un paramètre dans l'arbre"
+            className="h-8 w-full rounded-md border bg-card pl-7 pr-2 text-xs"
+          />
+        </label>
+      </div>
+      <div className="min-h-0 flex-1 overflow-auto">{body}</div>
+    </div>
   );
 }
 
@@ -194,70 +307,46 @@ function TreeMessage({
   system: "LTE" | "NR";
   message: DictTreeMessage;
   sel: Selection;
-  open: Set<string>;
+  open: boolean;
   toggle: (k: string) => void;
   onPick: (s: Selection) => void;
 }) {
   const key = `m:${system}:${message.message}`;
-  const isOpen = open.has(key);
-  const selectedMsg = sel.system === system && sel.message === message.message && sel.path == null;
   return (
     <li role="none">
       <button
         role="treeitem"
-        aria-selected={selectedMsg}
         aria-level={2}
-        aria-expanded={isOpen}
-        onClick={() => {
-          toggle(key);
-          onPick({ system, message: message.message, path: null });
-        }}
-        className={`flex w-full items-center gap-1 rounded px-1 py-1 text-left ${selectedMsg ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted"}`}
+        aria-expanded={open}
+        onClick={() => toggle(key)}
+        className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left hover:bg-muted"
       >
-        {isOpen ? (
-          <ChevronDown className="h-3 w-3 text-muted-foreground" />
-        ) : (
-          <ChevronRight className="h-3 w-3 text-muted-foreground" />
-        )}
-        <span className="min-w-0 truncate font-mono text-[11px]">{message.message}</span>
-        <span className="ml-auto flex items-center gap-1">
-          {message.count > 0 && (
-            <span className="rounded-sm border border-sev-good/40 px-1 text-[9px] font-semibold uppercase text-sev-good">
-              Observé
-            </span>
-          )}
-          <span className="font-mono text-[10px] text-muted-foreground">
-            {fmtInt(message.count)}
-          </span>
-        </span>
+        {open ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        <span className="min-w-0 truncate">{message.message}</span>
+        <span className="ml-auto font-mono text-[10px] text-muted-foreground">{fmtInt(message.count)}</span>
       </button>
-      {isOpen && (
-        <ul role="group" className="ml-3">
+      {open && (
+        <ul role="group" className="ml-4 border-l pl-1">
           {message.params.length === 0 ? (
-            <li role="none" className="pl-5 pr-2 py-1 text-[11px] italic text-muted-foreground">
-              Paramètres indisponibles — aucune valeur ingérée pour ce message
+            <li role="none" className="py-1 pl-3 pr-2 text-[11px] italic text-muted-foreground">
+              Aucun paramètre ingéré pour ce message
             </li>
           ) : (
             message.params.map((p) => {
-              const selectedParam =
-                sel.system === system && sel.message === message.message && sel.path === p.param;
+              const selected = sel.system === system && sel.message === message.message && sel.path === p.param;
               return (
-                <li key={`${key}:${p.param}`} role="none">
+                <li key={p.param} role="none">
                   <button
                     role="treeitem"
-                    aria-selected={selectedParam}
+                    aria-selected={selected}
                     aria-level={3}
-                    onClick={() => onPick({ system, message: message.message, path: p.param })}
-                    className={`flex w-full items-center gap-1 rounded px-1 py-[2px] text-left ${selectedParam ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted"}`}
                     title={p.param}
+                    onClick={() => onPick({ system, message: message.message, path: p.param })}
+                    className={`flex w-full items-center gap-1.5 rounded px-1.5 py-[3px] text-left ${selected ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted"}`}
                   >
-                    <span className="w-3 text-muted-foreground">·</span>
-                    <span className="min-w-0 truncate font-mono text-[11px]">
-                      {leafOf(p.param)}
-                    </span>
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">
-                      {fmtInt(p.count)}
-                    </span>
+                    <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 truncate">{leafOf(p.param)}</span>
+                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">{fmtInt(p.count)}</span>
                   </button>
                 </li>
               );
@@ -270,7 +359,7 @@ function TreeMessage({
 }
 
 /* ---------------------------------------------------------------- */
-/* Détail d'un paramètre (colonne droite)                           */
+/* Infos techniques (à la demande)                                   */
 /* ---------------------------------------------------------------- */
 
 function CopyButton({ text, label }: { text: string; label: string }) {
@@ -284,7 +373,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1500);
         } catch {
-          /* clipboard refusé */
+          /* presse-papiers refusé */
         }
       }}
       className="shrink-0 rounded p-0.5 text-primary hover:bg-muted"
@@ -294,108 +383,63 @@ function CopyButton({ text, label }: { text: string; label: string }) {
   );
 }
 
-function DetailTable({ row }: { row: ParamRow }) {
-  const share = row.share_dominant ?? null;
-  const rawDom = row.value_raw_dominant;
-  const convDom = row.value_converted_dominant;
+function InfoSheet({ row, open, onOpenChange }: { row: ParamRow; open: boolean; onOpenChange: (o: boolean) => void }) {
+  const nd = <span className="text-muted-foreground">N/D</span>;
+  const conv = row.value_converted_dominant;
+  const items: [string, ReactNode][] = [
+    ["Système", row.system],
+    ["Message", <span className="font-mono">{row.message}</span>],
+    [
+      "Chemin ASN.1",
+      <span className="flex items-start gap-1.5">
+        <code className="min-w-0 break-all font-mono text-[11px]">{row.path}</code>
+        <CopyButton text={row.path} label="Copier le chemin ASN.1" />
+      </span>,
+    ],
+    ["Type ASN.1", row.type ? <span className="font-mono">{row.type}</span> : nd],
+    ["Référence 3GPP", row.conversion_rule?.ref ?? nd],
+    [
+      "Valeur brute dominante",
+      row.value_raw_dominant == null ? nd : <span className="font-mono">{String(row.value_raw_dominant)}</span>,
+    ],
+    [
+      "Valeur convertie dominante",
+      conv == null || !row.conversion_rule ? (
+        nd
+      ) : (
+        <span className="font-mono font-semibold text-primary">
+          {typeof conv === "number" ? fmtNum(conv, row.conversion_rule.decimals) : conv} {row.unit_converted ?? ""}
+        </span>
+      ),
+    ],
+    ["Part dominante", fmtShare(row.share_dominant)],
+    [
+      "Règle de conversion",
+      row.conversion_rule ? (
+        <span className="font-mono">{row.conversion_rule.formula}</span>
+      ) : (
+        <span className="text-muted-foreground">Aucune règle validée fournie par l'API — valeurs brutes</span>
+      ),
+    ],
+    ["Occurrences (filtres actifs)", fmtInt(row.count)],
+  ];
   return (
-    <div className="rounded-md border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-32 text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Champ
-            </TableHead>
-            <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Valeur
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">Message</TableCell>
-            <TableCell className="py-1.5 font-mono text-[11.5px]">{row.message}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">Type ASN.1</TableCell>
-            <TableCell className="py-1.5 font-mono text-[11.5px]">
-              {row.type ?? <span className="text-muted-foreground">N/D</span>}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">
-              Chemin ASN.1
-            </TableCell>
-            <TableCell className="py-1.5">
-              <span className="flex items-start gap-1.5">
-                <code className="min-w-0 break-all font-mono text-[10.5px] leading-snug">
-                  {row.path}
-                </code>
-                <CopyButton text={row.path} label="Copier le chemin ASN.1" />
-              </span>
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">
-              Valeur observée
-            </TableCell>
-            <TableCell className="py-1.5">
-              <span className="font-mono text-[11.5px]">
-                {rawDom == null ? "N/D" : String(rawDom)}
-              </span>{" "}
-              <span className="text-[10px] text-muted-foreground">(brute, dominante)</span>
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">
-              Valeur convertie
-            </TableCell>
-            <TableCell className="py-1.5">
-              {convDom == null ? (
-                <span className="text-muted-foreground">N/D</span>
-              ) : (
-                <span className="font-mono text-[11.5px] font-semibold text-primary">
-                  {typeof convDom === "number" ? fmtNum(convDom, 2) : String(convDom)}
-                  {row.unit_converted ? ` ${row.unit_converted}` : ""}
-                </span>
-              )}
-            </TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">
-              Part dominante
-            </TableCell>
-            <TableCell className="py-1.5 font-mono text-[11.5px]">{fmtShare(share)}</TableCell>
-          </TableRow>
-          <TableRow>
-            <TableCell className="py-1.5 text-[11.5px] text-muted-foreground">
-              Règle de conversion
-            </TableCell>
-            <TableCell className="py-1.5">
-              {row.conversion_rule ? (
-                <span>
-                  <span className="font-mono text-[11.5px]">{row.conversion_rule.formula}</span>{" "}
-                  <span className="text-[10px] text-muted-foreground">
-                    — {row.conversion_rule.ref}
-                  </span>
-                </span>
-              ) : row.unit_converted ? (
-                <span className="font-mono text-[11.5px]">
-                  Unité : {row.unit_converted}{" "}
-                  <span className="text-[10px] text-muted-foreground">
-                    — règle 3GPP non fournie par l'API
-                  </span>
-                </span>
-              ) : (
-                <span className="text-muted-foreground">
-                  Aucune règle fournie par l'API — valeurs restituées brutes
-                </span>
-              )}
-            </TableCell>
-          </TableRow>
-        </TableBody>
-      </Table>
-    </div>
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="w-[420px] sm:max-w-[420px]">
+        <SheetHeader>
+          <SheetTitle className="font-mono">{leafOf(row.path)}</SheetTitle>
+          <SheetDescription>Informations techniques du paramètre</SheetDescription>
+        </SheetHeader>
+        <dl className="mt-4 divide-y text-[12.5px]">
+          {items.map(([k, v]) => (
+            <div key={k} className="grid grid-cols-[150px_minmax(0,1fr)] gap-2 py-2">
+              <dt className="text-muted-foreground">{k}</dt>
+              <dd className="min-w-0">{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </SheetContent>
+    </Sheet>
   );
 }
 
@@ -403,179 +447,275 @@ function DetailTable({ row }: { row: ParamRow }) {
 /* Histogramme                                                       */
 /* ---------------------------------------------------------------- */
 
-function Histogram({ row }: { row: ParamRow }) {
-  // 1.8.1 — Histogramme câblé sur `value_distribution` servi par
-  // `/dict/params` (bc4-back 0.15.0). Trois cas :
-  //   • Paramètre numérique (au moins un `value_converted` non null) :
-  //     abscisse = `value_converted` (string → ordre numérique pour
-  //     l'affichage), ordonnée = `count`. L'unité convertie, si
-  //     connue, suffixe le label d'axe. Les entrées à `value_converted
-  //     === null` sont retenues (fallback `value_raw`) et libellées
-  //     « N/D (conversion non appliquée) » en abscisse — jamais 0.
-  //   • Paramètre enum (TOUS les `value_converted` sont null) :
-  //     abscisse = `value_raw` (ex. "n100"), aucune conversion.
-  //   • `value_distribution` vide → EmptyState (voir plus bas).
-  //
-  // En mode `binned`, le back renvoie les bornes d'intervalle en
-  // `value_raw`/`value_converted` ; on garde le label TEL QUEL (pas de
-  // re-parsing côté UI) et on signale explicitement « binning actif »
-  // sous le chart.
-  const mode = row.value_distribution_mode ?? "exact";
-  const data = useMemo(() => {
-    const dist = row.value_distribution ?? [];
-    const isEnumLocal = dist.length > 0 && dist.every((e) => e.value_converted == null);
-    const items = dist.map((e) => {
-      const useConverted = !isEnumLocal;
-      const base = useConverted ? e.value_converted : e.value_raw;
-      // Label affiché en abscisse. Si on devrait convertir mais la valeur
-      // convertie est null, fallback explicite — jamais 0.
-      const label = useConverted && e.value_converted == null ? "N/D" : (base ?? e.value_raw);
-      // Clé de tri numérique (quand possible) pour que l'axe soit lisible.
-      const numericKey = Number(useConverted ? (e.value_converted ?? NaN) : e.value_raw);
-      return {
-        label: String(label),
-        count: e.count,
-        sort: Number.isFinite(numericKey) ? numericKey : Number.POSITIVE_INFINITY,
-        raw: String(e.value_raw),
-        isEnum: isEnumLocal,
-      };
-    });
-    // Si tri numérique applicable (paramètre numérique en mode exact),
-    // on trie par valeur convertie croissante. Sinon on conserve l'ordre
-    // du back (déjà trié côté SQL pour `binned` et pour les enums).
-    if (!isEnumLocal && mode === "exact") {
-      items.sort((a, b) => a.sort - b.sort);
-    }
-    return items;
-  }, [row.value_distribution, mode]);
-  const total = data.reduce((a, b) => a + b.count, 0);
-  const isEnum = data.length > 0 && data[0]!.isEnum;
-  const unitSuffix = !isEnum && row.unit_converted ? ` (${row.unit_converted})` : "";
-  const build = (c: { fg: string; muted: string; border: string }) => {
-    const primary = getComputedStyle(document.documentElement).getPropertyValue("--primary").trim();
-    return {
-      grid: { left: 44, right: 12, top: 18, bottom: 64, containLabel: false },
-      tooltip: { trigger: "axis" as const, axisPointer: { type: "shadow" as const } },
+function unitLabel(row: ParamRow, g: Grouped) {
+  return g.isEnum ? "Valeur ASN.1 brute" : `Valeur${row.unit_converted ? ` (${row.unit_converted})` : ""}`;
+}
+
+function HistogramChart({
+  row,
+  g,
+  series,
+  measure,
+  highlight,
+  title,
+  height,
+}: {
+  row: ParamRow;
+  g: Grouped;
+  series: Grouped["series"];
+  measure: Measure;
+  highlight: string | null;
+  title: string;
+  height: number;
+}) {
+  const hiIdx = highlight == null ? -1 : g.bins.findIndex((b) => b.raw === highlight);
+  const build = useCallback(
+    (c: { fg: string; muted: string; border: string }) => ({
+      grid: { left: 52, right: 12, top: 16, bottom: series.length > 1 ? 70 : 50 },
+      legend:
+        series.length > 1
+          ? { bottom: 0, icon: "circle", itemWidth: 9, textStyle: { color: c.fg, fontSize: 11 } }
+          : undefined,
+      tooltip: {
+        trigger: "axis" as const,
+        axisPointer: { type: "shadow" as const },
+        formatter: (ps: { seriesIndex: number; dataIndex: number; marker: string }[]) => {
+          const i = ps[0]?.dataIndex ?? 0;
+          const bin = g.bins[i]!;
+          const lines = ps.map((p) => {
+            const s = series[p.seriesIndex]!;
+            const n = s.counts[i]!;
+            const share = s.total ? ((n / s.total) * 100).toFixed(1) : "N/D";
+            return `${p.marker}${s.key === "Total" ? "Total" : s.key} : <b>${fmtInt(n)}</b> (${share} % du groupe, n=${fmtInt(s.total)})`;
+          });
+          return `<b>${bin.label}${!g.isEnum && row.unit_converted ? " " + row.unit_converted : ""}</b> <span style="opacity:.6">(brut ${bin.raw})</span><br/>${lines.join("<br/>")}<br/><span style="opacity:.6">Population filtrée : ${fmtInt(g.population)}</span>`;
+        },
+      },
       xAxis: {
         type: "category" as const,
-        data: data.map((b) => b.label),
-        name: isEnum ? "Valeur ASN.1 brute" : `Valeur convertie${unitSuffix}`,
+        data: g.bins.map((b) => b.label),
+        name: unitLabel(row, g),
         nameLocation: "middle" as const,
-        nameGap: 48,
-        axisLabel: {
-          color: c.muted,
-          fontSize: 9,
-          rotate: data.length > 6 ? 40 : 0,
-          interval: 0,
-          hideOverlap: true,
-        },
+        nameGap: 28,
+        nameTextStyle: { color: c.fg, fontSize: 11 },
+        axisLabel: { color: c.muted, fontSize: 10, hideOverlap: true },
         axisLine: { lineStyle: { color: c.border } },
       },
       yAxis: {
         type: "value" as const,
-        name: "Occurrences",
+        name: measure === "count" ? "Occurrences" : "%",
         nameTextStyle: { color: c.muted, fontSize: 10 },
         axisLabel: { color: c.muted, fontSize: 10 },
         splitLine: { lineStyle: { color: c.border } },
       },
-      series: [
-        {
-          type: "bar" as const,
-          data: data.map((b) => b.count),
-          itemStyle: { color: primary },
-          barMaxWidth: 28,
-        },
-      ],
-    };
-  };
-  if (!data.length || total === 0)
+      series: series.map((s, si) => ({
+        type: "bar" as const,
+        name: s.key,
+        barMaxWidth: 22,
+        itemStyle: { color: seriesColor(s.operator, si) },
+        data: s.counts.map((n, i) => ({
+          value: measureOf(n, measure, g.population, s.total),
+          itemStyle: hiIdx >= 0 && i !== hiIdx ? { opacity: 0.25 } : undefined,
+        })),
+      })),
+    }),
+    [row, g, series, measure, hiIdx],
+  );
+  return <Chart title={title} subtitle={`Mesure : ${MEASURE_LABELS[measure]}`} exportName={`distribution_${leafOf(row.path)}`} build={build} height={height} />;
+}
+
+function Histogram({
+  row,
+  g,
+  groupBy,
+  measure,
+  highlight,
+}: {
+  row: ParamRow;
+  g: Grouped;
+  groupBy: GroupBy;
+  measure: Measure;
+  highlight: string | null;
+}) {
+  if (groupBy === "operator_band" && g.series.length > MAX_SERIES) {
+    const ops = [...new Set(g.series.map((s) => s.operator ?? ""))];
     return (
-      <EmptyState title="Aucune valeur observée">
-        Aucune valeur distribuée pour ce paramètre avec les filtres actifs.
-      </EmptyState>
+      <div className="grid gap-2 md:grid-cols-2">
+        {ops.map((op) => (
+          <HistogramChart
+            key={op}
+            row={row}
+            g={g}
+            series={g.series.filter((s) => s.operator === op)}
+            measure={measure}
+            highlight={highlight}
+            title={`Distribution des valeurs — ${op} (par bande)`}
+            height={220}
+          />
+        ))}
+      </div>
     );
+  }
   return (
-    <div className="flex flex-col gap-1">
-      <Chart
-        title={`Distribution — ${leafOf(row.path)}`}
-        subtitle={`${fmtInt(total)} occurrences · ${fmtInt(data.length)} ${
-          isEnum ? "valeurs ASN.1" : "valeurs converties"
-        } distinctes`}
-        exportName={`distribution_${leafOf(row.path)}`}
-        build={build}
-        height={240}
-      />
-      {mode === "binned" && (
-        <p className="px-1 text-[10px] italic text-muted-foreground">
-          Binning actif — les abscisses sont des bornes d'intervalle servies par le back.
+    <HistogramChart
+      row={row}
+      g={g}
+      series={g.series}
+      measure={measure}
+      highlight={highlight}
+      title="Distribution des valeurs"
+      height={300}
+    />
+  );
+}
+
+/* ---------------------------------------------------------------- */
+/* Table détaillée                                                   */
+/* ---------------------------------------------------------------- */
+
+type SortKey = "value" | "total";
+
+function ValuesTable({
+  row,
+  g,
+  measure,
+  highlight,
+  onHighlight,
+}: {
+  row: ParamRow;
+  g: Grouped;
+  measure: Measure;
+  highlight: string | null;
+  onHighlight: (raw: string | null) => void;
+}) {
+  const [sort, setSort] = useState<{ k: SortKey; desc: boolean }>({ k: "total", desc: true });
+  const [q, setQ] = useState("");
+  const grouped = g.series.length > 1 || g.series[0]?.key !== "Total";
+  const rows = useMemo(() => {
+    const list = g.bins.map((b, i) => ({ b, i }));
+    const filteredList = q ? list.filter(({ b }) => `${b.label} ${b.raw}`.toLowerCase().includes(q.toLowerCase())) : list;
+    if (sort.k === "total") filteredList.sort((a, b) => (sort.desc ? b.b.total - a.b.total : a.b.total - b.b.total));
+    else if (sort.desc) filteredList.reverse();
+    return filteredList;
+  }, [g, q, sort]);
+  const max = Math.max(1, ...g.bins.map((b) => b.total));
+  const unit = !g.isEnum && row.unit_converted ? ` (${row.unit_converted})` : "";
+  const fmtCell = (n: number, groupTotal: number) => {
+    const v = measureOf(n, measure, g.population, groupTotal);
+    if (v == null) return "N/D";
+    return measure === "count" ? fmtInt(v) : `${fmtNum(v, 1)} %`;
+  };
+  const exportCsv = () =>
+    downloadCsv(`valeurs_${leafOf(row.path)}`, [
+      [`# Paramètre : ${row.path} — mesure : ${MEASURE_LABELS[measure]} — population filtrée : ${g.population}`],
+      ["valeur_brute", `valeur${unit}`, "total", ...g.series.filter(() => grouped).map((s) => s.key), "pct_total"],
+      ...g.bins.map((b, i) => [
+        b.raw,
+        b.label,
+        b.total,
+        ...g.series.filter(() => grouped).map((s) => s.counts[i]!),
+        g.population ? ((b.total / g.population) * 100).toFixed(2) : "N/D",
+      ]),
+    ]);
+  const th = "sticky top-0 z-[1] bg-muted px-2 py-1.5 text-left text-[11px] font-semibold whitespace-nowrap";
+  const sortBtn = (k: SortKey, label: string) => (
+    <button
+      onClick={() => setSort((s) => ({ k, desc: s.k === k ? !s.desc : k === "total" }))}
+      className="inline-flex items-center gap-1 hover:text-primary"
+      aria-label={`Trier par ${label}`}
+    >
+      {label}
+      {sort.k === k && <span aria-hidden>{sort.desc ? "↓" : "↑"}</span>}
+    </button>
+  );
+  return (
+    <Panel
+      title="Détail des valeurs"
+      actions={
+        <>
+          <input
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Filtrer une valeur…"
+            aria-label="Filtrer les valeurs du tableau"
+            className="h-7 w-36 rounded-md border bg-card px-2 text-xs"
+          />
+          <button onClick={exportCsv} className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted">
+            <Download className="h-3.5 w-3.5" /> Exporter CSV
+          </button>
+        </>
+      }
+    >
+      <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-[12px] tabular-nums">
+          <thead>
+            <tr>
+              <th className={th}>#</th>
+              <th className={th}>{sortBtn("value", `Valeur${unit}`)}</th>
+              {!g.isEnum && <th className={th}>Brut</th>}
+              <th className={`${th} text-right`}>{sortBtn("total", "Total")}</th>
+              {grouped && g.series.map((s) => <th key={s.key} className={`${th} text-right`}>{s.key}</th>)}
+              <th className={`${th} text-right`}>% du total</th>
+              <th className={`${th} w-32`} aria-label="Part visuelle" />
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ b, i }, n) => {
+              const pct = g.population ? (b.total / g.population) * 100 : null;
+              const active = highlight === b.raw;
+              return (
+                <tr
+                  key={b.raw}
+                  tabIndex={0}
+                  aria-selected={active}
+                  onClick={() => onHighlight(active ? null : b.raw)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      onHighlight(active ? null : b.raw);
+                    }
+                  }}
+                  className={`cursor-pointer border-b outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-accent" : "hover:bg-muted/60"}`}
+                >
+                  <td className="px-2 py-1 text-muted-foreground">{n + 1}</td>
+                  <td className="px-2 py-1 font-mono font-semibold">{b.label}</td>
+                  {!g.isEnum && <td className="px-2 py-1 font-mono text-muted-foreground">{b.raw}</td>}
+                  <td className="px-2 py-1 text-right font-semibold">{fmtInt(b.total)}</td>
+                  {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1 text-right">{fmtCell(s.counts[i]!, s.total)}</td>)}
+                  <td className="px-2 py-1 text-right">{pct == null ? "N/D" : `${fmtNum(pct, 1)} %`}</td>
+                  <td className="px-2 py-1">
+                    <div className="h-2 rounded bg-muted">
+                      <div className="h-2 rounded bg-primary" style={{ width: `${(b.total / max) * 100}%` }} />
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+          <tfoot>
+            <tr className="font-semibold">
+              <td className="px-2 py-1.5" colSpan={g.isEnum ? 2 : 3}>
+                Total (population filtrée)
+              </td>
+              <td className="px-2 py-1.5 text-right">{fmtInt(g.population)}</td>
+              {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1.5 text-right">{fmtInt(s.total)}</td>)}
+              <td className="px-2 py-1.5 text-right">{g.population ? "100,0 %" : "N/D"}</td>
+              <td />
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      {measure === "pct_group" && grouped && (
+        <p className="px-3 py-1.5 text-[11px] text-muted-foreground">
+          Colonnes de groupe en % du total de chaque groupe (dénominateur = ligne Total).
         </p>
       )}
-    </div>
+    </Panel>
   );
 }
 
 /* ---------------------------------------------------------------- */
-/* Table Opérateur × Bande                                           */
-/* ---------------------------------------------------------------- */
-
-function OperatorBandTable({ row }: { row: ParamRow }) {
-  const sorted = [...row.buckets].sort(
-    (a, b) => a.operator.localeCompare(b.operator) || a.band.localeCompare(b.band),
-  );
-  if (!sorted.length)
-    return (
-      <EmptyState title="Aucune ligne">
-        Aucune observation par (opérateur, bande) avec les filtres actifs.
-      </EmptyState>
-    );
-  return (
-    <div className="rounded-md border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Opérateur
-            </TableHead>
-            <TableHead className="text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Bande
-            </TableHead>
-            <TableHead className="text-right text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Occurrences
-            </TableHead>
-            <TableHead className="text-right text-[10.5px] font-semibold uppercase tracking-wider text-muted-foreground">
-              Moyenne {row.unit_converted ? `(${row.unit_converted})` : ""}
-            </TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {sorted.map((b, i) => (
-            <TableRow key={`${b.operator}·${b.band}·${i}`}>
-              <TableCell className="py-1.5 font-mono text-[11.5px]">{b.operator}</TableCell>
-              <TableCell className="py-1.5 font-mono text-[11.5px]">{b.band}</TableCell>
-              <TableCell className="py-1.5 text-right font-mono text-[11.5px]">
-                {b.count === 0 ? (
-                  <span className="text-muted-foreground">0 occurrence</span>
-                ) : (
-                  fmtInt(b.count)
-                )}
-              </TableCell>
-              <TableCell className="py-1.5 text-right font-mono text-[11.5px]">
-                {b.avg_converted == null ? (
-                  <span className="text-muted-foreground">N/D</span>
-                ) : (
-                  fmtNum(b.avg_converted, 2)
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-/* ---------------------------------------------------------------- */
-/* Carte des occurrences                                             */
+/* Carte                                                             */
 /* ---------------------------------------------------------------- */
 
 type MapPointLike = {
@@ -586,15 +726,18 @@ type MapPointLike = {
   operator: string | null;
   band: string | null;
 };
+const MAP_PALETTE = ["--chart-1", "--chart-2", "--chart-3", "--chart-4", "--chart-5"];
 
 function OccurrenceMap({
   points,
   center,
   unit,
+  highlight,
 }: {
   points: MapPointLike[];
   center: [number, number];
   unit: string | null;
+  highlight: string | null;
 }) {
   const el = useRef<HTMLDivElement>(null);
   const map = useRef<MlMap | null>(null);
@@ -602,44 +745,45 @@ function OccurrenceMap({
   const [tileError, setTileError] = useState(false);
   const [full, setFull] = useState(false);
 
-  const geo = useMemo(() => {
-    const nums = points
-      .map((p) => (typeof p.value_converted === "number" ? p.value_converted : null))
-      .filter((v): v is number => v != null && Number.isFinite(v));
-    const min = nums.length ? Math.min(...nums) : 0;
-    const max = nums.length ? Math.max(...nums) : 1;
-    const palette = ["#1769E0", "#52C41A", "#FAAD14", "#F5222D", "#722ED1"];
-    const colorOf = (v: number | string | null) => {
-      if (typeof v !== "number" || !Number.isFinite(v)) return "rgba(128,128,128,0.6)";
-      const t = max === min ? 0.5 : (v - min) / (max - min);
-      const idx = Math.min(palette.length - 1, Math.max(0, Math.floor(t * palette.length)));
-      return palette[idx]!;
+  const { geo, legend } = useMemo(() => {
+    const palette = MAP_PALETTE.map((v) => cssVar(v) || "gray");
+    const nums = points.map((p) => Number(p.value_converted)).filter((v) => Number.isFinite(v));
+    const numeric = nums.length === points.length && nums.length > 0;
+    const min = numeric ? Math.min(...nums) : 0;
+    const max = numeric ? Math.max(...nums) : 1;
+    const cats = numeric ? [] : [...new Set(points.map((p) => String(p.value_converted ?? p.value_raw ?? "N/D")))];
+    const colorOf = (p: MapPointLike) => {
+      if (numeric) {
+        const v = Number(p.value_converted);
+        const t = max === min ? 0.5 : (v - min) / (max - min);
+        return palette[Math.min(palette.length - 1, Math.floor(t * palette.length))]!;
+      }
+      return palette[cats.indexOf(String(p.value_converted ?? p.value_raw ?? "N/D")) % palette.length]!;
     };
+    const legend = numeric
+      ? palette.map((c, i) => {
+          const a = min + ((max - min) * i) / palette.length;
+          return { c, l: `≥ ${fmtNum(a, 1)}${unit ? " " + unit : ""}` };
+        })
+      : cats.slice(0, 5).map((l, i) => ({ c: palette[i % palette.length]!, l }));
     return {
-      type: "FeatureCollection" as const,
-      features: points
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon))
-        .map((p) => ({
-          type: "Feature" as const,
-          geometry: {
-            type: "Point" as const,
-            coordinates: [p.lon, p.lat] as [number, number],
-          },
-          properties: {
-            color: colorOf(
-              typeof p.value_converted === "string" ? Number(p.value_converted) : p.value_converted,
-            ),
-            display:
-              p.value_converted == null
-                ? "N/D"
-                : typeof p.value_converted === "number"
-                  ? `${fmtNum(p.value_converted, 2)}${unit ? " " + unit : ""}`
-                  : `${p.value_converted}${unit ? " " + unit : ""}`,
-            raw: p.value_raw == null ? "N/D" : String(p.value_raw),
-            op: p.operator ?? "N/D",
-            band: p.band ?? "N/D",
-          },
-        })),
+      legend,
+      geo: {
+        type: "FeatureCollection" as const,
+        features: points
+          .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lon))
+          .map((p) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [p.lon, p.lat] as [number, number] },
+            properties: {
+              color: colorOf(p),
+              raw: p.value_raw == null ? "N/D" : String(p.value_raw),
+              display: p.value_converted == null ? "N/D" : `${p.value_converted}${unit ? " " + unit : ""}`,
+              op: p.operator ?? "N/D",
+              band: p.band ?? "N/D",
+            },
+          })),
+      },
     };
   }, [points, unit]);
 
@@ -681,14 +825,7 @@ function OccurrenceMap({
               attribution: "© OpenStreetMap",
             },
           },
-          layers: [
-            {
-              id: "osm",
-              type: "raster",
-              source: "osm",
-              paint: { "raster-saturation": -0.8, "raster-opacity": 0.85 },
-            },
-          ],
+          layers: [{ id: "osm", type: "raster", source: "osm", paint: { "raster-saturation": -0.6, "raster-opacity": 0.9 } }],
         },
       });
       m.addControl(new ml.NavigationControl({ showCompass: false }), "top-right");
@@ -704,8 +841,8 @@ function OccurrenceMap({
           paint: {
             "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 3, 14, 7],
             "circle-color": ["get", "color"],
-            "circle-stroke-width": 0.7,
-            "circle-stroke-color": "rgba(20,34,53,0.55)",
+            "circle-stroke-width": 0.6,
+            "circle-stroke-color": "rgba(20,34,53,0.5)",
           },
         });
         const popup = new ml.Popup({ closeButton: false, closeOnClick: false, offset: 8 });
@@ -715,9 +852,7 @@ function OccurrenceMap({
           if (p)
             popup
               .setLngLat(e.lngLat)
-              .setHTML(
-                `<div style="font:12px IBM Plex Sans"><b>${p["op"]}</b> · ${p["band"]}<br/>Valeur : ${p["display"]} <span style="color:#888">(brut ${p["raw"]})</span></div>`,
-              )
+              .setHTML(`<div style="font:12px Inter"><b>${p["op"]}</b> · ${p["band"]}<br/>Valeur : ${p["display"]} <span style="opacity:.6">(brut ${p["raw"]})</span></div>`)
               .addTo(m);
         });
         m.on("mouseleave", "pts", () => {
@@ -745,6 +880,20 @@ function OccurrenceMap({
   }, [geo, ready]);
 
   useEffect(() => {
+    if (!ready || !map.current) return;
+    map.current.setPaintProperty(
+      "pts",
+      "circle-opacity",
+      highlight == null ? 0.9 : ["case", ["==", ["get", "raw"], highlight], 1, 0.12],
+    );
+    map.current.setPaintProperty(
+      "pts",
+      "circle-stroke-opacity",
+      highlight == null ? 1 : ["case", ["==", ["get", "raw"], highlight], 1, 0.1],
+    );
+  }, [highlight, ready]);
+
+  useEffect(() => {
     setTimeout(() => {
       map.current?.resize();
       fit();
@@ -754,184 +903,179 @@ function OccurrenceMap({
 
   if (!points.length)
     return (
-      <EmptyState title="Aucune position géographique disponible">
+      <EmptyState title="Aucune position GPS">
         Aucune coordonnée GPS n'est associée à ces observations. Aucune position n'est inventée.
       </EmptyState>
     );
   return (
-    <div className="flex flex-col gap-1.5 p-2">
-      <div
-        className={`relative overflow-hidden rounded-md border ${full ? "fixed inset-4 z-50 shadow-2xl" : "h-[340px]"}`}
-      >
-        <div
-          ref={el}
-          className="h-full w-full bg-muted"
-          role="region"
-          aria-label={`Carte, ${points.length} points`}
-        />
+    <div className="flex h-full flex-col gap-1.5 p-2">
+      <div className={`relative min-h-[260px] flex-1 overflow-hidden rounded-md border ${full ? "fixed inset-4 z-50 shadow-2xl" : ""}`}>
+        <div ref={el} className="h-full w-full bg-muted" role="region" aria-label={`Carte, ${points.length} points`} />
         <div className="absolute right-12 top-2.5 z-10 flex gap-1">
-          <button
-            onClick={fit}
-            aria-label="Recentrer sur les données"
-            className="panel p-1.5 shadow"
-          >
+          <button onClick={fit} aria-label="Recentrer sur les données" className="panel p-1.5 shadow">
             <Crosshair className="h-3.5 w-3.5" />
           </button>
-          <button
-            onClick={() => setFull((f) => !f)}
-            aria-label={full ? "Quitter plein écran" : "Carte plein écran"}
-            className="panel p-1.5 shadow"
-          >
+          <button onClick={() => setFull((f) => !f)} aria-label={full ? "Quitter plein écran" : "Carte plein écran"} className="panel p-1.5 shadow">
             {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
           </button>
         </div>
         {tileError && (
-          <div
-            role="status"
-            className="absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-warning px-2 py-1 text-[11px] text-warning-foreground"
-          >
-            <AlertTriangle className="h-3 w-3" /> Fond de carte indisponible — points affichés sans
-            tuiles.
+          <div role="status" className="absolute left-2 top-2 z-10 flex items-center gap-1.5 rounded-md bg-warning px-2 py-1 text-[11px] text-warning-foreground">
+            <AlertTriangle className="h-3 w-3" /> Fond de carte indisponible — points affichés sans tuiles.
           </div>
         )}
       </div>
-      <p className="text-[10px] text-muted-foreground">
-        {fmtInt(points.length)} points géolocalisés — valeurs issues de /dict/param/map.
-      </p>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px]">
+        {legend.map((x) => (
+          <span key={x.l} className="inline-flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-full" style={{ background: x.c }} />
+            {x.l}
+          </span>
+        ))}
+        <span className="ml-auto text-muted-foreground">{fmtInt(points.length)} points</span>
+      </div>
     </div>
   );
 }
 
 /* ---------------------------------------------------------------- */
-/* Barre de filtres (5 selects : Op, Bande, DR, Plaque, Zone ARCEP) */
+/* Barre d'outils unique                                             */
 /* ---------------------------------------------------------------- */
 
-function FilterBar({
-  filters,
-  setFilters,
+type Draft = { techno: Techno; op: string[]; band: string[] };
+
+function Toolbar({
+  draft,
+  setDraft,
   operators,
   bands,
-  arcepZones,
-  drOptions,
-  plaqueOptions,
-  cellRefEmpty,
+  period,
+  geoLabel,
+  groupBy,
+  setGroupBy,
+  measure,
+  setMeasure,
+  showMap,
+  setShowMap,
+  dirty,
+  onApply,
+  onReset,
+  groupingSupported,
+  compact,
 }: {
-  filters: DictFilters;
-  setFilters: (p: Partial<DictFilters>) => void;
+  draft: Draft;
+  setDraft: (d: Draft) => void;
   operators: string[];
   bands: string[];
-  arcepZones: string[];
-  drOptions: string[];
-  plaqueOptions: string[];
-  cellRefEmpty: boolean;
+  period: string | null;
+  geoLabel: string | null;
+  groupBy: GroupBy;
+  setGroupBy: (g: GroupBy) => void;
+  measure: Measure;
+  setMeasure: (m: Measure) => void;
+  showMap: boolean;
+  setShowMap: (b: boolean) => void;
+  dirty: boolean;
+  onApply: () => void;
+  onReset: () => void;
+  groupingSupported: boolean;
+  compact: boolean;
 }) {
-  const activeCount =
-    (filters.op?.length ?? 0) +
-    (filters.band?.length ?? 0) +
-    (filters.dr?.length ?? 0) +
-    (filters.plaque?.length ?? 0) +
-    (filters.arcep?.length ?? 0);
-  return (
-    <div className="panel flex flex-wrap items-center gap-1.5 px-2 py-1.5">
-      <BookOpen className="h-4 w-4 text-primary" aria-hidden />
-      <h1 className="mr-2 text-sm font-bold">
-        Dictionnaire RRC <span className="font-normal text-muted-foreground">LTE + NR</span>
-      </h1>
-      <MultiSelect
-        label="Opérateur"
-        options={operators}
-        value={filters.op ?? []}
-        onChange={(v) => setFilters({ op: v as Operator[] })}
-      />
-      <MultiSelect
-        label="Bande"
-        options={bands}
-        value={filters.band ?? []}
-        onChange={(v) => setFilters({ band: v })}
-      />
-      {/* DR / Plaque / Zone ARCEP : grisés tant que cell_ref est vide
-          côté back. Le composant MultiSelect ne supporte pas un `disabled`
-          natif ; on wrappe pour appliquer un style grisé + ignorer les
-          clics, et on expose des options vides. */}
-      <DisabledMultiSelect
-        label="DR"
-        disabled={cellRefEmpty}
-        options={drOptions}
-        value={filters.dr ?? []}
-        onChange={(v) => setFilters({ dr: v })}
-      />
-      <DisabledMultiSelect
-        label="Plaque"
-        disabled={cellRefEmpty}
-        options={plaqueOptions}
-        value={filters.plaque ?? []}
-        onChange={(v) => setFilters({ plaque: v })}
-      />
-      <DisabledMultiSelect
-        label="Zone ARCEP"
-        disabled={cellRefEmpty}
-        options={arcepZones}
-        value={filters.arcep ?? []}
-        onChange={(v) => setFilters({ arcep: v })}
-      />
-      {activeCount > 0 && (
-        <button
-          onClick={() =>
-            setFilters({
-              op: undefined,
-              band: undefined,
-              dr: undefined,
-              plaque: undefined,
-              arcep: undefined,
-            })
-          }
-          className="inline-flex h-7 items-center gap-1 rounded-md px-2 text-[11px] text-primary hover:bg-muted"
-        >
-          <X className="h-3 w-3" /> Effacer ({activeCount})
-        </button>
-      )}
-      {cellRefEmpty && (
-        <span
-          className="ml-auto text-[10px] text-muted-foreground"
-          title="DR / Plaque / Zone ARCEP requièrent une table cell_ref peuplée"
-        >
-          cell_ref vide — DR / Plaque / Zone ARCEP indisponibles
+  const [advanced, setAdvanced] = useState(false);
+  const secondary = (
+    <>
+      <Labeled label="Zone géographique">
+        <SelectBox
+          label="Zone géographique"
+          value="all"
+          disabled
+          title="Filtre géographique non pris en charge par l'API du dictionnaire (référentiel cellules vide)"
+          options={[{ v: "all", l: geoLabel ? `${geoLabel} (toutes)` : "Toutes" }]}
+          onChange={() => {}}
+        />
+      </Labeled>
+      <Labeled label="Période">
+        <span className="inline-flex h-7 items-center rounded-md border bg-muted/40 px-2 text-xs" title="Période du projet (filtre par période non pris en charge par l'API)">
+          {period ?? "N/D"}
         </span>
+      </Labeled>
+    </>
+  );
+  return (
+    <div className="panel flex flex-wrap items-end gap-x-3 gap-y-2 px-3 py-2">
+      <Labeled label="Technologie">
+        <Seg
+          label="Technologie"
+          value={draft.techno}
+          onChange={(t) => setDraft({ ...draft, techno: t })}
+          options={[
+            { v: "LTE", l: "LTE" },
+            { v: "NR", l: "NR" },
+            { v: "LTE+NR", l: "LTE + NR" },
+          ]}
+        />
+      </Labeled>
+      <Labeled label="Opérateur">
+        <MultiSelect label="Opérateur" options={operators} value={draft.op} onChange={(v) => setDraft({ ...draft, op: v })} />
+      </Labeled>
+      <Labeled label="Bande">
+        <MultiSelect label="Bande" options={bands} value={draft.band} onChange={(v) => setDraft({ ...draft, band: v })} />
+      </Labeled>
+      {compact ? (
+        <button onClick={() => setAdvanced((a) => !a)} aria-expanded={advanced} className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted">
+          <SlidersHorizontal className="h-3.5 w-3.5" /> Plus de filtres
+        </button>
+      ) : (
+        secondary
       )}
+      <Labeled label="Regrouper par">
+        <SelectBox
+          label="Regrouper par"
+          value={groupingSupported ? groupBy : "none"}
+          disabled={!groupingSupported}
+          title={groupingSupported ? undefined : "L'API ne fournit pas le détail par opérateur/bande pour ce paramètre"}
+          onChange={setGroupBy}
+          options={(Object.keys(GROUP_LABELS) as GroupBy[]).map((v) => ({ v, l: GROUP_LABELS[v] }))}
+        />
+      </Labeled>
+      <Labeled label="Afficher">
+        <SelectBox
+          label="Mesure affichée"
+          value={measure}
+          onChange={setMeasure}
+          options={(Object.keys(MEASURE_LABELS) as Measure[]).map((v) => ({ v, l: MEASURE_LABELS[v] }))}
+        />
+      </Labeled>
+      <button
+        role="switch"
+        aria-checked={showMap}
+        onClick={() => setShowMap(!showMap)}
+        className={`inline-flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium ${showMap ? "border-primary bg-accent text-accent-foreground" : "bg-card hover:bg-muted"}`}
+      >
+        <MapIcon className="h-3.5 w-3.5" /> Carte
+        <span className={`ml-1 inline-block h-3.5 w-6 rounded-full p-0.5 ${showMap ? "bg-primary" : "bg-muted-foreground/40"}`}>
+          <span className={`block h-2.5 w-2.5 rounded-full bg-card transition-transform ${showMap ? "translate-x-2.5" : ""}`} />
+        </span>
+      </button>
+      <div className="ml-auto flex gap-2">
+        <button
+          onClick={onApply}
+          disabled={!dirty}
+          className="inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+        >
+          <Check className="h-3.5 w-3.5" /> Appliquer
+        </button>
+        <button onClick={onReset} className="inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold text-primary hover:bg-muted">
+          <RotateCcw className="h-3.5 w-3.5" /> Réinitialiser
+        </button>
+      </div>
+      {compact && advanced && <div className="flex w-full flex-wrap gap-3 border-t pt-2">{secondary}</div>}
     </div>
   );
 }
 
-function DisabledMultiSelect({
-  label,
-  disabled,
-  options,
-  value,
-  onChange,
-}: {
-  label: string;
-  disabled: boolean;
-  options: string[];
-  value: string[];
-  onChange: (v: string[]) => void;
-}) {
-  if (disabled) {
-    return (
-      <span
-        aria-disabled
-        title={`${label} : cell_ref vide`}
-        className="inline-flex h-7 items-center gap-1.5 rounded-md border border-dashed bg-card px-2 text-xs opacity-50"
-      >
-        <span className="text-muted-foreground">{label}</span>
-        <span className="text-muted-foreground">—</span>
-      </span>
-    );
-  }
-  return <MultiSelect label={label} options={options} value={value} onChange={onChange} />;
-}
-
 /* ---------------------------------------------------------------- */
-/* DictionaryPage                                                    */
+/* Page                                                              */
 /* ---------------------------------------------------------------- */
 
 export function DictionaryPage({
@@ -945,178 +1089,205 @@ export function DictionaryPage({
 }) {
   const width = useWidth();
   const [sel, setSel] = useState<Selection>(EMPTY_SELECTION);
-  const [layoutKey] = useState(0);
+  const [techno, setTechno] = useState<Techno>("LTE+NR");
+  const [draft, setDraft] = useState<Draft>({ techno: "LTE+NR", op: filters.op ?? [], band: filters.band ?? [] });
+  const [groupBy, setGroupBy] = useState<GroupBy>("operator");
+  const [measure, setMeasure] = useState<Measure>("count");
+  const [showMap, setShowMap] = useState(false);
+  const [highlight, setHighlight] = useState<string | null>(null);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [treeOpen, setTreeOpen] = useState(false);
 
+  useEffect(() => setSel(EMPTY_SELECTION), [projectId]);
+  useEffect(() => setHighlight(null), [sel.path]);
   useEffect(() => {
-    setSel(EMPTY_SELECTION);
-  }, [projectId]);
+    setDraft((d) => ({ ...d, op: filters.op ?? [], band: filters.band ?? [] }));
+  }, [filters.op, filters.band]);
 
   const proj = useQuery(dictQ.project(projectId));
   const dims = proj.data?.dimensions;
 
-  // Zone ARCEP : options issues de `/reference/cell/summary.arcep_breakdown`.
-  // Tableau vide tant que `cell_ref` est vide (le back renvoie `[]`).
-  const arcepQ = useQuery({
-    queryKey: ["reference", "cell", "arcep-zones"],
-    queryFn: ({ signal }) => getCellArcepZones(signal),
-    staleTime: 5 * 60_000,
-  });
-  // Lot 1.8.0 : DR / Plaque ne sont pas encore exposés côté back pour
-  // le Dictionnaire (cell_ref vide). On passe des tableaux vides tant
-  // qu'il n'y a rien à proposer — le filtre reste grisé.
-  const cellRefEmpty = (arcepQ.data?.length ?? 0) === 0;
-
-  // Détail du paramètre sélectionné : exerce /dict/params avec le
-  // couple (system, message) sélectionné, puis filtre le `path` côté UI.
   const paramsQ = useQuery({
     ...dictQ.params(projectId, sel.system ?? "LTE", sel.message ?? "", filters),
     enabled: !!sel.system && !!sel.message,
   });
-  const row: ParamRow | null = useMemo(() => {
-    if (!sel.path || !paramsQ.data) return null;
-    return paramsQ.data.params.find((p) => p.path === sel.path) ?? null;
-  }, [paramsQ.data, sel.path]);
-
+  const row: ParamRow | null = useMemo(
+    () => (sel.path && paramsQ.data ? (paramsQ.data.params.find((p) => p.path === sel.path) ?? null) : null),
+    [paramsQ.data, sel.path],
+  );
   const mapQ = useQuery({
     ...dictQ.map(projectId, sel.path ?? "", sel.system ?? "LTE", filters),
-    enabled: !!sel.path && !!sel.system,
+    enabled: showMap && !!sel.path && !!sel.system,
   });
+  const g = useMemo(() => (row ? groupDistribution(row, groupBy) : null), [row, groupBy]);
 
-  // Préchargement opportuniste des `/dict/params` pour chaque (system,
-  // message) ouvert dans l'arbre : évite les clics « blanc » quand on
-  // sélectionne un path pour la première fois. On réutilise `useQueries`
-  // avec `enabled:false` pour laisser React Query hydrater sans forcer.
-  useQueries({ queries: [] });
+  const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x));
+  const dirty = draft.techno !== techno || !same(draft.op, filters.op ?? []) || !same(draft.band, filters.band ?? []);
+  const apply = () => {
+    setTechno(draft.techno);
+    setFilters({ op: draft.op as Operator[], band: draft.band });
+  };
+  const reset = () => {
+    setDraft({ techno: "LTE+NR", op: [], band: [] });
+    setTechno("LTE+NR");
+    setGroupBy("operator");
+    setMeasure("count");
+    setShowMap(false);
+    setFilters({ op: undefined, band: undefined, dr: undefined, plaque: undefined, arcep: undefined });
+  };
 
-  const filterBar = (
-    <FilterBar
-      filters={filters}
-      setFilters={setFilters}
+  const compact = width < 1100;
+  const systemHidden = sel.system && techno !== "LTE+NR" && sel.system !== techno;
+
+  const toolbar = (
+    <Toolbar
+      draft={draft}
+      setDraft={setDraft}
       operators={dims?.operators ?? []}
       bands={dims?.bands ?? []}
-      arcepZones={arcepQ.data ?? []}
-      drOptions={[]}
-      plaqueOptions={[]}
-      cellRefEmpty={cellRefEmpty}
+      period={dims?.periods[0]?.replace("/", " → ") ?? null}
+      geoLabel={dims?.geo_tree[0]?.label ?? null}
+      groupBy={groupBy}
+      setGroupBy={setGroupBy}
+      measure={measure}
+      setMeasure={setMeasure}
+      showMap={showMap}
+      setShowMap={setShowMap}
+      dirty={dirty}
+      onApply={apply}
+      onReset={reset}
+      groupingSupported={g ? g.groupingSupported : true}
+      compact={compact}
     />
   );
 
-  const treeNode = <Tree projectId={projectId} filters={filters} sel={sel} onPick={setSel} />;
+  const treeNode = (
+    <Tree
+      projectId={projectId}
+      filters={filters}
+      techno={techno}
+      sel={sel}
+      onPick={(s) => {
+        setSel(s);
+        setTreeOpen(false);
+      }}
+    />
+  );
 
-  const detail = !sel.path ? (
-    <EmptyState title="Sélectionnez un paramètre">
-      Choisissez un message dans l'arbre, puis un paramètre (feuille ASN.1) pour afficher sa fiche
-      détaillée, son histogramme, sa matrice opérateur × bande et sa carte.
-    </EmptyState>
+  const analysis = !sel.path ? (
+    <div className="panel h-full">
+      <EmptyState title="Sélectionnez un paramètre">
+        Choisissez un paramètre dans l'arbre ASN.1 pour afficher sa distribution et le détail des valeurs.
+      </EmptyState>
+    </div>
+  ) : systemHidden ? (
+    <div className="panel h-full">
+      <EmptyState title={`Paramètre ${sel.system} masqué`}>
+        Le paramètre sélectionné appartient à {sel.system}, exclu par le filtre Technologie « {techno} ». Repassez en {sel.system} ou LTE + NR pour l'afficher.
+      </EmptyState>
+    </div>
   ) : paramsQ.isPending ? (
-    <div className="p-3">
-      <LoadingSkeleton className="h-72" />
+    <div className="flex flex-col gap-2">
+      <LoadingSkeleton className="h-[340px]" />
+      <LoadingSkeleton className="h-[260px]" />
     </div>
   ) : paramsQ.isError ? (
-    <ErrorState message={errMsg(paramsQ.error)} onRetry={() => paramsQ.refetch()} />
-  ) : !row ? (
-    <EmptyState title="Paramètre introuvable">
-      L'API n'a renvoyé aucune ligne pour « {sel.path} ». Vérifier le filtrage.
-    </EmptyState>
+    <div className="panel">
+      <ErrorState message={errMsg(paramsQ.error)} onRetry={() => paramsQ.refetch()} />
+    </div>
+  ) : !row || !g ? (
+    <div className="panel">
+      <EmptyState title="Paramètre indisponible">
+        L'API ne renvoie plus « {leafOf(sel.path)} » avec les filtres actifs. Ajustez les filtres pour le retrouver.
+      </EmptyState>
+    </div>
+  ) : g.population === 0 ? (
+    <div className="panel">
+      <EmptyState title="Aucune valeur observée">Aucune occurrence pour ce paramètre avec les filtres actifs.</EmptyState>
+    </div>
   ) : (
-    <div className="flex flex-col gap-3 p-3">
-      <header className="flex items-center gap-2">
-        <TechBadge system={row.system} />
-        <h2 className="truncate font-mono text-base font-bold">{leafOf(row.path)}</h2>
-        <span className="ml-auto flex items-center gap-1 font-mono text-[10px] text-muted-foreground">
-          <span>{fmtInt(row.count)}</span>
-          <span>{row.count === 1 ? "occurrence" : "occurrences"}</span>
-        </span>
-      </header>
-      <DetailTable row={row} />
-      {row.count === 0 ? (
-        <EmptyState title="Aucune valeur observée">
-          Aucune occurrence pour ce paramètre avec les filtres actifs. Histogramme / carte / matrice
-          indisponibles.
-        </EmptyState>
-      ) : (
-        <>
-          <Histogram row={row} />
-          <OperatorBandTable row={row} />
-          <div className="flex items-center justify-end">
-            <button
-              onClick={() =>
-                downloadCsv(`param_${leafOf(row.path)}`, [
-                  [
-                    "operator",
-                    "band",
-                    "count",
-                    `avg_converted${row.unit_converted ? ` (${row.unit_converted})` : ""}`,
-                  ],
-                  ...row.buckets.map((b) => [b.operator, b.band, b.count, b.avg_converted ?? ""]),
-                ])
-              }
-              className="inline-flex items-center gap-1 rounded border px-2 py-0.5 text-[10px] hover:bg-muted"
-            >
-              Exporter la matrice en CSV
-            </button>
-          </div>
-          {mapQ.isPending ? (
-            <div className="p-2">
-              <LoadingSkeleton className="h-[340px]" />
-            </div>
-          ) : mapQ.isError ? (
-            <ErrorState message={errMsg(mapQ.error)} onRetry={() => mapQ.refetch()} />
-          ) : (
-            <OccurrenceMap
-              points={mapQ.data?.points ?? []}
-              center={PROJECTS_CENTER(projectId)}
-              unit={row.unit_converted}
-            />
-          )}
-        </>
+    <div className="flex flex-col gap-2">
+      <div className="relative">
+        <Histogram row={row} g={g} groupBy={groupBy} measure={measure} highlight={highlight} />
+        <button
+          onClick={() => setInfoOpen(true)}
+          className="absolute right-20 top-2 inline-flex h-6 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-medium hover:bg-muted"
+          aria-label="Informations techniques du paramètre"
+        >
+          <Info className="h-3.5 w-3.5 text-primary" /> Infos
+        </button>
+      </div>
+      {!g.groupingSupported && groupBy !== "none" && (
+        <p className="px-1 text-[11px] text-muted-foreground">
+          Regroupement indisponible : l'API ne fournit pas le détail par opérateur/bande — totaux affichés.
+        </p>
       )}
+      <ValuesTable row={row} g={g} measure={measure} highlight={highlight} onHighlight={setHighlight} />
+      <InfoSheet row={row} open={infoOpen} onOpenChange={setInfoOpen} />
     </div>
   );
 
-  return (
-    <div className="flex min-h-[calc(100vh-56px)] flex-col gap-2 p-2 lg:h-[calc(100vh-56px)]">
-      {filterBar}
-      <p className="px-1 text-[11px] text-muted-foreground" aria-live="polite">
-        Sélection :{" "}
-        {sel.system ? <span className="font-semibold">{sel.system} › </span> : "aucun système"}
-        {sel.message ? <span className="font-mono">{sel.message}</span> : null}
-        {sel.path && (
-          <>
-            {" "}
-            › <span className="font-mono font-semibold text-foreground">{leafOf(sel.path)}</span>
-          </>
-        )}
-      </p>
-
-      {width >= 1024 ? (
-        <ResizablePanelGroup
-          key={layoutKey}
-          orientation="horizontal"
-          className="min-h-0 flex-1 gap-0"
-        >
-          <ResizablePanel defaultSize="28%" minSize="18%">
-            <Panel title="Arbre RRC" className="h-full">
-              {treeNode}
-            </Panel>
-          </ResizablePanel>
-          <ResizableHandle withHandle className="mx-1" />
-          <ResizablePanel defaultSize="72%" minSize="40%">
-            <Panel title="Paramètres du message" className="h-full">
-              {detail}
-            </Panel>
-          </ResizablePanel>
-        </ResizablePanelGroup>
+  const mapNode = (
+    <Panel title="Carte" icon={<MapIcon className="h-4 w-4" />} className="h-full">
+      {!sel.path || !row ? (
+        <EmptyState title="Aucun paramètre">Sélectionnez un paramètre pour le cartographier.</EmptyState>
+      ) : mapQ.isPending ? (
+        <div className="p-2">
+          <LoadingSkeleton className="h-[320px]" />
+        </div>
+      ) : mapQ.isError ? (
+        <ErrorState message={errMsg(mapQ.error)} onRetry={() => mapQ.refetch()} />
       ) : (
-        <div className="grid gap-2">
-          <Panel title="Arbre RRC" className="h-[420px]">
+        <OccurrenceMap points={mapQ.data?.points ?? []} center={PROJECTS_CENTER(projectId)} unit={row.unit_converted} highlight={highlight} />
+      )}
+    </Panel>
+  );
+
+  if (width < 1024) {
+    return (
+      <div className="flex flex-col gap-2 p-2">
+        {toolbar}
+        <button onClick={() => setTreeOpen(true)} className="panel inline-flex h-9 items-center gap-2 px-3 text-xs font-semibold">
+          <Folder className="h-4 w-4 text-primary" /> Paramètres RRC
+          <span className="ml-auto truncate font-mono font-normal text-muted-foreground">{sel.path ? leafOf(sel.path) : "aucun"}</span>
+        </button>
+        <Sheet open={treeOpen} onOpenChange={setTreeOpen}>
+          <SheetContent side="left" className="w-[320px] p-0">
+            <SheetHeader className="border-b p-3">
+              <SheetTitle>Paramètres RRC</SheetTitle>
+              <SheetDescription className="sr-only">Arbre ASN.1</SheetDescription>
+            </SheetHeader>
+            <div className="h-[calc(100%-60px)]">{treeNode}</div>
+          </SheetContent>
+        </Sheet>
+        {analysis}
+        {showMap && <div className="h-[420px]">{mapNode}</div>}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex h-[calc(100vh-56px)] flex-col gap-2 p-2">
+      {toolbar}
+      <ResizablePanelGroup key={showMap ? "map" : "nomap"} orientation="horizontal" className="min-h-0 flex-1">
+        <ResizablePanel defaultSize="20%" minSize="14%" collapsible>
+          <Panel title="Paramètres RRC" className="h-full">
             {treeNode}
           </Panel>
-          <Panel title="Paramètres du message" className="min-h-[500px]">
-            {detail}
-          </Panel>
-        </div>
-      )}
+        </ResizablePanel>
+        <ResizableHandle withHandle className="mx-1" />
+        <ResizablePanel defaultSize={showMap ? "52%" : "80%"} minSize="35%">
+          <div className="h-full overflow-auto pr-0.5">{analysis}</div>
+        </ResizablePanel>
+        {showMap && (
+          <>
+            <ResizableHandle withHandle className="mx-1" />
+            <ResizablePanel defaultSize="28%" minSize="20%">
+              {mapNode}
+            </ResizablePanel>
+          </>
+        )}
+      </ResizablePanelGroup>
     </div>
   );
 }
