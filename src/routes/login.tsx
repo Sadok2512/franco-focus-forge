@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { APP_VERSION } from "@/lib/version";
 import {
   BarChart3,
   Bot,
@@ -201,7 +202,7 @@ function LoginPage() {
           </p>
         </form>
         <p className="absolute bottom-6 right-8 text-[11px] text-muted-foreground">
-          BC4 v1.0.0 | Usage interne uniquement
+          BC4 v{APP_VERSION} | Usage interne uniquement
         </p>
       </div>
     </div>
