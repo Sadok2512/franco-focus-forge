@@ -70,7 +70,7 @@ function toRgb(color: string) {
   ctx.clearRect(0, 0, 1, 1);
   ctx.fillStyle = color;
   ctx.fillRect(0, 0, 1, 1);
-  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+  const [r = 0, g = 0, b = 0, a = 255] = ctx.getImageData(0, 0, 1, 1).data;
   const out = a === 255 ? `rgb(${r}, ${g}, ${b})` : `rgba(${r}, ${g}, ${b}, ${(a / 255).toFixed(3)})`;
   rgbCache.set(color, out);
   return out;
