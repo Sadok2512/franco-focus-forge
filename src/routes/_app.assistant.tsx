@@ -1,11 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { AssistantPage } from "@/features/assistant/AssistantPage";
+import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { BotOff } from "lucide-react";
 import { getAiEnabled } from "@/lib/api/client";
 import { LoadingSkeleton } from "@/components/bc4/States";
+import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 
 export const Route = createFileRoute("/_app/assistant")({
   head: () => ({
@@ -30,6 +31,7 @@ export const Route = createFileRoute("/_app/assistant")({
 });
 
 function AssistantRoute() {
+  const { activeProject } = useActiveProject();
   const { filters, set } = useFilters();
   const on = useQuery({ queryKey: ["settings", "ai-enabled"], queryFn: getAiEnabled });
   if (on.isLoading) return <LoadingSkeleton className="m-6 h-64" />;
@@ -42,9 +44,14 @@ function AssistantRoute() {
           L'Assistant IA est désactivé par l'administrateur.
         </p>
         <Link to="/settings/ai" className="text-xs text-primary underline">
-          Configuration IA
+          Assistant LLM
         </Link>
       </div>
     );
-  return <AssistantPage filters={filters} setFilters={set} />;
+  // 1.11.0 — Assistant scopé au projet actif (store `activeProject`).
+  if (!activeProject) return <NoActiveProject scope="Assistant IA" />;
+  // On transmet un FilterContext où `project` est forcé à l'id actif —
+  // AssistantPage lit `filters.project` pour composer la requête.
+  const scoped = { ...filters, project: activeProject.id };
+  return <AssistantPage filters={scoped} setFilters={set} />;
 }

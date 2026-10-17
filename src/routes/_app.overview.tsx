@@ -4,12 +4,14 @@ import { ChevronDown } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { getKpiCatalog, getOverview, getProjects } from "@/lib/api/client";
 import { type Operator } from "@/lib/api/schemas";
+import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { Chart } from "@/components/bc4/Chart";
 import { RadioMap } from "@/components/bc4/RadioMap";
 import { MultiSelect } from "@/components/bc4/MultiSelect";
 import { Logo, OP_VAR } from "@/components/bc4/AppShell";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
+import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 
 export const Route = createFileRoute("/_app/overview")({
   head: () => ({
@@ -143,7 +145,15 @@ function StaticBox({ children }: { children: React.ReactNode }) {
 }
 
 function Overview() {
+  const { activeProject } = useActiveProject();
   const { filters, set } = useFilters();
+  // 1.11.0 — project_id vient du store `activeProject` (sélection
+  // explicite). On passe `activeProject.id` à `getOverview` via un
+  // filterContext ciblé — `filters.project` n'est plus la source.
+  const scopedFilters = useMemo(
+    () => ({ ...filters, project: activeProject?.id }),
+    [filters, activeProject?.id],
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const [layer, setLayer] = useState<"map" | "sat">("map");
   const projects = useQuery({
@@ -152,10 +162,10 @@ function Overview() {
   });
   const kpi = useQuery({ queryKey: ["kpi"], queryFn: ({ signal }) => getKpiCatalog(signal) });
   const q = useQuery({
-    queryKey: ["overview", filters],
-    enabled: !!filters.project,
+    queryKey: ["overview", scopedFilters],
+    enabled: !!activeProject,
     placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => getOverview(filters, signal),
+    queryFn: ({ signal }) => getOverview(scopedFilters, signal),
   });
   const d = q.data;
   const p = d?.project;
@@ -236,7 +246,8 @@ function Overview() {
     [d, p],
   );
 
-  if (!filters.project || (q.isPending && !d))
+  if (!activeProject) return <NoActiveProject scope="Vue d'ensemble" />;
+  if (q.isPending && !d)
     return (
       <div className="grid gap-3 p-4">
         {[0, 1, 2].map((i) => (

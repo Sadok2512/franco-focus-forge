@@ -85,13 +85,29 @@
   --op-orange: oklch(0.724 0.187 49);
   --op-sfr: oklch(0.62 0.21 20);
   --op-bouygues: oklch(0.68 0.16 250);
-  --op-free: oklch(0.72 0.02 250);
+  --op-free: oklch(0.72 0.18 150);
   --sev-good: oklch(0.797 0.164 160);          /* #3DDC97 */
   --sev-fair: oklch(0.854 0.157 84);           /* #FFC53D */
   --sev-poor: oklch(0.724 0.187 49);           /* #FF7A1A */
   --sev-bad: oklch(0.691 0.199 24);            /* #FF5C5C */
   --warning: oklch(0.854 0.157 84);
   --warning-foreground: oklch(0.2 0.03 254);
+  /* ---- 1.15.0 — Heatmap « Détail des valeurs » (bornes [min, max[) ----
+   * 6 couleurs STRICTEMENT déclarées, utilisées par le composant
+   * ValueMatrix pour peindre la fréquence relative (N/D) d'une cellule.
+   * NE REPRÉSENTE PAS la qualité radio : pas de rouge pour « défaut ».
+   *   [0 ; 10 %[  → --heat-0 (vert)
+   *   [10; 20 %[  → --heat-1 (vert clair)
+   *   [20; 40 %[  → --heat-2 (jaune)
+   *   [40; 60 %[  → --heat-3 (orange)
+   *   [60; 80 %[  → --heat-4 (rouge clair)
+   *   [80; 100 %] → --heat-5 (rouge foncé) */
+  --heat-0: oklch(0.78 0.14 155);              /* vert */
+  --heat-1: oklch(0.86 0.12 140);              /* vert clair */
+  --heat-2: oklch(0.86 0.14 95);               /* jaune */
+  --heat-3: oklch(0.76 0.17 60);               /* orange */
+  --heat-4: oklch(0.72 0.18 35);               /* rouge clair */
+  --heat-5: oklch(0.60 0.21 25);               /* rouge foncé */
 }
 
 /* ---- Thème clair par défaut ---- */
@@ -106,7 +122,7 @@
   --op-orange: oklch(0.72 0.17 55);
   --op-sfr: oklch(0.58 0.22 25);
   --op-bouygues: oklch(0.6 0.18 250);
-  --op-free: oklch(0.6 0.02 250);
+  --op-free: oklch(0.66 0.18 150);
   --background: oklch(0.982 0.004 255);
   --foreground: oklch(0.255 0.035 255);
   --card: oklch(1 0 0);
@@ -133,6 +149,16 @@
   --sev-bad: oklch(0.56 0.21 27);
   --warning: oklch(0.95 0.06 90);
   --warning-foreground: oklch(0.45 0.1 70);
+  /* ---- 1.15.0 — Heatmap « Détail des valeurs » (thème clair). Mêmes
+   * bornes et doctrine que la version dark (cf. commentaire plus haut).
+   * Nuances assombries pour conserver un contraste suffisant sur le
+   * fond blanc des cellules. */
+  --heat-0: oklch(0.70 0.14 150);
+  --heat-1: oklch(0.80 0.14 140);
+  --heat-2: oklch(0.82 0.15 90);
+  --heat-3: oklch(0.72 0.17 55);
+  --heat-4: oklch(0.66 0.19 30);
+  --heat-5: oklch(0.55 0.21 25);
 }
 
 @layer base {

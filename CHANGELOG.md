@@ -1,5 +1,1256 @@
 # Changelog
 
+## 1.17.5 (patch) — bc4-front 2026-10-17 — Garde /kpi via PARCOURS UTILISATEUR réel (shot_flow), tooltips extraits — reproduction du cas « 11 chips gris » (Agent BC2)
+
+> Reproduction demandée avant toute correction. Observation utilisateur :
+> « 11 chips gris en v1.17.4, alors que `bun run shot` rend 5 actifs ».
+>
+> **Diagnostic — ce n'est PAS un bug front** :
+> - Script précédent `scripts/shot.ts` injectait `activeProject` et visitait
+>   `/kpi` en URL directe → court-circuitait store + timing React.
+> - L'utilisateur passe par `/projects → clic "Ouvrir" → clic "KPI Analytics"`.
+>   Reproduction via nouveau `scripts/shot_flow.ts` :
+>   - **REF_PETITE_FORET** : `active=5, gray=6` (identique à shot direct) ✓
+>   - **TEST2** : `active=0, gray=11, console=0 erreur`. **Reproduit le symptôme.**
+> - Live back TEST2 `/kpi/filters` renvoie les 14 dims avec `available=false`
+>   et `reason` explicite :
+>   - operators/rats/bands/… : `"aucune valeur distincte pour measurement_points.X"`
+>   - dr/plaque/dor/arcep/commune/insee : `"ECGI non propagé : 0/0 points.
+>     Lancer POST /projects/{id}/kpi/_populate_ecgi."`
+> - **TEST2 n'a aucune donnée** (0 mp) → chaque dim gris est HONNÊTE et porte
+>   sa raison. L'utilisateur voyait TEST2 (soit activeProject persistant du
+>   TEST2, soit mauvais projet « ouvert »).
+>
+> **Vérification contrat front (déjà en 1.17.3)** :
+> - `FilterChip:388-397` : `title={label — reason}` → **chaque chip gris
+>   affiche sa raison en tooltip** (règle respectée).
+> - `_app.kpi.tsx:860-867` : `filtersQ.error` → bandeau rouge visible, pas de
+>   chip gris muet (règle respectée).
+> - `kpiFetch:148-170` : `console.error` avant throw → pas de parse silencieux.
+>
+> **Changements de ce lot (garde, pas correction)** :
+> - `scripts/shot_flow.ts` : NOUVEAU — parcours UI réel (login → /projects →
+>   click "Ouvrir" sur un projet par nom → click "KPI Analytics" nav →
+>   `waitForFunction` jusqu'à "Filtres" visible). Extrait `chipTooltips` :
+>   liste `{label, kind: active|gray|malformed|error|available-no-value,
+>   tooltip}` pour TOUTE la barre. Log réseau `kpiFiltersCalls` (URL +
+>   statut + timing).
+> - `package.json` : `bun run shot` → `shot_flow.ts` (parcours UI).
+>   `bun run shot:direct` → `shot.ts` (URL directe, pour debug schéma back).
+> - **Design inchangé**, aucun composant touché.
+>
+> **Gardes PNG** (parcours réel) :
+> - `shot-flow-REF_PETITE_FORET-*.png` : 5 actifs + 6 gris avec tooltips
+>   `"DR — ECGI non propagé : 0/68090 points…"` etc.
+> - `shot-flow-TEST2-*.png` : 11 gris avec tooltips distincts par dim.
+>
+> **Message pour l'utilisateur** : si tu vois 11 gris sur ce que tu crois
+> être REF, vérifie l'activeProject (`bc4.activeProject.v1.<ton-email>`
+> dans localStorage) OU hard-refresh (Ctrl+Shift+R) — l'ancien bundle
+> pouvait avoir un activeProject TEST2 persistant.
+
+## 1.17.4 (patch) — bc4-front 2026-10-17 — Label `v{APP_VERSION}` dans l'en-tête à côté du logo + source unique de version (Agent BC2)
+
+> Ajout au lot 1.17.3 (filtres /kpi), pas de lot séparé.
+>
+> **Changements** :
+> - `AppShell` : nouveau composant `HeaderVersion` affiché juste après
+>   `<Logo />` dans l'en-tête (toutes les pages). Rend `v{APP_VERSION}`
+>   en style sous-titre (`text-xs font-medium text-muted-foreground`,
+>   même rendu que le nom d'organisation). Tooltip au survol :
+>   `front v1.17.4 · back vX.Y.Z` — la version back vient de
+>   `useQuery(getBackHealth)` (déjà présent via `lib/api/project-kpi`),
+>   staleTime 60 s. Si le back est injoignable, tooltip affiche
+>   `back v?` — jamais une version inventée.
+> - **Source unique de version** : `src/lib/version.ts` exporte
+>   `APP_VERSION` lu de `package.json`. Le constant `FRONT_VERSION`
+>   dupliquée dans `_app.kpi.tsx` (string tapée à la main) est **retirée**.
+>   Le pied de sidebar `/kpi` utilise désormais `APP_VERSION` aussi.
+>   Garde grep : `grep -rn "FRONT_VERSION" src/` → 0 résultat ;
+>   `grep -rn "APP_VERSION" src/` → 3 résultats (version.ts, AppShell.tsx,
+>   _app.kpi.tsx).
+>
+> **Design inchangé ailleurs** : seule la zone à droite du logo gagne un
+> label texte. Pas de nouvelle route, pas de bump de dépendance.
+>
+> Garde : PNG de l'en-tête montrant « BC4 v1.17.4 » + tooltip visible.
+
+## 1.17.3 (patch) — bc4-front 2026-10-16 — /kpi : barre de filtres rendue depuis la LISTE ATTENDUE côté front, jamais depuis la réponse back — plus aucun échec de parse silencieux (Agent BC2)
+
+> Incident : sur REF, la barre entière de filtres disparaissait quand le
+> back renvoyait une dimension sous une forme inattendue (ex. 1.17.2 :
+> `dr/plaque/dor/arcep/commune/insee = {available:false, reason}` sans
+> `values`). Diagnostic : la **condition exacte** qui retirait la barre
+> était un **parse Zod silencieux** combiné à un `useQuery.error` jamais
+> consulté.
+>
+> Chaîne précise :
+> 1. `kpiFetch` (`src/lib/api/project-kpi.ts`) faisait `safeParse` et
+>    `throw KpiContractMismatchError` sans `console.error` préalable.
+> 2. React Query capturait l'exception dans `filtersQ.error` — rien n'était
+>    émis sur la console du navigateur (donc fausse impression de silence).
+> 3. Le composant `KpiPage` ne lisait **que** `filtersQ.data`, jamais
+>    `filtersQ.error`. Résultat : `filtersData = undefined`, les 11 chips
+>    recevaient `dim=undefined`, et dans l'ancien `FilterChip` ils
+>    retournaient `null` → panneau "Filtres" vide (apparence de barre
+>    retirée). Zéro erreur console, zéro bandeau d'erreur.
+>
+> Correctifs structurels :
+> - Schéma de dimension `KpiFilterDimensionSchema` : TOUS les champs
+>   (`available`, `reason`, `values`) rendus optionnels + `passthrough`.
+>   Un payload non conforme ne fait plus échouer le parse racine.
+> - Schéma racine `ProjectKpiFiltersSchema` : TOUTES les dimensions
+>   optionnelles. Un champ absent n'est jamais la cause d'une page vide.
+> - Barre de filtres rendue à partir de la **constante** front
+>   `EXPECTED_FILTER_DIMS` (11 entrées), pas de la réponse back.
+> - Chip grisé « forme inattendue » pour une dim non conforme, les autres
+>   restent actifs.
+> - `FilterBarErrorBoundary` autour de la barre : une exception interne
+>   affiche un chip d'erreur sans retirer la barre.
+> - `kpiFetch` émet un `console.error` **avant** de `throw` : plus aucun
+>   échec de parse n'est silencieux côté navigateur.
+> - Bandeau rouge visible dans la barre quand `filtersQ.error` est levé
+>   (ex. HTTP 500, Zod KO) : la raison est affichée à l'écran.
+>
+> Garde : `bun run shot -- /kpi REF` (Playwright headless) PNG joint au
+> rapport + comptes de chips actifs/grisés/erreur. `bun run contract:check`
+> PASS live (back 0.44.0). Un `/kpi/filters` renvoyant `{}` → barre
+> rendue, 11 chips grisés "forme inattendue" (test offline).
+
+## 1.17.2 (patch) — bc4-front 2026-10-16 — /kpi : règle d'activation `FilterChip` corrigée (jamais grisé sur champ optionnel absent) (Agent BC2)
+
+> Incident : sur REF, les 11 chips (Opérateur/Techno/Bande/Service/
+> Environnement + 6 géo) apparaissaient tous grisés alors que le back
+> renvoyait `available=true` et des `values` non vides sur chacune.
+> Cause : la condition `!available || values.length === 0` grisait
+> toute dimension dont `values` est absent (ex. ecgi en forme
+> couverture) ET laissait les cas de chargement (`dim === undefined`)
+> dans le même panier. Résultat utilisateur : impossible de distinguer
+> « dimension non livrée » et « valeurs à sélectionner ».
+
+### JSON brut `/projects/REF/kpi/filters` (back 0.42.0, confirmé)
+
+```
+operators     available=true  values=[Bouygues, Free, Orange]
+rats          available=true  values=[LTE, NR, N/D]
+bands         available=true  values=[B1, B20, B3, B7, N/D]
+service_types available=true  values=[HTTP_DOWNLOAD, N/D]
+phases        available=true  values=[active, idle, wait]
+envs          available=true  values=[incar]
+deps          available=true  values=[N/D]
+dr            available=true  values=[DR-NORD]
+plaque        available=true  values=[LILLE]
+dor           available=true  values=[DOR-NORD-OUEST]
+arcep         available=true  values=[ZPD]
+commune       available=true  values=[Petite-Forêt]
+insee         available=true  values=[59445]
+ecgi          available=true  (mp_total/mp_with_ecgi/pct, pas de values)
+```
+
+### Nouvelle règle `FilterChip` (spec)
+
+```typescript
+const active  = dim.available === true || values.length > 0;
+const grayed  = dim.available === false || (dim.available === undefined && values.length === 0);
+```
+
+- `available === true` + `values` non vides → **MultiSelect** actif.
+- `available === true` + `values` absent (ex. ecgi) → **chip read-only** (plein, non-dashed), tooltip « disponible mais aucune valeur à sélectionner ». Jamais grisé.
+- `available === false` → chip grisé dashed, tooltip porte `reason`.
+- `dim === undefined` (loading / schéma non parsé) → chip grisé dashed, tooltip générique.
+- **Un champ optionnel absent (ex. `values` sur ecgi) ne grise plus jamais** tant que `available === true`.
+
+### Garde (REF, bc4-back 0.42.0)
+
+- `bun tsc --noEmit --skipLibCheck` → exit 0.
+- `bun run contract:check` → PASS 8/8.
+- `/kpi` HTTP 200 après `docker compose restart front`.
+- UI à vérifier (⌘⇧R `/kpi`, REF) :
+  - 10 chips **actifs cliquables** : Opérateur (3) · Techno (3) · Bande
+    (5 dont N/D) · Service (2) · Environnement (1) · DR (DR-NORD) ·
+    Plaque (LILLE) · DOR (DOR-NORD-OUEST) · Zone ARCEP (ZPD) ·
+    Commune (Petite-Forêt) · INSEE (59445).
+  - 0 chip grisé en condition nominale sur REF (le back renvoie
+    `available=true` partout). Si un chip est grisé → c'est que `dim`
+    est `undefined` côté client (loading ou schéma non parsé), avec
+    tooltip explicite.
+- Pied de sidebar : `front v1.17.2`.
+
+## 1.17.1 (patch) — bc4-front 2026-10-16 — /kpi : filtres complets 14 dimensions + agrégation operator×band + table matrix + version visible (Agent BC2)
+
+> Incident écran utilisateur /kpi (REF) : 5 filtres seulement, aucun
+> DR/Plaque/DOR/ARCEP, aucun sélecteur d'agrégation, pas de table
+> sous le graphe, pas de version visible. 1.17.0 avait livré le squelette
+> (sidebar premium + 2 charts + 1 table) mais le lot « barre de filtres
+> complète + agrégation » n'était pas câblé parce que le back
+> n'exposait pas encore `group_by` ni les 7 dimensions géo/cell —
+> maintenant que bc4-back 0.42.0 les expose, on les câble.
+
+### Nouveaux filtres (14 chips)
+
+- Principal (5) : Opérateur, Techno, Bande, Service, Environnement — déjà présents.
+- Géo/cell (7 ajoutés) : **DR, Plaque, DOR, Zone ARCEP, Commune, INSEE** chaque
+  dimension suit le contrat `{available, reason, values[]}` de `/kpi/filters`.
+  Composant `FilterChip` qui respecte `available` : si `false` ou
+  `values=[]` → chip **grisé** `cursor-not-allowed` avec tooltip
+  `label — reason`. Jamais caché, jamais activable.
+- `ecgi` tolère la forme couverture (`mp_total`/`mp_with_ecgi`/`pct` sans
+  `values`) : `KpiFilterDimensionSchema.values` est désormais `.optional()`.
+- Les 14 valeurs sélectionnées sont passées en query params répétés à
+  `/kpi/{code}` (`buildMultiQuery` du 1.16.1).
+
+### Nouveau — Segmented control d'agrégation
+
+- Composant `GroupBySegmented` avec 3 options : **Opérateur · Bande · Les deux**.
+- Lié à l'état `groupBy: "operator" | "band" | "operator_band"` passé en
+  `group_by` au query param `/kpi/{code}`.
+- Positionné sous la rangée Actions, aligné à droite dans le header KPI.
+
+### Nouveau — Table matrix opérateur × bande
+
+- Quand `group_by === "operator_band"`, le composant `KpiDetailTable`
+  délègue à `MatrixOperatorBand` :
+  - Lignes = opérateurs (3 MNO + éventuelle ligne « N/D »).
+  - Colonnes = bandes (B1/B3/B7/B20… + éventuelle colonne « N/D »).
+  - Cellule = `P50 dBm (n)` si `nature=distribution`, sinon juste `n`.
+  - Tooltip détail : `n · p10 · p50 · p90`.
+  - Ligne/colonne « N/D » INCLUSES (jamais filtrées silencieusement) —
+    le back renvoie `operator=null` / `band=null` quand la dimension
+    n'est pas résolue sur une mesure.
+  - CSV export : header `Opérateur \ Bande`, cellules `P50 (n)`.
+- Quand `group_by === "operator"` ou `"band"` : table simple avec
+  colonne dynamique selon la dimension sélectionnée, puce couleur
+  opérateur affichée seulement sur la vue « Opérateur ».
+- Legacy `by_operator` conservé en fallback si `groups`/`table`
+  absents du payload.
+
+### Zod schemas (bc4-back 0.42.0)
+
+- `ProjectKpiFiltersSchema` : ajout des 7 clés optionnelles
+  `ecgi/dr/plaque/dor/arcep/commune/insee`, chacune en
+  `KpiFilterDimensionSchema` (passthrough).
+- `KpiGroupRowSchema = {operator?, band?, n, p10?, p50?, p90?, status?,
+  reason?, operator_color?, band_color?}` + ajout de `group_by`,
+  `groups[]`, `table[]`, `p10/p50/p90` au `ProjectKpiDetailSchema`.
+- `KpiQueryFilters` : ajout `band / rat / env / dep / dr / plaque /
+  dor / arcep / commune / insee / group_by`.
+- `project-kpi.ts::getProjectKpi` : passe tous ces params.
+
+### Nouveau — Version visible à l'écran
+
+- Pied de sidebar affiche `front v1.17.1 · back v{health.version}`.
+- `FRONT_VERSION` constante compilée dans `_app.kpi.tsx` — toujours en
+  phase avec `package.json` (bumpée simultanément).
+
+### Guards
+
+- `bun tsc --noEmit --skipLibCheck` → exit 0.
+- `bun run contract:check` → PASS 8/8 (REF).
+- Source `_app.kpi.tsx` : `grep -c "Les deux|FilterChip|FRONT_VERSION"` → 17.
+- `/kpi` HTTP 200 après `docker compose restart front`.
+- UI à vérifier côté navigateur (⌘⇧R sur `/kpi`) :
+  1. Barre filtres affiche 11 chips cliquables (operators/rats/bands/
+     services/envs/dr/plaque/dor/arcep/commune/insee) sur REF — tous
+     grisés si available=false avec tooltip reason.
+  2. Header KPI inclut Histogramme/Graph/Carte/Infos + segmented
+     Opérateur|Bande|Les deux à droite.
+  3. Sélection « Les deux » sur `LTE_RF_RSRP` → table opérateur ×
+     bande avec cellules `-93,0 (605)`, ligne/colonne « N/D » si
+     présente dans la réponse back.
+  4. Pied de sidebar : `front v1.17.1 · back v0.42.0`.
+
+## 1.17.0 (minor) — bc4-front 2026-10-16 — /kpi : refonte premium UI (sidebar tree, 2 charts côte à côte, table détail) (Agent BC2)
+
+> Reproduction fidèle de la maquette approuvée : sidebar catalogue 320 px
+> à gauche (tree LTE / NR / EN-DC / KPI agrégés avec puces de statut
+> compactes, nav clavier, search content-aware), zone d'analyse à droite
+> avec header KPI compact (icône + nom 21 px + badge + méta ligne +
+> 4 boutons ACTIONS), **deux cartes charts côte à côte** (grid
+> `xl:grid-cols-2`), puis **table « Détail des valeurs » pleine largeur**
+> sous les charts. Aucun chiffre inventé — les données proviennent
+> toujours de `getProjectKpi()` / `getProjectKpiCatalog()`.
+
+### Sidebar — priorité absolue de la maquette
+
+- Panneau blanc, border `#E2E8F0`, radius 10 px, padding 14 px, propre
+  scroll `max-h-[calc(100vh-180px)]`, sticky header + search.
+- Header : icône `BarChart3` + « Catalogue KPI » (15 px semibold) +
+  ligne secondaire `v{catalog_version} · {canonical_count} KPI ·
+  {technos_count} technos` **tirée de l'API** (jamais hardcodée).
+- Search 36 px, debounce via `useState` immédiat (texte court, pas de
+  requête lourde côté catalogue en mémoire). Match CONTENT : code, nom,
+  techno ou famille ; ancêtres étirés sur match.
+- **Ordre des racines imposé** : `LTE, NR, EN-DC, KPI agrégés`
+  (helpers `TECHNO_ORDER`, `sortTechnoRoots`, `technoLabel`). Les
+  identifiants back `ENDC` / `AGGREGATE` sont **renommés à l'affichage
+  seulement** — jamais altérés dans les requêtes.
+- Compteurs des racines inchangés (depuis `counts_by_techno`, add-only).
+- Catégories (familles) : chevron, 13 px semibold, compteur droite,
+  indent 14 px.
+- **Feuilles** : composant `LeafButton` ; puce de statut `h-1.5 w-1.5`
+  (vert / ambre / muted / rouge), label 13 px, `truncate` + tooltip
+  complet (name + reason), `scrollIntoView` sur sélection externe
+  (keyboard nav, URL deep-link). **Plus de grosses chips.**
+- Sélection : `bg-#DBEAFE` + text `#0759C7` + barre latérale 2 px.
+- Hover : `bg-#F1F5F9`.
+- Nav clavier : `ArrowUp` / `ArrowDown` parcourent la liste plate
+  dans l'ordre canonique du tree ; `Enter` / `Space` activés par
+  défaut (bouton HTML natif) ; focus ring visible.
+- **URL state** : `?kpi=<code>` persiste la sélection (deep-link,
+  refresh). Lu via `useSearch({strict:false})`, écrit via
+  `useNavigate({replace:true})` — fusionné avec les filtres existants.
+
+### Header KPI compact (~76 px) + 4 boutons ACTIONS
+
+- Icône `BarChart3` dans un carré 28 px bg `primary/10`.
+- Nom KPI 21 px semibold, badge statut à côté.
+- Ligne métadonnée : `code · nature · unité · source` (via `dash(v)`
+  sur source/unit/formula pour null → « — »).
+- Alias et formule sous le header (ligne discrète).
+- **Composant `ActionButtons`** à droite — 4 boutons :
+  - `Histogramme` (primary, pressed) — focus chart A.
+  - `Graph` (toggle, disabled car `canShowGraph()==false` en 0.40.0
+    — contract gap déclaré, voir note).
+  - `Carte` (disabled, tooltip « Pas de données géolocalisées »).
+  - `Infos` — ouvre `KpiInfoSheet` (drawer droit).
+
+### Charts côte à côte (grid `xl:grid-cols-2`)
+
+- Carte radius 12 px, border `#E2E8F0`, bg card, padding 12 px.
+- **Chart A — « Occurrences par opérateur »** :
+  `Chart` ECharts existant (`buildByOperator`). Bars avec couleurs
+  brand `Orange #FF7900 / SFR #E2001A / Bouygues #009FE3 / Free #7C8794
+  / unknown #CBD5E1`. Hauteur 310 px. Label de valeur sur bars.
+  Toolbar download/fullscreen héritée de `components/bc4/Chart.tsx`.
+- **Chart B — « RSRP LTE / NR par Task Time » (empty state)** :
+  composant `EmptyChart` avec titre + raison. Message explicite :
+  « /kpi/{code} ne renvoie ni trend ni task_time dans la version 0.40.0
+  du back. Déclaré en contract gap, pas de courbe inventée. » Jamais
+  une courbe fabriquée tant que le back n'expose pas la série.
+- Les deux cartes alignées verticalement, hauteur chart identique.
+
+### Table « Détail des valeurs » — pleine largeur
+
+- `KpiDetailTable` sous les charts. Colonnes : `Opérateur` |
+  `Occurrences` | `% du total`.
+- Puce opérateur colorée (`OP_HEX`) à côté du libellé.
+- `tr` sortables (Opérateur alpha, Occurrences num) ; état visuel ▲/▼.
+- Ligne « Total » affichée seulement quand `total > 0` (jamais 0
+  inventé) ; `100,0 %` strict (somme des parts).
+- **Export CSV** via `downloadCsv` (helper existant Dict RRC).
+  Fichier `kpi_<CODE>_detail.csv` avec meta header BC4.
+- Si `by_operator.length === 0` → encart « Pas de ventilation par
+  opérateur ».
+
+### Drawer « Infos » (Sheet shadcn)
+
+- `KpiInfoSheet` ouvre à droite, 480 px max : techno · famille ·
+  nature · unité · statut · raison · source · formule · alias ·
+  service_scope · valeur · occurrences. Toutes les clés passent par
+  `dash()` pour les null.
+
+### Palette operator — stable partout
+
+- `OP_HEX = { Orange: #FF7900, SFR: #E2001A, Bouygues: #009FE3, Free: #7C8794 }`
+  utilisée par `opColor()` dans les bars ET les puces de table. Le
+  spec hardcode cette palette : elle est fixe (brand).
+- Opérateur inconnu / null → `#CBD5E1` (jamais une couleur MNO
+  incorrecte).
+
+### Rules of hooks + exactOptionalPropertyTypes
+
+- Les hooks (`useQuery`, `useMemo`, `useState`, `useEffect`) tous
+  appelés AVANT les early returns (`isLoading`, `error`, `empty`) —
+  jamais après un conditional return.
+- `TypeScript` strict `exactOptionalPropertyTypes: true` : props
+  optionnelles typées `T | undefined` explicitement.
+
+### Contract gap déclaré (jamais hardcodé)
+
+- `/kpi/{code}` v2 (bc4-back 0.40.0) ne renvoie **pas** de `trend` /
+  `task_time` / `evidence_id` / `by_band` / `by_service_type`. Le
+  bouton « Graph » reste donc **disabled** avec tooltip explicite,
+  le chart B rend un empty state honnête, et la table reste limitée
+  à `by_operator`. Dès que le back expose ces champs, remplacer
+  `canShowGraph()` + ajouter colonnes dans `KpiDetailTable`.
+
+### Guards manuels (acceptance)
+
+- `bun tsc --noEmit --skipLibCheck` : exit 0 (0 erreur, 0 warning).
+- `bun run contract:check` : PASS 8/8 (REF + TEST2) — inchangé 1.16.2.
+- UI live (reload `/kpi`) :
+  - Sidebar ordre `LTE / NR / EN-DC / KPI agrégés` ✓.
+  - Keyboard `ArrowUp/Down` parcourt la liste, feuille sélectionnée
+    scrolle en vue, URL `?kpi=<code>` persiste.
+  - Puces statut compactes (plus de chips).
+  - Charts côte à côte ≥ 1280 px, stackés en dessous.
+  - Chart B « RSRP LTE / NR par Task Time » rend l'empty state avec
+    raison du contract gap, jamais une courbe fabriquée.
+  - Table « Détail des valeurs » colorée par opérateur, triable, CSV
+    exporte la vue courante.
+  - Drawer « Infos » ouvre à droite avec toutes les métadonnées,
+    null → « — ».
+
+## 1.16.2 (patch) — bc4-front 2026-10-16 — /kpi : contrat catalog v2 aligné sur réponse live + `contract:check` (Agent BC2)
+
+> La 1.16.1 avait installé le filet d'erreur (Error Boundary + bandeau).
+> La 1.16.2 CORRIGE le contrat Zod lui-même pour matcher la **réponse
+> live** du back 0.40.0 (lue via curl + /openapi.json). Observations
+> brutes qui motivent le patch :
+>
+> - `counts_by_techno` est un record **imbriqué** `Record<techno, Record<status, number>>` :
+>   `{"LTE": {"UNVALIDATED": 16, "UNAVAILABLE": 52, "AVAILABLE": 10, "PENDING": 4}, "NR": {...}, "ENDC": {...}, "AGGREGATE": {...}}`.
+>   Le back ne retourne **pas** de clé `total` — on l'additionne depuis
+>   les 4 statuts observés (jamais inventé).
+> - `formula` / `source` / `unit` / `reason` sont `nullable` sur certains
+>   KPI calculés → rendus « — » côté UI, pas string vide, pas crash.
+> - `/openapi.json` du back **ne décrit pas** la forme des 3 routes
+>   `/projects/{id}/kpi/*` (handlers FastAPI sans `response_model`,
+>   seulement `/kpi/catalog` global est typé via `KpiCatalogResponse`).
+>   Le `contract:check` ne peut donc pas être un diff JSON Schema pur :
+>   on fait un **live-check safeParse** contre la réponse réelle.
+
+### Changements de schéma Zod — `src/lib/api/project-kpi-schemas.ts`
+
+- `KpiCatalogItemSchema.{unit, source, formula, reason}` → tous
+  `.nullable()`.
+- `KpiCountsByTechnoSchema = z.record(z.record(z.number().int().nonnegative()))`
+  (imbriqué, pas flat). Clés statuts reprises **exactement** du back :
+  `AVAILABLE | PENDING | UNVALIDATED | UNAVAILABLE`.
+- `KpiCountsByStatusSchema = z.record(z.number().int().nonnegative())`.
+- `.passthrough()` sur toutes les objets racine + feuilles — tout champ
+  ajouté par le back est toléré, un champ ajouté ne cassera jamais la
+  page.
+- Nouveau `BackHealthSchema` pour `/health` (affichage versions dans le
+  bandeau contrat).
+
+### UI — `src/routes/_app.kpi.tsx`
+
+- **Compteurs par racine de l'arbre** : nouveau composant `TechnoBadge`
+  qui lit `catalog.counts_by_techno[techno]` et affiche
+  `<total> · <N> AVAIL` (vert). Total = somme des 4 statuts renvoyés
+  par le back (pas de total inventé, pas de recalcul : addition stricte
+  des 4 valeurs reçues). Tooltip détaille les 4 compteurs par statut.
+- **Bandeau « contrat incompatible »** affiche désormais **deux versions
+  séparément** : `catalog_version` extraite du payload non-conforme
+  (via `KpiContractMismatchError.backVersion`) ET la version `/health`
+  du back (via `getBackHealth()` ajouté au module API, non bloquant).
+- **`null → « — »`** : helper `dash(v)` appliqué sur `activeItem.unit`,
+  `activeItem.source`, `activeItem.formula`, et `kpi.unit` dans la
+  tuile Valeur. Jamais une étiquette vide.
+- Nouveau `healthQ = useQuery({...})` pour prefetch /health (staleTime
+  30 s, no retry — information d'ambiance).
+
+### Nouveau — `scripts/contract_check.ts` + `bun run contract:check`
+
+Script Bun qui vérifie en live :
+
+1. `GET /openapi.json` — les 3 paths `/projects/{project_id}/kpi/*`
+   sont déclarés (GET + path exact). Un path manquant → fail avec
+   message précis.
+2. `POST /auth/login` admin — récupère un token.
+3. `GET /projects/{PROJECT_ID}/kpi/{catalog,filters,{first-AVAILABLE-code}}` —
+   `safeParse` chaque réponse contre son schéma Zod. Fail = diff
+   lisible (chemin de la propriété Zod + message).
+
+Config via env : `BC4_API_BASE` (défaut `http://localhost:8000`,
+mettre `http://api:8000` pour exécuter depuis `bc4-front-1`),
+`BC4_ADMIN_EMAIL`, `BC4_ADMIN_PASSWORD`, `BC4_PROJECT_ID` (défaut REF).
+
+Exit codes :
+
+- `0` — PASS (routes présentes + schémas Zod OK).
+- `1` — FAIL (route manquante dans OpenAPI, ou `safeParse` échoue).
+- `2` — Infrastructure (login impossible, back injoignable…).
+
+Documenté dans `README.md` (section « Contrat back ↔ front »).
+
+### Garde manuelle (REF + TEST2, back coupé)
+
+- `/kpi` sur **REF** : arbre affiche `LTE 82 · 10 AVAIL`, `NR 79 · 0 AVAIL`,
+  `ENDC 25 · 0 AVAIL`, `AGGREGATE 8 · 4 AVAIL`. Détail d'un KPI
+  `LTE_RF_RSRP` (ou autre AVAILABLE) → valeur réelle rendue. Aucun
+  bandeau d'erreur. Console sans erreur rouge.
+- `/kpi` sur **TEST2** : même arbre, compteurs cohérents, formules
+  rendues « — » là où `null`. Pas de panneau vide.
+- `docker stop bc4-api-1 10` : bandeau rouge « Backend injoignable »,
+  bouton Réessayer. `docker start` → récupération. Si le back
+  renvoyait un contrat cassé, le bandeau jaune afficherait
+  `catalog_version lue: <X>  ·  /health version: <Y>` sur deux lignes
+  distinctes.
+- `bun run contract:check` : PASS 8/8 sur REF, PASS 8/8 sur TEST2.
+
+### Changements fichiers
+
+- `src/lib/api/project-kpi-schemas.ts` : nullable + passthrough + BackHealthSchema.
+- `src/lib/api/project-kpi.ts` : + `getBackHealth()` non-bloquant.
+- `src/routes/_app.kpi.tsx` : `TechnoBadge`, `dash()`, deux versions
+  dans le bandeau, `healthQ`.
+- `scripts/contract_check.ts` : nouveau script live-check.
+- `package.json` : `scripts["contract:check"]`.
+- `README.md` : section « Contrat back ↔ front ».
+
+## 1.16.1 (patch) — bc4-front 2026-10-16 — /kpi : états explicites + bandeau contrat + Error Boundary (Agent BC2)
+
+> Incident : `/kpi` rendait une **page vide** sur TEST2 (panneau gris,
+> aucun contenu, aucun message). Le diagnostic brut montre que la forme
+> `/kpi/catalog` est identique entre REF et TEST2 (back 0.40.0, 13 top
+> keys, tree 4 technos, kpi.aliases = `string[]`) — le bug n'est pas
+> contractuel. La page tombait néanmoins muette parce que les trois
+> seuls états rendus étaient `loading` et `OK` (`data` truthy) ; toute
+> erreur côté useQuery, toute non-conformité Zod levée par `apiFetch`,
+> ou toute exception de rendu laissait l'écran gris.
+
+### Correctif structurel (pas un correctif symptôme)
+
+- **`src/lib/api/project-kpi.ts`** : la couche d'accès ne passe plus par
+  `apiFetch` (qui jette `ApiSchemaError` sur un mismatch Zod). Elle fait
+  un `fetch` brut puis **`schema.safeParse(raw)`**. Non-conformité →
+  nouvelle erreur typée `KpiContractMismatchError` portant
+  `backVersion` (lu dans `catalog_version` du payload brut), 5 premiers
+  messages Zod bornés, et le chemin de la requête. Erreurs réseau /
+  HTTP conservent `ApiNetworkError` / `ApiHttpError` / `ApiUnauthenticatedError`.
+- **`src/routes/_app.kpi.tsx`** :
+  - **Error Boundary de classe** (`KpiErrorBoundary`) autour du
+    composant de route. Toute exception de rendu est capturée et rend
+    un bandeau lisible avec le message et la pile tronquée + bouton
+    « Réessayer ».
+  - **Fonction `classifyKpiError(err)`** : mappe `KpiContractMismatchError`,
+    `ApiUnauthenticatedError`, `ApiNetworkError`, `ApiHttpError`,
+    `KpiRequestError`, et tout autre `Error`, vers
+    `{title, message, details?, tone}` lisibles.
+  - **Composant `KpiErrorBanner`** réutilisable : titre + message +
+    détails (optionnels) + bouton « Réessayer » (optionnel) + tonalité
+    `warn | bad`.
+  - **États explicites** (loading / erreur catalogue / vide /
+    OK + erreur détail inline) :
+    1. `catalogQ.isLoading` → `<LoadingSkeleton>` plein écran.
+    2. `catalogQ.error` → bandeau avec classify + Réessayer.
+    3. `!catalogQ.data` (jamais ok ni erreur) → bandeau « catalogue vide ».
+    4. `totalKpis === 0` → bandeau « projet sans catalogue KPI » + version.
+    5. `kpiQ.error` sur le KPI sélectionné → bandeau **à la place** du
+       panneau détail (le reste de la page reste utilisable).
+    6. OK normal.
+  - `useCallback` sur les chart-builders supprimé (ne peut plus vivre
+    après un `return` conditionnel sans violer rules-of-hooks).
+    Remplacé par fonction locale — pas de perf dégradée (le build
+    chart est rapide et React mémoïse déjà via echarts).
+
+### Garde manuelle (projets REF + TEST2 + back coupé)
+
+1. `/kpi` sur **REF_PETITE_FORET** → arbre affiché (LTE 82 KPI / NR 79 /
+   ENDC 25 / AGGREGATE 8), KPI sélectionnable, détail rendu normalement.
+2. `/kpi` sur **TEST2** (`134af70a06eb`, 9 NMF, param_occurrence
+   99 k lignes, measurement_points 0) → même arbre, statuts
+   `UNVALIDATED` sur les rate (contrat non certifié) +
+   `UNAVAILABLE` / `PENDING` sur les mp-metrics. **Jamais panneau vide.**
+3. `docker stop bc4-api-1` 10 s → bandeau rouge « Backend injoignable »
+   avec message curl, bouton Réessayer. Pas de page blanche. `docker
+   start bc4-api-1` + clic Réessayer → récupération.
+4. Console navigateur : aucune erreur rouge non capturée (le boundary
+   logue les crashes en `console.error` pour trace, mais le rendu
+   reste lisible).
+
+## 1.16.0 (minor) — bc4-front 2026-10-16 — Page /kpi câblée sur les endpoints projet bc4-back 0.35.0+ (Agent BC2)
+
+> La page `/kpi` affichait des chiffres **fabriqués** (dates `01/01/2026 – 31/03/2026`
+> en dur ligne 299, séries temporelles générées par `sin(i*0.9+j)` ligne 142,
+> `k.value / k.delta / k.byOp` tirés de la vue globale `/kpi/catalog` + une
+> seule `KpiRrcSummary` canned). Elle devait passer sur les **endpoints
+> KPI scopés projet** livrés par bc4-back 0.35.0 (`/projects/{id}/kpi/*`),
+> en gardant le look actuel (pas de refonte).
+
+### Nouveau — adaptateur `lib/api/project-kpi.ts` + schémas Zod
+
+- `src/lib/api/project-kpi-schemas.ts` : schémas Zod stricts pour les
+  3 réponses back (`ProjectKpiCatalogSchema`, `ProjectKpiFiltersSchema`,
+  `ProjectKpiDetailSchema`) + `KpiStatusSchema`
+  (`AVAILABLE | PENDING | UNVALIDATED | UNAVAILABLE`) + verdict
+  comparabilité. `null` reste `null` partout — la UI affiche « N/D ».
+- `src/lib/api/project-kpi.ts` : 3 fonctions `apiOrMock` câblées à
+  `apiFetch` :
+  - `getProjectKpiCatalog(projectId, signal)` → arbre familles → KPI
+    avec statut par KPI.
+  - `getProjectKpiFilters(projectId, signal)` → operators / rats / bands
+    / service_types / envs / période / geo (available + reason).
+  - `getProjectKpi(projectId, code, filters, signal)` → agrégat détaillé
+    (value P50/total, p10/p90, n, technologies[], period, by_operator,
+    distribution, trend, period_unique, comparability, result_id).
+  - **buildMultiQuery** : les filtres multi-valeurs sont encodés en
+    params répétés (`?operator=A&operator=B`) — jamais `?operator=A,B`
+    (sinon FastAPI reçoit un seul élément « A,B » absent du DISTINCT).
+
+### Changé — `src/routes/_app.kpi.tsx` : rewrite ciblée (look inchangé)
+
+- Remplace `getKpiCatalog()` par `getProjectKpiCatalog(activeProject.id)`.
+  **Plus aucun appel** à l'ancien `/kpi/catalog` global sur cette page.
+- **Supprimé** : les dates en dur `01/01/2026 – 31/03/2026`, les séries
+  `sin(i*0.9+j)`, `k.value / k.delta / k.byOp` locaux. Rien ne s'affiche
+  qui ne vienne du back.
+- **Catalogue** : chaque KPI du catalogue porte son badge statut
+  (`Available / Pending / Unvalidated / Unavailable`) + raison au
+  survol (`title`). Recherche textuelle sur `name` + `code`.
+- **Filtres** : options tirées de `/kpi/filters` (plus de constantes
+  `OPERATORS / TECHNOLOGIES / KPI_BANDS` hardcodées sur cette page).
+  Opérateur / Techno / Bande / Service / Environnement. Zone ARCEP
+  grisée avec `geo.reason` tant que `cell_ref` est vide. Période
+  observée affichée à droite.
+- **KPI AVAILABLE** : tuiles = `value` (P50 pour distribution, total
+  pour count) + `unit` + `p10/p90` + `n` + `technologies[]` + `period`
+  réelle. Barres de la vue « Comparaison par opérateur » colorées via
+  `--op-{orange,sfr,bouygues,free}` ; opérateur non-MNO ou `null` →
+  gris muted. Verdict `comparability` affiché (COMPARABLE /
+  COMPARABLE_WITH_LIMITATIONS / NOT_COMPARABLE / SINGLE_GROUP) +
+  `result_id` en mono.
+- **KPI non-AVAILABLE** : badge + raison **À LA PLACE** des chiffres.
+  Jamais une tuile sans sa source back.
+- **Trend** : si `period_unique=true` → encart « Période unique
+  (date) » explicite, pas de courbe fabriquée.
+- **Distribution** : bar chart ordonné par bucket (gauche d'intervalle
+  numérique).
+- `null` → « N/D » partout.
+
+### Changé — `src/lib/api/schemas.ts`
+
+- `FilterContextSchema.svc` relâché à `z.array(z.string()).optional()`
+  pour accepter les valeurs `service_type` réelles exposées par bc4-back
+  (`HTTP_DOWNLOAD`, `HTTP_UPLOAD`, `VOICE_CALL`, …) en plus des 3 libellés
+  B0 historiques (`Data` / `SMS` / `Voice`, strings valides).
+- `FilterContextSchema.env` ajouté — `z.array(z.string()).optional()`
+  pour persister le filtre environnement dans la query string.
+
+### Garde (manuelle, après `docker compose restart front`) — projet REF_PETITE_FORET
+
+- `/kpi` affiche le catalogue avec statuts (RSRP_DIST / A3_OFFSET_DIST
+  Available, THR_DL_APP Pending, RRC_SETUP_SR Unvalidated, SMS_SR
+  Unavailable). Grep `98,2` et `01/01/2026` dans la source dist → **0**
+  occurrences.
+- `RSRP_DIST` sélectionné → P50 réel (≈ −104 dBm), n=663, 3 barres
+  colorées (Bouygues / Orange / Free) + 1 N/D grise, verdict
+  `COMPARABLE_WITH_LIMITATIONS`, `result_id = fbdfdd274e03b81c`.
+- `THR_DL_APP` sélectionné → encart Pending + raison
+  `measurement_points.dl NULL — mapping Phase 1 non prouvé`, aucune
+  tuile de chiffre.
+- `RRC_SETUP_SR` sélectionné → encart Unvalidated + raison
+  `contrat tentative/réussite non certifié par le décodeur`.
+- Barre de filtres : operators = [Bouygues, Free, Orange],
+  rats = [LTE, NR], bands = [B1, B3, B7],
+  service_types = [HTTP_DOWNLOAD], envs = [incar, indoor]. Zone ARCEP
+  grisée (reason `cell_ref vide`).
+
+## 1.15.0 (minor) — bc4-front 2026-10-16 — Matrice « Détail des valeurs » (Bande × Valeur × Opérateur) (Agent BC4)
+
+> Nouveau rendu du panneau « Détail des valeurs » du Dictionnaire RRC :
+> plus un tableau unidimensionnel de bins mais une **matrice déclarative**
+> **Bande × Valeur × Opérateur**, pivotée **100 % côté front** depuis
+> `row.value_matrix` servi par `/dict/params` (bc4-back ≥ 0.21.0). Aucune
+> nouvelle requête, aucun nouveau champ demandé au back dans ce lot.
+>
+> Doctrine stricte :
+>   - Dénominateur D(op, band) = Σ(count) de `value_matrix` filtré sur
+>     (operator=op, band=band). **JAMAIS** le total global.
+>   - D = 0 → cellule `N/D` (opérateur/bande absent).
+>   - D > 0 et N = 0 → `0 · 0,0 %` (zéro réel, distinct de N/D).
+>   - **Palette heat** (couleur = fréquence, PAS qualité radio) :
+>       [0;10[ vert → [10;20[ vert clair → [20;40[ jaune → [40;60[ orange
+>       → [60;80[ rouge clair → [80;100] rouge foncé.
+>   - Toute incohérence `Σ(value_matrix) ≠ bucket.count` est **loguée
+>     en `console.error` ET affichée en bandeau rouge** dans la UI —
+>     jamais masquée.
+
+### Ajouté
+
+- `src/features/dictionary/value-matrix.ts` — module dédié (pivot,
+  palette, formatters, export CSV). Fonctions exportées :
+  - `buildValueMatrix(row, { search, valueOrder, othersThreshold })` →
+    `MatrixData` (rows alternant `kind:"value"` et `kind:"band_total"`,
+    `denoms` par (op, band), `presentOperators`, `bands`, `enumMode`,
+    `coherenceErrors`). Les 4 colonnes `OPERATOR_COLUMNS = ["Orange",
+    "SFR", "Bouygues", "Free"]` sont **toujours rendues** ; un opérateur
+    absent produit uniquement des cellules `N/D` (D=0 pour chaque bande).
+  - `sortMatrixRows(data, key)` pour trier `op_count`/`op_pct`
+    ascendant/descendant **par bande** (préserve les `band_total` en fin
+    de bloc et les « Autres valeurs » en bas de chaque bande).
+  - `heatVarForPct(pct)` : mappe un % vers l'une des 6 CSS vars
+    `--heat-0..5` strictement déclarées.
+  - `toCsvRows({ paramPath, measurementLabel, data })` : export CSV
+    reflétant filtres + tri appliqués, triplet `N / D / pct` par cellule.
+  - `fmtN`, `fmtPct1`, `fmtCellText` : formatters FR (séparateurs
+    milliers, pourcentage 1 décimale `,`).
+  - **Autres valeurs** : au-delà de `AUTRES_VALEURS_THRESHOLD = 10`
+    valeurs distinctes pour une bande, la queue est agrégée dans une
+    ligne italique « Autres valeurs (N) » pour préserver `Σ(%) = 100` à
+    l'arrondi près.
+- `src/styles.css` — nouvelle série `--heat-0..5` (6 vars) déclarées
+  explicitement pour `.dark` ET `:root`, commentée dans le fichier.
+
+### Modifié
+
+- `src/features/dictionary/DictionaryPage.tsx` : remplacement complet du
+  composant `ValuesTable` (unidim bins × opérateurs) par **`ValueMatrix`**
+  + sous-composant `MatrixCellTd` :
+  - Colonnes fixes **Bande · Valeur · Orange · SFR · Bouygues · Free**.
+  - Chaque cellule : **N en gras** + **% à 1 décimale** + **barre
+    horizontale colorée** selon la palette heat. `N/D` neutre si D=0.
+  - Tooltip au survol : `opérateur · bande · valeur · N · D · %`.
+  - Headers opérateurs cliquables : tri par **N** ou par **%** sur
+    chaque colonne (ascendant/descendant toggleable).
+  - Bouton `Valeur ↑/↓` pour inverser l'ordre naturel des valeurs
+    numériques (asc par défaut, en respectant `value_converted`).
+  - Recherche textuelle sur la colonne « Valeur » (reprise de
+    `valueQuery` existant côté page).
+  - Export CSV via `toCsvRows()` : contient filtres + tri appliqués, un
+    triplet `N / D / pct` par opérateur, et une ligne « Total bande »
+    par bloc.
+  - **Clic sur ligne valeur** : relaie `onHighlight(valueRaw)` déjà
+    exposé par la page (réutilise la mécanique de sélection existante,
+    aucun nouveau channel de filtrage créé — cf. écart ouvert plus bas).
+
+### Contrat API (ne pas inventer)
+
+- Réutilise **`row.value_matrix` + `row.buckets`** déjà fournis par
+  `/dict/params` depuis bc4-back 0.21.0. Zod inchangé
+  (`ParamValueCellSchema` depuis 1.8.1, `.optional()`).
+- **Aucune nouvelle requête, aucun nouveau endpoint, aucun nouveau
+  champ** demandé au back.
+- Si un bucket est absent alors que `value_matrix` a des entrées pour
+  ce (op, band), c'est un **bug back** → écart ouvert déclaré + bandeau
+  rouge in-UI + `console.error`. On ne fabrique **jamais** D depuis un
+  pourcentage arrondi.
+
+### Garde-fous (vérifications dures implémentées)
+
+- `Σ(value_matrix[op, band].count) == bucket.count` est vérifié ligne
+  par ligne (op, band) dans `buildValueMatrix`. Chaque écart devient
+  une entrée de `coherenceErrors[]`.
+- `Σ(%) sur une bande × op = 100 %` à ±0.1 par construction (le
+  dénominateur est le bucket, pas une somme locale ré-estimée).
+- `null` ou `D=0` → `N/D` ; jamais 0 inventé ; jamais `0 %` affiché
+  comme substitut de `N/D`.
+
+### Palette (strictement déclarée dans styles.css)
+
+- `--heat-0` oklch(0.78 0.14 155) — vert
+- `--heat-1` oklch(0.86 0.12 140) — vert clair
+- `--heat-2` oklch(0.86 0.14 95) — jaune
+- `--heat-3` oklch(0.76 0.17 60) — orange
+- `--heat-4` oklch(0.72 0.18 35) — rouge clair
+- `--heat-5` oklch(0.60 0.21 25) — rouge foncé
+
+Variantes thème clair : nuances assombries pour préserver le contraste
+(voir commentaire styles.css).
+
+### Périmètre STRICT (non touchés)
+
+- Arbre ASN.1 LTE/NR (`Tree`, `TreeMessage`, clés M_ 1.12.0 préservées).
+- Filtres globaux (`FilterBar`, `MultiSelect`).
+- Histogramme (`Histogram`, `HistogramChart`, basé sur `value_distribution`).
+- Carte (`OccurrenceMap`, fix oklch préservé).
+- Navigation BC4, autres pages.
+- Règles de conversion 3GPP (côté back, consommées via `value_converted`).
+
+### Smoke API (scripts/smoke_api.ts, cas h.6)
+
+- Ajout d'une garde contrat back dédiée : exerce
+  `/dict/params?system=LTE&message=MeasurementReport` sur TEST2 et
+  vérifie, pour `rsrpResult` (neighbor LTE) :
+  - `value_matrix` non vide ;
+  - `Σ(value_matrix.count) == row.count` ;
+  - `Σ(value_matrix[op, band].count) == bucket.count` pour chaque bucket ;
+  - au moins 1 cellule porte `value_converted` non null ;
+  - aucun doublon strict `(operator, band, value_raw)`.
+
+### Écarts ouverts
+
+- **Sélection cellule → filtrage des visus liées** : la mécanique
+  `highlight` existante (`sel.path`, `onHighlight(valueRaw)`) est
+  réutilisée pour marquer la ligne valeur sélectionnée ; elle propage
+  déjà vers l'histogramme et la carte via `highlight`. Un clic sur une
+  **cellule** (op, band, value) ne propage PAS encore de filtre
+  (operator=op AND band=band AND value=valueRaw) vers l'histogramme :
+  cela demanderait un nouveau channel de filtrage que ce lot ne crée
+  pas (hors périmètre). Écart documenté, à adresser dans un lot futur.
+- **Garde cohérence Σ=100 % par groupe** : implémentée au niveau du
+  `buildValueMatrix` via les dénominateurs `bucket.count`, pas re-vérifiée
+  après tri (le tri ne change pas les N ni les D).
+
+## 1.14.0 (minor) — bc4-front 2026-10-16 — Assistant : rendu BlockMap + seuils dBm BC4 + colorBy (Agent BC1)
+
+> bc4-back 0.26.0 émet des `BlockMap` depuis `map_metric` (cellules
+> RSRP serving agrégées par grille lat/lon). Avant 1.14.0, un
+> `BlockMap` tombait sur un rendu générique insuffisant pour une
+> carte agrégée (pas de légende dBm BC4, pas de toggle opérateur,
+> pas de couleur par valeur). Ce lot livre une carte **dédiée
+> Assistant** avec les seuils dBm BC4 à 6 classes et un toggle
+> `colorBy` ("value" / "operator"). **Non-breaking** : les BlockMap
+> non-Assistant (ex. page Overview) continuent via `RadioMap`
+> historique (4 classes `good|fair|poor|bad`).
+
+### Ajouté
+- **`src/features/assistant/AssistantMap.tsx`** — composant maplibre-gl
+  dédié à la carte agrégée de l'Assistant :
+  - **6 seuils dBm BC4** (bornes supérieures de chaque classe) :
+    `≥ -71` (excellent, vert foncé `#1b5e20`) · `-71..-81` (fort,
+    vert clair `#66bb6a`) · `-81..-91` (moyen, jaune `#fdd835`) ·
+    `-91..-101` (faible, orange `#fb8c00`) · `-101..-111` (critique,
+    rouge `#e53935`) · `< -111` (hors couverture, rouge foncé
+    `#7f1d1d`).
+  - **Toggle `colorBy`** (radiogroup accessible) :
+    - `"value"` (défaut) → palette dBm BC4 ci-dessus.
+    - `"operator"` → palette catégorielle fixe (Orange `#ff7900`,
+      SFR `#e2001a`, Bouygues `#0084d6`, Free `#cd2026`).
+  - **Légende** visible en bas-gauche, reflète le mode courant
+    (dBm BC4 OU opérateurs présents dans les cellules).
+  - **Tooltip** par cellule au survol : `operator · tech band`,
+    `RSRP: X.X dBm`, `n = N observations`.
+  - Encart "Plage observée: [vmin, vmax] dBm" en haut-droite si
+    `value_range` fourni par le back (vient de 0.26.0).
+  - Fond OSM atténué (saturation −0.8), zoom par défaut 12 (plus
+    serré que RadioMap car cellules dense).
+  - Fallback `tileError` si tuiles OSM injoignables (comme RadioMap).
+  - Plein écran 1-clic (`Maximize2 / Minimize2`).
+- Chargement **paresseux** (`lazy()`) : maplibre-gl n'est importé que
+  si la réponse Assistant contient un BlockMap.
+
+### Modifié
+- `src/features/assistant/ResponseRenderer.tsx` :
+  - `case "map"` détecte si les points sont « Assistant-flavor »
+    (champ `n` injecté par `map_metric` 0.26.0) et route vers
+    `AssistantMap` ; sinon fallback `RadioMap`. Non-régression
+    Overview.
+  - **Encart `n=0` dédié** pour BlockMap sans points (icône `Inbox`,
+    message « Aucune donnée dans le périmètre »). **Jamais une carte
+    vide ni un 0.**
+  - Footer source : affiche `source_id`, nombre de cellules, unité et
+    bins (ex. « Source : 969a859f4a126812 · 81 cellules · unité :
+    dBm · grille 3 décimales »).
+  - **`GroupedBlocks` étendu** : pair `map + table` partageant le
+    même `source_id` dans une `<section>` commune (comme `chart +
+    table` depuis 1.13.0). Attribut `data-source-id` au DOM pour
+    tests.
+- `src/lib/api/schemas.ts` : `MeasurementPointSchema` ajoute
+  `n: z.number().int().nonnegative().optional()`. Non-régression :
+  les points Overview n'émettent pas ce champ, il reste `undefined`.
+- `src/lib/api/assistant-schemas.ts` : `BlockMap` ajoute 3 champs
+  optionnels (`unit`, `value_range`, `grid`) alignés avec le back
+  0.26.0. Sans eux, le rendu reste fonctionnel (défauts raisonnables).
+
+### Discipline (règles conservées)
+- UI ne lit que via `client.ts` (schéma Zod validé).
+- `null → "N/D"` dans tooltip (`p.rsrp == null ? "N/D" : …`).
+- `n=0` déclaré avec encart dédié, **jamais** une carte vide ni un `0`.
+- `tsc --noEmit` = 0 erreur.
+- Pas de modification de `RadioMap` : l'Overview et le Dictionnaire
+  conservent leur palette 4-classes historique sans divergence.
+
+### Garde manuelle (à vérifier après Vite HMR)
+
+| Question (sur TEST2) | Attendu dans la UI |
+|---|---|
+| « Affiche la carte des RSRP » | 1 `BlockMap` avec **81 cellules** (back 0.26.0 smoke), légende dBm 6 classes visible, toggle `colorBy` fonctionnel, encart plage observée `[-116, -69] dBm`, tooltip au survol avec `rsrp + n + op + band`, 1 `BlockTable` compagnon **dans la même carte** (`data-source-id` partagé) |
+
+Opérateurs attendus en TEST2 (vus par le back 0.26.0 smoke) :
+Bouygues, Free, Orange — SFR absent (donc 3 pastilles en mode
+`colorBy=operator`, pas 4 ; comportement correct, pas d'invention).
+
+### Non-objectifs (écarts ouverts)
+- Pas de clustering des cellules proches (toutes rendues individuellement).
+  Si le volume dépasse ~2000 cellules (limite `map_metric`), les
+  performances maplibre-gl commencent à se dégrader. Lot futur
+  pourra ajouter un `supercluster` si besoin.
+- Pas d'export carte en PNG / GeoJSON (export JSON global de la
+  réponse Assistant déjà disponible).
+- Les palettes des opérateurs sont codées en dur dans `AssistantMap` ;
+  si la doctrine couleur-par-opérateur évolue, factoriser vers
+  `src/lib/api/schemas.ts` (`OP_VAR` existe déjà dans `AppShell.tsx`
+  pour les charts — divergence acceptée dans ce lot, à aligner si
+  besoin).
+
+## 1.13.0 (minor) — bc4-front 2026-10-16 — Assistant V2 : rendu typé des blocs (Agent BC1)
+
+> Depuis bc4-back 0.25.1, l'assistant émet des blocs typés
+> (text / chart / table / verdict / context / n=0 déclaré). Le front
+> rendait déjà `chart`, `table`, `text` via `BlockView` ; ce lot ajoute
+> **3 sous-variantes typées** du `BlockText` (verdict / contexte /
+> n=0) **détectées PAR LE CONTENU** et **groupe visuellement les paires
+> chart+table** qui partagent le même `source_id`.
+
+### Ajouté — `src/features/assistant/ResponseRenderer.tsx`
+- **`VerdictBadge`** : pilule colorée pour les 3 verdicts de
+  comparabilité émis par `validate_comparison` côté back :
+  - `COMPARABLE` → vert (`border-sev-good/60`, `CheckCircle2`)
+  - `COMPARABLE_WITH_LIMITATIONS` → orange (`bg-warning`, `ShieldAlert`)
+  - `NOT_COMPARABLE` → rouge (`bg-destructive/10`, `XCircle`)
+  Chaque badge porte `data-verdict` + `data-source-id` (= result_id)
+  pour tests et traçabilité.
+- **`VerdictBlock`** : détecte les BlockText dont le `heading` matche
+  `/^Verdict\b/i`. Parse chaque claim avec `/^\[VERDICT\]\s*raison$/`
+  et rend badge + raison. Fallback générique si pattern raté.
+- **`ContextBlock`** : détecte `heading === "Contexte projet"` et rend
+  un encart discret (`border-dashed`, `bg-muted/40`, icône `Info`) avec
+  les métadonnées projet en `<dl>` compact (nom, période, opérateurs
+  déclarés, technos, bandes).
+- **`EmptyDataBlock`** : détecte un BlockText avec UNE seule claim
+  `OBSERVED` dont le texte commence par `n=0`. Rend un encart avec
+  icône `Inbox` + message grisé — **JAMAIS un chart vide ni un 0**.
+- **`GroupedBlocks`** : scanne la liste de blocs ; quand un `chart`
+  est immédiatement suivi par un `table` avec le MÊME `source_id`,
+  les deux sont enveloppés dans une `<section>` commune (bordure +
+  card background) pour signaler leur lien visuel. Les autres blocs
+  conservent leur rendu individuel.
+- **Evidence enrichi** : liste des sources avec `data-source-id` par
+  item, mise en forme lisible (opérateur `·` entre champs, dénominateur
+  `n = …` en police mono), compteur `(N)` dans l'en-tête.
+
+### Discipline (règles conservées)
+- UI ne lit que via `client.ts` (via `AssistantResponse` typée Zod).
+- `null → "N/D"` partout (`fmtNum` existant, inchangé).
+- `onFollowUp(q)` : chaque puce relance la question (comportement
+  existant, préservé).
+- `tsc --noEmit` = 0 erreur ; aucune modification côté API client.
+
+### Garde manuelle (TEST2 — à vérifier après Vite HMR)
+
+| Question | Blocs rendus réels |
+|---|---|
+| « Compare les bandes » | 1× **chart bar** + 1× table **dans la même `<section>`** (source_id partagé) |
+| « Paramètres RRC dominants » | 1× **chart bar** (top messages) + 1× table (même carte) |
+| « a3Offset Orange/SFR × B3/B20 » | 1× **chart bar (histogramme)** + 1× table + **3× encart n=0** + **3× badge COMPARABLE_WITH_LIMITATIONS orange** |
+| « Compare les débits » | 1× **chart bar** compare_operators + 1× table + **1× badge COMPARABLE vert** (plan rejeté LLM caché côté UI, cf. 0.25.1) |
+
+Chaque chart et sa table affichent le MÊME `source_id` sous eux
+(`font-mono text-[10px]`), vérifiable dans le DOM via
+`data-source-id` du conteneur `<section>` et des `<li>` d'evidence.
+
+### Non-objectifs
+- Pas de distinction visuelle `chart="histogram"` vs `chart="bar"` dans
+  le schéma Zod (`BlockChart.chart` reste `bar|line|boxplot`). Le back
+  0.25.1 émet les histogrammes en `chart="bar"` avec `heading` et
+  `x_label` sémantiques — rendu identique côté ECharts, sémantique
+  portée par le titre.
+- Pas d'export CSV séparé pour les blocs verdict/context (déjà en JSON
+  via le bouton export global). Pas prioritaire.
+- Le pattern de parsing des verdicts dépend du préfixe `[VERDICT]`
+  émis par le back. Si le back change ce format, le fallback générique
+  prend le relais (texte brut + EvidenceTag) — pas de crash.
+
+## 1.12.0 (minor) — bc4-front 2026-10-15 — Clés canoniques M_ pour les feuilles de MESURE sous MeasurementReport (Agent BC4)
+
+> Nouveau rendu de l'arbre Dictionnaire RRC : les feuilles de mesure sous
+> `MeasurementReport` affichent une **clé canonique parlante** à la place
+> du nom RRC natif, dérivée **par le CONTENU** de l'`asn1_path` servi par
+> `/dict/tree` — JAMAIS par le label. Les autres messages
+> (`RRCConnectionReconfiguration`, `MasterInformationBlock`,
+> `SystemInformationBlockType1`, …) **gardent leur nom RRC natif**.
+>
+> Clé : `M_<role>[_<ressource>]_<grandeur>`.
+> Exemples live TEST2 (bc4-back 0.22.3) :
+>   - LTE serving  rsrq → `M_serving_rsrq`
+>   - LTE neighbor rsrp → `M_neighbor_rsrp`
+>   - LTE SCell    rsrq → `M_scell_rsrq`
+>   - NR  serving  SSB  rsrp → `M_serving_ssb_rsrp`
+>   - NR  neighbor SSB  sinr → `M_neighbor_ssb_sinr`
+
+### Ajouté
+- `src/features/dictionary/measure-roles.ts` — table de rôle + fonction
+  `canonicalMeasureKey(asn1_path)` strictement déclarée (pas de deviné) :
+  - **Rôles** (précédence `neighbor > scell > serving`) :
+    - `serving`   : `measResultServingCell` | `measResultPCell` |
+                    `measResultServingMOList` | `servingCellResults`
+    - `neighbor`  : `measResultNeighCells` | `measResultListEUTRA` |
+                    `measResultNeighCellListNR` | `resultsNeighCellList`
+    - `scell`     : `measResultServFreqList` | `sCellResult` |
+                    `measResultSCell`
+  - **Ressource NR** (optionnelle) :
+    - `ssb`   : `resultsSSB-Cell` | `ssbResults` | `/ssb/`
+    - `csirs` : `resultsCSI-RS-Cell` | `csi-rs` | `csiRs`
+  - **Grandeur** : radical normalisé (suppression des suffixes release
+    `-r10…-r18`, `Result`, `-Result`, `ResultNCell`, `ResultSCell`) qui doit
+    matcher **exactement** `rsrp` | `rsrq` | `sinr` | `cqi`.
+  - Si rôle inconnu OU grandeur inconnue OU path hors `MeasurementReport`
+    → `canonicalMeasureKey` renvoie `null` et le leaf **conserve son nom
+    RRC natif** (via `leafOf()`). Aucun forçage.
+
+### Modifié
+- `src/features/dictionary/DictionaryPage.tsx` : rendu du label leaf (ligne
+  ~354) :
+  - calcule `canon = canonicalMeasureKey(p.param)` ; affiche `canon` quand
+    non-null (en police mono + couleur primaire pour la visibilité), sinon
+    `leafOf(p.param)` (comportement 1.11.x inchangé).
+  - **Détection des vrais doublons** : si deux leaves d'un même message
+    partagent le MÊME `asn1_path` exact, on log `console.warn` + badge
+    jaune « doublon » visible sur chaque ligne — on **ne fusionne PAS**
+    (c'est une anomalie d'agrégation back, cf. G22 doctrine `label` qui
+    emprunte un autre chemin de désambiguïsation).
+  - Le `title` (tooltip) et le détail (table ASN.1) conservent le path
+    complet + le nom RRC natif : **pas de perte d'info**.
+- `scripts/smoke_api.ts` : nouveau cas (h.5) sur TEST2 :
+  - import de `canonicalMeasureKey` depuis le même fichier UI (une seule
+    source de vérité) ;
+  - vérifie qu'au moins **2 clés M_ distinctes** apparaissent pour la
+    grandeur `rsrq` (plusieurs rôles observés : serving + neighbor + scell) ;
+  - log warn si des vrais doublons sont détectés dans un message, sans
+    faire échouer la garde (contrat UI : afficher le badge).
+- `scripts/g5_diff_scope.sh` : whitelist étendue au nouveau fichier
+  `src/features/dictionary/measure-roles.ts`.
+
+### Observations live TEST2 (bc4-back 0.22.3) — 2026-10-15
+- Pré-vérif étape 0 (OK) : `/dict/tree?tech=…` sert pour chaque param
+  `{ "param": "<asn1_path complet>", "count": N, "label": "<human>" }`.
+  La UI consomme `param` uniquement (Zod `TreeV2ParamSchema` strippe
+  `label` depuis 1.8.0).
+- **LTE MeasurementReport** (30 leaves) → 20 leaves de mesure classées,
+  10 non-mesure (`measId`, `physCellId`, `servFreqId-r10`, `utra-EcN0`,
+  `utra-RSCP`, `pci-r15`, `carrierFreq-r15`, `ssb-Index-r15`, `fdd`).
+  Clés M_ émises : `M_neighbor_rsrp`, `M_neighbor_rsrq`, `M_serving_rsrp`,
+  `M_serving_rsrq`, `M_scell_rsrp`, `M_scell_rsrq`, `M_scell_sinr`.
+- **NR MeasurementReport** (24 leaves) → 18 leaves de mesure classées,
+  6 non-mesure (`measId`, `physCellId`, `ssb-Index`×3, `servCellId`).
+  Clés M_ émises : `M_serving_ssb_rsrp/rsrq/sinr`, `M_neighbor_ssb_rsrp/rsrq/sinr`,
+  `M_neighbor_rsrp/rsrq/sinr` (branche `ssb-Results` sans marqueur
+  `resultsSSB-Cell` — cf. écart déclaré ci-dessous).
+- **Doublons back** (asn1_path EXACTEMENT identique dans un même message) :
+  **0 observé** sur TEST2 pour LTE+NR MeasurementReport. La UI est
+  néanmoins outillée (badge + warn console) pour les détecter dès qu'ils
+  apparaîtraient.
+
+### Écarts déclarés (role=unknown ou classification sémantique perfectible)
+Ces écarts sont **conscients** : la doctrine 1.12.0 est de ne JAMAIS deviner
+hors des marqueurs déclarés, donc les cas suivants :
+1. **`measResultServFreqListNR-r15/measResultBestNeighCell-r15/.../rsrp-Result-r15`**
+   → classé `scell` (marqueur `measResultServFreqList`), semantique réelle
+   « neighbor dans le serving-freq ». `measResultBestNeighCell` n'est pas
+   dans la liste des marqueurs neighbor → classification scell, path visible
+   dans le tooltip. Pour corriger : ajouter `measResultBestNeighCell` aux
+   marqueurs neighbor (lot ultérieur, demande d'alignement avec le back).
+2. **`measResultServingMOList/measResultBestNeighCell/.../rsrp`** (NR) → classé
+   `serving` + `ssb` (marqueur `measResultServingMOList`). Même constat :
+   `measResultBestNeighCell` non reconnu neighbor. Même remédiation.
+3. **`.../rsIndexResults/resultsSSB-Indexes/ssb-Results/rsrp`** (NR) → classé
+   `M_neighbor_rsrp` / `M_serving_rsrp` SANS ressource `ssb` : le marqueur
+   déclaré est `ssbResults` (sans hyphen), le path réel contient
+   `ssb-Results` (avec hyphen). Pour corriger : ajouter `ssb-Results` et
+   `resultsSSB-Indexes` aux marqueurs SSB (lot ultérieur).
+4. **`.../measResultSSB-Index-r15/rsrpResult-r15`** (LTE/NR) : même manque de
+   marqueur SSB — path contient `measResultSSB-Index` qui n'est pas dans
+   la liste.
+
+Ces écarts n'empêchent **pas** l'affichage : la clé reste significative
+(`M_scell_rsrp` au lieu de `M_neighbor_rsrp` dans le cas 1), et le path
+complet reste visible dans le tooltip + la table ASN.1 détail. Un lot
+« 1.12.1 : marqueurs étendus » corrigera ces 4 écarts sémantiques
+après validation d'une doctrine 3GPP partagée avec le back (coord G22).
+
+### Non-objectifs
+- Doctrine back G22 (`label: str` sur `DictTreeParam`, désambiguïsation par
+  path parent) **restée côté back, non consommée par la UI**. Les deux
+  doctrines coexistent : la UI 1.12.0 utilise exclusivement `param`
+  (asn1_path complet) pour sa classification, elle est **orthogonale** au
+  `label` G22.
+- Aucune modification des endpoints `/dict/params` et `/dict/param/map` :
+  la clé M_ reste purement **cosmétique** à l'affichage dans l'arbre. La
+  sélection d'un paramètre continue de propager l'`asn1_path` complet
+  (`sel.path = p.param`) aux autres panneaux (histogramme, table, map).
+
+## 1.11.2 (patch) — bc4-front 2026-10-15 — Badge « Données démo » conditionnel (Agent BC1)
+
+> Coordonné avec bc4-back 0.23.0. Le badge « Données démo » n'est plus
+> affiché systématiquement — il reflète maintenant le champ `demo` du
+> back qui est `false` pour un projet ingéré (NMF décodé), `true` pour
+> un projet purement seedé.
+
+### Modifié
+- `src/lib/api/assistant-schemas.ts` : `demo: z.literal(true)` →
+  `demo: z.boolean()`. Compat ascendante : le back renvoyait déjà
+  `true`, il peut maintenant renvoyer `false`.
+- `src/features/assistant/ResponseRenderer.tsx` : `<DemoBadge />` →
+  `{r.demo && <DemoBadge />}`. L'étiquette apparaît uniquement si le
+  back a signalé des données démo.
+
+### Non-objectifs
+- Les deux autres usages du label « Données démo » (sidebar + export
+  Markdown dans `AssistantPage.tsx`) **restent inchangés** pour ce lot
+  (lot ultérieur si besoin).
+
+## 1.11.1 (patch) — bc4-front 2026-10-15 — Settings LLM : « Enregistrer » n'efface plus la clé (Agent BC1)
+
+> **Bug fix UX destructif**. Avant 1.11.1, si l'utilisateur touchait
+> le champ clé puis le laissait vide avant de cliquer « Enregistrer »
+> (par exemple en cliquant dedans pour recopier/supprimer), le front
+> envoyait `api_key: ""` → le back effaçait silencieusement la clé.
+> Résultat observable : « Enregistré (serveur) » + « Tester OK » juste
+> après le save qui a stocké la vraie clé, mais à la prochaine save
+> la clé disparaissait et l'Assistant retombait en `UNAVAILABLE`.
+
+### Modifié
+- `src/features/settings/ai/LlmConfigPanel.tsx` :
+  - **« Enregistrer » n'envoie plus `api_key: ""`**. Si le secret est
+    vide (ou que des espaces), la clé stockée est préservée. Seule
+    une saisie **non vide** remplace la clé.
+  - Nouveau bouton **« Effacer la clé »** à côté du champ (visible
+    uniquement si `api_key_set === true`). Confirme via
+    `window.confirm("Effacer la clé API stockée ? …")` avant de PUT
+    `api_key: ""`. L'effacement est volontaire et unique chemin
+    destructif.
+  - Hint du champ clarifié : « Champ vide = clé actuelle préservée.
+    Pour l'effacer : bouton « Effacer la clé » ci-dessous. »
+  - Avertissement destructif « La clé stockée sera effacée » retiré
+    (devient faux après le fix).
+
+### Non-objectifs
+- La sémantique back (`api_key: ""` = clear) est **conservée** pour
+  compatibilité d'intégration (scripts admin externes qui veulent
+  effacer en une seule requête). Seule la UI standard refuse ce chemin.
+
+## 1.11.0 (minor) — bc4-front 2026-10-15 — Projet actif global (Agent BC1 pour BC2)
+
+> **Sélection explicite** du projet via la liste des projets. Un store
+> `activeProject` persisté par-viewer dans `localStorage` pilote les
+> pages scopées (Dictionnaire RRC, Assistant IA, Vue d'ensemble, KPI).
+> **Fin de l'auto-sélection silencieuse** de l'AppShell : si aucun
+> projet n'est actif, chaque page affiche un état vide clair
+> « Sélectionne un projet pour commencer ». Aucun projet n'est codé en
+> dur.
+
+### Ajouté
+- `src/lib/activeProject.ts` — store `activeProject` (shape
+  `{ id, name } | null`) :
+  - Pub/sub + `useSyncExternalStore` → consommable par `useActiveProject()`.
+  - Persisté dans `localStorage` à la clé `bc4.activeProject.v1.<userEmail|anon>`
+    (per-viewer, isolé entre comptes).
+  - **try/catch** sur read + write — un localStorage cassé ne doit JAMAIS
+    bloquer l'app ; en cas d'échec on repart de `null` sans erreur.
+  - Synchro inter-onglets via l'event `storage` (plusieurs onglets du
+    même viewer restent cohérents).
+  - API : `useActiveProject()`, `getActiveProject()`, `setActiveProject(p)`,
+    `clearActiveProject()`.
+- `src/components/bc4/NoActiveProject.tsx` — état vide standardisé pour
+  les 4 pages scopées : titre « Sélectionne un projet pour commencer »,
+  CTA vers `/projects`.
+- Toast monté au `__root.tsx` (`sonner` était déjà en deps, pas monté).
+  Les notifications discrètes passent par `toast.success(...)`.
+
+### Modifié
+- `src/components/bc4/AppShell.tsx` :
+  - **Suppression** de l'auto-set `filters.project = projects[0]!.id`
+    (ex-lignes 87-90). Un auto-set silencieux était un faux garde —
+    il masquait l'intention « je veux choisir un projet ».
+  - **Indicateur dans la barre du haut** : quand `activeProject !== null`,
+    pilule `Projet : {name} ✕` à gauche du toggle thème. Le bouton ✕
+    déclenche `clearActiveProject()` → les pages scopées repassent à
+    l'état vide, l'indicateur disparaît.
+- `src/routes/_app.projects.tsx` :
+  - Bouton **« Ouvrir »** → `setActiveProject({id, name})` +
+    `toast.success('Projet « X » chargé')`. **Plus de navigation** vers
+    `/projects/$projectId` (ce chemin reste réservé à l'import NMF,
+    atteint via `ProjectRowNmfAction` sur la même ligne).
+- `src/routes/_app.rrc.tsx`, `_app.overview.tsx`, `_app.assistant.tsx`,
+  `_app.kpi.tsx` :
+  - **Source de vérité du projet** = `useActiveProject().activeProject.id`
+    (plus `useFilters().project`).
+  - Rendu `<NoActiveProject scope="…" />` quand `!activeProject`.
+  - `useFilters()` est conservé pour les AUTRES scopes (op, tech, band,
+    arcep…). `filters.project` n'est plus lu dans ces 4 pages.
+  - Overview + Assistant construisent un `scopedFilters` qui force
+    `project: activeProject.id` au moment du call API, pour conserver
+    la signature `(filters) => …` existante côté `client.ts`.
+
+### Non-objectifs (écarts ouverts)
+- `filters.project` dans l'URL n'est plus la source de vérité, mais
+  reste schématisé par `FilterContextSchema` pour compat ascendante
+  avec les deeplinks existants (ex. captures écran). Un lot ultérieur
+  (1.11.1 ou 1.12.0) pourra retirer `project` du schema URL une fois
+  les deeplinks mis à jour.
+- Pas de « liste récente de projets ouverts » (MRU) — seul le projet
+  **courant** est mémorisé. L'historique de navigation reste côté
+  TanStack Router.
+- `/projects/$projectId` (détail NMF) n'est plus accessible via le
+  bouton « Ouvrir ». L'accès reste possible via le bouton d'import NMF
+  de la row ou en tapant l'URL. Si le besoin émerge d'un « Voir les
+  détails » dans le menu `...`, à ajouter en 1.11.1.
+
+### Garde (G5 manuelle — à exécuter dans un navigateur contre `VITE_BC4_DATA=api`)
+
+1. **Démarrage à froid** — vider `localStorage` (`bc4.activeProject.*`).
+   Naviguer vers `/rrc` → affiche « Sélectionne un projet pour commencer » + CTA.
+   Idem `/overview`, `/assistant`, `/kpi`. **PAS de projet TEST2 chargé auto.**
+2. **Ouvrir TEST2** — depuis `/projects`, cliquer « Ouvrir » sur TEST2.
+   Toast « Projet « TEST2 » chargé ». Barre du haut : pilule
+   « Projet : TEST2 ✕ ». Naviguer vers `/rrc` → paramètres de TEST2
+   s'affichent. `/overview` → données de TEST2. `/assistant` → chat
+   scopé TEST2 (preuves `measurement_points.summary` de TEST2).
+3. **Changer de projet** — « Ouvrir » Benchmark National.
+   Toast « chargé ». Barre : « Projet : Benchmark National ».
+   Pages scopées basculent automatiquement sans refetch manuel.
+4. **Fermer (×)** — clic sur ✕ dans la pilule. Barre : plus de pilule.
+   `/rrc`, `/overview`, `/assistant`, `/kpi` : tous en état vide
+   « Sélectionne un projet pour commencer ». **Pas de 0, pas de N/D
+   trompeur.**
+5. **Refresh F5** — après `Ouvrir TEST2`, F5. Le store est repris du
+   `localStorage` : pilule TEST2 toujours là, pages continuent de
+   fonctionner.
+6. **Multi-onglets** — ouvrir deux onglets, « Ouvrir TEST2 » dans l'un.
+   L'autre onglet reflète la pilule TEST2 en temps réel (via l'event
+   `storage`).
+7. **localStorage KO** — bloquer l'écriture (ex. mode privé Safari qui
+   quota à 0). L'app ne crashe PAS, elle démarre juste sans projet
+   actif. Les actions `setActiveProject` fonctionnent en mémoire mais
+   ne survivent pas au refresh — comportement acceptable.
+
+Si l'un des 7 points échoue, c'est un écart ouvert à documenter avant
+merge.
+
+## 1.10.0 (minor) — bc4-front 2026-10-15 — Assistant LLM : panneau branché au back réel (Agent BC1)
+
+> La page « Configuration IA » (route `/settings/ai`) est débranchée du
+> store mock et parle maintenant à bc4-back `/settings/llm` +
+> `/settings/llm/test`. Rebaptisée **« Assistant LLM »** dans la nav.
+> **Non-breaking côté UI** : même route, même emplacement — seuls
+> l'implémentation et les copies internes changent.
+
+### Ajouté
+- `src/lib/api/llm-schemas.ts` — schémas Zod `LlmSettings`,
+  `LlmSettingsInput`, `LlmTestResult`, options `LlmProviderOptions`
+  (openai / mistral / together / groq / openrouter / custom).
+- `src/lib/api/llm.ts` — client typé : `getLlmSettings`,
+  `putLlmSettings`, `testLlmConnection`, `llmApiBase`.
+  - La clé n'est JAMAIS stockée dans localStorage (pas de passage par
+    la cache react-query comme valeur, pas de persistance locale).
+  - `api_key === ""` ⇒ efface la clé stockée. `api_key: undefined` ⇒
+    ne touche pas.
+  - Mode mock (`VITE_BC4_DATA !== "api"`) : stubs cohérents, pas d'appel
+    réseau, pour que la navigation démo reste fonctionnelle.
+- `src/features/settings/ai/LlmConfigPanel.tsx` — nouveau panneau :
+  - Appel RÉEL `GET /settings/llm` (TanStack Query, 403 propagé via
+    `Forbidden`).
+  - PUT avec champs partiels (PATCH-like côté back). La clé passe
+    uniquement si l'utilisateur a touché le champ (`secretTouched`) —
+    sinon la clé stockée est conservée.
+  - Bouton **Tester la connexion** : POST `/settings/llm/test`
+    (chat completions `max_tokens=1`) → affichage OK/KO + latence +
+    message safe du back. Désactivé tant que le formulaire est `dirty`
+    (titre explicite au survol).
+  - Carte « Clé API stockée » (chiffrée en base / aucune), carte
+    « Dernière mise à jour » et « Assistant activé » comme pilules.
+  - Avertissement explicite si l'utilisateur vide la clé
+    (`api_key: ""` est destructif).
+  - Avertissement endpoint non HTTPS.
+
+### Modifié
+- `src/routes/_app.settings.ai.tsx` : rend désormais `LlmConfigPanel`
+  (ancien `AiConfigPanel` conservé en module pour archive mais plus
+  routé — peut être supprimé dans un lot suivant).
+- `src/features/settings/SettingsLayout.tsx` : onglet renommé
+  « Assistant LLM » (anciennement « Configuration IA »).
+
+### Non-objectifs (écarts ouverts)
+- `AiConfigPanel.tsx` + `getAiConfig/putAiConfig/testAiConnection` dans
+  `settings.ts` restent dans le repo (pas utilisés par le routeur).
+  Nettoyage à prévoir en 1.10.1.
+- Mode mock : le panneau est en « lecture seule effective » (les PUT
+  ne tapent pas de store mock). C'est **intentionnel** — la config LLM
+  n'est utile qu'en mode API.
+
 ## 1.9.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC : espace de travail dynamique unique
 
 - Page unique sans onglets ni bandeau KPI : arbre ASN.1 à gauche, histogramme + table détaillée au centre, carte optionnelle à droite.

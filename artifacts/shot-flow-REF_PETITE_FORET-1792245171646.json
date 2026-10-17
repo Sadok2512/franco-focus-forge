@@ -1,0 +1,113 @@
+{
+  "projectName": "REF_PETITE_FORET",
+  "front": "http://localhost:5173",
+  "api": "http://api:8000",
+  "counts": {
+    "bar": true,
+    "active": 5,
+    "gray": 6,
+    "malformed": 0,
+    "error": false
+  },
+  "footer": {
+    "front": "front v1.17.4",
+    "back": "back v0.45.2"
+  },
+  "kpiFiltersCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2740,
+      "resAt": 3097,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2741,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "allKpiCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/catalog",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2738,
+      "resAt": 6254,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2740,
+      "resAt": 3097,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/catalog",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2741,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2741,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 6335,
+      "resAt": 6389,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MTcxLCJleHAiOjE3OTIyNDg3NzF9.lfpU_crgZxnReLNq-ZS_cqrqScTjuGlqXR85vnmzNic",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "consoleErrors": [],
+  "png": "artifacts/shot-flow-REF_PETITE_FORET-1792245171646.png"
+}

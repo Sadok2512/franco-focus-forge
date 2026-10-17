@@ -17,9 +17,11 @@ import {
   XCircle,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import { createProject, deleteProject, getProjects } from "@/lib/api/client";
 import type { ProjectIngestView } from "@/lib/api/client";
 import { OPERATORS, TECHNOLOGIES, type Project } from "@/lib/api/schemas";
+import { useActiveProject } from "@/lib/activeProject";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
 import {
   DropdownMenu,
@@ -198,8 +200,19 @@ function ProjectsPage() {
     });
   }, [q.data, search, status, op, tech]);
 
-  const open = (p: Project) =>
-    navigate({ to: "/projects/$projectId", params: { projectId: p.id } });
+  // 1.11.0 — « Ouvrir » = sélectionne le projet comme actif (store global
+  // + persisté par-viewer). PAS de navigation vers /projects/$projectId —
+  // ce chemin reste pour l'import NMF, pris en charge par le bouton
+  // dédié (ProjectRowNmfAction) sur la même ligne. L'utilisateur peut
+  // alors aller librement sur Dictionnaire / Assistant / Vue d'ensemble
+  // et y retrouver CE projet (plus d'auto-sélection silencieuse).
+  const { setActiveProject } = useActiveProject();
+  const open = (p: Project) => {
+    setActiveProject({ id: p.id, name: p.name });
+    toast.success(`Projet « ${p.name} » chargé`, {
+      description: "Les pages Dictionnaire, Assistant, Vue d'ensemble et KPI utilisent désormais ce projet.",
+    });
+  };
 
   const setOverlay = useCallback((id: string, patch: Partial<RowOverlay>) => {
     setOverlays((prev) => ({ ...prev, [id]: { ...(prev[id] ?? emptyOverlay()), ...patch } }));

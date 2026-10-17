@@ -10,7 +10,7 @@ export const SETTINGS_TABS = [
   { to: "/settings/geography", label: "Géographie" },
   { to: "/settings/cellular-reference", label: "Référence cellulaire" },
   { to: "/settings/kpi-catalog", label: "Catalogue KPI" },
-  { to: "/settings/ai", label: "Configuration IA" },
+  { to: "/settings/ai", label: "Assistant LLM" },
   { to: "/settings/appearance", label: "Apparence" },
   { to: "/settings/organization", label: "Organisation" },
   { to: "/settings/about", label: "À propos & Version" },

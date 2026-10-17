@@ -10,9 +10,10 @@ import {
   Radio,
   Settings,
   Sun,
+  X,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { getAppearance, getOrganization, getProjects } from "@/lib/api/client";
+import { getAppearance, getOrganization } from "@/lib/api/client";
 import {
   applyAppearance,
   DEFAULT_PREFS,
@@ -23,7 +24,9 @@ import {
 import type { FilterContext, Operator } from "@/lib/api/schemas";
 import { getSession, logout } from "@/lib/auth";
 import { UNAUTH_EVENT } from "@/lib/api/http";
-import { useFilters } from "@/lib/filters";
+import { getBackHealth } from "@/lib/api/project-kpi";
+import { useActiveProject } from "@/lib/activeProject";
+import { APP_VERSION } from "@/lib/version";
 
 const NAV = [
   { to: "/projects", label: "Projets" },
@@ -68,6 +71,28 @@ export function Logo({ className = "" }: { className?: string }) {
   );
 }
 
+/** Petit label version à côté du logo : "v1.x.x" en style sous-titre
+ * (muted). Tooltip au survol = `front vX · back vY` (back lu depuis
+ * /health). Source UNIQUE de la version front : APP_VERSION ← package.json
+ * (jamais une string tapée à la main). */
+function HeaderVersion() {
+  const { data: health } = useQuery({
+    queryKey: ["back-health"],
+    queryFn: ({ signal }) => getBackHealth(signal),
+    staleTime: 60_000,
+    retry: false,
+  });
+  const backVer = health?.version ?? "?";
+  return (
+    <span
+      title={`front v${APP_VERSION} · back v${backVer}`}
+      className="text-xs font-medium text-muted-foreground"
+    >
+      v{APP_VERSION}
+    </span>
+  );
+}
+
 export function AppShell({ children }: { children: ReactNode }) {
   const [dark, toggleTheme] = useTheme();
   const { data: org } = useQuery({
@@ -76,18 +101,13 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const { filters, set } = useFilters();
-  const { data: projects } = useQuery({
-    queryKey: ["projects"],
-    queryFn: ({ signal }) => getProjects(signal),
-  });
+  // 1.11.0 — Projet actif global (ex auto-sélection « premier projet »).
+  // On NE sélectionne plus automatiquement : si l'utilisateur n'a pas
+  // cliqué « Ouvrir », les pages scopées affichent un état vide clair.
+  // Un auto-set était un silent-guard — il masquait l'intention « choisir ».
+  const { activeProject, clearActiveProject } = useActiveProject();
   const session = getSession();
   const [menu, setMenu] = useState(false);
-
-  useEffect(() => {
-    if (!filters.project && projects?.length) set({ project: projects[0]!.id });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [projects, filters.project]);
 
   // 401 attrapé par `apiFetch` (token expiré/invalide) ou appel explicite
   // à `logout()` : purge locale déjà faite, on redirige vers /login.
@@ -114,6 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="flex items-center gap-2 text-lg"
         >
           <Logo />
+          <HeaderVersion />
           {org?.show_in_header && org.name && (
             <span className="hidden max-w-40 truncate border-l pl-2 text-xs font-medium text-muted-foreground lg:inline">
               {org.short_name || org.name}
@@ -140,6 +161,25 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-1">
+          {activeProject && (
+            <div
+              aria-label={`Projet actif : ${activeProject.name}`}
+              className="mr-2 inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 pl-3 pr-1 text-xs font-medium text-primary"
+            >
+              <span className="truncate">
+                <span className="text-muted-foreground">Projet :</span> {activeProject.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => clearActiveProject()}
+                aria-label="Fermer le projet actif"
+                title="Fermer le projet actif"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary/10"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
           <button
             aria-label={dark ? "Thème clair" : "Thème sombre"}
             onClick={toggleTheme}

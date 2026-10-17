@@ -1,0 +1,193 @@
+{
+  "url": "http://localhost:5173/kpi",
+  "projectId": "7e656b8c6c19",
+  "route": "/kpi",
+  "emptyFilters": true,
+  "counts": {
+    "bar": true,
+    "active": 0,
+    "gray": 0,
+    "malformed": 22,
+    "error": false
+  },
+  "consoleErrors": [
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'operators' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'rats' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'bands' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'service_types' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'envs' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dr' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'plaque' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dor' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'arcep' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'commune' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'insee' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'operators' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'rats' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'bands' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'service_types' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'envs' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dr' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'plaque' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dor' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'arcep' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'commune' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'insee' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'operators' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'rats' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'bands' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'service_types' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'envs' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dr' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'plaque' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dor' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'arcep' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'commune' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'insee' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'operators' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'rats' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'bands' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'service_types' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'envs' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dr' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'plaque' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'dor' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'arcep' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'commune' forme inattendue undefined"
+    },
+    {
+      "type": "error",
+      "text": "[FilterBar] dim 'insee' forme inattendue undefined"
+    }
+  ],
+  "consoleWarnings": [],
+  "png": "artifacts/shot-_kpi-7e656b8c-empty-1792226996532.png"
+}

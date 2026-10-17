@@ -1,0 +1,170 @@
+{
+  "projectName": "REF_PETITE_FORET",
+  "front": "http://localhost:5173",
+  "api": "http://api:8000",
+  "counts": {
+    "bar": true,
+    "active": 5,
+    "gray": 6,
+    "malformed": 0,
+    "error": false
+  },
+  "footer": {
+    "front": "front v1.17.5",
+    "back": "back v0.45.2"
+  },
+  "chipTooltips": [
+    {
+      "label": "Opérateur",
+      "kind": "active",
+      "tooltip": ""
+    },
+    {
+      "label": "Techno",
+      "kind": "active",
+      "tooltip": ""
+    },
+    {
+      "label": "Bande",
+      "kind": "active",
+      "tooltip": ""
+    },
+    {
+      "label": "Service",
+      "kind": "active",
+      "tooltip": ""
+    },
+    {
+      "label": "Environnement",
+      "kind": "active",
+      "tooltip": ""
+    },
+    {
+      "label": "DR",
+      "kind": "gray",
+      "tooltip": "DR — référentiel non chargé : cell_ref.dr vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    },
+    {
+      "label": "Plaque",
+      "kind": "gray",
+      "tooltip": "Plaque — référentiel non chargé : cell_ref.plaque vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    },
+    {
+      "label": "DOR",
+      "kind": "gray",
+      "tooltip": "DOR — référentiel non chargé : cell_ref.dor vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    },
+    {
+      "label": "Zone ARCEP",
+      "kind": "gray",
+      "tooltip": "Zone ARCEP — référentiel non chargé : cell_ref.arcep_zone vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    },
+    {
+      "label": "Commune",
+      "kind": "gray",
+      "tooltip": "Commune — référentiel non chargé : cell_ref.commune vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    },
+    {
+      "label": "INSEE",
+      "kind": "gray",
+      "tooltip": "INSEE — référentiel non chargé : cell_ref.insee vide pour les 4319 points ECGI. Upload via POST /settings/cell-ref/upload."
+    }
+  ],
+  "kpiFiltersCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2872,
+      "resAt": 3208,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2873,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "allKpiCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/catalog",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2871,
+      "resAt": 6974,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2872,
+      "resAt": 3208,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/catalog",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2873,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2873,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/7e656b8c6c19/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 7049,
+      "resAt": 7095,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzYwLCJleHAiOjE3OTIyNDg5NjB9.J8xNyG5FLaaeBMNJxO3d5FT2tAZbpaqWMyMacQwzNQU",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "consoleErrors": [],
+  "png": "artifacts/flow-REF-1.17.5.png"
+}

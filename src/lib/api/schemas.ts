@@ -50,7 +50,15 @@ export const FilterContextSchema = z.object({
   project: z.string().optional(),
   op: z.array(OperatorSchema).optional(),
   tech: z.array(TechSchema).optional(),
-  svc: z.array(ServiceSchema).optional(),
+  // bc4-front 1.16.0 — `svc` est relâché à `string[]` pour accepter les
+  // valeurs service_type réelles exposées par bc4-back 0.35.0+
+  // (`HTTP_DOWNLOAD`, `HTTP_UPLOAD`, `VOICE_CALL`, …) en plus des 3
+  // libellés historiques fixtures. Les routes qui attendaient `Service`
+  // (B0) restent compatibles : "Data" / "SMS" / "Voice" sont des strings.
+  svc: z.array(z.string()).optional(),
+  // bc4-front 1.16.0 — Environnement de capture (indoor / incar / outdoor…)
+  // tiré de `nmf_file.env` + `measurement_points.env` via /kpi/filters.
+  env: z.array(z.string()).optional(),
   band: z.array(z.string()).optional(),
   dep: z.array(z.string()).optional(),
   // Zone ARCEP (bc4-back 0.7.1) — dimension orthogonale à la géo (jamais
@@ -101,6 +109,10 @@ export const MeasurementPointSchema = z.object({
   rsrp: z.number().nullable(),
   sinr: z.number().nullable(),
   latency: z.number().nullable(),
+  // 1.14.0 — champ optionnel ajouté pour les cellules agrégées
+  // (BlockMap retourné par `map_metric` 0.26.0). Overview + Dict
+  // n'émettent pas ce champ ; `undefined` par défaut, pas de régression.
+  n: z.number().int().nonnegative().optional(),
 });
 export type MeasurementPoint = z.infer<typeof MeasurementPointSchema>;
 

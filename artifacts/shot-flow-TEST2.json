@@ -1,0 +1,113 @@
+{
+  "projectName": "TEST2",
+  "front": "http://localhost:5173",
+  "api": "http://api:8000",
+  "counts": {
+    "bar": true,
+    "active": 0,
+    "gray": 11,
+    "malformed": 0,
+    "error": false
+  },
+  "footer": {
+    "front": "front v1.17.4",
+    "back": "back v0.45.2"
+  },
+  "kpiFiltersCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2924,
+      "resAt": 2968,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2925,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "allKpiCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/catalog",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2923,
+      "resAt": 3324,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2924,
+      "resAt": 2968,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/catalog",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2925,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2925,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 3391,
+      "resAt": 3439,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MjA2LCJleHAiOjE3OTIyNDg4MDZ9.oH7yGYQAOzHKz3nABmD1_QUwaZVi9pjXWOtJd0pvEUQ",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "consoleErrors": [],
+  "png": "artifacts/shot-flow-TEST2.png"
+}

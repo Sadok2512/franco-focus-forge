@@ -81,6 +81,17 @@ export const BlockSchema = z.discriminatedUnion("type", [
     points: z.array(MeasurementPointSchema),
     center: z.tuple([z.number(), z.number()]),
     source_id: z.string(),
+    // 1.14.0 — métadonnées optionnelles des cartes agrégées (back 0.26.0).
+    unit: z.string().nullable().optional(),
+    value_range: z.tuple([z.number(), z.number()]).nullable().optional(),
+    grid: z
+      .object({
+        bins_decimals: z.number().int().optional(),
+        cells: z.number().int().optional(),
+      })
+      .passthrough()
+      .nullable()
+      .optional(),
   }),
 ]);
 export type Block = z.infer<typeof BlockSchema>;
@@ -115,7 +126,11 @@ export const AssistantResponseSchema = z.object({
   execution_steps: z.array(StepSchema),
   warnings: z.array(z.string()),
   error: z.object({ code: z.string(), message: z.string() }).optional(),
-  demo: z.literal(true),
+  // 1.11.2 — `demo` passe de `literal(true)` à `boolean`. Un projet
+  // ingéré (NMF → param_occurrence) renvoie `demo:false` depuis
+  // bc4-back 0.23.0 — le badge « Données démo » n'apparaît alors plus
+  // (ResponseRenderer : `r.demo && …`).
+  demo: z.boolean(),
 });
 export type AssistantResponse = z.infer<typeof AssistantResponseSchema>;
 

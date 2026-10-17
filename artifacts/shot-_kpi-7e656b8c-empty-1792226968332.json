@@ -1,0 +1,16 @@
+{
+  "url": "http://localhost:5173/kpi",
+  "projectId": "7e656b8c6c19",
+  "route": "/kpi",
+  "emptyFilters": true,
+  "counts": {
+    "bar": true,
+    "active": 0,
+    "gray": 11,
+    "malformed": 0,
+    "error": false
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "png": "artifacts/shot-_kpi-7e656b8c-empty-1792226968332.png"
+}

@@ -41,6 +41,17 @@ for f in "${changed[@]}"; do
     # Zone ARCEP est orthogonale à la géo (jamais dans `/geo/tree`).
     src/features/dictionary/DictionaryPage.tsx) ;;
     src/features/dictionary/shared.ts) ;;
+    # 1.12.0 — Clés canoniques `M_<role>[_<resource>]_<quantity>` pour les
+    # feuilles de MESURE sous MeasurementReport (classification par CONTENU
+    # de l'`asn1_path` servi par /dict/tree, jamais par le label).
+    src/features/dictionary/measure-roles.ts) ;;
+    # 1.15.0 — Matrice « Détail des valeurs » (Bande × Valeur × Opérateur) :
+    # pivot déclaratif 100 % front sur `row.value_matrix`, palette heat
+    # strictement déclarée, formatters et export CSV. Zéro nouveau endpoint.
+    src/features/dictionary/value-matrix.ts) ;;
+    # 1.15.0 — Palette heat `--heat-0..5` déclarée dans styles.css
+    # (consommée exclusivement par le composant ValueMatrix).
+    src/styles.css) ;;
     # 1.7.1 — Retrait du composant V2 : la UI historique B0 est restaurée,
     # le mapping entre endpoints et composants vit intégralement dans
     # `src/lib/api/dictionary.ts` + schémas Zod — aucun composant pont.

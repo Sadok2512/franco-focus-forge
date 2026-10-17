@@ -31,6 +31,7 @@ bun_run x eslint \
   src/routes/_app.projects.\$projectId.tsx \
   src/features/dictionary/DictionaryPage.tsx \
   src/features/dictionary/shared.ts \
+  src/features/dictionary/value-matrix.ts \
   src/routes/_app.rrc.tsx src/routes/_app.kpi.tsx
 
 echo "[G1] typecheck complet"

@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { DictionaryPage } from "@/features/dictionary/DictionaryPage";
-import { LoadingSkeleton } from "@/components/bc4/States";
+import { NoActiveProject } from "@/components/bc4/NoActiveProject";
+import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 
 export const Route = createFileRoute("/_app/rrc")({
@@ -26,20 +27,16 @@ export const Route = createFileRoute("/_app/rrc")({
 });
 
 function RrcPage() {
+  const { activeProject } = useActiveProject();
   const { filters, set } = useFilters();
-  if (!filters.project)
-    return (
-      <div className="p-4">
-        <LoadingSkeleton className="h-96" />
-      </div>
-    );
-  // 1.8.0 — Dict ne piloté QUE 5 filtres : Opérateur, Bande, DR, Plaque,
-  // Zone ARCEP. Les autres (tech/svc/dep/metric) de la FilterContext
-  // partagée restent dans l'URL mais ne sont PAS consommés ici.
+  // 1.11.0 — Source de vérité du projet = store activeProject (sélection
+  // explicite via « Ouvrir »). `filters.project` n'est plus lu ici.
+  if (!activeProject) return <NoActiveProject scope="Dictionnaire RRC" />;
+  // 1.8.0 — Dict pilote 5 filtres : Opérateur, Bande, DR, Plaque, Zone ARCEP.
   const { op, band, dr, plaque, arcep } = filters;
   return (
     <DictionaryPage
-      projectId={filters.project}
+      projectId={activeProject.id}
       filters={{ op, band, dr, plaque, arcep }}
       setFilters={set}
     />

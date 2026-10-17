@@ -1,0 +1,170 @@
+{
+  "projectName": "TEST2",
+  "front": "http://localhost:5173",
+  "api": "http://api:8000",
+  "counts": {
+    "bar": true,
+    "active": 0,
+    "gray": 11,
+    "malformed": 0,
+    "error": false
+  },
+  "footer": {
+    "front": "front v1.17.5",
+    "back": "back v0.45.2"
+  },
+  "chipTooltips": [
+    {
+      "label": "Opérateur",
+      "kind": "gray",
+      "tooltip": "Opérateur — aucune valeur distincte pour measurement_points.operator"
+    },
+    {
+      "label": "Techno",
+      "kind": "gray",
+      "tooltip": "Techno — aucune valeur distincte pour measurement_points.tech"
+    },
+    {
+      "label": "Bande",
+      "kind": "gray",
+      "tooltip": "Bande — aucune valeur distincte pour measurement_points.band"
+    },
+    {
+      "label": "Service",
+      "kind": "gray",
+      "tooltip": "Service — aucune valeur distincte pour measurement_points.service_type"
+    },
+    {
+      "label": "Environnement",
+      "kind": "gray",
+      "tooltip": "Environnement — aucune valeur distincte pour measurement_points.env"
+    },
+    {
+      "label": "DR",
+      "kind": "gray",
+      "tooltip": "DR — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    },
+    {
+      "label": "Plaque",
+      "kind": "gray",
+      "tooltip": "Plaque — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    },
+    {
+      "label": "DOR",
+      "kind": "gray",
+      "tooltip": "DOR — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    },
+    {
+      "label": "Zone ARCEP",
+      "kind": "gray",
+      "tooltip": "Zone ARCEP — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    },
+    {
+      "label": "Commune",
+      "kind": "gray",
+      "tooltip": "Commune — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    },
+    {
+      "label": "INSEE",
+      "kind": "gray",
+      "tooltip": "INSEE — ECGI non propagé : 0/0 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."
+    }
+  ],
+  "kpiFiltersCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2693,
+      "resAt": 2737,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2694,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "allKpiCalls": [
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/catalog",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2692,
+      "resAt": 3117,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 2693,
+      "resAt": 2737,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/catalog",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2693,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "reqAt": 2694,
+      "resAt": null,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    },
+    {
+      "url": "http://localhost:5173/api/projects/134af70a06eb/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+      "method": "GET",
+      "status": 200,
+      "reqAt": 3190,
+      "resAt": 3250,
+      "headers": {
+        "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG0tMzBiZjU1MzEzOTExIiwicm9sZSI6ImFkbWluIiwiaWF0IjoxNzkyMjQ1MzgzLCJleHAiOjE3OTIyNDg5ODN9.82Krd0Zvk5fDqO-GZO5zbyhex1roj5dEBqd_uWL6cgY",
+        "referer": "http://localhost:5173/kpi",
+        "accept": "application/json"
+      },
+      "pageUrl": "http://localhost:5173/kpi"
+    }
+  ],
+  "consoleErrors": [],
+  "png": "artifacts/flow-TEST2-1.17.5.png"
+}

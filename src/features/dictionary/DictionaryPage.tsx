@@ -47,6 +47,23 @@ import {
   type Grouped,
   type Measure,
 } from "./grouping";
+import { canonicalMeasureKey } from "./measure-roles";
+// 1.15.0 — Matrice « Détail des valeurs ». Pivot 100 % front sur
+// `row.value_matrix` servi par /dict/params (back ≥ 0.21.0). Zéro
+// nouvelle requête. Doctrine (D=0 → N/D, N=0 D>0 → `0 · 0,0 %`, palette
+// --heat-0..5 déclarée dans styles.css) centralisée dans value-matrix.ts.
+import {
+  OPERATOR_COLUMNS,
+  buildValueMatrix,
+  fmtN,
+  fmtPct1,
+  heatVarForPct,
+  sortMatrixRows,
+  toCsvRows,
+  type MatrixCell as ValueMatrixCellT,
+  type MatrixSortKey,
+  type OperatorCol,
+} from "./value-matrix";
 
 type Techno = "LTE" | "NR" | "LTE+NR";
 const MEASURE_LABELS: Record<Measure, string> = {
@@ -59,6 +76,17 @@ const MAX_SERIES = 8;
 
 function cssVar(name: string) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+// maplibre-gl 6.14.0 ne parse pas `oklch(...)` — on normalise via canvas.
+function toRgb(cssColor: string): string {
+  if (!cssColor) return "";
+  if (typeof document === "undefined") return cssColor;
+  const ctx = document.createElement("canvas").getContext("2d");
+  if (!ctx) return cssColor;
+  ctx.fillStyle = cssColor;
+  ctx.fillRect(0, 0, 1, 1);
+  const [r, g, b, a] = ctx.getImageData(0, 0, 1, 1).data;
+  return a === 0 ? "" : `rgb(${r},${g},${b})`;
 }
 const OP_VAR: Record<string, string> = {
   Orange: "--op-orange",
@@ -327,25 +355,56 @@ function TreeMessage({
               Aucun paramètre ingéré pour ce message
             </li>
           ) : (
-            message.params.map((p) => {
-              const selected = sel.system === system && sel.message === message.message && sel.path === p.param;
-              return (
-                <li key={p.param} role="none">
-                  <button
-                    role="treeitem"
-                    aria-selected={selected}
-                    aria-level={3}
-                    title={p.param}
-                    onClick={() => onPick({ system, message: message.message, path: p.param })}
-                    className={`flex w-full items-center gap-1.5 rounded px-1.5 py-[3px] text-left ${selected ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted"}`}
-                  >
-                    <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
-                    <span className="min-w-0 truncate">{leafOf(p.param)}</span>
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground">{fmtInt(p.count)}</span>
-                  </button>
-                </li>
-              );
-            })
+            (() => {
+              // 1.12.0 — Détection des vrais doublons : deux leaves avec le
+              // MÊME `asn1_path` exact signalent une anomalie d'agrégation
+              // côté back (G22 : désambiguïsation par path parent + `label`
+              // non consommée ici). On NE fusionne PAS : chaque ligne est
+              // affichée avec un badge « doublon » visible et un warn console.
+              const occurrences = new Map<string, number>();
+              for (const p of message.params) occurrences.set(p.param, (occurrences.get(p.param) ?? 0) + 1);
+              const dupPaths = [...occurrences.entries()].filter(([, n]) => n > 1).map(([k]) => k);
+              if (dupPaths.length > 0) {
+                console.warn(
+                  `[dict-tree] doublon back détecté dans ${system}/${message.message} :`,
+                  dupPaths,
+                );
+              }
+              return message.params.map((p, idx) => {
+                const selected = sel.system === system && sel.message === message.message && sel.path === p.param;
+                // 1.12.0 — Clé canonique M_<role>[_<resource>]_<quantity> pour les
+                // feuilles de MESURE sous MeasurementReport. `null` → nom RRC
+                // natif conservé (via `leafOf()`). Le path complet reste
+                // visible dans le `title` + dans la table ASN.1 détail.
+                const canon = canonicalMeasureKey(p.param);
+                const displayLabel = canon ?? leafOf(p.param);
+                const isDup = (occurrences.get(p.param) ?? 0) > 1;
+                return (
+                  <li key={`${p.param}#${idx}`} role="none">
+                    <button
+                      role="treeitem"
+                      aria-selected={selected}
+                      aria-level={3}
+                      title={p.param}
+                      onClick={() => onPick({ system, message: message.message, path: p.param })}
+                      className={`flex w-full items-center gap-1.5 rounded px-1.5 py-[3px] text-left ${selected ? "bg-accent font-semibold text-accent-foreground" : "hover:bg-muted"}`}
+                    >
+                      <FileText className="h-3 w-3 shrink-0 text-muted-foreground" />
+                      <span className={`min-w-0 truncate ${canon ? "font-mono text-primary" : ""}`}>{displayLabel}</span>
+                      {isDup && (
+                        <span
+                          title="Doublon back : deux leaves avec le même asn1_path (anomalie d'agrégation)"
+                          className="shrink-0 rounded border border-amber-500 bg-amber-100 px-1 text-[9px] font-semibold uppercase tracking-wide text-amber-900"
+                        >
+                          doublon
+                        </span>
+                      )}
+                      <span className="ml-auto font-mono text-[10px] text-muted-foreground">{fmtInt(p.count)}</span>
+                    </button>
+                  </li>
+                );
+              });
+            })()
           )}
         </ul>
       )}
@@ -599,73 +658,85 @@ function Histogram({
 }
 
 /* ---------------------------------------------------------------- */
-/* Table détaillée                                                   */
+/* 1.15.0 — Matrice « Détail des valeurs »                            */
+/*   Bande × Valeur × { Orange | SFR | Bouygues | Free }              */
+/*   Source UNIQUE : row.value_matrix (back ≥ 0.21.0).                */
+/*   Dénominateur par cellule = Σ(count) WHERE (op, band) — JAMAIS    */
+/*   le total global. N/D si D=0 ; `0 · 0,0 %` si N=0 et D>0.         */
 /* ---------------------------------------------------------------- */
 
-type SortKey = "value" | "total";
-
-function ValuesTable({
+function ValueMatrix({
   row,
-  g,
-  measure,
-  chartType,
-  colorBy,
-  palette,
   query,
   onQuery,
   highlight,
   onHighlight,
 }: {
   row: ParamRow;
-  g: Grouped;
-  measure: Measure;
-  chartType: ChartType;
-  colorBy: ColorBy;
-  palette: Grouped;
   query: string;
   onQuery: (query: string) => void;
   highlight: string | null;
   onHighlight: (raw: string | null) => void;
 }) {
-  const [sort, setSort] = useState<{ k: SortKey; desc: boolean }>({ k: "total", desc: true });
-  const grouped = g.series.length > 1 || g.series[0]?.key !== "Total";
-  const rows = useMemo(() => {
-    const list = g.bins.map((b, i) => ({ b, i }));
-    const filteredList = list;
-    if (sort.k === "total") filteredList.sort((a, b) => (sort.desc ? b.b.total - a.b.total : a.b.total - b.b.total));
-    else if (sort.desc) filteredList.reverse();
-    return filteredList;
-  }, [g, sort]);
-  const max = Math.max(1, ...g.bins.map((b) => b.total));
-  const unit = !g.isEnum && row.unit_converted ? ` (${row.unit_converted})` : "";
-  const fmtCell = (n: number, groupTotal: number, index: number) => {
-    const v = chartMeasure(n, index, g.series, chartType, measure, g.population, groupTotal);
-    if (v == null) return "N/D";
-    return measure === "count" && chartType !== "stacked100" ? fmtInt(v) : `${fmtNum(v, 1)} %`;
+  const [sortKey, setSortKey] = useState<MatrixSortKey>({ kind: "band_value" });
+  const [ascValue, setAscValue] = useState<boolean>(true);
+  const matrixData = useMemo(() => {
+    const base = buildValueMatrix(row, { search: query, valueOrder: ascValue ? "asc" : "desc" });
+    return sortMatrixRows(base, sortKey);
+  }, [row, query, sortKey, ascValue]);
+
+  // Toute incohérence Σ(value_matrix) ≠ bucket.count → console.error +
+  // bandeau rouge in-UI. JAMAIS masquée (doctrine 1.15.0).
+  useEffect(() => {
+    for (const msg of matrixData.coherenceErrors) {
+      console.error(`[value-matrix] ${row.path} — ${msg}`);
+    }
+  }, [matrixData.coherenceErrors, row.path]);
+
+  const measurementLabel = row.unit_converted
+    ? `convertie (${row.unit_converted})`
+    : matrixData.enumMode
+      ? "ASN.1 brute (enum)"
+      : "brute";
+  const exportCsv = () => {
+    const csvRows = toCsvRows({ paramPath: row.path, measurementLabel, data: matrixData });
+    downloadCsv(`matrice_${leafOf(row.path)}`, csvRows);
   };
-  const exportCsv = () =>
-    downloadCsv(`valeurs_${leafOf(row.path)}`, [
-      [`# Paramètre : ${row.path} — mesure : ${MEASURE_LABELS[measure]} — population filtrée : ${g.population}`],
-      ["valeur_brute", `valeur${unit}`, "total", ...g.series.filter(() => grouped).map((s) => s.key), "pct_total"],
-      ...rows.map(({ b, i }) => [
-        b.raw,
-        b.label,
-        b.total,
-        ...g.series.filter(() => grouped).map((s) => s.counts[i] ?? 0),
-        g.population ? ((b.total / g.population) * 100).toFixed(2) : "N/D",
-      ]),
-    ]);
-  const th = "sticky top-0 z-[1] bg-muted px-2 py-1.5 text-left text-[11px] font-semibold whitespace-nowrap";
-  const sortBtn = (k: SortKey, label: string) => (
-    <button
-      onClick={() => setSort((s) => ({ k, desc: s.k === k ? !s.desc : k === "total" }))}
-      className="inline-flex items-center gap-1 hover:text-primary"
-      aria-label={`Trier par ${label}`}
-    >
-      {label}
-      {sort.k === k && <span aria-hidden>{sort.desc ? "↓" : "↑"}</span>}
-    </button>
-  );
+
+  const th =
+    "sticky top-0 z-[1] bg-muted px-2 py-1.5 text-left text-[11px] font-semibold whitespace-nowrap";
+  const headerSort = (op: OperatorCol) => {
+    const activeCount = sortKey.kind === "op_count" && sortKey.op === op;
+    const activePct = sortKey.kind === "op_pct" && sortKey.op === op;
+    return (
+      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+        <span
+          className="inline-block h-2 w-2 rounded-sm"
+          style={{ backgroundColor: `var(${OP_VAR[op] ?? "--muted-foreground"})` }}
+        />
+        <span className="font-semibold">{op}</span>
+        <button
+          onClick={() =>
+            setSortKey({ kind: "op_count", op, desc: activeCount ? !sortKey.desc : true })
+          }
+          aria-label={`Trier ${op} par occurrences`}
+          className={`ml-1 rounded px-1 text-[10px] ${activeCount ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
+        >
+          N{activeCount ? (sortKey.desc ? " ↓" : " ↑") : ""}
+        </button>
+        <button
+          onClick={() => setSortKey({ kind: "op_pct", op, desc: activePct ? !sortKey.desc : true })}
+          aria-label={`Trier ${op} par pourcentage`}
+          className={`rounded px-1 text-[10px] ${activePct ? "bg-accent text-accent-foreground" : "hover:bg-muted"}`}
+        >
+          %{activePct ? (sortKey.desc ? " ↓" : " ↑") : ""}
+        </button>
+      </div>
+    );
+  };
+
+  const hasRows = matrixData.rows.length > 0;
+
   return (
     <Panel
       title="Détail des valeurs"
@@ -678,79 +749,182 @@ function ValuesTable({
             aria-label="Filtrer les valeurs du tableau"
             className="h-7 w-36 rounded-md border bg-card px-2 text-xs"
           />
-          <button onClick={exportCsv} className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted">
+          <button
+            onClick={() => {
+              setSortKey({ kind: "band_value" });
+              setAscValue((v) => !v);
+            }}
+            aria-label={`Ordre des valeurs : ${ascValue ? "ascendant" : "descendant"}`}
+            className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
+          >
+            Valeur {ascValue ? "↑" : "↓"}
+          </button>
+          <button
+            onClick={exportCsv}
+            className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted"
+          >
             <Download className="h-3.5 w-3.5" /> Exporter CSV
           </button>
         </>
       }
     >
-      <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[12px] tabular-nums">
-          <thead>
-            <tr>
-              <th className={th}>#</th>
-              <th className={th}>{sortBtn("value", `Valeur${unit}`)}</th>
-              {!g.isEnum && <th className={th}>Brut</th>}
-              <th className={`${th} text-right`}>{sortBtn("total", "Total")}</th>
-              {grouped && g.series.map((s) => <th key={s.key} className={`${th} text-right`}><span className="inline-block h-2 w-2 rounded-sm mr-1" style={{ backgroundColor: `var(${colorToken(palette, colorBy, s, 0)})` }} />{s.key}</th>)}
-              <th className={`${th} text-right`}>% du total</th>
-              <th className={`${th} w-32`} aria-label="Part visuelle" />
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ b, i }, n) => {
-              const pct = g.population ? (b.total / g.population) * 100 : null;
-              const active = highlight === b.raw;
-              return (
-                <tr
-                  key={b.raw}
-                  tabIndex={0}
-                  aria-selected={active}
-                  onClick={() => onHighlight(active ? null : b.raw)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
-                      onHighlight(active ? null : b.raw);
-                    }
-                  }}
-                  className={`cursor-pointer border-b outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-accent" : "hover:bg-muted/60"}`}
-                >
-                  <td className="px-2 py-1 text-muted-foreground">{n + 1}</td>
-                  <td className="px-2 py-1 font-mono font-semibold">{colorBy === "value" && <span className="inline-block h-2 w-2 rounded-sm mr-1" style={{ backgroundColor: `var(${colorToken(palette, colorBy, g.series[0] ?? { key: "Total", counts: [], total: 0 }, palette.bins.findIndex((bin) => bin.raw === b.raw))})` }} />}{b.label}</td>
-                  {!g.isEnum && <td className="px-2 py-1 font-mono text-muted-foreground">{b.raw}</td>}
-                  <td className="px-2 py-1 text-right font-semibold">{fmtInt(b.total)}</td>
-                  {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1 text-right">{fmtCell(s.counts[i] ?? 0, s.total, i)}</td>)}
-                  <td className="px-2 py-1 text-right">{pct == null ? "N/D" : `${fmtNum(pct, 1)} %`}</td>
-                  <td className="px-2 py-1">
-                    <div className="h-2 rounded bg-muted">
-                      <div className="flex h-2 overflow-hidden rounded" style={{ width: `${(b.total / max) * 100}%` }}>
-                        {g.series.map((series) => <span key={series.key} className="h-2" style={{ width: `${b.total ? (series.counts[i] ?? 0) / b.total * 100 : 0}%`, backgroundColor: `var(${colorToken(palette, colorBy, series, palette.bins.findIndex((bin) => bin.raw === b.raw))})` }} />)}
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className="font-semibold">
-              <td className="px-2 py-1.5" colSpan={g.isEnum ? 2 : 3}>
-                Total (population filtrée)
-              </td>
-              <td className="px-2 py-1.5 text-right">{fmtInt(g.population)}</td>
-              {grouped && g.series.map((s) => <td key={s.key} className="px-2 py-1.5 text-right">{fmtInt(s.total)}</td>)}
-              <td className="px-2 py-1.5 text-right">{g.population ? "100,0 %" : "N/D"}</td>
-              <td />
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-      {measure === "pct_group" && grouped && (
-        <p className="px-3 py-1.5 text-[11px] text-muted-foreground">
-          Colonnes de groupe en % du total de chaque groupe (dénominateur = ligne Total).
-        </p>
+      {matrixData.coherenceErrors.length > 0 && (
+        <div
+          role="alert"
+          className="mx-3 mt-2 flex items-start gap-2 rounded-md border border-destructive bg-destructive/10 px-2 py-1.5 text-[11px] text-destructive"
+        >
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="space-y-0.5">
+            <p className="font-semibold">Incohérence back détectée (voir console)</p>
+            {matrixData.coherenceErrors.slice(0, 3).map((e, i) => (
+              <p key={i} className="font-mono">
+                {e}
+              </p>
+            ))}
+            {matrixData.coherenceErrors.length > 3 && (
+              <p className="text-muted-foreground">
+                + {matrixData.coherenceErrors.length - 3} autre(s)…
+              </p>
+            )}
+          </div>
+        </div>
       )}
+      {!hasRows ? (
+        <div className="p-3 text-xs text-muted-foreground">
+          Aucune cellule disponible pour ce paramètre avec les filtres actifs. (
+          <code className="font-mono">value_matrix</code> vide côté back.)
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-[12px] tabular-nums">
+            <thead>
+              <tr>
+                <th className={th}>Bande</th>
+                <th className={th}>Valeur</th>
+                {OPERATOR_COLUMNS.map((op) => (
+                  <th key={op} className={`${th} text-right`}>
+                    {headerSort(op)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {matrixData.rows.map((r, idx) => {
+                if (r.kind === "band_total") {
+                  const bt = r.row;
+                  return (
+                    <tr
+                      key={`total:${bt.band}:${idx}`}
+                      className="border-y bg-muted/40 font-semibold"
+                    >
+                      <td className="px-2 py-1.5 font-mono">{bt.band}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">Total bande</td>
+                      {OPERATOR_COLUMNS.map((op) => {
+                        const d = bt.cells[op].d;
+                        return (
+                          <td key={op} className="px-2 py-1.5 text-right">
+                            {d > 0 ? (
+                              <>
+                                <span>{fmtN(d)}</span>
+                                <span className="ml-1 text-muted-foreground">· 100,0 %</span>
+                              </>
+                            ) : (
+                              <span className="text-muted-foreground">N/D</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                }
+                const v = r.row;
+                const active = highlight === v.valueRaw;
+                return (
+                  <tr
+                    key={`${v.band}:${v.valueRaw}`}
+                    tabIndex={0}
+                    aria-selected={active}
+                    onClick={() => onHighlight(active ? null : v.valueRaw)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        onHighlight(active ? null : v.valueRaw);
+                      }
+                    }}
+                    className={`cursor-pointer border-b outline-none focus-visible:ring-2 focus-visible:ring-ring ${active ? "bg-accent" : "hover:bg-muted/60"} ${v.isOtherTail ? "italic text-muted-foreground" : ""}`}
+                  >
+                    <td className="px-2 py-1 font-mono text-[11px] text-muted-foreground">
+                      {v.band}
+                    </td>
+                    <td className="px-2 py-1 font-mono font-semibold">{v.valueLabel}</td>
+                    {OPERATOR_COLUMNS.map((op) => (
+                      <MatrixCellTd
+                        key={op}
+                        op={op}
+                        band={v.band}
+                        cell={v.cells[op]}
+                        valueLabel={v.valueLabel}
+                      />
+                    ))}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <p className="px-3 py-1.5 text-[11px] text-muted-foreground">
+        {"Dénominateur par cellule = "}
+        <code className="font-mono">Σ(value_matrix[op, band].count)</code>
+        {", borné par "}
+        <code className="font-mono">bucket.count</code>
+        {". Couleurs = fréquence (0 % vert → 100 % rouge foncé) ; pas la qualité radio."}
+      </p>
     </Panel>
+  );
+}
+
+/** Cellule opérateur de la matrice. `N/D` quand D=0 (opérateur/bande
+ *  absent), `0 · 0,0 %` quand D>0 et N=0 (zéro réel). Jamais inventer. */
+function MatrixCellTd({
+  op,
+  band,
+  cell,
+  valueLabel,
+}: {
+  op: OperatorCol;
+  band: string;
+  cell: ValueMatrixCellT;
+  valueLabel: string;
+}) {
+  const nd = cell.d <= 0;
+  const title = nd
+    ? `${op} · ${band} · ${valueLabel} · dénominateur D=0 (opérateur/bande absent)`
+    : `${op} · ${band} · ${valueLabel} · N=${fmtN(cell.n)} · D=${fmtN(cell.d)} · ${fmtPct1(cell.pct)}`;
+  const barWidth = nd ? 0 : Math.min(100, Math.max(0, cell.pct ?? 0));
+  const heatVar = nd ? null : heatVarForPct(cell.pct ?? 0);
+  return (
+    <td title={title} className="px-2 py-1 text-right align-middle">
+      {nd ? (
+        <span className="text-muted-foreground">N/D</span>
+      ) : (
+        <div className="flex flex-col items-end gap-0.5">
+          <div>
+            <span className="font-bold">{fmtN(cell.n)}</span>
+            <span className="ml-1 text-muted-foreground">· {fmtPct1(cell.pct)}</span>
+          </div>
+          <div className="h-1.5 w-16 overflow-hidden rounded bg-muted">
+            <div
+              className="h-full"
+              style={{
+                width: `${barWidth}%`,
+                backgroundColor: heatVar ? `var(${heatVar})` : undefined,
+              }}
+            />
+          </div>
+        </div>
+      )}
+    </td>
   );
 }
 
@@ -786,7 +960,7 @@ function OccurrenceMap({
   const [full, setFull] = useState(false);
 
   const { geo, legend } = useMemo(() => {
-    const palette = MAP_PALETTE.map((v) => cssVar(v) || "gray");
+    const palette = MAP_PALETTE.map((v) => toRgb(cssVar(v)) || "gray");
     const nums = points.map((p) => Number(p.value_converted)).filter((v) => Number.isFinite(v));
     const numeric = nums.length === points.length && nums.length > 0;
     const min = numeric ? Math.min(...nums) : 0;
@@ -1311,7 +1485,7 @@ export function DictionaryPage({
           Regroupement indisponible : l'API ne fournit pas le détail par opérateur/bande — totaux affichés.
         </p>
       )}
-      <ValuesTable row={row} g={visibleG ?? g} palette={chartG ?? g} measure={measure} chartType={chartType} colorBy={colorBy} query={valueQuery} onQuery={setValueQuery} highlight={highlight} onHighlight={setHighlight} />
+      <ValueMatrix row={row} query={valueQuery} onQuery={setValueQuery} highlight={highlight} onHighlight={setHighlight} />
     </div>
   );
 

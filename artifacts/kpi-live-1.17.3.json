@@ -1,0 +1,20 @@
+{
+  "url": "http://localhost:5173/kpi",
+  "projectId": "7e656b8c6c19",
+  "route": "/kpi",
+  "emptyFilters": false,
+  "counts": {
+    "bar": true,
+    "active": 5,
+    "gray": 6,
+    "malformed": 0,
+    "error": false
+  },
+  "footer": {
+    "front": "front v1.17.3",
+    "back": "back v0.44.0"
+  },
+  "consoleErrors": [],
+  "consoleWarnings": [],
+  "png": "artifacts/kpi-live-1.17.3.png"
+}

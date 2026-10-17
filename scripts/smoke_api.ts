@@ -18,6 +18,7 @@ import {
   ParamListSchema,
   ParamMapSchema,
 } from "../src/lib/api/dictionary-schemas";
+import { canonicalMeasureKey } from "../src/features/dictionary/measure-roles";
 import { AssistantResponseSchema } from "../src/lib/api/assistant-schemas";
 import {
   CellSummarySchema,
@@ -314,6 +315,120 @@ async function main() {
           );
         }
       }
+    }
+
+    // (h.5) 1.12.0 : clés canoniques M_<role>[_<resource>]_<quantity> pour
+    // les feuilles de MESURE sous MeasurementReport. On exerce la fonction
+    // `canonicalMeasureKey` sur les `param` (asn1_path complet) servis par
+    // /dict/tree et on vérifie :
+    //   - au moins 2 clés M_ DISTINCTES pour la grandeur `rsrq`
+    //     (plusieurs rôles observés sur TEST2 : serving, neighbor, scell) ;
+    //   - 0 vrai doublon (= même asn1_path répété dans un même message —
+    //     anomalie d'agrégation côté back). Si > 0, warn mais pas d'échec,
+    //     car la UI 1.12.0 affiche un badge « doublon » et log console.warn
+    //     sans masquer la ligne.
+    const MeasRptSchema = z.object({
+      branches: z.array(
+        z.object({
+          system: z.enum(["LTE", "NR"]),
+          messages: z.array(
+            z.object({
+              message: z.string(),
+              params: z.array(z.object({ param: z.string(), count: z.number().int() })),
+            }),
+          ),
+        }),
+      ),
+    });
+    const parsedH5 = MeasRptSchema.safeParse(t2Raw);
+    if (!parsedH5.success) {
+      throw new Error(`(h.5) /dict/tree V2 non conforme pour M_ keys : ${parsedH5.error.message}`);
+    }
+    const rsrqKeys = new Set<string>();
+    const dupPaths: Array<{ system: string; message: string; path: string }> = [];
+    let measurementLeavesSeen = 0;
+    for (const br of parsedH5.data.branches) {
+      for (const m of br.messages) {
+        if (m.message !== "MeasurementReport") continue;
+        const seen = new Set<string>();
+        for (const p of m.params) {
+          if (seen.has(p.param)) dupPaths.push({ system: br.system, message: m.message, path: p.param });
+          seen.add(p.param);
+          const key = canonicalMeasureKey(p.param);
+          if (key) {
+            measurementLeavesSeen += 1;
+            if (/^M_[a-z]+(?:_[a-z]+)?_rsrq$/.test(key)) rsrqKeys.add(key);
+          }
+        }
+      }
+    }
+    if (rsrqKeys.size < 2) {
+      throw new Error(
+        `(h.5) attendu ≥ 2 clés M_ distinctes pour rsrq, obtenu ${rsrqKeys.size} (${[...rsrqKeys].join(", ")}). ` +
+          `Vérifier /dict/tree TEST2 : au moins 2 rôles (serving/neighbor/scell) attendus sur rsrq.`,
+      );
+    }
+    if (dupPaths.length > 0) {
+      console.log(
+        `  !! (h.5) doublons back détectés (asn1_path identique dans un même message) : ${JSON.stringify(dupPaths)}`,
+      );
+    }
+    console.log(
+      `  ✓ (h.5) M_ keys sur rsrq : ${[...rsrqKeys].sort().join(" | ")} ` +
+        `(${measurementLeavesSeen} leaves mesure classées, ${dupPaths.length} vrai(s) doublon(s))`,
+    );
+
+    // (h.6) 1.15.0 : la matrice « Détail des valeurs » consomme
+    // `row.value_matrix` + `row.buckets` servis par /dict/params. Garde
+    // contrat back (bc4-back ≥ 0.21.0) :
+    //   • rsrpResult (TEST2 MeasurementReport neighbor LTE) a :
+    //       - value_matrix non vide (≥ 1 cellule) ;
+    //       - Σ(value_matrix.count) == row.count ;
+    //       - pour CHAQUE bucket (op, band), Σ(value_matrix[op,band]) == bucket.count
+    //         (contrainte dure du pivot UI : les colonnes opérateurs du
+    //         tableau en dépendent).
+    //   • Au moins 1 cellule porte value_converted non null (sanity 3GPP).
+    //   • Aucun doublon strict (op, band, value_raw) dans value_matrix.
+    const mrList = await hit(
+      `dict.params (TEST2 LTE MeasurementReport)`,
+      `/projects/${TEST2_ID}/dict/params?system=LTE&message=MeasurementReport`,
+      ParamListSchema,
+    );
+    const h6Row = mrList.params.find((p) => p.path.endsWith("measResult/rsrpResult"));
+    if (!h6Row) {
+      console.log(`  ⚠ (h.6) rsrpResult (neighbor LTE) absent — skip value_matrix pivot garde`);
+    } else {
+      const vm = h6Row.value_matrix ?? [];
+      if (!vm.length) throw new Error(`(h.6) rsrpResult.value_matrix vide — bc4-back 0.21.0 attendu`);
+      const sum = vm.reduce((a, e) => a + e.count, 0);
+      if (sum !== h6Row.count) {
+        throw new Error(`(h.6) Σ(value_matrix.count)=${sum} ≠ row.count=${h6Row.count}`);
+      }
+      const anyConverted = vm.some((e) => e.value_converted != null);
+      if (!anyConverted) throw new Error(`(h.6) aucune cellule value_matrix avec value_converted — conversion 3GPP non appliquée`);
+      // Dédoublonnage strict.
+      const seen = new Set<string>();
+      for (const e of vm) {
+        const k = `${e.operator}|${e.band}|${e.value_raw}`;
+        if (seen.has(k)) throw new Error(`(h.6) doublon strict dans value_matrix : (${k})`);
+        seen.add(k);
+      }
+      // Cohérence bucket ↔ value_matrix (contrat dur du pivot UI).
+      const buckets = h6Row.buckets ?? [];
+      for (const b of buckets) {
+        const s = vm
+          .filter((e) => e.operator === b.operator && e.band === b.band)
+          .reduce((a, e) => a + e.count, 0);
+        if (s !== b.count) {
+          throw new Error(
+            `(h.6) Σ(value_matrix[${b.operator}, ${b.band}])=${s} ≠ bucket.count=${b.count} — le pivot UI tomberait en erreur`,
+          );
+        }
+      }
+      console.log(
+        `  ✓ (h.6) rsrpResult.value_matrix — ${vm.length} cellules, Σcount=${sum}, ` +
+          `${buckets.length} bucket(s) cohérents, ${new Set(vm.map((e) => e.operator)).size} opérateur(s) observé(s)`,
+      );
     }
   }
 
