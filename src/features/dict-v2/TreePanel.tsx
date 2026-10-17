@@ -117,14 +117,27 @@ export function TreePanel({
         </label>
         {activeTree && (
           <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+            {/* 1.19.1 — Raw expose "paramètres · détections" ; catalog garde
+                "paramètres · lignes". Les deux comptes viennent de la racine
+                du payload back (distinct_param_keys / total_rows), jamais
+                recalculés côté front. */}
             {fmtInt(activeTree.distinct_param_keys)} paramètres · {fmtInt(activeTree.total_rows)}{" "}
-            lignes
+            {tab === "raw" ? "détections" : "lignes"}
           </p>
         )}
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         {!activeTree ? (
           <p className="p-3 text-xs text-muted-foreground">Chargement…</p>
+        ) : tab === "raw" ? (
+          <RawTreeView
+            tree={activeTree}
+            techno={techno}
+            needle={q.trim().toLowerCase()}
+            selected={selected}
+            onToggle={onToggle}
+            resetTick={internalResetTick}
+          />
         ) : (
           <TreeView
             tree={activeTree}
@@ -138,6 +151,329 @@ export function TreePanel({
         )}
       </div>
     </div>
+  );
+}
+
+// 1.21.2 — RÈGLES RENDU RAW (3e demande utilisateur, 2026-10-17) :
+//
+// 1. Afficher le DERNIER SEGMENT du chemin (nom 3GPP de la feuille).
+//    Jamais le chemin complet dans la ligne. Le chemin va dans title=
+//    (tooltip) et dans le volet Infos.
+//
+// 2. Les indices [0] [1] [2] sont retirés de la clé d'affichage ;
+//    les occurrences du même path dédupliqué sont additionnées (ex. 3
+//    occurrences de `rsrpResult` sous `measResultListEUTRA/[0..2]/
+//    rsrpResult` → une seule ligne `rsrpResult` avec le total). Fait
+//    côté front en attendant que le back expose un vrai `view=raw`
+//    agrégé — voir CHANGELOG 1.21.2.
+//
+// 3. Deux feuilles de même nom court sous le même message mais de
+//    chemins différents (ex. `t-Reordering` AM vs UM) → le nom court
+//    est suivi du segment parent discriminant entre parenthèses :
+//    `t-Reordering (dl-AM-RLC)`. Jamais le chemin complet.
+//
+// Les helpers `leafOf` + l'aggrégation `aggregateRawLeaves` ci-dessous
+// reproduisent le comportement de l'ancienne page
+// `src/features/dictionary/DictionaryPage.tsx:TreeMessage` d'avant 1.18.0.
+// Agrégation 1.21.2 — fait côté front en attendant un `view=raw`
+// agrégé côté back. On regroupe les feuilles par path dédupliqué (sans
+// [n]), on somme les n. Si deux feuilles agrégées ont le même nom
+// court dans le même message, on ajoute le segment parent discriminant
+// entre parenthèses — jamais le chemin complet dans la ligne.
+type RawAggItem = {
+  key:          string;          // path canonique (sans [n]) — clé React stable
+  shortName:    string;          // dernier segment (nom 3GPP)
+  display:      string;          // shortName + ' (parentSeg)' si ambigu
+  fullPath:     string;          // path complet du 1er leaf (pour tooltip)
+  n:            number;          // somme des occurrences agrégées
+  leafRef:      DictLeaf;        // 1er leaf (sert pour selected/onToggle)
+};
+
+function stripIndices(path: string): string {
+  // Retire tous les segments `[\d+]` (ex. "/[0]/" → "/").
+  return path
+    .split("/")
+    .filter((seg) => !/^\[\d+\]$/.test(seg))
+    .join("/");
+}
+
+function lastSegment(path: string): string {
+  const segs = path.split("/").filter((s) => s.length > 0 && !/^\[\d+\]$/.test(s));
+  return segs[segs.length - 1] ?? path;
+}
+
+function aggregateRawLeaves(leafs: DictLeaf[]): RawAggItem[] {
+  // Première passe : fusion par path dédupliqué (sans [n]).
+  const byKey = new Map<string, { leaf: DictLeaf; n: number; shortName: string; canonicalSegs: string[] }>();
+  for (const l of leafs) {
+    const canonical = stripIndices(l.display_name);
+    const segs = canonical.split("/").filter(Boolean);
+    const existing = byKey.get(canonical);
+    if (existing) {
+      existing.n += l.n ?? 0;
+    } else {
+      byKey.set(canonical, {
+        leaf: l,
+        n: l.n ?? 0,
+        shortName: segs[segs.length - 1] ?? canonical,
+        canonicalSegs: segs,
+      });
+    }
+  }
+  // Deuxième passe : disambiguation.
+  //   - On regroupe par shortName.
+  //   - Si > 1 entrée partage le même shortName, on cherche pour
+  //     chacune le segment ancêtre le plus proche qui la distingue
+  //     des autres entrées ambiguës (le parent immédiat suffit souvent
+  //     — ex. t-Reordering (dl-AM-RLC) vs t-Reordering (dl-UM-RLC) —
+  //     mais parfois il faut remonter d'un cran — ex. rs-sinr-Result
+  //     sous `.../measResultBestNeighCell-r15/measResultCell-r15/…`
+  //     vs `.../measResultSCell-r15/measResultCell-r15/…`).
+  const groupsByShort = new Map<string, { key: string; segs: string[] }[]>();
+  for (const [key, v] of byKey.entries()) {
+    const bag = groupsByShort.get(v.shortName) ?? [];
+    bag.push({ key, segs: v.canonicalSegs });
+    groupsByShort.set(v.shortName, bag);
+  }
+  const discriminatorByKey = new Map<string, string>();
+  for (const group of groupsByShort.values()) {
+    if (group.length <= 1) continue;
+    for (const g of group) {
+      // Cherche un segment ancêtre (à l'index -2, -3, …) qui n'apparaît
+      // pas au même index dans les autres entrées du groupe. Sinon,
+      // fallback = concat des 2 ancêtres les plus proches.
+      const segs = g.segs;
+      let discriminator = "";
+      for (let depth = 2; depth <= 5 && depth <= segs.length; depth++) {
+        const candidate = segs[segs.length - depth];
+        if (candidate === undefined) break;
+        const unique = group
+          .filter((o) => o.key !== g.key)
+          .every((o) => o.segs[o.segs.length - depth] !== candidate);
+        if (unique) {
+          discriminator = candidate;
+          break;
+        }
+      }
+      if (!discriminator) {
+        // Fallback : utiliser les 2 ancêtres les plus proches joints.
+        const a = segs[segs.length - 3] ?? "";
+        const b = segs[segs.length - 2] ?? "";
+        discriminator = [a, b].filter(Boolean).join("/") || "?";
+      }
+      discriminatorByKey.set(g.key, discriminator);
+    }
+  }
+  const out: RawAggItem[] = [];
+  for (const [key, v] of byKey.entries()) {
+    const disc = discriminatorByKey.get(key);
+    const display = disc ? `${v.shortName} (${disc})` : v.shortName;
+    out.push({
+      key,
+      shortName: v.shortName,
+      display,
+      fullPath: v.leaf.display_name,
+      n: v.n,
+      leafRef: v.leaf,
+    });
+  }
+  out.sort((a, b) => a.display.localeCompare(b.display));
+  return out;
+}
+
+function RawTreeView({
+  tree,
+  techno,
+  needle,
+  selected,
+  onToggle,
+  resetTick,
+}: {
+  tree: DictTreeResponse;
+  techno: Techno;
+  needle: string;
+  selected: Set<string>;
+  onToggle: (leaf: DictLeaf) => void;
+  resetTick: number;
+}) {
+  const [open, setOpen] = useState<Set<string>>(() => new Set(["LTE", "NR"]));
+  useEffect(() => {
+    if (resetTick === 0) return;
+    setOpen(new Set(["LTE", "NR"]));
+  }, [resetTick]);
+  const toggle = (k: string) =>
+    setOpen((s) => {
+      const n = new Set(s);
+      if (n.has(k)) n.delete(k);
+      else n.add(k);
+      return n;
+    });
+
+  // Flatten origins → messages (le niveau origin n'est pas rendu en Raw).
+  // 1.21.2 — Les feuilles sont ensuite AGRÉGÉES par path dédupliqué
+  // (sans [n]) → un item par nom 3GPP, n sommé. L'ambiguïté éventuelle
+  // (même shortName, parents différents) est résolue par ajout du
+  // segment parent entre parenthèses dans l'affichage.
+  const perTechno = tree.tree
+    .filter((t) => techno === "LTE+NR" || t.techno === techno)
+    .map((t) => {
+      const byMessage = new Map<string, DictLeaf[]>();
+      for (const o of t.origins) {
+        for (const m of o.messages) {
+          const bag = byMessage.get(m.message) ?? [];
+          for (const g of m.groups) {
+            for (const leaf of g.kpis) bag.push(leaf);
+          }
+          byMessage.set(m.message, bag);
+        }
+      }
+      return {
+        techno: t.techno,
+        messages: Array.from(byMessage.entries())
+          .map(([message, leafs]) => ({
+            message,
+            items: aggregateRawLeaves(leafs),
+          }))
+          .sort((a, b) => a.message.localeCompare(b.message)),
+      };
+    });
+
+  const matchItem = (item: RawAggItem): boolean => {
+    if (!needle) return true;
+    return (
+      item.display.toLowerCase().includes(needle) ||
+      item.fullPath.toLowerCase().includes(needle) ||
+      item.leafRef.param_key.toLowerCase().includes(needle)
+    );
+  };
+  const matchMessage = (message: string, items: RawAggItem[]): boolean => {
+    if (!needle) return true;
+    return message.toLowerCase().includes(needle) || items.some(matchItem);
+  };
+
+  return (
+    <ul role="tree" aria-label="Arbre Raw" className="p-1.5 text-[12.5px]">
+      {perTechno.map((t) => {
+        const visibleMessages = t.messages.filter((m) => matchMessage(m.message, m.items));
+        if (needle && visibleMessages.length === 0) return null;
+        const tOpen = open.has(t.techno) || !!needle;
+        const nMessages = visibleMessages.length;
+        const nLeafs = visibleMessages.reduce((a, m) => a + m.items.length, 0);
+        return (
+          <li key={t.techno} role="none">
+            <button
+              role="treeitem"
+              aria-level={1}
+              aria-expanded={tOpen}
+              onClick={() => toggle(t.techno)}
+              className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left font-semibold hover:bg-muted"
+            >
+              {tOpen ? (
+                <ChevronDown className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronRight className="h-3.5 w-3.5" />
+              )}
+              <Folder className="h-3.5 w-3.5 text-primary" />
+              {t.techno}
+              <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
+                {fmtInt(nMessages)} msg · {fmtInt(nLeafs)}
+              </span>
+            </button>
+            {tOpen && (
+              <ul role="group" className="ml-3">
+                {visibleMessages.map(({ message, items }) => {
+                  const mid = `raw|${t.techno}|${message}`;
+                  const mOpen = open.has(mid) || !!needle;
+                  const shownItems = needle ? items.filter(matchItem) : items;
+                  return (
+                    <li key={mid} role="none">
+                      <button
+                        role="treeitem"
+                        aria-level={2}
+                        aria-expanded={mOpen}
+                        onClick={() => toggle(mid)}
+                        className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left hover:bg-muted"
+                      >
+                        {mOpen ? (
+                          <ChevronDown className="h-3 w-3" />
+                        ) : (
+                          <ChevronRight className="h-3 w-3" />
+                        )}
+                        <span className="min-w-0 flex-1 font-mono text-[11.5px] break-all">
+                          {message}
+                        </span>
+                        <span className="shrink-0 font-mono text-[10px] tabular-nums text-muted-foreground">
+                          {fmtInt(shownItems.length)}
+                        </span>
+                      </button>
+                      {mOpen && (
+                        <ul role="group" className="ml-4 border-l pl-1">
+                          {shownItems.map((item) => (
+                            <RawLeafRow
+                              key={item.key}
+                              item={item}
+                              selected={selected}
+                              onToggle={onToggle}
+                            />
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+// 1.19.1 — Feuille Raw : nom BRUT mono, non tronqué (break-all), compte
+// aligné à droite tabular-nums. Pas de FileText (compacité), pas de chips,
+// pas de bouton Info — la ligne entière est cliquable pour toggle la case.
+function RawLeafRow({
+  item,
+  selected,
+  onToggle,
+}: {
+  item: RawAggItem;
+  selected: Set<string>;
+  onToggle: (leaf: DictLeaf) => void;
+}) {
+  const isSelected = selected.has(item.leafRef.param_key);
+  const n = item.n;
+  return (
+    <li role="none">
+      <label
+        className={`group flex items-start gap-1.5 rounded px-1.5 py-[3px] text-[12px] ${
+          isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted"
+        } ${n === 0 ? "opacity-60" : ""}`}
+        data-testid={`dict-raw-leaf-${item.shortName}`}
+      >
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={() => onToggle(item.leafRef)}
+          className="mt-[3px] h-3 w-3 shrink-0"
+          aria-label={`Sélectionner ${item.shortName}`}
+        />
+        <span
+          className={`min-w-0 flex-1 truncate font-mono text-[11.5px] leading-[1.35] ${
+            isSelected ? "font-semibold" : ""
+          }`}
+          // 1.21.2 — tooltip = chemin ASN.1 complet (path d'origine du
+          // 1er leaf agrégé). Le nom court seul reste dans la ligne.
+          title={item.fullPath}
+        >
+          {item.display}
+        </span>
+        <span className="shrink-0 self-start pt-[1px] font-mono text-[10px] tabular-nums text-muted-foreground">
+          {fmtInt(n)}
+        </span>
+      </label>
+    </li>
   );
 }
 

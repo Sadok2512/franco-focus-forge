@@ -1,5 +1,674 @@
 # Changelog
 
+## 1.21.2 (patch) — bc4-front 2026-10-17 — Raw tree : nom court + agrégation [n] + discriminant parent, chemin complet uniquement en tooltip (Agent BC1)
+
+> Avant 1.21.2, l'onglet Raw affichait le chemin ASN.1 complet dans la
+> ligne. Maintenant la ligne n'affiche que le dernier segment (nom
+> 3GPP) ; le chemin complet reste dans `title=` (tooltip) et dans le
+> volet Infos.
+>
+> Trois règles de rendu (`aggregateRawLeaves()` + `RawLeafRow` dans
+> `src/features/dict-v2/TreePanel.tsx`) :
+>
+> 1. Dernier segment seul dans la ligne.
+> 2. Segments `[n]` retirés pour la clé d'affichage ; les occurrences
+>    du même path dédupliqué sont additionnées. Fait côté front en
+>    attendant un `view=raw` déjà agrégé côté back.
+> 3. Même nom court sous le même message avec chemins parents
+>    différents → ajout du segment parent entre parenthèses
+>    (`t-Reordering (dl-AM-RLC)` vs `t-Reordering (dl-UM-RLC)`).
+>
+> Composant réutilisé : helpers du module `src/features/dictionary/
+> shared.ts` (`leafOf`). Logique d'agrégation implémentée localement
+> (le back renvoie encore les paths bruts dans view=raw).
+>
+> **Sous-titre `n paramètres · n détections`** : back vérifié,
+> `view=raw` et `view=catalog` retournent les mêmes valeurs sur REF
+> (773 · 258 699).
+
+### Garde (parcours réel REF)
+
+- Raw › LTE › RRCConnectionSetup : `phr-Config` + `dl-PathlossChange`
+  avec compte agrégé, sans chemin ni `[0]` dans la ligne.
+- Raw › LTE › MeasurementReport : `rsrpResult`, `rsrqResult`,
+  `physCellId` une seule ligne chacun avec le compte agrégé.
+- Aucun `/` ni `[0]` dans une ligne du Raw.
+- Tooltip = chemin ASN.1 complet.
+- Sous-titre identique entre Paramètres et Raw.
+
+## 1.21.1 (patch) — bc4-front 2026-10-17 — /kpi : correctifs Infos (3e panneau latéral persistant, pas overlay) + en-tête purgé de la ligne source + Raison wrap complet + Traçabilité result_id/back version réels (Agent BC2)
+
+> Correctif ciblé du lot 1.21.0 — 4 points précis, rien d'autre ne bouge.
+>
+> ### 1. Infos = 3e panneau, pas overlay
+>
+> - `<Sheet>` (Radix overlay avec fond sombre) **remplacé** par un
+>   `<aside>` intégré au grid 3 colonnes : `[320px tree] [1fr center]
+>   [360px infos]`. Grid conditionnel : `xl:grid-cols-[320px_1fr]`
+>   quand Infos off, `xl:grid-cols-[320px_1fr_360px]` quand on.
+> - Toggle **persistant via `localStorage.bc4.kpi.infoOpen` ("1"/"0")**,
+>   try/catch — jamais load-bearing si localStorage KO.
+> - Toggle `Infos` dans la toolbar : clic bascule, `pressed={infoOpen}`
+>   dans le `ActionButtons` → style primary quand ouvert.
+> - **Pas de fermeture au clic extérieur** : la carte et le graphe
+>   restent interactifs pendant que Infos est ouvert.
+>
+> ### 2. En-tête KPI purgé
+>
+> - Ligne `· {activeItem.source}` **supprimée** de la 2e ligne du header
+>   (`code · nature · unité · <source>` → `code · nature · unité`).
+> - L'en-tête = **nom · badge statut · code · nature · unité**, puis la
+>   ligne **Périmètre** déjà ajoutée en 1.21.0. **Rien d'autre.**
+> - Source et formule restent accessibles dans Infos uniquement.
+>
+> ### 3. Contenu Infos
+>
+> - **Raison** : passée de `Row` (truncate) à un `grid-cols-[110px_1fr]`
+>   avec `whitespace-pre-wrap break-words text-[11.5px]` — **wrap complet**,
+>   plus de troncature.
+> - **Traçabilité** :
+>   - `result_id` lu réellement de la réponse `/kpi/{code}` (champs
+>     `result_id` OU `run_id` si présents). Avec bouton **Copier**.
+>   - `back_version` **lu depuis `/health`** via le `healthQ` déjà
+>     présent dans la page (hoisté dans `KpiInfoPanel`).
+>   - Statut `PENDING`/`UNVALIDATED`/`UNAVAILABLE` ET pas de result_id →
+>     **"— (aucun calcul servi)"** au lieu de "N/D".
+>   - Statut `AVAILABLE` mais le back `/kpi/{code}` n'expose actuellement
+>     ni `result_id` ni `run_id` (contrat 0.47.x vérifié live) →
+>     **"N/D — non exposé par le back"** (règle n°2 : raison explicite).
+>     À remplacer dès que le back ajoute le champ.
+>
+> ### 4. Reste inchangé
+>
+> Carte/graphe/barre filtres/tableau/catalog : exactement comme en 1.21.0.
+>
+> ### Gardes
+>
+> | # | Résultat |
+> |---|---|
+> | G1 typecheck | EXIT=0 ✓ |
+> | G2 Infos = 3 panneaux côte à côte, pas de fond sombre | OK (aside intégré au grid) |
+> | G3 En-tête sans source ni formule | OK (ligne retirée) |
+> | G4 Raison wrap complet | OK (whitespace-pre-wrap) |
+> | G5 result_id lu réel + fallback "aucun calcul servi" si PENDING, "N/D — non exposé par le back" sinon | OK |
+> | G6 back version lu depuis /health | OK (0.47.3 remonté live) |
+> | G7 Toggle persistant localStorage | OK (try/catch) |
+> | G8 PNG garde REF + LTE_RF_RSRP + Infos | OK — 3 panneaux côte à côte (320·944·360 px), pas de fond sombre, console 0 erreur, `/tmp/kpi-1.21.1-3panels.png` |
+
+## 1.21.0 (minor) — bc4-front 2026-10-17 — /kpi : finitions UI — barre filtres homogène (cadenas + séparateur Géo), en-tête débarrassé des doublons Formule/Source, volet Infos refondu en 5 sections (360 px), carte plein écran + légende opérateur (Agent BC2)
+
+> Alignement sur la spec BC2 "finitions UI /kpi". Même design (couleurs,
+> typo, composants) — hiérarchie d'information corrigée. Pas de breaking
+> change API, pas d'invention.
+>
+> ### 1. Barre de filtres
+>
+> - **Chips homogènes** : TOUS h-7, même border/padding/font ; les 6 géo
+>   ont désormais la même taille que les data (avant plus petits et
+>   dashed/opacity-70). État indisponible = **icône cadenas** (`Lock`)
+>   à gauche + texte muted + tooltip reason — plus de chip rétréci.
+> - **Séparateur vertical** fin `w-px bg-[#E2E8F0]` + libellé discret
+>   `· Géo` entre les 5 chips data (Opérateur/Techno/Bande/Service/Env)
+>   et les 6 géo (DR/Plaque/DOR/Zone ARCEP/Commune/INSEE).
+> - Chip actif avec sélection affiche déjà **"Opérateur · 2"** via le
+>   `MultiSelect` existant (badge compte).
+> - Bouton **« Réinitialiser (N) »** à droite de la barre (`ml-auto`),
+>   `disabled` quand `activeFilterCount === 0` (border dashed, text muted).
+>   Icône `RefreshCw` au lieu de `X`.
+>
+> ### 2. En-tête KPI
+>
+> - Lignes `<strong>Formule :</strong>` et `<strong>Source :</strong> …
+>   — <strong>Formule :</strong>` (DOUBLON) **supprimées**.
+> - Nouvelle ligne unique **"Périmètre :"** : `n obs · toute la période ·
+>   k filtre(s) actif(s)` (ou "aucun filtre"). Les détails source/formule
+>   restent accessibles dans le volet Infos.
+>
+> ### 3. Volet Infos (Drawer refondu)
+>
+> - **Largeur 360 px** (vs 480 avant). Panneau `overflow-y-auto`, 5 sections
+>   avec header `uppercase tracking-wider text-muted-foreground` :
+>   1. **Définition** : techno, famille, nature, unité, alias
+>   2. **Source & formule** : source + formule en `font-mono break-all` +
+>      service_scope si applicable
+>   3. **Périmètre actuel** : **Valeur unique** (plus de doublon
+>      Valeur / Occurrences), statut, raison
+>   4. **Comparabilité** : verdict dérivé du statut
+>   5. **Traçabilité** : `result_id`, back version, bouton **Copier**
+>      (icône `Copy`) sur result_id si fourni par le back
+>
+> ### 4. Carte
+>
+> - Nouveau bouton **plein écran** `⤢` en haut à droite (icônes
+>   `Maximize2`/`Minimize2`). Mode plein écran : `fixed inset-0 z-[60]
+>   bg-background`, resize auto de MapLibre, **touche Échap** pour sortir.
+> - **Légende opérateur** en bas à gauche : couleurs de marque BC4
+>   (Orange `#FF7900`, SFR `#E2001A`, Bouygues `#009FE3`, Free `#7C8794`,
+>   N/D `border-dashed`). Chaque pastille 2×2px + libellé.
+> - **Encart info** en haut à gauche conservé mais honnête :
+>   `N obs. KPI · 0 point GPS exposé par le back` — à transformer en
+>   `N points géolocalisés / M` dès que `/kpi/{code}/points` est câblé
+>   (règle §G6 : jamais fake points).
+> - Centre/zoom par défaut inchangés (FR métropolitaine) — bbox mp.geom
+>   nécessite route back dédiée (noté dans NEXT STEP).
+>
+> ### Gardes
+>
+> | # | Résultat |
+> |---|---|
+> | G1 typecheck | EXIT=0 ✓ |
+> | G2 chips homogènes | OK (tous h-7 + cadenas sur indispo) |
+> | G3 séparateur Géo visible | OK |
+> | G4 Réinitialiser à droite + disabled | OK |
+> | G5 doublon Formule/Source retiré header | OK |
+> | G6 ligne Périmètre affichée | OK |
+> | G7 volet Infos 5 sections 360px | OK |
+> | G8 bouton fullscreen + Échap | OK |
+> | G9 légende opérateur bas-gauche | OK |
+> | G10 encart info honnête (0 point GPS) | OK |
+>
+> ### Fichiers
+>
+> - `src/routes/_app.kpi.tsx` : FilterChip (cadenas), barre groupée + reset,
+>   en-tête (ligne Périmètre), KpiInfoSheet (5 sections, 360px, Copy)
+> - `src/features/kpi/KpiMapOSM.tsx` : fullscreen + légende opérateur
+> - 0 fichier touché hors `/kpi`
+
+## 1.20.4 (patch) — bc4-front 2026-10-17 — /kpi : vraie carte **OpenStreetMap** via MapLibre dans le panneau Carte (basemap tiles OSM + attribution + zoom/pan), points par cellule à câbler back (Agent BC2)
+
+> Nouveau composant `src/features/kpi/KpiMapOSM.tsx` :
+> - MapLibre (déjà installé via RadioMap) + tile layer OpenStreetMap
+>   (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`)
+> - Centre par défaut FR métropolitaine (lng 2.4, lat 46.6, zoom 5)
+> - Attribution OSM compacte + contrôles zoom/pan `NavigationControl`
+> - Lazy-loaded (dynamic import `maplibre-gl` + CSS) → pas de surcoût si Carte off
+> - État "Chargement de la carte OSM…" pendant le load
+> - Fallback honnête "Tiles OSM injoignables" si `tile.openstreetmap.org`
+>   unreachable (vérification `on("error", status)`)
+> - Badge supérieur gauche : `N obs. KPI · points par cellule : non câblés back`
+>   → honnête tant que `/kpi/{code}` ne retourne pas de lat/lng par point
+>   (§G6 : jamais fake points)
+>
+> `KpiMapPanel` dans `_app.kpi.tsx` remplace l'ancien état statique par
+> `<KpiMapOSM nPoints={kpi.n} />` → **vraie carte interactive** dès que
+> l'utilisateur clique Carte.
+>
+> ### Gardes
+>
+> | # | Résultat |
+> |---|---|
+> | G1 typecheck | EXIT=0 ✓ |
+> | G6 pas de fake coords | OK (badge "points non câblés back") |
+> | G8 OSM attribution visible | OK (compact) |
+> | G11 pas de régression | 1 fichier nouveau + 1 modif import |
+>
+> ### Next step
+>
+> - Back route `GET /projects/{id}/kpi/{code}/points?limit=N` → `[{lat,lng,value,ecgi}]`
+> - Côté front : `fetch` + `addSource GeoJSON` + `circle layer` colorée par value
+>   (reuse logique RadioMap)
+
+## 1.20.3 (patch) — bc4-front 2026-10-17 — /kpi : bouton Carte fonctionnel (toggle), Chart A expand full-width quand Carte off, Graph (Task Time) rendu uniquement si activé — jamais de panneau mort ni fake coords (Agent BC2)
+
+> Alignement sur la spec `KPI_ANALYTICS_PREMIUM_UI_REDESIGN` :
+>
+> ### Avant / Après
+>
+> | | Avant 1.20.2 | Après 1.20.3 |
+> |---|---|---|
+> | Bouton Carte | **toujours disabled** (`canMap={false}`) | **actif** avec `pressed` + toggle |
+> | Chart A "Occurrences par opérateur" | moitié largeur permanente (côté gauche) | **full-width** quand Carte off, moitié quand Carte on |
+> | Panneau Task Time | **toujours rendu** à droite avec empty state même si Graph off | **masqué par défaut**, rendu uniquement si `graphVisible && canGraph` |
+> | Panneau Carte | — | nouveau `KpiMapPanel` honnête (back ne renvoie pas lat/lng → état indisponible explicite avec explication). JAMAIS fake coords. |
+> | Date & Heure dans table | déjà absent | inchangé, confirmé absent |
+> | 4 Summary cards | déjà absent | inchangé, confirmé absent |
+>
+> ### Comportement toggle
+>
+> - `Carte` OFF → `grid-cols-1`, Chart A `w-full`.
+> - `Carte` ON → `xl:grid-cols-2`, Chart A | `KpiMapPanel` (map actuellement = panneau unavailable, voir §G6).
+> - `Graph` OFF → aucun panneau Task Time (plus de "Secondaire désactivée" permanent).
+> - `Graph` ON + `canGraph=true` → panneau Task Time apparait **sous** les 2 panneaux (nouvelle zone dédiée).
+> - `Graph` ON + `canGraph=false` → bouton reste disabled (contract gap 1.17.0 — `canShowGraph()` renvoie false tant que /kpi/{code} ne retourne pas de task_time).
+>
+> ### KpiMapPanel (nouveau)
+>
+> - Titre "Distribution géographique" + badge compte `n obs. (n du KPI)`
+> - Icône `MapIcon` + texte "Carte indisponible pour ce KPI" + explication
+>   back : "Le back ne retourne pas de coordonnées (lat/lng) par point dans
+>   la réponse /kpi/{code}. Charger un référentiel cellule avec géométrie
+>   puis activer la jointure mp.ecgi ↔ cell_ref.geom pour afficher la
+>   distribution par cellule."
+> - JAMAIS d'invention de coordonnées (règle BC4 §G6).
+>
+> ### Gardes
+>
+> | # | Garde | Résultat |
+> |---|---|---|
+> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
+> | G2 | Pas de 4 summary cards | confirmé (jamais introduits) |
+> | G3 | Pas de colonne Date & Heure dans table | confirmé (déjà absent) |
+> | G4 | Chart A expand quand Carte off | OK via grid-cols-1 |
+> | G5 | Graph button disabled si canShowGraph=false | OK (tooltip explicite) |
+> | G6 | Pas de fake coords map | OK (panneau unavailable) |
+> | G8 | Design BC4 intact (navy #142235, bleu primary) | inchangé |
+> | G11 | KPI catalog/sidebar/Dict/RF/Assistant intacts | OK (modifs isolées à `_app.kpi.tsx`) |
+>
+> ### Impact
+>
+> - **1 fichier modifié** : `src/routes/_app.kpi.tsx` (+ KpiMapPanel, modif ActionButtons, modif section render charts).
+> - 0 fichier touché hors `/kpi`.
+
+## 1.20.2 (patch) — bc4-front 2026-10-17 — RF Modules **MODE DÉMO** complet : fixture déterministe 42 obs autour La Défense, carte SVG locale (serving/candidate/UE), linked histogram ↔ map ↔ table, Settings margin_db live-wired, MODE RÉEL explicitement séparé (Agent BC2)
+
+> Refonte DEMO suite à la spec `RF_MODULES_MOCK_VISUALIZATION_V1`.
+> Mode RÉEL inchangé — garde l'unavailability honnête.
+>
+> ### Nouveaux fichiers
+>
+> - `src/features/rf-modules/fixtures/rfDemo.ts` : **fixture déterministe
+>   isolé** avec 42 observations fictives (seedé via PRNG local, aucun
+>   `Math.random()` sur render). Chaque record : `obs_id` anonyme
+>   (jamais IMSI/IMEI), `capture_id`, `seq`, `operator`, `technology`,
+>   `band`, `vendor`, `zone`, `serving_cell`, `candidate_cell`,
+>   `serving_rsrp_dbm`, `candidate_rsrp_dbm`, `margin_db`,
+>   `serving_position`, `candidate_position`, `ue_observation_position`,
+>   `candidate_evidence`, `confirmation_evidence`, `classification`,
+>   `fixture_version`. Coordonnées fictives autour de 48.892 / 2.238
+>   (zone de démo). Export `DEMO_FIXTURE_VERSION =
+>   "rf-demo-overshooting@2026-10-17"`.
+> - `src/features/rf-modules/DemoMap.tsx` : **carte SVG locale** (pas
+>   de MapLibre ni street tiles). Grille lat/lng étiquetée, triangles
+>   couleur opérateur (serving), losanges ambre (candidate) + rouge
+>   (OVERSHOOTING_CONFIRMED), petits cercles gris (UE), lignes pointillées
+>   serving↔candidate. Badge `MODE DÉMO — Données fictives` permanent
+>   en overlay. Clic point → `onObsClick(obs_id)` remonte au parent.
+>   `highlightedObsId` → epaissit la ligne + agrandit les points.
+>
+> ### RfModulesPage — refonte résultats
+>
+> - **Toggle `MODE : DEMO ↔ REAL`** dans le header (DEMO défaut).
+>   DEMO = fixture local, REAL = panneau "câblage back requis"
+>   (plus de fausse carte, plus de summary cards tirées de rien).
+> - **Mode DEMO Overshooting** : `RunResults` lit `RF_DEMO_FIXTURE`,
+>   filtre via `filterDemo()` (opérateur/techno/bande/zone/vendor),
+>   calcule :
+>   - `topServing(filtered, 10)` → histogramme Top 10
+>   - `medianMargin(filtered)` → p50 pour summary card
+>   - `nCandidate`, `nConfirmed`, `nServing`, `nZones` → cards
+>   Les cards, l'histogramme, la carte et la table partagent **le MÊME
+>   `filtered`** → cohérence totaux (règle §G3).
+> - **Linked interactions** :
+>   - Clic sur une barre histogram → highlight la première `obs_id` de
+>     ce `serving_cell` → carte + table se synchronisent
+>   - Clic sur un point map → highlight son `obs_id` → table + barre
+>     histogram correspondante
+>   - Clic sur une row table → même sync
+>   - Re-click sur la même entité → unselect
+> - **Reclassification live via Settings** : le seuil `margin_db` est
+>   live-wired dans le state parent (`marginThreshold`) → changer dans
+>   le `SettingsDialog` reclassifie immédiatement les observations
+>   (règle §G5). Message en bleu dans le dialog : "↳ Appliqué
+>   immédiatement aux résultats DEMO…".
+> - **Mode RÉEL** : affiche panneau `MODE RÉEL — câblage back requis`
+>   avec le code endpoint attendu (`POST /projects/{id}/rf/modules/{m}/runs`).
+>   Pas de fake map, pas de summary cards fabriquées (règle §G6).
+> - **Autres modules en DEMO** (Interference / RACH / Throughput) :
+>   `DemoPreviewNotImplemented` panneau explicite "Aperçu démo non
+>   implémenté — priorité du lot 1.20.2 : Overshooting" (règle §10 :
+>   jamais fabriquer).
+>
+> ### Classification (règle §11)
+>
+> - `OVERSHOOTING_CONFIRMED` : `margin_db ≥ 10` ET `confirmation_evidence`
+>   (déterministe : index `i % 3 === 0`). Count typique ≈ 5-6 / 42.
+> - `BETTER_CELL_CANDIDATE` : `margin_db ≥ marginThreshold` (défault 3).
+> - `INSUFFICIENT_EVIDENCE` : sinon.
+> - Table affiche la classification en couleur distincte (rouge / orange
+>   / gris muté).
+>
+> ### Gardes
+>
+> | # | Garde | Résultat |
+> |---|---|---|
+> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
+> | G2 | DEMO Run → histogramme + carte + table populated | OK |
+> | G3 | Filter → totaux cohérents cards / histo / table | OK (même `filtered`) |
+> | G4 | Carte interactive : clic point → selection + highlight | OK |
+> | G5 | Settings margin_db change → reclassification + totaux cohérents | OK |
+> | G6 | REAL mode : pas de fake GPS, pas de fausses cards | OK |
+> | G7 | Aucun subscriber ID, DEMO badge visible UI | OK |
+> | G9 | KPI/Dict/Assistant intacts | OK |
+> | G10 | 1440/1920 testés via Playwright 1440×900 | OK |
+>
+> ### Impact
+>
+> - 2 fichiers nouveaux (`fixtures/rfDemo.ts`, `DemoMap.tsx`).
+> - 1 fichier refondu (`RfModulesPage.tsx`).
+> - 0 fichier touché hors `src/features/rf-modules/`.
+
+## 1.20.1 (patch) — bc4-front 2026-10-17 — RF Modules premium UI redesign : filter bar compact, summary cards (post-run), histogram + map côte-à-côte, evidence table ; subviews RACH/Throughput alignées sur la spec (Agent BC2)
+
+> Refonte UI selon la maquette approuvée. Même logique métier et mêmes
+> contrats que 1.20.0 — aucun fake result, DEMO toujours labélisé.
+>
+> ### Changements visuels (layout A→F)
+>
+> - **A. Sidebar module tree** : fond `#F5F7FB` canvas, panneau blanc,
+>   bordures `#E1E8F0`, headline "RF Modules" + sous-titre compact
+>   "Workspace d'analyse radio" + input "Rechercher un module…". Chaque
+>   module porte un badge statut coloré (OK/PART/UNV/UNA) + compte
+>   `nAvail/nTotal`. Lignes enfants 32-36 px, selected row
+>   `bg-[#E6F1FF]` + indicateur gauche bleu 2 px + texte primary.
+>   Chevron + clavier. Icône `XCircle` sur sous-vues indisponibles.
+> - **B. Header** : barre blanche compacte (~45 px), titre `text-[15px]`
+>   semibold, badge statut (border + bg colored), version `v0.1.0`,
+>   description sur **1 ligne** `line-clamp-1`, boutons Info/Settings/Run
+>   alignés droite, Run disabled pendant `queued`/`running`.
+> - **C. Filter bar compacte** : nouvelle barre blanche entre header
+>   et contenu. 7 chips : Opérateur (multiselect), Techno (LTE/NR/EN-DC),
+>   Bande (B1/B3/…), Zone (gris disabled — reason "cell_ref non chargé"),
+>   Vendor (gris disabled — reason "vendor non prouvé"), Période (select
+>   7/30/90 jours ou tout). Compteur "N filtres actifs" + bouton Reset.
+> - **D. Summary cards** : grid 4 colonnes (`md:grid-cols-4`), rendue
+>   **UNIQUEMENT après Run réussi**. Cards : "Candidats BETTER_CELL",
+>   "Cellules serveuses impactées", "Marge RSRP médiane", "Overshooting
+>   confirmés" (0 → muté, cf. règle §5 jamais claim confirm). Valeur
+>   `text-[20px] font-semibold tabular-nums`.
+> - **E. Deux panneaux côte-à-côte** (`lg:grid-cols-2`) :
+>   - Gauche : **Histogramme** "Top cellules serveuses par n candidats"
+>     avec axes légendés, barres `bg-sev-warn/80`, compteur `tabular-nums`,
+>     boutons export PNG + fullscreen (icons seulement, non actifs — placeholder).
+>   - Droite : **Carte** — panneau unavailable précis (icon `MapPin` +
+>     message "cell_ref.lat/lng non renseignés… Charger un référentiel
+>     national avec géométrie dans Paramètres › Référence cellulaire").
+>     **Jamais de fake map Paris** (règle §G6).
+> - **F. Evidence table** full-width : header sticky, bordures discrètes,
+>   colonnes capture_id · seq · serving · RSRP serv. · candidate · RSRP
+>   cand. · margin · band · operator · vendor · classification. Bouton
+>   CSV export (placeholder). Classification en `uppercase font-semibold`
+>   couleur `sev-warn`. Vendor affiché `N/D` quand non prouvé.
+>
+> ### Changements registry (subviews alignées sur spec)
+>
+> - **RACH** : subviews renommées à la spec exacte — "RACH Attempts",
+>   "RACH Success Rate", "RACH Failures" (nouveau), "Preamble Analysis",
+>   "RACH Latency", "Résultats". Toutes bloquées sauf "RACH Attempts"
+>   (comptage brut) + "Résultats" — contrat RACHSM pairage non certifié
+>   (decoder 2.1.0).
+> - **Throughput** : subviews refondues — "Application Throughput",
+>   "PHY / MAC / RLC / PDCP", "MCS / 256QAM / RI" (nouveau libellé),
+>   "Spectral Efficiency" (nouveau), "RAN Comparison" (nouveau,
+>   remplace "CA/EN-DC"), "Résultats". Seule APP throughput disponible
+>   (compute_transfers back).
+>
+> ### Provenance row (nouvelle)
+>
+> Juste sous la bannière DEMO, une ligne compacte expose
+> `run_id · project_id · module@version · vue · filtres · origine (DEMO/REAL)`
+> — toutes les infos nécessaires pour tracer un résultat.
+>
+> ### Gardes manuelles
+>
+> | # | Garde | Résultat |
+> |---|---|---|
+> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
+> | G2 | nav tree expand/collapse/search/selected | OK via parcours réel |
+> | G3 | filter changes → UI compte "N filtres actifs" | OK |
+> | G4 | Run disabled sur UNVALIDATED | OK (bouton grisé) |
+> | G5 | jamais OVERSHOOTING_CONFIRMED dans data | OK (uniquement description §5) |
+> | G6 | pas de fake map | OK (panneau unavailable explicite) |
+> | G7 | counts histogram = rows table | OK (demo cohérent) |
+> | G8 | histogram axes + units + export icons | OK |
+> | G9 | states idle/queued/running/completed/failed | OK |
+> | G10 | Settings/Info open/close | OK |
+> | G11 | pas d'identité sujet, ordre (capture_id, seq) | OK |
+> | G12 | pas de régression hors `/rf` | OK (fichiers isolés) |
+>
+> ### Impact
+>
+> - **1 fichier modifié** (`src/features/rf-modules/RfModulesPage.tsx`)
+>   + **1 fichier mineur** (`src/features/rf-modules/registry.ts` —
+>   subviews RACH/Throughput renommées).
+> - **0 fichier touché** hors `src/features/rf-modules/`.
+> - KPI Analytics, Dictionnaire, Assistant, Settings : inchangés.
+
+## 1.20.0 (minor) — bc4-front 2026-10-17 — RF Modules workspace : scaffold typé + registre module versionné + 1 module instrumenté (Overshooting Detection, DEMO) + 3 modules déclarés UNVALIDATED/PARTIAL avec reason (Agent BC2)
+
+> Nouvelle entrée top-level `/rf` entre KPI Analytics et Assistant IA.
+> Scope de cette release : **scaffold crédible**, pas une implémentation
+> back complète. Chaque capacité est annoncée avec son statut back et sa
+> raison. Jamais de conclusion RF fabriquée.
+>
+> ### Scope livré
+>
+> - `src/features/rf-modules/registry.ts` : **registre typé TS** (contrat §3)
+>   avec `RF_MODULES` = 4 entrées (`overshooting`, `interference`, `rach`,
+>   `throughput`). Chaque module porte :
+>   `module_id, version, title, description, capabilities, required_sources,
+>   required_fields, supported_dimensions, settings_schema, evidence_schema,
+>   availability_status (AVAILABLE | PARTIAL | UNVALIDATED | UNAVAILABLE),
+>   availability_reason, subviews[]`.
+>   20 sous-vues au total, chacune avec `available: bool` et
+>   `reason_if_unavailable` quand bloquée. Pas de capacité annoncée sans
+>   preuve back.
+> - `src/features/rf-modules/RfModulesPage.tsx` : workspace complet
+>   - sidebar module tree (280 px, scrollable, chevrons, statut coloré par
+>     module, badges "indisp." sur sous-vues non câblées)
+>   - header avec titre, description, badge statut, version, boutons
+>     Info / Settings / Run alignés à droite (bouton Run disabled si
+>     `UNAVAILABLE`, en cours si `queued`/`running`)
+>   - panneau résultats : états `idle` (hint), `queued`/`running`
+>     (spinner), `completed` (table DEMO), `UNAVAILABLE`/`UNVALIDATED`
+>     (bandeau explicatif avec sources requises + champs requis)
+>   - `SettingsDialog` (modal) : rend le `settings_schema` du module
+>     avec defaults, bounds, unit, description. Persistance via
+>     `PUT /rf/modules/{id}/settings` (route déclarée mais non câblée).
+>   - `InfoDrawer` (right drawer) : méthodologie, capacités, sources
+>     requises, champs requis, dimensions, statut + raison.
+> - `src/routes/_app.rf.tsx` : nouvelle route `/rf`.
+> - `src/components/bc4/AppShell.tsx` : entrée nav "RF Modules" entre
+>   "KPI Analytics" et "Assistant IA".
+>
+> ### Statut des 4 modules
+>
+> | Module | Statut | Sous-vues disponibles |
+> |---|---|---|
+> | Overshooting Detection | **PARTIAL** | Détection, Candidats, Serving vs Better, Résultats (4/5 — carto bloquée par cell_ref.lat/lng vides) |
+> | Interference Detector | **UNVALIDATED** | Radio Quality Screening, Résultats (2/5 — co/adjacent/time-freq bloqués par absence spectrum) |
+> | RACH Performance | **UNVALIDATED** | Attempts (brut), Résultats (2/5 — success/failure/preamble/latency bloqués par contrat RACHSM non certifié) |
+> | DL/UL Throughput | **PARTIAL** | Application, DL/UL Comparison, Résultats (3/6 — layers/MCS-CQI/CA-EN-DC bloqués) |
+>
+> ### Mock-first (clairement labélisé DEMO)
+>
+> Le résultat d'un Run sur Overshooting affiche un bandeau orange
+> `DEMO — ces lignes ne proviennent pas d'une exécution réelle du back.
+> Fixture interne pour valider le contrat de rendu. Pour un run réel,
+> câbler POST /projects/{id}/rf/modules/overshooting/runs`.
+> Les 3 lignes DEMO portent `capture_id, seq, serving, serving_rsrp,
+> candidate, candidate_rsrp, margin, status=BETTER_CELL_CANDIDATE` —
+> jamais `OVERSHOOTING_CONFIRMED` (règle §5).
+>
+> ### Prochaines étapes (hors release)
+>
+> - Back routes `/projects/{id}/rf/modules/*` + runner (déclarés dans la
+>   doc UI mais non implémentés dans ce lot).
+> - Filtre bar partagée (opérateur/bande/DOR) → aujourd'hui reprise depuis
+>   le contexte global `useFilters()`, à propager vers le payload Run.
+> - Cartographie Overshooting (bloquée par cell_ref.lat/lng — attend
+>   enrichissement référentiel national).
+> - Export CSV + fullscreen + PNG export des blocks.
+>
+> ### Gardes manuelles
+>
+> - G1 typecheck : `bunx tsc --noEmit` → EXIT=0 ✓
+> - G2 nav tree : parcours réel REF, click chaque module/sous-vue
+>   depuis sidebar → affiche l'état attendu
+> - G4 Run fails loudly : click Run sur module UNVALIDATED → statut
+>   "failed" + bandeau sources requises
+> - G5 Overshooting : jamais `OVERSHOOTING_CONFIRMED` sans critère validé —
+>   seul `BETTER_CELL_CANDIDATE` exposé en DEMO
+> - G6 Interference : jamais "confirmed interference" — seul
+>   `SCREENING_POOR_SINR` prévu
+> - G7 RACH : status `UNVALIDATED` jusqu'à certification contrat pairage
+>
+> **Design BC4 préservé** : navigation top, filtres, selected state,
+> couleurs opérateurs identiques, aucune route ni feature existante
+> cassée.
+
+## 1.19.1 (patch) — bc4-front 2026-10-17 — Dictionnaire RRC : onglet Raw rendu directement Techno › Message › feuille (sans "Configuration réseau" ni "RAW"), noms monospace jamais tronqués, compte "détections" (Agent BC2)
+
+> **Bug utilisateur** : l'onglet Raw rendait la structure du catalogue
+> (racine "Configuration réseau", nœud intermédiaire "RAW", noms tronqués
+> `rrcConnectionReconfigura…`, compte 364/16 339). Il devait rendre la
+> structure du décodeur : Techno → Message → feuille brute.
+>
+> ### Diagnostic (live back)
+>
+> - `GET /projects/{id}/dict/v2/tree?view=raw` renvoie bien le shape
+>   `tree[].origins[].messages[].groups[].kpis[]` AVEC `distinct_param_keys
+>   = 773` et `total_rows = 258 699` au niveau racine (cohérent avec
+>   l'onglet Paramètres).
+> - Les `origins` sont présents mais sont des buckets techniques
+>   (network_config/ue_capability/ue_report) qui n'ont **pas de sens
+>   sémantique en Raw**. Chaque `message` contient toujours **1 seul
+>   `group`** nommé `"RAW"` (placeholder).
+> - L'ancien code front traitait Raw EXACTEMENT comme catalog
+>   (`TreeView` partagé) → l'utilisateur voyait les 2 niveaux inutiles
+>   et un `truncate` CSS qui coupait les noms.
+>
+> ### Changements (DESIGN de la page inchangé)
+>
+> - `src/features/dict-v2/TreePanel.tsx` : nouveau `RawTreeView` dédié,
+>   utilisé uniquement quand l'onglet actif est "raw". Il **flatten les
+>   `origins`** et **ignore le `group` "RAW"**, produisant directement
+>   `Techno → Message → leaf`. Messages triés par ordre alphabétique
+>   (déterministe).
+> - Nouvelle `RawLeafRow` : nom affiché avec `font-mono text-[11.5px]
+>   break-all leading-[1.35]`. Pas d'`ellipsis`, pas d'`truncate` : le
+>   nom complet (`longDRX-CycleStartOffset/sf160`, chemin indices `[0]`
+>   inclus) est visible via wrap. Compte à droite `tabular-nums`. Pas
+>   de chips discriminators, pas de bouton Info — la ligne entière est
+>   un `<label>` : clic n'importe où toggle la checkbox.
+> - La **sélection** (`selected: Set<string>`) est **partagée** avec
+>   l'onglet Paramètres (prop `selected` + `onToggle` identiques) → le
+>   graphe de droite reçoit les mêmes `param_key` quel que soit l'onglet.
+> - Sous-titre : "n paramètres · n **détections**" en Raw (vs "n lignes"
+>   en Paramètres). Les deux comptes viennent de `activeTree.distinct_param_keys`
+>   et `activeTree.total_rows` servis par le back — **jamais recalculés**
+>   côté front.
+> - Les chevrons, l'indentation (`ml-3`, `ml-4 border-l pl-1`), les tailles
+>   (`text-[12.5px]` arbre, compte `text-[10px]`) sont **identiques** à
+>   l'onglet Paramètres.
+>
+> ### Garde PNG (parcours réel REF)
+>
+> `bun run shot -- /rrc` (vue Raw, LTE › RRCConnectionReconfiguration déplié) :
+> - Noms complets visibles sans ellipse (ex. `rrcConnectionReconfiguration/.../measGapConfig/setup/gapOffset`).
+> - Aucun nœud "RAW", aucun nœud "Configuration réseau" dans la vue Raw.
+> - Sous-titre "**773 paramètres · 258 699 détections**" cohérent avec le back.
+> - Cocher une feuille → graphe à droite se met à jour.
+> - Console 0 erreur.
+
+## 1.19.0 (minor) — bc4-front 2026-10-17 — Paramètres : Référence cellulaire câblée au vrai back (POST /settings/cell-ref/upload 0.47.1) + nettoyage mentions mock/démo mensongères + rôle réel session (Agent BC2)
+
+> **Bug utilisateur** : "Paramètres › Référence cellulaire est en mode MOCK
+> (API mockée, rôle simulé) : l'upload utilisateur n'atteint jamais le
+> back." Audit + patch.
+>
+> ### Diagnostic (grep src/)
+>
+> - `.env` dit **VITE_BC4_DATA=api** → dispatch api activé.
+> - **2 bugs structurels sur l'upload** :
+>   1. URL : front appelait `/reference/cell/upload` (ancienne route),
+>      back avait `/settings/cell-ref/upload` (0.47.1 — nouveau shape).
+>   2. Shape : front attendait `rows_read/rows_loaded/rejected_by_reason/
+>      bands_unmapped/by_rat/etat_breakdown/snapshot_date`, back renvoyait
+>      `status/status_reason/reject_reasons/processed/matched/inserted/
+>      updated_lines/cells_affected/source_path/warnings`. safeParse
+>      aurait échoué silencieusement.
+> - **Faux-positifs textuels** : `SettingsLayout.tsx:29,33` affichait
+>   "API mockée" + "Rôle simulé (démo)" en dur — texte PERMANENT, non
+>   conditionné par le mode. Les 4 panels (Users/Appearance/Geography/AI)
+>   ont des endpoints back live `/settings/*` → les textes "mock"/"démo"/
+>   "simulé" étaient mensongers.
+>
+> ### Changements
+>
+> - `src/lib/api/reference-schemas.ts` : **nouveau** `CellRefUploadReportSchema`
+>   aligné sur back 0.47.1 (status, status_reason, reject_reasons,
+>   processed, matched, inserted, updated_lines, cells_affected,
+>   source_path, …) + `.passthrough()`.
+> - `src/lib/api/reference.ts` : `uploadCellReference` pointe vers
+>   **`/settings/cell-ref/upload`** (plus `/reference/cell/upload`).
+>   console.error avant throw si schema mismatch (jamais silencieux).
+> - `src/features/settings/cellular-reference/CellularReferencePanel.tsx` :
+>   `ReportBlock` refondu — **bandeau rouge** si `status === "rejected"`
+>   avec `status_reason` + ventilation `reject_reasons`.
+>   **Jamais vert si `cells_affected === 0`** (bandeau succès conditionné
+>   à `status === "ok"`). Cards remappées : "Lignes CSV lues (processed)",
+>   "Cellules affectées (inserted/updated)", "Rejetées/ambiguës/vides",
+>   "Référence (reference_id + source_path)".
+> - `src/features/settings/SettingsLayout.tsx` : textes "API mockée" et
+>   "Rôle simulé (démo)" **supprimés**. En-tête affiche `Connecté :
+>   <email session>` + pastille rôle réel (admin/editor/viewer). Si pas
+>   de session : "Non authentifié" en rouge (jamais "démo").
+> - 4 panels (AI, Appearance, Geography, Users) : textes "mock"/"démo"/
+>   "simulé"/"simulation mock" **remplacés** par mention de l'endpoint
+>   back réel (`POST /settings/ai`, `/settings/appearance`, etc.) —
+>   aucun n'est effectivement mock, les labels étaient historiques.
+> - `src/features/settings/shared.tsx` : "Enregistré (mock)" → "Enregistré".
+>   Nouveau composant `NotWiredBanner` (rouge, "NON CONNECTÉ AU BACK")
+>   disponible pour toute section réellement non câblée (aucune usage
+>   actuel : tous les endpoints Settings existent côté back).
+>
+> ### Audit mocks restant (rapport brut)
+>
+> - `src/mocks/*.ts` : 5 modules fixtures (assistant, dictionary, projects,
+>   reference, settings). Utilisés UNIQUEMENT quand `VITE_BC4_DATA ≠ api`.
+> - En prod/dev avec `VITE_BC4_DATA=api` (défaut `.env`), **aucun mock
+>   n'est servi**. Les fixtures sont là pour le mode offline / Storybook.
+> - **"Données démo" badge** (`src/components/bc4/States.tsx:42`) reste —
+>   utilisé uniquement par mock Dictionary + mock Assistant, pas affiché
+>   en mode api.
+>
+> ### Garde PNG (parcours réel)
+>
+> `bun run shot -- /settings/cellular-reference` → Paramètres sans mention
+> "démo"/"API mockée" ; **upload d'un CSV vide** (`touch /tmp/empty.csv`)
+> → bandeau rouge "Import rejeté — aucune cellule affectée en base
+> Motif : fichier vide ou en-tête non reconnu" ; log réseau Playwright
+> montre **POST http://.../api/settings/cell-ref/upload → 200** avec
+> `{"status":"rejected", …}`. Console 0 erreur.
+
+## 1.18.1 (patch) — bc4-front 2026-10-17 — /kpi : segmented d'agrégation 4e option DOR (grisée si cell_ref non chargé) + palette catégorielle DOR + couverture n/N (Agent BC2)
+
+> **Changement** : `GroupBySegmented` ajoute un 4e bouton **DOR** après
+> `Opérateur | Bande | Les deux`. Active ⇐ `filtersData.dr.available ===
+> true` OU `values.length > 0`. Sinon **grisé** avec `title=DOR —
+> <reason du back>` (jamais inventé). Même règle que `FilterChip`.
+>
+> **Palette** : `DOR_PALETTE` Okabe-Ito 8 couleurs (colorblind-safe,
+> stable, hash par index) — **jamais la palette opérateur**. Barre
+> « N/D » toujours gris slate `#9CA3AF`.
+>
+> **Couverture** : sous le chart quand `groupBy==="dor"`, ligne discrète
+> `Couverture DOR : n / N points avec DOR renseigné (p %)`. Les points
+> `dor=null` ou `dor="N/D"` sont **exclus de n**, inclus dans N
+> (dénominateur). Jamais inventé — calculé depuis `kpi.groups`.
+>
+> **Contrat** :
+> - `KpiGroupBy` type étendu à `"dor"` (schema Zod).
+> - `KpiGroupRowSchema` : ajout `dor?: string | null` (passthrough).
+> - Back 0.46.0 → **0.46.1** attendu : accepte `group_by=dor` ;
+>   `_group_cols("dor") = ["dor"]`. Patché simultanément côté back.
+>
+> **Garde PNG** (parcours réel via `bun run shot` qui est désormais
+> `shot_flow.ts`) : sur REF, segmented à **4 boutons visibles** ;
+> « DOR » grisé avec tooltip
+> `"DOR — ECGI non propagé : 0/4319 points. Lancer POST /projects/{id}/kpi/_populate_ecgi."` ;
+> console 0 erreur.
+
 ## 1.18.0 (minor) — bc4-front 2026-10-17 — Dictionnaire RRC v2 : onglets Paramètres | Raw parameter, explorateur de valeurs (Opérateur/Bande/Les deux), tableau + CSV, bouton Réinitialiser (BC1 worktree, mergé par BC2)
 
 > Nouvelle feature livrée par Agent BC1 depuis le worktree isolé
