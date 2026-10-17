@@ -31,16 +31,25 @@ await page.getByRole("button", { name: /Se connecter/i }).click();
 await page.waitForURL((u) => !u.pathname.includes("login"), { timeout: 15000 });
 
 await page.goto(`${BASE}/rrc?project=${PROJECT_ID}`, { waitUntil: "networkidle" });
-await page.waitForSelector('[data-testid="dict-tree-panel"]', { timeout: 25000 });
+await page.waitForSelector('[data-testid="dict-tree-tabs"]', { timeout: 25000 });
+await page.waitForTimeout(1500); // laisser le fetch tree finir
 
 const tabs = page.locator('[data-testid="dict-tree-tabs"] button');
 const tabsCount = await tabs.count();
 if (tabsCount < 2) throw new Error(`Expected 2 tabs, got ${tabsCount}`);
 
+// Expand the subtree where A3 leaves live for a nice "déplié" screenshot
+await page
+  .locator('[role="treeitem"]', { hasText: "RRCConnectionReconfiguration" })
+  .first()
+  .click({ force: true })
+  .catch(() => {});
+await page.waitForTimeout(200);
+
 for (const name of ["a3-Offset", "hysteresis", "timeToTrigger"]) {
   const search = page.locator('[data-testid="dict-tree-search"]');
   await search.fill(name);
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(500);
   const row = page.locator(`[data-testid="dict-leaf-${name}"]`).first();
   const cb = row.locator('input[type="checkbox"]');
   await cb.check();
@@ -49,7 +58,8 @@ for (const name of ["a3-Offset", "hysteresis", "timeToTrigger"]) {
 await page.locator('[data-testid="dict-tree-search"]').fill("");
 await page.waitForTimeout(300);
 
-await page.waitForSelector('[data-testid="dict-charts"]', { timeout: 20000 });
+// Attendre que les 3 cartes de distribution ValueExplorer soient là.
+await page.waitForSelector('[data-testid="dict-value-explorer"]', { timeout: 20000 });
 await page.waitForTimeout(2000);
 await page.screenshot({ path: `${OUT_DIR}/dict_a3_operator.png`, fullPage: true });
 
@@ -63,23 +73,49 @@ await page.screenshot({ path: `${OUT_DIR}/dict_search_drx.png`, fullPage: true }
 
 const rawTab = page.locator('[data-testid="dict-tree-tabs"] button').nth(1);
 await rawTab.click();
-await page.waitForTimeout(500);
+await page.waitForTimeout(800);
 await page.locator('[data-testid="dict-tree-search"]').fill("rrc-TransactionIdentifier");
-await page.waitForTimeout(500);
+await page.waitForTimeout(800);
 await page.screenshot({ path: `${OUT_DIR}/dict_raw_rrc_tx.png`, fullPage: true });
-// Count leaves containing rrc-TransactionIdentifier (slashes break testid selectors)
+// Count leaf buttons containing rrc-TransactionIdentifier (text match
+// évite le pb des data-testid avec slashes dans view=raw).
 const rawHits = await page
-  .locator('[data-testid="dict-tree-panel"] code', { hasText: /rrc-TransactionIdentifier/i })
+  .locator('[role="tree"] button', { hasText: /rrc-TransactionIdentifier/i })
   .count();
 
 // Catalog tab + search rrc-TransactionIdentifier should produce 0 hits
 await page.locator('[data-testid="dict-tree-tabs"] button').nth(0).click();
-await page.waitForTimeout(400);
-await page.locator('[data-testid="dict-tree-search"]').fill("rrc-TransactionIdentifier");
 await page.waitForTimeout(500);
+await page.locator('[data-testid="dict-tree-search"]').fill("rrc-TransactionIdentifier");
+await page.waitForTimeout(800);
 const catalogHits = await page
-  .locator('[data-testid="dict-tree-panel"] code', { hasText: /rrc-TransactionIdentifier/i })
+  .locator('[role="tree"] button', { hasText: /rrc-TransactionIdentifier/i })
   .count();
+
+// Capture d'un arbre déplié sur LTE › Configuration réseau ›
+// RRCConnectionReconfiguration › MAC-DRX comme demandé.
+await page.locator('[data-testid="dict-tree-search"]').fill("");
+await page.waitForTimeout(300);
+// Développe origin "Configuration réseau" + message RRCConnectionReconfiguration
+await page
+  .locator('[role="treeitem"]', { hasText: "Configuration réseau" })
+  .first()
+  .click({ force: true })
+  .catch(() => {});
+await page.waitForTimeout(200);
+await page
+  .locator('[role="treeitem"]', { hasText: "RRCConnectionReconfiguration" })
+  .first()
+  .click({ force: true })
+  .catch(() => {});
+await page.waitForTimeout(200);
+await page
+  .locator('[role="treeitem"]', { hasText: /MAC.*DRX/i })
+  .first()
+  .click({ force: true })
+  .catch(() => {});
+await page.waitForTimeout(500);
+await page.screenshot({ path: `${OUT_DIR}/dict_tree_mac_drx.png`, fullPage: true });
 
 const report = { base: BASE, project: PROJECT_ID, tabs: tabsCount, rawTxFound: rawHits, catalogTxFound: catalogHits, consoleErrors };
 fs.writeFileSync(`${OUT_DIR}/dict_report.json`, JSON.stringify(report, null, 2));
