@@ -1,5 +1,73 @@
 # Changelog
 
+## 1.18.0 (minor) — bc4-front 2026-10-17 — Dictionnaire RRC v2 : onglets Paramètres | Raw parameter, explorateur de valeurs (Opérateur/Bande/Les deux), tableau + CSV, bouton Réinitialiser (BC1 worktree, mergé par BC2)
+
+> Nouvelle feature livrée par Agent BC1 depuis le worktree isolé
+> `feat/dict-v2`, mergée dans main par Agent BC2 (merge commit c30f79f,
+> 3 commits : 3d80cb9 + 4710ce7 + 304a98b).
+
+### Backend contrat (back ≥ 0.45.1)
+
+- `GET /projects/{id}/dict/v2/tree?view=catalog|raw` : arbre à 5 niveaux
+  (Techno → Configuration réseau / Capacités terminal / Mesures
+  rapportées → message → groupe fonctionnel → feuilles) ; view=catalog
+  pour les param_key canoniques, view=raw pour les paths ASN.1 bruts.
+- `GET /projects/{id}/dict/v2/distribution?keys=…&group_by=operator|
+  band|operator_band` : un bloc par param_key avec valeurs/groupes/
+  verdict, utilisé pour les cartes du panneau droit.
+- `GET /projects/{id}/dict/v2/param/{key}` : fiche paramètre (unit,
+  origin, discriminators_examples, sample_paths, kpi_hint).
+
+### Front — nouveaux fichiers
+
+- `src/lib/api/dict-v2.ts` : 3 fetchers Zod `.passthrough()`,
+  champs optionnels, pas de return null silencieux.
+- `src/features/dict-v2/types.ts` : couleurs fallback Orange #FF7900 /
+  Bouygues #009DE0 / SFR #E2001A / Free #A0148C / N/D #9AA0A6 (le back
+  envoie `operator_color` / `band_color` quand il peut, on retombe sur
+  le fallback sinon).
+- `src/features/dict-v2/TreePanel.tsx` : panneau arbre hiérarchique
+  (ChevronDown/ChevronRight comme main's Tree, compteurs `fmtInt` à
+  droite, role=treeitem avec aria-level) ; onglets « Paramètres »
+  (view=catalog) et « Raw parameter » (view=raw) ; compteur
+  `N sélectionné(s)` + bouton `Réinitialiser` (mêmes classes que
+  Toolbar).
+- `src/features/dict-v2/ValueExplorer.tsx` : panneau droit — segmented
+  Opérateur | Bande | Les deux, une carte Chart par feuille cochée,
+  tableau commun + bouton « Copier en CSV », verdict + chips
+  discriminators.
+- `src/features/dict-v2/InfoDrawer.tsx` : fiche paramètre (dans le
+  panneau Infos de la Toolbar) ; origin=ue_report → lien « voir dans
+  KPI ».
+- `src/features/dict-v2/DictV2Page.tsx` : coque identique à main's
+  DictionaryPage (Toolbar + Panel + ResizablePanelGroup) ; seule la
+  tree + l'analysis sont swappés.
+- `scripts/shot_dict.mjs` : garde Playwright (login → /rrc → cocher 3
+  A3 → segmented « Les deux » → recherche « drx » → onglet Raw +
+  « rrc-TransactionIdentifier » → Réinitialiser).
+
+### Front — fichier modifié (1 ligne)
+
+- `src/routes/_app.rrc.tsx` : swap du module importé pour
+  `DictionaryPage` (`@/features/dictionary/DictionaryPage` →
+  `@/features/dict-v2/DictV2Page`). Reste byte-identique à main (meta,
+  logique NoActiveProject préservée).
+
+### Garde Réinitialiser
+
+- Cocher 3 feuilles + remplir search → compteur = 3, carts visibles.
+- Click `Réinitialiser` → compteur = 0, search vidée, arbre replié
+  (LTE/NR auto-ouverts, reste collapsé), panneau droit = EmptyState
+  « Sélectionnez un paramètre ».
+- Bouton grisé quand `nSel = 0 AND search = ""`.
+
+### Rebuild + /health
+
+- `package.json : 1.17.5 → 1.18.0 (minor)`.
+- `docker compose restart front` + curl -sI http://localhost:5174 → 200.
+- Garde parcours réel sur :5174 avec shot_flow (login → /projects →
+  Ouvrir REF → Dictionnaire RRC) : voir artifacts/dict_main_*.png.
+
 ## 1.17.5 (patch) — bc4-front 2026-10-17 — Garde /kpi via PARCOURS UTILISATEUR réel (shot_flow), tooltips extraits — reproduction du cas « 11 chips gris » (Agent BC2)
 
 > Reproduction demandée avant toute correction. Observation utilisateur :
