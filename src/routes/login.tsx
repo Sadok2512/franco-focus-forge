@@ -46,8 +46,6 @@ const FEATURES = [
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [id, setId] = useState("");
-  const [pw, setPw] = useState("");
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [err, setErr] = useState<string | null>(null);
