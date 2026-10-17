@@ -181,7 +181,7 @@ function LoginPage() {
             </p>
           )}
           <button
-            disabled={busy}
+            disabled={busy || !ready}
             className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Se connecter
