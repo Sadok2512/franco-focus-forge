@@ -14,6 +14,7 @@ const browser = await chromium.launch({ args: ["--no-sandbox"] });
 const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 const page = await ctx.newPage();
 const consoleErrors = [];
+let report_extras = {};
 page.on("console", (m) => {
   if (m.type() !== "error") return;
   const t = m.text();
@@ -117,7 +118,35 @@ await page
 await page.waitForTimeout(500);
 await page.screenshot({ path: `${OUT_DIR}/dict_tree_mac_drx.png`, fullPage: true });
 
-const report = { base: BASE, project: PROJECT_ID, tabs: tabsCount, rawTxFound: rawHits, catalogTxFound: catalogHits, consoleErrors };
+// Garde Réinitialiser : cocher 3 feuilles, saisir du texte dans search,
+// déplier des nœuds, puis cliquer Réinitialiser → tout doit revenir à
+// l'état initial (compteur=0, search vide, panneau droit vide).
+await page.locator('[data-testid="dict-tree-tabs"] button').nth(0).click();
+await page.waitForTimeout(400);
+for (const name of ["a3-Offset", "hysteresis", "timeToTrigger"]) {
+  await page.locator('[data-testid="dict-tree-search"]').fill(name);
+  await page.waitForTimeout(400);
+  await page
+    .locator(`[data-testid="dict-leaf-${name}"]`)
+    .first()
+    .locator('input[type="checkbox"]')
+    .check();
+  await page.waitForTimeout(200);
+}
+await page.locator('[data-testid="dict-tree-search"]').fill("test-pre-reset");
+await page.waitForTimeout(300);
+const nSelBefore = await page.locator('[data-testid="dict-selected-count"] b').textContent();
+await page.screenshot({ path: `${OUT_DIR}/dict_before_reset.png`, fullPage: true });
+await page.locator('[data-testid="dict-reset"]').click();
+await page.waitForTimeout(500);
+const nSelAfter = await page.locator('[data-testid="dict-selected-count"] b').textContent();
+const searchAfter = await page.locator('[data-testid="dict-tree-search"]').inputValue();
+await page.screenshot({ path: `${OUT_DIR}/dict_after_reset.png`, fullPage: true });
+
+// Add to report
+report_extras = { nSelBefore, nSelAfter, searchAfter };
+
+const report = { base: BASE, project: PROJECT_ID, tabs: tabsCount, rawTxFound: rawHits, catalogTxFound: catalogHits, ...report_extras, consoleErrors };
 fs.writeFileSync(`${OUT_DIR}/dict_report.json`, JSON.stringify(report, null, 2));
 console.log(JSON.stringify(report, null, 2));
 

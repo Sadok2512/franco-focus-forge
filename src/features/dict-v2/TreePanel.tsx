@@ -8,7 +8,7 @@
 // aucune différence entre les deux onglets ni avec main.
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, FileText, Folder, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, FileText, Folder, RotateCcw, Search } from "lucide-react";
 import type { DictLeaf, DictTreeResponse } from "@/lib/api/dict-v2";
 import { fmtInt } from "@/features/dictionary/shared";
 import { discriminatorChips, originLabel } from "./types";
@@ -23,6 +23,8 @@ export function TreePanel({
   selected,
   onToggle,
   onInfo,
+  onReset,
+  resetTick,
 }: {
   techno: Techno;
   catalog: DictTreeResponse | null;
@@ -30,10 +32,27 @@ export function TreePanel({
   selected: Set<string>;
   onToggle: (leaf: DictLeaf) => void;
   onInfo: (leaf: DictLeaf) => void;
+  // Clear selection + collapse tree + empty right panel. Owned par
+  // DictV2Page (il tient `selected`) ; TreePanel vide son propre état
+  // (search + onglet + nœuds dépliés) quand `resetTick` incrémente.
+  onReset: () => void;
+  resetTick: number;
 }) {
   const [tab, setTab] = useState<View>("catalog");
   const [q, setQ] = useState("");
+  // Signal interne vers TreeView pour qu'il replie à l'état initial —
+  // bumpé par le même tick que celui du bouton Réinitialiser.
+  const [internalResetTick, setInternalResetTick] = useState(0);
   const activeTree = tab === "catalog" ? catalog : raw;
+
+  useEffect(() => {
+    if (resetTick === 0) return;
+    setTab("catalog");
+    setQ("");
+    setInternalResetTick((t) => t + 1);
+  }, [resetTick]);
+
+  const nSel = selected.size;
 
   return (
     <div className="flex h-full flex-col">
@@ -70,6 +89,20 @@ export function TreePanel({
           Raw parameter
         </button>
       </div>
+      <div className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
+        <span className="text-[11px] text-muted-foreground" data-testid="dict-selected-count">
+          <b className="font-mono text-foreground">{nSel}</b> sélectionné{nSel > 1 ? "s" : ""}
+        </span>
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={nSel === 0 && q === ""}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[11px] font-semibold text-primary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          data-testid="dict-reset"
+        >
+          <RotateCcw className="h-3 w-3" /> Réinitialiser
+        </button>
+      </div>
       <div className="border-b p-2">
         <label className="relative block">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
@@ -100,6 +133,7 @@ export function TreePanel({
             selected={selected}
             onToggle={onToggle}
             onInfo={onInfo}
+            resetTick={internalResetTick}
           />
         )}
       </div>
@@ -114,6 +148,7 @@ function TreeView({
   selected,
   onToggle,
   onInfo,
+  resetTick,
 }: {
   tree: DictTreeResponse;
   techno: Techno;
@@ -121,9 +156,15 @@ function TreeView({
   selected: Set<string>;
   onToggle: (leaf: DictLeaf) => void;
   onInfo: (leaf: DictLeaf) => void;
+  resetTick: number;
 }) {
   // Nœuds développés (ids stables). Techno LTE/NR auto-ouverts par défaut.
-  const [open, setOpen] = useState<Set<string>>(() => new Set(["LTE", "NR"]));
+  const initialOpen = () => new Set(["LTE", "NR"]);
+  const [open, setOpen] = useState<Set<string>>(initialOpen);
+  useEffect(() => {
+    if (resetTick === 0) return;
+    setOpen(initialOpen());
+  }, [resetTick]);
   const toggle = (k: string) =>
     setOpen((s) => {
       const n = new Set(s);

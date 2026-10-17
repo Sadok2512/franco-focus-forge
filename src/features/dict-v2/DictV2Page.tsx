@@ -362,6 +362,14 @@ export function DictionaryPage({
   const [infoOpen, setInfoOpen] = useState(false);
   const [selected, setSelected] = useState<DictLeaf[]>([]);
   const [infoKey, setInfoKey] = useState<string | null>(null);
+  // Signal vers TreePanel pour qu'il replie à l'état initial +
+  // vide sa recherche. Incrémenté par le bouton Réinitialiser.
+  const [resetTick, setResetTick] = useState(0);
+  const resetTree = () => {
+    setSelected([]);
+    setInfoKey(null);
+    setResetTick((t) => t + 1);
+  };
 
   useEffect(() => {
     setDraft((d) => ({ ...d, op: filters.op ?? [], band: filters.band ?? [] }));
@@ -452,6 +460,8 @@ export function DictionaryPage({
       selected={selectedSet}
       onToggle={onToggle}
       onInfo={(leaf) => setInfoKey(leaf.param_key)}
+      onReset={resetTree}
+      resetTick={resetTick}
     />
   );
 
