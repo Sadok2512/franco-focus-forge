@@ -12,7 +12,7 @@ import {
   Radio,
   Scale,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import tower from "@/assets/login-tower.jpg";
 import { login } from "@/lib/auth";
 
@@ -46,19 +46,24 @@ const FEATURES = [
 
 function LoginPage() {
   const navigate = useNavigate();
-  const [id, setId] = useState("");
-  const [pw, setPw] = useState("");
   const [show, setShow] = useState(false);
   const [remember, setRemember] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Tant que le JS de la page n'est pas hydraté, un submit natif (Entrée
+  // ou clic rapide) partirait en GET /login? et perdrait la saisie.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
-  const submit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setErr(null);
     setBusy(true);
+    // Champs non contrôlés : on lit la saisie au moment du submit, donc
+    // elle survit à l'hydratation même si l'utilisateur a tapé tôt.
+    const fd = new FormData(e.currentTarget);
     try {
-      await login(id, pw);
+      await login(String(fd.get("email") ?? ""), String(fd.get("password") ?? ""));
       navigate({ to: "/projects" });
     } catch (x) {
       setErr((x as Error).message);
@@ -128,8 +133,7 @@ function LoginPage() {
             <span className="text-sm font-semibold">Adresse e-mail</span>
             <input
               type="text"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
+              name="email"
               placeholder="admin@bc4.local"
               autoComplete="email"
               required
@@ -141,8 +145,7 @@ function LoginPage() {
             <div className="relative mt-2">
               <input
                 type={show ? "text" : "password"}
-                value={pw}
-                onChange={(e) => setPw(e.target.value)}
+                name="password"
                 autoComplete="current-password"
                 required
                 className="h-11 w-full rounded-md border border-input bg-card px-3 pr-10 text-sm"
@@ -177,7 +180,7 @@ function LoginPage() {
             </p>
           )}
           <button
-            disabled={busy}
+            disabled={busy || !ready}
             className="mt-6 flex h-11 w-full items-center justify-center gap-2 rounded-md bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
             {busy && <Loader2 className="h-4 w-4 animate-spin" />} Se connecter
