@@ -12,7 +12,7 @@ import {
   Radio,
   Scale,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import tower from "@/assets/login-tower.jpg";
 import { login } from "@/lib/auth";
 
@@ -52,6 +52,10 @@ function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Tant que le JS de la page n'est pas hydraté, un submit natif (Entrée
+  // ou clic rapide) partirait en GET /login? et perdrait la saisie.
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
