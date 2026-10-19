@@ -62,8 +62,8 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
       categories = data.series.filter((s) => s.kind === "categorical");
     const units = [...new Set(numeric.map((s) => s.unit))];
     const grids = [
-      { left: 80, right: 170, top: 45, height: 280 },
-      ...categories.map((_, i) => ({ left: 80, right: 170, top: 355 + i * 65, height: 42 })),
+      { left: 80, right: 170, top: 75, height: 280 },
+      ...categories.map((_, i) => ({ left: 80, right: 170, top: 395 + i * 65, height: 42 })),
     ];
     const xAxis = grids.map((_, i) => ({
       type: "value" as const,
@@ -71,6 +71,8 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
       min: 0,
       max: data.duration_s,
       name: i === 0 ? "Temps capture (s)" : "",
+      nameLocation: "middle" as const,
+      nameGap: 28,
       axisLabel: { color: "#cbd5e1" },
       splitLine: { lineStyle: { color: "#334155" } },
     }));
@@ -100,7 +102,12 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
     const markers = (events?.markers ?? []).map((e) => ({
       name: e.label,
       xAxis: e.t_rel_s,
-      label: { formatter: e.label, fontSize: 9, color: e.type === "task" ? "#fbbf24" : "#c4b5fd" },
+      label: {
+        formatter: e.type === "task" ? e.label.split(" · ")[0] : e.type.toUpperCase(),
+        rotate: 90,
+        fontSize: 9,
+        color: e.type === "task" ? "#fbbf24" : "#c4b5fd",
+      },
       lineStyle: { color: e.type === "task" ? "#fbbf24" : "#a78bfa", opacity: 0.6 },
     }));
     const lines = numeric.map((s, i) => ({
@@ -140,7 +147,7 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
     chart.current.setOption(
       {
         animation: false,
-        backgroundColor: "transparent",
+        backgroundColor: "#0f172a",
         textStyle: { color: "#cbd5e1" },
         legend: { top: 5, textStyle: { color: "#cbd5e1" } },
         grid: grids,
@@ -194,7 +201,7 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
       <div
         ref={host}
         data-testid="chronogram-chart"
-        style={{ height: 450 + data.series.filter((s) => s.kind === "categorical").length * 65 }}
+        style={{ height: 490 + data.series.filter((s) => s.kind === "categorical").length * 65 }}
       />
     </>
   );
@@ -332,6 +339,7 @@ export const Chronogram = forwardRef<
                       time_policy: data.time_policy,
                       metrics: metrics.data,
                       events_result_id: events.data?.result_id,
+                      markers: events.data?.markers,
                     },
                     null,
                     2,
