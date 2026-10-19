@@ -89,6 +89,13 @@ export const TaskScatter = forwardRef<
             {data.population.excluded} exclues · tâches incomplètes/partielles :{" "}
             {data.population.incomplete_tasks ?? "N/D"}
           </p>
+          {data.excluded && (
+            <p className="text-xs" data-testid="exclusion-reasons">
+              {data.excluded.nr_no_profile} NR sans profil RSRP · {data.excluded.lte_not_enriched}{" "}
+              LTE non enrichies
+              {data.excluded.other > 0 && ` · ${data.excluded.other} autres exclusions`}
+            </p>
+          )}
           {!data.points.length ? (
             <p>Aucune paire disponible pour cet axe.</p>
           ) : (

@@ -63,6 +63,13 @@ export const AnalyticsSchema = z.object({
   population: PopulationSchema,
   points: PointSchema.array(),
   sampling: z.record(z.unknown()),
+  excluded: z
+    .object({
+      nr_no_profile: z.number().int().nonnegative(),
+      lte_not_enriched: z.number().int().nonnegative(),
+      other: z.number().int().nonnegative(),
+    })
+    .nullish(),
   pairing: z.string().nullish(),
 });
 export type Task = z.infer<typeof TaskSchema>;

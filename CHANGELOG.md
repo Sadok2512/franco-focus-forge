@@ -1,3 +1,7 @@
+## 1.38.2 (patch) — KPI 2026-10-19 — Causes des exclusions RSRP (Agent BC2)
+
+- Le nuage affiche les comptes API NR sans profil RSRP / LTE non enrichies / autres exclusions, sans calcul local.
+
 ## 1.38.1 (patch) — KPI 2026-10-19 — Nuage sur axes API (Agent BC2)
 
 - Nuage débit / axe mesuré piloté par GET /kpi/axes et /points. Labels, unités et choix issus du catalogue serveur.

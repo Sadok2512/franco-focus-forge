@@ -2,7 +2,7 @@ import { chromium } from 'playwright';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import assert from 'node:assert/strict';
-const out='../kpi-0.54.1-report';
+const out=process.env.KPI_EVIDENCE_DIR ?? '../kpi-0.54.3-report';
 const session=JSON.parse(execFileSync('docker',['exec','bc4-api-1','python','-c',`import os,json,httpx
 c=httpx.Client(base_url='http://localhost:8000');r=c.post('/auth/login',json={'email':os.environ['BC4_ADMIN_EMAIL'],'password':os.environ['BC4_ADMIN_PASSWORD']});r.raise_for_status();s=r.json();s['user']=c.get('/auth/me',headers={'Authorization':'Bearer '+s['token']}).json();print(json.dumps(s))`],{encoding:'utf8'}));
 const browser=await chromium.launch({args:['--no-sandbox']});
@@ -19,6 +19,10 @@ try {
  await page.getByTestId('task-scatter-chart').waitFor();
  const select=page.getByRole('combobox',{name:'Axe X du nuage'});assert.equal(await select.inputValue(),'rsrp');
  assert.ok(await page.locator('.recharts-scatter-symbol').count()>0);
+ const reasons=page.getByTestId('exclusion-reasons');await reasons.waitFor();
+ const apiPoints=responses.filter(r=>r.url.includes('/points')).at(-1).body;
+ assert.ok((await reasons.innerText()).includes(`${apiPoints.excluded.nr_no_profile} NR sans profil RSRP`));
+ assert.ok((await reasons.innerText()).includes(`${apiPoints.excluded.lte_not_enriched} LTE non enrichies`));
  await page.screenshot({path:out+'/TEST2-debit-RSRP.png',fullPage:true});
  await page.getByTestId('task-scatter').screenshot({path:out+'/nuage-TEST2.png'});
  const downloadPromise=page.waitForEvent('download');await page.getByTestId('task-scatter').getByRole('button',{name:'CSV des points'}).click();const dl=await downloadPromise;await dl.saveAs(out+'/points-front.csv');
