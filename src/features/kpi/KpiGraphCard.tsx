@@ -562,11 +562,11 @@ export function KpiGraphCard({
       </header>
       <div className="kpi-card-meta">
         <span className={`kpi-state state-${status.toLowerCase()}`}>
-          {taskView ? "Task Time" : status}
+          {config.visualization === "task_scatter" ? "Nuage" : taskView ? "Task Time" : status}
         </span>
         <span className="text-[10px] text-muted-foreground">
           {taskView
-            ? "Série temporelle · points API"
+            ? (config.visualization === "task_scatter" ? "Observations appariées · points API" : "Série temporelle · points API")
             : config.visualization === "graph"
               ? "Points agrégés · aucune série temporelle"
               : "Comparaison des agrégats"}
