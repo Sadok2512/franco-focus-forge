@@ -1,8 +1,9 @@
 import { memo, useMemo, useRef, useState } from "react";
-import { ChevronDown, ChevronRight, Folder, FolderOpen, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Folder, FolderOpen, Info, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import type { DictTreeResponse, DistributionBlock, GroupByMode } from "@/lib/api/dict-v2";
 import {
+  attributedTableColumns,
   buildGroupedTable,
   groupRows,
   hierarchyRows,
@@ -51,14 +52,16 @@ const ValueCells = memo(function ValueCells({
                     · {cell.percentage === null ? "—" : percent(cell.percentage)}
                   </span>
                 </div>
-                <div className="rrc-cell-track" aria-hidden="true">
-                  <span
-                    style={{
-                      width: `${Math.min(100, Math.max(0, cell.percentage ?? 0))}%`,
-                      background: column.color,
-                    }}
-                  />
-                </div>
+                {cell.denominator !== null && cell.denominator > 0 && cell.percentage !== null && (
+                  <div className="rrc-cell-track" aria-hidden="true">
+                    <span
+                      style={{
+                        width: `${Math.min(100, Math.max(0, cell.percentage ?? 0))}%`,
+                        background: column.color,
+                      }}
+                    />
+                  </div>
+                )}
               </>
             )}
           </td>
@@ -93,9 +96,14 @@ export function GroupedValueTable({
   const rows = useMemo(() => selectRows(model.rows, search, sort), [model.rows, search, sort]);
   const families = useMemo(() => groupRows(rows), [rows]);
   const nodes = useMemo(() => hierarchyRows(families, activeClosed), [families, activeClosed]);
+  const attributed = useMemo(
+    () => attributedTableColumns(model.columns, groupBy),
+    [model.columns, groupBy],
+  );
+  const unattributedHidden = attributed.length < model.columns.length;
   const visible = useMemo(
-    () => model.columns.filter((column) => !hidden.includes(column.id)),
-    [model.columns, hidden],
+    () => attributed.filter((column) => !hidden.includes(column.id)),
+    [attributed, hidden],
   );
   const headers = [{ id: "value", label: "Famille / Paramètre / Valeur" }, ...visible];
   // Window only large result sets. Every hierarchy row has the same measured CSS height.
@@ -155,7 +163,20 @@ export function GroupedValueTable({
             Tableau des valeurs{" "}
             <span className="font-normal text-muted-foreground">({rows.length})</span>
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground">Famille · Paramètre · Valeurs</p>
+          <p className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+            Famille · Paramètre · Valeurs
+            {unattributedHidden && (
+              <span
+                tabIndex={0}
+                role="img"
+                aria-label="Les enregistrements non attribués sont masqués dans les colonnes opérateurs, mais conservés dans les données sources et l’export CSV."
+                title="Les enregistrements non attribués sont masqués dans les colonnes opérateurs, mais conservés dans les données sources et l’export CSV."
+                className="rounded focus-visible:outline focus-visible:outline-2"
+              >
+                <Info size={14} aria-hidden="true" />
+              </span>
+            )}
+          </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <label className="rrc-table-search">
@@ -182,7 +203,7 @@ export function GroupedValueTable({
             </PopoverTrigger>
             <PopoverContent align="end" className="rrc-premium-popover">
               <h4 className="mb-2 text-sm font-semibold">Colonnes des groupes</h4>
-              {model.columns.map((column) => (
+              {attributed.map((column) => (
                 <label key={column.id} className="flex items-center gap-2 py-2 text-sm">
                   <input
                     type="checkbox"
@@ -250,7 +271,9 @@ export function GroupedValueTable({
               }
             >
               <option value="count">Occurrences</option>
-              <option value="percentage" disabled title="Pourcentage non exposé par l’API">Pourcentage — non exposé par l’API</option>
+              <option value="percentage" disabled title="Pourcentage non exposé par l’API">
+                Pourcentage — non exposé par l’API
+              </option>
             </select>
           </label>
         </div>

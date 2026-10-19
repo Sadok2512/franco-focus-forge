@@ -15,6 +15,14 @@ export type Column = {
   band: string | null;
   color: string;
 };
+/** Presentation only: the v2 contract represents unattributed operators as null.
+ * Band-only columns have no operator dimension and must remain visible.
+ * Do not classify arbitrary operator names (including unfamiliar strings).
+ */
+export function attributedTableColumns(columns: Column[], mode: GroupByMode): Column[] {
+  return mode === "band" ? columns : columns.filter((column) => column.operator !== null);
+}
+
 export type ValueRow = {
   id: string;
   familyId: string;
@@ -103,8 +111,7 @@ export function buildGroupedTable(
           `${block.display_name} (${block.param_key}) : valeur brute dupliquée ${value.value}. Les lignes sources sont conservées.`,
         );
       const counts = new Map<string, number>();
-      for (const g of value.groups)
-        if (g.n != null) counts.set(key(g), g.n);
+      for (const g of value.groups) if (g.n != null) counts.set(key(g), g.n);
       const cells: Record<string, Cell> = {};
       for (const id of columns.keys()) {
         cells[id] = {

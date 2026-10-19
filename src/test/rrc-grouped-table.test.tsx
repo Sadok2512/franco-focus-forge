@@ -1,6 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import {
+  attributedTableColumns,
   buildGroupedTable,
   selectRows,
   tableCsv,
@@ -80,7 +81,11 @@ describe("RRC grouped values", () => {
     const free = model.columns.find((c) => c.operator === "Free")!.id;
     expect(model.rows[0]!.cells[orange]).toEqual({ count: 2, denominator: null, percentage: null });
     expect(model.rows[0]!.cells[free]).toEqual({ count: 0, denominator: null, percentage: null });
-    expect(model.rows[2]!.cells[orange]).toEqual({ count: null, denominator: null, percentage: null });
+    expect(model.rows[2]!.cells[orange]).toEqual({
+      count: null,
+      denominator: null,
+      percentage: null,
+    });
     expect(model.rows[2]!.total).toBeNull();
     expect(
       selectRows(model.rows, "3", { key: "value", desc: false })[0]!.cells[orange]!.percentage,
@@ -102,7 +107,9 @@ describe("RRC grouped values", () => {
       ],
     };
     const model = buildGroupedTable([b], "operator_band");
-    expect(model.rows[0]!.cells[model.columns.find((c) => c.band === "B1")!.id]!.percentage).toBeNull();
+    expect(
+      model.rows[0]!.cells[model.columns.find((c) => c.band === "B1")!.id]!.percentage,
+    ).toBeNull();
     expect(
       model.rows[0]!.cells[model.columns.find((c) => c.band === "B3")!.id]!.percentage,
     ).toBeNull();
@@ -152,9 +159,11 @@ describe("RRC grouped values", () => {
     expect(screen.queryByRole("columnheader", { name: /^Total/ })).not.toBeInTheDocument();
     expect(container.querySelectorAll("thead th")).toHaveLength(3);
     expect(container.querySelector("[data-row-kind=value]")!.children).toHaveLength(3);
-    expect(screen.getByTitle("Pourcentage et dénominateur non exposés par l’API. prach-ConfigIndex · Free : 0 / — · —")).toHaveTextContent(
-      "0 · —",
-    );
+    expect(
+      screen.getByTitle(
+        "Pourcentage et dénominateur non exposés par l’API. prach-ConfigIndex · Free : 0 / — · —",
+      ),
+    ).toHaveTextContent("0 · —");
     fireEvent.change(screen.getByLabelText("Rechercher une valeur"), { target: { value: "20" } });
     expect(container.querySelectorAll("[data-row-kind=value]")).toHaveLength(1);
     expect(container.querySelector("[data-row-kind=family] .rrc-hierarchy-name")).toHaveTextContent(
@@ -176,13 +185,13 @@ describe("RRC V3 hierarchy", () => {
     expect(families[0]!.parameters).toHaveLength(2);
     expect(new Set(model.rows.map((row) => row.id)).size).toBe(6);
     expect(selectRows(model.rows, "path-b", { key: "value", desc: false })).toHaveLength(3);
-    expect(model.rows.every(row => row.total === null)).toBe(true);
+    expect(model.rows.every((row) => row.total === null)).toBe(true);
   });
   it("preserves the API population and cells without calculating a replacement total", () => {
     const source = { ...block, n_total: 99 };
     const original = JSON.stringify(source);
     const model = buildGroupedTable([source], "operator", catalog);
-    expect(model.rows.every(row => row.total === null)).toBe(true);
+    expect(model.rows.every((row) => row.total === null)).toBe(true);
     expect(model.rows[0]!.cells[model.columns[0]!.id]!.count).toBe(2);
     render(<GroupedValueTable blocks={[source]} groupBy="operator" catalog={catalog} />);
     fireEvent.change(screen.getByLabelText("Rechercher une valeur"), {
@@ -256,4 +265,86 @@ it("exports observed values even when no operator population is available", () =
   expect(model.columns).toHaveLength(0);
   expect(tableCsv(model.rows, model.columns).split("\r\n")).toHaveLength(2);
   expect(model.rows[0]!.total).toBeNull();
+});
+
+describe("RRC unattributed columns are presentation-only", () => {
+  const mixed: DistributionBlock = {
+    ...block,
+    values: block.values.map((v, i) => ({
+      ...v,
+      groups: [
+        ...v.groups,
+        { operator: null, n: i + 7 },
+        { operator: "TEST-Opérateur atypique", n: i },
+      ],
+    })),
+  };
+  it("hides null operator columns and their cells, retaining unfamiliar operators", () => {
+    const { container } = render(<GroupedValueTable blocks={[mixed]} groupBy="operator" />);
+    expect(screen.queryByRole("columnheader", { name: /^N\/D/ })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: /^Total/ })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: /TEST-Opérateur atypique/ })).toBeVisible();
+    expect(container.querySelectorAll("thead th")).toHaveLength(4);
+    expect(container.querySelectorAll('[data-row-kind="value"] td')).toHaveLength(12);
+    expect(screen.getByRole("img", { name: /enregistrements non attribués/ })).toHaveAttribute(
+      "tabindex",
+      "0",
+    );
+  });
+  it("keeps the complete model and clipboard CSV unchanged, including unattributed counts", async () => {
+    const original = JSON.stringify(mixed);
+    const model = buildGroupedTable([mixed], "operator");
+    const csv = tableCsv(selectRows(model.rows, "", { key: "value", desc: false }), model.columns);
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+    render(<GroupedValueTable blocks={[mixed]} groupBy="operator" />);
+    fireEvent.click(screen.getByRole("button", { name: "Copier en CSV" }));
+    expect(writeText).toHaveBeenCalledWith(csv);
+    expect(csv).toContain(';"";"";"7";');
+    expect(JSON.stringify(mixed)).toBe(original);
+    const before = JSON.stringify(model);
+    const visible = attributedTableColumns(model.columns, "operator");
+    expect(visible.every((c) => c.operator !== null)).toBe(true);
+    expect(JSON.stringify(model)).toBe(before);
+  });
+  it("preserves band-only columns and attributed operator-band pairs", () => {
+    const bands = buildGroupedTable([mixed], "band");
+    expect(attributedTableColumns(bands.columns, "band")).toEqual(bands.columns);
+    const pairs = buildGroupedTable([mixed], "operator_band");
+    expect(
+      attributedTableColumns(pairs.columns, "operator_band").some(
+        (c) => c.operator === "Orange" && c.band === "B1",
+      ),
+    ).toBe(true);
+    expect(
+      attributedTableColumns(pairs.columns, "operator_band").every((c) => c.operator !== null),
+    ).toBe(true);
+  });
+  it("updates displayed operators with the applied response and preserves null versus zero", () => {
+    const view = render(<GroupedValueTable blocks={[mixed]} groupBy="operator" />);
+    expect(screen.getByRole("columnheader", { name: /Orange/ })).toBeVisible();
+    view.rerender(
+      <GroupedValueTable
+        blocks={[
+          {
+            ...block,
+            values: [
+              {
+                value: "TEST-value",
+                value_display: "TEST-value",
+                groups: [
+                  { operator: "SFR", n: 0 },
+                  { operator: null, n: 9 },
+                ],
+              },
+            ],
+          },
+        ]}
+        groupBy="operator"
+      />,
+    );
+    expect(screen.queryByRole("columnheader", { name: /Orange/ })).toBeNull();
+    expect(screen.getByRole("columnheader", { name: /SFR/ })).toBeVisible();
+    expect(view.container.querySelector(".rrc-number strong")).toHaveTextContent("0");
+  });
 });
