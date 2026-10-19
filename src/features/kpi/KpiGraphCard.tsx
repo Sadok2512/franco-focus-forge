@@ -1,3 +1,4 @@
+import { TaskScatter } from "./TaskScatter";
 import { TaskAnalytics, type TaskAnalyticsHandle } from "./TaskAnalytics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
@@ -240,7 +241,7 @@ export function KpiGraphCard({
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
 }) {
-  const taskView = config.visualization === "task_series";
+  const taskView = config.visualization === "task_series" || config.visualization === "task_scatter";
   const taskPanel = useRef<TaskAnalyticsHandle>(null);
   const [taskId, setTaskId] = useState<string>();
   useEffect(() => {
@@ -290,7 +291,9 @@ export function KpiGraphCard({
   const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
   const body = (
     <>
-      {taskView && !blockedReason ? (
+      {config.visualization === "task_scatter" && !blockedReason ? (
+        <TaskScatter ref={taskPanel} projectId={projectId} code={entry.item.code} filters={appliedFilters} />
+      ) : taskView && !blockedReason ? (
         <TaskAnalytics
           key={JSON.stringify(appliedFilters)}
           ref={taskPanel}

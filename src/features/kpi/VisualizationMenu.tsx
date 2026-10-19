@@ -7,6 +7,7 @@ const icons = {
   table: Table2,
   map: MapPin,
   task_series: ChartNoAxesCombined,
+  task_scatter: ChartNoAxesCombined,
 };
 export function VisualizationItems({
   onChange,
@@ -18,7 +19,7 @@ export function VisualizationItems({
   return (
     <>
       {(Object.keys(VISUALIZATIONS) as VisualizationType[])
-        .filter((mode) => mode !== "task_series" || throughput)
+        .filter((mode) => !mode.startsWith("task_") || throughput)
         .map((mode) => {
           const Icon = icons[mode];
           return (
@@ -28,11 +29,6 @@ export function VisualizationItems({
             </DropdownMenuItem>
           );
         })}
-      {throughput && (
-        <span title="Catalogue des axes non exposé par l’API" className="block">
-          <DropdownMenuItem disabled>Nuage (vs radio)</DropdownMenuItem>
-        </span>
-      )}
       <p className="max-w-64 px-2 py-1 text-[10px] text-muted-foreground">
         Graphique : points agrégés par groupe, sans liaison temporelle.
       </p>

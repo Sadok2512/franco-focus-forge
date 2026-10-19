@@ -44,6 +44,7 @@ export const PointSchema = z.object({
   capture_id: z.string().nullish(),
   seq: nullableNumber.optional(),
   mp_seq: nullableNumber.optional(),
+  seq_gap: nullableNumber.optional(),
   t_rel_s: nullableNumber.optional(),
   x: nullableNumber.optional(),
   value: nullableNumber.optional(),
@@ -121,4 +122,29 @@ export const ResultSchema = z.object({
 });
 export function getAnalyticsResult(id: string, signal?: AbortSignal) {
   return kpiFetch(`/results/${encodeURIComponent(id)}`, ResultSchema, signal);
+}
+
+export const AxisSchema = z.object({
+  code: z.string(),
+  label: z.string(),
+  unit: z.string(),
+  source: z.string(),
+});
+export function getKpiAxes(project: string, signal?: AbortSignal) {
+  return kpiFetch(`/projects/${encodeURIComponent(project)}/kpi/axes`, AxisSchema.array(), signal);
+}
+export function getTaskPoints(
+  project: string,
+  code: string,
+  x: string,
+  filters: KpiQueryFilters,
+  signal?: AbortSignal,
+) {
+  const params = new URLSearchParams(taskQuery(filters).replace(/^\?/, ""));
+  params.set("x", x);
+  return kpiFetch(
+    `/projects/${encodeURIComponent(project)}/kpi/${encodeURIComponent(code)}/points?${params}`,
+    AnalyticsSchema,
+    signal,
+  );
 }

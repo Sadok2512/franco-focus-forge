@@ -1,3 +1,8 @@
+## 1.38.1 (patch) — KPI 2026-10-19 — Nuage sur axes API (Agent BC2)
+
+- Nuage débit / axe mesuré piloté par GET /kpi/axes et /points. Labels, unités et choix issus du catalogue serveur.
+- Provenance capture/seq et seq_gap dans les infobulles et exports CSV ; populations et absence de paires explicites.
+
 ## 1.38.0 (minor) — bc4-front 2026-10-19 — Séries KPI Task Time, lot C partiel (Agent BC2)
 
 - Vue Série (Task Time) pour les KPI Mbit/s : enveloppes P10/P50/P90 de l’API par opérateur, sélection d’une tâche et courbe capture-locale, axes à zéro.

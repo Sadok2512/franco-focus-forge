@@ -11,6 +11,7 @@ export const POINT_COLUMNS = [
   "capture_id",
   "seq",
   "mp_seq",
+  "seq_gap",
   "t_rel_s",
   "x",
   "value",

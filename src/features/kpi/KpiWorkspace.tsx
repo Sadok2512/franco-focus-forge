@@ -144,7 +144,9 @@ function Workspace({
             config &&
             config.kpiCode === code &&
             config.yMetric === code &&
-            ["histogram", "graph", "table", "map", "task_series"].includes(config.visualization) &&
+            ["histogram", "graph", "table", "map", "task_series", "task_scatter"].includes(
+              config.visualization,
+            ) &&
             ["operator", "band", "operator_band", "dor"].includes(config.groupBy) &&
             config.xMetric === config.groupBy &&
             [null, "value", "p10", "p50", "p90"].includes(config.statistic),
@@ -216,7 +218,7 @@ function Workspace({
     return [{ entry, query, stat, rows: query.data ? analyticRows(query.data, stat) : [] }];
   });
   const rows = panels
-    .filter((panel) => configFor(panel.entry.item.code).visualization !== "task_series")
+    .filter((panel) => !configFor(panel.entry.item.code).visualization.startsWith("task_"))
     .flatMap((panel) => panel.rows);
   const saveCodes = (next: string[]) => {
     setCodes(next);
@@ -450,7 +452,7 @@ function Workspace({
             <div id="kpi-workspace-data">
               {panels.length &&
               panels.every(
-                (panel) => configFor(panel.entry.item.code).visualization === "task_series",
+                (panel) => configFor(panel.entry.item.code).visualization.startsWith("task_"),
               ) ? (
                 <p className="p-3 text-xs text-muted-foreground">
                   Les points et leur export CSV figurent sous chaque série.

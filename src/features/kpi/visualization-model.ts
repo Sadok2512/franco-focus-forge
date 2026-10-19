@@ -1,7 +1,7 @@
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import type { Statistic } from "./workspace-model";
 
-export type VisualizationType = "histogram" | "graph" | "table" | "map" | "task_series";
+export type VisualizationType = "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter";
 export type ChartConfig = {
   kpiCode: string;
   visualization: VisualizationType;
@@ -16,6 +16,7 @@ export const VISUALIZATIONS: Record<VisualizationType, string> = {
   table: "Tableau",
   map: "Carte",
   task_series: "Série (Task Time)",
+  task_scatter: "Nuage (vs radio)",
 };
 // Audited /kpi/{code}: aggregate groups only, no observation/pairing contract.
 export const XY_UNAVAILABLE =

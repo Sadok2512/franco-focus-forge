@@ -265,4 +265,10 @@ export { getProjectKpi, getProjectKpiCatalog, getProjectKpiFilters } from "./pro
 export { getDictTemplates, getDictTemplateSummary } from "./dict-templates";
 export { updateDictTemplate } from "./dict-templates";
 
-export { getProjectTasks, getTaskSeries, getAnalyticsResult } from "./task-analytics";
+export {
+  getProjectTasks,
+  getTaskSeries,
+  getAnalyticsResult,
+  getKpiAxes,
+  getTaskPoints,
+} from "./task-analytics";
