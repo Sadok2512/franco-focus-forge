@@ -17,10 +17,16 @@ try {
  await page.locator('nav a',{hasText:'KPI Analytics'}).click();
  const url=new URL(page.url());url.searchParams.set('kpi','AGG_APP_DL_THR');await page.goto(url.toString());
  const card=page.locator('#kpi-graph-AGG_APP_DL_THR');
- await card.getByRole('button',{name:/^Actions /}).click();await page.getByRole('menuitem',{name:'Chronogramme',exact:true}).click();
+ await card.getByRole('button',{name:'BLER / temps par capture',exact:true}).click();
  console.log('chronogram TEST2');const panel=page.getByTestId('chronogram');
  await panel.getByRole('combobox',{name:'Capture du chronogramme'}).selectOption('047e3f34e0af');
  await panel.getByTestId('capture-decode').getByText('Deep 1.0.0',{exact:true}).waitFor();
+ await panel.getByTestId('chronogram-time-axis').waitFor();
+ await page.waitForFunction(()=>document.querySelector('[aria-label="Métriques BLER"] input')?.checked);
+ assert.equal(await panel.locator('[aria-label="Métriques BLER"] input:checked').count(),2);
+ await panel.getByText('Chargement du chronogramme…').waitFor({state:'hidden'});
+ await panel.locator('canvas').waitFor();await page.waitForTimeout(1000);
+ await panel.screenshot({path:out+'default-BLER-time.png'});
  const select=panel.getByRole('combobox',{name:'Tâche du chronogramme'});
  await page.waitForFunction(()=>[...document.querySelectorAll('select[aria-label="Tâche du chronogramme"] option')].some(o=>o.textContent.includes('HTTP_DL')));
  const task=await select.locator('option').evaluateAll(options=>options.find(o=>o.textContent.includes('HTTP_DL')).value);
@@ -61,7 +67,7 @@ try {
  assert.ok(await lightPanel.getByTestId('capture-decode').getByRole('button',{name:'Analyse approfondie',exact:true}).isEnabled());
  assert.ok((await lightPanel.getByTestId('capture-decode').textContent()).includes('2.3 min'));
  await lightPanel.screenshot({path:out+'b-Test_3-light-action.png'});
- assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v1.40.0'));
+ assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v1.40.2'));
  // Optional explicit live action once, after preserving the Light evidence.
  if(process.env.BC2_RUN_DECODE==='1') {
   await lightPanel.getByTestId('capture-decode').getByRole('button',{name:'Analyse approfondie',exact:true}).click();
@@ -70,7 +76,7 @@ try {
   await lightPanel.getByTestId('capture-decode').getByText('Deep 1.0.0',{exact:true}).waitFor({timeout:300000});
  }
  }
- assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v1.40.0'));
+ assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v1.40.2'));
  assert.deepEqual(errors,[]);
  fs.writeFileSync(out+(process.env.BC2_TEST2_ONLY==='1'?'browser-test2.json':'browser.json'),JSON.stringify({at:new Date().toISOString(),url:page.url(),task,errors,responses},null,2));
  console.log('PASS: real navigation, Deep/Light badges, API estimates, 9 task-local series, unknown disabled, decoder Infos, header');

@@ -1,3 +1,9 @@
+## 1.40.2 (patch) — BC4 2026-10-19 — BLER et axe temps accessibles (Agent BC2)
+
+- Sélecteur de vue visible et accès direct « BLER / temps par capture » depuis chaque graphique KPI.
+- Chronogramme : BLER PHY (PDSCH) et MAC sélectionnés par défaut, commandes BLER visibles et axe X explicitement indiqué en secondes de capture.
+- Les points et unités restent ceux de l’API, sans calcul de mesure côté front.
+
 ## 1.40.1 (patch) — BC4-FRONT 2026-10-19 — Sidebar RRC compacte (Agent BC1)
 
 - Supprime le résumé des paramètres et lignes du projet et la mention « Sélection : projet / affichées » sous la recherche.

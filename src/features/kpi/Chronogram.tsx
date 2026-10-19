@@ -300,9 +300,9 @@ export const Chronogram = forwardRef<
   { projectId: string; filters: KpiQueryFilters }
 >(({ projectId, filters }, ref) => {
   const [selectedCapture, setCapture] = useState<string>(),
-    [selectedCodes, setCodes] = useState<string[]>(["rsrp", "sinr", "thr_dl"]),
+    [selectedCodes, setCodes] = useState<string[]>(["rsrp", "sinr", "thr_dl", "pdsch_bler", "mac_dl_bler"]),
     [info, setInfo] = useState(false),
-    [stacked, setStacked] = useState(false),
+    [stacked, setStacked] = useState(true),
     [taskId, setTaskId] = useState(""),
     [unknownEvent, setUnknownEvent] = useState("CHI"),
     [unknownOpen, setUnknownOpen] = useState(false);
@@ -361,6 +361,9 @@ export const Chronogram = forwardRef<
   const eventGroups = [...new Set(metrics.data?.map((m) => m.event_code) ?? [])].sort();
   return (
     <section className="p-4 space-y-3" data-testid="chronogram">
+      <p className="text-sm font-medium" data-testid="chronogram-time-axis">
+        Axe X = temps de la capture (s) · origine : début de capture
+      </p>
       <DecodePanel projectId={projectId} />
       <div className="flex flex-wrap items-center gap-3">
         <label>
@@ -431,6 +434,15 @@ export const Chronogram = forwardRef<
           <input type="checkbox" checked={stacked} onChange={(e) => setStacked(e.target.checked)} />
           Panneaux empilés
         </label>
+      </div>
+      <div className="flex flex-wrap gap-4 text-sm" aria-label="Métriques BLER">
+        {metrics.data?.filter((m) => m.code === "pdsch_bler" || m.code === "mac_dl_bler").map((m) => (
+          <label key={m.code} className="flex items-center gap-2">
+            <input type="checkbox" checked={codes.includes(m.code)}
+              onChange={(e) => setCodes(e.target.checked ? [...selectedCodes, m.code] : selectedCodes.filter((c) => c !== m.code))} />
+            {m.label} ({m.unit})
+          </label>
+        ))}
       </div>
       <details className="rounded border border-border p-3" data-testid="metric-selector">
         <summary className="cursor-pointer text-sm font-medium">Métriques par événement</summary>

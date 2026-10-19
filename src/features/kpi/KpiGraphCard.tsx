@@ -5,7 +5,7 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import { MAP_UNAVAILABLE, GROUP_LABELS, type ChartConfig } from "./visualization-model";
+import { MAP_UNAVAILABLE, GROUP_LABELS, VISUALIZATIONS, type VisualizationType, type ChartConfig } from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -577,6 +577,31 @@ export function KpiGraphCard({
           </Popover>
         </div>
       </header>
+      <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
+        <label>
+          Vue{" "}
+          <select
+            className="kpi-button"
+            aria-label={`Vue ${entry.item.name}`}
+            value={config.visualization}
+            onChange={(event) => onConfig({ ...config, visualization: event.target.value as VisualizationType })}
+          >
+            {(Object.keys(VISUALIZATIONS) as VisualizationType[])
+              .filter((mode) => mode !== "task_scatter" || seriesAvailable)
+              .map((mode) => (
+                <option key={mode} value={mode} disabled={mode === "task_series" && !seriesAvailable}
+                  title={mode === "task_series" && !seriesAvailable ? "pas de série temporelle pour ce KPI (source agrégée)" : undefined}>
+                  {mode === "chronogram" ? "Chronogramme — X = temps par capture" : VISUALIZATIONS[mode]}
+                </option>
+              ))}
+          </select>
+        </label>
+        {config.visualization !== "chronogram" && (
+          <button className="kpi-button" onClick={() => onConfig({ ...config, visualization: "chronogram" })}>
+            BLER / temps par capture
+          </button>
+        )}
+      </div>
       <div className="kpi-card-meta">
         <span className={`kpi-state state-${status.toLowerCase()}`}>
           {config.visualization === "chronogram"
