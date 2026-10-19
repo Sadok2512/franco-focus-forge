@@ -41,6 +41,7 @@ export const KpiCatalogItemSchema = z
     // nullable (patch 1.16.2) : certains KPI calculés ont `unit=null`.
     unit: z.string().nullable(),
     source: z.string().nullable(),
+    temporal_source: z.string().nullable().optional(),
     formula: z.string().nullable(),
     service_scope: z.array(z.string()).optional(),
     aliases: z.array(z.string()).optional(),
@@ -65,12 +66,8 @@ export const KpiCatalogTechnoSchema = z
 
 // counts_by_techno : Record<techno, Record<status, number>>. Pas de
 // `total` renvoyé par le back ; la UI l'additionne depuis les 4 statuts.
-export const KpiCountsByTechnoSchema = z.record(
-  z.record(z.number().int().nonnegative()),
-);
-export const KpiCountsByStatusSchema = z.record(
-  z.number().int().nonnegative(),
-);
+export const KpiCountsByTechnoSchema = z.record(z.record(z.number().int().nonnegative()));
+export const KpiCountsByStatusSchema = z.record(z.number().int().nonnegative());
 
 export const ProjectKpiCatalogSchema = z
   .object({
@@ -151,7 +148,7 @@ export const KpiGroupRowSchema = z
   .object({
     operator: z.string().nullable().optional(),
     band: z.string().nullable().optional(),
-    dor: z.string().nullable().optional(),  // 1.18.0 — group_by=dor
+    dor: z.string().nullable().optional(), // 1.18.0 — group_by=dor
     n: z.number().int().nonnegative(),
     p10: z.number().nullable().optional(),
     p50: z.number().nullable().optional(),

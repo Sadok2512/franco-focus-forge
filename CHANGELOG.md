@@ -1,3 +1,9 @@
+## 1.39.1 (patch) — BC4 2026-10-19 — Série désactivée sans source temporelle (Agent BC2)
+
+- Le menu Série lit temporal_source du catalogue, jamais l’unité ; les KPI agrégés sont grisés avec explication.
+- Une ancienne sélection Série sans source affiche la raison sans appeler une route incompatible.
+- Préparation des preuves chronogramme aux versions suivantes ; couches Nemo en attente du document de format.
+
 ## 1.39.0 (minor) — BC4 2026-10-19 — Chronogramme par capture (Agent BC2)
 
 - Vue Chronogramme dans le sélecteur KPI : captures filtrées, métriques API groupées par unité, axes ECharts, zoom et marqueurs explicites.

@@ -43,7 +43,8 @@ try {
  assert.equal(seriesB.capture_id,'705aa521e9e0');assert.ok(seriesB.series.find(s=>s.code==='rsrp').n_total>0);assert.ok(seriesB.series.find(s=>s.code==='pci').segments.length>1);
  assert.ok(responses.some(r=>r.body.capture_id==='705aa521e9e0'&&r.body.markers?.some(m=>m.type==='ho')));
  await card.getByRole('button',{name:/^Infos /}).click();await page.getByRole('heading',{name:'Infos et preuves — Chronogramme'}).waitFor();
- assert.match(await page.locator('body').innerText(),/BC4\s+v1\.39\.0/);
+ const version=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8')).version;
+ assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v'+version));
  assert.deepEqual(errors,[]);
  fs.writeFileSync(out+'/browser.json',JSON.stringify({at:new Date().toISOString(),url:page.url(),errors,responses},null,2));
  console.log('PASS: real KPI selector, capture-local chart, DAA/DCOMP, PCI/HO, zoom30, exact API CSV, Infos, header');

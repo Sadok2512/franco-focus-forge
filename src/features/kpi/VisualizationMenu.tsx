@@ -13,21 +13,35 @@ const icons = {
 export function VisualizationItems({
   onChange,
   throughput = false,
+  seriesAvailable = false,
 }: {
   throughput?: boolean;
+  seriesAvailable?: boolean;
   onChange: (mode: VisualizationType) => void;
 }) {
   return (
     <>
       {(Object.keys(VISUALIZATIONS) as VisualizationType[])
-        .filter((mode) => !mode.startsWith("task_") || throughput)
+        .filter((mode) => mode !== "task_scatter" || throughput)
         .map((mode) => {
           const Icon = icons[mode];
           return (
-            <DropdownMenuItem key={mode} onSelect={() => onChange(mode)}>
-              <Icon size={14} />
-              {VISUALIZATIONS[mode]}
-            </DropdownMenuItem>
+            <span
+              key={mode}
+              title={
+                mode === "task_series" && !seriesAvailable
+                  ? "pas de série temporelle pour ce KPI (source agrégée)"
+                  : undefined
+              }
+            >
+              <DropdownMenuItem
+                disabled={mode === "task_series" && !seriesAvailable}
+                onSelect={() => onChange(mode)}
+              >
+                <Icon size={14} />
+                {VISUALIZATIONS[mode]}
+              </DropdownMenuItem>
+            </span>
           );
         })}
       <p className="max-w-64 px-2 py-1 text-[10px] text-muted-foreground">

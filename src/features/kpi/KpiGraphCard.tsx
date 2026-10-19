@@ -242,6 +242,7 @@ export function KpiGraphCard({
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
 }) {
+  const seriesAvailable = !!entry.item.temporal_source;
   const taskView =
     config.visualization === "chronogram" ||
     config.visualization === "task_series" ||
@@ -295,7 +296,11 @@ export function KpiGraphCard({
   const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
   const body = (
     <>
-      {config.visualization === "chronogram" ? (
+      {config.visualization === "task_series" && !seriesAvailable ? (
+        <div className="kpi-chart-state" role="status">
+          pas de série temporelle pour ce KPI (source agrégée)
+        </div>
+      ) : config.visualization === "chronogram" ? (
         <Chronogram ref={taskPanel} projectId={projectId} filters={appliedFilters} />
       ) : config.visualization === "task_scatter" && !blockedReason ? (
         <TaskScatter
@@ -460,7 +465,8 @@ export function KpiGraphCard({
                   >
                     <DropdownMenuLabel>Paramètres du graphique</DropdownMenuLabel>
                     <VisualizationItems
-                      throughput={entry.item.unit === "Mbit/s"}
+                      throughput={seriesAvailable}
+                      seriesAvailable={seriesAvailable}
                       onChange={(visualization) => onConfig({ ...config, visualization })}
                     />
                     <DropdownMenuSeparator />
