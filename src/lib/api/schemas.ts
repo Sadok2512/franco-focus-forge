@@ -51,6 +51,7 @@ export const ProjectSchema = z.object({
 export type Project = z.infer<typeof ProjectSchema>;
 
 export const FilterContextSchema = z.object({
+  rrc_message: z.string().optional(),
   project: z.string().optional(),
   op: z.array(OperatorSchema).optional(),
   tech: z.array(TechSchema).optional(),

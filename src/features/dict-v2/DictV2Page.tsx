@@ -1,3 +1,4 @@
+import { toggleCatalogSelection, messageAbbreviation } from "./catalog-model";
 import { getProject, getDictTemplates } from "@/lib/api/client";
 import { templateLeaves } from "./template-model";
 import { TemplateTable } from "./TemplateTable";
@@ -43,7 +44,7 @@ import { SelectedParameterInfo } from "./SelectedParameterInfo";
 import type { DictLeaf, GroupByMode, DictGeographicDimension } from "@/lib/api/dict-v2";
 
 type Techno = "LTE" | "NR" | "LTE+NR";
-type Draft = { techno: Techno; op: string[]; band: string[] };
+type Draft = { techno: Techno; op: string[]; band: string[]; message?: string };
 
 // Même wrapper que main/DictionaryPage.tsx : classes IDENTIQUES — ne
 // jamais retoucher sans réaligner main. (Dupliqué car non exporté par le
@@ -144,7 +145,9 @@ function Toolbar({
   geoDimensions,
   geoLoading,
   geoError,
+  messages,
 }: {
+  messages: string[];
   applied: RrcFilterState;
   geography: GeoDraft;
   setGeography: (draft: GeoDraft) => void;
@@ -215,6 +218,18 @@ function Toolbar({
             loading={geoLoading}
             error={geoError}
           />
+          <details className="relative">
+            <summary className="rrc-control cursor-pointer">Filtres avancés</summary>
+            <div className="absolute right-0 z-50 mt-1 w-72 rounded border bg-card p-3 shadow-lg">
+              <label className="text-xs">Message
+                <select aria-label="Message" className="mt-1 w-full rounded border bg-card p-2"
+                  value={draft.message ?? ""} onChange={e=>setDraft({...draft,message:e.target.value})}>
+                  <option value="">Tous les messages</option>
+                  {messages.map(message=><option key={message} value={message}>{messageAbbreviation(message)} — {message}</option>)}
+                </select>
+              </label>
+            </div>
+          </details>
           <span
             className="rrc-filter-period opacity-60"
             aria-disabled="true"
@@ -352,6 +367,7 @@ export function DictionaryPage({
       : "LTE+NR";
   const urlSnapshot = filterSnapshot({
     techno: urlTechno,
+    message: urlFilters.rrc_message ?? "",
     op: [],
     band: [],
     geography: geoDraft({
@@ -452,8 +468,10 @@ export function DictionaryPage({
     const snapshot = filterSnapshot({ ...draftFilters, op: [], band: [] });
     setFilterError(null);
     writtenUrl.current = appliedKey(snapshot);
+    if ((snapshot.message ?? "") !== (appliedFilters.message ?? "")) setSelected([]);
     setAppliedFilters(snapshot);
     setUrlFilters({
+      rrc_message: snapshot.message || undefined,
       op: snapshot.op as Operator[],
       band: snapshot.band,
       tech: snapshot.techno === "LTE+NR" ? undefined : [snapshot.techno],
@@ -471,9 +489,9 @@ export function DictionaryPage({
 
   // Deux arbres : catalog (défaut, onglet Paramètres) + raw (onglet Raw).
   const catalogQ = useQuery({
-    queryKey: ["dict-v2", "tree", projectId, "catalog"],
+    queryKey: ["dict-v2", "tree", projectId, "catalog", appliedFilters.message ?? ""],
     // Metadata is project-keyed: let an in-flight load populate the cache across navigation.
-    queryFn: () => getDictTree(projectId, "catalog"),
+    queryFn: () => getDictTree(projectId, "catalog", undefined, appliedFilters.message),
     enabled: !!projectId,
     staleTime: Infinity,
   });
@@ -586,6 +604,7 @@ export function DictionaryPage({
           </button>
         )
       }
+      messages={catalogQ.data?.available_messages ?? []}
       draft={draft}
       setDraft={setDraft}
       operators={dims?.operators ?? []}
@@ -646,6 +665,9 @@ export function DictionaryPage({
       catalog={populationTrees.catalog}
       raw={populationTrees.raw}
       selected={selectedSet}
+      onToggleCatalog={(parameter, technology, origin, leaf) => {
+        setSelected(previous=>toggleCatalogSelection(previous,parameter,technology,origin,leaf,!appliedFilters.message));
+      }}
       onToggle={onToggle}
       onInfo={() => setInfoOpen(true)}
       onReset={resetTree}
@@ -670,6 +692,11 @@ export function DictionaryPage({
         {!!(filters.op?.length || filters.band?.length) && (
           <p role="status" className="rrc-context-notice">
             Les filtres opérateur/bande de l’URL ne sont pas appliqués : l’API de distribution ne les prend pas en charge.
+          </p>
+        )}
+        {!!appliedFilters.message && (
+          <p role="status" className="rrc-context-notice">
+            Message : {messageAbbreviation(appliedFilters.message)}. Les distributions portent sur les feuilles de ce message ; l’API ne fournit pas d’agrégat filtré par message.
           </p>
         )}
         {previousContext && (

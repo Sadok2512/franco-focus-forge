@@ -1,3 +1,4 @@
+import { catalogMetadata } from "./catalog-model";
 import type {
   DictTreeResponse,
   DistributionBlock,
@@ -37,7 +38,7 @@ export function buildGroupedTable(
 ) {
   const technologies = new Map<string, Set<string>>();
   const families = new Map<string, Map<string, string>>();
-  for (const tech of catalog?.tree ?? [])
+  for (const tech of catalogMetadata(catalog ?? null)?.tree ?? [])
     for (const origin of tech.origins)
       for (const message of origin.messages)
         for (const group of message.groups) {

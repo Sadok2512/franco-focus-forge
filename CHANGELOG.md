@@ -1,3 +1,11 @@
+## 1.37.0 (minor) — bc4-front 2026-10-19 — Dictionnaire catégoriel dict v2.2, lot B (Agent BC2)
+
+- Onglet Paramètres aligné sur le contrat 0.53.0 : catégories, sous-catégories, paramètres agrégés et feuilles avec badges message ; aucun niveau message.
+- Sélection des agrégats serveur et état indeterminate ; clic Templates ouvre et coche les feuilles correspondantes dans l’arbre.
+- Filtre Message alimenté par available_messages, conservé dans l’URL ; distributions des feuilles du message, car l’API ne filtre pas les clés agrégées par message.
+- Compteurs API uniquement ; n=0 désactivé avec tooltip. Écarts documentés : pourcentage Autres absent, aucun n=0 dans TEST2, spec HTML absente du workspace.
+- Tableau, graphique et layout conservés ; lot C en attente des routes tâches/séries.
+
 ## 1.36.2 (patch) — bc4-front 2026-10-19 — Finitions dictionnaire/KPI, lot A (Agent BC2)
 
 - En-tête paramètre sans préfixe d’unité N/D ; population et nombre de valeurs provenant de la distribution API.

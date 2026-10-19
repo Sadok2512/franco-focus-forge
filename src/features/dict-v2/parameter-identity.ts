@@ -1,3 +1,4 @@
+import { catalogParameters } from "./catalog-model";
 import type { DictLeaf, DictTreeResponse } from "@/lib/api/dict-v2";
 export const selectionId = (leaf: DictLeaf) =>
   typeof leaf["selection_id"] === "string" ? leaf["selection_id"] : leaf.param_key;
@@ -9,16 +10,18 @@ export function identifyTrees(catalog: DictTreeResponse | null, raw: DictTreeRes
         for (const g of m.groups)
           for (const leaf of g.kpis)
             entries.push({ leaf, technology: t.techno, message: m.message });
+  for (const item of catalogParameters(catalog))
+    for (const leaf of item.parameter.leaves)
+      entries.push({leaf, technology:item.technology, message:leaf.message});
   const index = new Map<string, typeof entries>();
   for (const entry of entries) {
-    const key = JSON.stringify([
-      entry.technology,
-      entry.message,
-      entry.leaf.param_key.split("/").at(-1),
-    ]);
-    const bucket = index.get(key) ?? [];
-    bucket.push(entry);
-    index.set(key, bucket);
+    const paths = [entry.leaf.param_key, ...(entry.leaf.sample_paths ?? [])];
+    for (const last of new Set(paths.map(path => path.split("/").at(-1)))) {
+      const key = JSON.stringify([entry.technology, entry.message, last]);
+      const bucket = index.get(key) ?? [];
+      bucket.push(entry);
+      index.set(key, bucket);
+    }
   }
   function annotate(tree: DictTreeResponse | null) {
     if (!tree) return null;

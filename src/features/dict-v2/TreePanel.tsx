@@ -1,3 +1,5 @@
+import { CatalogTree } from "./CatalogTree";
+import type { DictParameterNode } from "@/lib/api/dict-v2";
 // bc4-front — Dict v2 : panneau arbre.
 // Onglets "Paramètres" (view=catalog) et "Raw" (view=raw) empilés
 // au-dessus de l'arbre. L'arbre est HIÉRARCHIQUE comme main :
@@ -26,6 +28,7 @@ export function TreePanel({
   raw,
   selected,
   onToggle,
+  onToggleCatalog,
   onInfo,
   onReset,
   resetTick,
@@ -36,6 +39,7 @@ export function TreePanel({
   templatesError,
   onViewChange,
 }: {
+  onToggleCatalog: (parameter: DictParameterNode, technology: string, origin: string, leaf?: DictLeaf) => void;
   onViewChange: (view: TreePanelView) => void;
   categories: TemplateCategory[];
   activeCategory: TemplateCategory | null;
@@ -153,7 +157,7 @@ export function TreePanel({
               type="button"
               aria-pressed={activeCategory?.id === category.id}
               title={category.n_in_project === 0 ? "0 occurrence dans le projet" : category.label}
-              onClick={() => onCategory(category)}
+              onClick={() => { onCategory(category); setTab("catalog"); onViewChange("catalog"); }}
               className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs hover:bg-muted ${activeCategory?.id === category.id ? "bg-primary/10 text-primary" : category.n_in_project === 0 ? "text-muted-foreground" : ""}`}
             >
               <span>{category.label}</span>
@@ -227,6 +231,9 @@ export function TreePanel({
                 onToggle={onToggle}
                 resetTick={internalResetTick}
               />
+            ) : tree.tree.some(t=>t.origins.some(o=>o.categories !== undefined)) ? (
+              <CatalogTree tree={tree} techno={techno} needle={searches[view].trim().toLowerCase()}
+                selected={selected} onToggle={onToggleCatalog} resetTick={internalResetTick}/>
             ) : (
               <TreeView
                 tree={tree}

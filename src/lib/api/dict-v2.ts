@@ -41,8 +41,33 @@ const DictMessageBucketSchema = z
   .passthrough();
 export type DictMessageBucket = z.infer<typeof DictMessageBucketSchema>;
 
+const DictCatalogLeafSchema = DictLeafSchema.extend({
+  message: z.string(),
+  subcategory_id: z.string().nullable(),
+  source_param_keys: z.array(z.string()),
+  n_occurrences: z.number(),
+  n_captures: z.number(),
+  n_in_tech: z.number(),
+});
+const DictParameterNodeSchema = z.object({
+  param_key: z.string(), display_name: z.string(), unit: z.string().nullable().optional(),
+  category_id: z.string(), subcategory_id: z.string().nullable().optional(),
+  n: z.number(), n_occurrences: z.number(), n_captures: z.number(), n_in_tech: z.number(),
+  leaves: z.array(DictCatalogLeafSchema),
+}).passthrough();
+const DictSubcategoryNodeSchema = z.object({
+  id: z.string().nullable(), label: z.string(), position: z.number(),
+  parameters: z.array(DictParameterNodeSchema),
+}).passthrough();
+const DictCategoryNodeSchema = z.object({
+  id: z.string(), label: z.string(), position: z.number(),
+  subcategories: z.array(DictSubcategoryNodeSchema),
+}).passthrough();
+export type DictParameterNode = z.infer<typeof DictParameterNodeSchema>;
+export type DictCategoryNode = z.infer<typeof DictCategoryNodeSchema>;
+
 const DictOriginBucketSchema = z
-  .object({ origin: OriginSchema, messages: z.array(DictMessageBucketSchema) })
+  .object({ origin: OriginSchema, messages: z.array(DictMessageBucketSchema), categories: z.array(DictCategoryNodeSchema).optional() })
   .passthrough();
 export type DictOriginBucket = z.infer<typeof DictOriginBucketSchema>;
 
@@ -55,6 +80,7 @@ const DictTreeResponseSchema = z
   .object({
     project_id: z.string(),
     view: ViewSchema,
+    available_messages: z.array(z.string()).optional(),
     total_rows: z.number(),
     distinct_param_keys: z.number(),
     tree: z.array(DictTechnoBucketSchema),
@@ -158,8 +184,9 @@ export async function getDictTree(
   projectId: string,
   view: "catalog" | "raw",
   signal?: AbortSignal,
+  message?: string,
 ): Promise<DictTreeResponse> {
-  const q = buildQuery({ view });
+  const q = buildQuery({ view, message: message || undefined });
   return apiFetch(
     `/projects/${encodeURIComponent(projectId)}/dict/v2/tree${q}`,
     DictTreeResponseSchema,

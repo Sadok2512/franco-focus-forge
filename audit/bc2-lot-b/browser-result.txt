@@ -1,0 +1,1 @@
+PASS: login UI TEST2, categories, messages, aggregate n=512, partial selection, SIB2 n=103, template linkage.

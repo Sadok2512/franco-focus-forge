@@ -2,6 +2,7 @@ import type { DictGeoFilters } from "@/lib/api/dict-v2";
 import { GEO_KEYS, geoDraft, type GeoDraft } from "./geographic-state";
 export type RrcFilterState = {
   techno: "LTE" | "NR" | "LTE+NR";
+  message?: string;
   op: string[];
   band: string[];
   geography: GeoDraft;
@@ -20,7 +21,7 @@ export function filterSnapshot(state: RrcFilterState): RrcFilterState {
   Object.freeze(op);
   Object.freeze(band);
   Object.freeze(geography);
-  return Object.freeze({ techno: state.techno, op, band, geography });
+  return Object.freeze({ techno: state.techno, message: state.message ?? "", op, band, geography });
 }
 export function defaultFilters(): RrcFilterState {
   return filterSnapshot({ techno: "LTE+NR", op: [], band: [], geography: geoDraft({}) });
@@ -35,6 +36,7 @@ export function geographicQuery(state: RrcFilterState): DictGeoFilters {
 export function appliedKey(state: RrcFilterState) {
   return JSON.stringify([
     state.techno,
+    state.message ?? "",
     sorted(state.op),
     sorted(state.band),
     geographicQuery(state),

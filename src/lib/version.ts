@@ -1,4 +1,4 @@
-// BC2 lot A: header and release notes share the SemVer in package.json.
+// BC2: header and release notes share the SemVer in package.json (lots A/B).
 import pkg from "../../package.json";
 import changelog from "../../CHANGELOG.md?raw";
 

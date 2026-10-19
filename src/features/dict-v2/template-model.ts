@@ -1,3 +1,4 @@
+import { catalogParameters, catalogSelection } from "./catalog-model";
 import type { DictTreeResponse } from "@/lib/api/dict-v2";
 import type { TemplateCategory } from "@/lib/api/dict-templates";
 export function categoryTree(tree: DictTreeResponse | null, category: TemplateCategory | null) {
@@ -31,6 +32,12 @@ export function categoryTree(tree: DictTreeResponse | null, category: TemplateCa
 }
 export function templateLeaves(tree: DictTreeResponse | null, category: TemplateCategory) {
   const refs = category.entries.flatMap((e) => e.parameters);
+  const parameters = catalogParameters(tree);
+  if (parameters.length) return parameters.flatMap(item => item.parameter.leaves
+    .filter(leaf => refs.some(ref => ref.technology === item.technology &&
+      (ref.param_key === leaf.param_key || leaf.source_param_keys.includes(ref.param_key)) &&
+      Object.entries(ref.discriminators).every(([key,value])=>leaf.discriminators?.[key]===value)))
+    .map(leaf=>catalogSelection(leaf,item.technology,item.origin)));
   return (tree?.tree ?? []).flatMap((t) =>
     t.origins.flatMap((o) =>
       o.messages.flatMap((m) =>

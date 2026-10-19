@@ -1,0 +1,64 @@
+BC2 — LOT B — front 1.37.0 — 2026-10-19
+
+Prérequis vérifié : back 0.53.0, GET /projects/134af70a06eb/dict/v2/tree?view=catalog
+expose origins[].categories[].subcategories[].parameters[].leaves[].
+Réponses et horodatages : contract-probe.json, browser-responses.json.
+Projet TEST2, login réel admin@bc4.local, ouverture depuis Projets puis navigation RRC.
+Aucun backend modifié, aucune mesure calculée au front, aucun push.
+
+Implémentation
+- Paramètres : racine technologie/origine → catégorie → sous-catégorie → paramètre
+  → feuilles. Aucun niveau message. Layout et panneau droit conservés.
+- 12 catégories LTE effectivement exposées. Noms et positions de l’API.
+- Badges message abrégés (SIB2, RRCReconf, RRCRel, RRCSetup…), tooltip complet
+  et table d’abréviations alimentée par les messages disponibles.
+- Paramètre multi-feuilles cochable et dépliable, indeterminate ; sélection du
+  parent par sa clé agrégée opaque API, pas par une somme des populations enfants.
+- Sélection partielle : clés de feuilles uniquement. Compteurs n transmis par l’API.
+- Templates : clic catégorie ouvre Paramètres et coche les références via les
+  source_param_keys explicitement fournis. Présentation Raw/Templates conservée.
+- Filtre Message dans Filtres avancés, choix API available_messages, état dans
+  l’URL rrc_message, application explicite. Changement de message efface la sélection.
+- n=0 visible/grisé, checkbox désactivée et tooltip de raison.
+
+Écarts ouverts / aucune donnée inventée
+1. /home/devmat/BC4/specs/dict_categories.html absent ; recherche par nom sans résultat.
+   Mise en œuvre d’après la description utilisateur et le design existant.
+2. Pas de catégorie Autres ni pourcentage Autres dans la réponse TEST2. Le tri
+   place Autres en dernier si présent ; badge N/D % avec tooltip en absence de
+   pourcentage. Aucun x % calculé ou supposé.
+3. Pas de compteur catégorie/sous-catégorie : seuls les compteurs paramètre et
+   feuille fournis sont affichés ; aucune population structurelle reconstituée.
+4. Aucun paramètre n=0 dans TEST2 : impossible de fournir honnêtement un PNG live
+   de ce cas. Test UI sur fixture explicitement TEST-zero, jamais envoyée à l’API.
+5. Message SIB2 : arbre additionalSpectrumEmission n=103 mais clé parent renvoie
+   n_total=158, car /distribution n’accepte pas de filtre message. En mode filtré,
+   le parent sélectionne les feuilles du message et affiche leurs distributions
+   séparées (n=103 prouvé), sans les additionner. Limite expliquée à l’écran.
+6. q-RxLevMin : l’API répartit SIB1/SIB3/SIB5/SIB6/SIB7 dans les sous-catégories
+   d’Idle ; pas de fusion inventée en un nœud de trois feuilles.
+
+Preuves PNG
+00-header.png — BC4 v1.37.0.
+01-categories.png — 12 catégories LTE.
+02-mobility.png — timeToTrigger, A1/A2/A4/A5, badges RRCReconf.
+03-idle.png — q-RxLevMin et badges SIB issus de l’API.
+04-aggregate.png — parent coché et graphe n=512, même clé serveur.
+05-message-sib2.png — filtre SIB2 et distribution feuille n=103.
+06-template-link.png — clic Templates/PHY ouvre et coche le nouvel arbre.
+
+Validation
+19 suites / 99 tests Node PASS ; TypeScript PASS ; build PASS.
+Playwright PASS : login réel, catégories, agrégat, état mixed, filtre SIB2, lien Templates.
+Commandes :
+  VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config scripts/kpi-vitest.config.mjs --configLoader native
+  docker exec bc4-front-1 bun run typecheck
+  docker exec bc4-front-1 bun run build
+  node scripts/bc2-lot-b-proof.mjs
+Réception après commit propre dans artifacts/reconciliation-1.36.2/lot-b/.
+
+Surveillance
+Pendant cette livraison le back est passé à 0.54.0 et OpenAPI expose désormais
+/projects/{project_id}/tasks, /projects/{project_id}/kpi/{code}/series,
+/projects/{project_id}/kpi/{code}/points, /results/{result_id}.
+Lot C autorisé par le contrat, à traiter séparément après ce commit/build.

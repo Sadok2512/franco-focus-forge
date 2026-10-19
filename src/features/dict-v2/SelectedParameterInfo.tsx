@@ -1,3 +1,4 @@
+import { catalogMetadata } from "./catalog-model";
 import { useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { getDictV2Param } from "@/lib/api/client";
@@ -113,7 +114,7 @@ export function SelectedParameterInfo({
                 : distribution?.blocks.find((b) => b.param_key === leaf.param_key);
               const technology = leaf["technology"];
               let family: string | null = null;
-              for (const t of catalog?.tree ?? [])
+              for (const t of catalogMetadata(catalog)?.tree ?? [])
                 for (const o of t.origins)
                   for (const m of o.messages)
                     for (const g of m.groups)
