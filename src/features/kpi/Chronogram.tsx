@@ -110,7 +110,7 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
       },
       lineStyle: { color: e.type === "task" ? "#fbbf24" : "#a78bfa", opacity: 0.6 },
     }));
-    const lines = numeric.map((s, i) => ({
+    const lines = numeric.map((s) => ({
       name: s.label,
       type: "line" as const,
       yAxisIndex: units.indexOf(s.unit),
@@ -120,7 +120,6 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
       lineStyle: { width: 1.5, color: metricColor(s.code) },
       itemStyle: { color: metricColor(s.code) },
       data: s.points.map((p) => ({ value: [p.t_rel_s, p.value], tooltipText: p.tooltip })),
-      ...(i === 0 ? { markLine: { symbol: "none", silent: true, data: markers } } : {}),
     }));
     const bands = categories.map((s, i) => ({
       name: s.label,
@@ -183,7 +182,11 @@ function Plot({ data, events }: { data: ChronogramData; events?: ChronogramEvent
             saveAsImage: { backgroundColor: "#0f172a" },
           },
         },
-        series: [...lines, ...bands],
+        series: [
+          ...lines,
+          ...bands,
+          { type: "line", data: [], markLine: { symbol: "none", silent: true, data: markers } },
+        ],
       } as EChartsOption,
       true,
     );
