@@ -1,3 +1,4 @@
+import { Chronogram } from "./Chronogram";
 import { TaskScatter } from "./TaskScatter";
 import { TaskAnalytics, type TaskAnalyticsHandle } from "./TaskAnalytics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -241,7 +242,10 @@ export function KpiGraphCard({
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
 }) {
-  const taskView = config.visualization === "task_series" || config.visualization === "task_scatter";
+  const taskView =
+    config.visualization === "chronogram" ||
+    config.visualization === "task_series" ||
+    config.visualization === "task_scatter";
   const taskPanel = useRef<TaskAnalyticsHandle>(null);
   const [taskId, setTaskId] = useState<string>();
   useEffect(() => {
@@ -291,8 +295,15 @@ export function KpiGraphCard({
   const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
   const body = (
     <>
-      {config.visualization === "task_scatter" && !blockedReason ? (
-        <TaskScatter ref={taskPanel} projectId={projectId} code={entry.item.code} filters={appliedFilters} />
+      {config.visualization === "chronogram" ? (
+        <Chronogram ref={taskPanel} projectId={projectId} filters={appliedFilters} />
+      ) : config.visualization === "task_scatter" && !blockedReason ? (
+        <TaskScatter
+          ref={taskPanel}
+          projectId={projectId}
+          code={entry.item.code}
+          filters={appliedFilters}
+        />
       ) : taskView && !blockedReason ? (
         <TaskAnalytics
           key={JSON.stringify(appliedFilters)}
@@ -562,11 +573,19 @@ export function KpiGraphCard({
       </header>
       <div className="kpi-card-meta">
         <span className={`kpi-state state-${status.toLowerCase()}`}>
-          {config.visualization === "task_scatter" ? "Nuage" : taskView ? "Task Time" : status}
+          {config.visualization === "chronogram"
+            ? "Chronogramme"
+            : config.visualization === "task_scatter"
+              ? "Nuage"
+              : taskView
+                ? "Task Time"
+                : status}
         </span>
         <span className="text-[10px] text-muted-foreground">
           {taskView
-            ? (config.visualization === "task_scatter" ? "Observations appariées · points API" : "Série temporelle · points API")
+            ? config.visualization === "task_scatter"
+              ? "Observations appariées · points API"
+              : "Série temporelle · points API"
             : config.visualization === "graph"
               ? "Points agrégés · aucune série temporelle"
               : "Comparaison des agrégats"}

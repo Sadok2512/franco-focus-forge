@@ -1,3 +1,9 @@
+## 1.39.0 (minor) — BC4 2026-10-19 — Chronogramme par capture (Agent BC2)
+
+- Vue Chronogramme dans le sélecteur KPI : captures filtrées, métriques API groupées par unité, axes ECharts, zoom et marqueurs explicites.
+- Bandeaux catégoriels, tooltip au seq, Infos et CSV fournis par le back ; aucune conversion ou statistique dans le front.
+- Contrat chronogramme contrôlé contre OpenAPI et réponses live ; header BC4 v1.39.0.
+
 ## 1.38.2 (patch) — KPI 2026-10-19 — Causes des exclusions RSRP (Agent BC2)
 
 - Le nuage affiche les comptes API NR sans profil RSRP / LTE non enrichies / autres exclusions, sans calcul local.

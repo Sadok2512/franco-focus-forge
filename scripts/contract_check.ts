@@ -1,3 +1,4 @@
+import { MetricSchema, MetricSeriesSchema, EventsSchema } from "../src/lib/api/metrics-schemas";
 // `bun run contract:check` — vérifie que la réponse live du back aligne
 // avec les schémas Zod des routes KPI (bc4-back 0.40.0+).
 //
@@ -52,7 +53,12 @@ function pass(label: string, detail?: string) {
 }
 function fail(label: string, detail: string) {
   results.push({ ok: false, label, detail });
-  console.log(`  ✗ ${label}\n${detail.split("\n").map((l) => `    ${l}`).join("\n")}`);
+  console.log(
+    `  ✗ ${label}\n${detail
+      .split("\n")
+      .map((l) => `    ${l}`)
+      .join("\n")}`,
+  );
 }
 
 async function login(): Promise<string> {
@@ -95,6 +101,10 @@ async function main(): Promise<number> {
   pass(`back OpenAPI info.version = ${backVersion}`);
   const paths = openapi.paths ?? {};
   const expected = [
+    "/projects/{project_id}/metrics",
+    "/projects/{project_id}/metrics/series",
+    "/projects/{project_id}/metrics/captures",
+    "/projects/{project_id}/captures/{capture_id}/events",
     "/projects/{project_id}/kpi/catalog",
     "/projects/{project_id}/kpi/filters",
     "/projects/{project_id}/kpi/{code}",
@@ -124,10 +134,7 @@ async function main(): Promise<number> {
   // 3. /projects/{id}/kpi/catalog — safeParse.
   reportStart(`GET /projects/${PROJECT_ID}/kpi/catalog`);
   try {
-    const raw = await getJson(
-      `/projects/${encodeURIComponent(PROJECT_ID)}/kpi/catalog`,
-      token,
-    );
+    const raw = await getJson(`/projects/${encodeURIComponent(PROJECT_ID)}/kpi/catalog`, token);
     const parsed = ProjectKpiCatalogSchema.safeParse(raw);
     if (parsed.success) {
       const nTechno = parsed.data.tree.length;
@@ -137,14 +144,14 @@ async function main(): Promise<number> {
       );
       pass(
         `catalog v${parsed.data.catalog_version}`,
-        `${nTechno} technos · ${nTotal} KPI · counts_by_techno keys = ${Object.keys(
-          parsed.data.counts_by_techno ?? {},
-        ).join(", ") || "N/D"}`,
+        `${nTechno} technos · ${nTotal} KPI · counts_by_techno keys = ${
+          Object.keys(parsed.data.counts_by_techno ?? {}).join(", ") || "N/D"
+        }`,
       );
     } else {
-      const msgs = parsed.error.issues.slice(0, 10).map(
-        (i) => `${i.path.join(".") || "<root>"}: ${i.message}`,
-      );
+      const msgs = parsed.error.issues
+        .slice(0, 10)
+        .map((i) => `${i.path.join(".") || "<root>"}: ${i.message}`);
       fail("ProjectKpiCatalogSchema.safeParse", msgs.join("\n"));
     }
   } catch (e) {
@@ -155,10 +162,7 @@ async function main(): Promise<number> {
   // 4. /projects/{id}/kpi/filters — safeParse.
   reportStart(`GET /projects/${PROJECT_ID}/kpi/filters`);
   try {
-    const raw = await getJson(
-      `/projects/${encodeURIComponent(PROJECT_ID)}/kpi/filters`,
-      token,
-    );
+    const raw = await getJson(`/projects/${encodeURIComponent(PROJECT_ID)}/kpi/filters`, token);
     const parsed = ProjectKpiFiltersSchema.safeParse(raw);
     if (parsed.success) {
       pass(
@@ -166,9 +170,9 @@ async function main(): Promise<number> {
         `operators=${parsed.data.operators.values.length} rats=${parsed.data.rats.values.length} bands=${parsed.data.bands.values.length} services=${parsed.data.service_types.values.length}`,
       );
     } else {
-      const msgs = parsed.error.issues.slice(0, 10).map(
-        (i) => `${i.path.join(".") || "<root>"}: ${i.message}`,
-      );
+      const msgs = parsed.error.issues
+        .slice(0, 10)
+        .map((i) => `${i.path.join(".") || "<root>"}: ${i.message}`);
       fail("ProjectKpiFiltersSchema.safeParse", msgs.join("\n"));
     }
   } catch (e) {
@@ -199,11 +203,14 @@ async function main(): Promise<number> {
       );
       const parsed = ProjectKpiDetailSchema.safeParse(detail);
       if (parsed.success) {
-        pass(`detail ${code} schema OK`, `status=${parsed.data.status} n=${parsed.data.n ?? "N/D"}`);
-      } else {
-        const msgs = parsed.error.issues.slice(0, 10).map(
-          (i) => `${i.path.join(".") || "<root>"}: ${i.message}`,
+        pass(
+          `detail ${code} schema OK`,
+          `status=${parsed.data.status} n=${parsed.data.n ?? "N/D"}`,
         );
+      } else {
+        const msgs = parsed.error.issues
+          .slice(0, 10)
+          .map((i) => `${i.path.join(".") || "<root>"}: ${i.message}`);
         fail(`ProjectKpiDetailSchema.safeParse (${code})`, msgs.join("\n"));
       }
     }
@@ -211,6 +218,30 @@ async function main(): Promise<number> {
     fail("ProjectKpiDetailSchema fetch", (e as Error).message);
   }
   console.log("");
+
+  try {
+    const metricCatalog = MetricSchema.array().parse(
+      await getJson(`/projects/${PROJECT_ID}/metrics`, token),
+    );
+    pass("metrics catalogue schema OK");
+    const captures = (await getJson(`/projects/${PROJECT_ID}/metrics/captures`, token)) as {
+      capture_id: string;
+    }[];
+    if (captures[0] && metricCatalog[0]) {
+      const cap = captures[0].capture_id;
+      const series = MetricSeriesSchema.parse(
+        await getJson(
+          `/projects/${PROJECT_ID}/metrics/series?capture_id=${cap}&codes=${metricCatalog[0].code}`,
+          token,
+        ),
+      );
+      if (series.capture_id !== cap) throw new Error("capture scope mismatch");
+      EventsSchema.parse(await getJson(`/projects/${PROJECT_ID}/captures/${cap}/events`, token));
+      pass("capture series + events schemas OK");
+    }
+  } catch (e) {
+    fail("chronogram contract", (e as Error).message);
+  }
 
   return summarize();
 }

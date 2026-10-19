@@ -2,6 +2,7 @@ import { BarChart3, ChartNoAxesCombined, Table2, MapPin } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { VISUALIZATIONS, type VisualizationType } from "./visualization-model";
 const icons = {
+  chronogram: ChartNoAxesCombined,
   histogram: BarChart3,
   graph: ChartNoAxesCombined,
   table: Table2,

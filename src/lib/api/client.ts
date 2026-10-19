@@ -272,3 +272,5 @@ export {
   getKpiAxes,
   getTaskPoints,
 } from "./task-analytics";
+
+export { getMetrics, getMetricCaptures, getMetricSeries, getCaptureEvents } from "./metrics";

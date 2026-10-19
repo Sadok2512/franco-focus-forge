@@ -1,7 +1,8 @@
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import type { Statistic } from "./workspace-model";
 
-export type VisualizationType = "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter";
+export type VisualizationType =
+  "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter" | "chronogram";
 export type ChartConfig = {
   kpiCode: string;
   visualization: VisualizationType;
@@ -11,6 +12,7 @@ export type ChartConfig = {
   statistic: Statistic | null;
 };
 export const VISUALIZATIONS: Record<VisualizationType, string> = {
+  chronogram: "Chronogramme",
   histogram: "Histogramme",
   graph: "Graphique",
   table: "Tableau",
