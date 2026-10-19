@@ -1,3 +1,8 @@
+## 1.40.0 (minor) — BC4 2026-10-19 — Niveaux de décodage et chronogramme Nemo (Agent BC2)
+
+- Badges projet/capture Light et Deep, analyse approfondie admin avec progression et estimation fournies par l’API.
+- Chronogramme : catalogue groupé par événement, inconnus grisés, version de la donnée dans Infos, sélection de tâche et panneaux empilés par couche sans cumul des débits.
+
 ## 1.39.2 (patch) — BC4-FRONT 2026-10-19 — Tableau RRC sans colonne non attribuée (Agent BC1)
 
 - Masque uniquement les colonnes opérateur null du contrat RRC dans le tableau hiérarchique et le sélecteur de colonnes ; les noms d’opérateurs inhabituels sont conservés.

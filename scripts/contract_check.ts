@@ -1,3 +1,4 @@
+import { DecodeStatusSchema, UnknownMetricSchema } from "../src/lib/api/decode";
 import { MetricSchema, MetricSeriesSchema, EventsSchema } from "../src/lib/api/metrics-schemas";
 // `bun run contract:check` — vérifie que la réponse live du back aligne
 // avec les schémas Zod des routes KPI (bc4-back 0.40.0+).
@@ -95,6 +96,22 @@ async function main(): Promise<number> {
     openapi = (await getJson("/openapi.json")) as typeof openapi;
   } catch (e) {
     fail("fetch /openapi.json", (e as Error).message);
+    try {
+      const status = DecodeStatusSchema.parse(
+        await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
+      );
+      if (
+        status.estimated_remaining_minutes !==
+        Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
+      )
+        throw new Error("API estimate mismatch");
+      UnknownMetricSchema.array().parse(
+        await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
+      );
+      pass("decode levels, API estimate and disabled unknown fields schema OK");
+    } catch (e) {
+      fail("decode contract", (e as Error).message);
+    }
     return summarize();
   }
   const backVersion = openapi.info?.version ?? "N/D";
@@ -127,6 +144,22 @@ async function main(): Promise<number> {
     pass("login", `as ${EMAIL}`);
   } catch (e) {
     fail("login", (e as Error).message);
+    try {
+      const status = DecodeStatusSchema.parse(
+        await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
+      );
+      if (
+        status.estimated_remaining_minutes !==
+        Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
+      )
+        throw new Error("API estimate mismatch");
+      UnknownMetricSchema.array().parse(
+        await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
+      );
+      pass("decode levels, API estimate and disabled unknown fields schema OK");
+    } catch (e) {
+      fail("decode contract", (e as Error).message);
+    }
     return summarize();
   }
   console.log("");
@@ -243,6 +276,22 @@ async function main(): Promise<number> {
     fail("chronogram contract", (e as Error).message);
   }
 
+  try {
+    const status = DecodeStatusSchema.parse(
+      await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
+    );
+    if (
+      status.estimated_remaining_minutes !==
+      Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
+    )
+      throw new Error("API estimate mismatch");
+    UnknownMetricSchema.array().parse(
+      await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
+    );
+    pass("decode levels, API estimate and disabled unknown fields schema OK");
+  } catch (e) {
+    fail("decode contract", (e as Error).message);
+  }
   return summarize();
 }
 

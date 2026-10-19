@@ -7,6 +7,7 @@ import type { NmfImportReport } from "@/lib/api/nmf-schemas";
 import { ErrorState, LoadingSkeleton } from "@/components/bc4/States";
 import { NmfImportPanel } from "./NmfImportPanel";
 import { NmfImportReportView } from "./NmfImportReportView";
+import { DecodePanel } from "./DecodePanel";
 import { Card, Section } from "./shared";
 
 // Id dur du champ fichier interne à `NmfImportPanel`. Le CTA "Ajouter des logs"
@@ -77,6 +78,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
         </div>
       </div>
 
+      <DecodePanel projectId={projectId} />
       {q.isPending ? (
         <LoadingSkeleton className="h-24" />
       ) : q.isError ? (
