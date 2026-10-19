@@ -127,7 +127,7 @@ function Plot({
       name: i === grids.length - 1 ? "Temps capture (s)" : "",
       nameLocation: "middle" as const,
       nameGap: 24,
-      axisLabel: { color: "#cbd5e1" },
+      axisLabel: { show: !stacked || i === grids.length - 1, color: "#cbd5e1" },
       splitLine: { lineStyle: { color: "#334155" } },
     }));
     const numericAxes = stacked
@@ -173,6 +173,7 @@ function Plot({
         label: {
           formatter: e.type === "task" ? e.label.split(" · ")[0] : e.type.toUpperCase(),
           rotate: 90,
+          position: "insideEndTop",
           fontSize: 9,
           color: "#fbbf24",
         },

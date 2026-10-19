@@ -8,7 +8,7 @@ c=httpx.Client(base_url='http://localhost:8000');r=c.post('/auth/login',json={'e
 const browser=await chromium.launch({args:['--no-sandbox']});
 const responses=[],errors=[]; let page;
 try {
- page=await browser.newPage({viewport:{width:1800,height:1500}});page.setDefaultTimeout(180000);
+ page=await browser.newPage({viewport:{width:1800,height:2600}});page.setDefaultTimeout(180000);
  await page.addInitScript(s=>localStorage.setItem('bc4.session',JSON.stringify(s)),session);
  page.on('pageerror',e=>errors.push(e.message));
  page.on('response',async r=>{if(/\/projects\/[^/]+\/(metrics|captures|decode|tasks)/.test(r.url())){try{responses.push({at:new Date().toISOString(),url:r.url(),status:r.status(),body:await r.json()});}catch{}}});
@@ -34,6 +34,9 @@ try {
  assert.equal(series?.capture_id,'047e3f34e0af');assert.equal(series.decoder_version,'1.0.0');assert.equal(series.decode_level,'deep');assert.equal(series.series.length,9);assert.ok(series.series.every(s=>s.n_total>0));
  assert.ok(responses.some(r=>r.body.markers?.some(m=>m.label.startsWith('DAA'))));assert.ok(responses.some(r=>r.body.markers?.some(m=>m.label.startsWith('DCOMP'))));
  await panel.screenshot({path:out+'a-TEST2-deep-layers.png'});await page.screenshot({path:out+'a-TEST2-full.png',fullPage:true});
+ await panel.getByTestId('metric-selector').locator('summary').click();
+ await panel.getByTestId('metric-selector').screenshot({path:out+'metrics-by-event.png'});
+ await panel.getByTestId('metric-selector').locator('summary').click();
  await panel.getByTestId('unknown-metrics').locator('summary').click();
  await panel.getByRole('combobox',{name:'Événement non documenté'}).selectOption('CHI');
  assert.ok(await panel.getByRole('checkbox',{name:'unk_CHI_10',exact:true}).isDisabled());
@@ -43,6 +46,7 @@ try {
  assert.ok(await page.getByRole('dialog').textContent().then(s=>s.includes('"decoder_version": "1.0.0"')));
  await page.screenshot({path:out+'infos-decoder-version.png'});await page.keyboard.press('Escape');
  console.log('TEST2 evidence saved');
+ if(process.env.BC2_TEST2_ONLY!=='1') {
  // Same real KPI route and captured source, but Light exists only in Test_3.
  await page.goto('http://localhost:5174/projects');
  await page.locator('tr',{hasText:'Test_3'}).first().getByRole('button',{name:'Ouvrir',exact:true}).click();
@@ -51,7 +55,7 @@ try {
  const lightCard=page.locator('#kpi-graph-AGG_APP_DL_THR');
  if (!(await page.getByTestId('chronogram').count())) {await lightCard.getByRole('button',{name:/^Actions /}).click();await page.getByRole('menuitem',{name:'Chronogramme',exact:true}).click();}
  const lightPanel=page.getByTestId('chronogram');
- await lightPanel.getByRole('combobox',{name:'Capture du chronogramme'}).selectOption('047e3f34e0af');
+ await lightPanel.getByRole('combobox',{name:'Capture du chronogramme'}).selectOption(process.env.BC2_LIGHT_CAPTURE ?? '047e3f34e0af');
  await lightPanel.getByTestId('capture-decode').getByText('Light 1.0.0',{exact:true}).waitFor();
  await lightPanel.getByText('Chargement du chronogramme…').waitFor({state:'hidden'});
  assert.ok(await lightPanel.getByTestId('capture-decode').getByRole('button',{name:'Analyse approfondie',exact:true}).isEnabled());
@@ -65,7 +69,9 @@ try {
   await lightPanel.getByTestId('capture-decode').screenshot({path:out+'progress-live.png'});
   await lightPanel.getByTestId('capture-decode').getByText('Deep 1.0.0',{exact:true}).waitFor({timeout:300000});
  }
+ }
+ assert.ok((await page.locator('body').innerText()).replace(/\s+/g,' ').includes('BC4 v1.40.0'));
  assert.deepEqual(errors,[]);
- fs.writeFileSync(out+'browser.json',JSON.stringify({at:new Date().toISOString(),url:page.url(),task,errors,responses},null,2));
+ fs.writeFileSync(out+(process.env.BC2_TEST2_ONLY==='1'?'browser-test2.json':'browser.json'),JSON.stringify({at:new Date().toISOString(),url:page.url(),task,errors,responses},null,2));
  console.log('PASS: real navigation, Deep/Light badges, API estimates, 9 task-local series, unknown disabled, decoder Infos, header');
 } catch(e) {if(page) await page.screenshot({path:out+'failure.png',fullPage:true}).catch(()=>{});fs.writeFileSync(out+'browser-failure.json',JSON.stringify({errors,responses},null,2));throw e;} finally {await browser.close();}
