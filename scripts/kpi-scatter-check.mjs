@@ -13,8 +13,8 @@ try {
  await page.goto('http://localhost:5174/projects');
  await page.locator('tr',{hasText:'TEST2'}).first().getByRole('button',{name:'Ouvrir',exact:true}).click();
  await page.locator('nav a',{hasText:'KPI Analytics'}).click();
- const url=new URL(page.url());url.searchParams.set('kpi','THR_DL_APP');
- await page.evaluate(()=>sessionStorage.setItem('bc4.kpi.visualizations.134af70a06eb',JSON.stringify({THR_DL_APP:{kpiCode:'THR_DL_APP',visualization:'task_scatter',xMetric:'operator_band',yMetric:'THR_DL_APP',groupBy:'operator_band',statistic:null}})));
+ const url=new URL(page.url());url.searchParams.set('kpi','AGG_APP_DL_THR');
+ await page.evaluate(()=>sessionStorage.setItem('bc4.kpi.visualizations.134af70a06eb',JSON.stringify({AGG_APP_DL_THR:{kpiCode:'AGG_APP_DL_THR',visualization:'task_scatter',xMetric:'operator_band',yMetric:'AGG_APP_DL_THR',groupBy:'operator_band',statistic:null}})));
  await page.goto(url.toString());
  await page.getByTestId('task-scatter-chart').waitFor();
  const select=page.getByRole('combobox',{name:'Axe X du nuage'});assert.equal(await select.inputValue(),'rsrp');
