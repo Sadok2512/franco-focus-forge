@@ -3,6 +3,9 @@ export const MetricSchema = z.object({
   code: z.string(),
   label: z.string(),
   unit: z.string(),
+  event_code: z.string(),
+  decoder_version: z.string(),
+  proof_ref: z.string(),
   source_table: z.string(),
   source_column: z.string(),
   tech: z.enum(["LTE", "NR", "BOTH"]),
@@ -10,6 +13,10 @@ export const MetricSchema = z.object({
   n_in_project: z.number().int(),
 });
 export const MetricSeriesSchema = z.object({
+  decoder_version: z.string(),
+  schema_version: z.string(),
+  decode_level: z.enum(["light", "deep"]),
+  aggregation: z.string(),
   project_id: z.string(),
   capture_id: z.string(),
   result_id: z.string(),

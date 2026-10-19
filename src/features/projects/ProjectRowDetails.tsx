@@ -1,3 +1,4 @@
+import { DecodePanel } from "./DecodePanel";
 // 1.5.1 — Détail d'ingestion déplié dans la liste projets.
 //
 // Composant « accordéon » monté UNIQUEMENT quand la ligne est ouverte
@@ -56,6 +57,7 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
 
   return (
     <div className="space-y-4 bg-muted/30 p-4">
+      {open && <DecodePanel projectId={project.id} />}
       {/* Totaux issus de Project (déjà listé) — pas de nouvelle requête. */}
       <div className="grid gap-3 sm:grid-cols-3">
         <div className="rounded-md border bg-background p-3">

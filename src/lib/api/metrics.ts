@@ -17,9 +17,10 @@ export const getMetricSeries = (
   capture: string,
   codes: string[],
   signal?: AbortSignal,
+  range?: { from_seq: number; to_seq: number },
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams({ capture_id: capture, codes: codes.join(",") })}`,
+    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams({ capture_id: capture, codes: codes.join(","), ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })}`,
     MetricSeriesSchema,
     signal,
   );

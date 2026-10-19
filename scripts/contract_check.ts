@@ -1,3 +1,4 @@
+import { DecodeStatusSchema, UnknownMetricSchema } from "../src/lib/api/decode";
 import { MetricSchema, MetricSeriesSchema, EventsSchema } from "../src/lib/api/metrics-schemas";
 // `bun run contract:check` — vérifie que la réponse live du back aligne
 // avec les schémas Zod des routes KPI (bc4-back 0.40.0+).
@@ -101,6 +102,8 @@ async function main(): Promise<number> {
   pass(`back OpenAPI info.version = ${backVersion}`);
   const paths = openapi.paths ?? {};
   const expected = [
+    "/projects/{project_id}/decode/status",
+    "/projects/{project_id}/metrics/unknown",
     "/projects/{project_id}/metrics",
     "/projects/{project_id}/metrics/series",
     "/projects/{project_id}/metrics/captures",
@@ -243,6 +246,22 @@ async function main(): Promise<number> {
     fail("chronogram contract", (e as Error).message);
   }
 
+  try {
+    const status = DecodeStatusSchema.parse(
+      await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
+    );
+    if (
+      status.estimated_remaining_minutes !==
+      Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
+    )
+      throw new Error("API estimate mismatch");
+    UnknownMetricSchema.array().parse(
+      await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
+    );
+    pass("decode levels, API estimate and disabled unknown fields schema OK");
+  } catch (e) {
+    fail("decode contract", (e as Error).message);
+  }
   return summarize();
 }
 
