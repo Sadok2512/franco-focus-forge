@@ -1,0 +1,83 @@
+MISE À JOUR : état initial du lot A ci-dessous. La réconciliation et la livraison sont documentées dans ../reconciliation-1.36.2/REPORT.txt et artifacts/reconciliation-1.36.2/DELIVERY.txt.
+
+BC2 — LOT A — 2026-10-19 — front 1.36.2
+Projet TEST2 134af70a06eb ; connexion réelle admin@bc4.local.
+
+Périmètre et état
+- CLAUDE.md et AGENTS.md lus. Backend non modifié ; aucun appel de migration,
+  populate, import ou redémarrage. Aucun commit créé.
+- Le workspace front était déjà fortement modifié, version 1.36.1, HEAD 1.21.2.
+  Proposition de numérotation soumise pendant l’audit ; sans retour, patch 1.36.2
+  retenu pour éviter une régression de SemVer. package.json, CHANGELOG.md et
+  src/lib/version.ts alignés ; header BC4 v1.36.2 visible sur les PNG.
+- Corrections présentes sur le serveur de développement monté sur le workspace.
+  Build de validation réussi. Pas de livraison Docker depuis un HEAD propre :
+  le workspace contient des lots antérieurs non committés. La discipline rebuild
+  de CLAUDE.md interdit de présenter ce workspace comme une livraison reproductible.
+
+LOT A — constats et corrections
+1. En-tête : suppression du préfixe unité N/D. Option autorisée « ou rien » retenue,
+   aucun comptage de groupes inventé. distinct_values et n_total viennent de la
+   réponse de distribution. Sur TEST2 phich-Config/phich-Duration : n_total=4 ;
+   le second chemin phich-Duration a n_total=54, pas le n=393 de l’exemple initial.
+2. Période : GET /projects/134af70a06eb expose periodStart=periodEnd=2026-10-15.
+   Le dictionnaire utilise désormais ces champs, pas /dict.dimensions.periods.
+   Le filtre temporel reste grisé : aucune borne de filtrage dans le contrat
+   distribution. Tooltip explicite ; si bornes absentes, « plage non exposée par l'API ».
+   Le KPI utilisait déjà /projects/{id} ; même traitement des bornes absentes ajouté.
+   Aucune affirmation de vérification SQL des dates de capture : seule la plage
+   projet exposée par l’API est attestée.
+3. « Les deux » : requêtes directes group_by=operator_band, plus de regroupement
+   local pour passer à operator ou band. phich-Duration renvoie la valeur normal
+   avec Orange/B1 n=2 et Orange/B3 n=2 ; graphe attesté par le PNG 01.
+   ÉCART BACK OUVERT : rsrpResult et rsrqResult du chemin measResultPCell renvoient
+   n_total=1515 et values=[] dans les trois regroupements (distributions.json).
+   Le front affichait « 0 occurrence » à tort : message de distribution indisponible
+   désormais affiché, n_total conservé. Aucune mesure n’est reconstruite.
+4. Raw : les chemins indexés /measIdToAddModList/[0]/measId (et autres clés du probe)
+   renvoient zéro et aucune valeur. Le front additionnait les compteurs Raw et
+   déduisait une correspondance canonique par sous-séquence du chemin.
+   Cette déduction est supprimée : correspondance exacte de param_key ou sample_paths
+   explicitement exposé seulement. Agrégats sans compteur/correspondance API grisés,
+   tooltip, N/D ; jamais masqués. ÉCART BACK : contrat d’agrégat Raw manquant.
+
+Autres écarts découverts dans le périmètre distribution
+- OpenAPI ne déclare ni opérateur ni bande comme filtre de distribution.
+  Les contrôles restent visibles, grisés et expliqués ; regroupements disponibles.
+  Les anciens filtres URL sont explicitement signalés comme non appliqués.
+- Pourcentages et dénominateurs par groupe non exposés : N/D dans le tableau/export,
+  option de tri pourcentage grisée avec explication. Aucune somme locale des cellules.
+- Les compteurs structurels d’interface (nombre de lignes/nœuds affichés) sont distincts
+  des populations de mesures ; le nouvel arbre et ses compteurs serveur relèvent du lot B.
+
+Preuves (authentification par formulaire, sélection TEST2 via Ouvrir, navigation RRC)
+- 01-period-and-search.png : header, phich-Duration, période, Les deux avec valeurs.
+- 02-both-api-gap.png : n=1515 sans valeurs dans la réponse, message d’indisponibilité.
+- 03-raw-api-gap.png : Raw agrégé indisponible visible et grisé.
+- browser-responses.json : réponses exactes du navigateur, URL, statut, horodatage.
+- distributions.json : réponses brutes du probe, URL, horodatage, header Bearer expurgé.
+- responses.json : réponses projet, filtres KPI, arbres catalog/raw au début de l’audit.
+  Aucun token ou mot de passe sauvegardé. Pas de données de référence créées.
+
+Vérifications reproductibles depuis /home/devmat/BC4/franco-focus-forge
+  docker exec bc4-front-1 bun run typecheck
+  docker exec bc4-front-1 bun run test src/test/bc2-lot-a.test.ts
+  docker exec bc4-front-1 bun run build
+  node scripts/bc2-lot-a-proof.mjs
+  docker exec -i bc4-api-1 python < audit/bc2-lot-a/probe.py
+- typecheck PASS ; tests ciblés 2/2 PASS ; build PASS (build.log).
+- bun run contract:check exécuté dans le conteneur front, BC4_API_BASE=http://api:8000,
+  BC4_PROJECT_ID=134af70a06eb, identifiants admin transmis en mémoire : PASS 8/8.
+- Tests historiques supposant les calculs locaux remplacés ne constituent pas une
+  validation de ce nouveau contrat ; suite globale non exécutée.
+
+LOT B — EN ATTENTE, NON COMMENCÉ
+health-after.json : back 0.52.3. Pas de livraison dict v2.2 exposée par /health.
+L’arbre catalog servi reste techno/origin/messages/groups/kpis. La présence d’un
+category_id sur certaines feuilles ne constitue pas le contrat hiérarchique demandé.
+Pas de PNG lot B ; aucune implémentation sur contrat supposé.
+
+LOT C — EN ATTENTE, NON COMMENCÉ
+openapi-after.json ne contient aucune route tasks, séries KPI, points KPI ou results
+requise par le lot. Pas de courbe ni de nuage fabriqué. Pas de PNG lot C.
+Recontrôler /health et /openapi.json avant toute reprise des deux lots.

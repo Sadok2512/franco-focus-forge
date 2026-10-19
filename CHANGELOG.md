@@ -1,3 +1,11 @@
+## 1.36.2 (patch) — bc4-front 2026-10-19 — Finitions dictionnaire/KPI, lot A (Agent BC2)
+
+- En-tête paramètre sans préfixe d’unité N/D ; population et nombre de valeurs provenant de la distribution API.
+- Période du dictionnaire issue de /projects/{id}, sans date du jour ; contrôle temporel indisponible expliqué par tooltip.
+- Regroupements demandés directement au back. Population non nulle sans valeurs signalée comme distribution indisponible, jamais comme zéro occurrence.
+- Agrégats Raw sans correspondance explicite indisponibles avec tooltip ; suppression des sommes et pourcentages locaux du tableau de distribution. Filtres opérateur/bande indisponibles faute de paramètres API.
+- Audit TEST2 et preuves dans audit/bc2-lot-a. Lots B/C en attente du contrat servi ; aucun changement backend.
+
 ## 1.36.1 (patch) — 2026-10-19 — Mode Graphique KPI activé
 
 - Graphique disponible dans les deux menus : points par groupe avec la valeur/statistique réelle du KPI en Y, sans relier les groupes.

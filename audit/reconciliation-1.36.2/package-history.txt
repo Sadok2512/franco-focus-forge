@@ -1,0 +1,14 @@
+15f9c34 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T20:54:41+00:00 | bc4-front 1.21.2 — Raw tree : nom court + agrégation [n] + discriminant parent, chemin complet uniquement en tooltip (3e demande utilisateur) (Agent BC1)
+07d2bd8 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:13:05+00:00 | bc4-front 1.18.0 — bump + CHANGELOG dictionnaire RRC v2 (Agent BC2)
+38bf274 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:11:30+00:00 | bc4-front 1.17.5 — filtres KPI : parcours réel shot_flow, label version, tooltips raison (Agent BC2)
+cf425aa | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T20:36:14+00:00 | Changes
+83c4b20 | Sadok2512 <tgara008@gmail.com> | 2026-10-15T20:12:58+00:00 | bc4-front 1.8.0 + 1.8.1 : Dictionnaire RRC rebâti sur design system BC4 + histogramme value_distribution
+f3832bf | Sadok2512 <tgara008@gmail.com> | 2026-10-15T19:08:05+00:00 | Dictionnaire RRC 1.7.1 : retrait du composant V2, retour au design B0 unifié
+95c4b7c | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T18:54:15+00:00 | Work in progress
+6615ec3 | Sadok2512 <tgara008@gmail.com> | 2026-10-15T18:09:17+00:00 | Jour: auth B2, enrich 1.1, perimetre, dict, pastilles, DELETE
+efeff9f | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T09:13:08+00:00 | Changes
+a50e51f | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T09:05:31+00:00 | Changes
+bb150e0 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-14T21:22:21+00:00 | Changes
+6477d96 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-14T21:08:50+00:00 | Changes
+8cbd850 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-14T20:06:34+00:00 | Changes
+0436dbd | Lovable <noreply@lovable.dev> | 2026-10-07T16:21:03+00:00 | template: tanstack_start_ts_current-435fd937eb68

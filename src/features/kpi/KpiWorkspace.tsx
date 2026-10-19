@@ -81,7 +81,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
       dimensionsLoading={dimensions.isPending}
       dimensionsError={dimensions.isError}
       retryDimensions={() => void dimensions.refetch()}
-      period={project.data ? `${project.data.periodStart} — ${project.data.periodEnd}` : null}
+      period={project.data?.periodStart && project.data?.periodEnd ? `${project.data.periodStart} — ${project.data.periodEnd}` : null}
     />
   );
 }

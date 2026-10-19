@@ -1,0 +1,348 @@
+[
+  {
+    "url": "http://localhost:5174/api/projects/134af70a06eb",
+    "at": "2026-10-19T13:18:04.551Z",
+    "status": 200,
+    "headers": {
+      "Authorization": "Bearer <admin@bc4.local session>"
+    },
+    "body": {
+      "id": "134af70a06eb",
+      "name": "TEST2",
+      "geography": "",
+      "center": [
+        0,
+        0
+      ],
+      "operators": [
+        "Bouygues",
+        "Free",
+        "Orange"
+      ],
+      "technologies": [
+        "LTE",
+        "NR"
+      ],
+      "services": [],
+      "bands": [
+        "B1",
+        "B20",
+        "B3",
+        "B7",
+        "n78"
+      ],
+      "departements": [],
+      "periodStart": "2026-10-15",
+      "periodEnd": "2026-10-15",
+      "captures": 16,
+      "importedAt": "2026-10-15T15:08:32Z",
+      "status": "failed",
+      "import_job": null,
+      "n_files": 16,
+      "n_points": 61908,
+      "last_populate_at": "2026-10-17T18:53:44.559946+00:00",
+      "ingest_status": "failed"
+    }
+  },
+  {
+    "url": "http://localhost:5174/api/projects/134af70a06eb/dict/v2/distribution?keys=phich-Config%2Fphich-Duration&group_by=operator",
+    "at": "2026-10-19T13:18:06.283Z",
+    "status": 200,
+    "headers": {
+      "Authorization": "Bearer <admin@bc4.local session>"
+    },
+    "body": {
+      "project_id": "134af70a06eb",
+      "group_by": "operator",
+      "blocks": [
+        {
+          "param_key": "phich-Config/phich-Duration",
+          "display_name": "phich-Duration",
+          "unit": null,
+          "choice_of": null,
+          "discriminators": null,
+          "origin": "network_config",
+          "n_total": 4,
+          "distinct_values": 1,
+          "values": [
+            {
+              "value": "normal",
+              "value_display": "normal",
+              "groups": [
+                {
+                  "operator": "Orange",
+                  "band": null,
+                  "dor": null,
+                  "dr": null,
+                  "plaque": null,
+                  "arcep_zone": null,
+                  "n": 4,
+                  "operator_color": "#FF7900",
+                  "band_color": null
+                }
+              ]
+            }
+          ],
+          "comparability": "COMPARABLE",
+          "verdict": "IDENTIQUE",
+          "result_id": "e20fbe9e9709917a",
+          "source_result_id": null,
+          "status": "AVAILABLE",
+          "reason": null,
+          "coverage": null
+        }
+      ],
+      "group_by_options": [
+        {
+          "key": "operator",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "operator_band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "dor",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dor)"
+        },
+        {
+          "key": "dr",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dr)"
+        },
+        {
+          "key": "plaque",
+          "available": false,
+          "reason": "référentiel cellule non chargé (plaque)"
+        },
+        {
+          "key": "arcep_zone",
+          "available": false,
+          "reason": "référentiel cellule non chargé (zone arcep)"
+        }
+      ]
+    }
+  },
+  {
+    "url": "http://localhost:5174/api/projects/134af70a06eb/dict/v2/distribution?keys=phich-Config%2Fphich-Duration&group_by=operator_band",
+    "at": "2026-10-19T13:18:06.629Z",
+    "status": 200,
+    "headers": {
+      "Authorization": "Bearer <admin@bc4.local session>"
+    },
+    "body": {
+      "project_id": "134af70a06eb",
+      "group_by": "operator_band",
+      "blocks": [
+        {
+          "param_key": "phich-Config/phich-Duration",
+          "display_name": "phich-Duration",
+          "unit": null,
+          "choice_of": null,
+          "discriminators": null,
+          "origin": "network_config",
+          "n_total": 4,
+          "distinct_values": 1,
+          "values": [
+            {
+              "value": "normal",
+              "value_display": "normal",
+              "groups": [
+                {
+                  "operator": "Orange",
+                  "band": "B1",
+                  "dor": null,
+                  "dr": null,
+                  "plaque": null,
+                  "arcep_zone": null,
+                  "n": 2,
+                  "operator_color": "#FF7900",
+                  "band_color": "#4F46E5"
+                },
+                {
+                  "operator": "Orange",
+                  "band": "B3",
+                  "dor": null,
+                  "dr": null,
+                  "plaque": null,
+                  "arcep_zone": null,
+                  "n": 2,
+                  "operator_color": "#FF7900",
+                  "band_color": "#059669"
+                }
+              ]
+            }
+          ],
+          "comparability": "COMPARABLE",
+          "verdict": "IDENTIQUE",
+          "result_id": "dd7e647b2683ff0a",
+          "source_result_id": null,
+          "status": "AVAILABLE",
+          "reason": null,
+          "coverage": null
+        }
+      ],
+      "group_by_options": [
+        {
+          "key": "operator",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "operator_band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "dor",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dor)"
+        },
+        {
+          "key": "dr",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dr)"
+        },
+        {
+          "key": "plaque",
+          "available": false,
+          "reason": "référentiel cellule non chargé (plaque)"
+        },
+        {
+          "key": "arcep_zone",
+          "available": false,
+          "reason": "référentiel cellule non chargé (zone arcep)"
+        }
+      ]
+    }
+  },
+  {
+    "url": "http://localhost:5174/api/projects/134af70a06eb/dict/v2/distribution?keys=measurementReport%2FmeasurementReport-r8%2FmeasResults%2FmeasResultPCell%2FrsrpResult%2Cphich-Config%2Fphich-Duration&group_by=operator_band",
+    "at": "2026-10-19T13:18:08.133Z",
+    "status": 200,
+    "headers": {
+      "Authorization": "Bearer <admin@bc4.local session>"
+    },
+    "body": {
+      "project_id": "134af70a06eb",
+      "group_by": "operator_band",
+      "blocks": [
+        {
+          "param_key": "measurementReport/measurementReport-r8/measResults/measResultPCell/rsrpResult",
+          "display_name": "rsrpResult",
+          "unit": "dBm",
+          "choice_of": null,
+          "discriminators": null,
+          "origin": "ue_report",
+          "n_total": 1515,
+          "distinct_values": 39,
+          "values": [],
+          "comparability": "NO_DATA",
+          "verdict": "NON_COMPARE",
+          "result_id": "1453f9912fff127d",
+          "source_result_id": null,
+          "status": "AVAILABLE",
+          "reason": null,
+          "coverage": null
+        },
+        {
+          "param_key": "phich-Config/phich-Duration",
+          "display_name": "phich-Duration",
+          "unit": null,
+          "choice_of": null,
+          "discriminators": null,
+          "origin": "network_config",
+          "n_total": 4,
+          "distinct_values": 1,
+          "values": [
+            {
+              "value": "normal",
+              "value_display": "normal",
+              "groups": [
+                {
+                  "operator": "Orange",
+                  "band": "B1",
+                  "dor": null,
+                  "dr": null,
+                  "plaque": null,
+                  "arcep_zone": null,
+                  "n": 2,
+                  "operator_color": "#FF7900",
+                  "band_color": "#4F46E5"
+                },
+                {
+                  "operator": "Orange",
+                  "band": "B3",
+                  "dor": null,
+                  "dr": null,
+                  "plaque": null,
+                  "arcep_zone": null,
+                  "n": 2,
+                  "operator_color": "#FF7900",
+                  "band_color": "#059669"
+                }
+              ]
+            }
+          ],
+          "comparability": "COMPARABLE",
+          "verdict": "IDENTIQUE",
+          "result_id": "dd7e647b2683ff0a",
+          "source_result_id": null,
+          "status": "AVAILABLE",
+          "reason": null,
+          "coverage": null
+        }
+      ],
+      "group_by_options": [
+        {
+          "key": "operator",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "operator_band",
+          "available": true,
+          "reason": null
+        },
+        {
+          "key": "dor",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dor)"
+        },
+        {
+          "key": "dr",
+          "available": false,
+          "reason": "référentiel cellule non chargé (dr)"
+        },
+        {
+          "key": "plaque",
+          "available": false,
+          "reason": "référentiel cellule non chargé (plaque)"
+        },
+        {
+          "key": "arcep_zone",
+          "available": false,
+          "reason": "référentiel cellule non chargé (zone arcep)"
+        }
+      ]
+    }
+  }
+]

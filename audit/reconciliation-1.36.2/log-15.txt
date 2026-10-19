@@ -1,0 +1,15 @@
+15f9c34 bc4-front 1.21.2 — Raw tree : nom court + agrégation [n] + discriminant parent, chemin complet uniquement en tooltip (3e demande utilisateur) (Agent BC1)
+07d2bd8 bc4-front 1.18.0 — bump + CHANGELOG dictionnaire RRC v2 (Agent BC2)
+c30f79f Merge branch 'feat/dict-v2'
+38bf274 bc4-front 1.17.5 — filtres KPI : parcours réel shot_flow, label version, tooltips raison (Agent BC2)
+304a98b bc4-front — feat/dict-v2 : bouton Réinitialiser dans le panneau arbre (Agent BC1)
+4710ce7 bc4-front — feat/dict-v2 : coque main inchangée, swap panneaux seulement (Agent BC1)
+3d80cb9 bc4-front — feat/dict-v2 : page Dictionnaire RRC v2 (deux arbres + explorateur) (Agent BC1)
+98985f5 Syncré tableau et graphique
+bfaf12e Changes
+c2e38c8 Changes
+cbbeedd Changes
+201bb33 Changes
+8c09bc0 Changes
+5ad7aa6 Added stacked bars & 100%
+edb4a80 Changes

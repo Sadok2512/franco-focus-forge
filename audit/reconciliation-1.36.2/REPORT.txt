@@ -1,0 +1,75 @@
+BC2 — Réconciliation 1.36.1 puis livraison 1.36.2 — 2026-10-19
+
+SORTIES BRUTES DEMANDÉES
+status-short.txt : git status --short au début de cette réconciliation.
+diff-stat.txt : git diff --stat au même instant (les fichiers non suivis ne sont pas dans diff).
+log-15.txt : git log --oneline -15.
+authors-15.txt : ces commits avec auteur, e-mail, date d’auteur.
+package-history.txt : historique package.json sur toutes les références locales.
+inventory-per-file.txt : 316 fichiers locaux, une ligne descriptive par fichier.
+
+QUI A BUMPÉ 1.21.2 → 1.36.1 ?
+Aucun commit de cette progression n’existait. HEAD était 15f9c34 (1.21.2),
+Sadok2512 <tgara008@gmail.com>, 2026-10-17T20:54:41+00:00.
+Le reflog ne contient pas de commit plus récent. package.json portait 1.36.1
+avant le lot A ; le changelog contient les étapes intermédiaires non committées.
+L’auteur réel de ces écritures locales n’est pas attribuable par Git.
+Les mentions Agent BC1/BC2 du changelog sont déclaratives, pas une preuve Git.
+La signature du commit de réconciliation utilise l’identité Git configurée ;
+elle ne réattribue pas l’ensemble de ces travaux historiques à cette personne.
+
+DÉCISION
+Commit 32af6b6 : « 1.36.1 — réconciliation (travaux non commités) ».
+Les modifications préexistantes sont conservées telles quelles, preuves incluses.
+Le lot A a été isolé avant le commit par inversion des seuls changements de cette
+session ; aucun nettoyage/formatage/correctif ajouté à 1.36.1.
+Les fichiers hors lot A sont vérifiés octet par octet contre la sauvegarde initiale
+(baseline-byte-check.json). Les avertissements d’espaces/CRLF des journaux et CSV
+préexistants ont été conservés conformément à « tel quel ».
+Pas de stash unknown-1.36.1 : les conditions de cohérence et de build sont remplies.
+
+VALIDATION 1.36.1
+- TypeScript PASS, build production PASS.
+- Test runner Bun : erreurs de chargement de modules (baseline-tests.log).
+- Runner Node avec configuration existante : 17 suites / 92 tests PASS,
+  sans changer les tests ni le code (baseline-tests-node.log).
+- Connexion UI admin@bc4.local, ouverture TEST2, header 1.36.1 et Graphique
+  KPI actifs vérifiés par Playwright : baseline-rrc.png et baseline-graph.png.
+- Limitations préexistantes documentées : mode RF démo explicitement marqué,
+  modules settings non connectés indiqués, pas de Task Time/XY réels,
+  lint global historique non propre. Aucune prétention à corriger ces lots ici.
+
+LOT A / 1.36.2
+Réapplication séparée des corrections déjà examinées ; tests historiques ajustés
+à l’interdiction des totaux/pourcentages calculés et des correspondances Raw devinées.
+18 suites / 94 tests PASS. Les tests de zéro/null, CSV, identité explicite, ambiguïté,
+recherche, hiérarchie et virtualisation restent couverts.
+CHANGELOG, package.json et src/lib/version.ts alignés ; aucune modification backend.
+Preuves avant commit dans audit/bc2-lot-a ; réception après commit/build et redémarrage
+front isolé dans artifacts/reconciliation-1.36.2/ (hors index pour garder HEAD propre).
+
+COMMANDES
+VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config scripts/kpi-vitest.config.mjs --configLoader native
+docker exec bc4-front-1 bun run typecheck
+docker exec bc4-front-1 bun run build
+node scripts/bc2-lot-a-proof.mjs
+
+DÉPLOIEMENT FRONT UNIQUEMENT
+Le service compose front utilise oven/bun:1 avec montage du dépôt et vite dev ;
+il ne définit pas de build d’image. Le build applicatif est bun run build depuis
+HEAD propre. Recréation autorisée du seul conteneur front avec --no-deps.
+/health appartient au backend ; la version front est vérifiée dans le header.
+
+APRÈS LIVRAISON
+Surveillance lecture seule de /health et /openapi.json, puis réponse live
+/tree?view=catalog pour le prérequis B. Au cours de la réconciliation /health
+est passé de 0.52.3 à 0.53.0 ; aucune route tasks/series/results n’était alors servie.
+Ne pas déduire la disponibilité du lot B du seul numéro de version.
+
+BASCULE BACK PENDANT LA RÉCEPTION
+Le back 0.53.0 sert maintenant origins[].categories[].subcategories[].parameters[]
+et laisse origins[].messages[] vide. Réponse catalog-live.json horodatée jointe.
+Le lot A ne sait pas rendre cet arbre ; ses trois PNG fonctionnels sont les preuves
+précédentes sur 0.52.3, pas des preuves après bascule. Le header 1.36.2 est recapturé.
+Le commit 1.36.2 fige le lot A et son build ; la réception fonctionnelle sur 0.53.0
+requiert le lot B, maintenant déclenché. Aucun retour arrière/modification backend.

@@ -90,18 +90,9 @@ export function buildGroupedTable(
     // Dict v2 param_key is the canonical ASN.1 path, not the display name.
     const asn1Path = typeof block["asn1_path"] === "string" ? block["asn1_path"] : block.param_key;
     const parameterKey = JSON.stringify([technology, parameterId, asn1Path]);
-    const totals = new Map<string, number>();
-    for (const value of block.values)
-      for (const g of value.groups)
-        if (g.n != null) totals.set(key(g), (totals.get(key(g)) ?? 0) + g.n);
     const membership = families.get(block.param_key);
     const [familyId, family] =
       membership?.size === 1 ? [...membership][0]! : ["unknown", "Famille non renseignée"];
-    const observedTotal = [...totals.values()].reduce((sum, n) => sum + n, 0);
-    if (observedTotal !== block.n_total)
-      diagnostics.push(
-        `${block.display_name} (${block.param_key}) : somme des occurrences ${observedTotal}, population API ${block.n_total}.`,
-      );
     const seen = new Map<string, number>();
     block.values.forEach((value) => {
       const occurrence = seen.get(value.value) ?? 0;
@@ -112,18 +103,13 @@ export function buildGroupedTable(
         );
       const counts = new Map<string, number>();
       for (const g of value.groups)
-        if (g.n != null) counts.set(key(g), (counts.get(key(g)) ?? 0) + g.n);
+        if (g.n != null) counts.set(key(g), g.n);
       const cells: Record<string, Cell> = {};
       for (const id of columns.keys()) {
-        const count = counts.get(id) ?? null,
-          denominator = totals.get(id) ?? null;
         cells[id] = {
-          count,
-          denominator,
-          percentage:
-            count !== null && denominator !== null && denominator > 0
-              ? (100 * count) / denominator
-              : null,
+          count: counts.get(id) ?? null,
+          denominator: null,
+          percentage: null,
         };
       }
       rows.push({
@@ -138,7 +124,7 @@ export function buildGroupedTable(
         value: value.value_display,
         rawValue: value.value,
         cells,
-        total: counts.size ? [...counts.values()].reduce((a, b) => a + b, 0) : null,
+        total: null,
       });
     });
   }

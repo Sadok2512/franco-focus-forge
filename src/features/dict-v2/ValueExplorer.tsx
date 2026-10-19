@@ -78,7 +78,7 @@ export function ValueExplorer({
       )}
       {blocks.length > 0 && blocks.every((block) => !block.values.length) && (
         <p role="status" className="rrc-context-notice">
-          Aucune valeur pour les filtres appliqués.
+          Valeurs non fournies par l’API pour cette sélection.
         </p>
       )}
       <div className="rrc-data-layout">
@@ -145,7 +145,6 @@ function ChartCard({
   groupBy: GroupByMode;
   filtered: boolean;
 }) {
-  const unitPart = block.unit ? block.unit : "N/D";
   const [dark, setDark] = useState(
     () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
   );
@@ -243,14 +242,16 @@ function ChartCard({
         <div className="min-w-0">
           <b className="truncate text-sm font-semibold">{block.display_name}</b>
           <div className="text-[11px] text-muted-foreground">
-            {unitPart} · {block.distinct_values} valeur{block.distinct_values > 1 ? "s" : ""} · n=
+            {block.distinct_values} valeur{block.distinct_values > 1 ? "s" : ""} · n=
             {block.n_total}
           </div>
         </div>
       </div>
       {empty ? (
         <div className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
-          0 occurrence dans ce périmètre
+          {block.n_total > 0
+            ? "Distribution indisponible : l’API renvoie une population non nulle sans valeurs."
+            : "0 occurrence dans ce périmètre"}
         </div>
       ) : (
         <Chart

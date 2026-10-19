@@ -38,7 +38,7 @@ const ValueCells = memo(function ValueCells({
           <td
             key={column.id}
             className="rrc-number"
-            title={`${row.parameter} · ${column.label} : ${cell.count ?? "—"} / ${cell.denominator ?? "—"} · ${cell.percentage === null ? "—" : percent(cell.percentage)}`}
+            title={`Pourcentage et dénominateur non exposés par l’API. ${row.parameter} · ${column.label} : ${cell.count ?? "—"} / ${cell.denominator ?? "—"} · ${cell.percentage === null ? "—" : percent(cell.percentage)}`}
           >
             {cell.count === null ? (
               <span className="text-muted-foreground">—</span>
@@ -250,7 +250,7 @@ export function GroupedValueTable({
               }
             >
               <option value="count">Occurrences</option>
-              <option value="percentage">Pourcentage</option>
+              <option value="percentage" disabled title="Pourcentage non exposé par l’API">Pourcentage — non exposé par l’API</option>
             </select>
           </label>
         </div>

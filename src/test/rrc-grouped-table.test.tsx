@@ -74,19 +74,19 @@ describe("RRC grouped values", () => {
     expect(JSON.stringify(block)).toBe(original);
     expect(buildGroupedTable([block], "operator").rows[0]!.family).toBe("Famille non renseignée");
   });
-  it("calculates denominators per parameter/operator before search; preserves null and zero", () => {
+  it("preserves API counts, null and zero without inventing denominators or percentages", () => {
     const model = buildGroupedTable([block], "operator", catalog);
     const orange = model.columns.find((c) => c.operator === "Orange")!.id;
     const free = model.columns.find((c) => c.operator === "Free")!.id;
-    expect(model.rows[0]!.cells[orange]).toEqual({ count: 2, denominator: 8, percentage: 25 });
-    expect(model.rows[0]!.cells[free]).toEqual({ count: 0, denominator: 2, percentage: 0 });
-    expect(model.rows[2]!.cells[orange]).toEqual({ count: null, denominator: 8, percentage: null });
+    expect(model.rows[0]!.cells[orange]).toEqual({ count: 2, denominator: null, percentage: null });
+    expect(model.rows[0]!.cells[free]).toEqual({ count: 0, denominator: null, percentage: null });
+    expect(model.rows[2]!.cells[orange]).toEqual({ count: null, denominator: null, percentage: null });
     expect(model.rows[2]!.total).toBeNull();
     expect(
       selectRows(model.rows, "3", { key: "value", desc: false })[0]!.cells[orange]!.percentage,
-    ).toBe(25);
+    ).toBeNull();
   });
-  it("keeps operator/band denominators separate and zero-only populations undefined", () => {
+  it("keeps operator/band counts separate without calculating missing percentages", () => {
     const b = {
       ...block,
       values: [
@@ -102,9 +102,7 @@ describe("RRC grouped values", () => {
       ],
     };
     const model = buildGroupedTable([b], "operator_band");
-    expect(model.rows[0]!.cells[model.columns.find((c) => c.band === "B1")!.id]!.percentage).toBe(
-      25,
-    );
+    expect(model.rows[0]!.cells[model.columns.find((c) => c.band === "B1")!.id]!.percentage).toBeNull();
     expect(
       model.rows[0]!.cells[model.columns.find((c) => c.band === "B3")!.id]!.percentage,
     ).toBeNull();
@@ -137,8 +135,8 @@ describe("RRC grouped values", () => {
           line.includes('"Accès & timers";"stable-prach";"stable-prach";"prach-ConfigIndex"'),
         ),
     ).toBe(true);
-    expect(lines.some((line) => line.includes('"Orange";"";"2";"8";"25";"2"'))).toBe(true);
-    expect(lines.some((line) => line.includes('"Orange";"";"";"8";"";""'))).toBe(true);
+    expect(lines.some((line) => line.includes('"Orange";"";"2";"";"";""'))).toBe(true);
+    expect(lines.some((line) => line.includes('"Orange";"";"";"";"";""'))).toBe(true);
   });
   it("renders labels once visually, retains accessible context after searching, and shows zero", () => {
     const { container } = render(
@@ -154,8 +152,8 @@ describe("RRC grouped values", () => {
     expect(screen.queryByRole("columnheader", { name: /^Total/ })).not.toBeInTheDocument();
     expect(container.querySelectorAll("thead th")).toHaveLength(3);
     expect(container.querySelector("[data-row-kind=value]")!.children).toHaveLength(3);
-    expect(screen.getByTitle("prach-ConfigIndex · Free : 0 / 2 · 0,0 %")).toHaveTextContent(
-      "0 · 0,0 %",
+    expect(screen.getByTitle("Pourcentage et dénominateur non exposés par l’API. prach-ConfigIndex · Free : 0 / — · —")).toHaveTextContent(
+      "0 · —",
     );
     fireEvent.change(screen.getByLabelText("Rechercher une valeur"), { target: { value: "20" } });
     expect(container.querySelectorAll("[data-row-kind=value]")).toHaveLength(1);
@@ -178,24 +176,20 @@ describe("RRC V3 hierarchy", () => {
     expect(families[0]!.parameters).toHaveLength(2);
     expect(new Set(model.rows.map((row) => row.id)).size).toBe(6);
     expect(selectRows(model.rows, "path-b", { key: "value", desc: false })).toHaveLength(3);
-    expect(model.rows.reduce((sum, row) => sum + (row.total ?? 0), 0)).toBe(20);
+    expect(model.rows.every(row => row.total === null)).toBe(true);
   });
-  it("reports source population mismatches before search and never changes counts", () => {
-    const model = buildGroupedTable([{ ...block, n_total: 99 }], "operator", catalog);
-    expect(model.diagnostics[0]).toContain("somme des occurrences 10, population API 99");
-    expect(model.rows.reduce((sum, row) => sum + (row.total ?? 0), 0)).toBe(10);
-    render(
-      <GroupedValueTable
-        blocks={[{ ...block, n_total: 99 }]}
-        groupBy="operator"
-        catalog={catalog}
-      />,
-    );
-    expect(screen.getByRole("alert")).toHaveTextContent("population API 99");
+  it("preserves the API population and cells without calculating a replacement total", () => {
+    const source = { ...block, n_total: 99 };
+    const original = JSON.stringify(source);
+    const model = buildGroupedTable([source], "operator", catalog);
+    expect(model.rows.every(row => row.total === null)).toBe(true);
+    expect(model.rows[0]!.cells[model.columns[0]!.id]!.count).toBe(2);
+    render(<GroupedValueTable blocks={[source]} groupBy="operator" catalog={catalog} />);
     fireEvent.change(screen.getByLabelText("Rechercher une valeur"), {
       target: { value: "no match" },
     });
-    expect(screen.getByRole("alert")).toHaveTextContent("population API 99");
+    expect(JSON.stringify(source)).toBe(original);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });
   it("preserves collapse on sort, auto-expands search matches and restores previous state", () => {
     const { container } = render(
@@ -220,7 +214,7 @@ describe("RRC V3 hierarchy", () => {
     expect(container.querySelectorAll("[data-row-kind=family]")).toHaveLength(1);
     expect(container.querySelectorAll("[data-row-kind=parameter]")).toHaveLength(0);
   });
-  it("windows thousands of values without truncating the export or changing denominators", () => {
+  it("windows thousands of values without truncating export or inventing denominators", () => {
     const large = {
       ...block,
       n_total: 2000,
@@ -233,7 +227,7 @@ describe("RRC V3 hierarchy", () => {
     };
     const model = buildGroupedTable([large], "operator", catalog);
     expect(model.diagnostics).toEqual([]);
-    expect(model.rows[1999]!.cells[model.columns[0]!.id]!.denominator).toBe(2000);
+    expect(model.rows[1999]!.cells[model.columns[0]!.id]!.denominator).toBeNull();
     expect(tableCsv(model.rows, model.columns).split("\r\n")).toHaveLength(2001);
     expect(hierarchyRows(groupRows(model.rows), new Set())).toHaveLength(2002);
     const { container } = render(

@@ -1,0 +1,15 @@
+15f9c34 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T20:54:41+00:00 | bc4-front 1.21.2 — Raw tree : nom court + agrégation [n] + discriminant parent, chemin complet uniquement en tooltip (3e demande utilisateur) (Agent BC1)
+07d2bd8 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:13:05+00:00 | bc4-front 1.18.0 — bump + CHANGELOG dictionnaire RRC v2 (Agent BC2)
+c30f79f | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:12:10+00:00 | Merge branch 'feat/dict-v2'
+38bf274 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:11:30+00:00 | bc4-front 1.17.5 — filtres KPI : parcours réel shot_flow, label version, tooltips raison (Agent BC2)
+304a98b | Sadok2512 <tgara008@gmail.com> | 2026-10-17T14:02:52+00:00 | bc4-front — feat/dict-v2 : bouton Réinitialiser dans le panneau arbre (Agent BC1)
+4710ce7 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T13:51:15+00:00 | bc4-front — feat/dict-v2 : coque main inchangée, swap panneaux seulement (Agent BC1)
+3d80cb9 | Sadok2512 <tgara008@gmail.com> | 2026-10-17T12:15:11+00:00 | bc4-front — feat/dict-v2 : page Dictionnaire RRC v2 (deux arbres + explorateur) (Agent BC1)
+98985f5 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:10:59+00:00 | Syncré tableau et graphique
+bfaf12e | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:10:36+00:00 | Changes
+c2e38c8 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:09:40+00:00 | Changes
+cbbeedd | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:09:13+00:00 | Changes
+201bb33 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:09:02+00:00 | Changes
+8c09bc0 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:08:33+00:00 | Changes
+5ad7aa6 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:04:25+00:00 | Added stacked bars & 100%
+edb4a80 | gpt-engineer-app[bot] <159125892+gpt-engineer-app[bot]@users.noreply.github.com> | 2026-10-15T21:03:53+00:00 | Changes

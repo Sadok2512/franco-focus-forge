@@ -1,4 +1,4 @@
-// Single source of truth for the app version: package.json.
+// BC2 lot A: header and release notes share the SemVer in package.json.
 import pkg from "../../package.json";
 import changelog from "../../CHANGELOG.md?raw";
 

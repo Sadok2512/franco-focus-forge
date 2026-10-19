@@ -1,0 +1,104 @@
+BC4
+v1.36.2
+Projets
+Vue d'ensemble
+Dictionnaire RRC
+KPI Analytics
+RF Modules
+Assistant IA
+Projet : TEST2
+A
+admin@bc4.local
+Ingénieur Radio
+LTE
+NR
+LTE + NR
+Opérateur
+Bouygues
+Free
+Orange
+Bande
+Tous
+Tous
+Zone géographique
+Période : 2026-10-15 → 2026-10-15
+Carte
+Infos
+Réinitialiser
+Appliquer les filtres
+Paramètres RRC
+Paramètres
+Raw parameter
+Templates
+1 sélectionné
+Réinitialiser
+
+773 paramètres · 156 131 lignes dans le projet. Sélection : projet / affichées.
+
+LTE
+Configuration réseau
+560
+MasterInformationBlock
+8
+Autres
+7
+phich-Duration
+4 / 4
+RRCConnectionReconfiguration
+327
+Autres
+255
+phich-Duration
+54
+NR
+Opérateur
+Bande
+Les deux
+phich-Duration
+1 valeur · n=4
+phich-Duration
+IDENTIQUE
+COMPARABLE
+Configuration réseau
+Tableau des valeurs (1)
+
+Famille · Paramètre · Valeurs
+
+Copier en CSV
+Colonnes
+Tout développer
+Tout réduire
+Valeurs 
+Croissantes
+Décroissantes
+Tri par colonne
+Tri numérique 
+Occurrences
+Pourcentage — non exposé par l’API
+Familles et paramètres repliables. Pourcentages par paramètre et groupe, avant recherche. L’export inclut toutes les valeurs filtrées, même repliées.
+Famille / Paramètre / Valeur
+↑
+	
+Orange · B1
+↕
+	
+Orange · B3
+↕
+
+
+Autres
+1 paramètre
+
+
+phich-Duration
+LTE
+1 valeur
+
+
+normal
+	
+2 · —
+	
+2 · —
+Projet « TEST2 » chargé
+Les pages Dictionnaire, Assistant, Vue d'ensemble et KPI utilisent désormais ce projet.

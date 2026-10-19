@@ -1,0 +1,316 @@
+CHANGELOG.md — historique local des versions jusqu’à 1.36.1, puis entrée 1.36.2 du lot A
+RRC_FILTER_LAYOUT_AND_DATA_SYNC_ACCEPTANCE.txt — rapport ou journal de validation : RRC_FILTER_LAYOUT_AND_DATA_SYNC_ACCEPTANCE (.)
+RRC_GEOGRAPHIC_FILTERS_ACCEPTANCE.txt — rapport ou journal de validation : RRC_GEOGRAPHIC_FILTERS_ACCEPTANCE (.)
+RRC_GROUPED_TABLE_ACCEPTANCE.txt — rapport ou journal de validation : RRC_GROUPED_TABLE_ACCEPTANCE (.)
+RRC_HIERARCHICAL_VALUES_V3_ACCEPTANCE.txt — rapport ou journal de validation : RRC_HIERARCHICAL_VALUES_V3_ACCEPTANCE (.)
+RRC_PREMIUM_ACCEPTANCE.txt — rapport ou journal de validation : RRC_PREMIUM_ACCEPTANCE (.)
+audit/bc2-lot-a/01-period-and-search.png — capture navigateur préexistante : 01 period and search (audit/bc2-lot-a)
+audit/bc2-lot-a/02-both-api-gap.png — capture navigateur préexistante : 02 both api gap (audit/bc2-lot-a)
+audit/bc2-lot-a/03-raw-api-gap.png — capture navigateur préexistante : 03 raw api gap (audit/bc2-lot-a)
+audit/bc2-lot-a/REPORT.txt — rapport ou journal de validation : REPORT (audit/bc2-lot-a)
+audit/bc2-lot-a/browser-responses.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / browser-responses
+audit/bc2-lot-a/distributions.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / distributions
+audit/bc2-lot-a/health-after.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / health-after
+audit/bc2-lot-a/openapi-after.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / openapi-after
+audit/bc2-lot-a/openapi-before.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / openapi-before
+audit/bc2-lot-a/probe.py — probe API reproductible du lot A (lecture et authentification)
+audit/bc2-lot-a/responses.json — réponses/mesures ou contrat enregistré : audit/bc2-lot-a / responses
+audit/bc2-lot-a/ui-inspect.txt — rapport ou journal de validation : ui-inspect (audit/bc2-lot-a)
+audit/kpi-visualization-v3/API_GAPS.txt — rapport ou journal de validation : API_GAPS (audit/kpi-visualization-v3)
+audit/kpi-visualization-v3/GRAPH_1.36.1.txt — rapport ou journal de validation : GRAPH_1.36.1 (audit/kpi-visualization-v3)
+audit/kpi-visualization-v3/REPORT.txt — rapport ou journal de validation : REPORT (audit/kpi-visualization-v3)
+audit/kpi-visualization-v3/openapi-kpi.json — réponses/mesures ou contrat enregistré : audit/kpi-visualization-v3 / openapi-kpi
+kpi-compact-evidence/1280.png — capture navigateur préexistante : 1280 (kpi-compact-evidence)
+kpi-compact-evidence/1440.png — capture navigateur préexistante : 1440 (kpi-compact-evidence)
+kpi-compact-evidence/1920.png — capture navigateur préexistante : 1920 (kpi-compact-evidence)
+kpi-compact-evidence/400.png — capture navigateur préexistante : 400 (kpi-compact-evidence)
+kpi-compact-evidence/REPORT.txt — rapport ou journal de validation : REPORT (kpi-compact-evidence)
+kpi-compact-evidence/browser.json — réponses/mesures ou contrat enregistré : kpi-compact-evidence / browser
+kpi-compact-evidence/error.png — capture navigateur préexistante : error (kpi-compact-evidence)
+kpi-compact-evidence/failure.png — capture navigateur préexistante : failure (kpi-compact-evidence)
+kpi-compact-evidence/selected-operator.png — capture navigateur préexistante : selected operator (kpi-compact-evidence)
+kpi-multigraph-evidence/REPORT.txt — rapport ou journal de validation : REPORT (kpi-multigraph-evidence)
+kpi-multigraph-evidence/browser-report.json — réponses/mesures ou contrat enregistré : kpi-multigraph-evidence / browser-report
+kpi-multigraph-evidence/data.png — capture navigateur préexistante : data (kpi-multigraph-evidence)
+kpi-multigraph-evidence/desktop.png — capture navigateur préexistante : desktop (kpi-multigraph-evidence)
+kpi-multigraph-evidence/map-info.png — capture navigateur préexistante : map info (kpi-multigraph-evidence)
+kpi-multigraph-evidence/mobile.png — capture navigateur préexistante : mobile (kpi-multigraph-evidence)
+kpi-multigraph-evidence/scope-audit.json — réponses/mesures ou contrat enregistré : kpi-multigraph-evidence / scope-audit
+kpi-v3-evidence/1280.png — capture navigateur préexistante : 1280 (kpi-v3-evidence)
+kpi-v3-evidence/1920.png — capture navigateur préexistante : 1920 (kpi-v3-evidence)
+kpi-v3-evidence/400.png — capture navigateur préexistante : 400 (kpi-v3-evidence)
+kpi-v3-evidence/axes.png — capture navigateur préexistante : axes (kpi-v3-evidence)
+kpi-v3-evidence/dark.png — capture navigateur préexistante : dark (kpi-v3-evidence)
+kpi-v3-evidence/desktop.png — capture navigateur préexistante : desktop (kpi-v3-evidence)
+kpi-v3-evidence/graph.png — capture navigateur préexistante : graph (kpi-v3-evidence)
+kpi-v3-evidence/report.json — réponses/mesures ou contrat enregistré : kpi-v3-evidence / report
+kpi-v3-evidence/sidebar.png — capture navigateur préexistante : sidebar (kpi-v3-evidence)
+package.json — version 1.21.2 → 1.36.1 puis 1.36.2 ; commande typecheck remplacée par tsc
+performance-evidence/AUDIT.txt — rapport ou journal de validation : AUDIT (performance-evidence)
+performance-evidence/after-repeat.json — réponses/mesures ou contrat enregistré : performance-evidence / after-repeat
+performance-evidence/after.json — réponses/mesures ou contrat enregistré : performance-evidence / after
+performance-evidence/api-incident.json — réponses/mesures ou contrat enregistré : performance-evidence / api-incident
+performance-evidence/backend-build.txt — rapport ou journal de validation : backend-build (performance-evidence)
+performance-evidence/backend-parity.txt — rapport ou journal de validation : backend-parity (performance-evidence)
+performance-evidence/backend-profile-0521.txt — rapport ou journal de validation : backend-profile-0521 (performance-evidence)
+performance-evidence/baseline-recovered.json — réponses/mesures ou contrat enregistré : performance-evidence / baseline-recovered
+performance-evidence/filters-regression.txt — rapport ou journal de validation : filters-regression (performance-evidence)
+performance-evidence/filters/1280.png — capture navigateur préexistante : 1280 (performance-evidence/filters)
+performance-evidence/filters/1440.png — capture navigateur préexistante : 1440 (performance-evidence/filters)
+performance-evidence/filters/1920.png — capture navigateur préexistante : 1920 (performance-evidence/filters)
+performance-evidence/filters/400.png — capture navigateur préexistante : 400 (performance-evidence/filters)
+performance-evidence/filters/applied.png — capture navigateur préexistante : applied (performance-evidence/filters)
+performance-evidence/frontend-build.txt — rapport ou journal de validation : frontend-build (performance-evidence)
+performance-evidence/health.json — réponses/mesures ou contrat enregistré : performance-evidence / health
+performance-evidence/kpi-overview-tests.txt — rapport ou journal de validation : kpi-overview-tests (performance-evidence)
+performance-evidence/lint-shared-without-formatting.txt — rapport ou journal de validation : lint-shared-without-formatting (performance-evidence)
+performance-evidence/lint-targeted.txt — rapport ou journal de validation : lint-targeted (performance-evidence)
+performance-evidence/navigation-cache.json — réponses/mesures ou contrat enregistré : performance-evidence / navigation-cache
+performance-evidence/other-pages.json — réponses/mesures ou contrat enregistré : performance-evidence / other-pages
+performance-evidence/overview-0522.json — réponses/mesures ou contrat enregistré : performance-evidence / overview-0522
+performance-evidence/overview-browser-0521.txt — rapport ou journal de validation : overview-browser-0521 (performance-evidence)
+performance-evidence/overview-final.json — réponses/mesures ou contrat enregistré : performance-evidence / overview-final
+performance-evidence/overview-final.png — capture navigateur préexistante : overview final (performance-evidence)
+performance-evidence/overview-live-0520.txt — rapport ou journal de validation : overview-live-0520 (performance-evidence)
+performance-evidence/rrc-tests.txt — rapport ou journal de validation : rrc-tests (performance-evidence)
+performance-evidence/templates-regression.txt — rapport ou journal de validation : templates-regression (performance-evidence)
+performance-evidence/templates/00-parameters.png — capture navigateur préexistante : 00 parameters (performance-evidence/templates)
+performance-evidence/templates/01-drx-operator.png — capture navigateur préexistante : 01 drx operator (performance-evidence/templates)
+performance-evidence/templates/02-drx-band.png — capture navigateur préexistante : 02 drx band (performance-evidence/templates)
+performance-evidence/templates/03-drx-both.png — capture navigateur préexistante : 03 drx both (performance-evidence/templates)
+performance-evidence/templates/04-raw.png — capture navigateur préexistante : 04 raw (performance-evidence/templates)
+performance-evidence/templates/05-mobile.png — capture navigateur préexistante : 05 mobile (performance-evidence/templates)
+performance-evidence/templates/06-dark.png — capture navigateur préexistante : 06 dark (performance-evidence/templates)
+performance-evidence/templates/07-admin.png — capture navigateur préexistante : 07 admin (performance-evidence/templates)
+performance-evidence/typecheck.txt — rapport ou journal de validation : typecheck (performance-evidence)
+rrc-filterbar-evidence/1280.png — capture navigateur préexistante : 1280 (rrc-filterbar-evidence)
+rrc-filterbar-evidence/1440.png — capture navigateur préexistante : 1440 (rrc-filterbar-evidence)
+rrc-filterbar-evidence/1920.png — capture navigateur préexistante : 1920 (rrc-filterbar-evidence)
+rrc-filterbar-evidence/400.png — capture navigateur préexistante : 400 (rrc-filterbar-evidence)
+rrc-filterbar-evidence/VALIDATION.txt — rapport ou journal de validation : VALIDATION (rrc-filterbar-evidence)
+rrc-filterbar-evidence/applied.png — capture navigateur préexistante : applied (rrc-filterbar-evidence)
+rrc-filterbar-evidence/browser.txt — rapport ou journal de validation : browser (rrc-filterbar-evidence)
+rrc-filterbar-evidence/tests.txt — rapport ou journal de validation : tests (rrc-filterbar-evidence)
+rrc-full-map-evidence/1280.png — capture navigateur préexistante : 1280 (rrc-full-map-evidence)
+rrc-full-map-evidence/1440.png — capture navigateur préexistante : 1440 (rrc-full-map-evidence)
+rrc-full-map-evidence/1920.png — capture navigateur préexistante : 1920 (rrc-full-map-evidence)
+rrc-full-map-evidence/400.png — capture navigateur préexistante : 400 (rrc-full-map-evidence)
+rrc-full-map-evidence/REPORT.txt — rapport ou journal de validation : REPORT (rrc-full-map-evidence)
+rrc-full-map-evidence/analysis.png — capture navigateur préexistante : analysis (rrc-full-map-evidence)
+rrc-full-map-evidence/browser.json — réponses/mesures ou contrat enregistré : rrc-full-map-evidence / browser
+rrc-full-map-evidence/failure.png — capture navigateur préexistante : failure (rrc-full-map-evidence)
+rrc-full-map-evidence/final.png — capture navigateur préexistante : final (rrc-full-map-evidence)
+rrc-full-map-evidence/rrc-basemap.png — capture navigateur préexistante : rrc basemap (rrc-full-map-evidence)
+rrc-geography-ui-evidence/kpi-400.png — capture navigateur préexistante : kpi 400 (rrc-geography-ui-evidence)
+rrc-geography-ui-evidence/kpi.png — capture navigateur préexistante : kpi (rrc-geography-ui-evidence)
+rrc-geography-ui-evidence/rrc-400.png — capture navigateur préexistante : rrc 400 (rrc-geography-ui-evidence)
+rrc-geography-ui-evidence/rrc.png — capture navigateur préexistante : rrc (rrc-geography-ui-evidence)
+rrc-grouped-evidence/dark.png — capture navigateur préexistante : dark (rrc-grouped-evidence)
+rrc-grouped-evidence/desktop.png — capture navigateur préexistante : desktop (rrc-grouped-evidence)
+rrc-grouped-evidence/distribution-before.json — réponses/mesures ou contrat enregistré : rrc-grouped-evidence / distribution-before
+rrc-grouped-evidence/distribution.json — réponses/mesures ou contrat enregistré : rrc-grouped-evidence / distribution
+rrc-grouped-evidence/mobile.png — capture navigateur préexistante : mobile (rrc-grouped-evidence)
+rrc-grouped-evidence/report.json — réponses/mesures ou contrat enregistré : rrc-grouped-evidence / report
+rrc-grouped-evidence/table.png — capture navigateur préexistante : table (rrc-grouped-evidence)
+rrc-grouped-evidence/values.csv — export de valeurs RRC enregistré pour comparaison tableau/graphe
+rrc-hierarchy-evidence/dark.png — capture navigateur préexistante : dark (rrc-hierarchy-evidence)
+rrc-hierarchy-evidence/desktop.png — capture navigateur préexistante : desktop (rrc-hierarchy-evidence)
+rrc-hierarchy-evidence/distribution.json — réponses/mesures ou contrat enregistré : rrc-hierarchy-evidence / distribution
+rrc-hierarchy-evidence/mobile-scrolled.png — capture navigateur préexistante : mobile scrolled (rrc-hierarchy-evidence)
+rrc-hierarchy-evidence/mobile.png — capture navigateur préexistante : mobile (rrc-hierarchy-evidence)
+rrc-hierarchy-evidence/report.json — réponses/mesures ou contrat enregistré : rrc-hierarchy-evidence / report
+rrc-hierarchy-evidence/table.png — capture navigateur préexistante : table (rrc-hierarchy-evidence)
+rrc-hierarchy-evidence/values.csv — export de valeurs RRC enregistré pour comparaison tableau/graphe
+rrc-map-evidence/rrc-basemap.png — capture navigateur préexistante : rrc basemap (rrc-map-evidence)
+rrc-map-evidence/rrc-map-info.png — capture navigateur préexistante : rrc map info (rrc-map-evidence)
+rrc-panels-v2-evidence/1280.png — capture navigateur préexistante : 1280 (rrc-panels-v2-evidence)
+rrc-panels-v2-evidence/1440.png — capture navigateur préexistante : 1440 (rrc-panels-v2-evidence)
+rrc-panels-v2-evidence/1920.png — capture navigateur préexistante : 1920 (rrc-panels-v2-evidence)
+rrc-panels-v2-evidence/400.png — capture navigateur préexistante : 400 (rrc-panels-v2-evidence)
+rrc-panels-v2-evidence/REPORT.txt — rapport ou journal de validation : REPORT (rrc-panels-v2-evidence)
+rrc-panels-v2-evidence/browser.json — réponses/mesures ou contrat enregistré : rrc-panels-v2-evidence / browser
+rrc-points-evidence/400.png — capture navigateur préexistante : 400 (rrc-points-evidence)
+rrc-points-evidence/REPORT.txt — rapport ou journal de validation : REPORT (rrc-points-evidence)
+rrc-points-evidence/browser.json — réponses/mesures ou contrat enregistré : rrc-points-evidence / browser
+rrc-points-evidence/points-and-values.png — capture navigateur préexistante : points and values (rrc-points-evidence)
+rrc-points-evidence/test3-cluster-values.png — capture navigateur préexistante : test3 cluster values (rrc-points-evidence)
+rrc-points-evidence/test3-coverage.json — réponses/mesures ou contrat enregistré : rrc-points-evidence / test3-coverage
+rrc-points-evidence/test3-real-points.png — capture navigateur préexistante : test3 real points (rrc-points-evidence)
+rrc-recovery-evidence/REPORT.txt — rapport ou journal de validation : REPORT (rrc-recovery-evidence)
+rrc-recovery-evidence/browser.json — réponses/mesures ou contrat enregistré : rrc-recovery-evidence / browser
+rrc-recovery-evidence/recovered.png — capture navigateur préexistante : recovered (rrc-recovery-evidence)
+rrc-resize-evidence/rrc-basemap.png — capture navigateur préexistante : rrc basemap (rrc-resize-evidence)
+rrc-sync-evidence/rrc-layout-before.json — réponses/mesures ou contrat enregistré : rrc-sync-evidence / rrc-layout-before
+rrc-sync-evidence/rrc-scroll-before.json — réponses/mesures ou contrat enregistré : rrc-sync-evidence / rrc-scroll-before
+rrc-sync-evidence/rrc-scroll-validation.json — réponses/mesures ou contrat enregistré : rrc-sync-evidence / rrc-scroll-validation
+rrc-sync-evidence/rrc-sync-audit.json — réponses/mesures ou contrat enregistré : rrc-sync-evidence / rrc-sync-audit
+rrc-sync-evidence/rrc-sync-browser.json — réponses/mesures ou contrat enregistré : rrc-sync-evidence / rrc-sync-browser
+rrc-sync-evidence/rrc-sync-desktop.png — capture navigateur préexistante : rrc sync desktop (rrc-sync-evidence)
+rrc-sync-evidence/rrc-sync-table.png — capture navigateur préexistante : rrc sync table (rrc-sync-evidence)
+rrc-sync-evidence/rrc-sync-toolbar.png — capture navigateur préexistante : rrc sync toolbar (rrc-sync-evidence)
+rrc-sync-evidence/rrc-sync-values.csv — export de valeurs RRC enregistré pour comparaison tableau/graphe
+rrc-sync-evidence/vitest-validation.config.mjs — script de contrôle/preuve vitest validation.config
+rrc-table-premium-evidence/1280.png — capture navigateur préexistante : 1280 (rrc-table-premium-evidence)
+rrc-table-premium-evidence/1440.png — capture navigateur préexistante : 1440 (rrc-table-premium-evidence)
+rrc-table-premium-evidence/1920.png — capture navigateur préexistante : 1920 (rrc-table-premium-evidence)
+rrc-table-premium-evidence/2560.png — capture navigateur préexistante : 2560 (rrc-table-premium-evidence)
+rrc-table-premium-evidence/400.png — capture navigateur préexistante : 400 (rrc-table-premium-evidence)
+rrc-table-premium-evidence/baseline.json — réponses/mesures ou contrat enregistré : rrc-table-premium-evidence / baseline
+rrc-templates-evidence/00-parameters.png — capture navigateur préexistante : 00 parameters (rrc-templates-evidence)
+rrc-templates-evidence/01-drx-operator.png — capture navigateur préexistante : 01 drx operator (rrc-templates-evidence)
+rrc-templates-evidence/02-drx-band.png — capture navigateur préexistante : 02 drx band (rrc-templates-evidence)
+rrc-templates-evidence/03-drx-both.png — capture navigateur préexistante : 03 drx both (rrc-templates-evidence)
+rrc-templates-evidence/04-raw.png — capture navigateur préexistante : 04 raw (rrc-templates-evidence)
+rrc-templates-evidence/05-mobile.png — capture navigateur préexistante : 05 mobile (rrc-templates-evidence)
+rrc-templates-evidence/06-dark.png — capture navigateur préexistante : 06 dark (rrc-templates-evidence)
+rrc-templates-evidence/07-admin.png — capture navigateur préexistante : 07 admin (rrc-templates-evidence)
+rrc-templates-evidence/DELIVERY.txt — rapport ou journal de validation : DELIVERY (rrc-templates-evidence)
+rrc-templates-evidence/THREE_TREES.txt — rapport ou journal de validation : THREE_TREES (rrc-templates-evidence)
+rrc-templates-evidence/browser.txt — rapport ou journal de validation : browser (rrc-templates-evidence)
+rrc-templates-evidence/build.txt — rapport ou journal de validation : build (rrc-templates-evidence)
+rrc-templates-evidence/failure.png — capture navigateur préexistante : failure (rrc-templates-evidence)
+rrc-templates-evidence/lint-targeted.txt — rapport ou journal de validation : lint-targeted (rrc-templates-evidence)
+rrc-templates-evidence/tests.txt — rapport ou journal de validation : tests (rrc-templates-evidence)
+rrc-templates-evidence/three-trees-browser.txt — rapport ou journal de validation : three-trees-browser (rrc-templates-evidence)
+rrc-templates-evidence/three-trees-build.txt — rapport ou journal de validation : three-trees-build (rrc-templates-evidence)
+rrc-templates-evidence/three-trees-tests.txt — rapport ou journal de validation : three-trees-tests (rrc-templates-evidence)
+rrc-templates-evidence/three-trees-typecheck.txt — rapport ou journal de validation : three-trees-typecheck (rrc-templates-evidence)
+rrc-templates-evidence/typecheck.txt — rapport ou journal de validation : typecheck (rrc-templates-evidence)
+rrc-v3-evidence/1280.png — capture navigateur préexistante : 1280 (rrc-v3-evidence)
+rrc-v3-evidence/1440.png — capture navigateur préexistante : 1440 (rrc-v3-evidence)
+rrc-v3-evidence/1920.png — capture navigateur préexistante : 1920 (rrc-v3-evidence)
+rrc-v3-evidence/400.png — capture navigateur préexistante : 400 (rrc-v3-evidence)
+rrc-v3-evidence/REPORT.txt — rapport ou journal de validation : REPORT (rrc-v3-evidence)
+rrc-v3-evidence/browser.json — réponses/mesures ou contrat enregistré : rrc-v3-evidence / browser
+rrc-v3-evidence/rrc-basemap.png — capture navigateur préexistante : rrc basemap (rrc-v3-evidence)
+scripts/bc2-lot-a-proof.mjs — script de contrôle/preuve bc2 lot a proof
+scripts/kpi-compact-check.mjs — script de contrôle/preuve kpi compact check
+scripts/kpi-map-check.mjs — script de contrôle/preuve kpi map check
+scripts/kpi-multigraph-check.mjs — script de contrôle/preuve kpi multigraph check
+scripts/kpi-v3-check.mjs — script de contrôle/preuve kpi v3 check
+scripts/kpi-vitest.config.mjs — script de contrôle/preuve kpi vitest.config
+scripts/navigation-cache-check.mjs — script de contrôle/preuve navigation cache check
+scripts/operator-default-check.mjs — script de contrôle/preuve operator default check
+scripts/page-performance-check.mjs — script de contrôle/preuve page performance check
+scripts/page-performance-filter-check.mjs — script de contrôle/preuve page performance filter check
+scripts/page-performance-navigation.mjs — script de contrôle/preuve page performance navigation
+scripts/page-performance-overview-check.mjs — script de contrôle/preuve page performance overview check
+scripts/page-performance-regression.mjs — script de contrôle/preuve page performance regression
+scripts/rrc-basemap-check.mjs — script de contrôle/preuve rrc basemap check
+scripts/rrc-export-sync-check.mjs — script de contrôle/preuve rrc export sync check
+scripts/rrc-filter-controls-check.mjs — script de contrôle/preuve rrc filter controls check
+scripts/rrc-filter-sync-check.mjs — script de contrôle/preuve rrc filter sync check
+scripts/rrc-filterbar-check.mjs — script de contrôle/preuve rrc filterbar check
+scripts/rrc-full-map-check.mjs — script de contrôle/preuve rrc full map check
+scripts/rrc-full-map-controls-check.mjs — script de contrôle/preuve rrc full map controls check
+scripts/rrc-full-map-filters-check.mjs — script de contrôle/preuve rrc full map filters check
+scripts/rrc-geography-ui-check.mjs — script de contrôle/preuve rrc geography ui check
+scripts/rrc-grouped-check.mjs — script de contrôle/preuve rrc grouped check
+scripts/rrc-hierarchy-check.mjs — script de contrôle/preuve rrc hierarchy check
+scripts/rrc-info-left-check.mjs — script de contrôle/preuve rrc info left check
+scripts/rrc-layout-audit.mjs — script de contrôle/preuve rrc layout audit
+scripts/rrc-map-api-probe.mjs — script de contrôle/preuve rrc map api probe
+scripts/rrc-map-check.mjs — script de contrôle/preuve rrc map check
+scripts/rrc-map-resize-check.mjs — script de contrôle/preuve rrc map resize check
+scripts/rrc-multiselect-api-check.mjs — script de contrôle/preuve rrc multiselect api check
+scripts/rrc-multiselect-recovery-check.mjs — script de contrôle/preuve rrc multiselect recovery check
+scripts/rrc-panels-v2-check.mjs — script de contrôle/preuve rrc panels v2 check
+scripts/rrc-points-check.mjs — script de contrôle/preuve rrc points check
+scripts/rrc-premium-check.mjs — script de contrôle/preuve rrc premium check
+scripts/rrc-scroll-audit.mjs — script de contrôle/preuve rrc scroll audit
+scripts/rrc-scroll-check.mjs — script de contrôle/preuve rrc scroll check
+scripts/rrc-sync-layout-check.mjs — script de contrôle/preuve rrc sync layout check
+scripts/rrc-table-premium-check.mjs — script de contrôle/preuve rrc table premium check
+scripts/rrc-templates-check.mjs — script de contrôle/preuve rrc templates check
+scripts/rrc-templates-clean-check.mjs — script de contrôle/preuve rrc templates clean check
+scripts/rrc-test3-map-proof.mjs — script de contrôle/preuve rrc test3 map proof
+scripts/rrc-test3-points-check.mjs — script de contrôle/preuve rrc test3 points check
+scripts/rrc-v3-check.mjs — script de contrôle/preuve rrc v3 check
+scripts/rrc-v3-map-check.mjs — script de contrôle/preuve rrc v3 map check
+scripts/rrc-v3-table-check.mjs — script de contrôle/preuve rrc v3 table check
+scripts/shot_dict_main.mjs — script de contrôle/preuve shot_dict_main
+scripts/vitest-rrc.config.mjs — script de contrôle/preuve vitest rrc.config
+src/components/bc4/AppShell.tsx — ajout de RF Modules dans la navigation ; version commune affichée
+src/components/bc4/RadioMap.tsx — accepte les points nullable ; exclut uniquement les coordonnées nulles de la carte
+src/features/dict-v2/DictV2Page.tsx — refonte panneaux/filtres/carte/infos/templates/cache ; lot A : période projet et distribution directe serveur
+src/features/dict-v2/FilterSelect.tsx — sélecteur local opérateur/bande ; lot A : indisponibilité avec tooltip
+src/features/dict-v2/GeographicFilter.tsx — filtres géographiques pilotés par disponibilité API
+src/features/dict-v2/GroupedValueTable.tsx — tableau hiérarchique commun, tri/recherche/CSV ; lot A : pourcentages non exposés désactivés
+src/features/dict-v2/InfoDrawer.tsx — lecture via client API commun et formatage JSX
+src/features/dict-v2/RrcMapLayers.tsx — contrôles de couches de la carte RRC
+src/features/dict-v2/RrcMapPanel.tsx — carte des occurrences RRC et panneaux de détail
+src/features/dict-v2/SelectedParameterInfo.tsx — fiche du paramètre sélectionné et preuves de distribution
+src/features/dict-v2/TemplateTable.tsx — rendu tabulaire des catégories et lignes templates
+src/features/dict-v2/TreePanel.tsx — onglets Paramètres/Raw/Templates, sélection synchronisée ; lot A : agrégats Raw indisponibles explicités
+src/features/dict-v2/ValueExplorer.tsx — tableau groupé commun et graphiques ; lot A : en-tête API et distinction indisponible/zéro
+src/features/dict-v2/distribution-view.ts — ancien filtrage/regroupement des agrégats API côté client ; non appelé par lot A
+src/features/dict-v2/filter-state.ts — instantanés immuables et clés de filtres appliqués/brouillon
+src/features/dict-v2/geographic-state.ts — modèle et sérialisation des sélections géographiques
+src/features/dict-v2/grouped-table.ts — modèle commun tableau/export ; lot A : sommes et pourcentages calculés supprimés
+src/features/dict-v2/map-view.ts — sélection et présentation des occurrences cartographiques
+src/features/dict-v2/parameter-identity.ts — identité des feuilles et compteurs ; lot A : correspondance explicite seulement
+src/features/dict-v2/premium.css — styles panneaux, contrôles, carte et tableau RRC
+src/features/dict-v2/request-recovery.ts — messages et stratégie de nouvelle tentative des requêtes RRC
+src/features/dict-v2/template-model.test.ts — tests template model
+src/features/dict-v2/template-model.ts — modèle des catégories templates et liaison aux feuilles
+src/features/dict-v2/types.ts — palette opérateurs commune, Free vert, helpers de libellés
+src/features/kpi/KpiCatalogSidebar.tsx — arbre du catalogue KPI et menus de visualisation
+src/features/kpi/KpiChartSettings.tsx — configuration locale des axes/regroupements/statistiques par KPI
+src/features/kpi/KpiDataTable.tsx — tableau des résultats KPI et export CSV
+src/features/kpi/KpiFilters.tsx — barre des filtres KPI et disponibilités ; lot A : tooltip période absente
+src/features/kpi/KpiGraphCard.tsx — carte KPI, histogramme/graphique agrégé/tableau/carte indisponible, export
+src/features/kpi/KpiMapInfo.tsx — panneau explicatif des limites et informations de carte KPI
+src/features/kpi/KpiMapOSM.tsx — fond cartographique OpenStreetMap pour KPI
+src/features/kpi/KpiWorkspace.tsx — orchestration des sélections, requêtes et vues indépendantes ; lot A : bornes manquantes
+src/features/kpi/VisualizationMenu.tsx — menu partagé de choix de visualisation KPI
+src/features/kpi/visualization-model.ts — configuration des modes et capabilities disponibles
+src/features/kpi/workspace-model.ts — modèle filtres/catalogue/résultats/export KPI
+src/features/kpi/workspace.css — styles de l’espace KPI et responsive
+src/features/projects/NmfImportPanel.tsx — affichage de la progression du job asynchrone NMF
+src/features/projects/ProjectRowNmfAction.tsx — progression import, propagation immédiate des erreurs et statut requête
+src/features/projects/shared.tsx — libellé partagé de progression du job d’import
+src/features/projects/useNmfUpload.ts — suivi du job accepté ; erreurs de suivi distinctes des erreurs de réception
+src/features/rf-modules/DemoMap.tsx — carte de démonstration RF, non présentée comme données API
+src/features/rf-modules/RfModulesPage.tsx — espace RF Modules, disponibilité et démonstration explicitement marquée
+src/features/rf-modules/fixtures/rfDemo.ts — observations RF synthétiques de démonstration préexistantes ; aucune insertion back
+src/features/rf-modules/registry.ts — registre des modules RF et capacités/indisponibilités
+src/features/settings/SettingsLayout.tsx — onglet Templates RRC, session réelle et retrait du rôle simulé
+src/features/settings/ai/AiConfigPanel.tsx — libellés de sauvegarde et test de connexion reliés au back
+src/features/settings/appearance/AppearancePanel.tsx — bandeau signalant le panneau non connecté au back
+src/features/settings/cellular-reference/CellularReferencePanel.tsx — rapport upload aligné sur status/rejets/cellules affectées ; refus jamais présenté comme succès
+src/features/settings/dict-templates/DictTemplatesPanel.tsx — administration des templates RRC via API
+src/features/settings/geography/GeographyPanel.tsx — bandeau signalant le panneau non connecté au back
+src/features/settings/shared.tsx — composant NotWiredBanner et libellé de sauvegarde partagé
+src/features/settings/users/UsersPanel.tsx — signalement des limites de connexion back du panneau utilisateurs
+src/lib/api/client.ts — validation stricte Overview nullable et exports clients dictionnaire/KPI/templates
+src/lib/api/dict-templates.ts — schémas et clients lecture/mise à jour templates
+src/lib/api/dict-v2.ts — schémas et fetchers des filtres géographiques, distribution technologique et carte
+src/lib/api/nmf-schemas.ts — schéma de job asynchrone NMF
+src/lib/api/project-kpi-schemas.ts — validation assouplie des métadonnées/valeurs KPI nullable
+src/lib/api/projects.ts — gestion HTTP 202 et polling du job d’import jusqu’au rapport
+src/lib/api/reference-schemas.ts — schéma CellRefUploadReport du back
+src/lib/api/reference.ts — upload vers /settings/cell-ref/upload et validation du nouveau rapport
+src/lib/api/schemas.ts — Project avec n_files/import_job, filtre dor, OverviewPoint nullable
+src/lib/query-cache.ts — client Query partagé, durée de cache et effacement de session
+src/lib/version.ts — source unique package.json conservée ; commentaire du lot A
+src/routeTree.gen.ts — arbre de routes généré : RF et administration templates
+src/router.tsx — client React Query partagé avec politique de cache
+src/routes/__root.tsx — invalidations du cache liées à la session
+src/routes/_app.kpi.tsx — ancienne page remplacée par KpiWorkspace modulaire
+src/routes/_app.overview.tsx — cache des requêtes et affichage N/D pour métadonnées absentes
+src/routes/_app.projects.tsx — projet actif visible, jobs d’import/polling et compte de fichiers
+src/routes/_app.rf.tsx — route RF Modules
+src/routes/_app.rrc.tsx — remontage du dictionnaire lors du changement de projet
+src/routes/_app.settings.dict-templates.tsx — route administration templates RRC
+src/test/bc2-lot-a.test.ts — tests bc2 lot a
+src/test/kpi-visualization.test.tsx — tests kpi visualization
+src/test/kpi-workspace.test.ts — tests kpi workspace
+src/test/operator-filter.test.tsx — tests operator filter
+src/test/overview-contract.test.ts — tests overview contract
+src/test/project-import-error.test.tsx — tests project import error
+src/test/query-cache.test.ts — tests query cache
+src/test/rrc-geography.test.tsx — tests rrc geography
+src/test/rrc-grouped-table.test.tsx — tests rrc grouped table
+src/test/rrc-premium.test.ts — tests rrc premium
+src/test/rrc-request-recovery.test.ts — tests rrc request recovery
+src/test/rrc-sync.test.ts — tests rrc sync

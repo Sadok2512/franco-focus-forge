@@ -192,7 +192,9 @@ export function KpiFilters({
           ))}
           <span
             className="kpi-unavailable-filter"
-            title="Le contrat KPI ne prend pas en charge le filtrage par dates."
+            aria-disabled="true"
+            tabIndex={0}
+            title={period ? "Le contrat KPI ne prend pas en charge le filtrage par dates." : "plage non exposée par l'API"}
           >
             Période : {period ?? "—"}
           </span>

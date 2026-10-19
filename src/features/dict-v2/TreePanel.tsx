@@ -276,7 +276,7 @@ type RawAggItem = {
   shortName: string; // dernier segment (nom 3GPP)
   display: string; // shortName + ' (parentSeg)' si ambigu
   fullPath: string; // path complet du 1er leaf (pour tooltip)
-  n: number; // somme des occurrences agrégées
+  n: number | null; // compteur API uniquement
   leafRef: DictLeaf; // 1er leaf (sert pour selected/onToggle)
 };
 
@@ -297,18 +297,20 @@ function aggregateRawLeaves(leafs: DictLeaf[]): RawAggItem[] {
   // Première passe : fusion par path dédupliqué (sans [n]).
   const byKey = new Map<
     string,
-    { leaf: DictLeaf; n: number; shortName: string; canonicalSegs: string[] }
+    { leaf: DictLeaf; n: number | null; shortName: string; canonicalSegs: string[] }
   >();
   for (const l of leafs) {
     const canonical = stripIndices(l.display_name);
     const segs = canonical.split("/").filter(Boolean);
     const existing = byKey.get(canonical);
     if (existing) {
-      existing.n += l.n ?? 0;
+      existing.n = typeof l["canonical_n"] === "number" ? l["canonical_n"] : null;
+      if (existing.n === null) existing.leaf = { ...existing.leaf,
+        mapping_error: "Agrégat Raw non exposé par l’API : compteur et distribution indisponibles." };
     } else {
       byKey.set(canonical, {
         leaf: l,
-        n: l.n ?? 0,
+        n: typeof l["canonical_n"] === "number" ? l["canonical_n"] : l.n,
         shortName: segs[segs.length - 1] ?? canonical,
         canonicalSegs: segs,
       });
@@ -539,18 +541,21 @@ function RawLeafRow({
 }) {
   const isSelected = selected.has(selectionId(item.leafRef));
   const n = item.n;
+  const unavailable = typeof item.leafRef["mapping_error"] === "string" ? item.leafRef["mapping_error"] : n === 0 ? "0 occurrence dans ce périmètre" : undefined;
   return (
     <li role="none">
       <label
         className={`group flex items-start gap-1.5 rounded px-1.5 py-[3px] text-[12px] ${
           isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted"
-        } ${n === 0 ? "opacity-60" : ""}`}
+        } ${unavailable ? "opacity-60" : ""}`}
+        title={unavailable ?? item.fullPath}
         data-testid={`dict-raw-leaf-${item.shortName}`}
         data-selection-id={selectionId(item.leafRef)}
       >
         <input
           type="checkbox"
           checked={isSelected}
+          disabled={!!unavailable}
           onChange={() => onToggle(item.leafRef)}
           className="mt-[3px] h-3 w-3 shrink-0"
           aria-label={`Sélectionner ${item.shortName}`}
@@ -566,7 +571,7 @@ function RawLeafRow({
           {item.display}
         </span>
         <span className="shrink-0 self-start pt-[1px] font-mono text-[10px] tabular-nums text-muted-foreground">
-          {fmtInt(n)}
+          {n === null ? "N/D" : fmtInt(n)}
           {isSelected && (
             <span title="Occurrences affichées avec les filtres appliqués">
               {" "}
@@ -841,13 +846,15 @@ function LeafRow({
 }) {
   const chips = discriminatorChips(leaf.discriminators);
   const isSelected = selected.has(selectionId(leaf));
-  const n = leaf.n ?? 0;
+  const n = leaf.n;
+  const unavailable = n === 0 ? "0 occurrence dans ce périmètre" : undefined;
   return (
     <li role="none">
       <div
         className={`group flex items-center gap-1.5 rounded px-1.5 py-[3px] text-[12px] ${
           isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted"
-        } ${n === 0 ? "opacity-60" : ""}`}
+        } ${unavailable ? "opacity-60" : ""}`}
+        title={unavailable}
         data-testid={`dict-leaf-${leaf.display_name}`}
         data-selection-id={selectionId(leaf)}
       >
@@ -873,7 +880,7 @@ function LeafRow({
           </span>
         )}
         <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
-          {fmtInt(n)}
+          {n === null ? "N/D" : fmtInt(n)}
           {isSelected && (
             <span title="Occurrences affichées avec les filtres appliqués">
               {" "}

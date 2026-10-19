@@ -1,4 +1,4 @@
-import { getDictTemplates } from "@/lib/api/client";
+import { getProject, getDictTemplates } from "@/lib/api/client";
 import { templateLeaves } from "./template-model";
 import { TemplateTable } from "./TemplateTable";
 import { retryRrcRequest, rrcRetryDelay } from "./request-recovery";
@@ -24,7 +24,6 @@ import {
   geographicQuery,
   type RrcFilterState,
 } from "./filter-state";
-import { filterDistribution } from "./distribution-view";
 import "./premium.css";
 import { EmptyState, LoadingSkeleton } from "@/components/bc4/States";
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/components/ui/resizable";
@@ -186,16 +185,18 @@ function Toolbar({
           <MultiSelect
             showLabel
             operatorBadges
+            unavailableReason="Filtrage opérateur non exposé par l’API de distribution."
             label="Opérateur"
             options={operators}
-            value={draft.op}
+            value={[]}
             onChange={(op) => setDraft({ ...draft, op })}
           />
           <MultiSelect
             showLabel
             label="Bande"
+            unavailableReason="Filtrage bande non exposé par l’API de distribution."
             options={bands}
-            value={draft.band}
+            value={[]}
             onChange={(band) => setDraft({ ...draft, band })}
           />
           <GeographicFilter
@@ -215,8 +216,12 @@ function Toolbar({
             error={geoError}
           />
           <span
-            className="rrc-filter-period"
-            title="Dates du projet. Le filtrage temporel n’est pas pris en charge par l’API du dictionnaire."
+            className="rrc-filter-period opacity-60"
+            aria-disabled="true"
+            tabIndex={0}
+            title={period
+              ? "Plage renvoyée par /projects/{id}. Le filtrage temporel n’est pas pris en charge par l’API du dictionnaire."
+              : "plage non exposée par l'API"}
           >
             Période : {period ?? "—"}
           </span>
@@ -347,8 +352,8 @@ export function DictionaryPage({
       : "LTE+NR";
   const urlSnapshot = filterSnapshot({
     techno: urlTechno,
-    op: filters.op ?? [],
-    band: filters.band ?? [],
+    op: [],
+    band: [],
     geography: geoDraft({
       dor: urlFilters.dor ?? [],
       plaque: urlFilters.plaque ?? [],
@@ -417,6 +422,11 @@ export function DictionaryPage({
     setResetTick((t) => t + 1);
   };
 
+  const projectPeriod = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: () => getProject(projectId),
+    enabled: !!projectId,
+  });
   const proj = useQuery(dictQ.project(projectId));
   const dims = proj.data?.dimensions;
   const dirty = draftKey(draftFilters) !== draftKey(appliedFilters);
@@ -439,7 +449,7 @@ export function DictionaryPage({
       );
       return;
     }
-    const snapshot = filterSnapshot(draftFilters);
+    const snapshot = filterSnapshot({ ...draftFilters, op: [], band: [] });
     setFilterError(null);
     writtenUrl.current = appliedKey(snapshot);
     setAppliedFilters(snapshot);
@@ -494,7 +504,7 @@ export function DictionaryPage({
     [selected, techno],
   );
   const contextKey = appliedKey(appliedFilters);
-  const requestGroup = "operator_band" as const;
+  const requestGroup = groupBy;
   const distributionQ = useQuery({
     queryKey: ["dict-v2", "distribution", projectId, contextKey, effectiveKeys, groupBy],
     queryFn: async () => ({
@@ -522,18 +532,7 @@ export function DictionaryPage({
       lastValid.current = distributionQ.data;
   }, [distributionQ.data, distributionQ.isPlaceholderData]);
   const displayed = effectiveKeys.length ? (distributionQ.data ?? lastValid.current) : undefined;
-  const displayedDistribution = useMemo(
-    () =>
-      displayed
-        ? filterDistribution(
-            displayed.response,
-            displayed.filters.op,
-            displayed.filters.band,
-            displayed.groupBy,
-          )
-        : null,
-    [displayed],
-  );
+  const displayedDistribution = displayed?.response ?? null;
   const previousContext =
     !!displayed &&
     (displayed.contextKey !== contextKey ||
@@ -595,7 +594,9 @@ export function DictionaryPage({
           draft.techno === "LTE+NR" ||
           (draft.techno === "NR" ? /^n/i.test(band) : /^b/i.test(band)),
       )}
-      period={dims?.periods[0]?.replace("/", " → ") ?? null}
+      period={projectPeriod.data?.periodStart && projectPeriod.data?.periodEnd
+        ? `${projectPeriod.data.periodStart} → ${projectPeriod.data.periodEnd}`
+        : null}
       mapOpen={mapOpen}
       setMapOpen={setMapOpen}
       infoOpen={infoOpen}
@@ -614,10 +615,7 @@ export function DictionaryPage({
           selectionId(leaf),
           previousContext || !block
             ? null
-            : block.values.reduce(
-                (sum, value) => sum + value.groups.reduce((n, g) => n + g.n, 0),
-                0,
-              ),
+            : block.n_total,
         ] as const;
       }),
     );
@@ -669,6 +667,11 @@ export function DictionaryPage({
       </div>
     ) : (
       <>
+        {!!(filters.op?.length || filters.band?.length) && (
+          <p role="status" className="rrc-context-notice">
+            Les filtres opérateur/bande de l’URL ne sont pas appliqués : l’API de distribution ne les prend pas en charge.
+          </p>
+        )}
         {previousContext && (
           <p role="status" className="rrc-context-notice">
             Résultats du contexte précédent conservés —{" "}

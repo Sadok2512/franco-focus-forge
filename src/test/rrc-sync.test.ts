@@ -42,11 +42,11 @@ const leaf = (key: string, n = 10): DictLeaf => ({
 const first = (t: DictTreeResponse | null) =>
   t!.tree[0]!.origins[0]!.messages[0]!.groups[0]!.kpis[0]!;
 describe("RRC canonical parameter selection", () => {
-  it("resolves raw indices/CHOICE against a unique full catalog path in the same technology/message", () => {
+  it("resolves raw indices/CHOICE only through a unique explicit API sample path", () => {
     const canonical = "rrc/reportConfigToAddModList/reportConfig/triggerType/eventId/a3-Offset";
     const raw =
       "rrc/reportConfigToAddModList/[0]/reportConfig/reportConfigEUTRA/triggerType/event/eventId/eventA3/a3-Offset";
-    const catalog = tree("catalog", [leaf(canonical, 1129)]),
+    const catalog = tree("catalog", [{ ...leaf(canonical, 1129), sample_paths: [raw] }]),
       rawTree = tree("raw", [leaf(raw, 958)]);
     const original = JSON.stringify([catalog, rawTree]);
     const identified = identifyTrees(catalog, rawTree);
@@ -71,10 +71,10 @@ describe("RRC canonical parameter selection", () => {
       ).toBeTruthy();
     }
   });
-  it("rejects ambiguous canonical projections instead of guessing", () => {
+  it("rejects ambiguous explicit API sample paths instead of guessing", () => {
     const identified = identifyTrees(
-      tree("catalog", [leaf("rrc/path/offset"), leaf("rrc/offset")]),
-      tree("raw", [leaf("rrc/path/offset")]),
+      tree("catalog", [{ ...leaf("rrc/path/offset"), sample_paths: ["rrc/raw/offset"] }, { ...leaf("rrc/offset"), sample_paths: ["rrc/raw/offset"] }]),
+      tree("raw", [leaf("rrc/raw/offset")]),
     );
     expect(first(identified.raw)["distribution_key"]).toBeNull();
   });

@@ -1,0 +1,1162 @@
+[
+  {
+    "path": "RRC_FILTER_LAYOUT_AND_DATA_SYNC_ACCEPTANCE.txt",
+    "sha256": "f92fbb790058ecf6054cd4062436c60c6513d7eb41d6ffcaa222faa7b6792831"
+  },
+  {
+    "path": "RRC_GEOGRAPHIC_FILTERS_ACCEPTANCE.txt",
+    "sha256": "4e7daf0f948d135d29fba0433544fc3b1cb373e9e651eb4cb5cbe2706ccf8925"
+  },
+  {
+    "path": "RRC_GROUPED_TABLE_ACCEPTANCE.txt",
+    "sha256": "d82032970de97d83aee5f688c15641bcfb9318fb77309182642d609f615143c6"
+  },
+  {
+    "path": "RRC_HIERARCHICAL_VALUES_V3_ACCEPTANCE.txt",
+    "sha256": "95beb0cabb301327fcf6232c5b020f1437db566c9f1ec02151eeb13fceab8c7c"
+  },
+  {
+    "path": "RRC_PREMIUM_ACCEPTANCE.txt",
+    "sha256": "8753cb4916bfc74e1e030194dee72a168aaa5545724e767fb3f6ff10b92daf14"
+  },
+  {
+    "path": "audit/kpi-visualization-v3/API_GAPS.txt",
+    "sha256": "116bdbcd8479af1a37ca99ae7bd17ec13b790d85299c5c3e4ab72b66e888bf22"
+  },
+  {
+    "path": "audit/kpi-visualization-v3/GRAPH_1.36.1.txt",
+    "sha256": "bca41649ee1529ac2aad038e2e46228c6af9119316935b54be77031fd8d6f063"
+  },
+  {
+    "path": "audit/kpi-visualization-v3/REPORT.txt",
+    "sha256": "ecf80f82cba2b43eb37b2628182b22be276bb1c073c56ddaa8d6053101f7a9c0"
+  },
+  {
+    "path": "audit/kpi-visualization-v3/openapi-kpi.json",
+    "sha256": "424692602766e5e210377763b3bfe3b69e8de15acef5d6526033a8dba27dedd1"
+  },
+  {
+    "path": "kpi-compact-evidence/1280.png",
+    "sha256": "acfb2cd61786fa46b47f0959d58c1b263bac6639037a4be320c40a348c2d9bc5"
+  },
+  {
+    "path": "kpi-compact-evidence/1440.png",
+    "sha256": "4d43461ce7458a00e1f7ded4a19b9a081937a1d1b487dbcc994b3e8c06f81638"
+  },
+  {
+    "path": "kpi-compact-evidence/1920.png",
+    "sha256": "23111e690ddc70b322efe775b514474913c002a359a475d150c63589f0188fd6"
+  },
+  {
+    "path": "kpi-compact-evidence/400.png",
+    "sha256": "f0053c7d8a6c49ed528f9c86be8514e5e9ae16d5a265a9b381b0d9fdade0b346"
+  },
+  {
+    "path": "kpi-compact-evidence/REPORT.txt",
+    "sha256": "3c88275c024e00ef6ba67fae2f04da2749014c10afd66d8e3ed14c177158b2cd"
+  },
+  {
+    "path": "kpi-compact-evidence/browser.json",
+    "sha256": "8825016c81909eb2ebe1878219e0fb6bf19858560b2f67bfeeb4e9c670c99a7b"
+  },
+  {
+    "path": "kpi-compact-evidence/error.png",
+    "sha256": "8fb13f896c68fec2a5ae4edffe50aad7c17ec02dedf4d776cefcca09d8b870dc"
+  },
+  {
+    "path": "kpi-compact-evidence/failure.png",
+    "sha256": "d27d04bb2d3ce0777f87098ca2c478cd7b1f9cfd93cda00f54f942e1d9241e0c"
+  },
+  {
+    "path": "kpi-compact-evidence/selected-operator.png",
+    "sha256": "ba325460faa03835129ff1992331a94960838d37234710eecaf1e1ffb97d854e"
+  },
+  {
+    "path": "kpi-multigraph-evidence/REPORT.txt",
+    "sha256": "351094135b1f6fc1ba697c6ff3bbea34f3992b3a38b3aac06ba2805deea5df0c"
+  },
+  {
+    "path": "kpi-multigraph-evidence/browser-report.json",
+    "sha256": "d0bdf9cfd1ff7b66e432eb7e1368c9516dba0142ab00f9cf59bd80de6f79ce0f"
+  },
+  {
+    "path": "kpi-multigraph-evidence/data.png",
+    "sha256": "7d1367aceced389d32d2342652f41ea0efcc829032dfb9efb9755bf55b258c6d"
+  },
+  {
+    "path": "kpi-multigraph-evidence/desktop.png",
+    "sha256": "3be9b8cd94079a2841eb8a2c6f2569cb3e27e899a42028ca076e509aa9b1f9b5"
+  },
+  {
+    "path": "kpi-multigraph-evidence/map-info.png",
+    "sha256": "9ae83da3691441aec2c62c5ca69d697d025ae86c8c5539a7ccf104eb387e80f5"
+  },
+  {
+    "path": "kpi-multigraph-evidence/mobile.png",
+    "sha256": "de42af67db2e951610eda9d1c168107cd418e3d89acd86c4db39629235175902"
+  },
+  {
+    "path": "kpi-multigraph-evidence/scope-audit.json",
+    "sha256": "4134b7ac19f075b0e9358843579d970e2337cf95f32c1ba9ff59351973f18830"
+  },
+  {
+    "path": "kpi-v3-evidence/1280.png",
+    "sha256": "1be3ea80b8a196c39e0afe874c0f5525fbccdae33060dcdd4274228d65d92f34"
+  },
+  {
+    "path": "kpi-v3-evidence/1920.png",
+    "sha256": "9682afad9d6e85298216a4a4e695200beed2b6fa5828233e03e244297336a46d"
+  },
+  {
+    "path": "kpi-v3-evidence/400.png",
+    "sha256": "e8bf1968ca3960f4d126e731e88808f40740b3284dabb18ce3bf3a0b5bb769f0"
+  },
+  {
+    "path": "kpi-v3-evidence/axes.png",
+    "sha256": "919cf8d82f6e4769f4c15293c0a5bc8d9060e891fa70705fa2828838e2d18c00"
+  },
+  {
+    "path": "kpi-v3-evidence/dark.png",
+    "sha256": "d223f4119039e6072f928ed618fd7dd2c7ec3e96a5f399c814813420fe24888e"
+  },
+  {
+    "path": "kpi-v3-evidence/desktop.png",
+    "sha256": "6b8490120bbe70c9d40de9c9a7b851111f11bafffcf4f16b23126c70e4d47868"
+  },
+  {
+    "path": "kpi-v3-evidence/graph.png",
+    "sha256": "700f202417305e809f79a49e11f6dcafe98332e7442116c5310d5be6e0cf286b"
+  },
+  {
+    "path": "kpi-v3-evidence/report.json",
+    "sha256": "0dda572dacc8d28fe629713ddc317122394958bddfc78b531a75e633ca0b4a99"
+  },
+  {
+    "path": "kpi-v3-evidence/sidebar.png",
+    "sha256": "e2ae40dfcc8a1f70239c5fb5f58bee9ee74ed8e70a6b162c641bd909bef544b6"
+  },
+  {
+    "path": "performance-evidence/AUDIT.txt",
+    "sha256": "c7cdb6e991d16d8732880550d1177092ee406baf0fa90c8c3691b2d636af0c9a"
+  },
+  {
+    "path": "performance-evidence/after-repeat.json",
+    "sha256": "6bb4f25b20c14c52a251cd501007ef72d68ac10cc27d735a9449f04ef83a30e4"
+  },
+  {
+    "path": "performance-evidence/after.json",
+    "sha256": "1b1f784ea69ad95e9ed7738dcfa8bbf940f5438c2fdbc6a2f41fbb7f0f936bd9"
+  },
+  {
+    "path": "performance-evidence/api-incident.json",
+    "sha256": "3d574de135ee82901a2d0e8b5b928f0115421cdd1e0b059e8a5d017331d287a5"
+  },
+  {
+    "path": "performance-evidence/backend-build.txt",
+    "sha256": "271a46bc51fc143cc8c9d8276356e66573aa6a079586cea108164ec8b5a1cd29"
+  },
+  {
+    "path": "performance-evidence/backend-parity.txt",
+    "sha256": "536be4435e0b3fc0747a56e11aadabb52a04174b04c03cf81515fadd0d35b71c"
+  },
+  {
+    "path": "performance-evidence/backend-profile-0521.txt",
+    "sha256": "4f0a6be4d267efe8444b8214a7131c783c6cf77748c394c23ca89e4e5870b102"
+  },
+  {
+    "path": "performance-evidence/baseline-recovered.json",
+    "sha256": "6e48030977f9e31efa079eef5f152442ed26852e15bbd2ee2bdc18234f340705"
+  },
+  {
+    "path": "performance-evidence/filters-regression.txt",
+    "sha256": "3c2c3daab652bf41139275378e9dd5ebf68a39b9b1c32046647e8803f67a0251"
+  },
+  {
+    "path": "performance-evidence/filters/1280.png",
+    "sha256": "b40490cc7f6449c12ba9cbdf0ea0b61b1119bf4b446c8335e06fc7f5c34323eb"
+  },
+  {
+    "path": "performance-evidence/filters/1440.png",
+    "sha256": "004c9bb210151fa92ae49c849a7477b2fb11ae55bf70758e4467949a31ce802b"
+  },
+  {
+    "path": "performance-evidence/filters/1920.png",
+    "sha256": "79a5e29e4f1d631e2780051ff9215e0a16f78ddeff6579073236b898a6dd4a60"
+  },
+  {
+    "path": "performance-evidence/filters/400.png",
+    "sha256": "04aa3e4a64b67dbb0b0f8ac26328496a5c5085333088c5a667d0e11c1c5573bb"
+  },
+  {
+    "path": "performance-evidence/filters/applied.png",
+    "sha256": "8317f39e86c1dd0c458dc6dc5bf01b4d4c98a5d005dca94b77fecbc2c4984848"
+  },
+  {
+    "path": "performance-evidence/frontend-build.txt",
+    "sha256": "09b4060d156b93e2bcd628be8c5233f6d394bef0e9354dd2bf286f07c021a636"
+  },
+  {
+    "path": "performance-evidence/health.json",
+    "sha256": "806e8fbaf3bb13643bbf72b34130816b7879cd89797253a7ff10f4758f04ebc1"
+  },
+  {
+    "path": "performance-evidence/kpi-overview-tests.txt",
+    "sha256": "d6029dbfa6ac4232d0d4ed300e35f2f6238049cb44a5a6305e331ac424c93f1f"
+  },
+  {
+    "path": "performance-evidence/lint-shared-without-formatting.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "performance-evidence/lint-targeted.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "performance-evidence/navigation-cache.json",
+    "sha256": "3779d553ba057b1840d9cf62a67f3a14260a9a9ffd53ff589e19e87ae4ee5b45"
+  },
+  {
+    "path": "performance-evidence/other-pages.json",
+    "sha256": "02781a3d385e320ceabe8d304cfa9f5828b4f729363b6ea0651ec7086ee90a3a"
+  },
+  {
+    "path": "performance-evidence/overview-0522.json",
+    "sha256": "3367cf82727f24caf65cf627fa43400f5803d4816cfbc4f3f705b05648f0199f"
+  },
+  {
+    "path": "performance-evidence/overview-browser-0521.txt",
+    "sha256": "4745adfc719fd5d9ad3af7615a980dc609388ee45854eabf5717aa878dc61a71"
+  },
+  {
+    "path": "performance-evidence/overview-final.json",
+    "sha256": "0e1e71963029c0b94893104aa21643c52968589cbca0061ceb2a90bb8e52d79e"
+  },
+  {
+    "path": "performance-evidence/overview-final.png",
+    "sha256": "5aac8a3307dc31bcf8c0066381a075163648283301bfaf7bf14f6a152e529ae9"
+  },
+  {
+    "path": "performance-evidence/overview-live-0520.txt",
+    "sha256": "501679766385b7008b9132afac082a3777cc49408b771617d6ad1c4f7883a3e5"
+  },
+  {
+    "path": "performance-evidence/rrc-tests.txt",
+    "sha256": "ca84f7bee2d29813ea2bef716bdb083e02738b374d453ec103464c63475047a8"
+  },
+  {
+    "path": "performance-evidence/templates-regression.txt",
+    "sha256": "3cdf8130d20c24e7fe0902fb75b715c31f2777e374caa37b29a8a2e8d16aebfd"
+  },
+  {
+    "path": "performance-evidence/templates/00-parameters.png",
+    "sha256": "7a9e1d8783a60c6ba6ff9f5901a26e7c102b3882876655f3067aa26974c3c610"
+  },
+  {
+    "path": "performance-evidence/templates/01-drx-operator.png",
+    "sha256": "578c6989f6651455992da449c048b28ca73ef55df14bf15866e0c2497045dcdc"
+  },
+  {
+    "path": "performance-evidence/templates/02-drx-band.png",
+    "sha256": "57f8d85057e1bf644fc183ebb399918bed8a1a2522dcfcb6d0b77b5be4007d34"
+  },
+  {
+    "path": "performance-evidence/templates/03-drx-both.png",
+    "sha256": "169e6b559501b25d60489e9e77fafc6fd41154295c2663dbd3bda75cf4800f70"
+  },
+  {
+    "path": "performance-evidence/templates/04-raw.png",
+    "sha256": "886cf790327bbfe82df6377f680bd989f3b0c76acb9c389785b1fdcfa79206a3"
+  },
+  {
+    "path": "performance-evidence/templates/05-mobile.png",
+    "sha256": "bacd81474fd0680204bd1cd66ab80a8ca73e10658d325f8bd87d13554086f9ba"
+  },
+  {
+    "path": "performance-evidence/templates/06-dark.png",
+    "sha256": "268cb8128ba8965505a9c19d63ce3b72da588514641e7116e89e0f30e3686686"
+  },
+  {
+    "path": "performance-evidence/templates/07-admin.png",
+    "sha256": "53ca8f9614a3181d54742c20854de4eb1163c7df4a8959f9e41b1b8edda6108b"
+  },
+  {
+    "path": "performance-evidence/typecheck.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "rrc-filterbar-evidence/1280.png",
+    "sha256": "28387ef7d9084bd34c72d73af978f762ebc9f5d07a248d1e213ee14dc7890cbd"
+  },
+  {
+    "path": "rrc-filterbar-evidence/1440.png",
+    "sha256": "8b56e40395ef55ebe8b9cf8d28493e3ce5e37f24a2145ef3e913b7a21cb2c083"
+  },
+  {
+    "path": "rrc-filterbar-evidence/1920.png",
+    "sha256": "200c0257bae9062a79ae0edb3257e16d6a9f352a1b148bdb79bf4f6c57fa93fd"
+  },
+  {
+    "path": "rrc-filterbar-evidence/400.png",
+    "sha256": "deefc7f4f648263c8714ad5d95724046b0621e8ce1c3afc1d9d566513a61413a"
+  },
+  {
+    "path": "rrc-filterbar-evidence/VALIDATION.txt",
+    "sha256": "b9529b6a57e0e3ea365cc6e5648493b40348f9fba547090146b831a40a06f872"
+  },
+  {
+    "path": "rrc-filterbar-evidence/applied.png",
+    "sha256": "325bea5a22d7e008964e71ff211d4e57a0d414f7f64a6e6aa5f74c3e30cff179"
+  },
+  {
+    "path": "rrc-filterbar-evidence/browser.txt",
+    "sha256": "80762b6724dc58b9d10e603180738f583a5a573dcf731da19ccf667d48131deb"
+  },
+  {
+    "path": "rrc-filterbar-evidence/tests.txt",
+    "sha256": "39e7de5c52f76121d51e52c3bd683c39bfea2505ef91af39f94ee5fefa24cfd7"
+  },
+  {
+    "path": "rrc-full-map-evidence/1280.png",
+    "sha256": "0c80290e4b050b3332fc19e788b94239c03d8ed31dcbcc8a07d2d8739b4c0a41"
+  },
+  {
+    "path": "rrc-full-map-evidence/1440.png",
+    "sha256": "9e816d09bb9fc0d33eb7111da4ffd1ec5c1e0ba3461fc29d31ac53568ec44069"
+  },
+  {
+    "path": "rrc-full-map-evidence/1920.png",
+    "sha256": "fbf46f5038c5eda407610bb74f4db8f9dcf516ae208688d3a25c65293b13f919"
+  },
+  {
+    "path": "rrc-full-map-evidence/400.png",
+    "sha256": "15790144833b9a5ba1513f8f17d4b4736bf31fa9fc1f5eab1319df5374d63a8e"
+  },
+  {
+    "path": "rrc-full-map-evidence/REPORT.txt",
+    "sha256": "764acbfde4da8ea4381b3cb9409f29ab749761ec9b908f1b9a9910faf2b7d7b4"
+  },
+  {
+    "path": "rrc-full-map-evidence/analysis.png",
+    "sha256": "cf7fd3e03d50744c7679bf5ecbc384c677248517796f9277b4d847f795a40cca"
+  },
+  {
+    "path": "rrc-full-map-evidence/browser.json",
+    "sha256": "e4fd860dc37059caba2b74166478fe0c9d5ad1ca4d6cfa4067c84b8319aad497"
+  },
+  {
+    "path": "rrc-full-map-evidence/failure.png",
+    "sha256": "8d86ad3c9f08876007ca60b1eb7a282557098e55498e2b62099ff4ecc5a70b07"
+  },
+  {
+    "path": "rrc-full-map-evidence/final.png",
+    "sha256": "e389d5d6483188a377baca3d4cfeefabb45a5634fb31b66c1af44e312cfdfaed"
+  },
+  {
+    "path": "rrc-full-map-evidence/rrc-basemap.png",
+    "sha256": "0aaff8fceffc144aaad00580c8337579e4f534644d0bb411073b99a8765d5256"
+  },
+  {
+    "path": "rrc-geography-ui-evidence/kpi-400.png",
+    "sha256": "e6b301fe815dc8dbed825d296c142a7242d039932b1a6b644078aeb4e581b2c4"
+  },
+  {
+    "path": "rrc-geography-ui-evidence/kpi.png",
+    "sha256": "2990f595f01ce1d2492cedd82493094b5bf00260be02b4f0cb67e9114a6f6e24"
+  },
+  {
+    "path": "rrc-geography-ui-evidence/rrc-400.png",
+    "sha256": "f005ad8871d42bf0896a7e9e04128f90b39818ea543abc9c5b0731d0b2627ef7"
+  },
+  {
+    "path": "rrc-geography-ui-evidence/rrc.png",
+    "sha256": "6f1a1dbc6e1a7e40c29a90547ef81f8d8253b7e48a440b737efe14dbd6c26a70"
+  },
+  {
+    "path": "rrc-grouped-evidence/dark.png",
+    "sha256": "4c0d0e281a450f70aa2abeaec23a658ef1eea0971701b779995d30327b130fc4"
+  },
+  {
+    "path": "rrc-grouped-evidence/desktop.png",
+    "sha256": "9700636e073a93dd47e516ce7b7c9d955720af27cd41451648b6e877ee3232c0"
+  },
+  {
+    "path": "rrc-grouped-evidence/distribution-before.json",
+    "sha256": "1e0e00af42eecf8fb71935d1a25a7476e6c7525fce5c8f7f3f181003059238da"
+  },
+  {
+    "path": "rrc-grouped-evidence/distribution.json",
+    "sha256": "87d107594f96b0510afe1445a57ff01b0d6c8a86129d2ab144cbaa50431e5ccc"
+  },
+  {
+    "path": "rrc-grouped-evidence/mobile.png",
+    "sha256": "dc6b32be656567885ea4422cdd9189071fcec2e95c18958c34c12a6c7d69de0b"
+  },
+  {
+    "path": "rrc-grouped-evidence/report.json",
+    "sha256": "29014a64f7281789d4ea0c8a2c421b5ffc3b7e1d82e11c8d362d668d6e4ec43c"
+  },
+  {
+    "path": "rrc-grouped-evidence/table.png",
+    "sha256": "0fb62bfcdbabea9f9b8a37e0c6d97dacb8df661259ee68d60d4b192db1360f82"
+  },
+  {
+    "path": "rrc-grouped-evidence/values.csv",
+    "sha256": "1ddc2c035900d77d0b30d732c59f1a48d088cb2b96db03902d8d4982cc7c1fb6"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/dark.png",
+    "sha256": "6591b6b7f9bd91530243629d890daaa2e336a83f7b27d65bfba91a3d9154e705"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/desktop.png",
+    "sha256": "e797d2f3efa288c46a19ec311b48570d838b60f70325a41f5c28c286e7790716"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/distribution.json",
+    "sha256": "87d107594f96b0510afe1445a57ff01b0d6c8a86129d2ab144cbaa50431e5ccc"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/mobile-scrolled.png",
+    "sha256": "3c49a90e2a1a13e3144dc05025f2691b7bfd02ff7953f6637eaffd5f726c8960"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/mobile.png",
+    "sha256": "b04e5e54b8cce655b652911d8135356c82ed382e2aed83532748bada8cc15c31"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/report.json",
+    "sha256": "f03f9737de2a9aa66e8918113b465b638984f661e17613b4427b29937d1417af"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/table.png",
+    "sha256": "c31b53db61e0ef06c1623b76caec2aeaeb8f3cdb17ab5f79d2a2f7feec910bcb"
+  },
+  {
+    "path": "rrc-hierarchy-evidence/values.csv",
+    "sha256": "ba733668056aebba6572b78e707eb566f9f151bf10c6fc85a7ad0a5fb9d4c5cf"
+  },
+  {
+    "path": "rrc-map-evidence/rrc-basemap.png",
+    "sha256": "7ca19f67bc5649da6ecc48458da31b2339ef8a4a8a8e72dc38fda8e195058027"
+  },
+  {
+    "path": "rrc-map-evidence/rrc-map-info.png",
+    "sha256": "5b0e6a4041d9b139642d833ec43ffdf7b4dd96d6f0386e0bf251fc3dd105914a"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/1280.png",
+    "sha256": "e087a814e181e0e8892d2c4f1b659a681f2f858364b3f8126f137aa3bf6dd432"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/1440.png",
+    "sha256": "0c6659eabe6203dc44f83b362cdb5f4b53d6186098c445263999a68b3923528a"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/1920.png",
+    "sha256": "669630b0873300db4627e7897af5cf72e9cf6e203ee0d7de0137f8fe7e864894"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/400.png",
+    "sha256": "215562a645b39e2f4426b821069515bd2e6b0d764c572dead7c4d22436076316"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/REPORT.txt",
+    "sha256": "58c5db8c3991bca3fe7ca024a5ea67a32ffcc987983aa90a99b7777d7fdf5b81"
+  },
+  {
+    "path": "rrc-panels-v2-evidence/browser.json",
+    "sha256": "bc8cbfbfeefa57acd79bc15685b80f1fea86cf1b6d0f27a8db286b689966a70f"
+  },
+  {
+    "path": "rrc-points-evidence/400.png",
+    "sha256": "94240f8978b0abf47ed63d25337c02c51f4c534ee0a49f384ffea38768808794"
+  },
+  {
+    "path": "rrc-points-evidence/REPORT.txt",
+    "sha256": "c213618e33f5131fad8b34dd7036e73af2dddd0f91adb80de8ee517e1780e886"
+  },
+  {
+    "path": "rrc-points-evidence/browser.json",
+    "sha256": "ba4c28c5627df21275088e733509844753b08e5dd7bca13953e3edd95316509d"
+  },
+  {
+    "path": "rrc-points-evidence/points-and-values.png",
+    "sha256": "74ff04ec7a43e94c09f2db1a0d9bb2555fccb1dcf9db157e41e1c59c75b2871a"
+  },
+  {
+    "path": "rrc-points-evidence/test3-cluster-values.png",
+    "sha256": "0087d1f93d3688fa1f999ada18d9635d708e79a9ffdb632e3b9b929a1db68cae"
+  },
+  {
+    "path": "rrc-points-evidence/test3-coverage.json",
+    "sha256": "8c650c498235fee264d040b25bfc6c9b78dd1455499e3073ea58f93d5ac7cd7d"
+  },
+  {
+    "path": "rrc-points-evidence/test3-real-points.png",
+    "sha256": "12445a2f59044d47d5d5f2287c56791c4916b2adc284659bd40382b92868b7fc"
+  },
+  {
+    "path": "rrc-recovery-evidence/REPORT.txt",
+    "sha256": "c1924e22d1c3411a414ff2379a707a526490997c46a06eb1ed2e2190f3c9f81b"
+  },
+  {
+    "path": "rrc-recovery-evidence/browser.json",
+    "sha256": "357b37b4d9e4e57dfcfb5dfc40239ce00a6d5e712c7bb5defe5e0c816068bc87"
+  },
+  {
+    "path": "rrc-recovery-evidence/recovered.png",
+    "sha256": "01d3bcc78bfd6596f73472fc4c068c9baae22a834375b04afc549754393f440a"
+  },
+  {
+    "path": "rrc-resize-evidence/rrc-basemap.png",
+    "sha256": "a2c6d688247b77e725b64a90aa754b3aa58b3fbe60884388674e131f8cb89a8b"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-layout-before.json",
+    "sha256": "78c2507a4583723fa53b3286337080a1c199ab0b84395dd6fb73cd4504cfcb8f"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-scroll-before.json",
+    "sha256": "8290751676b7a881812de28bbcc4e8baede9f6f11a5f8437a34bc132b1297bf0"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-scroll-validation.json",
+    "sha256": "1dff2b42c675456c5e878412d1c64bf3d08d70e7ae46b8402a13fa6d87e724aa"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-audit.json",
+    "sha256": "c825eb91da81e893f89fccc391f1fe77a75b299de3c7c7b46c4d09dd9c8a3d14"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-browser.json",
+    "sha256": "57886a389efc80490868e2d0ce19170886ec37f2b25c5720d04e9c30f09c1a01"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-desktop.png",
+    "sha256": "2bba3288831a44a488ab7361260e1d6d08a948db6e26520a50004ec965fb53ed"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-table.png",
+    "sha256": "ee7ca8b761f03b5ff95a8bb00b1863df2a4f3183e56254b3f88f7efe9a9729c9"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-toolbar.png",
+    "sha256": "974bc91740c2eb9171a074c379579d7752ee73097bde19bb909a1ac6a38e044a"
+  },
+  {
+    "path": "rrc-sync-evidence/rrc-sync-values.csv",
+    "sha256": "6282097cf1d23bbb32aa1732bd4c5b548945dc7a61b3210d1040c6294d55acbc"
+  },
+  {
+    "path": "rrc-sync-evidence/vitest-validation.config.mjs",
+    "sha256": "c869346e3dde60d79650362f758566e403084efc809d554fdec8acf0e33ec18d"
+  },
+  {
+    "path": "rrc-table-premium-evidence/1280.png",
+    "sha256": "dccbd23ec746741fbbe94854f6e995b387abe2564acec224ac15bbd378328d39"
+  },
+  {
+    "path": "rrc-table-premium-evidence/1440.png",
+    "sha256": "7b265200526b02377f3f9afd39a25f72cf6a85d401e1be8ed127701a8ef68aa0"
+  },
+  {
+    "path": "rrc-table-premium-evidence/1920.png",
+    "sha256": "ee59323f5586292f69a98e72c9ac5235c04898c41f9870e8a757a855d9fcb41b"
+  },
+  {
+    "path": "rrc-table-premium-evidence/2560.png",
+    "sha256": "c1e716892953df83c57156fe78f240b64fbe32405cb9499fdea47ccbfed93b61"
+  },
+  {
+    "path": "rrc-table-premium-evidence/400.png",
+    "sha256": "fa35e04075fe74ac926497156673fdc18700dc8f90c7b3f5fa7c15897c3a3bf2"
+  },
+  {
+    "path": "rrc-table-premium-evidence/baseline.json",
+    "sha256": "f61fe4bc49b3ea1a0bce3f2cd1555206abb02d97e8660c3a4ba7770cc15cbb70"
+  },
+  {
+    "path": "rrc-templates-evidence/00-parameters.png",
+    "sha256": "ba4a1a5076a7e402346856a703b1a08be994380e05ec9135cf07f97892964d91"
+  },
+  {
+    "path": "rrc-templates-evidence/01-drx-operator.png",
+    "sha256": "2eb46618f950fa4b389bc60c949f36bd995b824bd9d229936e5036fc96ad670e"
+  },
+  {
+    "path": "rrc-templates-evidence/02-drx-band.png",
+    "sha256": "9dff1f8b5c1db206ccd9f844ce9755618df968e37507791811d278e453473431"
+  },
+  {
+    "path": "rrc-templates-evidence/03-drx-both.png",
+    "sha256": "d7fc804c71e35ce8da6ee7b455811c4c52ac4230fbd058798570a89b5d30b078"
+  },
+  {
+    "path": "rrc-templates-evidence/04-raw.png",
+    "sha256": "77378b02c6d6e545b2d86e1d28eacba14dce60929f3d12405e6573f302e4fb0d"
+  },
+  {
+    "path": "rrc-templates-evidence/05-mobile.png",
+    "sha256": "ab4e7db674e1ed4845eb6c5795e9515986bd46c39a8ff53b4a38ac07e5ece1af"
+  },
+  {
+    "path": "rrc-templates-evidence/06-dark.png",
+    "sha256": "eeac2a7f707c53dcd8b8030ea2bcc90a0d1d1680f965bcd6864bf39065d74275"
+  },
+  {
+    "path": "rrc-templates-evidence/07-admin.png",
+    "sha256": "540405f54ee4ce529038abed7af7e41cf0f56bd6f9d8c99c1b01b80a7552af79"
+  },
+  {
+    "path": "rrc-templates-evidence/DELIVERY.txt",
+    "sha256": "1283edcda8ab67d79109a3269c4e6fd154b8ea9738ff368b624500a82715ea62"
+  },
+  {
+    "path": "rrc-templates-evidence/THREE_TREES.txt",
+    "sha256": "9c7febf3949f1447177fb5f6a3b19d6d6c0b78357c781503cd29523f1b602abc"
+  },
+  {
+    "path": "rrc-templates-evidence/browser.txt",
+    "sha256": "d28817b34e30afed321f10ed16c3f31a8b2ae230fc89711f3e966e3c767b8bd5"
+  },
+  {
+    "path": "rrc-templates-evidence/build.txt",
+    "sha256": "f767b939cf261d6687f45a2624b97121176284feba97e4d180b79e9c2796c2b0"
+  },
+  {
+    "path": "rrc-templates-evidence/failure.png",
+    "sha256": "1a0144b70ff0f6dbdf3c0ff2633e382c7201d400c2d522013da2a54141ef0ec2"
+  },
+  {
+    "path": "rrc-templates-evidence/lint-targeted.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "rrc-templates-evidence/tests.txt",
+    "sha256": "782e9f0e6ae50c03c63822e09d4b0dd985b72a69be93b99d4dc3ad80f511fbf2"
+  },
+  {
+    "path": "rrc-templates-evidence/three-trees-browser.txt",
+    "sha256": "3cdf8130d20c24e7fe0902fb75b715c31f2777e374caa37b29a8a2e8d16aebfd"
+  },
+  {
+    "path": "rrc-templates-evidence/three-trees-build.txt",
+    "sha256": "9f001cf2e42fdd168506a45cbb3e15299de39d5778ea3aea6cf39d84532d5579"
+  },
+  {
+    "path": "rrc-templates-evidence/three-trees-tests.txt",
+    "sha256": "314627a93f28c371cdc4d9249f54d6010c06e04c862a6cb91d6f81b2dcea9b93"
+  },
+  {
+    "path": "rrc-templates-evidence/three-trees-typecheck.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "rrc-templates-evidence/typecheck.txt",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "path": "rrc-v3-evidence/1280.png",
+    "sha256": "4a5a511c356406fa73a6bc381585c55528a90720fad937885d7805d25e817ed5"
+  },
+  {
+    "path": "rrc-v3-evidence/1440.png",
+    "sha256": "4cd7bb22031ecda9c8aefcbbb64d20984866501580da236c1dddd21db8604363"
+  },
+  {
+    "path": "rrc-v3-evidence/1920.png",
+    "sha256": "6eafd0567b111620ff10bbdca0e8c89ee68469453a5ee282e59eb899418a5f49"
+  },
+  {
+    "path": "rrc-v3-evidence/400.png",
+    "sha256": "1b56499385bb4579053cbf62b6a72ca494ec7aecaebafa0f189c8ce2ce90054f"
+  },
+  {
+    "path": "rrc-v3-evidence/REPORT.txt",
+    "sha256": "75b7a43404de15c04451301e7a2f906882597ee553d82fd41bf79f533191b2f4"
+  },
+  {
+    "path": "rrc-v3-evidence/browser.json",
+    "sha256": "7a63febb257892830486f67eb501caa99dafcec927fcc8136864477b90a4c227"
+  },
+  {
+    "path": "rrc-v3-evidence/rrc-basemap.png",
+    "sha256": "2b482a10ed4c4747f2f0e51c22313dfa53b77aaf4273dbc45ac79b33e51a7c54"
+  },
+  {
+    "path": "scripts/kpi-compact-check.mjs",
+    "sha256": "d992b231119a113767a6c292e99bdd3d99995b7c8463320da154e2bb77a1986c"
+  },
+  {
+    "path": "scripts/kpi-map-check.mjs",
+    "sha256": "238626a190088475fc0cac7c298312e7e891332f7d049cddde8cac785ca581de"
+  },
+  {
+    "path": "scripts/kpi-multigraph-check.mjs",
+    "sha256": "affe2a84b448260b88927bd612aef01b463b1f59f808fd44b3f3bdbb4c5358b1"
+  },
+  {
+    "path": "scripts/kpi-v3-check.mjs",
+    "sha256": "3030bd1ac90f69de8a4627eb6bb92d0ad0dd34eb399109be301969c433628874"
+  },
+  {
+    "path": "scripts/kpi-vitest.config.mjs",
+    "sha256": "3d20c35b2f70e44c1cdb6b1ec3bfa427531533113cf911e35e3811aad79bb529"
+  },
+  {
+    "path": "scripts/navigation-cache-check.mjs",
+    "sha256": "d7dd819e8549f671b12c322b03395a948b71e8d5816a81807003492dc15b003c"
+  },
+  {
+    "path": "scripts/operator-default-check.mjs",
+    "sha256": "ff707e504d981bce90b320e4206a14965d476b20975c741ad7892c0e231c26ce"
+  },
+  {
+    "path": "scripts/page-performance-check.mjs",
+    "sha256": "48dab2433960ad4f384d810e81af6585f189972ef7a6109086c335cbac7f3524"
+  },
+  {
+    "path": "scripts/page-performance-filter-check.mjs",
+    "sha256": "3458e914ca3e67269b3bd5375fa6edce7acedaf3836467bf581a74972bd4fbc4"
+  },
+  {
+    "path": "scripts/page-performance-navigation.mjs",
+    "sha256": "3035036a2fc44d006ec7476ede7aa1e77a3393d23e129cd9f8dd34eeb3785fab"
+  },
+  {
+    "path": "scripts/page-performance-overview-check.mjs",
+    "sha256": "1caceb5931c3cc6bde8ee605ed61876eb16565578ffea3789201c445ea3cac71"
+  },
+  {
+    "path": "scripts/page-performance-regression.mjs",
+    "sha256": "acefd1509e9a8e49e67f69f66e6089685ddc3ec967ae1dbf78b546c281324991"
+  },
+  {
+    "path": "scripts/rrc-basemap-check.mjs",
+    "sha256": "bc968c8119b687d7fef93646c0bd34195a9668e241e3f26e960d99b1e994b231"
+  },
+  {
+    "path": "scripts/rrc-export-sync-check.mjs",
+    "sha256": "ca9b03f99f9cf20b34e20ca07cf606438bfa43d45e618a9497a52a2835ffc888"
+  },
+  {
+    "path": "scripts/rrc-filter-controls-check.mjs",
+    "sha256": "ea3885504242ffff0633f8acc922978d0b450ff5d6d853de04e4868881e54b8d"
+  },
+  {
+    "path": "scripts/rrc-filter-sync-check.mjs",
+    "sha256": "6ced357dbe6d1c987f46f8adbdc410d9bb7f55bbe8b7763d1bae866348763c7c"
+  },
+  {
+    "path": "scripts/rrc-filterbar-check.mjs",
+    "sha256": "b38e4b29fda3738c848aac26106a75c182e7b88c236bb8293f15e43f6e5e4cfd"
+  },
+  {
+    "path": "scripts/rrc-full-map-check.mjs",
+    "sha256": "c9ecb2ea030cfd3109f0afb8c07d576b8b9c11eb29535c85fc9ae04c26b70ef2"
+  },
+  {
+    "path": "scripts/rrc-full-map-controls-check.mjs",
+    "sha256": "4b32d4b1a975755b664f52febe20358539d6f0848d68840809bc6d0ec04bc1a1"
+  },
+  {
+    "path": "scripts/rrc-full-map-filters-check.mjs",
+    "sha256": "fde3543b6e7cd8115916738ec4e607e7a425dd08d98084831861deedb19b8e14"
+  },
+  {
+    "path": "scripts/rrc-geography-ui-check.mjs",
+    "sha256": "4462d00cb04ad47940f2b45af837ba2dbd0964b0da142d6c26b54e5dbddab777"
+  },
+  {
+    "path": "scripts/rrc-grouped-check.mjs",
+    "sha256": "091d234c71da38df3845aca9fd7b9322f173cb5c4277630250ca586d07ddcf7c"
+  },
+  {
+    "path": "scripts/rrc-hierarchy-check.mjs",
+    "sha256": "bf2ab1f9ec18dd8c6d8e6b9b3579504e4b5e646213f3524cc09acd3c1f8c5e57"
+  },
+  {
+    "path": "scripts/rrc-info-left-check.mjs",
+    "sha256": "0555ca14904429355c1e6e2ee452b6db8d952f9c06da9685e7bb97d47df1babc"
+  },
+  {
+    "path": "scripts/rrc-layout-audit.mjs",
+    "sha256": "7189cd89eb9ee31f9e6c25550184ad496f27da7581e851fede6627207c923def"
+  },
+  {
+    "path": "scripts/rrc-map-api-probe.mjs",
+    "sha256": "d15784d65711e812a79f871eac269aa350e28311f5d293946f7725946d26e855"
+  },
+  {
+    "path": "scripts/rrc-map-check.mjs",
+    "sha256": "6e6187d0e2f1d49e1fc0c4d59b4f0ff1bf6ffb0b34fc1ecb4476181215a43f4f"
+  },
+  {
+    "path": "scripts/rrc-map-resize-check.mjs",
+    "sha256": "84b73938598bc9a9de5dbd0e0454ae5e0879fcd7a559b99406efdae577c6614a"
+  },
+  {
+    "path": "scripts/rrc-multiselect-api-check.mjs",
+    "sha256": "cab3f9ecdfe35c650b4ce8de8da973f75c31bf5e7aaeb4290fddfc162ff9b7c4"
+  },
+  {
+    "path": "scripts/rrc-multiselect-recovery-check.mjs",
+    "sha256": "fe14ad92f490516552ac380874b5cad1da17fade43af22737b2c09da970ea8fb"
+  },
+  {
+    "path": "scripts/rrc-panels-v2-check.mjs",
+    "sha256": "e3d9a97bc352d49dea31320e7a57ffec554fce524a037ff4f6150a20a27800d7"
+  },
+  {
+    "path": "scripts/rrc-points-check.mjs",
+    "sha256": "460e42945885008b172c9bcbb35c6b27e7026e7c1a28f690d827bdbadd3cd4ca"
+  },
+  {
+    "path": "scripts/rrc-premium-check.mjs",
+    "sha256": "f513b4f1709087989a68b4a34feab272c9483089ec36d8271c61d88237d73382"
+  },
+  {
+    "path": "scripts/rrc-scroll-audit.mjs",
+    "sha256": "e7baca3fe8d3f93f757d59a029b774e314e312decc529b4cb39f8da8fb7bdbb0"
+  },
+  {
+    "path": "scripts/rrc-scroll-check.mjs",
+    "sha256": "6522a6ed6f47683e22dbd6d09e4b92fec92a12b40637655d48c8b86929bb44d2"
+  },
+  {
+    "path": "scripts/rrc-sync-layout-check.mjs",
+    "sha256": "88eca60c7369ca2082b0a831d73b7fa860b7468341645635f217ea0b5045d56e"
+  },
+  {
+    "path": "scripts/rrc-table-premium-check.mjs",
+    "sha256": "463106abecb931e2b8f0da0bc63dceabcd40731252dd41e9dffb30ebb23954cb"
+  },
+  {
+    "path": "scripts/rrc-templates-check.mjs",
+    "sha256": "0b535b9f9fce96a24d4e49bbc3c4b1ffc47d34e5eae2a036c8e2616a1370c09e"
+  },
+  {
+    "path": "scripts/rrc-templates-clean-check.mjs",
+    "sha256": "437344c46a7edac6c6da39347ba3811a1c26a21529935aaebfb50329863fd959"
+  },
+  {
+    "path": "scripts/rrc-test3-map-proof.mjs",
+    "sha256": "42b13a5d196c501e90abe940afe1900a9e802c4b93207c62828bffd33d04f7f2"
+  },
+  {
+    "path": "scripts/rrc-test3-points-check.mjs",
+    "sha256": "e537057333940567c632cd15d340b09d83884f4e4068cacde6123aa2d61e8df2"
+  },
+  {
+    "path": "scripts/rrc-v3-check.mjs",
+    "sha256": "fcde25154ee7552a91a86dab7c1aa8eb47b3fb2cd258f787d32f59ea56659854"
+  },
+  {
+    "path": "scripts/rrc-v3-map-check.mjs",
+    "sha256": "017018ed7415dfe9b514ff2db7ad6a48975f029c1778f87035d449433995672e"
+  },
+  {
+    "path": "scripts/rrc-v3-table-check.mjs",
+    "sha256": "7ce071ed417707becd9d76e04fbe4886a051978d9e8ca5a8bd00ec5bf99a90c2"
+  },
+  {
+    "path": "scripts/shot_dict_main.mjs",
+    "sha256": "339fad33d3f30b27ae9a2acb2e9755885d7a82b445a627d3a71c4fae1afabf67"
+  },
+  {
+    "path": "scripts/vitest-rrc.config.mjs",
+    "sha256": "1ea6851c94c03fdfc3cdd5219790a4a62dc721ef55bcb9237923f2aaca7189ec"
+  },
+  {
+    "path": "src/components/bc4/AppShell.tsx",
+    "sha256": "916fcb9f5814cf481d9271a88768ecec36b6adc9c15a7d2951bbf181e2ef6da8"
+  },
+  {
+    "path": "src/components/bc4/RadioMap.tsx",
+    "sha256": "315a2dd0616ed0b3a796635be22eb65baf2d31629632f88ec697a5ccdd3305b5"
+  },
+  {
+    "path": "src/features/dict-v2/GeographicFilter.tsx",
+    "sha256": "9e5be58a8499863012d4bfe136203f98433683c06caa555229971b7606e4c621"
+  },
+  {
+    "path": "src/features/dict-v2/InfoDrawer.tsx",
+    "sha256": "36d5af32739f8b1bc2692a5704ed20dd0f2507e3bb4d127e7897abfd596e27df"
+  },
+  {
+    "path": "src/features/dict-v2/RrcMapLayers.tsx",
+    "sha256": "591ed1dd8d2d50caaf07ae49639e0d364aee669477a8bd277b9fe76c527ddb58"
+  },
+  {
+    "path": "src/features/dict-v2/RrcMapPanel.tsx",
+    "sha256": "26a73bdbb6a443f5cfab9a04f99f68886944472dfda06a69d7b895b31f750e38"
+  },
+  {
+    "path": "src/features/dict-v2/SelectedParameterInfo.tsx",
+    "sha256": "de8063b26086f13d3527ea42443b14d98d049b0062a4ddc34a9663c4882cb458"
+  },
+  {
+    "path": "src/features/dict-v2/TemplateTable.tsx",
+    "sha256": "c1533926c03964b075f00009cca5fe1b5ac512207f33cf33e78420c8bd83a5ee"
+  },
+  {
+    "path": "src/features/dict-v2/distribution-view.ts",
+    "sha256": "d63ffdbe33425ff77637c499571986986579f2611ad1243df5d5ad22dee07363"
+  },
+  {
+    "path": "src/features/dict-v2/filter-state.ts",
+    "sha256": "c24bbd1c5a8c80fd59b967c06fc3c79d5f7a0d12c1a997f403d9f1e052a82a46"
+  },
+  {
+    "path": "src/features/dict-v2/geographic-state.ts",
+    "sha256": "7398bf44a51d9a5b34d9c939cc627135da49a39e6d5f63928b56a1ddcb27711e"
+  },
+  {
+    "path": "src/features/dict-v2/map-view.ts",
+    "sha256": "b2832d95e425d615a714f937954c0730331a010fd3f9a11e9816a4ef558e46e7"
+  },
+  {
+    "path": "src/features/dict-v2/premium.css",
+    "sha256": "cfb4a0c1f43424f7fa4b7ee8f93640fef501530b7a4fd256f5549e0f9b9f3c41"
+  },
+  {
+    "path": "src/features/dict-v2/request-recovery.ts",
+    "sha256": "42182f3ca02d1033b0a11226d4c7ec2d25120dbc02fdfa793fbd8f03983141f0"
+  },
+  {
+    "path": "src/features/dict-v2/template-model.test.ts",
+    "sha256": "5f4a1c19fbbe0d6b3b5bce386c4261e3d7d451978a64621ba2d60180252a524b"
+  },
+  {
+    "path": "src/features/dict-v2/template-model.ts",
+    "sha256": "848b2c43a0123829b3f54ba69b96ef61dd73c620f178bedeeabb36be1a060530"
+  },
+  {
+    "path": "src/features/dict-v2/types.ts",
+    "sha256": "7ebaad8065a8ef53cbf45b5362f421a6c195a0f70c2af85a599583065699e679"
+  },
+  {
+    "path": "src/features/kpi/KpiCatalogSidebar.tsx",
+    "sha256": "720458011ccd883f2e050d64c0aad9469d468d10b6055ddf1c98574c31ee7ec2"
+  },
+  {
+    "path": "src/features/kpi/KpiChartSettings.tsx",
+    "sha256": "a0f1e677db1cf72aedc6040aac18e7f9804e972fe5bccf00d1869489b40a13ab"
+  },
+  {
+    "path": "src/features/kpi/KpiDataTable.tsx",
+    "sha256": "4318a4dc7035c7ca3f0b0412a8b4e238ca6225a6e7811c9c2a4a0e06680acbbd"
+  },
+  {
+    "path": "src/features/kpi/KpiGraphCard.tsx",
+    "sha256": "2a5eb4b3a0b9727957fd92181e95f5469594a871c35b5225626e3402bae3fcd0"
+  },
+  {
+    "path": "src/features/kpi/KpiMapInfo.tsx",
+    "sha256": "9f7ff5764644aabd8579b81f6a504fbf5df934df4f84ab5c9feedbe64b2ca40e"
+  },
+  {
+    "path": "src/features/kpi/KpiMapOSM.tsx",
+    "sha256": "72bff2b4ed9774325ed9a31cd2f2b56f5292f5402dc0ad1db5bad87c32c37f04"
+  },
+  {
+    "path": "src/features/kpi/VisualizationMenu.tsx",
+    "sha256": "f13276808318b444aca5848eeb75c7ad8c8e6644992df886761d5628de423624"
+  },
+  {
+    "path": "src/features/kpi/visualization-model.ts",
+    "sha256": "1b0ab211af42757e912ca68e7dd8531f92ca57eda9f1f0341051304d475e3af1"
+  },
+  {
+    "path": "src/features/kpi/workspace-model.ts",
+    "sha256": "6ce48bed8d2edc8a00b0b47dc23cba4b43d2cc9b40cb9c795775789634654484"
+  },
+  {
+    "path": "src/features/kpi/workspace.css",
+    "sha256": "ba27878d03bf1b8769a6cd027358b4ce28c97a7f334fe672bcdbf1752ee0c86f"
+  },
+  {
+    "path": "src/features/projects/NmfImportPanel.tsx",
+    "sha256": "e0dd3833b639b4ed1fa53d41673f0ff82695b7354b9aee0146fd4a052cfea1fc"
+  },
+  {
+    "path": "src/features/projects/ProjectRowNmfAction.tsx",
+    "sha256": "613881e2e9e6dd701298db57cb2ca798c0d77bd75fbcc8a4000134256991e03a"
+  },
+  {
+    "path": "src/features/projects/shared.tsx",
+    "sha256": "df68920cc863d644db8f5b1e676805c1187624e8c23e80448e64ee7146056677"
+  },
+  {
+    "path": "src/features/projects/useNmfUpload.ts",
+    "sha256": "f0a376b711a64c6d46de10b7995d6c34d9f1fbaade669f0acc5eb65424b8d70a"
+  },
+  {
+    "path": "src/features/rf-modules/DemoMap.tsx",
+    "sha256": "1dbe61a60c656b3eb1e7f5f8971a52ccf4ad426677219cee30e018fd6d6a80f5"
+  },
+  {
+    "path": "src/features/rf-modules/RfModulesPage.tsx",
+    "sha256": "d00cae206b37660e08ef310cef668467e03672eb1dbae68142536ad80a532cca"
+  },
+  {
+    "path": "src/features/rf-modules/fixtures/rfDemo.ts",
+    "sha256": "1e4cefc44148a35b55e6cb8525f190e5107292152322c1ded9d511d92e4c49aa"
+  },
+  {
+    "path": "src/features/rf-modules/registry.ts",
+    "sha256": "c08438424b2851649e11374b4e1f1d711cbef2be7da4c2296ebec0ed4cdc9fb0"
+  },
+  {
+    "path": "src/features/settings/SettingsLayout.tsx",
+    "sha256": "53b2ecc5f41424a757410902668b7513d84a541a5e0fcbec89892ab644356952"
+  },
+  {
+    "path": "src/features/settings/ai/AiConfigPanel.tsx",
+    "sha256": "80d61b64bd56b98bdc66f3b1c65826d12547e18ca4f6b0ee9fbc08a3c3688d0e"
+  },
+  {
+    "path": "src/features/settings/appearance/AppearancePanel.tsx",
+    "sha256": "edfec988bc5c5b62cf3a214fa82d65ffb68ff53caddb59fffd19142d54bc7535"
+  },
+  {
+    "path": "src/features/settings/cellular-reference/CellularReferencePanel.tsx",
+    "sha256": "11dab7d7912ff305664a76a22b744c29cd90d0c9caf2dedf8fe3ed4ef310e54f"
+  },
+  {
+    "path": "src/features/settings/dict-templates/DictTemplatesPanel.tsx",
+    "sha256": "e2c9f4beb8901cd38b8b039bcc0174d917bd3b1a5d90c8c8ad302dd30a67f780"
+  },
+  {
+    "path": "src/features/settings/geography/GeographyPanel.tsx",
+    "sha256": "edc24ba8ae76322c8d1511748e8323f00ffd0060bac2c919d45a6570b88afd15"
+  },
+  {
+    "path": "src/features/settings/shared.tsx",
+    "sha256": "a5b138ef99929f4ec10d2f6e94ff2079fc986f40c230025b7dc8dc29fa277596"
+  },
+  {
+    "path": "src/features/settings/users/UsersPanel.tsx",
+    "sha256": "6041915b92ec9034aaad481e68de06895a67c8235fbb893560d99c6c91eaf1c3"
+  },
+  {
+    "path": "src/lib/api/client.ts",
+    "sha256": "e4232555a7db9b4b6ee293ce15921337cbae313c5a2a5c309fe33fae427de7b5"
+  },
+  {
+    "path": "src/lib/api/dict-templates.ts",
+    "sha256": "ec963d32db38cba8464d6ed999ce82d9bc24d0c4f03e147491c158347af2e630"
+  },
+  {
+    "path": "src/lib/api/dict-v2.ts",
+    "sha256": "d43683a12acd9d3608626f57ca13b22a3caba674d0b5da3818507f5df255aba6"
+  },
+  {
+    "path": "src/lib/api/nmf-schemas.ts",
+    "sha256": "5d1bb1d2c93aec6e4dd94efd53b2cccd3de4716ec330a686780be18aa3f0ea8a"
+  },
+  {
+    "path": "src/lib/api/project-kpi-schemas.ts",
+    "sha256": "95290252e94ef78cf66311c1f3741acb20e240c9bb6727d3e58791e47e3d07f3"
+  },
+  {
+    "path": "src/lib/api/projects.ts",
+    "sha256": "7ae68d381b8761e17cfb09520a7f8e346d2181fd02473ed412f88f7e8011e084"
+  },
+  {
+    "path": "src/lib/api/reference-schemas.ts",
+    "sha256": "93f54b2a9da6f6a2c8a6aa0447cdbe289e9d9bd8ae4b9a34e1b44e210c65005d"
+  },
+  {
+    "path": "src/lib/api/reference.ts",
+    "sha256": "c8ac26ea0210bad2e0d47ce1c9509df0ba9c970bce432feab439229f752e1da8"
+  },
+  {
+    "path": "src/lib/api/schemas.ts",
+    "sha256": "1f2887fbbfc815cfc3a80e89e74a98ba870d4588df66ed961075fbff338b1744"
+  },
+  {
+    "path": "src/lib/query-cache.ts",
+    "sha256": "9321bf2dad083db379ebf942ef633e08bf45688a194b8e8e3f5d8e903ce9dec0"
+  },
+  {
+    "path": "src/routeTree.gen.ts",
+    "sha256": "c11cd3471cf1624032f6bd884f8e6984701678e1abb228393b7429f6bb104551"
+  },
+  {
+    "path": "src/router.tsx",
+    "sha256": "bf1e7b4e1abe75917a93a55253849386d081c8916e2c089f51c3109172d38223"
+  },
+  {
+    "path": "src/routes/__root.tsx",
+    "sha256": "4e3c19240596e585326cbce9de9e20cfaf1f51d2381f37534c3dd4ab156a2687"
+  },
+  {
+    "path": "src/routes/_app.kpi.tsx",
+    "sha256": "b6ab82390ad38821d3c48282ae31dbd90b027e421da58e2cd7314028cb59011c"
+  },
+  {
+    "path": "src/routes/_app.overview.tsx",
+    "sha256": "8f7652f9651a226c6bd707558e4b0d504063a69c4329a25afe40439a3722578e"
+  },
+  {
+    "path": "src/routes/_app.projects.tsx",
+    "sha256": "e4e0ed712b6bf506c165b8fe7309bfbad7b782d603641b0569f035b9b885dd47"
+  },
+  {
+    "path": "src/routes/_app.rf.tsx",
+    "sha256": "41df3ce728d61ea775487a85003f078c2927ce9d0a6ed8b8348dd2d4ce21c0de"
+  },
+  {
+    "path": "src/routes/_app.rrc.tsx",
+    "sha256": "81fcbbd6bc14472d4d817637f18cf8ef9f274daab21ae04b6520358c95cb4ae6"
+  },
+  {
+    "path": "src/routes/_app.settings.dict-templates.tsx",
+    "sha256": "f10de73750fc4612220d35868e393e41f45c0b0f503643553590330159c20124"
+  },
+  {
+    "path": "src/test/kpi-visualization.test.tsx",
+    "sha256": "4698dc6bcd283a1b17dab0bb6c5b8bdf7402062c51a75b2c4d621bbc0261ccb9"
+  },
+  {
+    "path": "src/test/kpi-workspace.test.ts",
+    "sha256": "cd2df78a1028412058ed40fa27c4951f471538490d2aa22c573e6aef6816781c"
+  },
+  {
+    "path": "src/test/operator-filter.test.tsx",
+    "sha256": "87dc9d3db65eeff17bbe892c86890f013e9fad466a8e019c3801e0de40aa79cb"
+  },
+  {
+    "path": "src/test/overview-contract.test.ts",
+    "sha256": "79c90e0fe6d303f8d7a97956264caeb2f03332035146b2d59920fd379d700465"
+  },
+  {
+    "path": "src/test/project-import-error.test.tsx",
+    "sha256": "381ea28f299053f0fbb6d7d974e978fd073caa4c6923473f3fbc5366c93b40ab"
+  },
+  {
+    "path": "src/test/query-cache.test.ts",
+    "sha256": "593dbf20393c1ac08c3f929120700293ca4374ea145c492ff2ed40690c67a490"
+  },
+  {
+    "path": "src/test/rrc-geography.test.tsx",
+    "sha256": "e901abdaf7de9f032505483d7385a1a40ac203a5250dc3ed2be95da0b1bd355d"
+  },
+  {
+    "path": "src/test/rrc-grouped-table.test.tsx",
+    "sha256": "418414d1b2bd92fe59d439822c64854130aa51b62d5de5064b6b7ddc951b82b0"
+  },
+  {
+    "path": "src/test/rrc-premium.test.ts",
+    "sha256": "a3e6027438d7158836ef50e24d1b636943391ba3a6a43a0591544d988f485ec6"
+  },
+  {
+    "path": "src/test/rrc-request-recovery.test.ts",
+    "sha256": "71dd90dd211b88637a635a6919dd49a6397bf18c95d2013d4377c1ea52fcdd7a"
+  },
+  {
+    "path": "src/test/rrc-sync.test.ts",
+    "sha256": "a4aa14ec324458554dd9061cd64854d568ddc47620b8352228fe4340bb02226d"
+  }
+]

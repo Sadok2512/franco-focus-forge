@@ -11,7 +11,9 @@ export function FilterSelect({
   onChange,
   operatorBadges = false,
   showLabel = false,
+  unavailableReason,
 }: {
+  unavailableReason?: string;
   operatorBadges?: boolean;
   showLabel?: boolean;
   label: string;
@@ -37,7 +39,10 @@ export function FilterSelect({
     <Popover>
       <PopoverTrigger asChild>
         <button
-          className={`rrc-control ${showLabel ? "rrc-geographic-select" : ""}`}
+          aria-disabled={!!unavailableReason}
+          title={unavailableReason}
+          onClick={(event) => { if (unavailableReason) event.preventDefault(); }}
+          className={`${unavailableReason ? "opacity-50 cursor-not-allowed" : ""} rrc-control ${showLabel ? "rrc-geographic-select" : ""}`}
           aria-label={`${label} — ${selected.length ? (operatorBadges ? selected.join(", ") : `${selected.length} sélectionné(s)`) : "Tous"}`}
         >
           {showLabel && <span className="font-medium">{label}</span>}

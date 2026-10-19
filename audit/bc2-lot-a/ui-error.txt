@@ -1,0 +1,43 @@
+BC4
+v1.36.2
+Projets
+Vue d'ensemble
+Dictionnaire RRC
+KPI Analytics
+RF Modules
+Assistant IA
+Projet : TEST2
+A
+admin@bc4.local
+Ingénieur Radio
+LTE
+NR
+LTE + NR
+Opérateur
+Bouygues
+Free
+Orange
+Bande
+Tous
+Tous
+Zone géographique
+Période : 2026-10-15 → 2026-10-15
+Carte
+Infos
+Réinitialiser
+Appliquer les filtres
+Paramètres RRC
+Paramètres
+Raw parameter
+Templates
+0 sélectionné
+Réinitialiser
+
+773 paramètres · 156 131 lignes dans le projet. Sélection : projet / affichées.
+
+LTE
+NR
+
+Sélectionnez un paramètre
+
+Choisissez un paramètre dans l'arbre pour afficher la distribution de ses valeurs.

@@ -1,16 +1,6 @@
 import type { DictLeaf, DictTreeResponse } from "@/lib/api/dict-v2";
 export const selectionId = (leaf: DictLeaf) =>
   typeof leaf["selection_id"] === "string" ? leaf["selection_id"] : leaf.param_key;
-const segments = (path: string) => path.split("/").filter((segment) => !/^\[\d+\]$/.test(segment));
-/** Match the complete catalog path in order, never a display-name lookup or a guessed CHOICE catalog. */
-function projectsTo(raw: string, canonical: string) {
-  const source = segments(raw),
-    target = segments(canonical);
-  if (source[0] !== target[0] || source.at(-1) !== target.at(-1)) return false;
-  let i = 0;
-  for (const segment of source) if (segment === target[i]) i++;
-  return i === target.length;
-}
 export function identifyTrees(catalog: DictTreeResponse | null, raw: DictTreeResponse | null) {
   const entries: Array<{ leaf: DictLeaf; technology: string; message: string }> = [];
   for (const t of catalog?.tree ?? [])
@@ -50,7 +40,7 @@ export function identifyTrees(catalog: DictTreeResponse | null, raw: DictTreeRes
                         index.get(
                           JSON.stringify([t.techno, m.message, leaf.param_key.split("/").at(-1)]),
                         ) ?? []
-                      ).filter((e) => projectsTo(leaf.param_key, e.leaf.param_key));
+                      ).filter((e) => e.leaf.param_key === leaf.param_key || e.leaf.sample_paths?.includes(leaf.param_key));
                 const unique = new Map(candidates.map((e) => [e.leaf.param_key, e.leaf]));
                 const match = unique.size === 1 ? [...unique.values()][0]! : null;
                 const key = match?.param_key ?? leaf.param_key;
