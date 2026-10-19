@@ -1,3 +1,9 @@
+## 1.39.2 (patch) — BC4-FRONT 2026-10-19 — Tableau RRC sans colonne non attribuée (Agent BC1)
+
+- Masque uniquement les colonnes opérateur null du contrat RRC dans le tableau hiérarchique et le sélecteur de colonnes ; les noms d’opérateurs inhabituels sont conservés.
+- Aucune colonne Total ajoutée. Données, occurrences, dénominateurs absents, ordre, couleurs et CSV inchangés ; les bandes seules restent visibles.
+- Information accessible lorsque des colonnes non attribuées sont masquées. Aucun changement du backend ou des autres visualisations.
+
 ## 1.39.1 (patch) — BC4 2026-10-19 — Série désactivée sans source temporelle (Agent BC2)
 
 - Le menu Série lit temporal_source du catalogue, jamais l’unité ; les KPI agrégés sont grisés avec explication.
