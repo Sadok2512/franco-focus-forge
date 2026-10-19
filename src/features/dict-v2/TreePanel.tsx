@@ -39,7 +39,12 @@ export function TreePanel({
   templatesError,
   onViewChange,
 }: {
-  onToggleCatalog: (parameter: DictParameterNode, technology: string, origin: string, leaf?: DictLeaf) => void;
+  onToggleCatalog: (
+    parameter: DictParameterNode,
+    technology: string,
+    origin: string,
+    leaf?: DictLeaf,
+  ) => void;
   onViewChange: (view: TreePanelView) => void;
   categories: TemplateCategory[];
   activeCategory: TemplateCategory | null;
@@ -69,7 +74,6 @@ export function TreePanel({
   // Signal interne vers TreeView pour qu'il replie à l'état initial —
   // bumpé par le même tick que celui du bouton Réinitialiser.
   const [internalResetTick, setInternalResetTick] = useState(0);
-  const activeTree = tab === "catalog" ? catalog : raw;
 
   useEffect(() => {
     if (resetTick === 0) return;
@@ -157,7 +161,11 @@ export function TreePanel({
               type="button"
               aria-pressed={activeCategory?.id === category.id}
               title={category.n_in_project === 0 ? "0 occurrence dans le projet" : category.label}
-              onClick={() => { onCategory(category); setTab("catalog"); onViewChange("catalog"); }}
+              onClick={() => {
+                onCategory(category);
+                setTab("catalog");
+                onViewChange("catalog");
+              }}
               className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs hover:bg-muted ${activeCategory?.id === category.id ? "bg-primary/10 text-primary" : category.n_in_project === 0 ? "text-muted-foreground" : ""}`}
             >
               <span>{category.label}</span>
@@ -195,17 +203,6 @@ export function TreePanel({
               data-testid="dict-tree-search"
             />
           </label>
-          {activeTree && (
-            <p className="mt-1.5 text-[10.5px] text-muted-foreground">
-              {/* 1.19.1 — Raw expose "paramètres · détections" ; catalog garde
-                "paramètres · lignes". Les deux comptes viennent de la racine
-                du payload back (distinct_param_keys / total_rows), jamais
-                recalculés côté front. */}
-              {fmtInt(activeTree.distinct_param_keys)} paramètres · {fmtInt(activeTree.total_rows)}{" "}
-              {tab === "raw" ? "détections" : "lignes"} dans le projet. Sélection : projet /
-              affichées.
-            </p>
-          )}
         </div>
       )}
       {(["catalog", "raw"] as const).map((view) => {
@@ -231,9 +228,15 @@ export function TreePanel({
                 onToggle={onToggle}
                 resetTick={internalResetTick}
               />
-            ) : tree.tree.some(t=>t.origins.some(o=>o.categories !== undefined)) ? (
-              <CatalogTree tree={tree} techno={techno} needle={searches[view].trim().toLowerCase()}
-                selected={selected} onToggle={onToggleCatalog} resetTick={internalResetTick}/>
+            ) : tree.tree.some((t) => t.origins.some((o) => o.categories !== undefined)) ? (
+              <CatalogTree
+                tree={tree}
+                techno={techno}
+                needle={searches[view].trim().toLowerCase()}
+                selected={selected}
+                onToggle={onToggleCatalog}
+                resetTick={internalResetTick}
+              />
             ) : (
               <TreeView
                 tree={tree}
@@ -312,8 +315,12 @@ function aggregateRawLeaves(leafs: DictLeaf[]): RawAggItem[] {
     const existing = byKey.get(canonical);
     if (existing) {
       existing.n = typeof l["canonical_n"] === "number" ? l["canonical_n"] : null;
-      if (existing.n === null) existing.leaf = { ...existing.leaf,
-        mapping_error: "Agrégat Raw non exposé par l’API : compteur et distribution indisponibles." };
+      if (existing.n === null)
+        existing.leaf = {
+          ...existing.leaf,
+          mapping_error:
+            "Agrégat Raw non exposé par l’API : compteur et distribution indisponibles.",
+        };
     } else {
       byKey.set(canonical, {
         leaf: l,
@@ -548,7 +555,12 @@ function RawLeafRow({
 }) {
   const isSelected = selected.has(selectionId(item.leafRef));
   const n = item.n;
-  const unavailable = typeof item.leafRef["mapping_error"] === "string" ? item.leafRef["mapping_error"] : n === 0 ? "0 occurrence dans ce périmètre" : undefined;
+  const unavailable =
+    typeof item.leafRef["mapping_error"] === "string"
+      ? item.leafRef["mapping_error"]
+      : n === 0
+        ? "0 occurrence dans ce périmètre"
+        : undefined;
   return (
     <li role="none">
       <label

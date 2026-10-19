@@ -1,3 +1,7 @@
+## 1.39.3 (patch) — BC4-FRONT 2026-10-19 — En-tête du dictionnaire simplifié (Agent BC1)
+
+- Retire le récapitulatif « paramètres · lignes/détections dans le projet. Sélection : projet / affichées » sous la recherche de l’arbre RRC. Les données, la recherche et les compteurs des branches sont conservés.
+
 ## 1.39.2 (patch) — BC4-FRONT 2026-10-19 — Tableau RRC sans colonne non attribuée (Agent BC1)
 
 - Masque uniquement les colonnes opérateur null du contrat RRC dans le tableau hiérarchique et le sélecteur de colonnes ; les noms d’opérateurs inhabituels sont conservés.
