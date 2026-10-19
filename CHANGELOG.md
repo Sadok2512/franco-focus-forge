@@ -1,3 +1,8 @@
+## 1.40.1 (patch) — BC4-FRONT 2026-10-19 — Sidebar RRC compacte (Agent BC1)
+
+- Supprime le résumé des paramètres et lignes du projet et la mention « Sélection : projet / affichées » sous la recherche.
+- Données du modèle, recherche et compteurs de branches conservés.
+
 ## 1.40.0 (minor) — BC4 2026-10-19 — Niveaux de décodage et chronogramme Nemo (Agent BC2)
 
 - Badges projet/capture Light et Deep, analyse approfondie admin avec progression et estimation fournies par l’API.
