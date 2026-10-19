@@ -1,0 +1,103 @@
+PROJECT = BC4-FRONT
+MISSION = KPI_ANALYTICS_MULTIGRAPH_PREMIUM_V1
+
+PREVIOUS_VERSION = 1.25.0 (version inspectée au début de la mission)
+NEW_VERSION = 1.26.0
+CHANGE_TYPE = MINOR — nouvelles fonctions UI compatibles avec les API existantes
+
+SIDEBAR_PRESERVED = TRUE — catalogue API, technologies, familles, codes et statuts conservés
+SIDEBAR_RESIZABLE = TRUE — 280 px initial, bornes 230–460 px, scroll indépendant
+MULTI_SELECT = TRUE — code stable, sans doublon, 8 graphiques par défaut
+FILTERS_REUSED = TRUE — FilterSelect RRC importé sans modification, useFilters et clés URL partagés
+APPLY_FILTERS = TRUE — brouillon local / filtres appliqués dans l’URL
+MULTIGRAPH_MODE = TRUE — ON/OFF sans perte des sélections
+GRAPH_TABS = TRUE — ajout, activation, fermeture, ordre via menu des cartes
+GRAPH_LAYOUT = TRUE — automatique, 1, 2, 4 colonnes, liste et graphique unique
+TASK_TIME = UNAVAILABLE — contrat sans observations temporelles; aucune série fabriquée
+TABLE_SYNC = TRUE — projection identique aux graphiques, par métrique et population
+DATA_INTEGRITY = TRUE — null distinct de zéro, preuve result_id préservée, pourcentages sans dénominateur positif masqués
+
+G1 = PASS
+G2 = PASS
+G3 = PASS
+G4 = PASS
+G5 = PASS
+G6 = PASS
+G7 = PASS
+G8 = PASS
+G9 = PASS
+G10 = PASS
+G11 = FAIL — lint global du dépôt; typecheck, tests, build et lint ciblé réussis
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+KNOWN_LIMITATIONS =
+- Le contrat KPI actuel ne fournit ni Task Time/capture_id/seq ni observations brutes: aucune courbe temporelle ou distribution brute n’est affichée.
+- Période informative; filtrage par dates, site et fournisseur RAN non implémentable avec les paramètres actuels. Aucune dimension inventée.
+- P10/P50/P90 et valeur uniquement si disponibles. Moyenne/minimum/maximum non déduits de compteurs.
+- Tableau long: une ligne par métrique et groupe réel. Les populations de KPI différents ne sont pas jointes artificiellement.
+- Géographie désactivée sur TEST2 selon les raisons de l’API. Activation/désactivation testée avec des fixtures navigateur isolées.
+- 707 erreurs et 29 avertissements au lint global, dans les fichiers préexistants hors des nouveaux composants. Aucun PASS global déclaré.
+- Pas de test de charge massif ni validation navigateur autre que Chromium.
+- Le workspace contenait déjà des modifications étrangères à la mission. Des modifications concurrentes RRC ont été constatées et laissées intactes; les indicateurs de périmètre concernent cette mission.
+- La maquette de référence n’était pas jointe; composition basée sur les exigences écrites et les contrôles RRC existants.
+
+NEXT_STEP = Recette utilisateur sur les projets/imports réels; traiter le lint préexistant dans une mission distincte. Toute extension temporelle exigera un contrat API prouvé, hors de ce périmètre frontend.
+
+FICHIERS LIVRÉS
+package.json — version 1.26.0
+CHANGELOG.md — entrée minor, entrées préexistantes conservées
+src/routes/_app.kpi.tsx — entrée workspace et validation URL KPI
+src/lib/api/client.ts — réexport des trois lecteurs KPI existants
+src/features/kpi/workspace-model.ts — populations, filtres, sélection, couleurs, CSV
+src/features/kpi/KpiWorkspace.tsx — orchestration, cache, annulation, dispositions
+src/features/kpi/KpiCatalogSidebar.tsx — arbre existant, recherche et sélection multiple
+src/features/kpi/KpiFilters.tsx — contrôles RRC, application explicite, géographie
+src/features/kpi/KpiGraphCard.tsx — graphiques, états, preuves, plein écran et actions
+src/features/kpi/KpiDataTable.tsx — données synchronisées, recherche/tri/colonnes/pagination/export
+src/features/kpi/workspace.css — styles scoped, responsive et header mobile uniquement sur KPI
+src/test/kpi-workspace.test.ts — 8 tests d’intégrité
+scripts/kpi-multigraph-check.mjs — contrôle navigateur réel + fixtures isolées
+scripts/kpi-vitest.config.mjs — équivalent ESM du config existant pour exécution sans cache Docker protégé
+kpi-multigraph-evidence/ — rapport, captures et journaux
+
+COMMANDES EXÉCUTÉES
+npm run lint
+  FAIL — 736 problèmes: 707 erreurs, 29 avertissements; voir lint-global.log.
+npx eslint src/features/kpi/KpiCatalogSidebar.tsx src/features/kpi/KpiFilters.tsx src/features/kpi/KpiGraphCard.tsx src/features/kpi/KpiDataTable.tsx src/features/kpi/KpiWorkspace.tsx src/features/kpi/workspace-model.ts src/routes/_app.kpi.tsx src/test/kpi-workspace.test.ts scripts/kpi-*.mjs
+  PASS — code de sortie 0.
+npm run typecheck
+  PASS — code de sortie 0.
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+  PASS — 11 fichiers, 77 tests. Les suites existantes utilisent leurs mocks; le navigateur vérifie aussi l’API réelle.
+docker exec bc4-front-1 bun run build
+  PASS — build client/server/Nitro terminé, code de sortie 0.
+node scripts/kpi-multigraph-check.mjs
+  PASS — API réelle TEST2 + fixtures d’états/annulation; voir browser-report.json.
+
+Essais initiaux et adaptation de l’environnement:
+- Typecheck initial a détecté des erreurs dans le nouveau code, corrigées et revérifiées.
+- npm run build -- --configLoader runner a rencontré EACCES sur .output détenu par Docker; build exécuté dans le conteneur frontend existant.
+- Vitest lancé avec l’environnement API échouait sur les suites mock préexistantes; réexécuté avec VITE_BC4_DATA=mock.
+- Captures navigateur ont permis de corriger le catalogue mobile et l’origine zéro des histogrammes de compteurs.
+- Le statut de groupe réel PRESENT est accepté sous un résultat global AVAILABLE; UNVALIDATED/PENDING restent masqués.
+
+PREUVES PAR GARDE
+G1 — 4 technologies réelles (197 KPI), recherche par code, 3 sélections, resize mesuré 280→349 px; catalogue mobile 280 px visible.
+G2 — sélections d’opérateur sans appel; clic Appliquer: 3 appels filtrés; DOR activable sur fixture, désactivation retirant le paramètre; géographie réelle indisponible expliquée.
+G3 — 3 cartes → mode OFF 1 carte → ON 3 cartes, sélections conservées.
+G4 — ajout focalise le catalogue, réordonnancement via menu, fermeture retire carte et onglet; infos et plein écran ouverts/fermés.
+G5 — modes 1/2/4 exercés; quatre cartes ont des abscisses distinctes et la même ordonnée; mobile sans débordement.
+G6 — lectures par code réel et opérateur appliqué; bandes et valeurs présentes dans la réponse conservées.
+G7 — projection sans temps ni concaténation; test interdisant un compteur d’observations utilisé comme mesure.
+G8 — tableau réel filtré Orange, CSV téléchargé; fixtures null/0/result_id, colonnes, pagination, tri et sélection.
+G9 — Loading, Available, Empty, Pending, Unvalidated, Unavailable et Error exercés; reprise d’une seule carte.
+G10 — aucun appel de disposition; cache de retour au contexte précédent; réponses retardées annulées, population B3 reste affichée après B1.
+G11 — toutes les commandes exécutées; lint global en échec déclaré.
+
+CAPTURES RÉELLES
+desktop.png — TEST2, 3 KPI agrégés réels, grille 2 colonnes
+data.png — tableau correspondant
+mobile.png — même workspace, viewport 390 px
+Les fixtures de test ne sont pas intégrées à l’application ni aux captures livrées.

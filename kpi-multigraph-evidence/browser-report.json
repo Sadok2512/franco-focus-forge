@@ -1,0 +1,81 @@
+{
+  "actualCodes": [
+    "LTE_RRC_ATTEMPTS",
+    "LTE_RRC_SETUP_COUNT",
+    "LTE_RRC_SUCCESS"
+  ],
+  "sidebarRoots": [
+    "LTE84 · 9 AVAIL",
+    "NR80 · 0 AVAIL",
+    "EN-DC25 · 0 AVAIL",
+    "KPI agrégés8 · 4 AVAIL"
+  ],
+  "resize": {
+    "before": 280,
+    "after": 349
+  },
+  "appliedRequests": 3,
+  "mobilePanels": [
+    {
+      "id": "_r_0_",
+      "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col kpi-workspace-panels",
+      "rect": {
+        "height": 1966.78125,
+        "width": 374
+      },
+      "style": "height: 100%; width: 100%; overflow: hidden; display: flex; flex-flow: row; touch-action: pan-y;",
+      "computed": "",
+      "display": "block",
+      "flex": "0 0 auto"
+    },
+    {
+      "id": "kpi-catalog-panel",
+      "cls": "",
+      "rect": {
+        "height": 280,
+        "width": 374
+      },
+      "style": "min-height: 0px; max-height: 100%; height: auto; min-width: 0px; max-width: 100%; width: auto; border: 0px; padding: 0px; margin: 0px; display: flex; flex: 30.749 1 0px; overflow: visible;",
+      "computed": "",
+      "display": "flex",
+      "flex": "0 0 auto"
+    },
+    {
+      "id": "",
+      "cls": "kpi-catalog",
+      "rect": {
+        "height": 280,
+        "width": 374
+      },
+      "style": null,
+      "computed": "",
+      "display": "flex",
+      "flex": "0 1 auto"
+    },
+    {
+      "id": "kpi-analysis-panel",
+      "cls": "",
+      "rect": {
+        "height": 1674.78125,
+        "width": 374
+      },
+      "style": "min-height: 0px; max-height: 100%; height: auto; min-width: 0px; max-width: 100%; width: auto; border: 0px; padding: 0px; margin: 0px; display: flex; flex: 69.251 1 0px; overflow: visible;",
+      "computed": "",
+      "display": "flex",
+      "flex": "0 0 auto"
+    }
+  ],
+  "mobileOverflow": false,
+  "consoleErrors": [],
+  "live": "PASS",
+  "errorAttemptsBeforeRetry": 1,
+  "fourColumns": "PASS",
+  "fixture": {
+    "states": "PASS",
+    "retry": "PASS",
+    "nullZeroEvidence": "PASS",
+    "columnsSelection": "PASS",
+    "cachedLayout": "PASS",
+    "obsoleteRequestsCancelled": 2
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "G4": "PASS",
+  "G3": "PASS",
+  "G2": "PASS",
+  "G1": "PASS",
+  "G7": "PASS",
+  "G6": "PASS",
+  "G8": "PASS",
+  "G9": "PASS",
+  "keyboard": "PASS",
+  "rowHeights": [
+    40,
+    40,
+    40,
+    40,
+    40,
+    40,
+    40,
+    40,
+    40
+  ],
+  "mobile": {
+    "width": 366,
+    "scroll": 720,
+    "client": 364
+  },
+  "G10": "PASS",
+  "syntheticWindowing": "PASS: 2000 values, last value reachable, <35 mounted rows, complete CSV, collapse/restore and sort scroll retention",
+  "errors": []
+}

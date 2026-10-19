@@ -1,4 +1,290 @@
+## 1.36.1 (patch) — 2026-10-19 — Mode Graphique KPI activé
+
+- Graphique disponible dans les deux menus : points par groupe avec la valeur/statistique réelle du KPI en Y, sans relier les groupes.
+- Réglages par KPI, légende, sélection, plein écran et export PNG/CSV conservés ; aucune requête supplémentaire pour changer le rendu.
+- Task Time et croisement de deux mesures numériques restent indisponibles sans contrat d’observations appariées.
+
+## 1.36.0 (minor) — 2026-10-19 — Visualisations et réglages KPI indépendants
+
+- Menu ⋮ par KPI dans la sidebar : histogramme, tableau inférieur et carte avec état vide explicite lorsque les coordonnées sont absentes ; sélection sans doublon.
+- Menu ⋮ de carte distinct : configuration locale X/Y, regroupement, statistiques disponibles, exports PNG/CSV, déplacement et suppression.
+- Préférences par code KPI conservées pendant la session, sans appliquer les filtres globaux en attente ; requêtes dédupliquées selon les arguments réellement supportés par l’API.
+- Graphique XY/Task Time explicitement indisponible : contrat actuel limité aux agrégats, sans observations appariées, temps de tâche ni coordonnées KPI. Aucune série ou mesure reconstruite.
+
+## 1.35.5 (patch) — 2026-10-19 — Navigation Templates allégée
+
+- Suppression de la recherche de paramètres, du résumé des occurrences et de l’arbre LTE/NR dans l’onglet Templates uniquement.
+- Catégories de templates conservées avec défilement ; onglets Paramètres et Raw inchangés.
+
+## 1.35.4 (patch) — 2026-10-19 — Opérateurs identifiés et Free vert
+
+- Exclusion des libellés N/D et non attribués dans le sélecteur Opérateur partagé RRC/KPI ; conservation des mesures et du contrat API.
+- Palette commune des graphiques RRC et KPI : Free en vert #16A34A.
+
+## 1.35.3 (patch) — 2026-10-19 — Sélection opérateurs par défaut
+
+- Dictionnaire RRC et KPI : tous les opérateurs disponibles cochés par défaut, badges colorés visibles dans le bouton, y compris lorsque tous sont actifs.
+- Conservation du contrat sans restriction opérateur et de l’application explicite ; réinitialisation vers tous les opérateurs.
+- Suppression des badges opérateurs répétés sous les filtres KPI.
+
+## 1.35.2 (patch) — 2026-10-19 — Cache des résultats entre pages
+
+- Résultats analytiques conservés 30 minutes après avoir quitté une page, sans téléchargement automatique au retour ni au changement de focus.
+- Chargements RRC/KPI en cours réutilisés pendant la navigation ; réponses isolées par clé de contexte, cache vidé à la déconnexion.
+- Les changements de projet/filtres et les invalidations explicites continuent de charger les résultats correspondants ; suivi des imports inchangé.
+
+## 1.35.1 (patch) — 2026-10-19 — Tableau RRC toujours sous les histogrammes
+
+- Suppression de la disposition côte à côte sur grand écran : le Tableau des valeurs reste en dernière position, sous les histogrammes, sur toute la largeur disponible.
+- Données, calculs, filtres et export inchangés.
+
+## 1.35.0 (minor) — BC4-FRONT 2026-10-18 — Chargements de pages allégés
+
+- Dictionnaire : Raw et Templates chargés à l’ouverture de leur onglet, sans requête inutile à l’arrivée sur Paramètres.
+- Métadonnées RRC et KPI : réutilisation des chargements en cours à travers les remontages/navigation ; cache isolé par projet, requêtes analytiques toujours annulables.
+- Vue d’ensemble : chargement réutilisé entre navigations et contrat nullable du backend 0.52.0 validé ; points sans coordonnées conservés dans les populations, exclus uniquement de la carte.
+- Audit reproductible des temps navigateur et des requêtes dans scripts/page-performance-check.mjs ; incident API OOM documenté dans performance-evidence.
+
+## 1.34.10 (patch) — 2026-10-18 — Opérateurs RRC sans répétition
+
+- Les opérateurs sélectionnés restent dans le bouton Opérateur ; suppression des badges opérateurs répétés sous les filtres.
+- La ligne Appliqués est masquée sans autre filtre à résumer.
+
+## 1.34.9 (patch) — 2026-10-18 — Infos RRC à gauche
+
+- Panneau des paramètres sélectionnés placé dans une section redimensionnable à gauche des visualisations, avec défilement indépendant.
+- Sur mobile, les informations apparaissent entre le catalogue et les visualisations.
+
+## 1.34.8 (patch) — 2026-10-18 — Tableau RRC sans colonne Total
+
+- Suppression visuelle de Total, de son tri et de son fond dédié ; colonnes de groupes équilibrées sur la largeur disponible.
+- En-tête plus compact, hiérarchie, occurrences, pourcentages et barres conservés.
+- Totaux internes et export CSV inchangés.
+
+## 1.34.7 (patch) — 2026-10-18 — Dimensions géographiques harmonisées
+
+- Dictionnaire : présentation compacte des dimensions alignée sur KPI, titre et cases d’activation identiques.
+- Commune et INSEE retirés du choix des dimensions KPI ; contrats API et filtres existants conservés.
+
+## 1.34.6 (patch) — 2026-10-18 — Free en vert dans KPI Analytics
+
+- Couleur Free verte (#16A34A) dans les graphiques, légendes et tableau KPI, via leur fonction de couleur commune.
+
+## 1.34.5 (patch) — BC4-FRONT 2026-10-18 — Commandes RRC compactes (Agent BC1)
+
+- Repli de l’arbre par une icône dans son en-tête ; icône de restauration disponible lorsque le panneau est fermé.
+- Carte et Infos déplacés dans la barre de filtres ; suppression de la ligne intermédiaire et espacement vertical réduit.
+
+## 1.34.4 (patch) — BC4-FRONT 2026-10-18 — Filtres RRC alignés sur KPI (Agent BC1)
+
+- Barre compacte identique à la disposition KPI : contrôles en ligne, Réinitialiser/Appliquer à droite, badges des filtres appliqués en dessous.
+- Filtres toujours visibles, noms opérateurs colorés, géographie à la demande et dimensions actives séparées.
+- Commandes des panneaux RRC séparées des filtres ; états brouillon/appliqué, API et sélection conservés.
+
+## 1.34.3 (patch) — BC4-FRONT 2026-10-18 — Filtres KPI toujours visibles (Agent BC1)
+
+- Suppression du bouton Plier/Déplier et de son état : filtres KPI toujours affichés.
+
+## 1.34.2 (patch) — BC4-FRONT 2026-10-18 — Badges des filtres sélectionnés (Agent BC1)
+
+- Noms des opérateurs sélectionnés visibles avec les badges colorés du projet dans le sélecteur existant et dans les filtres KPI appliqués.
+- Menu multisélection et comportement Appliquer/Réinitialiser conservés.
+- Onglets KPI à gauche et contrôles Histogramme / Grouper par / Export à droite sur une même ligne desktop ; adaptation mobile.
+
+## 1.34.1 (patch) — BC4-FRONT 2026-10-18 — En-tête KPI allégé (Agent BC1)
+
+- Suppression du badge de nom du projet dans l’en-tête KPI ; projet actif et données conservés.
+- Suppression du titre « Analyse des KPI » et du récapitulatif « KPI sélectionnés · Population du projet filtrée ».
+- Suppression des textes visibles « WORKSPACE RADIO » et « KPI Analytics » dans l’en-tête de la page ; navigation et fonctionnalités conservées.
+
+## 1.34.0 — 2026-10-18
+### KPI Analytics compact layout
+- Full-width compact filters above the preserved resizable catalogue; advanced filters in a popover.
+- Always-on multiple KPI selection; removed global Multi-graphes and Carte / Infos controls.
+- Automatic one/two-column charts, with the third chart spanning the row.
+- Independent friendly error messages with exact expandable diagnostics and retry.
+- Preserved applied-filter requests, API contracts, chart values and synchronized data table.
+- Date filtering remains unavailable under the existing KPI API contract.
+
 # Changelog
+
+## 1.33.2 (patch) — BC4-FRONT 2026-10-18 — En-tête des distributions allégé (Agent BC1)
+
+- Suppression du titre « Distribution des valeurs » et de la liste récapitulative des paramètres au-dessus des histogrammes. Contrôle de comparaison et graphiques conservés.
+
+
+## 1.33.1 (patch) — BC4-FRONT 2026-10-18 — Trois arbres RRC distincts (Agent BC1)
+
+- Ajout d’un troisième onglet Templates, séparé de Paramètres et Raw parameter.
+- Paramètres présente toujours le catalogue complet ; seules les catégories de Templates filtrent son arbre dédié.
+- Recherche, dépliage et conteneur de défilement indépendants pour chaque arbre ; navigation clavier entre les trois onglets.
+
+
+## 1.33.0 (minor) — BC4-FRONT 2026-10-18 — Templates RRC (Agent BC1)
+
+- Catégories API dans la sidebar Paramètres, compteurs projet, sélection du template par identité ASN.1 et arbre filtré ; onglet Raw conservé.
+- Tableau des valeurs dominantes par opérateur, bande ou les deux, distributions complètes en infobulle et accès aux histogrammes.
+- Résumés explicitement limités au projet ; indisponibles sous restrictions géographiques/opérateur/bande non prises en charge par cette route.
+- Administration Réglages → Templates RRC : édition validée, révision serveur et invalidation des caches après enregistrement.
+- Opérateurs sélectionnés affichés par leurs badges nominatifs.
+
+
+## [1.32.1] - 2026-10-18
+
+### RRC — reprise après indisponibilité temporaire du backend
+- Reprise bornée des requêtes carte/distribution lors des erreurs réseau ou HTTP 502/503/504, sans relancer les erreurs de validation ou de session.
+- Message de reconnexion et action Réessayer sur les résultats ; paramètres et filtres appliqués conservés.
+- Vérification des sélections multiples correspondant aux erreurs constatées pendant le redémarrage du backend.
+
+## [1.32.0] - 2026-10-18
+
+### Dictionnaire RRC — valeurs géographiques réelles
+- Carte alimentée par le nouvel endpoint traçable : valeurs, coordonnées sources, capture, séquence, événement, occurrence et fichier NMF.
+- Regroupement des points denses, infobulles avec sélection des occurrences superposées, légende opérateurs et coloration par valeur. Couverture et limites explicites.
+- Requêtes annulables et mises en cache, limitées aux paramètres sélectionnés et aux filtres appliqués ; même périmètre technologique pour les distributions.
+- Aucun marqueur artificiel, position de site ou interpolation. Redimensionnement et plein écran préservés.
+
+## [1.31.0] - 2026-10-18
+
+### Dictionnaire RRC — carte redimensionnable
+- Poignée sous la carte pour ajuster la hauteur entre 240 et 800 px à la souris, au tactile ou au clavier. Double-clic pour revenir à 400 px.
+- Hauteur conservée pendant la session, y compris après fermeture/réouverture du panneau. Zoom et centre préservés pendant le redimensionnement et le plein écran, sans recharger les données.
+
+## [1.30.0] - 2026-10-18
+
+### Dictionnaire RRC — filtres compacts et carte centrale
+- Carte pleine largeur centrale, Infos indépendantes en fiches compactes sous la carte, sans espace réservé aux panneaux masqués.
+- Histogrammes et tableau sous la carte ; tableau à droite lorsque la largeur centrale atteint 1400 px, sinon sous les graphiques.
+- Filtres denses, opérateurs résumés lorsque tous sont sélectionnés, suppression des chips répétées dans la barre ouverte.
+- Dimensions avancées et période explicitement indisponibles lorsque le contrat API ne permet pas leur application.
+- Sidebar, données, calculs, filtres appliqués et API conservés. Points et légende de mesures restent bloqués par le contrat cartographique sans preuve par point.
+
+## [1.29.1] - 2026-10-18
+
+### Dictionnaire RRC
+- Suppression du bloc « Populations et contexte des résultats » et de ses détails par paramètre, sans changement des données, calculs ou filtres.
+
+## [1.29.0] - 2026-10-18
+
+### Dictionnaire RRC — carte, graphiques et Infos premium
+- Carte de 350–450 px sans texte permanent sous le fond ; état sans mesures compact, attribution préservée et commandes flottantes accessibles par icônes.
+- Recherche par coordonnées, recentrage, visibilité de la couche OSM et plein écran, sans nouvelle API ni coordonnées de mesure inventées.
+- Un histogramme occupe toute la largeur ; avec trois graphiques, le dernier occupe les deux colonnes. Les autres dispositions et le redimensionnement existants sont conservés.
+- Racines LTE bleues (#1769E0), NR vertes (#16A34A), sans coloration des descendants.
+- Fiches Infos compactes, badges technologiques, détails longs sous Voir plus, recherche conditionnelle à la sélection multiple.
+- Aucun changement des calculs, conversions, filtres, histogrammes internes, tableau ou backend. Les points/ légendes de mesures restent indisponibles faute de contrat traçable.
+
+## [1.28.1] - 2026-10-18
+
+### RRC — fond cartographique même sans mesures
+- Affiche la carte OpenStreetMap existante même sans points géolocalisés traçables, avec indication explicite « Fond de carte uniquement ».
+- Zoom, déplacement et plein écran disponibles ; même instance conservée au basculement, avec recalcul des dimensions.
+- Masque la légende opérateurs lorsqu’aucune population n’est cartographiée. Aucun marqueur de mesure inventé.
+
+## [1.28.0] - 2026-10-18
+
+### Dictionnaire RRC — panneaux Carte et Infos indépendants
+- Deux toggles indépendants, quatre dispositions sans espace réservé aux panneaux fermés ; panneau droit redimensionnable 350–600 px et sidebar 250–420 px.
+- Infos multiples par sélection canonique : fiches repliables, recherche, tout développer/réduire, copie des chemins et des informations techniques.
+- Métadonnées issues de la fiche API ; populations et preuves issues de la distribution du contexte appliqué. Champs absents affichés —, anciennes populations masquées pendant l’actualisation.
+- Carte : état Unavailable explicite et plein écran. L’endpoint existant par chemin ne fournit pas de preuve par point et ignore la géographie appliquée ; aucune coordonnée, légende ou coloration de mesures n’est fabriquée.
+- Aucun changement du backend, des conversions, de l’arbre, des histogrammes, du tableau ou de KPI Analytics.
+
+## [1.27.1] - 2026-10-18
+
+### Correction — Carte / Infos sur Dictionnaire RRC
+- Place l’interrupteur Carte / Infos directement dans la barre du Dictionnaire RRC, visible même lorsque les filtres sont repliés.
+- Affiche à la demande la carte OSM et la fiche RRC existante ; le panneau est démonté lorsqu’il est masqué.
+- Réutilise la carte avec un libellé RRC, sans points géographiques inventés ni changement des distributions.
+
+## [1.27.0] - 2026-10-18
+
+### KPI Analytics — Carte / Infos à la demande
+- Ajoute un interrupteur Carte / Infos, désactivé initialement, pour afficher ou masquer la carte OSM et la fiche du KPI actif.
+- Réutilise la carte existante, montée uniquement lorsque la section est activée, avec nettoyage au masquage et adaptation au redimensionnement.
+- Informations issues du catalogue et de la réponse analytique déjà chargée ; aucune requête KPI supplémentaire au basculement.
+- Affiche explicitement l’absence de coordonnées KPI sans inventer de points GPS ou additionner les populations des métriques.
+
+## [1.26.0] - 2026-10-18
+
+### KPI Analytics — workspace multi-graphes
+- Évolution mineure : sélection multiple par code catalogue, onglets ordonnables, mode unique conservant les sélections et dispositions automatique/1/2/4.
+- Sidebar KPI existante conservée (technologies et familles API), redimensionnable de 230 à 460 px, recherche étendue et scroll indépendant.
+- Réutilisation des sélecteurs RRC ; états brouillon/appliqué, géographie activable, dimensions avancées contractuelles et filtres partagés dans l’URL.
+- Graphiques indépendants, P10/P50/P90 uniquement lorsqu’ils sont fournis, couleurs opérateurs communes, infos et preuves, export CSV et plein écran.
+- Tableau synchronisé sur les mêmes agrégats avec recherche, tri, colonnes, pagination et sélection liée aux barres.
+- Cache par projet/métrique/filtres, annulation des requêtes obsolètes, rendu des graphiques différé et limite configurable VITE_KPI_MAX_GRAPHS (8 par défaut, maximum 16).
+- Aucune série Task Time ni distribution brute inventée : le contrat courant ne fournit que des agrégats ; période informative et absence de filtre site/fournisseur RAN faute de contrat.
+- Aucun changement du backend, des formules ou des modules RRC/RF/IA.
+
+## [1.25.1] - 2026-10-18
+
+### Dictionnaire RRC — corrections de synchronisation et de défilement
+- Corrige les distributions vides des paramètres sélectionnés dans Raw : résolution unique du chemin brut vers la clé canonique présente dans le catalogue, dans la même technologie et le même message. Les correspondances absentes ou ambiguës sont signalées, jamais devinées à partir du libellé.
+- Sépare les filtres en cours et les snapshots immuables appliqués. Réinitialiser prépare le brouillon ; seul Appliquer change le contexte analytique et l’URL. Les sélections de paramètres et Group By réutilisent exclusivement le contexte validé.
+- Clés de requête stables, annulation via AbortSignal, cache par contexte et conservation des derniers résultats avec indication explicite de leur contexte pendant l’actualisation ou après une erreur.
+- Distingue les comptes globaux de l’arbre et les occurrences affichées pour les paramètres sélectionnés ; ajoute le détail des populations et les diagnostics d’incohérence. Aucun compte décodable distinct n’est inventé lorsque l’API ne le fournit pas.
+- Barre desktop ramenée d’environ 200 px à 108 px, un seul indicateur de modifications non appliquées, actions sur la ligne principale et panneau repliable sur mobile.
+- Supprime l’allocation mobile artificielle de 1100 px : contenu analytique en flux naturel, sidebar à défilement indépendant, table et virtualisation préservées. Adaptation du header uniquement sur le Dictionnaire étroit pour éviter le débordement horizontal, sans supprimer les commandes.
+- Aucun changement des conversions, données, tracés des histogrammes, schéma CSV, contrats API ou backend.
+
+
+## [1.25.0] - 2026-10-18
+
+### Dictionnaire RRC — tableau hiérarchique premium V3
+- En-têtes Famille et Paramètre repliables, puis lignes de valeurs indentées ; commandes Tout développer/Tout réduire et recherche des chemins ASN.1 avec ouverture automatique des résultats.
+- Identité de groupe fondée sur les identifiants API, le chemin canonique et la technologie disponible ; familles issues exclusivement du catalogue.
+- Colonnes dynamiques dans l’ordre opérateur, marqueurs et barres de 4px aux couleurs prescrites ; occurrences et dénominateurs conservés avant recherche.
+- Diagnostic visible si la somme des occurrences diffère du total API ou si une valeur brute est dupliquée ; aucune correction silencieuse des données.
+- Construction mémoïsée des groupes et rendu fenêtré au-delà de 300 lignes ; tri et repli indépendants de l’export complet.
+- Nouveau CSV plat à 13 colonnes : technology, family_id, family_name, param_id, asn1_path, parameter_name, value, operator, band, occurrences, denominator, percentage, total. Version mineure pour l’évolution du format exporté et des interactions.
+- Aucun changement des histogrammes, filtres globaux, conversions, sélections, client API ou backend.
+
+
+## [1.24.1] - 2026-10-18
+
+- Dictionnaire RRC : chaque dimension géographique activée dispose de son propre bouton de multisélection dans la barre de filtres, avec son libellé et son compteur.
+- Ajout du bouton Plier/Déplier les filtres ; les sélections et modifications en attente sont conservées.
+
+
+## [1.24.0] - 2026-10-18
+
+### Dictionnaire RRC — tableau hiérarchique
+- Famille issue du catalogue, paramètre identifié par `param_key`, valeurs regroupées sans répétition visuelle des libellés ; contexte conservé pour les lecteurs d’écran.
+- Occurrences, pourcentages par population paramètre/opérateur (et bande), barres sur une échelle commune ; absence conservée comme null et affichée « — ».
+- Recherche famille/paramètre/valeur et tri au sein de chaque groupe ; dénominateurs conservés avant recherche.
+- CSV détaillé par valeur et opérateur avec identifiant stable, dénominateur et pourcentage ; colonne bande supplémentaire en mode bande/combiné. Cette évolution du format d’export justifie une version mineure.
+- Histogrammes, sélection, filtres globaux et appels API inchangés. Tests de regroupement et validation navigateur sur données réelles.
+
+
+## 1.23.1 (patch) — bc4-front 2026-10-18 — Panneau géographique épuré
+
+- Suppression des explications et messages techniques du panneau géographique. Présentation compacte avec libellés, interrupteurs et compteurs discrets.
+- Sélections, disponibilité réelle des dimensions et comportement Apply/Reset conservés.
+
+## 1.23.0 (minor) — bc4-front 2026-10-18 — Filtres géographiques RRC effectifs
+
+- DOR, Plaque et Zone ARCEP : activation indépendante, recherche, sélection multiple, compte des options, suppression et Apply/Reset. État appliqué partagé dans l’URL.
+- Disponibilité et valeurs obtenues via `/dict/v2/filters` ; les dimensions sans liaison stricte restent désactivées avec la raison retournée par le serveur.
+- Requête géographique unique pour histogrammes et tableau, avec les regroupements existants. Aucun choix géographique inventé. Nécessite bc4-back 0.49.0.
+
+## 1.22.1 (patch) — bc4-front 2026-10-18 — Badges opérateurs du dictionnaire
+
+- Réutilisation exacte des badges `OperatorChip` de Projets dans les options opérateurs, la sélection, les filtres actifs et les en-têtes du tableau RRC.
+- Indisponibilité des filtres géographiques annoncée dès le sélecteur principal : le contrat distribution v2 ne prend toujours pas de filtre géographique. Aucun faux filtrage ni changement backend.
+
+## 1.22.0 (minor) — bc4-front 2026-10-18 — Dictionnaire RRC : filtres et tableau premium
+
+- Surface de filtres sur deux lignes, sélecteurs recherchables, sélection multiple, actions individuelles, Apply/Reset et technologie synchronisée avec l’URL.
+- Opérateur et bande filtrent désormais une même projection des agrégats API `operator_band` pour les histogrammes et le tableau. Aucun nouvel endpoint ni changement backend. Les verdicts du projet ne sont pas présentés comme des verdicts de la sous-population filtrée ; les preuves originales restent intactes.
+- Géographie DOR / Plaque / Zone ARCEP accessible directement dans un popover clavier. Contrôles désactivés avec explication : le contrat distribution v2 ne supporte pas ces filtres. Période réelle du projet affichée, sans faux sélecteur de dates.
+- Arbre conservé, largeur initiale 300 px, bornes 250–460 px, poignée et réduction/restauration sans démontage de l’arbre.
+- Deux histogrammes côte à côte sur bureau ; tableau indépendant surélevé, en-tête fixe, recherche, tri, colonnes et CSV échappé de la sélection affichée. Valeurs absentes : N/D.
+- Couleurs opérateurs alignées sur la charte. Thèmes et disposition étroite conservés ; le header global existant déborde encore à 400 px.
+- `typecheck` utilise le TypeScript déjà déclaré (`tsc`) au lieu du binaire `tsgo` absent des dépendances.
+- Version mineure : correction observable du comportement des filtres auparavant inactifs sur les distributions. Contrats API, décodage et modules voisins inchangés.
+
+Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 
 ## 1.21.2 (patch) — bc4-front 2026-10-17 — Raw tree : nom court + agrégation [n] + discriminant parent, chemin complet uniquement en tooltip (Agent BC1)
 

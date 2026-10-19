@@ -1,0 +1,42 @@
+[
+  {
+    "param_key": "loggedMeasurementConfiguration-r10/loggedMeasurementConfiguration-r10/loggingDuration-r10",
+    "total": 160,
+    "geolocated": 0,
+    "returned": 0,
+    "operators": [],
+    "reason": "Aucune occurrence sélectionnée ne possède de coordonnées valides dans son événement source."
+  },
+  {
+    "param_key": "loggedMeasurementConfiguration-r10/loggedMeasurementConfiguration-r10/traceReference-r10/plmn-Identity-r10/mnc",
+    "total": 160,
+    "geolocated": 0,
+    "returned": 0,
+    "operators": [],
+    "reason": "Aucune occurrence sélectionnée ne possède de coordonnées valides dans son événement source."
+  },
+  {
+    "param_key": "systemInformationBlockType1/cellAccessRelatedInfo/plmn-IdentityList/plmn-Identity/mnc",
+    "total": 1763,
+    "geolocated": 199,
+    "returned": 199,
+    "operators": [
+      {
+        "name": "Bouygues",
+        "count": 31,
+        "color": "#009FE3"
+      },
+      {
+        "name": "Free",
+        "count": 50,
+        "color": "#7C8794"
+      },
+      {
+        "name": "Orange",
+        "count": 118,
+        "color": "#FF7900"
+      }
+    ],
+    "reason": null
+  }
+]

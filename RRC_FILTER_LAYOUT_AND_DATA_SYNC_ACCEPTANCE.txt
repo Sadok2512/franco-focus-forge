@@ -1,0 +1,92 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_FILTER_LAYOUT_AND_DATA_SYNC_FIX
+DATE = 2026-10-18
+
+PREVIOUS_VERSION = 1.25.0
+NEW_VERSION = 1.25.1 (correctif RRC ; workspace désormais 1.26.0 après évolution KPI concurrente, conservée)
+VERSION_CHANGE_TYPE = PATCH
+
+ISSUE_1_FILTER_WHITESPACE = corrigé ; 200,22 px avant, 108,22 px après aux trois résolutions desktop
+ISSUE_2_TREE_GRAPH_MISMATCH = corrigé ; les chemins Raw étaient envoyés comme clés canoniques
+ISSUE_3_APPLY_FILTER_BEHAVIOR = corrigé ; modifications et Reset ne changent que le brouillon
+DRAFT_FILTERS = état séparé ; indicateur de modifications non appliquées
+APPLIED_FILTERS = snapshot immuable, URL synchronisée uniquement à validation
+REQUEST_DEDUPLICATION = cache et clés stables projet/contexte/paramètres/groupement
+STALE_RESPONSE_PROTECTION = AbortSignal, réponse liée à son snapshot ; ancien résultat explicitement identifié
+
+A2_THRESHOLD_TREE_COUNT = 3098
+A2_THRESHOLD_FILTERED_COUNT = 3098 sans restriction ; 77 Orange + B1
+A2_THRESHOLD_DISTRIBUTION_COUNT = 3098 sans restriction ; 77 Orange + B1
+A3_OFFSET_TREE_COUNT = 1129
+A3_OFFSET_FILTERED_COUNT = 1129 sans restriction ; 31 Orange + B1
+A3_OFFSET_DISTRIBUTION_COUNT = 1129 sans restriction ; 31 Orange + B1
+
+ROOT_CAUSE = Raw regroupe les indices ASN.1 pour le compte mais sélectionnait la clé brute du premier élément. La distribution recherche une clé canonique. Le chemin brut (indices et branches CHOICE) renvoyait zéro, la clé catalogue renvoie les occurrences réelles.
+FIX_APPLIED = résolution unique Raw vers catalogue dans la même technologie et le même message, vérification structurelle du chemin complet ; absence/ambiguïté signalée. Aucun rapprochement par seul libellé. Snapshots de filtres et projection commune du résultat vers histogrammes/tableau.
+DATA_INTEGRITY = totaux des séries ECharts réelles et du tableau identiques, valeurs API conservées ; aucun changement des conversions ou données sources.
+
+G1 = PASS — 1920×1080, 1440×900, 1280×800 : barre 108,22 px ; page sans débordement horizontal à 400 px.
+G2 = PASS — opérateur, bande, technologie en brouillon : aucun appel analytique ; DOR testé avec métadonnées isolées de test, sans appliquer de valeur géographique fabriquée au serveur.
+G3 = PASS — histogrammes/tableau partagent le résultat et le contexte validé. L'arbre expose ses comptes projet et les comptes affichés des sélections ; l'API arbre ne permet pas de requête filtrée.
+G4 = PASS — Reset ne recharge pas ; Apply restaure les valeurs par défaut.
+G5 = PASS — sélections Raw a2-Threshold/a3-Offset : requêtes canoniques et 3098/1129 occurrences.
+G6 = PASS — comparaison directe API brute/canonique, identité des paramètres et populations ; cause exacte documentée ci-dessus.
+G7 = PASS — Tous et désactivé omettent la restriction ; population réelle conservée. Les dimensions sans liaison valide restent indisponibles. Activation testée par fixture de métadonnées uniquement.
+G8 = PASS — deux contextes appliqués rapidement, première réponse retardée ignorée ; erreur 503 simulée conserve le dernier résultat et son contexte explicite.
+G9 = PASS — sommes des séries ECharts et lignes du tableau : 3098/1129 puis 77/31 ; 69 tests unitaires réussis.
+G10 = PASS — Raw/catalogue, multisélection, Group By, LTE/NR, hiérarchie et CSV. Export réel : 13 colonnes, 32 enregistrements ; export identique après retour au contexte initial. Tracés, conversions et couleurs conservés.
+G11 = FAIL — lint global : 1027 erreurs, 29 avertissements ; typecheck global en échec dans les fichiers KPI modifiés en parallèle. Lint ciblé RRC PASS, 69 tests PASS, production build PASS. Aucun fichier RRC dans les diagnostics TypeScript finaux.
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE (pour cette mission ; modifications externes préexistantes/concurrentes conservées)
+OPEN_ISSUES = gardes globaux lint/typecheck non verts ; arbre API global ; période informative faute de contrat de filtre ; nombre décodable distinct non fourni ; seuls DOR/Plaque/Zone ARCEP supportés par le contrat géographique actuel.
+NEXT_STEP = corriger les diagnostics hors périmètre dans leur chantier, puis relancer les gardes globaux.
+
+ISSUE 4 — Audit et défilement
+Les mesures avant modification sont dans rrc-layout-before.json et rrc-scroll-before.json. Inspection des hauteurs/min/max, flex/min-height:0, overflow et virtualisation effectuée avant CSS.
+Desktop : le scroll interne et les espaceurs de virtualisation ne reproduisaient pas de grand vide après la dernière ligne. Mobile : min-height:1100px et panneau vertical à minimum 600px imposaient une allocation artificielle et plusieurs zones de scroll imbriquées.
+Correction : suppression de cette allocation mobile ; flux naturel analytique, sidebar indépendante. Desktop conserve sa hauteur viewport et son panneau horizontal redimensionnable. Table à hauteur naturelle pour peu de résultats, scroll interne/virtualisation existante pour les grandes populations. Pas de min-height fixe ajouté pour masquer le problème.
+Validation exécutée : 0, 1, 10, 100 et 1000 lignes × trois résolutions desktop, avec deux paramètres et redimensionnement sidebar ; dernière ligne accessible, 0,5–1 px après elle dans la table, moins de 35 lignes montées pour 1000 résultats. Scroll sidebar indépendant et conservé. À 400 px : aucun débordement horizontal et environ 14 px après la table en fin de document.
+Les lignes de stress sont des fixtures de navigateur isolées, jamais des données de production. Un espace de fond disponible sous une petite table dans un viewport plus haut n'est pas une zone artificielle supplémentaire à défiler.
+
+Commandes réellement exécutées (depuis franco-focus-forge)
+npm run typecheck
+npm run lint
+npx eslint src/features/dict-v2/DictV2Page.tsx src/features/dict-v2/TreePanel.tsx src/features/dict-v2/parameter-identity.ts src/features/dict-v2/filter-state.ts src/features/dict-v2/distribution-view.ts src/features/dict-v2/ValueExplorer.tsx src/features/dict-v2/GeographicFilter.tsx src/routes/_app.rrc.tsx src/test/rrc-sync.test.ts scripts/rrc-sync-layout-check.mjs scripts/rrc-scroll-check.mjs scripts/rrc-layout-audit.mjs scripts/rrc-scroll-audit.mjs scripts/rrc-export-sync-check.mjs
+VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config /tmp/rrc-tests.config.mjs
+docker exec bc4-front-1 bun run build
+node scripts/rrc-sync-layout-check.mjs
+node scripts/rrc-scroll-check.mjs
+node scripts/rrc-export-sync-check.mjs
+
+Configuration Vitest temporaire : root du frontend, environnement jsdom, globals:true, setupFiles ./src/test/setup.ts, include src/**/*.{test,spec}.{ts,tsx}, alias @ vers src, cacheDir /tmp/rrc-vitest-cache. Contournement des droits du répertoire node_modules/.vite-temp uniquement. Build exécuté dans le conteneur existant pour la même raison.
+
+Fichiers de cette mission
+src/features/dict-v2/DictV2Page.tsx
+src/features/dict-v2/TreePanel.tsx
+src/features/dict-v2/ValueExplorer.tsx
+src/features/dict-v2/GeographicFilter.tsx
+src/features/dict-v2/distribution-view.ts
+src/features/dict-v2/parameter-identity.ts
+src/features/dict-v2/filter-state.ts
+src/features/dict-v2/premium.css
+src/routes/_app.rrc.tsx
+src/test/rrc-sync.test.ts
+scripts/rrc-layout-audit.mjs
+scripts/rrc-scroll-audit.mjs
+scripts/rrc-sync-layout-check.mjs
+scripts/rrc-scroll-check.mjs
+scripts/rrc-export-sync-check.mjs
+package.json (patch 1.25.1, depuis remplacé par 1.26.0 dans le chantier KPI)
+CHANGELOG.md (entrée 1.25.1 conservée)
+RRC_FILTER_LAYOUT_AND_DATA_SYNC_ACCEPTANCE.txt
+rrc-sync-evidence/ (JSON, logs, CSV, captures réelles)
+
+Preuves
+rrc-sync-evidence/rrc-sync-audit.json : identités catalogue/Raw et réponses API Test_3.
+rrc-sync-evidence/rrc-sync-browser.json : requêtes, comptes, sommes histogrammes, dimensions et interactions.
+rrc-sync-evidence/rrc-scroll-validation.json : matrice complète de défilement.
+rrc-sync-evidence/rrc-sync-table.png : capture du tableau réel, 8 valeurs.
+rrc-sync-evidence/rrc-sync-desktop.png et rrc-sync-toolbar.png : captures de la page et des filtres.
+rrc-sync-evidence/rrc-sync-values.csv : export réel.
+rrc-sync-evidence/*.log : résultats des commandes, y compris les échecs globaux.

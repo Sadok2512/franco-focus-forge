@@ -1,0 +1,1 @@
+PASS: 11 categories, DRX selection, 3 comparison modes, Raw isolation, 400px overflow, admin read-only, no runtime errors; 7 PNG.

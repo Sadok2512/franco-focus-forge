@@ -1,0 +1,65 @@
+[
+  {
+    "page": "Vue d'ensemble",
+    "networkSettled": true,
+    "ms": 16759,
+    "url": "http://localhost:5174/overview",
+    "requests": [
+      {
+        "url": "http://localhost:5174/api/kpi/catalog",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5174/api/projects",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/overview",
+        "status": 200
+      }
+    ],
+    "errors": []
+  },
+  {
+    "page": "RF Modules",
+    "networkSettled": true,
+    "ms": 2987,
+    "url": "http://localhost:5174/rf",
+    "requests": [],
+    "errors": []
+  },
+  {
+    "page": "Assistant IA",
+    "networkSettled": true,
+    "ms": 1288,
+    "url": "http://localhost:5174/assistant",
+    "requests": [
+      {
+        "url": "http://localhost:5174/api/settings/ai/enabled",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/conversations",
+        "status": 200
+      },
+      {
+        "url": "http://localhost:5174/api/projects",
+        "status": 200
+      }
+    ],
+    "errors": []
+  },
+  {
+    "page": "Projets",
+    "networkSettled": true,
+    "ms": 1216,
+    "url": "http://localhost:5174/projects",
+    "requests": [
+      {
+        "url": "http://localhost:5174/api/projects",
+        "status": 200
+      }
+    ],
+    "errors": []
+  }
+]

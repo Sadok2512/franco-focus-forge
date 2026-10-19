@@ -42,3 +42,16 @@ export const NmfImportReportSchema = z.object({
   technos_seen: z.record(z.string(), z.number().int()),
 });
 export type NmfImportReport = z.infer<typeof NmfImportReportSchema>;
+
+export const NmfImportJobSchema = z.object({
+  id: z.string(),
+  project_id: z.string(),
+  status: z.enum(["queued", "decoding", "finalizing", "done", "error"]),
+  files_total: z.number().int().nonnegative(),
+  files_done: z.number().int().nonnegative(),
+  files_error: z.number().int().nonnegative(),
+  by_file: z.array(NmfFileEntrySchema),
+  error_msg: z.string().nullable(),
+  report: NmfImportReportSchema.nullable(),
+});
+export type NmfImportJob = z.infer<typeof NmfImportJobSchema>;

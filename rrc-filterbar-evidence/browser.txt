@@ -1,0 +1,5 @@
+{"width":1920,"filterHeight":73}
+{"width":1440,"filterHeight":73}
+{"width":1280,"filterHeight":73}
+{"width":400,"filterHeight":186.9375}
+PASS: draft has no analytical requests; applied chips only change after Apply; Reset remains draft; compact layout and no horizontal overflow at 4 widths.

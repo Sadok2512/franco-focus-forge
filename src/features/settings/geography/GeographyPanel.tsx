@@ -58,7 +58,7 @@ export function GeographyPanel() {
     mutationFn: () =>
       postGeoImport(actor, { filename: file!.name, mapping, rows: table!.rows, commit: true }),
     onSuccess: (r) => {
-      setDone(`Référentiel v${r.committed?.version} importé (${r.valid} lignes, simulation mock).`);
+      setDone(`Référentiel v${r.committed?.version} importé (${r.valid} lignes).`);
       setTable(null);
       setFile(null);
       qc.invalidateQueries({ queryKey: ["settings", "geo"] });

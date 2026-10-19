@@ -1,0 +1,1416 @@
+{
+  "at": "2026-10-18T22:40:19.583Z",
+  "project": "4b7bfd50ddb6",
+  "samples": [
+    {
+      "page": "projects",
+      "readyMs": 2021
+    },
+    {
+      "page": "Dictionnaire RRC",
+      "readyMs": 5764
+    },
+    {
+      "page": "KPI Analytics",
+      "readyMs": 3894
+    },
+    {
+      "page": "Dictionnaire RRC",
+      "readyMs": 243
+    }
+  ],
+  "requests": [
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/tree?view=catalog",
+      "ms": 5243,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/catalog",
+      "ms": 3393,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/filters",
+      "ms": 1797,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/filters",
+      "ms": 1374,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band",
+      "ms": 472,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/echarts.js?v=cde14f62",
+      "ms": 292,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/@react-refresh",
+      "ms": 161,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/projects",
+      "ms": 148,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/dictionary-schemas.ts",
+      "ms": 122,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/mocks/reference.ts",
+      "ms": 122,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/reference-schemas.ts",
+      "ms": 120,
+      "type": "script"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/inter/v20/UcC73FwrK3iLTeHuS_nVMrMxCp50SjIa1ZL7.woff2",
+      "ms": 118,
+      "type": "font"
+    },
+    {
+      "url": "http://localhost:5174/src/mocks/dictionary.ts",
+      "ms": 113,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/mocks/projects.ts",
+      "ms": 112,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/mocks/assistant.ts?t=1792362388838",
+      "ms": 112,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/dist-C3BDsm5L.js?v=cde14f62",
+      "ms": 112,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/settings-schemas.ts",
+      "ms": 111,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/assistant-schemas.ts?t=1792336901679",
+      "ms": 110,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/Combination-Cg1KPPIP.js?v=cde14f62",
+      "ms": 110,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/mocks/settings.ts",
+      "ms": 109,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/permissions.ts",
+      "ms": 107,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/project-schemas.ts",
+      "ms": 106,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/dist-Cwh4H64v.js?v=cde14f62",
+      "ms": 105,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/dist-EKb03w6L.js?v=cde14f62",
+      "ms": 105,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/button.tsx",
+      "ms": 103,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.organization.tsx",
+      "ms": 100,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.users.tsx",
+      "ms": 100,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/tailwind-merge.js?v=cde14f62",
+      "ms": 99,
+      "type": "script"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap",
+      "ms": 98,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.dict-templates.tsx?t=1792362388838",
+      "ms": 98,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.kpi-catalog.tsx",
+      "ms": 98,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@radix-ui_react-alert-dialog.js?v=cde14f62",
+      "ms": 98,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.appearance.tsx",
+      "ms": 97,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.geography.tsx",
+      "ms": 97,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.ai.tsx",
+      "ms": 93,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/new-process-route-tree.js?v=cde14f62",
+      "ms": 93,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.about.tsx",
+      "ms": 92,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.cellular-reference.tsx",
+      "ms": 92,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/sieve-cache.js?v=cde14f62",
+      "ms": 92,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.projects.$projectId.tsx?t=1792362388838",
+      "ms": 91,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.index.tsx",
+      "ms": 91,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.rf.tsx",
+      "ms": 90,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.rrc.tsx?t=1792363189153",
+      "ms": 90,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.settings.tsx?t=1792357949735",
+      "ms": 90,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/cookie-es/dist/index.mjs?v=cde14f62",
+      "ms": 88,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/RawStreamJSONPlugin.js?v=cde14f62",
+      "ms": 88,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client-rpc/serverFnFetcher.js?v=cde14f62",
+      "ms": 87,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/ShallowErrorPlugin.js?v=cde14f62",
+      "ms": 87,
+      "type": "script"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/jetbrainsmono/v24/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8-qxTOlOV.woff2",
+      "ms": 87,
+      "type": "font"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/seroval-plugins/dist/dev/web.js?v=cde14f62",
+      "ms": 86,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/ssr-match-id.js?v=cde14f62",
+      "ms": 86,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.projects.tsx?t=1792362388838",
+      "ms": 86,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start-client/dist/esm/Hydrate.js?v=cde14f62",
+      "ms": 85,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/getStartOptions.js?v=cde14f62",
+      "ms": 85,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/index.js?v=cde14f62",
+      "ms": 84,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/index.tsx",
+      "ms": 84,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/clsx.js?v=cde14f62",
+      "ms": 84,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start/dist/esm/useServerFn.js?v=cde14f62",
+      "ms": 83,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.assistant.tsx?t=1792362388838",
+      "ms": 83,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.tsx?t=1792362388838",
+      "ms": 83,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/login.tsx?t=1792362388838",
+      "ms": 83,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.kpi.tsx?t=1792363189171",
+      "ms": 82,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/seroval/dist/dev/index.js?v=cde14f62",
+      "ms": 79,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/lucide-react.js?v=cde14f62",
+      "ms": 79,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.overview.tsx?t=1792362388838",
+      "ms": 78,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/await-signal.js?v=cde14f62",
+      "ms": 77,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/__root.tsx",
+      "ms": 73,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/index.js?v=cde14f62",
+      "ms": 54,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/nonRouteComponentContext.js?v=cde14f62",
+      "ms": 50,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/routerContext.js?v=cde14f62",
+      "ms": 50,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/settings/organization",
+      "ms": 50,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/alert-dialog.tsx",
+      "ms": 48,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/project-kpi-schemas.ts",
+      "ms": 48,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@radix-ui_react-dropdown-menu.js?v=cde14f62",
+      "ms": 48,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/matchContext.js?v=cde14f62",
+      "ms": 47,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/utils.ts",
+      "ms": 47,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/empty-plugin-adapters.js?v=cde14f62",
+      "ms": 46,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/router.tsx?t=1792363189171",
+      "ms": 46,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-fn-stubs/dist/esm/index.js?v=cde14f62",
+      "ms": 46,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/createStart.js?v=cde14f62",
+      "ms": 45,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client-rpc/frame-decoder.js?v=cde14f62",
+      "ms": 45,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/CHANGELOG.md?import&t=1792362388843&raw",
+      "ms": 45,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/Scripts.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/start.ts",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/client.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@tanstack_react-router_n_@tanstack_react-store.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/getRouterInstance.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/getDefaultSerovalPlugins.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/getGlobalStartContext.js?v=cde14f62",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/dict-v2.ts?t=1792355996683",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/dict-templates.ts?t=1792357749430",
+      "ms": 44,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/HeadContent.dev.js?v=cde14f62",
+      "ms": 43,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/index.js?v=cde14f62",
+      "ms": 43,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client/ServerFunctionSerializationAdapter.js?v=cde14f62",
+      "ms": 43,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/isServer/development.js?v=cde14f62",
+      "ms": 43,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/headContentUtils.js?v=cde14f62",
+      "ms": 42,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useCanGoBack.js?v=cde14f62",
+      "ms": 41,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/Asset.js?v=cde14f62",
+      "ms": 41,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-fn-stubs/dist/esm/createIsomorphicFn.js?v=cde14f62",
+      "ms": 41,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/sonner.js?v=cde14f62",
+      "ms": 41,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/createCsrfMiddleware.js?v=cde14f62",
+      "ms": 40,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/createMiddleware.js?v=cde14f62",
+      "ms": 40,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/getStartContextServerOnly.js?v=cde14f62",
+      "ms": 40,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/types.ts?t=1792335974390",
+      "ms": 40,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=cde14f62",
+      "ms": 39,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-fn-stubs/dist/esm/envOnly.js?v=cde14f62",
+      "ms": 39,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/http.ts",
+      "ms": 39,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/schemas.ts?t=1792336901679",
+      "ms": 39,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/package.json?import&t=1792362388838",
+      "ms": 39,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react_jsx-dev-runtime.js?v=cde14f62",
+      "ms": 38,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/transformer.js?v=cde14f62",
+      "ms": 38,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/createServerFn.js?v=cde14f62",
+      "ms": 38,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useLocation.js?v=cde14f62",
+      "ms": 37,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/RawStream.js?v=cde14f62",
+      "ms": 37,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/safeObjectMerge.js?v=cde14f62",
+      "ms": 37,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/searchMiddleware.js?v=cde14f62",
+      "ms": 36,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/useNmfUpload.ts?t=1792362388838",
+      "ms": 35,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/config.js?v=cde14f62",
+      "ms": 34,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/route.js?v=cde14f62",
+      "ms": 34,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6",
+      "ms": 34,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/dict",
+      "ms": 33,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useBlocker.js?v=cde14f62",
+      "ms": 32,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/Transitioner.js?v=cde14f62",
+      "ms": 32,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useRouterState.js?v=cde14f62",
+      "ms": 31,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/scroll-restoration.js?v=cde14f62",
+      "ms": 31,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@tanstack_react-query.js?v=cde14f62",
+      "ms": 31,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/RouterProvider.js?v=cde14f62",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/renderRouteNotFound.js?v=cde14f62",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/Matches.js?v=cde14f62",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/manifest.js?v=cde14f62",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/bodyScripts.js?v=cde14f62",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/reference.ts",
+      "ms": 30,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/health",
+      "ms": 30,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/rolldown-runtime-DC62tzP2.js?v=cde14f62",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/router.js?v=cde14f62",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/routerStores.js?v=cde14f62",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/load-server.js?v=cde14f62",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/link.js?v=cde14f62",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/settings.ts?t=1792362388838",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/settings/appearance",
+      "ms": 29,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/RrcMapPanel.tsx?t=1792362388838",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/SelectedParameterInfo.tsx?t=1792362388838",
+      "ms": 29,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/ScrollRestoration.js?v=cde14f62",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react-dom.js?v=cde14f62",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routeTree.gen.ts?t=1792363189171",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/seroval-plugins/dist/dev/rolldown-runtime-D7D4PA-g.js?v=cde14f62",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/assistant.ts?t=1792362388838",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/dictionary.ts",
+      "ms": 28,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/@tanstack-start/styles.css?routes=__root__%2C%2F_app%2C%2F_app%2Fprojects",
+      "ms": 27,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start/dist/esm/client.js?t=1792363189171&v=cde14f62",
+      "ms": 27,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/TreePanel.tsx?t=1792362388838",
+      "ms": 27,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/dict",
+      "ms": 27,
+      "type": "fetch"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/Matches.js?v=cde14f62",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/seroval-plugins.js?v=cde14f62",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/RawStreamRPCPlugin.js?v=cde14f62",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/router.js?v=cde14f62",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/DeleteProjectDialog.tsx",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/shared.tsx?t=1792335989148",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/projects.ts?t=1792335960891",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dictionary/shared.ts?t=1792362388838",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/ValueExplorer.tsx?t=1792362051143",
+      "ms": 26,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/projects",
+      "ms": 25,
+      "type": "document"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/stores.js?v=cde14f62",
+      "ms": 25,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/defer.js?v=cde14f62",
+      "ms": 25,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/load-client.js?v=cde14f62",
+      "ms": 24,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/Match.js?v=cde14f62",
+      "ms": 23,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start/dist/esm/index.js?v=cde14f62",
+      "ms": 23,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/resizable.tsx",
+      "ms": 23,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/ScriptOnce.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/history/dist/esm/index.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client-rpc/createClientRpc.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/headers.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/json.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/rewrite.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/redirect.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/zod.js?v=cde14f62",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/distribution-view.ts?t=1792346867593",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/premium.css?t=1792362132736",
+      "ms": 22,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/lovable-error-reporting.ts",
+      "ms": 21,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/fixtures.ts",
+      "ms": 21,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/@vite/client",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/lazyRouteComponent.js?v=cde14f62",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/not-found.js?v=cde14f62",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/constants.js?v=cde14f62",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/path.js?v=cde14f62",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/styles.css?url",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/sonner.tsx",
+      "ms": 20,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/@id/virtual:tanstack-start-dev-client-entry",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/fileRoute.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/route.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/invariant.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/not-found.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/root.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/seroval-plugins/dist/dev/web-CDQeyEaf.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/dropdown-menu.tsx",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react-resizable-panels.js?v=cde14f62",
+      "ms": 19,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/HeadContent.js?v=cde14f62",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/makeSerovalPlugin.js?v=cde14f62",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/workspace-model.ts?t=1792361191963",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/auth.ts",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/filters.ts?t=1792336901679",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/auth-schemas.ts",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/filter-state.ts",
+      "ms": 18,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/nmf-schemas.ts?t=1792335960745",
+      "ms": 17,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/project-kpi.ts",
+      "ms": 17,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/parameter-identity.ts?t=1792346994273",
+      "ms": 17,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/styles.css",
+      "ms": 16,
+      "type": "stylesheet"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/searchParams.js?v=cde14f62",
+      "ms": 16,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/qss.js?v=cde14f62",
+      "ms": 16,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/link.js?v=cde14f62",
+      "ms": 15,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/ssr/serializer/rawStreamCodec.js?v=cde14f62",
+      "ms": 15,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/CreateProjectDialog.tsx",
+      "ms": 15,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/appearance.ts",
+      "ms": 15,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useRouteContext.js?v=cde14f62",
+      "ms": 14,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/ProjectRowNmfAction.tsx?t=1792362388838",
+      "ms": 14,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/version.ts?t=1792362388838",
+      "ms": 14,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useSearch.js?v=cde14f62",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useNavigate.js?v=cde14f62",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/projects/ProjectRowDetails.tsx?t=1792362388838",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/FilterSelect.tsx?t=1792360099992",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/GeographicFilter.tsx?t=1792361470978",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@radix-ui_react-popover.js?v=cde14f62",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/RrcMapLayers.tsx?t=1792356217753",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiMapOSM.tsx?t=1792356423360",
+      "ms": 13,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/geographic-state.ts?t=1792337131008",
+      "ms": 12,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useMatch.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useLoaderDeps.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useParams.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useLoaderData.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/scroll-restoration-script/client.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/scroll-restoration.js?v=cde14f62",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/popover.tsx",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/map-view.ts?t=1792356096156",
+      "ms": 11,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/grouped-table.ts?t=1792345160741",
+      "ms": 10,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/useRouter.js?v=cde14f62",
+      "ms": 9,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/router-core/dist/esm/utils.js?v=cde14f62",
+      "ms": 9,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/TemplateTable.tsx?t=1792362388838",
+      "ms": 9,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/request-recovery.ts?t=1792357003315",
+      "ms": 8,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/workspace.css?t=1792360156799",
+      "ms": 8,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/bc4/States.tsx",
+      "ms": 7,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/bc4/Chart.tsx",
+      "ms": 7,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiDataTable.tsx?t=1792361191963",
+      "ms": 7,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react_jsx-runtime.js?v=cde14f62",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/awaited.js?v=cde14f62",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/ClientOnly.js?v=cde14f62",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/CatchBoundary.js?v=cde14f62",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.tsx?t=1792362388838&tsr-split=component",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/api/client.ts?t=1792362388838",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/lib/activeProject.ts",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiGraphCard.tsx?t=1792361191963",
+      "ms": 6,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start/dist/plugin/default-entry/client.tsx?t=1792363189171",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/react.js?v=cde14f62",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/utils.js?v=cde14f62",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.projects.tsx?t=1792362388838&tsr-split=component",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/bc4/NoActiveProject.tsx",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/template-model.ts?t=1792357559771",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiFilters.tsx?t=1792361470974",
+      "ms": 5,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/vite/dist/client/env.mjs",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-router/dist/esm/index.dev.js?v=cde14f62",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@radix-ui_react-slot.js?v=cde14f62",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/class-variance-authority.js?v=cde14f62",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.rrc.tsx?t=1792363189153&tsr-split=component",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/DictV2Page.tsx?t=1792363189153",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/dict-v2/GroupedValueTable.tsx?t=1792362051143",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/routes/_app.kpi.tsx?t=1792363189171&tsr-split=component",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiWorkspace.tsx?t=1792363189171",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/features/kpi/KpiCatalogSidebar.tsx?t=1792362388838",
+      "ms": 4,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start-client/dist/esm/index.js?t=1792363189171&v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start-client/dist/esm/StartClient.js?t=1792363189171&v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client/index.js?t=1792363189171&v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/start-client-core/dist/esm/client/hydrateStart.js?t=1792363189171&v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/bc4/AppShell.tsx?t=1792362388838",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/@radix-ui_react-dialog.js?v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/.vite/deps/dist-DfGXtQSm.js?v=cde14f62",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/dialog.tsx",
+      "ms": 3,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/node_modules/@tanstack/react-start-client/dist/esm/hydrateStart.js?t=1792363189171&v=cde14f62",
+      "ms": 2,
+      "type": "script"
+    },
+    {
+      "url": "http://localhost:5174/src/components/ui/sheet.tsx",
+      "ms": 2,
+      "type": "script"
+    }
+  ],
+  "errors": [
+    "http://localhost:5174/api/health: net::ERR_ABORTED",
+    "http://localhost:5174/api/projects: net::ERR_ABORTED",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict: net::ERR_ABORTED",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band: net::ERR_ABORTED",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict: net::ERR_ABORTED"
+  ]
+}

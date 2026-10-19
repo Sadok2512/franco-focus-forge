@@ -1,0 +1,12 @@
+{
+  "recovery": {
+    "failures": {
+      "distribution": 1,
+      "map": 1
+    },
+    "blocks": 3,
+    "points": 144,
+    "selected": 3
+  },
+  "result": "PASS"
+}

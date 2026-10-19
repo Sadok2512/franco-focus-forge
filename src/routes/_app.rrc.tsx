@@ -36,6 +36,7 @@ function RrcPage() {
   const { op, band, dr, plaque, arcep } = filters;
   return (
     <DictionaryPage
+      key={activeProject.id}
       projectId={activeProject.id}
       filters={{ op, band, dr, plaque, arcep }}
       setFilters={set}

@@ -1,0 +1,173 @@
+{
+  "cells": [
+    {
+      "text": "129 · 100,0 %",
+      "title": "highSpeedFlag · Orange : 129 / 129 · 100,0 %",
+      "bar": "width: 100%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "50 · 100,0 %",
+      "title": "highSpeedFlag · SFR : 50 / 50 · 100,0 %",
+      "bar": "width: 100%; background: rgb(226, 0, 26);"
+    },
+    {
+      "text": "89 · 100,0 %",
+      "title": "highSpeedFlag · Bouygues : 89 / 89 · 100,0 %",
+      "bar": "width: 100%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "90 · 100,0 %",
+      "title": "highSpeedFlag · Free : 90 / 90 · 100,0 %",
+      "bar": "width: 100%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "1 · 0,8 %",
+      "title": "prach-ConfigIndex · Orange : 1 / 129 · 0,8 %",
+      "bar": "width: 0.775194%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "25 · 50,0 %",
+      "title": "prach-ConfigIndex · SFR : 25 / 50 · 50,0 %",
+      "bar": "width: 50%; background: rgb(226, 0, 26);"
+    },
+    {
+      "text": "7 · 7,9 %",
+      "title": "prach-ConfigIndex · Bouygues : 7 / 89 · 7,9 %",
+      "bar": "width: 7.86517%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "12 · 13,3 %",
+      "title": "prach-ConfigIndex · Free : 12 / 90 · 13,3 %",
+      "bar": "width: 13.3333%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "18 · 14,0 %",
+      "title": "prach-ConfigIndex · Orange : 18 / 129 · 14,0 %",
+      "bar": "width: 13.9535%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "11 · 12,4 %",
+      "title": "prach-ConfigIndex · Bouygues : 11 / 89 · 12,4 %",
+      "bar": "width: 12.3596%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "7 · 7,8 %",
+      "title": "prach-ConfigIndex · Free : 7 / 90 · 7,8 %",
+      "bar": "width: 7.77778%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "51 · 39,5 %",
+      "title": "prach-ConfigIndex · Orange : 51 / 129 · 39,5 %",
+      "bar": "width: 39.5349%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Bouygues : — / 89 · —"
+    },
+    {
+      "text": "22 · 24,4 %",
+      "title": "prach-ConfigIndex · Free : 22 / 90 · 24,4 %",
+      "bar": "width: 24.4444%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "13 · 10,1 %",
+      "title": "prach-ConfigIndex · Orange : 13 / 129 · 10,1 %",
+      "bar": "width: 10.0775%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "25 · 50,0 %",
+      "title": "prach-ConfigIndex · SFR : 25 / 50 · 50,0 %",
+      "bar": "width: 50%; background: rgb(226, 0, 26);"
+    },
+    {
+      "text": "23 · 25,8 %",
+      "title": "prach-ConfigIndex · Bouygues : 23 / 89 · 25,8 %",
+      "bar": "width: 25.8427%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "11 · 12,2 %",
+      "title": "prach-ConfigIndex · Free : 11 / 90 · 12,2 %",
+      "bar": "width: 12.2222%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "18 · 14,0 %",
+      "title": "prach-ConfigIndex · Orange : 18 / 129 · 14,0 %",
+      "bar": "width: 13.9535%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "22 · 24,7 %",
+      "title": "prach-ConfigIndex · Bouygues : 22 / 89 · 24,7 %",
+      "bar": "width: 24.7191%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "24 · 26,7 %",
+      "title": "prach-ConfigIndex · Free : 24 / 90 · 26,7 %",
+      "bar": "width: 26.6667%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "22 · 17,1 %",
+      "title": "prach-ConfigIndex · Orange : 22 / 129 · 17,1 %",
+      "bar": "width: 17.0543%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Bouygues : — / 89 · —"
+    },
+    {
+      "text": "14 · 15,6 %",
+      "title": "prach-ConfigIndex · Free : 14 / 90 · 15,6 %",
+      "bar": "width: 15.5556%; background: rgb(124, 135, 148);"
+    },
+    {
+      "text": "6 · 4,7 %",
+      "title": "prach-ConfigIndex · Orange : 6 / 129 · 4,7 %",
+      "bar": "width: 4.65116%; background: rgb(255, 121, 0);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Bouygues : — / 89 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Free : — / 90 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Orange : — / 129 · —"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · SFR : — / 50 · —"
+    },
+    {
+      "text": "26 · 29,2 %",
+      "title": "prach-ConfigIndex · Bouygues : 26 / 89 · 29,2 %",
+      "bar": "width: 29.2135%; background: rgb(0, 159, 227);"
+    },
+    {
+      "text": "—",
+      "title": "prach-ConfigIndex · Free : — / 90 · —"
+    }
+  ],
+  "csv": "\"technology\";\"family_id\";\"family_name\";\"param_id\";\"asn1_path\";\"parameter_name\";\"value\";\"operator\";\"band\";\"occurrences\";\"denominator\";\"percentage\";\"total\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"highSpeedFlag\";\"False\";\"Orange\";\"\";\"129\";\"129\";\"100\";\"358\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"highSpeedFlag\";\"False\";\"SFR\";\"\";\"50\";\"50\";\"100\";\"358\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"highSpeedFlag\";\"False\";\"Bouygues\";\"\";\"89\";\"89\";\"100\";\"358\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag\";\"highSpeedFlag\";\"False\";\"Free\";\"\";\"90\";\"90\";\"100\";\"358\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"3\";\"Orange\";\"\";\"1\";\"129\";\"0.7751937984496124\";\"45\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"3\";\"SFR\";\"\";\"25\";\"50\";\"50\";\"45\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"3\";\"Bouygues\";\"\";\"7\";\"89\";\"7.865168539325842\";\"45\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"3\";\"Free\";\"\";\"12\";\"90\";\"13.333333333333334\";\"45\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"4\";\"Orange\";\"\";\"18\";\"129\";\"13.953488372093023\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"4\";\"SFR\";\"\";\"\";\"50\";\"\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"4\";\"Bouygues\";\"\";\"11\";\"89\";\"12.359550561797754\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"4\";\"Free\";\"\";\"7\";\"90\";\"7.777777777777778\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"5\";\"Orange\";\"\";\"51\";\"129\";\"39.53488372093023\";\"73\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"5\";\"SFR\";\"\";\"\";\"50\";\"\";\"73\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"5\";\"Bouygues\";\"\";\"\";\"89\";\"\";\"73\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"5\";\"Free\";\"\";\"22\";\"90\";\"24.444444444444443\";\"73\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"19\";\"Orange\";\"\";\"13\";\"129\";\"10.077519379844961\";\"72\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"19\";\"SFR\";\"\";\"25\";\"50\";\"50\";\"72\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"19\";\"Bouygues\";\"\";\"23\";\"89\";\"25.84269662921348\";\"72\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"19\";\"Free\";\"\";\"11\";\"90\";\"12.222222222222221\";\"72\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"20\";\"Orange\";\"\";\"18\";\"129\";\"13.953488372093023\";\"64\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"20\";\"SFR\";\"\";\"\";\"50\";\"\";\"64\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"20\";\"Bouygues\";\"\";\"22\";\"89\";\"24.719101123595507\";\"64\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"20\";\"Free\";\"\";\"24\";\"90\";\"26.666666666666668\";\"64\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"21\";\"Orange\";\"\";\"22\";\"129\";\"17.05426356589147\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"21\";\"SFR\";\"\";\"\";\"50\";\"\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"21\";\"Bouygues\";\"\";\"\";\"89\";\"\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"21\";\"Free\";\"\";\"14\";\"90\";\"15.555555555555555\";\"36\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"22\";\"Orange\";\"\";\"6\";\"129\";\"4.651162790697675\";\"6\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"22\";\"SFR\";\"\";\"\";\"50\";\"\";\"6\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"22\";\"Bouygues\";\"\";\"\";\"89\";\"\";\"6\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"22\";\"Free\";\"\";\"\";\"90\";\"\";\"6\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"35\";\"Orange\";\"\";\"\";\"129\";\"\";\"26\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"35\";\"SFR\";\"\";\"\";\"50\";\"\";\"26\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"35\";\"Bouygues\";\"\";\"26\";\"89\";\"29.213483146067414\";\"26\"\r\n\"LTE\";\"catalog:\"\"Autres\"\"\";\"Autres\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex\";\"prach-ConfigIndex\";\"35\";\"Free\";\"\";\"\";\"90\";\"\";\"26\""
+}

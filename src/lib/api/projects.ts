@@ -29,7 +29,7 @@ import {
   ProjectIngestViewSchema,
   type ProjectIngestView,
 } from "./project-schemas";
-import { NmfImportReportSchema, type NmfFileStatus, type NmfImportReport } from "./nmf-schemas";
+import { NmfImportJobSchema, type NmfImportJob, NmfImportReportSchema, type NmfFileStatus, type NmfImportReport } from "./nmf-schemas";
 import type { Project } from "./schemas";
 import {
   buildNmfReportMock,
@@ -173,6 +173,7 @@ export type NmfPerFileProgress = {
 
 export type NmfUploadOptions = {
   signal?: AbortSignal;
+  onJobProgress?: (job: NmfImportJob) => void;
   /** Appelé à chaque transition d'un fichier (pending/decoding/done/error)
    *  et à chaque tick de progression. */
   onFileProgress?: (p: NmfPerFileProgress) => void;
@@ -332,7 +333,7 @@ export async function uploadNmfFiles(
       }
     };
 
-    xhr.onload = () => {
+    xhr.onload = async () => {
       // Convertit la réponse XHR en payload JSON OU en erreur typée
       // (ApiUnauthenticatedError sur 401 — purge+évènement émis par
       // le helper ; ApiHttpError sur 4xx/5xx avec le `message` du back
@@ -343,6 +344,15 @@ export async function uploadNmfFiles(
       } catch (e) {
         reject(e as Error);
         return;
+      }
+      // 202 acknowledges durable storage; decoding runs in a separate worker.
+      if (xhr.status === 202) {
+        try {
+          payload = await waitForNmfJob(projectId, payload, files, opts);
+        } catch (error) {
+          reject(error);
+          return;
+        }
       }
       const parsed = NmfImportReportSchema.safeParse(payload);
       if (!parsed.success) {
@@ -386,4 +396,39 @@ export async function uploadNmfFiles(
     files.forEach((f) => form.append("files", f, f.name));
     xhr.send(form);
   });
+}
+
+
+export async function waitForNmfJob(
+  projectId: string, initial: unknown, files: File[], opts: NmfUploadOptions,
+): Promise<NmfImportReport> {
+  let job = NmfImportJobSchema.parse(initial);
+  while (true) {
+    opts.onJobProgress?.(job);
+    job.by_file.forEach((entry, index) => opts.onFileProgress?.({
+      index, filename: entry.filename, size: files[index]?.size ?? 0,
+      status: entry.status, loaded: files[index]?.size ?? 0, percent: 100,
+      error_msg: entry.error_msg,
+    }));
+    if (job.status === "done" || job.status === "error") {
+      if (job.report) return job.report;
+      throw new ApiHttpError("IMPORT_FAILED", job.error_msg ?? "Échec du traitement de l’import", 422);
+    }
+    await new Promise<void>((resolve, reject) => {
+      const abort = () => {
+        clearTimeout(timer);
+        reject(new Error("Suivi interrompu ; l’import continue sur le serveur."));
+      };
+      const timer = setTimeout(() => {
+        opts.signal?.removeEventListener("abort", abort);
+        resolve();
+      }, 2000);
+      if (opts.signal?.aborted) abort();
+      else opts.signal?.addEventListener("abort", abort, { once: true });
+    });
+    job = await apiFetch(
+      `/projects/${encodeURIComponent(projectId)}/imports/${encodeURIComponent(job.id)}`,
+      NmfImportJobSchema, { signal: opts.signal },
+    );
+  }
 }

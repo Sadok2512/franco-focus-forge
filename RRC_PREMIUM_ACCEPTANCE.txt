@@ -1,0 +1,105 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_DICTIONARY_FILTERS_AND_TABLE_PREMIUM_REDESIGN
+
+PREVIOUS_VERSION = 1.21.2
+NEW_VERSION = 1.22.0
+VERSION_CHANGE_TYPE = MINOR — Apply now filters distributions, an observable behavior correction; API contracts unchanged.
+
+FILES_MODIFIED (this task only) =
+  package.json
+  CHANGELOG.md
+  RRC_PREMIUM_ACCEPTANCE.txt
+  src/lib/api/client.ts (namespaced RRC v2 re-exports only)
+  src/features/dict-v2/DictV2Page.tsx
+  src/features/dict-v2/FilterSelect.tsx (new)
+  src/features/dict-v2/distribution-view.ts (new)
+  src/features/dict-v2/premium.css (new)
+  src/features/dict-v2/ValueExplorer.tsx
+  src/features/dict-v2/InfoDrawer.tsx
+  src/features/dict-v2/types.ts
+  src/test/rrc-premium.test.ts (new)
+  scripts/rrc-premium-check.mjs (new)
+
+FILTER_TOOLBAR = Implemented: two rows, searchable operator/band selections, select-all/clear, removable chips, Apply/Reset, technology URL synchronization. Exactly one comparison control remains.
+GEOGRAPHIC_POPOVER = Implemented: opens directly; DOR, Plaque and Zone ARCEP disabled with explicit API/linkage explanation. No fabricated options or unsupported requests.
+SIDEBAR_RESIZABLE = Implemented: 300px initial desktop width, 250–460px limits, keyboard-capable separator, collapse/restore without remounting the tree.
+HISTOGRAMS_PRESERVED = Two side-by-side desktop bar charts, stacked at narrow sizes, existing export/fullscreen. Shared effective distribution with table. Backend comparison evidence retained unchanged, hidden for locally filtered subpopulations.
+TABLE_REDESIGNED = Independent elevated card; 18px section spacing; 38px rows; sticky pale header; searchable/sortable values; dynamic group columns; visibility controls; quoted CSV of displayed rows/columns; local horizontal scroll; absent cells N/D.
+
+G1 = FAIL
+  npm run typecheck: PASS (tsc --noEmit; tsgo was not installed or declared).
+  docker exec bc4-front-1 bun run build: PASS, production client/server/Nitro output generated.
+  npm run lint: FAIL, final run 817 errors / 33 warnings across the working repository, predominantly existing formatting and unrelated modules.
+  Scoped ESLint: PASS for every task-modified TS/TSX/MJS file (command below).
+  Host npm run build/test initially encountered EACCES on container-owned node_modules/.vite-temp; build executed successfully in the existing frontend container.
+
+G2 = PASS (unavailable-dimension branch)
+  Live browser opened the geographic popover; all three named switches were disabled, with explanation; Escape restored trigger focus.
+  Enabled geography branch NOT RUN / unavailable: existing v2 distribution route only accepts keys and group_by. Geographic grouping availability is not a geographic filtering contract. No cell_ref mappings inferred.
+
+G3 = FAIL (period filtering is unsupported)
+  Live operator selection synchronized URL, both charts and table: Orange n=54 for each selected parameter, matching sums of API operator_band aggregates.
+  Band B1 Apply and technology NR Apply updated their URL states; two selected parameters remained selected. Reset restored both charts.
+  Four executable tests cover intersecting operator/band filters, regrouping, absent groups and preservation of original evidence.
+  Temporal filtering cannot be implemented against the unchanged v2 contract; the actual project period is displayed with an availability explanation.
+
+G4 = PASS
+  Live TEST2 search selected highSpeedFlag and prach-ConfigIndex. Both remained selected after collapse/restore and technology changes.
+  Drag moved sidebar 300 -> 359.5px. Tree scrollTop remained 100 -> 100 across collapse/restore. Existing ASN.1 tree implementation untouched.
+
+G5 = FAIL (whole-page 400px acceptance)
+  Desktop screenshot 1440x900 confirms independent table and side-by-side histograms. Live search, sorting, CSV and column toggling executed (6 -> 5 visible columns).
+  Dictionary itself measured 400px at a 400px viewport; 588.5px table scrolls inside its region. Existing shared application header makes document width 498px. Header was not modified by this task.
+
+G6 = PASS (tested project and transformation coverage)
+  TEST2 unfiltered highSpeedFlag: False; Orange 54, Bouygues 12, Free 9; total 75.
+  TEST2 unfiltered prach-ConfigIndex: 3=>1, 4=>14, 5=>44, 20=>4, 35=>12; total 75.
+  Orange subset: highSpeedFlag 54; prach values 3=>1, 4=>14, 5=>39; total 54, identical between chart and table.
+  Projection tests verify no API-object mutation and original result_id/verdict preservation. No decoding, conversion, source/evidence or capture ordering code changed. Full backend population verdicts are not claimed for filtered populations.
+
+G7 = NOT RUN (complete WCAG AA audit)
+  Partial checks executed: Escape/focus return, native keyboard-capable inputs, responsive layout and theme screenshots. Dark card/text verified as rgb(23,37,56) / rgb(237,243,252), with two chart canvases. Dictionary-scoped theme tokens compensate for a pre-existing global light-token cascade. Theme changes rebuild charts to use current axis colors. No complete contrast/screen-reader/fullscreen-focus audit; do not infer AA certification.
+
+G8 = PASS
+  Read existing backend route contract; only existing project/tree/distribution/param API calls used. V2 data calls are re-exported by the existing API client. Live browser recorded no page errors. No production fixture data added. No backend or other-module edits made by this task.
+
+DATA_INTEGRITY = Preserved API values/evidence; both visualizations share the same effective projection. Unfiltered responses retain exact API totals/statuses. Filtered totals are sums of existing API counts, never synthetic measurements.
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE (this task; unrelated/concurrent working-tree edits existed and were left untouched)
+
+KNOWN_LIMITATIONS =
+  No approved screenshot was attached; implementation follows the written specification.
+  Date and geographic filtering unavailable in current v2 contract; no fake functioning controls.
+  Band technology constraints use standard B/n prefixes on API-supplied project bands; API has no richer technology-band mapping.
+  Existing global header overflows at 400px.
+  Full repository lint is not green; full accessibility audit not completed.
+  Initial container-wide tests failed on Bun/Zod module interop. A Node run with equivalent temporary config and mock mode passed all 49 tests across 7 files.
+
+NEXT_STEP = Resolve repository lint baseline and shared-header responsiveness separately; add backend geographic/date filter support before enabling those controls; perform full accessibility review. No deployment performed.
+
+EXACT COMMANDS (cwd /home/devmat/BC4/franco-focus-forge) =
+  npm run lint
+  npm run typecheck
+  docker exec bc4-front-1 bun run build
+  docker exec bc4-front-1 bun run test
+  docker exec bc4-front-1 bun run test -- src/test/rrc-premium.test.ts
+  npx eslint src/features/dict-v2/DictV2Page.tsx src/features/dict-v2/ValueExplorer.tsx src/features/dict-v2/InfoDrawer.tsx src/features/dict-v2/FilterSelect.tsx src/features/dict-v2/distribution-view.ts src/features/dict-v2/types.ts src/lib/api/client.ts src/test/rrc-premium.test.ts scripts/rrc-premium-check.mjs
+  VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config /tmp/rrc-tests.config.mjs
+  node scripts/rrc-premium-check.mjs
+  git diff --check
+
+NODE TEST CONFIG = /tmp/rrc-tests.config.mjs
+  Equivalent root/alias/jsdom/globals/setup/include settings; temporary file avoids container-owned Vite cache. Test-only data remains outside production imports.
+
+EVIDENCE =
+  /tmp/bc4-rrc-premium/report.json
+  /tmp/bc4-rrc-premium/desktop.png
+  /tmp/bc4-rrc-premium/mobile.png
+  /tmp/bc4-rrc-premium/dark.png
+  /tmp/rrc-types.log
+  /tmp/rrc-build.log
+  /tmp/rrc-lint-final.log
+  /tmp/rrc-lint-scoped.log
+  /tmp/rrc-target-test.log
+  /tmp/rrc-tests-node.log
+  /tmp/rrc-browser.log

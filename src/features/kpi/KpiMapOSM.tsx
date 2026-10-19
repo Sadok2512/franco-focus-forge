@@ -1,0 +1,318 @@
+// -----------------------------------------------------------------------
+// 1.20.4 — Carte OSM sur /kpi via MapLibre (dépendance déjà présente,
+// cf. RadioMap). Pas de fake coords : la carte base OSM est affichée
+// interactive (zoom, pan, OSM attribution) ; les points KPI apparaissent
+// uniquement si le back expose lat/lng pour les observations du KPI
+// sélectionné (contract /kpi/{code}.points — non câblé en 0.47.x).
+//
+// Centre par défaut : centroid approximatif FR métropolitaine. Si le
+// projet a un `center` validé, utiliser `project.center` à la place.
+// -----------------------------------------------------------------------
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import type { Map as MlMap } from "maplibre-gl";
+import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
+
+// 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
+const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
+  { op: "Orange", hex: "#FF7900" },
+  { op: "SFR", hex: "#E2001A" },
+  { op: "Bouygues", hex: "#009FE3" },
+  { op: "Free", hex: "#7C8794" },
+];
+
+export function KpiMapOSM({
+  center = [2.4, 46.6],
+  zoom = 5,
+  nPoints,
+  contextLabel = "KPI",
+  premium = false,
+  showOperatorLegend = true,
+  fullscreen,
+  onFullscreenChange,
+  onMapReady,
+  onRecenter,
+  children,
+  measurementStatus,
+}: {
+  center?: [number, number];
+  zoom?: number;
+  nPoints?: number;
+  contextLabel?: string;
+  premium?: boolean;
+  showOperatorLegend?: boolean;
+  fullscreen?: boolean;
+  onFullscreenChange?: (value: boolean) => void;
+  onMapReady?: (map: MlMap) => void;
+  onRecenter?: (() => void) | undefined;
+  children?: ReactNode;
+  measurementStatus?: string | null;
+}) {
+  const readyCallback = useRef(onMapReady);
+  readyCallback.current = onMapReady;
+  const el = useRef<HTMLDivElement>(null);
+  const map = useRef<MlMap | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [layersOpen, setLayersOpen] = useState(false);
+  const [coordinates, setCoordinates] = useState("");
+  const [coordinateError, setCoordinateError] = useState("");
+  const [baseVisible, setBaseVisible] = useState(true);
+  const [ready, setReady] = useState(false);
+  const [tileError, setTileError] = useState(false);
+  const [localFull, setLocalFull] = useState(false);
+  const full = fullscreen ?? localFull;
+  const setFull = useCallback(
+    (value: boolean) => {
+      setLocalFull(value);
+      onFullscreenChange?.(value);
+    },
+    [onFullscreenChange],
+  );
+
+  useEffect(() => {
+    let disposed = false;
+    (async () => {
+      const maplibregl = await import("maplibre-gl");
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      if (disposed || !el.current) return;
+      const instance = new maplibregl.Map({
+        container: el.current,
+        center,
+        zoom,
+        attributionControl: { compact: true },
+        style: {
+          version: 8,
+          sources: {
+            osm: {
+              type: "raster",
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              tileSize: 256,
+              attribution: "© OpenStreetMap",
+            },
+          },
+          layers: [{ id: "osm", type: "raster", source: "osm" }],
+        },
+      });
+      map.current = instance;
+      instance.on("load", () => {
+        setReady(true);
+        readyCallback.current?.(instance);
+      });
+      instance.on("error", (e: unknown) => {
+        const err = e as { error?: { status?: number } };
+        if (err?.error?.status) setTileError(true);
+      });
+      instance.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+    })().catch(() => {
+      if (!disposed) setTileError(true);
+    });
+    return () => {
+      disposed = true;
+      map.current?.remove();
+      map.current = null;
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const observer = new ResizeObserver(() => map.current?.resize());
+    if (el.current) observer.observe(el.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // Esc → sortie fullscreen
+  useEffect(() => {
+    if (!full) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFull(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [full, setFull]);
+
+  // Resize map quand on bascule fullscreen
+  useEffect(() => {
+    const id = setTimeout(() => map.current?.resize(), 50);
+    return () => clearTimeout(id);
+  }, [full]);
+
+  return (
+    <div
+      style={
+        premium && !full
+          ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
+          : undefined
+      }
+      className={
+        full
+          ? "fixed inset-0 z-[60] bg-background"
+          : "relative h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
+      }
+    >
+      <div ref={el} className="h-full w-full" aria-label="Carte OpenStreetMap du projet" />
+      {!ready && !tileError && (
+        <div className="absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground">
+          Chargement de la carte OSM…
+        </div>
+      )}
+      {tileError && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-[11px] text-muted-foreground">
+          <MapIcon className="h-6 w-6" />
+          <p className="font-medium">Tiles OSM injoignables</p>
+          <p>
+            Vérifier la connexion sortante vers <code>tile.openstreetmap.org</code>.
+          </p>
+        </div>
+      )}
+      {premium && (
+        <div className="absolute left-2 top-2 z-10">
+          <div className="flex gap-1">
+            <button
+              className="rrc-map-icon"
+              aria-label="Recherche géographique par coordonnées"
+              title="Aller à des coordonnées"
+              aria-expanded={searchOpen}
+              onClick={() => {
+                setSearchOpen(!searchOpen);
+                setLayersOpen(false);
+              }}
+            >
+              <Search size={15} />
+            </button>
+            <button
+              className="rrc-map-icon"
+              aria-label="Recentrer la carte"
+              title="Recentrer la carte"
+              onClick={() => (onRecenter ? onRecenter() : map.current?.flyTo({ center, zoom }))}
+            >
+              <LocateFixed size={15} />
+            </button>
+            <button
+              className="rrc-map-icon"
+              aria-label="Couches cartographiques"
+              title="Couches cartographiques"
+              aria-expanded={layersOpen}
+              onClick={() => {
+                setLayersOpen(!layersOpen);
+                setSearchOpen(false);
+              }}
+            >
+              <Layers size={15} />
+            </button>
+          </div>
+          {searchOpen && (
+            <form
+              className="rrc-map-popover"
+              onSubmit={(event) => {
+                event.preventDefault();
+                const values = coordinates.split(/[;,]/).map((v) => Number(v.trim()));
+                const lat = values[0],
+                  lon = values[1];
+                if (
+                  values.length !== 2 ||
+                  coordinates.split(/[;,]/).some((v) => !v.trim()) ||
+                  lat == null ||
+                  lon == null ||
+                  !Number.isFinite(lat) ||
+                  !Number.isFinite(lon) ||
+                  Math.abs(lat) > 90 ||
+                  Math.abs(lon) > 180
+                ) {
+                  setCoordinateError("Saisissez latitude, longitude valides.");
+                  return;
+                }
+                setCoordinateError("");
+                map.current?.flyTo({ center: [lon, lat], zoom: 12 });
+                setSearchOpen(false);
+              }}
+            >
+              <label className="text-xs">
+                Latitude, longitude
+                <input
+                  aria-label="Latitude, longitude"
+                  value={coordinates}
+                  onChange={(e) => setCoordinates(e.target.value)}
+                  placeholder="48.8566, 2.3522"
+                  className="mt-1 w-full rounded border px-2 py-1"
+                />
+              </label>
+              <button className="rrc-control mt-2" type="submit">
+                Aller
+              </button>
+              {coordinateError && (
+                <p role="alert" className="text-xs mt-1">
+                  {coordinateError}
+                </p>
+              )}
+            </form>
+          )}
+          {layersOpen && (
+            <div className="rrc-map-popover">
+              <label className="flex gap-2 text-xs">
+                <input
+                  type="checkbox"
+                  checked={baseVisible}
+                  disabled={!ready}
+                  onChange={(e) => {
+                    setBaseVisible(e.target.checked);
+                    map.current?.setLayoutProperty(
+                      "osm",
+                      "visibility",
+                      e.target.checked ? "visible" : "none",
+                    );
+                  }}
+                />
+                Fond OpenStreetMap
+              </label>
+            </div>
+          )}
+        </div>
+      )}
+      {children}
+      {/* Compact empty-measurement status; attribution remains on the map. */}
+      {measurementStatus !== null && (
+        <div
+          className={`absolute left-2 ${premium ? "bottom-2" : "top-2"} z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm`}
+          title="Aucune coordonnée de mesure traçable pour le contexte appliqué. Fond de carte uniquement."
+        >
+          {nPoints != null && (
+            <span className="mr-2">
+              {nPoints.toLocaleString("fr-FR")} obs. {contextLabel}
+            </span>
+          )}
+          <span className="text-sev-warn">
+            {measurementStatus ??
+              (premium
+                ? "Aucun point géolocalisé"
+                : `Fond de carte · coordonnées ${contextLabel} indisponibles`)}
+          </span>
+        </div>
+      )}
+      {/* Bouton plein écran ⤢ en haut à droite */}
+      <button
+        onClick={() => setFull(!full)}
+        aria-label={full ? "Quitter le plein écran" : premium ? "Plein écran carte" : "Plein écran"}
+        title={full ? "Quitter le plein écran (Échap)" : "Plein écran"}
+        className="absolute right-12 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
+      >
+        {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+      </button>
+      {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
+      {showOperatorLegend && (
+        <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">
+          <div className="mb-0.5 font-semibold text-foreground">Opérateurs</div>
+          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+            {OPERATOR_COLORS.map(({ op, hex }) => (
+              <span key={op} className="inline-flex items-center gap-1">
+                <span className="h-2 w-2 rounded-full" style={{ background: hex }} />
+                <span className="text-foreground">{op}</span>
+              </span>
+            ))}
+            <span className="inline-flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full border border-dashed border-muted-foreground" />
+              <span className="text-muted-foreground">N/D</span>
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

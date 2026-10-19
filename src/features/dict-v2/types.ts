@@ -1,16 +1,14 @@
 // bc4-front — Types locaux + fallback colors Dict v2.
-// Les couleurs opérateur préférées viennent du back
-// (DistributionValueGroup.operator_color / band_color). Si le back les
-// omet (compat), on applique le fallback de la spec (Orange #FF7900 /
-// Bouygues #009DE0 / SFR #E2001A / Free #A0148C / N/D #9AA0A6).
+// Les opérateurs identifiés utilisent la palette BC4 commune aux graphiques
+// RRC et KPI. Les autres groupes conservent les couleurs API ou une teinte neutre.
 
 import type { DictLeaf, GroupByMode } from "@/lib/api/dict-v2";
 
 export const OP_FALLBACK: Record<string, string> = {
   Orange: "#FF7900",
-  Bouygues: "#009DE0",
+  Bouygues: "#009FE3",
   SFR: "#E2001A",
-  Free: "#A0148C",
+  Free: "#16A34A",
 };
 export const BAND_FALLBACK: Record<string, string> = {
   B1: "#2f6fed",
@@ -32,8 +30,8 @@ export function groupKeyLabel(
   return `${op} · ${band}`;
 }
 
-/** Couleur d'une clé de groupe — préfère la couleur envoyée par le back,
- *  retombe sur le fallback défini par la spec. */
+/** Couleur d'une clé de groupe — utilise les couleurs opérateurs de la charte ;
+ *  conserve les couleurs API des autres groupes. */
 export function groupKeyColor(
   mode: GroupByMode,
   g: {
@@ -44,14 +42,14 @@ export function groupKeyColor(
   },
 ): string {
   if (mode === "operator") {
-    return g.operator_color || OP_FALLBACK[g.operator ?? ""] || ND_COLOR;
+    return OP_FALLBACK[g.operator ?? ""] || g.operator_color || ND_COLOR;
   }
   if (mode === "band") {
     return g.band_color || BAND_FALLBACK[g.band ?? ""] || ND_COLOR;
   }
   // operator_band — on garde la teinte opérateur ; la bande sera lisible
   // via le libellé de la série (pas d'altération de la chroma).
-  return g.operator_color || OP_FALLBACK[g.operator ?? ""] || ND_COLOR;
+  return OP_FALLBACK[g.operator ?? ""] || g.operator_color || ND_COLOR;
 }
 
 /** Libellé lisible d'une origine (3 valeurs : config/réseau, capacité
@@ -73,9 +71,7 @@ export function originLabel(origin: DictLeaf["origin"] | string | null | undefin
 /** Chip "key=value" pour afficher un discriminator. On ignore les clés
  *  d'origine (ex. ``inheritance``) qui ne portent pas d'info utilisateur. */
 const DISCRIMINATOR_HIDDEN = new Set<string>(["inheritance"]);
-export function discriminatorChips(
-  d: Record<string, unknown> | null | undefined,
-): string[] {
+export function discriminatorChips(d: Record<string, unknown> | null | undefined): string[] {
   if (!d) return [];
   return Object.entries(d)
     .filter(([k]) => !DISCRIMINATOR_HIDDEN.has(k))

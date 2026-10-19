@@ -1,7 +1,7 @@
 import { AlertTriangle, Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MlMap } from "maplibre-gl";
-import { METRICS, severityOf, type MeasurementPoint, type MetricKey } from "@/lib/api/schemas";
+import { METRICS, severityOf, type OverviewPoint, type MetricKey } from "@/lib/api/schemas";
 
 const SEV_VARS = { good: "--sev-good", fair: "--sev-fair", poor: "--sev-poor", bad: "--sev-bad" } as const;
 
@@ -38,7 +38,7 @@ export function MapLegend({ metric }: { metric: MetricKey }) {
 export function RadioMap({
   points, metric, center, selectedId, onSelect,
 }: {
-  points: MeasurementPoint[]; metric: MetricKey; center: [number, number];
+  points: OverviewPoint[]; metric: MetricKey; center: [number, number];
   selectedId?: string | null; onSelect?: (id: string | null) => void;
 }) {
   const el = useRef<HTMLDivElement>(null);
@@ -53,11 +53,11 @@ export function RadioMap({
     );
     return {
       type: "FeatureCollection" as const,
-      features: points.map((p) => {
+      features: points.filter((p) => p.lat !== null && p.lng !== null).map((p) => {
         const v = p[metric];
         return {
           type: "Feature" as const, id: undefined,
-          geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+          geometry: { type: "Point" as const, coordinates: [p.lng!, p.lat!] },
           properties: { id: p.id, op: p.operator, tech: p.tech, band: p.band, v: v ?? "N/D", color: v == null ? "rgba(0,0,0,0)" : colors[severityOf(metric, v)] },
         };
       }),

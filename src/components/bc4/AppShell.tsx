@@ -33,6 +33,7 @@ const NAV = [
   { to: "/overview", label: "Vue d'ensemble" },
   { to: "/rrc", label: "Dictionnaire RRC" },
   { to: "/kpi", label: "KPI Analytics" },
+  { to: "/rf", label: "RF Modules" },
   { to: "/assistant", label: "Assistant IA" },
 ] as const;
 

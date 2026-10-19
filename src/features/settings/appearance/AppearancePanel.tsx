@@ -46,7 +46,7 @@ export function AppearancePanel() {
   const orgSave = useMutation({
     mutationFn: (hex: string | null) => putAppearance(actor, { org_primary_hex: hex }),
     onSuccess: () => {
-      setMsg("Thème d'organisation enregistré (mock).");
+      setMsg("Thème d'organisation enregistré.");
       qc.invalidateQueries({ queryKey: ["settings", "appearance"] });
     },
     onError: (e) => setMsg(errMsg(e)),

@@ -67,7 +67,7 @@ function AiForm({ cfg }: { cfg: AiConfig }) {
   return (
     <SettingsSection
       title="Configuration IA"
-      description="Paramètres du modèle de l'Assistant. Phase mock : aucune requête n'est envoyée vers l'URL saisie."
+      description="Paramètres du modèle de l'Assistant. Les champs sont persistés via POST /settings/ai (bc4-back) ; le test de connexion live passe par POST /settings/llm/test."
     >
       {!write && <ReadOnlyNotice />}
       <div className="grid gap-3 sm:grid-cols-3">
@@ -85,10 +85,10 @@ function AiForm({ cfg }: { cfg: AiConfig }) {
         <Card>
           <p className="text-[11px] text-muted-foreground">Modèle réellement joignable</p>
           <p className="mt-1">
-            <Pill tone="muted">Inconnu — non vérifiable en mock</Pill>
+            <Pill tone="muted">Inconnu — utiliser « Tester la connexion »</Pill>
           </p>
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Dernier test simulé :{" "}
+            Dernier test :{" "}
             {conn.status === "untested" ? "jamais" : conn.status === "mock_ok" ? "réussi" : "échec"}
           </p>
         </Card>
@@ -217,7 +217,7 @@ function AiForm({ cfg }: { cfg: AiConfig }) {
                   onClick={() => test.mutate()}
                 >
                   <PlugZap className="h-3.5 w-3.5" />
-                  Tester la connexion (simulé)
+                  Tester la connexion
                 </button>
                 <button
                   type="button"

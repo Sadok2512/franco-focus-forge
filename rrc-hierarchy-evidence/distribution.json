@@ -1,0 +1,216 @@
+{
+  "project_id": "134af70a06eb",
+  "group_by": "operator",
+  "blocks": [
+    {
+      "param_key": "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/highSpeedFlag",
+      "display_name": "highSpeedFlag",
+      "unit": null,
+      "choice_of": null,
+      "discriminators": null,
+      "origin": "network_config",
+      "n_total": 75,
+      "distinct_values": 1,
+      "values": [
+        {
+          "value": "False",
+          "value_display": "False",
+          "groups": [
+            {
+              "operator": "Bouygues",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 12,
+              "operator_color": "#1E6EC1",
+              "band_color": null
+            },
+            {
+              "operator": "Free",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 9,
+              "operator_color": "#CD1F2A",
+              "band_color": null
+            },
+            {
+              "operator": "Orange",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 54,
+              "operator_color": "#FF7900",
+              "band_color": null
+            }
+          ]
+        }
+      ],
+      "comparability": "COMPARABLE",
+      "verdict": "IDENTIQUE",
+      "result_id": "da67062091b06007",
+      "source_result_id": null,
+      "status": "AVAILABLE",
+      "reason": null,
+      "coverage": null
+    },
+    {
+      "param_key": "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/mobilityControlInfo/radioResourceConfigCommon/prach-Config/prach-ConfigInfo/prach-ConfigIndex",
+      "display_name": "prach-ConfigIndex",
+      "unit": null,
+      "choice_of": null,
+      "discriminators": null,
+      "origin": "network_config",
+      "n_total": 75,
+      "distinct_values": 5,
+      "values": [
+        {
+          "value": "20",
+          "value_display": "20",
+          "groups": [
+            {
+              "operator": "Free",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 4,
+              "operator_color": "#CD1F2A",
+              "band_color": null
+            }
+          ]
+        },
+        {
+          "value": "3",
+          "value_display": "3",
+          "groups": [
+            {
+              "operator": "Orange",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 1,
+              "operator_color": "#FF7900",
+              "band_color": null
+            }
+          ]
+        },
+        {
+          "value": "35",
+          "value_display": "35",
+          "groups": [
+            {
+              "operator": "Bouygues",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 12,
+              "operator_color": "#1E6EC1",
+              "band_color": null
+            }
+          ]
+        },
+        {
+          "value": "4",
+          "value_display": "4",
+          "groups": [
+            {
+              "operator": "Orange",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 14,
+              "operator_color": "#FF7900",
+              "band_color": null
+            }
+          ]
+        },
+        {
+          "value": "5",
+          "value_display": "5",
+          "groups": [
+            {
+              "operator": "Free",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 5,
+              "operator_color": "#CD1F2A",
+              "band_color": null
+            },
+            {
+              "operator": "Orange",
+              "band": null,
+              "dor": null,
+              "dr": null,
+              "plaque": null,
+              "arcep_zone": null,
+              "n": 39,
+              "operator_color": "#FF7900",
+              "band_color": null
+            }
+          ]
+        }
+      ],
+      "comparability": "COMPARABLE",
+      "verdict": "DIFFERENT",
+      "result_id": "78aa8df1b6f72357",
+      "source_result_id": null,
+      "status": "AVAILABLE",
+      "reason": null,
+      "coverage": null
+    }
+  ],
+  "group_by_options": [
+    {
+      "key": "operator",
+      "available": true,
+      "reason": null
+    },
+    {
+      "key": "band",
+      "available": true,
+      "reason": null
+    },
+    {
+      "key": "operator_band",
+      "available": true,
+      "reason": null
+    },
+    {
+      "key": "dor",
+      "available": false,
+      "reason": "référentiel cellule non chargé (dor)"
+    },
+    {
+      "key": "dr",
+      "available": false,
+      "reason": "référentiel cellule non chargé (dr)"
+    },
+    {
+      "key": "plaque",
+      "available": false,
+      "reason": "référentiel cellule non chargé (plaque)"
+    },
+    {
+      "key": "arcep_zone",
+      "available": false,
+      "reason": "référentiel cellule non chargé (zone arcep)"
+    }
+  ]
+}

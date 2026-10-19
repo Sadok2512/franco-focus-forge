@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { NmfImportJobSchema } from "./nmf-schemas";
 
 export const OPERATORS = ["Orange", "SFR", "Bouygues", "Free"] as const;
 export const TECHNOLOGIES = ["LTE", "NR", "EN-DC"] as const;
@@ -35,6 +36,9 @@ export const ProjectSchema = z.object({
   periodStart: z.string(),
   periodEnd: z.string(),
   captures: z.number().int(),
+  // Nombre de fichiers NMF décodés ; distinct des captures dans ces fichiers.
+  n_files: z.number().int().nonnegative().nullable().optional(),
+  import_job: NmfImportJobSchema.nullable().optional(),
   importedAt: z.string(),
   status: z.enum(["ready", "processing", "failed"]),
   operators_plmn: z.record(z.string(), z.number().int()).nullable().optional(),
@@ -69,6 +73,7 @@ export const FilterContextSchema = z.object({
   // cellulaire, orthogonale à la géo). Tant que `cell_ref` est vide,
   // les filtres restent présents dans l'URL/UI mais grisés visuellement
   // et NON propagés en query string. Pas de 400 silencieux.
+  dor: z.array(z.string()).optional(),
   dr: z.array(z.string()).optional(),
   plaque: z.array(z.string()).optional(),
   metric: z.enum(["dl", "rsrp", "sinr", "latency"]).optional(),
@@ -115,6 +120,21 @@ export const MeasurementPointSchema = z.object({
   n: z.number().int().nonnegative().optional(),
 });
 export type MeasurementPoint = z.infer<typeof MeasurementPointSchema>;
+
+// Real ingested observations may have no GPS or attribution. Keep them in
+// overview populations; only the map excludes observations without coordinates.
+export const OverviewPointSchema = MeasurementPointSchema.extend({
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  operator: OperatorSchema.nullable(),
+  tech: TechSchema.nullable(),
+  service: ServiceSchema.nullable(),
+  band: z.string().nullable(),
+  dep: z.string().nullable(),
+  site: z.string().nullable(),
+});
+export type OverviewPoint = z.infer<typeof OverviewPointSchema>;
+
 
 export const ApiErrorSchema = z.object({ code: z.string(), message: z.string() });
 export type ApiError = z.infer<typeof ApiErrorSchema>;

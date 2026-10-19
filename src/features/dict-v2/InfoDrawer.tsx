@@ -5,10 +5,16 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { getDictParam } from "@/lib/api/dict-v2";
+import { getDictV2Param as getDictParam } from "@/lib/api/client";
 import { originLabel } from "./types";
 
-export function InfoDrawer({ projectId, paramKey }: { projectId: string; paramKey: string | null }) {
+export function InfoDrawer({
+  projectId,
+  paramKey,
+}: {
+  projectId: string;
+  paramKey: string | null;
+}) {
   const q = useQuery({
     queryKey: ["dict-v2", "param", projectId, paramKey],
     queryFn: ({ signal }) => getDictParam(projectId, paramKey!, signal),
@@ -59,7 +65,8 @@ export function InfoDrawer({ projectId, paramKey }: { projectId: string; paramKe
           <>
             <dt className="text-muted-foreground">CHOICE</dt>
             <dd>
-              paramètre nommé par <code className="font-mono">{p.choice_of}</code>, valeur = alternative choisie
+              paramètre nommé par <code className="font-mono">{p.choice_of}</code>, valeur =
+              alternative choisie
             </dd>
           </>
         )}
@@ -82,14 +89,18 @@ export function InfoDrawer({ projectId, paramKey }: { projectId: string; paramKe
         <dd>
           {p.carrying_messages.length
             ? p.carrying_messages
-                .map((m) => `${(m as { message?: string }).message} (${(m as { n?: number }).n ?? 0})`)
+                .map(
+                  (m) => `${(m as { message?: string }).message} (${(m as { n?: number }).n ?? 0})`,
+                )
                 .join(", ")
             : "—"}
         </dd>
         <dt className="text-muted-foreground">N total</dt>
         <dd className="num">{p.n_total}</dd>
         <dt className="text-muted-foreground">Source</dt>
-        <dd className="min-w-0 overflow-wrap-anywhere text-[11px] text-muted-foreground">{p.source}</dd>
+        <dd className="min-w-0 overflow-wrap-anywhere text-[11px] text-muted-foreground">
+          {p.source}
+        </dd>
       </dl>
       {isReport && p.kpi_hint && (
         <div className="mt-1 rounded-md border bg-accent/10 p-2 text-xs">
@@ -100,14 +111,15 @@ export function InfoDrawer({ projectId, paramKey }: { projectId: string; paramKe
             className="font-semibold text-primary hover:underline"
           >
             KPI
-          </Link>
-          {" "}
+          </Link>{" "}
           <span className="font-mono text-[10.5px]">({p.kpi_hint})</span>
         </div>
       )}
       {p.sample_paths.length > 0 && (
         <details className="mt-1 text-xs">
-          <summary className="cursor-pointer text-muted-foreground">Chemins ASN.1 (échantillon)</summary>
+          <summary className="cursor-pointer text-muted-foreground">
+            Chemins ASN.1 (échantillon)
+          </summary>
           <ul className="mt-1 space-y-1 pl-4 font-mono text-[10.5px] text-muted-foreground">
             {p.sample_paths.map((s) => (
               <li key={s} className="overflow-wrap-anywhere">

@@ -1,0 +1,19 @@
+{
+  "api": {
+    "total": 4,
+    "geolocated": 4,
+    "operators": [
+      {
+        "name": "Orange",
+        "count": 4,
+        "color": "#FF7900"
+      }
+    ]
+  },
+  "popup": "PASS",
+  "valueColor": "PASS",
+  "filters": "PASS",
+  "fullscreenResize": "PASS",
+  "toggleWithPoints": "PASS",
+  "result": "PASS"
+}

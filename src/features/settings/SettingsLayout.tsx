@@ -1,11 +1,11 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
-import { setDemoRole } from "@/lib/auth";
+import { getSession } from "@/lib/auth";
 import type { FilterContext } from "@/lib/api/schemas";
-import { ROLE_LABEL, RoleSchema, type Role } from "@/lib/api/settings-schemas";
-import { inputCls, useActor } from "./shared";
+import { ROLE_LABEL } from "@/lib/api/settings-schemas";
+import { useActor } from "./shared";
 
 export const SETTINGS_TABS = [
+  { to: "/settings/dict-templates", label: "Templates RRC" },
   { to: "/settings/users", label: "Utilisateurs" },
   { to: "/settings/geography", label: "Géographie" },
   { to: "/settings/cellular-reference", label: "Référence cellulaire" },
@@ -19,34 +19,37 @@ export const SETTINGS_TABS = [
 export function SettingsLayout() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const actor = useActor();
-  const qc = useQueryClient();
+  // 1.19.0 — Lecture directe de la session HTTP : plus de « démo » dans
+  // ce composant. Les onglets non-connectés affichent eux-mêmes leur
+  // propre bandeau "NON CONNECTÉ AU BACK".
+  const session = getSession();
+  const email = session?.user ?? null;
   return (
     <div className="mx-auto max-w-7xl space-y-5 p-4 md:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-xl font-semibold">Paramètres</h1>
           <p className="text-xs text-muted-foreground">
-            Administration de BC4 — données de démonstration, API mockée.
+            Administration de BC4. Les onglets ont chacun leur statut de connexion back (certaines
+            sections restent en mock : marquées visiblement dans leur en-tête).
           </p>
         </div>
-        <label className="flex items-center gap-2 text-xs">
-          <span className="text-muted-foreground">Rôle simulé (démo)</span>
-          <select
-            className={`${inputCls} w-40`}
-            value={actor.role}
-            onChange={(e) => {
-              setDemoRole(e.target.value as Role);
-              window.dispatchEvent(new Event("bc4-role"));
-              qc.invalidateQueries({ queryKey: ["settings"] });
-            }}
-          >
-            {RoleSchema.options.map((r) => (
-              <option key={r} value={r}>
-                {ROLE_LABEL[r]}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-muted-foreground">
+            {email ? (
+              <>
+                Connecté : <span className="font-medium text-foreground">{email}</span>
+              </>
+            ) : (
+              <span className="font-medium text-destructive">
+                Non authentifié (pas de session active)
+              </span>
+            )}
+          </span>
+          <span className="rounded border border-[#E2E8F0] px-2 py-0.5 font-medium">
+            {ROLE_LABEL[actor.role]}
+          </span>
+        </div>
       </div>
       <nav aria-label="Sections des paramètres" className="flex gap-1 overflow-x-auto border-b">
         {SETTINGS_TABS.map((t) => {

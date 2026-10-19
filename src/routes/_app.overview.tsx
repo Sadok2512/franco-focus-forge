@@ -165,7 +165,11 @@ function Overview() {
     queryKey: ["overview", scopedFilters],
     enabled: !!activeProject,
     placeholderData: keepPreviousData,
-    queryFn: ({ signal }) => getOverview(scopedFilters, signal),
+    // Let the project/filter-keyed result finish into the cache on navigation.
+    // Canceling HTTP does not cancel the server aggregation.
+    queryFn: () => getOverview(scopedFilters),
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
   });
   const d = q.data;
   const p = d?.project;
@@ -187,7 +191,7 @@ function Overview() {
         .slice(-12),
     [d],
   );
-  const sites = useMemo(() => new Set(d?.points.map((x) => x.site)).size, [d]);
+  const sites = useMemo(() => new Set(d?.points.map((x) => x.site).filter((site) => site != null)).size, [d]);
   const sel = d?.points.find((x) => x.id === selected);
 
   const donut = useCallback(
@@ -421,10 +425,10 @@ function Overview() {
             />
             {sel && (
               <div className="absolute left-1/2 top-24 z-10 w-48 rounded-md border bg-card p-2.5 text-[11px] shadow-lg">
-                <p className="font-semibold">Site : {sel.site}</p>
-                <p>Opérateur : {sel.operator}</p>
-                <p>Techno : {sel.tech}</p>
-                <p>Bande : {sel.band}</p>
+                <p className="font-semibold">Site : {sel.site ?? "N/D"}</p>
+                <p>Opérateur : {sel.operator ?? "N/D"}</p>
+                <p>Techno : {sel.tech ?? "N/D"}</p>
+                <p>Bande : {sel.band ?? "N/D"}</p>
                 <p>RSRP : {sel.rsrp == null ? "N/D" : `${fmt(sel.rsrp)} dBm`}</p>
               </div>
             )}

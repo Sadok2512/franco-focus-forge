@@ -1,3 +1,4 @@
+import { OverviewPointSchema, type OverviewPoint } from "./schemas";
 // Typed API adapter. UI only talks to these functions.
 // Dispatch: VITE_BC4_DATA=api → HTTP vers bc4-back, sinon → mock local.
 // Les schémas Zod existants sont la source de parité au runtime.
@@ -74,7 +75,7 @@ function mean(vals: (number | null)[]) {
 
 export type OverviewData = {
   project: Project;
-  points: MeasurementPoint[];
+  points: OverviewPoint[];
   kpis: MetricValue[];
   byOperator: {
     operator: Operator;
@@ -92,7 +93,7 @@ export type OverviewData = {
 // branch. Mock branch keeps its historical construction.
 const OverviewSchema = z.object({
   project: ProjectSchema,
-  points: z.array(z.any()),
+  points: z.array(OverviewPointSchema),
   kpis: z.array(
     z.object({
       key: z.string(),
@@ -249,3 +250,17 @@ export { createProject, deleteProject, getImportReport, uploadNmfFiles } from ".
 export type { NmfPerFileProgress, NmfUploadOptions } from "./projects";
 export type * from "./nmf-schemas";
 export type * from "./project-schemas";
+
+// RRC v2 uses the shared API client entry point.
+export {
+  getDictMap as getDictV2Map,
+  getDictTree as getDictV2Tree,
+  getDictFilterOptions as getDictV2FilterOptions,
+  getDictParam as getDictV2Param,
+  getDictDistribution as getDictV2Distribution,
+} from "./dict-v2";
+
+// Project-scoped KPI Analytics adapters (shared UI entry point).
+export { getProjectKpi, getProjectKpiCatalog, getProjectKpiFilters } from "./project-kpi";
+export { getDictTemplates, getDictTemplateSummary } from "./dict-templates";
+export { updateDictTemplate } from "./dict-templates";

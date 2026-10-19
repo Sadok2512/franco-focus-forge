@@ -130,6 +130,28 @@ const DictParamSheetSchema = z
   .passthrough();
 export type DictParamSheet = z.infer<typeof DictParamSheetSchema>;
 
+const DictGeographicDimensionSchema = z.object({
+  key: z.enum(["dor", "plaque", "arcep_zone"]),
+  label: z.string(),
+  available: z.boolean(),
+  reason: z.string().nullable(),
+  options: z.array(z.string()),
+  count: z.number().int().nonnegative(),
+});
+const DictFilterOptionsSchema = z.object({
+  project_id: z.string(),
+  geographic: z.array(DictGeographicDimensionSchema),
+});
+export type DictGeographicDimension = z.infer<typeof DictGeographicDimensionSchema>;
+export type DictGeoFilters = Partial<Record<DictGeographicDimension["key"], string[]>>;
+export function getDictFilterOptions(projectId: string, signal?: AbortSignal) {
+  return apiFetch(
+    `/projects/${encodeURIComponent(projectId)}/dict/v2/filters`,
+    DictFilterOptionsSchema,
+    { signal },
+  );
+}
+
 // --- Fetchers (toujours via apiFetch — Zod obligatoire)
 
 export async function getDictTree(
@@ -150,9 +172,19 @@ export async function getDictDistribution(
   keys: string[],
   groupBy: GroupByMode,
   signal?: AbortSignal,
+  geographic: DictGeoFilters = {},
+  technology?: "LTE" | "NR" | "LTE+NR",
 ): Promise<DictDistributionResponse> {
   // keys passés en CSV via buildQuery (il joint sur `,`).
-  const q = buildQuery({ keys, group_by: groupBy });
+  const base = buildQuery({
+    keys,
+    group_by: groupBy,
+    technology: technology === "LTE+NR" ? undefined : technology,
+  });
+  const geo = new URLSearchParams();
+  for (const key of ["dor", "plaque", "arcep_zone"] as const)
+    for (const value of geographic[key] ?? []) geo.append(key, value);
+  const q = base + (geo.size ? `&${geo}` : "");
   return apiFetch(
     `/projects/${encodeURIComponent(projectId)}/dict/v2/distribution${q}`,
     DictDistributionResponseSchema,
@@ -168,6 +200,64 @@ export async function getDictParam(
   return apiFetch(
     `/projects/${encodeURIComponent(projectId)}/dict/v2/param/${encodeURIComponent(paramKey)}`,
     DictParamSheetSchema,
+    { signal },
+  );
+}
+
+export const DictMapResponseSchema = z.object({
+  project_id: z.string(),
+  points: z.array(
+    z.object({
+      occurrence_id: z.string(),
+      event_id: z.string(),
+      capture_id: z.string(),
+      seq: z.number().int(),
+      nmf_file_id: z.string().nullable(),
+      param_key: z.string(),
+      display_name: z.string().nullable(),
+      path: z.string(),
+      technology: z.string(),
+      operator: z.string().nullable(),
+      band: z.string().nullable(),
+      value_raw: z.string().nullable(),
+      value_converted: z.string().nullable(),
+      unit: z.string().nullable(),
+      lat: z.number().min(-90).max(90),
+      lon: z.number().min(-180).max(180),
+      source: z.string(),
+      coordinate_source: z.literal("stg_event"),
+      operator_color: z.string(),
+    }),
+  ),
+  total_occurrences: z.number(),
+  geolocated_occurrences: z.number(),
+  returned_occurrences: z.number(),
+  truncated: z.boolean(),
+  limit: z.number(),
+  reason: z.string().nullable(),
+  operators: z.array(z.object({ name: z.string(), count: z.number(), color: z.string() })),
+});
+export type DictMapResponse = z.infer<typeof DictMapResponseSchema>;
+export type DictMapPoint = DictMapResponse["points"][number];
+
+export function getDictMap(
+  projectId: string,
+  keys: string[],
+  technology: string,
+  operators: string[],
+  bands: string[],
+  geographic: DictGeoFilters,
+  signal?: AbortSignal,
+): Promise<DictMapResponse> {
+  const query = new URLSearchParams({ keys: keys.join(",") });
+  if (technology !== "LTE+NR") query.set("technology", technology);
+  for (const value of operators) query.append("operator", value);
+  for (const value of bands) query.append("band", value);
+  for (const key of ["dor", "plaque", "arcep_zone"] as const)
+    for (const value of geographic[key] ?? []) query.append(key, value);
+  return apiFetch(
+    `/projects/${encodeURIComponent(projectId)}/dict/v2/map?${query}`,
+    DictMapResponseSchema,
     { signal },
   );
 }

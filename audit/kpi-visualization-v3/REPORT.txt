@@ -1,0 +1,72 @@
+PROJECT = BC4-FRONT
+MISSION = KPI_ANALYTICS_ADVANCED_VISUALIZATION_V3
+
+PREVIOUS_VERSION = 1.35.5 (shared workspace version read before increment)
+NEW_VERSION = 1.36.0
+CHANGE_TYPE = minor
+
+SIDEBAR_KPI_MENU = implemented; separate accessible menu, selection by code without duplication
+CHART_SETTINGS_MENU = implemented; local configuration, group/statistic, PNG/CSV, move/remove
+HISTOGRAM_MODE = existing real aggregate bars preserved
+GRAPH_MODE = disabled with reason: paired observations contract absent
+TABLE_MODE = existing lower table retained with all selected KPI; no duplicated rows
+MAP_MODE = explicit unavailable state: no KPI coordinates in current response
+
+X_AXIS_CONFIGURATION = available categorical dimensions only, local draft/Apply
+Y_AXIS_CONFIGURATION = selected KPI with actual unit; alternate measures unavailable
+TASK_TIME_DEFAULT = never synthesized; absent from current contract
+XY_PAIRING_VALIDATION = no pairing performed; unsupported graph blocked
+
+MULTI_KPI_SELECTION = independent configs; reselect restores; session preferences per project/code
+FILTERS_PRESERVED = local grouping uses applied filters, never pending global draft
+DATA_INTEGRITY = common existing analyticRows for bars/table/CSV, formulas unchanged
+
+G1 = PASS — live sidebar menu and keyboard-accessible button
+G2 = FAIL — Histogram/Table/Map empty state verified; Graph cannot run without backend support
+G3 = PASS — separate card menu; PNG/CSV exports executed
+G4 = FAIL — local categorical X and grouping verified; numerical X/alternate Y blocked by contract
+G5 = PASS — no Task Time offered/defaulted when absent, browser assertion
+G6 = NOT RUN — no paired observations endpoint/data to validate; no invented pairs
+G7 = PASS — two KPI, independent groupings and mode restored after deselect/reselect
+G8 = PASS — draft operator changes send no query; local Apply uses prior applied filters;
+              global Apply then excludes deselected operator in live response
+G9 = PASS — CSV identical before/after mode switching; source populations/null/zero/unit/evidence unit guards
+G10 = PASS — explicit no-geolocation state; no invented map points
+G11 = PASS — zero requests for presentation modes; one request for changed local grouping
+G12 = PASS — 1920/1440/1280/400 layouts, popovers within viewport, Escape and focus return; dark screenshot
+G13 = FAIL — global npm run lint: 946 errors, 29 warnings, outside modified production files;
+              targeted lint PASS, typecheck PASS, 15 tests PASS, production build PASS
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+KNOWN_LIMITATIONS = no Task Time, individual KPI coordinates or paired XY contract;
+                    mean not exposed as a separate validated statistic;
+                    no alternative numeric axes enabled; global lint remains failing
+NEXT_STEP = authorize and provide the observations/pairing/capabilities contract described in API_GAPS.txt
+
+Commands actually executed:
+node scripts/kpi-v3-check.mjs
+npx eslint src/features/kpi/{KpiGraphCard,KpiChartSettings,KpiWorkspace,KpiCatalogSidebar,VisualizationMenu}.tsx src/features/kpi/visualization-model.ts src/test/kpi-visualization.test.tsx scripts/kpi-v3-check.mjs
+npm run lint
+npx tsc --noEmit
+VITE_BC4_DATA=mock npx vitest run --config scripts/kpi-vitest.config.mjs --configLoader native src/test/kpi-visualization.test.tsx src/test/kpi-workspace.test.ts src/test/query-cache.test.ts
+docker exec bc4-front-1 bun run build
+
+Files changed for this mission:
+package.json, CHANGELOG.md
+src/features/kpi/KpiCatalogSidebar.tsx
+src/features/kpi/KpiGraphCard.tsx
+src/features/kpi/KpiWorkspace.tsx
+src/features/kpi/workspace.css
+src/features/kpi/KpiChartSettings.tsx (new)
+src/features/kpi/VisualizationMenu.tsx (new)
+src/features/kpi/visualization-model.ts (new)
+src/test/kpi-visualization.test.tsx (new)
+scripts/kpi-v3-check.mjs (new)
+audit/kpi-visualization-v3/* and kpi-v3-evidence/*
+
+Proof: kpi-v3-evidence/report.json contains request URLs, live responses and CSV.
+Screenshots: sidebar.png, axes.png, desktop.png, 1920.png, 1280.png, 400.png, dark.png.
+No image rebuild or broad commit from the shared dirty workspace. Vite serves source changes;
+production compilation executed inside the running frontend container.

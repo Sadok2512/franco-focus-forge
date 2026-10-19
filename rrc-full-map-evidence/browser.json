@@ -1,0 +1,320 @@
+{
+  "parameters": [
+    "dl-Bandwidth",
+    "spare",
+    "phich-Duration",
+    "phich-Resource"
+  ],
+  "mapContract": {
+    "status": 200,
+    "responseFields": [
+      "path",
+      "system",
+      "points"
+    ],
+    "pointCount": 6,
+    "pointFields": [
+      "lat",
+      "lon",
+      "value_raw",
+      "value_converted",
+      "operator",
+      "band"
+    ]
+  },
+  "G1": "PASS",
+  "G2": "PASS",
+  "chart1": {
+    "width": 1377,
+    "children": [
+      1377
+    ]
+  },
+  "chart2": {
+    "width": 1377,
+    "children": [
+      682.5,
+      682.5
+    ]
+  },
+  "chart3": {
+    "width": 1377,
+    "children": [
+      682.5,
+      682.5,
+      1377
+    ]
+  },
+  "rootColors": [
+    {
+      "tech": "LTE",
+      "color": "rgb(23, 105, 224)"
+    },
+    {
+      "tech": "NR",
+      "color": "rgb(22, 163, 74)"
+    }
+  ],
+  "G6": "PASS",
+  "G7": "PASS",
+  "G5": "PASS (basemap fullscreen)",
+  "G9": "PASS",
+  "explicitApply": "PASS",
+  "appliedContext": "PASS",
+  "G8": "PASS",
+  "size1920": {
+    "height": 1080,
+    "document": 1080,
+    "overflowNodes": [
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1734.03125,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1371.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1371.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1217.21875,
+        "position": "absolute",
+        "overflow": "hidden"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 1080,
+        "bottom": 1080
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 1080
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "layout1920": {
+    "columns": "767.109px 728.766px",
+    "width": 1507.890625
+  },
+  "size1440": {
+    "height": 900,
+    "document": 900,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1870.96875,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1662.03125,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1299.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1299.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 900,
+        "bottom": 900
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 900
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "layout1440": {
+    "columns": "1121.78px",
+    "width": 1121.78125
+  },
+  "size1280": {
+    "height": 800,
+    "document": 800,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1842.96875,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1634.03125,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1271.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1271.15625,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 800,
+        "bottom": 800
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 800
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "layout1280": {
+    "columns": "987px",
+    "width": 987
+  },
+  "size400": {
+    "height": 900,
+    "document": 3469,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 3133.28125,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 2756.34375,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 2393.46875,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 2030.59375,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "maplibregl-canvas",
+        "bottom": 1142.65625,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "DIV",
+        "cls": "maplibregl-ctrl-bottom-left ",
+        "bottom": 1142.65625,
+        "position": "absolute",
+        "overflow": "visible"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 3469.28125,
+        "bottom": 3469.28125
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 3469.28125
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "layout400": {
+    "columns": "372px",
+    "width": 372
+  },
+  "scroll": {
+    "top": 0,
+    "height": 241,
+    "total": 241
+  },
+  "G10": "PASS",
+  "G11": "PASS",
+  "consoleErrors": [],
+  "result": "PASS"
+}

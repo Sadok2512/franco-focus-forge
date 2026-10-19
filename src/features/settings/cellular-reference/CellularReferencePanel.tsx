@@ -5,10 +5,10 @@ import {
   getCellSummary,
   listCellImports,
   uploadCellReference,
-  type ImportReport,
   type ReferenceImportEntry,
   type UploadProgress,
 } from "@/lib/api/client";
+import type { CellRefUploadReport } from "@/lib/api/reference-schemas";
 import { toUserMessage } from "@/lib/api/http";
 import { Card, Pill, SettingsSection, btnPrimary, fmtDate } from "../shared";
 
@@ -38,42 +38,16 @@ function BreakdownList({
   );
 }
 
-function ReportBlock({ report }: { report: ImportReport }) {
-  const bandsUnmapped = Object.entries(report.bands_unmapped);
-  const unmappedTotal = bandsUnmapped.reduce((s, [, n]) => s + n, 0);
-  const rejectedEntries = Object.entries(report.rejected_by_reason).sort((a, b) => b[1] - a[1]);
-  const ratEntries = Object.entries(report.by_rat).sort((a, b) => b[1] - a[1]);
-  const etatEntries = Object.entries(report.etat_breakdown).sort((a, b) => b[1] - a[1]);
+// 1.19.0 — ReportBlock aligné sur CellRefUploadReport (back 0.47.1).
+// Jamais vert sur 0 ligne : si cells_affected=0, un bandeau rouge
+// "rejected" porte status_reason + ventilation reject_reasons.
+function ReportBlock({ report }: { report: CellRefUploadReport }) {
+  const rejectedEntries = Object.entries(report.reject_reasons ?? {}).sort((a, b) => b[1] - a[1]);
+  const cellsAffected = report.cells_affected ?? report.matched;
+  const isRejected = report.status === "rejected";
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 sm:grid-cols-4">
-        <Card title="Lignes lues">
-          <p className="text-xl font-semibold">{nd(report.rows_read)}</p>
-          <p className="text-[11px] text-muted-foreground">
-            Snapshot : {report.snapshot_date ?? "N/D"}
-          </p>
-        </Card>
-        <Card title="Chargées">
-          <p className="text-xl font-semibold text-sev-good">{nd(report.rows_loaded)}</p>
-          <p className="text-[11px] text-muted-foreground">
-            Upsert idempotent sur <code>id</code>
-          </p>
-        </Card>
-        <Card title="Rejetées">
-          <p className="text-xl font-semibold text-destructive">{nd(report.rows_rejected)}</p>
-          <p className="text-[11px] text-muted-foreground">Détail par motif ci-dessous.</p>
-        </Card>
-        <Card title="Cellules distinctes">
-          <p className="text-sm">
-            ECI&nbsp;: <span className="font-mono">{nd(report.distinct_eci)}</span>
-          </p>
-          <p className="text-sm">
-            NCI&nbsp;: <span className="font-mono">{nd(report.distinct_nci)}</span>
-          </p>
-        </Card>
-      </div>
-
-      {unmappedTotal > 0 && (
+      {isRejected && (
         <div
           role="alert"
           className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs"
@@ -81,38 +55,87 @@ function ReportBlock({ report }: { report: ImportReport }) {
           <FileWarning className="mt-0.5 h-4 w-4 text-destructive" aria-hidden />
           <div>
             <p className="font-semibold text-destructive">
-              Écart ouvert — bandes non mappées ({nd(unmappedTotal)} lignes)
+              Import rejeté — aucune cellule affectée en base
             </p>
-            <p className="text-muted-foreground">
-              Les bandes suivantes ne figurent pas dans la table de mapping 3GPP de la référence
-              cellulaire. Elles ne sont pas devinées — une migration explicite est requise pour les
-              intégrer.
+            <p className="text-destructive/90 mt-0.5">
+              Motif : {report.status_reason ?? "(aucune raison fournie)"}
             </p>
-            <ul className="mt-1 flex flex-wrap gap-1">
-              {bandsUnmapped.map(([k, n]) => (
-                <li key={k}>
-                  <Pill tone="warn">
-                    <span className="font-mono">{k}</span>
-                    &nbsp;· {nd(n)}
-                  </Pill>
-                </li>
+            {rejectedEntries.length > 0 && (
+              <ul className="mt-1 flex flex-wrap gap-1">
+                {rejectedEntries.map(([k, n]) => (
+                  <li key={k}>
+                    <Pill tone="warn">
+                      <span className="font-mono">{k}</span>
+                      &nbsp;· {nd(n)}
+                    </Pill>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {report.source_path && (
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Blob source persisté : <code>{report.source_path}</code>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="grid gap-3 sm:grid-cols-4">
+        <Card title="Lignes CSV lues">
+          <p className="text-xl font-semibold">{nd(report.processed)}</p>
+          <p className="text-[11px] text-muted-foreground">processed</p>
+        </Card>
+        <Card title="Cellules affectées">
+          <p className={`text-xl font-semibold ${cellsAffected > 0 ? "text-sev-good" : "text-destructive"}`}>
+            {nd(cellsAffected)}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            inserted {nd(report.inserted)} · updated {nd(report.updated_lines ?? 0)}
+          </p>
+        </Card>
+        <Card title="Rejetées / ambiguës / vides">
+          <p className="text-xl font-semibold text-destructive">
+            {nd(report.rejected)}
+            {report.ambiguous !== undefined && ` + ${nd(report.ambiguous)}`}
+            {report.skipped_empty !== undefined && ` + ${nd(report.skipped_empty)}`}
+          </p>
+          <p className="text-[11px] text-muted-foreground">rejected · ambiguous · skipped_empty</p>
+        </Card>
+        <Card title="Référence">
+          <p className="text-sm">
+            id&nbsp;: <span className="font-mono text-[11px]">{report.reference_id}</span>
+          </p>
+          {report.source_path && (
+            <p className="text-[11px] text-muted-foreground break-all">
+              <span className="font-mono">{report.source_path}</span>
+            </p>
+          )}
+        </Card>
+      </div>
+
+      {rejectedEntries.length > 0 && !isRejected && (
+        <div className="grid gap-3 md:grid-cols-1">
+          <Card title="Rejets par motif (import partiel)">
+            <BreakdownList entries={rejectedEntries} emptyLabel="Aucun rejet." />
+          </Card>
+        </div>
+      )}
+      {report.warnings && report.warnings.length > 0 && (
+        <div
+          role="alert"
+          className="flex items-start gap-2 rounded-md border border-sev-warn/40 bg-sev-warn/10 p-3 text-xs text-sev-warn"
+        >
+          <AlertTriangle className="mt-0.5 h-4 w-4" aria-hidden />
+          <div>
+            <p className="font-semibold">Warnings de parsing :</p>
+            <ul className="list-disc pl-4">
+              {report.warnings.map((w, i) => (
+                <li key={i} className="text-muted-foreground">{w}</li>
               ))}
             </ul>
           </div>
         </div>
       )}
-
-      <div className="grid gap-3 md:grid-cols-3">
-        <Card title="Rejets par motif">
-          <BreakdownList entries={rejectedEntries} emptyLabel="Aucun rejet." />
-        </Card>
-        <Card title="Répartition 4G / 5G">
-          <BreakdownList entries={ratEntries} emptyLabel="Aucune cellule chargée." />
-        </Card>
-        <Card title="État de fonctionnement">
-          <BreakdownList entries={etatEntries} emptyLabel="Colonne vide." />
-        </Card>
-      </div>
     </div>
   );
 }
@@ -184,7 +207,7 @@ export function CellularReferencePanel() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
-  const [lastReport, setLastReport] = useState<ImportReport | null>(null);
+  const [lastReport, setLastReport] = useState<CellRefUploadReport | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const importsQ = useQuery({
@@ -196,7 +219,7 @@ export function CellularReferencePanel() {
     queryFn: ({ signal }) => getCellSummary(signal),
   });
 
-  const uploadM = useMutation<ImportReport, Error, File>({
+  const uploadM = useMutation<CellRefUploadReport, Error, File>({
     mutationFn: async (f: File) => {
       setUploadError(null);
       setProgress({ loaded: 0, total: f.size, percent: 0 });
@@ -297,12 +320,13 @@ export function CellularReferencePanel() {
             </div>
           )}
 
-          {uploadM.status === "success" && lastReport && (
+          {uploadM.status === "success" && lastReport && lastReport.status === "ok" && (
             <div className="mt-4 flex items-center gap-2 rounded-md border border-sev-good/40 bg-sev-good/10 p-3 text-xs text-sev-good">
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               <span>
-                Upload terminé — {nd(lastReport.rows_loaded)} ligne(s) chargée(s),{" "}
-                {nd(lastReport.rows_rejected)} rejetée(s).
+                Upload accepté — {nd(lastReport.cells_affected ?? lastReport.matched)} cellule(s) écrite(s)
+                en base ({nd(lastReport.inserted)} insert, {nd(lastReport.updated_lines ?? 0)} update)
+                sur {nd(lastReport.processed)} lignes CSV lues.
               </span>
             </div>
           )}

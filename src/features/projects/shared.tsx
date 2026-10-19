@@ -189,3 +189,14 @@ export function Section({
     </section>
   );
 }
+
+export function importProgressLabel(job: import("@/lib/api/nmf-schemas").NmfImportJob): string {
+  const stage = {
+    queued: "En attente",
+    decoding: "Décodage",
+    finalizing: "Calcul des mesures",
+    done: "Terminé",
+    error: "Échec",
+  }[job.status];
+  return `${stage} · ${job.files_done + job.files_error}/${job.files_total} fichiers traités${job.files_error ? ` · ${job.files_error} en échec` : ""}`;
+}

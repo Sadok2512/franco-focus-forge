@@ -1,0 +1,63 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_TEMPLATES_FRONTEND_INTEGRATION
+PREVIOUS_VERSION = 1.32.1
+NEW_VERSION = 1.33.0
+VERSION_CHANGE_TYPE = minor (new frontend functionality; no version downgrade)
+BACKEND_CHANGED = FALSE
+
+Implemented:
+- Paramètres sidebar: API categories ordered by server position, counters, active category, exact category_id filtering, template selection by technology + param_key + discriminators.
+- Category activation waits for catalog availability. Deactivation restores the previous parameter selection. Raw tab has no categories or template summary.
+- Dominant-value table: operator / band / both, server percentages and majority flags, API display units, full distribution in tooltips, graph access. Unresolved parameters stay visible as N/D; confirmed absent cells show 0 occ.
+- Réglages > Templates RRC: admin-only editor, server revision check, typed PUT via shared API client, query invalidation. No configuration was written during validation.
+- All selected operator names shown with existing project badges.
+
+Guards:
+PASS — live API contract read from localhost:8000/openapi.json, backend health 0.51.0.
+PASS — Playwright on Test_3 via Projects > Ouvrir > Dictionnaire RRC: 11 categories, DRX active, 7 selected parameters, 3 comparison modes, click to existing histograms, Raw isolation, mobile overflow, admin editor read-only, no page errors.
+PASS — 7 PNG: operator, band, both, Raw, 400px, dark, administration.
+PASS — 37 tests, including exact key/technology/discriminator identity, category filtering, existing hierarchy/filter/recovery/grouping guards.
+PASS — TypeScript: npx tsc --noEmit.
+PASS — targeted ESLint (command below).
+PASS — production build: docker exec bc4-front-1 bun run build.
+FAIL — repository-wide lint: npx eslint . --quiet; existing formatting/other-module errors remain outside this lot.
+NOT RUN — admin PUT against live global configuration (intentionally not altered by validation).
+NOT RUN — container image rebuild/redeployment: working tree includes extensive pre-existing changes; CLAUDE.md requires clean committed HEAD for image rebuild. Frontend development instance localhost:5174 already serves v1.33.0 and was browser-tested.
+
+Commands:
+node scripts/rrc-templates-check.mjs
+VITE_BC4_DATA=mock npx vitest run --config scripts/vitest-rrc.config.mjs --configLoader native
+npx tsc --noEmit
+npx eslint src/features/dict-v2/TemplateTable.tsx src/features/dict-v2/TreePanel.tsx src/features/dict-v2/DictV2Page.tsx src/features/dict-v2/FilterSelect.tsx src/features/dict-v2/template-model.ts src/features/dict-v2/template-model.test.ts src/lib/api/dict-templates.ts src/features/settings/dict-templates/DictTemplatesPanel.tsx src/routes/_app.settings.dict-templates.tsx scripts/rrc-templates-check.mjs scripts/vitest-rrc.config.mjs
+docker exec bc4-front-1 bun run build
+npx eslint . --quiet
+
+Test-environment diagnostics:
+Default host Vitest was blocked by container-owned node_modules/.vite-temp (EACCES).
+Container Vitest failed loading Zod in two existing suites.
+The dedicated Node config avoids container-owned config output. VITE_BC4_DATA=mock is test-only for existing fixture-based tests; production and browser evidence use live API data exclusively. All 37 tests pass with this command.
+
+Known limitations:
+- Summary API has no operator, band or geographic restriction parameters. With those applied restrictions, the template summary is replaced by an explicit notice and existing filtered histograms remain available. Draft filters do not implicitly apply. Technology filters select corresponding API rows without combining parameters. No new backend contract was invented.
+- Unresolved template entries remain N/D with their server reason; canonical references were not fabricated.
+- Category badges describe the complete project population, as returned by /templates.
+- Admin editor is a validated JSON configuration editor, not a drag-and-drop catalog editor.
+
+Files for this lot:
+src/lib/api/dict-templates.ts
+src/lib/api/client.ts (template exports)
+src/features/dict-v2/TemplateTable.tsx
+src/features/dict-v2/template-model.ts
+src/features/dict-v2/template-model.test.ts
+src/features/dict-v2/TreePanel.tsx
+src/features/dict-v2/DictV2Page.tsx
+src/features/dict-v2/FilterSelect.tsx (preceding requested operator label fix)
+src/features/settings/dict-templates/DictTemplatesPanel.tsx
+src/features/settings/SettingsLayout.tsx (Templates RRC navigation)
+src/routes/_app.settings.dict-templates.tsx
+src/routeTree.gen.ts (generated route registration)
+scripts/rrc-templates-check.mjs
+scripts/vitest-rrc.config.mjs
+package.json
+CHANGELOG.md
+rrc-templates-evidence/

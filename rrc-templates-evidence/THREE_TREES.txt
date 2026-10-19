@@ -1,0 +1,18 @@
+BC4-FRONT — correction demandée : trois arbres distincts
+Version : 1.33.0 → 1.33.1 (patch), changelog mis à jour.
+
+Paramètres : catalogue complet, aucune restriction par la catégorie de Templates.
+Raw parameter : arbre ASN.1 brut conservé.
+Templates : catégories et arbre filtré dédiés, tableau comparatif.
+Les trois composants restent montés avec leurs recherches, états de dépliage et conteneurs de scroll indépendants. La sélection des paramètres reste partagée.
+
+PASS — node scripts/rrc-templates-check.mjs
+Preuves live Test_3 : trois onglets ; highSpeedFlag toujours retrouvé dans Paramètres après DRX dans Templates ; recherches indépendantes ; navigation clavier End ; Raw isolé ; 3 modes comparatifs ; 400 px sans débordement ; administration en lecture seule ; aucune erreur JS.
+PASS — VITE_BC4_DATA=mock npx vitest run --config scripts/vitest-rrc.config.mjs --configLoader native (37 tests)
+PASS — npx tsc --noEmit
+PASS — npx eslint src/features/dict-v2/TreePanel.tsx src/features/dict-v2/DictV2Page.tsx scripts/rrc-templates-check.mjs
+
+Aucun changement de backend, données ou calculs.
+Les limites de la route summary et du lint global signalées dans DELIVERY.txt restent inchangées.
+
+PASS — docker exec bc4-front-1 bun run build (production).

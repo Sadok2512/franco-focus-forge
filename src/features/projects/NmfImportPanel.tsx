@@ -1,3 +1,4 @@
+import { importProgressLabel } from "./shared";
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Upload, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { useNmfUpload, type NmfFileRow } from "./useNmfUpload";
@@ -139,6 +140,9 @@ export function NmfImportPanel({
         </p>
       )}
 
+      {nmf.jobProgress && (
+        <p role="status" className="mt-2 text-sm">{importProgressLabel(nmf.jobProgress)}</p>
+      )}
       {nmf.globalError && (
         <div
           role="alert"

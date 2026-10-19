@@ -1,0 +1,70 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_HIERARCHICAL_VALUES_TABLE_PREMIUM_V3
+
+PREVIOUS_VERSION = 1.24.1
+NEW_VERSION = 1.25.0
+CHANGE_TYPE = MINOR — hierarchical interactions and new 13-column CSV schema
+
+FAMILY_GROUPING = Approved catalog metadata only. One collapsible family header with parameter count. Missing/conflicting catalog membership -> Famille non renseignée.
+PARAMETER_GROUPING = One collapsible header per composite (technology, API param_id or param_key, explicit ASN.1 path or canonical param_key). Equal display names never merge distinct paths/technologies.
+VALUE_ROWS = Observed display values beneath parameter headers; raw values retained for export. No rowSpan. Independent collapse state survives sorting. Search auto-expands matching groups and clearing search restores previous expansion state.
+PERCENTAGES = Same source counts and full effective parameter/group denominators before text search or windowing; operator+band denominator kept separate. Unavailable percentage -> —.
+OPERATOR_COLORS = Orange #FF7900, SFR #E2001A, Bouygues #009FE3, Free #7C8794. Dynamic columns only from effective API population. 4px bars with common 0–100% scale; no severity semantics.
+SEARCH = Family, parameter name, raw/display value and canonical ASN.1 path. Family/parameter context retained for matching values. Matching family/parameter/path includes all corresponding values.
+SORTING = Family then stable parameter group then values. Ascending/descending value controls and occurrence/percentage sorting by operator column. Collapse state retained.
+CSV_EXPORT = technology;family_id;family_name;param_id;asn1_path;parameter_name;value;operator;band;occurrences;denominator;percentage;total. One row per filtered value/group, explicit identity on every record. All filtered records exported, including collapsed/windowed rows and visually hidden columns. Missing fields are empty, not fabricated zeroes.
+DATA_INTEGRITY = Model validates sum of source value/group counts against each block.n_total before table search. Mismatches and duplicate raw source values produce persistent visible diagnostics; no count or source correction. Original API objects/evidence never mutated.
+
+G1 = PASS — Chromium on real TEST2: 1 family header, 2 parameter headers, 6 value rows in correct order; unit tests also exercise hierarchy.
+G2 = PASS — real TEST2 shows highSpeedFlag and prach-ConfigIndex once each as parameter headings. Unit test verifies same-name/different-path and LTE/NR identities remain separate.
+G3 = PASS — displayed Accès & timers comes from current API catalog. Unit tests verify fallback without metadata; no name-based classification.
+G4 = PASS — real cells Orange 39/54=72.2%, Free 4/9=44.4%; unit tests cover independent parameter/operator/band denominators and invariance under search.
+G5 = PASS — executed rendering tests distinguish missing — from real zero 0 · 0,0 %; zero-only denominator yields percentage —. Empty operator population remains null and its observed value is exported.
+G6 = PASS — browser searches family, complete parameter name, value 35, full ASN.1 path. Correct ancestors retained; previously collapsed parameter opens for search and restores collapse afterward.
+G7 = PASS — browser count sorting retains parameter boundaries; unit tests verify value/count/group ordering. Sort retains collapse state; isolated large-result browser test preserves scrollTop=10000 on descending sort.
+G8 = PASS — browser clipboard with all groups collapsed contains header plus18 real TEST2 records, exact13-column header, technology/path/family identity on every record. Synthetic2000-value browser test exports all2000 records despite windowing. Model tests verify null fields, identifiers and band field.
+G9 = PASS — real TEST2 totals75 and75 before and after hierarchy; each original values/n_total/distinct_values/verdict/comparability/result_id matches saved pre-change baseline. Unit test deliberately supplies total99 vs sum10 and verifies visible persistent alert without count mutation.
+G10 = PASS — 2 real histograms and 2 selected parameters retained. Applying Orange still produces total54,4 value rows,Orange-only dynamic columns. Baseline API/evidence comparison passes. No chart/filter/sidebar/API/backend implementation edits in this mission; unrelated preexisting working-tree changes preserved.
+G11 = FAIL — repository-wide lint fails outside this mission's changed files. Targeted lint PASS; TypeScript PASS; full frontend suite62 tests in9 files PASS; production build PASS. Exact global lint count in rrc-hierarchy-evidence/rrc-v3-lint.log.
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+FILES_MODIFIED_THIS_MISSION =
+src/features/dict-v2/GroupedValueTable.tsx
+src/features/dict-v2/grouped-table.ts
+src/features/dict-v2/premium.css (table-only additions)
+src/test/rrc-grouped-table.test.tsx
+scripts/rrc-hierarchy-check.mjs (new)
+package.json
+CHANGELOG.md
+RRC_HIERARCHICAL_VALUES_V3_ACCEPTANCE.txt (new)
+rrc-hierarchy-evidence/* (new screenshots and validation evidence)
+
+MANUAL COMMANDS (from /home/devmat/BC4/franco-focus-forge) =
+npm run lint
+npx eslint src/features/dict-v2/grouped-table.ts src/features/dict-v2/GroupedValueTable.tsx src/test/rrc-grouped-table.test.tsx scripts/rrc-hierarchy-check.mjs
+npm run typecheck
+VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config /tmp/rrc-tests.config.mjs
+docker exec bc4-front-1 bun run build
+node scripts/rrc-hierarchy-check.mjs
+
+TEST CONFIG =
+External Vitest config avoids existing root-owned node_modules/.vite-temp. Contents:
+import {defineConfig} from '/home/devmat/BC4/franco-focus-forge/node_modules/vitest/dist/config.js';
+export default defineConfig({root:'/home/devmat/BC4/franco-focus-forge',cacheDir:'/tmp/rrc-vitest-cache',test:{environment:'jsdom',globals:true,setupFiles:['./src/test/setup.ts'],include:['src/**/*.{test,spec}.{ts,tsx}']},resolve:{alias:{'@':'/home/devmat/BC4/franco-focus-forge/src'}}});
+Browser script uses local API8000, app5174, TEST2 and saved baseline rrc-grouped-evidence/distribution-before.json. Its final stress scenario intercepts only that isolated browser's distribution response with a test fixture; no database or server write, no production mock data. Screenshots and saved distribution/CSV are real TEST2 data captured before stress injection.
+
+PERFORMANCE / PRESENTATION =
+Memoized model, search/sort, grouping and expansion flattening; percentages only rebuilt when source blocks/group mode/catalog change. More than300 visible hierarchy nodes uses fixed40px windowing with overscan, max28 mounted data/header rows. Isolated browser test verifies2000 values, reaching last value1999, <35 total tbody rows, complete export, collapse/restore and preserved sort scroll. Row heights measured40px on all9 real hierarchy rows.
+Desktop1440×900 and mobile400px exercised; mobile table width366px, internal horizontal content720px, viewport364px. Light/dark screenshots visually inspected. Enter/Space activates expand/collapse; focus ring remains visible; value cells expose ancestor context for assistive technology and table includes logical row count/index for windowed data.
+
+KNOWN_LIMITATIONS =
+- Full repository lint remains failing; all mission source/test/script files pass targeted lint.
+- No separate approved screenshot was attached: implementation follows the supplied hierarchy example and visual requirements; pixel-perfect comparison NOT RUN.
+- Current catalog does not always provide family_id: use explicit family_id/id when available, otherwise a stable catalog category key. No invented family classification.
+- Technology stays empty in CSV when neither explicit block metadata nor an unambiguous catalog technology exists. Existing API aggregation is not split or reconstructed.
+- ASN.1 export uses an explicit asn1_path when supplied, otherwise the existing API canonical param_key (CHOICE-collapsed canonical path), not a fabricated raw occurrence path.
+- Full screen-reader session and exhaustive WCAG contrast audit NOT RUN. Global header/mobile behavior outside this table is unchanged.
+
+NEXT_STEP = Review the delivered screenshots; repository-wide lint cleanup remains outside this table-only mission.

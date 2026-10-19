@@ -1,0 +1,34 @@
+{
+  "geo": [
+    {
+      "name": "Activer DOR",
+      "disabled": true
+    },
+    {
+      "name": "Activer Plaque",
+      "disabled": true
+    },
+    {
+      "name": "Activer Zone ARCEP",
+      "disabled": true
+    }
+  ],
+  "geoFocus": false,
+  "charts": 2,
+  "selected": "2 sélectionnés",
+  "G3": "PASS",
+  "G2": "PASS",
+  "G1": "PASS",
+  "G5": "PASS",
+  "G6": "PASS",
+  "G7": "PASS",
+  "G8": "PASS",
+  "columnVisibility": "PASS",
+  "tableKeyboardFocus": "PASS",
+  "mobile": {
+    "width": 366,
+    "scroll": 798,
+    "viewport": 364
+  },
+  "errors": []
+}

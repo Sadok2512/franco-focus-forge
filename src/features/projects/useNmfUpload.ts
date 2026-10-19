@@ -20,6 +20,7 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { uploadNmfFiles } from "@/lib/api/client";
 import type { NmfFileStatus, NmfImportReport, NmfPerFileProgress } from "@/lib/api/client";
+import type { NmfImportJob } from "@/lib/api/nmf-schemas";
 import { toUserMessage } from "@/lib/api/http";
 
 export type NmfFileRow = {
@@ -38,6 +39,7 @@ export type NmfUploadStatus = "idle" | "uploading" | "success" | "error";
 export type NmfUploadState = {
   rows: NmfFileRow[];
   globalError: string | null;
+  jobProgress: NmfImportJob | null;
   report: NmfImportReport | null;
   status: NmfUploadStatus;
   /** Progression cumulée en octets (somme des `loaded`). */
@@ -53,7 +55,7 @@ export type UseNmfUploadResult = NmfUploadState & {
    *  comme `pending` au départ pour que la UI exerce la même branche
    *  de rendu que `apiFetch`. Résout avec le rapport (ou `null` sur
    *  erreur — l'erreur reste disponible via `globalError`). */
-  upload: (files: File[]) => Promise<NmfImportReport | null>;
+  upload: (files: File[], onError?: (message: string) => void) => Promise<NmfImportReport | null>;
   /** Remet le hook à zéro : les deux consommateurs reviennent à l'état
    *  initial (plus de rapport, plus d'erreur, plus de lignes). */
   reset: () => void;
@@ -70,6 +72,7 @@ function makeRows(files: File[]): NmfFileRow[] {
 }
 
 export function useNmfUpload(projectId: string): UseNmfUploadResult {
+  const [jobProgress, setJobProgress] = useState<NmfImportJob | null>(null);
   const [rows, setRows] = useState<NmfFileRow[]>([]);
   const [globalError, setGlobalError] = useState<string | null>(null);
   const [report, setReport] = useState<NmfImportReport | null>(null);
@@ -83,19 +86,23 @@ export function useNmfUpload(projectId: string): UseNmfUploadResult {
   const reset = useCallback(() => {
     setRows([]);
     setGlobalError(null);
+    setJobProgress(null);
     setReport(null);
     setStatus("idle");
   }, []);
 
-  const upload = useCallback(async (files: File[]): Promise<NmfImportReport | null> => {
+  const upload = useCallback(async (files: File[], onError?: (message: string) => void): Promise<NmfImportReport | null> => {
     if (!files.length) return null;
     setGlobalError(null);
+    setJobProgress(null);
     setReport(null);
     setStatus("uploading");
+    let accepted = false;
     const initialRows = makeRows(files);
     setRows(initialRows);
     try {
       const r = await uploadNmfFiles(projectIdRef.current, files, {
+        onJobProgress: (job) => { accepted = true; setJobProgress(job); },
         onFileProgress: (p: NmfPerFileProgress) =>
           setRows((prev) => {
             const next = [...prev];
@@ -117,16 +124,20 @@ export function useNmfUpload(projectId: string): UseNmfUploadResult {
     } catch (e) {
       // Même traitement d'erreur que NmfImportPanel (P1-3) : la classe
       // est devinée par `toUserMessage`, pas par le composant.
-      const userMsg = toUserMessage(e);
+      const userMsg = accepted
+        ? `Le suivi de l’import a échoué : ${toUserMessage(e)} Consultez son état dans la liste des projets.`
+        : toUserMessage(e);
       setGlobalError(userMsg);
       setRows((prev) =>
         prev.map((r) =>
-          r.status === "pending" || r.status === "decoding"
+          !accepted && (r.status === "pending" || r.status === "decoding")
             ? { ...r, status: "error", error_msg: userMsg }
             : r,
         ),
       );
       setStatus("error");
+      // Transmet l'erreur de cet appel sans attendre le prochain rendu React.
+      onError?.(userMsg);
       return null;
     }
   }, []);
@@ -151,6 +162,7 @@ export function useNmfUpload(projectId: string): UseNmfUploadResult {
   return {
     rows,
     globalError,
+    jobProgress,
     report,
     status,
     loadedBytes,

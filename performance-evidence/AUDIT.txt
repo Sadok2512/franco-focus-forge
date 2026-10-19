@@ -1,0 +1,108 @@
+BC4 — audit et corrections de chargement — 2026-10-18
+Front : 1.34.10 -> 1.35.0. Backend : 0.51.0 -> 0.52.3.
+Projet réel : Test_3, 4b7bfd50ddb6. Navigateur Chromium local 1440x900, Vite localhost:5174.
+Mesures ponctuelles rejouables, pas un benchmark statistique ni une mesure réseau distante.
+
+INCIDENT
+L'API 0.51.0 était arrêtée par OOM (code 137), confirmé par Docker.
+Charge système observée >100 et délais SQL dépassés. L'attribution du kill à une requête
+unique n'est pas prouvée. Etat brut conservé dans api-incident.json.
+Service restauré avec la même image initialement, sans seed ni migration.
+Aucun import, suppression, populate, changement de données sources ou fixtures en base.
+
+MESURES
+Avant corrections frontend, après restauration de l'API :
+[{"page": "projects", "readyMs": 2262}, {"page": "Dictionnaire RRC", "readyMs": 13009}, {"page": "KPI Analytics", "readyMs": 11041}, {"page": "Dictionnaire RRC", "readyMs": 242}]
+Après corrections frontend, seconde mesure :
+[{"page": "projects", "readyMs": 1501}, {"page": "Dictionnaire RRC", "readyMs": 5274}, {"page": "KPI Analytics", "readyMs": 3909}, {"page": "Dictionnaire RRC", "readyMs": 231}]
+Première mesure après : after.json (Dictionnaire 5764 ms, KPI 3894 ms).
+Dictionnaire : 13009 -> 5274 ms (-59,5%).
+KPI : 11041 -> 3909 ms (-64,6%).
+Retour au Dictionnaire : 231 ms.
+
+Vue d'ensemble initiale : ne terminait pas dans la fenêtre de 20 s et continuait de
+consommer le CPU après navigation. Le temps d'achèvement initial n'a pas été mesuré.
+Après première correction backend : réponse API 33,554 s, 75 762 881 octets décompressés.
+Backend final 0.52.3, affichage navigateur : 19411 ms.
+Ressource HTTP finale : [{"url": "http://localhost:5174/api/projects/4b7bfd50ddb6/overview", "duration": 16035.29999999702, "encoded": 5825574, "decoded": 75762881}]
+Une seule requête overview et aucune erreur JavaScript dans ce contrôle.
+La page reste coûteuse au premier chargement : population complète de 349703 points.
+Aucun résultat échantillonné ou supprimé pour améliorer artificiellement la mesure.
+
+CAUSES ET CORRECTIONS
+1. Raw et Templates demandés à chaque entrée sur Paramètres, même inutilisés.
+   Désormais chargés lors de l'ouverture de l'onglet. Les trois onglets sont conservés.
+2. Métadonnées annulées/relancées lors des remontages ou navigations :
+   les requêtes par projet terminent maintenant dans leur propre cache.
+   Les analyses filtrées RRC/KPI restent annulables, avec leur contexte propre.
+3. Overview parcourait N points pour chaque tranche et opérateur : Test_3 a 39967 tranches.
+   Indexation en un passage, mêmes observations/ordre dans chaque groupe, fmean et arrondis.
+4. ORM complet puis accès SQLAlchemy Row coûteux :
+   lecture de 14 colonnes par lots de 10000, tuples compacts et validation Pydantic par liste.
+5. JSON volumineux :
+   sérialisation directe du modèle validé et gzip négocié uniquement pour overview.
+   Décompression strictement identique au JSON validé, gardes identity/gzip/q=0.
+6. Contrat incompatible avec les coordonnées et attributions absentes autorisées en DB :
+   champs nullable, validation front explicite, affichage N/D, exclusion de la carte uniquement
+   des points sans coordonnées. Les points restent dans les populations et statistiques.
+
+INTEGRITE
+SQL utilisé :
+SELECT count(*) AS points, count(DISTINCT left(ts,10)) AS trend_buckets,
+       count(*) FILTER (WHERE lat IS NULL OR lng IS NULL) AS without_gps
+FROM measurement_points WHERE project_id='4b7bfd50ddb6';
+Résultat : 349703 | 39967 | 281613.
+Réponse live vérifiée : mêmes trois nombres.
+Parité hors production entre l'algorithme précédent et nouveau sur 0/1/100/10000 lignes TEST,
+les quatre métriques, null et zéro ; aucun jeu TEST inséré en DB.
+Les tests de transport comparent le JSON complet décompressé.
+Aucune modification de formule, décodage ou conversion.
+
+VALIDATION
+PASS : 37 tests RRC, 8 tests KPI, 2 tests contrat nullable.
+PASS : TypeScript et build production frontend.
+PASS : lint des composants de chargement et du test ajouté.
+PASS : lint fonctionnel des fichiers partagés, règle de formatage héritée désactivée pour ce contrôle.
+Limitation : le lint global du dépôt contient des erreurs antérieures ; pas déclaré PASS.
+PASS : parité backend et encodage ; build backend depuis HEAD propre.
+PASS : navigateur — trois onglets, Raw/Templates à la demande (un appel chacun),
+DRX, trois regroupements, recherches indépendantes, clavier, 400px et thème sombre.
+PASS : filtres — aucune analyse avant Appliquer, Reset reste brouillon, quatre largeurs.
+PASS : navigateur overview final, une requête et aucune erreur JavaScript.
+Les scripts ne lancent pas les suites backend avec nettoyage destructif de projets.
+
+COMMANDES
+Frontend, depuis franco-focus-forge :
+  PHASE=after-repeat node scripts/page-performance-check.mjs
+  node scripts/page-performance-regression.mjs
+  node scripts/page-performance-filter-check.mjs
+  node scripts/page-performance-overview-check.mjs
+  node scripts/page-performance-navigation.mjs
+  npx tsc --noEmit
+  npx eslint src/features/dict-v2/DictV2Page.tsx src/features/kpi/KpiWorkspace.tsx src/test/overview-contract.test.ts
+  npx eslint src/lib/api/client.ts src/lib/api/schemas.ts src/components/bc4/RadioMap.tsx src/routes/_app.overview.tsx --rule 'prettier/prettier: off'
+  VITE_BC4_DATA=mock npx vitest run --config scripts/vitest-rrc.config.mjs --configLoader native
+  VITE_BC4_DATA=mock npx vitest run --config scripts/kpi-vitest.config.mjs --configLoader native src/test/overview-contract.test.ts src/test/kpi-workspace.test.ts
+  docker exec bc4-front-1 bun run build
+Backend, depuis bc4-back :
+  BC4_DSN=postgresql+psycopg://TEST:TEST@localhost/TEST BC4_JWT_SECRET=TEST-offline-secret .venv/bin/python scripts/guard_overview_performance.py
+  git diff --check
+  docker build -t bc4-api:0.52.3 .
+  curl -s localhost:8000/health
+
+LIVRAISON / EXPLOITATION
+Backend commit final propre : d5574eb. Image bc4-api:0.52.3.
+Conteneur bc4-api-1 recréé avec les mêmes volumes, réseau, variables et ports,
+commande uvicorn uniquement (pas le seed ni les migrations du CMD historique).
+Anciennes images/conteneurs arrêtés conservés pour retour arrière ; aucun volume supprimé.
+Un prochain remplacement par Compose doit préserver cette commande sans seed/migration automatique.
+Frontend : version 1.35.0 visible via le serveur Vite existant, build production validé.
+Pas de commit global frontend ni reconstruction d'image depuis le dépôt partagé déjà modifié.
+
+LIMITES
+- Premier chargement overview encore lourd : tous les points et toutes les tranches sont transmis.
+  Une séparation API entre synthèse et points paginés serait un lot distinct, avec contrat explicite.
+- Pas de preuve que la saturation mémoire initiale provenait exclusivement d'overview.
+- Mesures locales sur Test_3, non extrapolables à tous projets/réseaux.
+- Autres pages : résultats de navigation dans other-pages.json, métrique d'activité réseau
+  incluant le délai de stabilisation ; ne pas confondre avec le seul temps de rendu.

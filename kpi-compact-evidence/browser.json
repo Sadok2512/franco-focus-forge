@@ -1,0 +1,114 @@
+{
+  "actualCodes": [
+    "LTE_RRC_ATTEMPTS",
+    "LTE_RRC_SETUP_COUNT",
+    "LTE_RRC_SUCCESS"
+  ],
+  "sidebarRoots": [
+    "LTE84 · 10 AVAIL",
+    "NR80 · 0 AVAIL",
+    "EN-DC25 · 0 AVAIL",
+    "KPI agrégés8 · 4 AVAIL"
+  ],
+  "resize": {
+    "before": 280,
+    "after": 349
+  },
+  "filters": {
+    "x": 16,
+    "y": 72,
+    "width": 1688,
+    "height": 73
+  },
+  "selectedOperatorBadges": "PASS",
+  "explicitApply": "PASS",
+  "viewports": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "boxes": [
+        {
+          "x": 420.640625,
+          "y": 213,
+          "width": 730.171875
+        },
+        {
+          "x": 1162.8125,
+          "y": 213,
+          "width": 730.1875
+        },
+        {
+          "x": 420.640625,
+          "y": 572.390625,
+          "width": 1472.359375
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "boxes": [
+        {
+          "x": 320.6875,
+          "y": 213,
+          "width": 540.15625
+        },
+        {
+          "x": 872.84375,
+          "y": 213,
+          "width": 540.15625
+        },
+        {
+          "x": 320.6875,
+          "y": 572.390625,
+          "width": 1092.3125
+        }
+      ]
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "boxes": [
+        {
+          "x": 287.375,
+          "y": 251,
+          "width": 476.8125
+        },
+        {
+          "x": 776.1875,
+          "y": 251,
+          "width": 476.8125
+        },
+        {
+          "x": 287.375,
+          "y": 610.390625,
+          "width": 965.625
+        }
+      ]
+    },
+    {
+      "width": 400,
+      "height": 844,
+      "boxes": [
+        {
+          "x": 10,
+          "y": 736,
+          "width": 380
+        },
+        {
+          "x": 10,
+          "y": 1095.390625,
+          "width": 380
+        },
+        {
+          "x": 10,
+          "y": 1454.78125,
+          "width": 380
+        }
+      ]
+    }
+  ],
+  "errorRecovery": "PASS",
+  "consoleErrors": [],
+  "result": "PASS"
+}

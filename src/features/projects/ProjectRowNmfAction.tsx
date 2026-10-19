@@ -17,6 +17,7 @@
 import { AlertTriangle, Loader2, Upload } from "lucide-react";
 import { useId, useRef } from "react";
 import type { NmfImportReport } from "@/lib/api/client";
+import { importProgressLabel } from "./shared";
 import { useNmfUpload } from "./useNmfUpload";
 
 export type ProjectRowNmfReport = {
@@ -61,13 +62,12 @@ export function ProjectRowNmfAction({
     if (!fs || !fs.length) return;
     const files = Array.from(fs);
     onStart?.();
-    const r = await nmf.upload(files);
+    const r = await nmf.upload(files, onError);
     // Réinitialise la valeur de l'input pour permettre un re-pick
     // identique (sinon onChange ne refire pas).
     if (inputRef.current) inputRef.current.value = "";
     if (!r) {
-      // Erreur : le hook a stocké le message utilisateur.
-      onError(nmf.globalError ?? "Erreur inconnue");
+      // Le hook a déjà transmis l'erreur de cet appel à onError.
       return;
     }
     const firstErr = r.by_file.find((f) => f.status === "error");
@@ -103,9 +103,11 @@ export function ProjectRowNmfAction({
           <Upload className="h-3.5 w-3.5" aria-hidden />
         )}
         {uploading
-          ? nmf.cumulativePercent == null
-            ? "Envoi…"
-            : `Envoi ${nmf.cumulativePercent}%`
+          ? nmf.jobProgress
+            ? importProgressLabel(nmf.jobProgress)
+            : nmf.cumulativePercent === 100
+              ? "Envoi terminé, réception…"
+              : `Envoi ${nmf.cumulativePercent ?? 0}%`
           : "Ajouter des logs"}
       </button>
       {nmf.status === "error" && nmf.globalError && (
@@ -115,7 +117,7 @@ export function ProjectRowNmfAction({
           title={nmf.globalError}
         >
           <AlertTriangle className="h-3 w-3" aria-hidden />
-          Échec import
+          Requête d’import échouée
         </span>
       )}
     </div>

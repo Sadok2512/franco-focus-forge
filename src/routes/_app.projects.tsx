@@ -41,6 +41,7 @@ import {
   TechBadge,
   selectOperatorLabels,
   selectTechLabels,
+  importProgressLabel,
 } from "@/features/projects/shared";
 
 export const Route = createFileRoute("/_app/projects")({
@@ -134,7 +135,17 @@ function emptyOverlay(): RowOverlay {
 function ProjectsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const q = useQuery({ queryKey: ["projects"], queryFn: ({ signal }) => getProjects(signal) });
+  const [overlays, setOverlays] = useState<Record<string, RowOverlay>>({});
+  const q = useQuery({
+    queryKey: ["projects"],
+    queryFn: ({ signal }) => getProjects(signal),
+    // Le serveur peut continuer après une coupure de la requête d'import.
+    refetchInterval: (query) =>
+      Object.values(overlays).some((overlay) => overlay.status === "processing") ||
+      query.state.data?.some((p) => p.status === "processing" && ((p.n_files ?? 0) > 0 || p.import_job != null))
+        ? 5000
+        : false,
+  });
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [op, setOp] = useState("");
@@ -155,7 +166,6 @@ function ProjectsPage() {
   }, [notice]);
   // Overlay local par projectId pour afficher la progression / le résultat
   // de l'upload NMF SANS attendre un refetch complet des projets.
-  const [overlays, setOverlays] = useState<Record<string, RowOverlay>>({});
   // 1.5.1 — Accordéon par ligne (expand/collapse) : set d'ids ouverts
   // pour permettre plusieurs lignes ouvertes simultanément. Le fetch du
   // rapport d'import est PARESSEUX côté `ProjectRowDetails`.
@@ -206,7 +216,7 @@ function ProjectsPage() {
   // dédié (ProjectRowNmfAction) sur la même ligne. L'utilisateur peut
   // alors aller librement sur Dictionnaire / Assistant / Vue d'ensemble
   // et y retrouver CE projet (plus d'auto-sélection silencieuse).
-  const { setActiveProject } = useActiveProject();
+  const { activeProject, setActiveProject } = useActiveProject();
   const open = (p: Project) => {
     setActiveProject({ id: p.id, name: p.name });
     toast.success(`Projet « ${p.name} » chargé`, {
@@ -241,12 +251,14 @@ function ProjectsPage() {
   );
 
   const handleError = useCallback(
-    (id: string, userMsg: string) =>
+    (id: string, userMsg: string) => {
       // L'erreur HTTP ne doit pas « verrouiller » la ligne en Traitement :
       // on efface le statut dérivé pour que la ligne retombe sur
       // `p.status` et on expose l'erreur en badge local.
-      setOverlay(id, { status: null, errorMsg: userMsg }),
-    [setOverlay],
+      setOverlay(id, { status: null, errorMsg: userMsg });
+      void qc.invalidateQueries({ queryKey: ["projects"] });
+    },
+    [qc, setOverlay],
   );
 
   // 1.6.0 — Suppression projet. L'invalidation `projects` provoque un
@@ -342,6 +354,7 @@ function ProjectsPage() {
                     "Opérateurs",
                     "Technologies",
                     "Période",
+                    "Logs importés",
                     "Captures",
                     "Statut",
                     "Actions",
@@ -357,13 +370,15 @@ function ProjectsPage() {
                 </tr>
               </thead>
               {rows.map((p) => {
+                const isActive = activeProject?.id === p.id;
                 const ov = overlays[p.id] ?? emptyOverlay();
-                const effectiveStatus = ov.status ?? p.status;
+                const effectiveStatus = p.import_job ? p.status : (ov.status ?? p.status);
+                const activeImport = p.import_job != null && ["queued", "decoding", "finalizing"].includes(p.import_job.status);
                 const S = STATUS[effectiveStatus];
                 // Captures : l'overlay (rapport NMF) prime quand il
                 // existe. Jamais 0 par défaut — on retombe sur
                 // `p.captures` du listing si pas d'overlay.
-                const effectiveCaptures = ov.captures ?? p.captures;
+                const effectiveCaptures = p.import_job ? p.captures : (ov.captures ?? p.captures);
                 // 1.6.0 — Opérateurs / Technologies : LABELS visibles.
                 // Préférence B0 (`project.operators` / `project.technologies`
                 // qui portent déjà les libellés Orange/SFR/LTE/NR), fallback
@@ -386,7 +401,9 @@ function ProjectsPage() {
                 // <table>→<tbody>→<tr> sans wrapper <div>.
                 return (
                   <tbody key={p.id}>
-                    <tr className="border-t hover:bg-muted/50">
+                    <tr
+                      className={`border-t transition-colors ${isActive ? "bg-green-50 hover:bg-green-100/70 dark:bg-green-950/30 dark:hover:bg-green-950/50" : "hover:bg-muted/50"}`}
+                    >
                       <td className="px-2 py-3 align-top">
                         <button
                           type="button"
@@ -438,6 +455,9 @@ function ProjectsPage() {
                         <br />
                         {fmtDate(p.periodEnd)}
                       </td>
+                      <td className="num px-4 py-3" title="Fichiers NMF décodés avec succès">
+                        {p.n_files == null ? "N/D" : p.n_files.toLocaleString("fr-FR")}
+                      </td>
                       <td className="num px-4 py-3">{fmtCount(effectiveCaptures)}</td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
@@ -447,6 +467,14 @@ function ProjectsPage() {
                             <S.i className="h-3.5 w-3.5" />
                             {S.l}
                           </span>
+                          {p.import_job && (
+                            <span className="text-xs text-muted-foreground" role="status">
+                              {importProgressLabel(p.import_job)}
+                            </span>
+                          )}
+                          {p.import_job?.error_msg && (
+                            <span className="text-xs text-destructive">{p.import_job.error_msg}</span>
+                          )}
                           {ov.errorMsg && (
                             <span
                               className="inline-flex items-center gap-1 text-[11px] text-destructive"
@@ -461,14 +489,18 @@ function ProjectsPage() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <button
-                            onClick={() => open(p)}
-                            className="flex h-8 items-center gap-1.5 rounded-md border border-primary px-3 text-xs font-semibold text-primary hover:bg-accent"
+                            type="button"
+                            aria-pressed={isActive}
+                            onClick={() => { if (!isActive) open(p); }}
+                            className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-xs font-semibold transition-colors ${isActive ? "border-green-700 bg-green-700 text-white hover:bg-green-800 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700" : "border-primary text-primary hover:bg-accent"}`}
                           >
-                            <FolderOpen className="h-3.5 w-3.5" /> Ouvrir
+                            {isActive ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : <FolderOpen className="h-3.5 w-3.5" aria-hidden />}
+                            {isActive ? "Projet actif" : "Ouvrir"}
                           </button>
                           <ProjectRowNmfAction
                             projectId={p.id}
                             projectName={p.name}
+                            disabled={activeImport}
                             onStart={() => handleStart(p.id)}
                             onReport={(r) => handleReport(p.id, r)}
                             onError={(m) => handleError(p.id, m)}
@@ -504,7 +536,7 @@ function ProjectsPage() {
                     </tr>
                     {isOpen && (
                       <tr id={`project-row-details-${p.id}`} className="border-t">
-                        <td colSpan={9} className="p-0">
+                        <td colSpan={10} className="p-0">
                           <ProjectRowDetails project={p} open={isOpen} />
                         </td>
                       </tr>

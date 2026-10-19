@@ -52,7 +52,7 @@ export function UsersPanel() {
     mutationFn: (u: User) => resetPassword(actor, u.id),
     onSuccess: (_r, u) =>
       setNotice(
-        `Réinitialisation simulée pour ${u.login} : aucun mot de passe n'est affiché ni stocké.`,
+        `Réinitialisation déclenchée pour ${u.login} : le back POST /settings/users/{id}/reset-password ne renvoie jamais le mot de passe généré ; l'utilisateur doit être réinvité.`,
       ),
     onError: (e) => setNotice(errMsg(e)),
   });
@@ -71,7 +71,7 @@ export function UsersPanel() {
   return (
     <SettingsSection
       title="Utilisateurs"
-      description="Comptes, rôles et statut. Démo : la sécurité effective exigera un contrôle côté serveur."
+      description="Comptes, rôles et statut. Backend : GET/POST /settings/users (bc4-back)."
       actions={
         <>
           <div className="relative">

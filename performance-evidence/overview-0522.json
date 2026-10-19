@@ -1,0 +1,17 @@
+{
+  "at": "2026-10-18T22:53:08.416Z",
+  "project": "4b7bfd50ddb6",
+  "readyMs": 20352,
+  "resources": [
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/overview",
+      "duration": 16962.5,
+      "encoded": 5825574,
+      "decoded": 75762881
+    }
+  ],
+  "requests": [
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/overview"
+  ],
+  "errors": []
+}

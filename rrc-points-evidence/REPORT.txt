@@ -1,0 +1,75 @@
+BC4 — RRC VALUES ON MAP
+Date: 2026-10-18
+Frontend: 1.31.0 -> 1.32.0 (MINOR)
+Backend: 0.49.0 -> 0.50.0 (MINOR)
+Backend changes explicitly authorized by the user's "do it" response to the API contract limitation.
+
+DELIVERED
+GET /projects/{project_id}/dict/v2/map returns selected canonical parameter occurrences with values and traceable event coordinates. Every point carries occurrence_id, event_id, capture_id, seq, nmf_file_id, path and source. Coordinates come exclusively from the corresponding same-project/same-technology stg_event. No cell-site positions, interpolation, cross-capture matching or parser changes.
+Filters: applied technology, operator, band, supported geographic dimensions, selected parameter keys. Geography reuses existing strict ECGI associations through EXISTS; duplicate reference rows cannot multiply occurrences. Distribution now accepts an optional technology filter to match the map population; existing calls without it retain their previous behavior.
+Coverage separates total valued occurrences from the geolocated subset. Null values/coordinates are excluded, actual numeric zeros preserved. Rows follow (capture_id, seq, occurrence_id). Default 5000-point cap, maximum 10000, explicit truncation and returned-population legend counts. Maximum 100 selected canonical keys per map request.
+MapLibre implementation reused: clustered circles, BC4 operator colors, dynamic legend, safe DOM popups with source evidence and selection of overlapping occurrences. Cluster popup shows up to its first 100 leaves with an explicit count and zoom action. Categorical value colors; continuous scales only when converted numeric values have a consistent unit. No invented metrics.
+React Query cache and abort signals: draft filter changes do not fetch map data; applied changes do. The map instance survives fullscreen and height changes. Closing/reopening the panel is supported.
+
+VALIDATION
+Backend: 15 transactional PostgreSQL tests PASS, using temporary tables and rollback (9 new map tests + 6 existing geographic tests). Includes provenance, project isolation, missing/out-of-range coordinates, genuine zero, operator/band/technology/geography filters, truncation, geographic deduplication, API validation and authentication.
+Frontend: 77 existing tests across 11 files PASS.
+TypeScript: PASS.
+Scoped ESLint on changed application files: PASS, no diagnostics.
+Frontend production build: PASS.
+Backend Docker image build: PASS.
+Browser real-data checks: PASS (browser.json). Actual markers and value/source popup, categorical coloring, operator legend, no request before Apply, filtered response, fullscreen/Escape, resize without extra requests, map toggle with loaded points, mobile overflow at 400px.
+No synthetic measurements were used in the application or real-data browser screenshots. Synthetic test rows exist only in transactional temporary database tests.
+Global repository lint was not rerun for this follow-up; its previously documented unrelated failures are not claimed resolved.
+
+REAL PROJECT COVERAGE
+TEST2 / dl-Bandwidth: 4 total, 4 geolocated, Orange (4).
+Test_3 / SIB1 mnc: 1763 total, 199 geolocated; Orange 118, Free 50, Bouygues 31.
+Test_3 / loggingDuration-r10: 160 total, 0 geolocated.
+Test_3 / traceReference-r10 mnc: 160 total, 0 geolocated.
+The last two selections still cannot display measurement markers because their source events have no coordinates. This is a data-availability limitation, not a hidden API failure. Exact canonical keys and API counters are in test3-coverage.json.
+
+DEPLOYMENT
+Built bc4-api:latest and recreated only the API service using docker compose up -d --no-deps api. Current API image sha256:98660f6359157a4459240da7ce65a5e818f5945827be7a1c13a10959969c3d55. Existing database/source volumes preserved; no schema migration added. API health verified. Frontend served from the existing mounted development workspace at :5174. Production frontend build also completed.
+
+CHANGED FILES IN THIS FOLLOW-UP
+bc4-back/app/dict/map_v2.py
+bc4-back/app/dict/service_v2.py
+bc4-back/app/routes/project_dict_v2.py
+bc4-back/app/schemas/dict_v2.py
+bc4-back/app/main.py (version)
+bc4-back/pyproject.toml
+bc4-back/CHANGELOG.md
+bc4-back/tests/test_dict_map_v2.py
+franco-focus-forge/src/lib/api/dict-v2.ts
+franco-focus-forge/src/lib/api/client.ts
+franco-focus-forge/src/features/dict-v2/DictV2Page.tsx
+franco-focus-forge/src/features/dict-v2/RrcMapPanel.tsx
+franco-focus-forge/src/features/dict-v2/RrcMapLayers.tsx
+franco-focus-forge/src/features/dict-v2/map-view.ts
+franco-focus-forge/src/features/dict-v2/premium.css
+franco-focus-forge/src/features/kpi/KpiMapOSM.tsx (shared engine extension; default KPI behavior retained)
+franco-focus-forge/package.json
+franco-focus-forge/CHANGELOG.md
+franco-focus-forge/scripts/rrc-points-check.mjs
+franco-focus-forge/scripts/rrc-map-api-probe.mjs
+franco-focus-forge/scripts/rrc-test3-map-proof.mjs
+franco-focus-forge/scripts/rrc-test3-points-check.mjs
+franco-focus-forge/rrc-points-evidence/*
+Preexisting unrelated workspace edits preserved. No parser, conversions, KPI formulas or source data changes.
+
+COMMANDS
+npm run typecheck
+npx eslint (changed application files; scoped script formatting via --fix)
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+docker exec bc4-api-1 python -m pytest tests/test_dict_map_v2.py tests/test_dict_geo_filters.py -q
+docker exec bc4-front-1 bun run build
+docker build -t bc4-api:latest .
+docker compose up -d --no-deps api
+node scripts/rrc-points-check.mjs
+node scripts/rrc-test3-map-proof.mjs
+node scripts/rrc-test3-points-check.mjs
+Read-only API/SQL checks and git diff --check.
+
+Additional browser acceptance: Test_3 / SIB1 mnc rendered 199 real occurrences with matching Orange/Free/Bouygues legend and no browser errors (test3-browser.log, test3-real-points.png).
+Cluster acceptance: clicked an actual Test_3 cluster, opened multiple occurrence choices, verified source references and the zoom action (test3-cluster-values.png). PASS.

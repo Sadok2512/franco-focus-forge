@@ -1,0 +1,258 @@
+{
+  "parameters": [
+    "dl-Bandwidth",
+    "spare",
+    "phich-Duration",
+    "phich-Resource"
+  ],
+  "mapContract": {
+    "status": 200,
+    "responseFields": [
+      "path",
+      "system",
+      "points"
+    ],
+    "pointCount": 6,
+    "pointFields": [
+      "lat",
+      "lon",
+      "value_raw",
+      "value_converted",
+      "operator",
+      "band"
+    ]
+  },
+  "G1": "PASS",
+  "G2": "PASS",
+  "chart1": {
+    "width": 968,
+    "children": [
+      968
+    ]
+  },
+  "chart2": {
+    "width": 968,
+    "children": [
+      476,
+      476
+    ]
+  },
+  "chart3": {
+    "width": 968,
+    "children": [
+      476,
+      476,
+      968
+    ]
+  },
+  "rootColors": [
+    {
+      "tech": "LTE",
+      "color": "rgb(23, 105, 224)"
+    },
+    {
+      "tech": "NR",
+      "color": "rgb(22, 163, 74)"
+    }
+  ],
+  "G6": "PASS",
+  "G7": "PASS",
+  "G5": "PASS (basemap fullscreen)",
+  "G9": "PASS",
+  "appliedContext": "PASS",
+  "G8": "PASS",
+  "resize": {
+    "before": 400,
+    "after": 450.515625
+  },
+  "size1920": {
+    "height": 1080,
+    "document": 1080,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1184.359375,
+        "position": "absolute",
+        "overflow": "hidden"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 1080,
+        "bottom": 1080
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 1080
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size1440": {
+    "height": 900,
+    "document": 900,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1184.359375,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 969.421875,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 900,
+        "bottom": 900
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 900
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size1280": {
+    "height": 800,
+    "document": 800,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1288.859375,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 987.921875,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 800,
+        "bottom": 800
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 800
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size400": {
+    "height": 900,
+    "document": 3759,
+    "overflowNodes": [
+      {
+        "tag": "CANVAS",
+        "cls": "maplibregl-canvas",
+        "bottom": 3087.671875,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "DIV",
+        "cls": "maplibregl-ctrl-bottom-left ",
+        "bottom": 3087.671875,
+        "position": "absolute",
+        "overflow": "visible"
+      },
+      {
+        "tag": "DIV",
+        "cls": "maplibregl-ctrl-bottom-right ",
+        "bottom": 3087.671875,
+        "position": "absolute",
+        "overflow": "visible"
+      },
+      {
+        "tag": "DIV",
+        "cls": "absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground",
+        "bottom": 3087.671875,
+        "position": "absolute",
+        "overflow": "visible"
+      },
+      {
+        "tag": "DIV",
+        "cls": "absolute left-2 bottom-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm",
+        "bottom": 3079.671875,
+        "position": "absolute",
+        "overflow": "visible"
+      },
+      {
+        "tag": "SUMMARY",
+        "cls": "maplibregl-ctrl-attrib-button",
+        "bottom": 3077.671875,
+        "position": "absolute",
+        "overflow": "visible"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 3758.671875,
+        "bottom": 3758.671875
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 3758.671875
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "scroll": {
+    "top": 386,
+    "height": 519,
+    "total": 905
+  },
+  "G10": "PASS",
+  "G11": "PASS",
+  "consoleErrors": [],
+  "result": "PASS"
+}

@@ -1,0 +1,29 @@
+seconds 32.34275481700024 points 349703
+         4003895 function calls (3998414 primitive calls) in 32.179 seconds
+
+   Ordered by: cumulative time
+   List reduced from 1383 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        1    7.971    7.971   32.180   32.180 /app/app/services/overview.py:102(compute_overview)
+   349703    8.574    0.000   12.652    0.000 /app/app/services/overview.py:77(_point_schema)
+        1    0.016    0.016    5.780    5.780 /usr/local/lib/python3.12/site-packages/sqlalchemy/orm/query.py:2651(all)
+        1    0.006    0.006    5.070    5.070 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/result.py:1362(all)
+        1    0.887    0.887    5.065    5.065 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/result.py:543(_allrows)
+   389744    1.833    0.000    4.553    0.000 /usr/local/lib/python3.12/site-packages/pydantic/main.py:204(__init__)
+        1    0.146    0.146    4.178    4.178 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/result.py:2266(_fetchall_impl)
+        8    2.400    0.300    4.033    0.504 /usr/local/lib/python3.12/site-packages/sqlalchemy/orm/loading.py:207(chunks)
+        7    0.656    0.094    2.945    0.421 /app/app/services/overview.py:117(mv)
+   389744    2.720    0.000    2.720    0.000 {method 'validate_python' of 'pydantic_core._pydantic_core.SchemaValidator' objects}
+        4    0.872    0.218    1.633    0.408 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/result.py:537(_raw_all_rows)
+701855/700838    1.409    0.000    1.435    0.000 {built-in method builtins.getattr}
+        3    0.061    0.020    0.895    0.298 {built-in method builtins.sum}
+        4    0.000    0.000    0.894    0.224 /usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2301(execute)
+        4    0.000    0.000    0.894    0.224 /usr/local/lib/python3.12/site-packages/sqlalchemy/orm/session.py:2134(_execute_internal)
+        4    0.000    0.000    0.834    0.208 /usr/local/lib/python3.12/site-packages/sqlalchemy/orm/context.py:295(orm_execute_statement)
+   187620    0.166    0.000    0.833    0.000 /app/app/services/overview.py:167(<genexpr>)
+        4    0.000    0.000    0.832    0.208 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1374(execute)
+        4    0.000    0.000    0.832    0.208 /usr/local/lib/python3.12/site-packages/sqlalchemy/sql/elements.py:506(_execute_on_connection)
+        4    0.000    0.000    0.832    0.208 /usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py:1590(_execute_clauseelement)
+
+

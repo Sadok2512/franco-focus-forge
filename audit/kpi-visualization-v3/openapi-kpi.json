@@ -1,0 +1,382 @@
+{
+  "/projects/{project_id}/kpi/catalog": {
+    "get": {
+      "tags": [
+        "kpi-project"
+      ],
+      "summary": "Kpi Catalog",
+      "description": "Catalogue v2 : 194 canoniques + 14 alias (208 input xlsx).\n\nSi ``service_type[]`` est fourni, les KPI hors scope sont marqu\u00e9s\n``NOT_APPLICABLE`` dans l'arbre (jamais filtr\u00e9s silencieusement).",
+      "operationId": "kpi_catalog_projects__project_id__kpi_catalog_get",
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "project_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Project Id"
+          }
+        },
+        {
+          "name": "service_type",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Service Type"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectKpiCatalog"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/projects/{project_id}/kpi/filters": {
+    "get": {
+      "tags": [
+        "kpi-project"
+      ],
+      "summary": "Kpi Filters",
+      "operationId": "kpi_filters_projects__project_id__kpi_filters_get",
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "project_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Project Id"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectKpiFilters"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/projects/{project_id}/kpi/_rebuild_param_occurrence": {
+    "post": {
+      "tags": [
+        "kpi-project"
+      ],
+      "summary": "Kpi Rebuild Param Occurrence",
+      "description": "Admin \u2014 re-d\u00e9code tous les events RRC du projet (purge + repopulate\n``param_occurrence``). \u00c0 appeler apr\u00e8s un release du walker ASN.1\n(ex. 0.42.0 \u2014 BIT STRING long + MCC/MNC concat\u00e9n\u00e9s).",
+      "operationId": "kpi_rebuild_param_occurrence_projects__project_id__kpi__rebuild_param_occurrence_post",
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "project_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Project Id"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "Response Kpi Rebuild Param Occurrence Projects  Project Id  Kpi  Rebuild Param Occurrence Post"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/projects/{project_id}/kpi/_populate_ecgi": {
+    "post": {
+      "tags": [
+        "kpi-project"
+      ],
+      "summary": "Kpi Populate Ecgi",
+      "description": "Admin \u2014 d\u00e9clenche la propagation ECGI pour ce projet.\n\nLit SIB1 depuis ``param_occurrence``, construit la liste des\ncellules observ\u00e9es, propage ``measurement_points.ecgi`` par\n``(capture_id, earfcn)`` et alimente ``cell_ref`` depuis les logs.",
+      "operationId": "kpi_populate_ecgi_projects__project_id__kpi__populate_ecgi_post",
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "project_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Project Id"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "Response Kpi Populate Ecgi Projects  Project Id  Kpi  Populate Ecgi Post"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/projects/{project_id}/kpi/{code}": {
+    "get": {
+      "tags": [
+        "kpi-project"
+      ],
+      "summary": "Kpi Detail",
+      "operationId": "kpi_detail_projects__project_id__kpi__code__get",
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ],
+      "parameters": [
+        {
+          "name": "project_id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Project Id"
+          }
+        },
+        {
+          "name": "code",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "string",
+            "title": "Code"
+          }
+        },
+        {
+          "name": "operator",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Operator"
+          }
+        },
+        {
+          "name": "service_type",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Service Type"
+          }
+        },
+        {
+          "name": "phase",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "title": "Phase"
+          }
+        },
+        {
+          "name": "group_by",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "type": "string",
+            "default": "operator",
+            "title": "Group By"
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProjectKpiDetail"
+              }
+            }
+          }
+        },
+        "422": {
+          "description": "Validation Error",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HTTPValidationError"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/kpi/catalog": {
+    "get": {
+      "tags": [
+        "kpi"
+      ],
+      "summary": "Get Kpi Catalog",
+      "operationId": "get_kpi_catalog_kpi_catalog_get",
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "Response Get Kpi Catalog Kpi Catalog Get"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "/settings/kpi": {
+    "get": {
+      "tags": [
+        "settings"
+      ],
+      "summary": "Get Kpi Catalog Settings",
+      "operationId": "get_kpi_catalog_settings_settings_kpi_get",
+      "responses": {
+        "200": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/KpiCatalogResponse"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ]
+    },
+    "post": {
+      "tags": [
+        "settings"
+      ],
+      "summary": "Create Kpi",
+      "operationId": "create_kpi_settings_kpi_post",
+      "responses": {
+        "501": {
+          "description": "Successful Response",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "title": "Response Create Kpi Settings Kpi Post"
+              }
+            }
+          }
+        }
+      },
+      "security": [
+        {
+          "HTTPBearer": []
+        }
+      ]
+    }
+  }
+}

@@ -1,21 +1,19 @@
+import { rrcRequestMessage } from "./request-recovery";
 // bc4-front — Panneau droit du Dict v2 : filtres (chips comparables à
 // /kpi), segmenté opérateur|bande|les deux, un graphe par paramètre
 // coché, verdict + chips, tableau commun avec export CSV.
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { GroupedValueTable } from "./GroupedValueTable";
 import type { EChartsOption } from "echarts";
 import { Chart } from "@/components/bc4/Chart";
 import type {
+  DictTreeResponse,
   DictDistributionResponse,
   DistributionBlock,
   GroupByMode,
 } from "@/lib/api/dict-v2";
-import {
-  discriminatorChips,
-  groupKeyColor,
-  groupKeyLabel,
-  originLabel,
-} from "./types";
+import { discriminatorChips, groupKeyColor, groupKeyLabel, originLabel } from "./types";
 
 export function ValueExplorer({
   distribution,
@@ -24,6 +22,9 @@ export function ValueExplorer({
   isLoading,
   error,
   selectedKeys,
+  catalog,
+  filtered = false,
+  onRetry,
 }: {
   distribution: DictDistributionResponse | null;
   groupBy: GroupByMode;
@@ -31,30 +32,30 @@ export function ValueExplorer({
   isLoading: boolean;
   error: unknown;
   selectedKeys: string[];
+  catalog?: DictTreeResponse | null;
+  filtered?: boolean;
+  onRetry?: () => void;
 }) {
   const blocks = distribution?.blocks ?? [];
-  const groupByText =
-    groupBy === "operator" ? "opérateur" : groupBy === "band" ? "bande" : "opérateur × bande";
-  const selText =
-    blocks.length > 0
-      ? `${blocks.map((b) => b.display_name).join("  ·  ")}   —   comparé par ${groupByText}`
-      : "—";
 
   return (
-    <section className="panel flex flex-col gap-3 p-4" data-testid="dict-value-explorer">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-base font-bold">Distribution des valeurs</h2>
-          <p className="text-xs text-muted-foreground" data-testid="dict-selected-text">
-            {selText}
-          </p>
-        </div>
+    <section className="flex min-w-0 flex-col gap-3 p-1" data-testid="dict-value-explorer">
+      <header className="flex flex-wrap items-start justify-end gap-3">
         <SegGroupBy value={groupBy} onChange={onGroupByChange} />
       </header>
 
       {error ? (
         <div className="rounded-md border border-sev-bad/40 bg-sev-bad/10 p-3 text-xs text-sev-bad">
-          {errorMessage(error)}
+          <span role="alert">{rrcRequestMessage(error)}</span>
+          {onRetry && (
+            <button
+              className="rrc-control ml-2"
+              aria-label="Réessayer les résultats"
+              onClick={onRetry}
+            >
+              Réessayer
+            </button>
+          )}
         </div>
       ) : null}
 
@@ -70,19 +71,29 @@ export function ValueExplorer({
         </div>
       )}
 
-      {blocks.length > 0 && (
-        <div
-          className="grid gap-3"
-          style={{ gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))" }}
-          data-testid="dict-charts"
-        >
-          {blocks.map((b) => (
-            <ChartCard key={b.param_key} block={b} groupBy={groupBy} />
-          ))}
-        </div>
+      {selectedKeys.length > 0 && !isLoading && !error && blocks.length === 0 && (
+        <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+          Aucune valeur pour les filtres appliqués. Les paramètres cochés sont conservés.
+        </p>
       )}
+      {blocks.length > 0 && blocks.every((block) => !block.values.length) && (
+        <p role="status" className="rrc-context-notice">
+          Aucune valeur pour les filtres appliqués.
+        </p>
+      )}
+      <div className="rrc-data-layout">
+        {blocks.length > 0 && (
+          <div className="rrc-charts" data-testid="dict-charts" data-chart-count={blocks.length}>
+            {blocks.map((b) => (
+              <ChartCard key={b.param_key} block={b} groupBy={groupBy} filtered={filtered} />
+            ))}
+          </div>
+        )}
 
-      {blocks.length > 0 && <ValueTable blocks={blocks} groupBy={groupBy} />}
+        {blocks.length > 0 && (
+          <GroupedValueTable blocks={blocks} groupBy={groupBy} catalog={catalog ?? null} />
+        )}
+      </div>
     </section>
   );
 }
@@ -100,7 +111,11 @@ function SegGroupBy({
     { v: "operator_band", label: "Les deux" },
   ];
   return (
-    <div className="inline-flex overflow-hidden rounded-md border" role="group" aria-label="Comparer par">
+    <div
+      className="inline-flex overflow-hidden rounded-md border"
+      role="group"
+      aria-label="Comparer par"
+    >
       {opts.map((o, i) => (
         <button
           key={o.v}
@@ -108,7 +123,9 @@ function SegGroupBy({
           onClick={() => onChange(o.v)}
           data-testid={`dict-groupby-${o.v}`}
           className={`${i > 0 ? "border-l" : ""} px-3 py-1.5 text-xs font-medium ${
-            value === o.v ? "bg-accent/40 text-accent-foreground" : "text-muted-foreground hover:bg-muted"
+            value === o.v
+              ? "bg-accent/40 text-accent-foreground"
+              : "text-muted-foreground hover:bg-muted"
           }`}
           aria-pressed={value === o.v}
         >
@@ -119,11 +136,30 @@ function SegGroupBy({
   );
 }
 
-function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: GroupByMode }) {
-  const unitPart = block.unit ? block.unit : "—";
+function ChartCard({
+  block,
+  groupBy,
+  filtered,
+}: {
+  block: DistributionBlock;
+  groupBy: GroupByMode;
+  filtered: boolean;
+}) {
+  const unitPart = block.unit ? block.unit : "N/D";
+  const [dark, setDark] = useState(
+    () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() =>
+      setDark(document.documentElement.classList.contains("dark")),
+    );
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
 
   const build = useCallback(
     (c: { fg: string; muted: string; border: string }): EChartsOption => {
+      if (dark) c = { fg: "#edf3fc", muted: "#b1c2d9", border: "#34445b" };
       // Clés de série (groupes), triées pour un ordre stable (Orange d'abord,
       // puis SFR, Bouygues, Free, puis N/D). Pour operator_band, tri alpha.
       const keyMap = new Map<string, string>();
@@ -144,7 +180,10 @@ function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: Grou
         name: k,
         type: "bar" as const,
         barMaxWidth: 28,
-        itemStyle: { color: keyMap.get(k)!, borderRadius: [2, 2, 0, 0] as [number, number, number, number] },
+        itemStyle: {
+          color: keyMap.get(k)!,
+          borderRadius: [2, 2, 0, 0] as [number, number, number, number],
+        },
         emphasis: { focus: "series" as const },
         data: xCats.map((cat) => {
           const row = block.values.find((v) => v.value_display === cat);
@@ -180,13 +219,13 @@ function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: Grou
         series,
       };
     },
-    [block, groupBy],
+    [block, groupBy, dark],
   );
 
   const verdictBadge = {
-    IDENTIQUE: "bg-sev-good/15 text-sev-good",
+    IDENTIQUE: "bg-muted text-foreground",
     DIFFERENT: "bg-accent/40 text-accent-foreground",
-    NON_COMPARE: "bg-sev-warn/15 text-sev-warn",
+    NON_COMPARE: "bg-muted text-foreground",
   }[block.verdict];
 
   const chips = discriminatorChips(block.discriminators);
@@ -204,7 +243,8 @@ function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: Grou
         <div className="min-w-0">
           <b className="truncate text-sm font-semibold">{block.display_name}</b>
           <div className="text-[11px] text-muted-foreground">
-            {unitPart} · {block.distinct_values} valeur{block.distinct_values > 1 ? "s" : ""} · n={block.n_total}
+            {unitPart} · {block.distinct_values} valeur{block.distinct_values > 1 ? "s" : ""} · n=
+            {block.n_total}
           </div>
         </div>
       </div>
@@ -214,15 +254,24 @@ function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: Grou
         </div>
       ) : (
         <Chart
-          title=""
+          key={dark ? "dark" : "light"}
+          title={block.display_name}
           build={build}
           height={220}
           exportName={`dict_${block.display_name.replace(/[^a-z0-9]+/gi, "_")}`}
         />
       )}
       <div className="flex flex-wrap items-center gap-1 text-[11px]">
-        <span className={`rounded px-1.5 py-0.5 font-semibold ${verdictBadge}`}>{block.verdict}</span>
-        <span className="text-muted-foreground">{block.comparability}</span>
+        {filtered ? (
+          <span className="text-muted-foreground">Comparaison : N/D pour la sélection filtrée</span>
+        ) : (
+          <>
+            <span className={`rounded px-1.5 py-0.5 font-semibold ${verdictBadge}`}>
+              {block.verdict}
+            </span>
+            <span className="text-muted-foreground">{block.comparability}</span>
+          </>
+        )}
         {chips.map((c) => (
           <span
             key={c}
@@ -231,7 +280,9 @@ function ChartCard({ block, groupBy }: { block: DistributionBlock; groupBy: Grou
             {c}
           </span>
         ))}
-        <span className="ml-auto text-[10px] text-muted-foreground">{originLabel(block.origin)}</span>
+        <span className="ml-auto text-[10px] text-muted-foreground">
+          {originLabel(block.origin)}
+        </span>
       </div>
     </div>
   );
@@ -264,131 +315,4 @@ function sortedValues(block: DistributionBlock): string[] {
     return parsed.sort((a, b) => a.n - b.n).map((x) => x.c);
   }
   return [...cats].sort();
-}
-
-function errorMessage(err: unknown): string {
-  if (err && typeof err === "object" && "message" in err) {
-    const m = (err as { message?: unknown }).message;
-    if (typeof m === "string") return m;
-  }
-  return "Erreur chargement distribution";
-}
-
-function ValueTable({ blocks, groupBy }: { blocks: DistributionBlock[]; groupBy: GroupByMode }) {
-  const { rows, keys, keyColors } = useMemo(() => buildTable(blocks, groupBy), [blocks, groupBy]);
-
-  const onCopyCsv = useCallback(() => {
-    const header = ["Paramètre", "Valeur", ...keys, "Total"];
-    const lines = [header.join(";")];
-    for (const r of rows) {
-      lines.push(
-        [r.param, r.value, ...keys.map((k) => r.cells[k] ?? ""), r.total].join(";"),
-      );
-    }
-    const txt = lines.join("\n");
-    navigator.clipboard
-      .writeText(txt)
-      .catch(() => {
-        // Fallback silencieux : download .csv si clipboard refusé.
-        const blob = new Blob([txt], { type: "text/csv;charset=utf-8" });
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(blob);
-        a.download = `dict-distribution_${new Date().toISOString().slice(0, 19)}.csv`;
-        a.click();
-      });
-  }, [rows, keys]);
-
-  if (!rows.length) return null;
-
-  return (
-    <div className="panel">
-      <div className="flex items-center justify-between gap-2 border-b px-4 py-2">
-        <h3 className="text-sm font-semibold">Tableau</h3>
-        <button
-          type="button"
-          onClick={onCopyCsv}
-          className="rounded-md border bg-card px-2 py-1 text-xs font-medium hover:bg-muted"
-          data-testid="dict-csv-copy"
-        >
-          Copier en CSV
-        </button>
-      </div>
-      <div className="overflow-x-auto p-4">
-        <table className="w-full border-collapse text-xs">
-          <thead>
-            <tr className="border-b">
-              <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wider text-muted-foreground">
-                Paramètre
-              </th>
-              <th className="px-2 py-1.5 text-left font-semibold uppercase tracking-wider text-muted-foreground">
-                Valeur
-              </th>
-              {keys.map((k) => (
-                <th
-                  key={k}
-                  className="px-2 py-1.5 text-right font-semibold uppercase tracking-wider text-muted-foreground"
-                >
-                  <span
-                    className="mr-1 inline-block h-2 w-2 rounded-sm align-baseline"
-                    style={{ background: keyColors[k] }}
-                  />
-                  {k}
-                </th>
-              ))}
-              <th className="px-2 py-1.5 text-right font-semibold uppercase tracking-wider text-muted-foreground">
-                Total
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} className="border-b last:border-b-0">
-                <td className="px-2 py-1">{r.param}</td>
-                <td className="num px-2 py-1 text-right">{r.value}</td>
-                {keys.map((k) => (
-                  <td key={k} className="num px-2 py-1 text-right">
-                    {r.cells[k] ?? "—"}
-                  </td>
-                ))}
-                <td className="num px-2 py-1 text-right">{r.total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-type TableRow = {
-  id: string;
-  param: string;
-  value: string;
-  cells: Record<string, number>;
-  total: number;
-};
-
-function buildTable(blocks: DistributionBlock[], groupBy: GroupByMode) {
-  const keyColors: Record<string, string> = {};
-  const rows: TableRow[] = [];
-  for (const b of blocks) {
-    for (const v of b.values) {
-      const row: TableRow = {
-        id: `${b.param_key}|${v.value_display}`,
-        param: b.display_name,
-        value: v.value_display,
-        cells: {},
-        total: 0,
-      };
-      for (const g of v.groups) {
-        const k = groupKeyLabel(groupBy, g);
-        row.cells[k] = (row.cells[k] ?? 0) + g.n;
-        row.total += g.n;
-        if (!keyColors[k]) keyColors[k] = groupKeyColor(groupBy, g);
-      }
-      rows.push(row);
-    }
-  }
-  const keys = Object.keys(keyColors).sort(sortKey(groupBy));
-  return { rows, keys, keyColors };
 }

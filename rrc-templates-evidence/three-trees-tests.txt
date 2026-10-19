@@ -1,0 +1,9 @@
+
+ RUN  v4.1.11 /home/devmat/BC4/franco-focus-forge
+
+
+ Test Files  7 passed (7)
+      Tests  37 passed (37)
+   Start at  21:20:55
+   Duration  3.83s (transform 1.38s, setup 2.21s, import 2.54s, tests 4.11s, environment 5.17s)
+

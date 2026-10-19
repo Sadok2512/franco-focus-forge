@@ -151,6 +151,7 @@ export const KpiGroupRowSchema = z
   .object({
     operator: z.string().nullable().optional(),
     band: z.string().nullable().optional(),
+    dor: z.string().nullable().optional(),  // 1.18.0 — group_by=dor
     n: z.number().int().nonnegative(),
     p10: z.number().nullable().optional(),
     p50: z.number().nullable().optional(),
@@ -199,7 +200,7 @@ export type KpiByOperator = z.infer<typeof KpiByOperatorSchema>;
 
 /* ---------- Query input (filters passed to /kpi/{code}) ---------- */
 
-export type KpiGroupBy = "operator" | "band" | "operator_band";
+export type KpiGroupBy = "operator" | "band" | "operator_band" | "dor";
 
 export type KpiQueryFilters = {
   operator?: string[];

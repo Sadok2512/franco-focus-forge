@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.21.2",
+  "version": "1.36.1",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -10,7 +10,7 @@
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",
-    "typecheck": "tsgo --noEmit",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",

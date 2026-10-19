@@ -1,0 +1,4786 @@
+{
+  "at": "2026-10-19T12:33:22.950Z",
+  "project": "4b7bfd50ddb6",
+  "requests": [
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/catalog",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/filters",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?operator=Free&operator=Orange&operator=SFR&group_by=operator",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_SETUP_COUNT?group_by=operator_band"
+  ],
+  "responses": [
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/filters",
+      "body": {
+        "project_id": "4b7bfd50ddb6",
+        "operators": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "Bouygues",
+            "Free",
+            "Orange",
+            "SFR",
+            "N/D"
+          ]
+        },
+        "rats": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "LTE",
+            "NR",
+            "N/D"
+          ]
+        },
+        "bands": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "B1",
+            "B20",
+            "B28",
+            "B3",
+            "B7",
+            "B8",
+            "N/D"
+          ]
+        },
+        "service_types": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "HTTP_DOWNLOAD",
+            "VOICE_CALL",
+            "N/D"
+          ]
+        },
+        "envs": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "incar",
+            "indoor",
+            "N/D"
+          ]
+        },
+        "deps": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "N/D"
+          ]
+        },
+        "phases": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "active",
+            "idle",
+            "wait"
+          ]
+        },
+        "ecgi": {
+          "available": true,
+          "reason": null,
+          "values": [],
+          "mp_total": 349703,
+          "mp_with_ecgi": 12592,
+          "pct": 3.6
+        },
+        "dr": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "VALENCIENNES"
+          ]
+        },
+        "plaque": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "VALENCIENNES"
+          ]
+        },
+        "dor": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "UPR Nord-Est"
+          ]
+        },
+        "arcep": {
+          "available": true,
+          "reason": null,
+          "values": [
+            "02/ 200 - 400 K"
+          ]
+        },
+        "commune": {
+          "available": false,
+          "reason": "référentiel non chargé : cell_ref.commune vide pour les 12592 points ECGI. Upload via POST /settings/cell-ref/upload.",
+          "values": []
+        },
+        "insee": {
+          "available": false,
+          "reason": "référentiel non chargé : cell_ref.insee vide pour les 12592 points ECGI. Upload via POST /settings/cell-ref/upload.",
+          "values": []
+        },
+        "group_by_options": [
+          {
+            "key": "operator",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "operator_band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dor",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dr",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "plaque",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "arcep_zone",
+            "available": true,
+            "reason": null
+          }
+        ]
+      }
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/catalog",
+      "body": {
+        "project_id": "4b7bfd50ddb6",
+        "catalog_version": "2.0.0",
+        "canonical_count": 196,
+        "aliases_count": 14,
+        "counts_by_status": {
+          "UNVALIDATED": 42,
+          "UNAVAILABLE": 131,
+          "AVAILABLE": 16,
+          "PENDING": 8
+        },
+        "counts_by_techno": {
+          "LTE": {
+            "UNVALIDATED": 16,
+            "UNAVAILABLE": 52,
+            "AVAILABLE": 12,
+            "PENDING": 4
+          },
+          "NR": {
+            "UNVALIDATED": 16,
+            "UNAVAILABLE": 64
+          },
+          "ENDC": {
+            "UNVALIDATED": 10,
+            "UNAVAILABLE": 15
+          },
+          "AGGREGATE": {
+            "AVAILABLE": 4,
+            "PENDING": 4
+          }
+        },
+        "tree": [
+          {
+            "techno": "LTE",
+            "families": [
+              {
+                "family": "Accessibilité",
+                "kpis": [
+                  {
+                    "code": "LTE_EPS_ATTACH_SR",
+                    "name": "LTE EPS Attach Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_RACH_ACCESS_SR",
+                    "name": "LTE RACH Access Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "LTE_RACH_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_RACH_ATTEMPTS",
+                    "name": "LTE RACH Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur RACH_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_RACH_FAILURES",
+                    "name": "LTE RACH Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur RACH_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_RACH_SUCCESS",
+                    "name": "LTE RACH Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur RACH_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_RRC_ATTEMPTS",
+                    "name": "LTE RRC Connection Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "stg_event (message=RRCConnectionRequest)",
+                    "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionRequest'",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RRC_FAILURES",
+                    "name": "LTE RRC Connection Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur LTE_RRC_FAILURES sans règle de rattachement événementielle."
+                  },
+                  {
+                    "code": "LTE_RRC_SETUP_COUNT",
+                    "name": "LTE RRC Setup Count",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "stg_event (message=RRCConnectionSetup)",
+                    "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionSetup'",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RRC_SETUP_LATENCY",
+                    "name": "LTE RRC Setup Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_RRC_SETUP_LATENCY sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_RRC_SETUP_SR",
+                    "name": "LTE RRC Setup Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "LTE_RRC_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_RRC_SUCCESS",
+                    "name": "LTE RRC Connection Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "stg_event (message=RRCConnectionSetupComplete)",
+                    "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionSetupComplete'",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  }
+                ]
+              },
+              {
+                "family": "Rétention",
+                "kpis": [
+                  {
+                    "code": "LTE_RADIO_LINK_FAILURE_SR",
+                    "name": "LTE Radio Link Failure Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_RRC_ABNORMAL_RELEASE_SR",
+                    "name": "LTE RRC Abnormal Release Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_RRC_REESTABLISHMENT_SR",
+                    "name": "LTE RRC Reestablishment Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "Mobilité",
+                "kpis": [
+                  {
+                    "code": "LTE_CELL_RESELECTION_SR",
+                    "name": "LTE Cell Reselection Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_ECGI",
+                    "name": "LTE ECGI — Cellules distinctes observées",
+                    "nature": "Compteur",
+                    "unit": "cellules",
+                    "source": "measurement_points.ecgi — dérivé SIB1 (PLMN + cellIdentity, 3GPP TS 36.401 §6.2.1), propagé par populate_ecgi en ordre (capture_id, seq).",
+                    "formula": "COUNT(DISTINCT measurement_points.ecgi)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_HANDOVER_EXECUTION_TIME_TIME",
+                    "name": "LTE Handover Execution Time",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_HO_COUNT",
+                    "name": "LTE Handover Count",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "param_occurrence (path LIKE %mobilityControlInfo%)",
+                    "formula": "COUNT(DISTINCT stg_event_id) WHERE path LIKE '%mobilityControlInfo%'",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_HO_INTER_ATTEMPTS",
+                    "name": "LTE Inter-frequency HO Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTER_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_INTER_FAILURES",
+                    "name": "LTE Inter-frequency HO Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTER_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_INTER_LATENCY",
+                    "name": "LTE Inter-frequency HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_HO_INTER_LATENCY sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_HO_INTER_SR",
+                    "name": "LTE Inter-frequency HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "LTE_INTER_FREQUENCY_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_HO_INTER_SUCCESS",
+                    "name": "LTE Inter-frequency HO Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTER_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_INTRA_ATTEMPTS",
+                    "name": "LTE Intra-frequency HO Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTRA_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_INTRA_FAILURES",
+                    "name": "LTE Intra-frequency HO Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTRA_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_INTRA_LATENCY",
+                    "name": "LTE Intra-frequency HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_HO_INTRA_LATENCY sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_HO_INTRA_SR",
+                    "name": "LTE Intra-frequency HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "LTE_INTRA_FREQUENCY_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_HO_INTRA_SUCCESS",
+                    "name": "LTE Intra-frequency HO Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_INTRA_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_IRAT_ATTEMPTS",
+                    "name": "LTE Inter-RAT HO Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_IRAT_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_IRAT_FAILURES",
+                    "name": "LTE Inter-RAT HO Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_IRAT_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_HO_IRAT_LATENCY",
+                    "name": "LTE Inter-RAT HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_HO_IRAT_LATENCY sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_HO_IRAT_SR",
+                    "name": "LTE Inter-RAT HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "LTE_INTER_RAT_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_HO_IRAT_SUCCESS",
+                    "name": "LTE Inter-RAT HO Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur HO_IRAT_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  }
+                ]
+              },
+              {
+                "family": "Qualité radio",
+                "kpis": [
+                  {
+                    "code": "LTE_RF_CQI",
+                    "name": "LTE CQI",
+                    "nature": "Métrique mesurée",
+                    "unit": "indice",
+                    "source": "measurement_points.cqi",
+                    "formula": "percentile_cont sur measurement_points.cqi",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RF_RSRP",
+                    "name": "LTE RSRP",
+                    "nature": "Métrique mesurée",
+                    "unit": "dBm",
+                    "source": "measurement_points.rsrp (CELLMEAS prouvé — profile_cellmeas verdict=proven, mapping cell0_rsrq_db ↔ rsrp)",
+                    "formula": "percentile_cont sur measurement_points.rsrp (CELLMEAS prouvé)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RF_RSRP_AT_MR",
+                    "name": "LTE RSRP @ MeasurementReport (RRC)",
+                    "nature": "Métrique mesurée",
+                    "unit": "dBm",
+                    "source": "param_occurrence (path LIKE '%measResultPCell/rsrpResult', message='MeasurementReport' — biaisé événements de mesure RRC, idx − 141 dBm 3GPP TS 36.133 §9.1.4)",
+                    "formula": "percentile_cont sur CAST(value_converted AS DOUBLE PRECISION) filtré par path LIKE '%measResultPCell/rsrpResult'",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RF_RSRQ",
+                    "name": "LTE RSRQ",
+                    "nature": "Métrique mesurée",
+                    "unit": "dB",
+                    "source": "measurement_points.rsrq (CELLMEAS prouvé — profile_cellmeas verdict=proven)",
+                    "formula": "percentile_cont sur measurement_points.rsrq (CELLMEAS prouvé)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RF_RSSI",
+                    "name": "LTE RSSI",
+                    "nature": "Métrique mesurée",
+                    "unit": "dBm",
+                    "source": "measurement_points.rssi",
+                    "formula": "percentile_cont sur measurement_points.rssi",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_RF_SINR",
+                    "name": "LTE SINR",
+                    "nature": "Métrique mesurée",
+                    "unit": "dB",
+                    "source": "measurement_points.sinr",
+                    "formula": "percentile_cont sur measurement_points.sinr",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  }
+                ]
+              },
+              {
+                "family": "MIMO",
+                "kpis": [
+                  {
+                    "code": "LTE_MIMO_MIMO_LAYERS",
+                    "name": "LTE MIMO Layers",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_MIMO_MIMO_LAYERS sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_MIMO_MODULATION_DISTRIBUTION",
+                    "name": "LTE Modulation Distribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_MIMO_MODULATION_DISTRIBUTION sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_MIMO_RI_DISTRIBUTION",
+                    "name": "LTE RI Distribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_MIMO_RI_DISTRIBUTION sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_MIMO_SPECTRAL_EFFICIENCY",
+                    "name": "LTE Spectral Efficiency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_MIMO_SPECTRAL_EFFICIENCY sans mapping prouvé côté décodeur."
+                  }
+                ]
+              },
+              {
+                "family": "Carrier Aggregation",
+                "kpis": [
+                  {
+                    "code": "LTE_CA_CA_ACTIVE_RATIO",
+                    "name": "LTE CA Active Ratio",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_CA_CA_ACTIVE_RATIO sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_CA_CA_BAND_COMBINATIONS",
+                    "name": "LTE CA Band Combinations",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_CA_CA_BAND_COMBINATIONS sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_CA_CA_CONFIGURED",
+                    "name": "LTE CA Configured",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_CA_CA_CONFIGURED sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_CA_COMPONENT_CARRIERS",
+                    "name": "LTE Component Carriers",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_CA_COMPONENT_CARRIERS sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_CA_PCELL_SCELL_THROUGHPUT",
+                    "name": "LTE PCell / SCell Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_CA_PCELL_SCELL_THROUGHPUT sans mapping prouvé côté décodeur."
+                  }
+                ]
+              },
+              {
+                "family": "DL",
+                "kpis": [
+                  {
+                    "code": "LTE_DL_APPLICATION_THR",
+                    "name": "LTE DL Application Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": "Mbit/s",
+                    "source": "measurement_points.dl",
+                    "formula": "percentile_cont sur measurement_points.dl",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "LTE_DL_BLER",
+                    "name": "LTE DL BLER",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_BLER sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_DATA_ATTEMPTS",
+                    "name": "LTE DL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur DL_DATA_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_DL_DATA_FAILURES",
+                    "name": "LTE DL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur DL_DATA_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_DL_DATA_SUCCESS",
+                    "name": "LTE DL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur DL_DATA_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_DL_DATA_VOLUME",
+                    "name": "LTE DL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_DATA_VOLUME sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_MAC_THR",
+                    "name": "LTE DL MAC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_MAC_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_MCS",
+                    "name": "LTE DL MCS",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_MCS sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_PDCP_THR",
+                    "name": "LTE DL PDCP Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_PDCP_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_PHY_THR",
+                    "name": "LTE DL PHY Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_PHY_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_PRB_UTILIZATION",
+                    "name": "LTE DL PRB Utilization",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_PRB_UTILIZATION sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_DL_RLC_THR",
+                    "name": "LTE DL RLC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_DL_RLC_THR sans mapping prouvé côté décodeur."
+                  }
+                ]
+              },
+              {
+                "family": "UL",
+                "kpis": [
+                  {
+                    "code": "LTE_UL_APPLICATION_THR",
+                    "name": "LTE UL Application Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": "Mbit/s",
+                    "source": "measurement_points.thrpt_ul",
+                    "formula": "percentile_cont sur measurement_points.thrpt_ul",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "measurement_points.thrpt_ul NULL partout — mapping décodeur non prouvé (écart 0.24.0 / 0.25.0, lot 0.39.0 en cours)."
+                  },
+                  {
+                    "code": "LTE_UL_BLER",
+                    "name": "LTE UL BLER",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_BLER sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_DATA_ATTEMPTS",
+                    "name": "LTE UL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur UL_DATA_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_UL_DATA_FAILURES",
+                    "name": "LTE UL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur UL_DATA_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_UL_DATA_SUCCESS",
+                    "name": "LTE UL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur UL_DATA_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_UL_DATA_VOLUME",
+                    "name": "LTE UL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_DATA_VOLUME sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_MAC_THR",
+                    "name": "LTE UL MAC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_MAC_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_MCS",
+                    "name": "LTE UL MCS",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_MCS sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_PDCP_THR",
+                    "name": "LTE UL PDCP Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_PDCP_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_PHY_THR",
+                    "name": "LTE UL PHY Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_PHY_THR sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_PRB_UTILIZATION",
+                    "name": "LTE UL PRB Utilization",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_PRB_UTILIZATION sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_UL_RLC_THR",
+                    "name": "LTE UL RLC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_UL_RLC_THR sans mapping prouvé côté décodeur."
+                  }
+                ]
+              },
+              {
+                "family": "Latence",
+                "kpis": [
+                  {
+                    "code": "LTE_LAT_HTTP_RESPONSE",
+                    "name": "LTE HTTP Response Time",
+                    "nature": "Métrique mesurée",
+                    "unit": "ms",
+                    "source": "measurement_points.latency (si DAA/DCOMP mappés)",
+                    "formula": "percentile_cont sur measurement_points.latency",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "measurement_points.latency NULL partout — latence pas encore extraite des events data_* (écart 0.24.0)."
+                  },
+                  {
+                    "code": "LTE_LAT_RTT",
+                    "name": "LTE Round Trip Time",
+                    "nature": "Métrique mesurée",
+                    "unit": "ms",
+                    "source": "measurement_points.latency (si DAA/DCOMP mappés)",
+                    "formula": "percentile_cont sur measurement_points.latency",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "measurement_points.latency NULL partout — latence pas encore extraite des events data_* (écart 0.24.0)."
+                  },
+                  {
+                    "code": "LTE_LAT_TRANSFER_SETUP",
+                    "name": "LTE Data Transfer Setup Time",
+                    "nature": "Métrique mesurée",
+                    "unit": "ms",
+                    "source": "measurement_points.latency (si DAA/DCOMP mappés)",
+                    "formula": "percentile_cont sur measurement_points.latency",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "measurement_points.latency NULL partout — latence pas encore extraite des events data_* (écart 0.24.0)."
+                  }
+                ]
+              },
+              {
+                "family": "Data",
+                "kpis": [
+                  {
+                    "code": "LTE_HTTP_DL_TRANSFER_SR",
+                    "name": "LTE HTTP DL Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [
+                      "LTE_DL_DATA_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_HTTP_UL_TRANSFER_SR",
+                    "name": "LTE HTTP UL Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [
+                      "LTE_UL_DATA_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "Bearers",
+                "kpis": [
+                  {
+                    "code": "LTE_ERAB_ATTEMPTS",
+                    "name": "LTE RAB / E-RAB Setup Attempts",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur ERAB_ATTEMPTS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_ERAB_FAILURES",
+                    "name": "LTE RAB / E-RAB Setup Failures",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur ERAB_FAILURES non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  },
+                  {
+                    "code": "LTE_ERAB_LATENCY",
+                    "name": "LTE RAB / E-RAB Setup Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : règle non définie)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "métrique mesurée LTE_ERAB_LATENCY sans mapping prouvé côté décodeur."
+                  },
+                  {
+                    "code": "LTE_ERAB_SR",
+                    "name": "LTE RAB / E-RAB Setup Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_ERAB_SUCCESS",
+                    "name": "LTE RAB / E-RAB Setup Success",
+                    "nature": "Compteur",
+                    "unit": "occurrences",
+                    "source": "(indisponible : event / position non prouvée)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "compteur ERAB_SUCCESS non adossé à un event prouvé par le décodeur 2.0.0 (écarts 0.24.0 / 0.33.0 : RACH/E-RAB/DATA_* et HO par type intra/inter/irat sans distinction certifiée)."
+                  }
+                ]
+              },
+              {
+                "family": "Voix",
+                "kpis": [
+                  {
+                    "code": "LTE_CALL_DROP_SR",
+                    "name": "LTE Call Drop Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "VOICE"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "LTE_VOLTE_CALL_SETUP_SR",
+                    "name": "LTE VoLTE Call Setup Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "VOICE"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "techno": "NR",
+            "families": [
+              {
+                "family": "Accessibilité",
+                "kpis": [
+                  {
+                    "code": "NR_5G_REGISTRATION_SR",
+                    "name": "NR 5G Registration Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_RACH_ACCESS_SR",
+                    "name": "NR RACH Access Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "NR_RACH_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_RACH_ATTEMPTS",
+                    "name": "NR RACH Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RACH_FAILURES",
+                    "name": "NR RACH Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RACH_SUCCESS",
+                    "name": "NR RACH Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RRC_ATTEMPTS",
+                    "name": "NR RRC Connection Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RRC_FAILURES",
+                    "name": "NR RRC Connection Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RRC_SETUP_LATENCY",
+                    "name": "NR RRC Setup Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RRC_SETUP_SR",
+                    "name": "NR RRC Setup Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "NR_RRC_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_RRC_SUCCESS",
+                    "name": "NR RRC Connection Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Rétention",
+                "kpis": [
+                  {
+                    "code": "NR_RADIO_LINK_FAILURE_SR",
+                    "name": "NR Radio Link Failure Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_RRC_ABNORMAL_RELEASE_SR",
+                    "name": "NR RRC Abnormal Release Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_RRC_REESTABLISHMENT_SR",
+                    "name": "NR RRC Reestablishment Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "Mobilité",
+                "kpis": [
+                  {
+                    "code": "NR_CELL_RESELECTION_SR",
+                    "name": "NR Cell Reselection Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HANDOVER_EXECUTION_TIME_TIME",
+                    "name": "NR Handover Execution Time",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HO_INTER_ATTEMPTS",
+                    "name": "NR Inter-frequency HO Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTER_FAILURES",
+                    "name": "NR Inter-frequency HO Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTER_LATENCY",
+                    "name": "NR Inter-frequency HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTER_SR",
+                    "name": "NR Inter-frequency HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "NR_INTER_FREQUENCY_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HO_INTER_SUCCESS",
+                    "name": "NR Inter-frequency HO Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTRA_ATTEMPTS",
+                    "name": "NR Intra-frequency HO Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTRA_FAILURES",
+                    "name": "NR Intra-frequency HO Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTRA_LATENCY",
+                    "name": "NR Intra-frequency HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_INTRA_SR",
+                    "name": "NR Intra-frequency HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "NR_INTRA_FREQUENCY_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HO_INTRA_SUCCESS",
+                    "name": "NR Intra-frequency HO Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_IRAT_ATTEMPTS",
+                    "name": "NR Inter-RAT HO Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_IRAT_FAILURES",
+                    "name": "NR Inter-RAT HO Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_IRAT_LATENCY",
+                    "name": "NR Inter-RAT HO Execution Latency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_HO_IRAT_SR",
+                    "name": "NR Inter-RAT HO Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [
+                      "NR_INTER_RAT_HANDOVER_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HO_IRAT_SUCCESS",
+                    "name": "NR Inter-RAT HO Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_NCGI",
+                    "name": "NR NCGI — Cellules 5G distinctes observées",
+                    "nature": "Compteur",
+                    "unit": "cellules",
+                    "source": "measurement_points.ecgi — dérivé SIB1-NR (PLMN + NCI 36 bits, 3GPP TS 38.413 §9.3.1.7). Propagation NR non livrée tant qu'aucun NMF NR n'est ingéré.",
+                    "formula": "COUNT(DISTINCT measurement_points.ecgi WHERE tech='NR')",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement) ; propagation NCGI attend un release du décodeur NR."
+                  }
+                ]
+              },
+              {
+                "family": "Qualité radio",
+                "kpis": [
+                  {
+                    "code": "NR_RF_CQI",
+                    "name": "NR CQI",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RF_CSI_RSRP",
+                    "name": "NR CSI-RSRP",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RF_SS_RSRP",
+                    "name": "NR SS-RSRP",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RF_SS_RSRQ",
+                    "name": "NR SS-RSRQ",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_RF_SS_SINR",
+                    "name": "NR SS-SINR",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "MIMO",
+                "kpis": [
+                  {
+                    "code": "NR_MIMO_MIMO_LAYERS",
+                    "name": "NR MIMO Layers",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_MIMO_MODULATION_DISTRIBUTION",
+                    "name": "NR Modulation Distribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_MIMO_RI_DISTRIBUTION",
+                    "name": "NR RI Distribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_MIMO_SPECTRAL_EFFICIENCY",
+                    "name": "NR Spectral Efficiency",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Carrier Aggregation",
+                "kpis": [
+                  {
+                    "code": "NR_CA_CA_ACTIVE_RATIO",
+                    "name": "NR CA Active Ratio",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_CA_CA_BAND_COMBINATIONS",
+                    "name": "NR CA Band Combinations",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_CA_CA_CONFIGURED",
+                    "name": "NR CA Configured",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_CA_COMPONENT_CARRIERS",
+                    "name": "NR Component Carriers",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_CA_PCELL_SCELL_THROUGHPUT",
+                    "name": "NR PCell / SCell Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "DL",
+                "kpis": [
+                  {
+                    "code": "NR_DL_APPLICATION_THR",
+                    "name": "NR DL Application Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_BLER",
+                    "name": "NR DL BLER",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_DATA_ATTEMPTS",
+                    "name": "NR DL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_DATA_FAILURES",
+                    "name": "NR DL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_DATA_SUCCESS",
+                    "name": "NR DL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_DATA_VOLUME",
+                    "name": "NR DL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_MAC_THR",
+                    "name": "NR DL MAC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_MCS",
+                    "name": "NR DL MCS",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_PDCP_THR",
+                    "name": "NR DL PDCP Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_PHY_THR",
+                    "name": "NR DL PHY Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_PRB_UTILIZATION",
+                    "name": "NR DL PRB Utilization",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_DL_RLC_THR",
+                    "name": "NR DL RLC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "UL",
+                "kpis": [
+                  {
+                    "code": "NR_UL_APPLICATION_THR",
+                    "name": "NR UL Application Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_BLER",
+                    "name": "NR UL BLER",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_DATA_ATTEMPTS",
+                    "name": "NR UL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_DATA_FAILURES",
+                    "name": "NR UL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_DATA_SUCCESS",
+                    "name": "NR UL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_DATA_VOLUME",
+                    "name": "NR UL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_MAC_THR",
+                    "name": "NR UL MAC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_MCS",
+                    "name": "NR UL MCS",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_PDCP_THR",
+                    "name": "NR UL PDCP Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_PHY_THR",
+                    "name": "NR UL PHY Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_PRB_UTILIZATION",
+                    "name": "NR UL PRB Utilization",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_UL_RLC_THR",
+                    "name": "NR UL RLC Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Latence",
+                "kpis": [
+                  {
+                    "code": "NR_LAT_HTTP_RESPONSE",
+                    "name": "NR HTTP Response Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_LAT_RTT",
+                    "name": "NR Round Trip Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_LAT_TRANSFER_SETUP",
+                    "name": "NR Data Transfer Setup Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Data",
+                "kpis": [
+                  {
+                    "code": "NR_HTTP_DL_TRANSFER_SR",
+                    "name": "NR HTTP DL Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [
+                      "NR_DL_DATA_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_HTTP_UL_TRANSFER_SR",
+                    "name": "NR HTTP UL Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [
+                      "NR_UL_DATA_SR"
+                    ],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "Sessions",
+                "kpis": [
+                  {
+                    "code": "NR_PDU_SESSION_ATTEMPTS",
+                    "name": "NR PDU Session Establishment Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_PDU_SESSION_FAILURES",
+                    "name": "NR PDU Session Establishment Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "NR_PDU_SESSION_SR",
+                    "name": "NR PDU Session Establishment Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_PDU_SESSION_SUCCESS",
+                    "name": "NR PDU Session Establishment Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF NR ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Voix",
+                "kpis": [
+                  {
+                    "code": "NR_CALL_DROP_SR",
+                    "name": "NR Call Drop Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "VOICE"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "NR_VONR_CALL_SETUP_SR",
+                    "name": "NR VoNR Call Setup Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "VOICE"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "techno": "ENDC",
+            "families": [
+              {
+                "family": "Mobilité",
+                "kpis": [
+                  {
+                    "code": "ENDC_MCG_MOBILITY",
+                    "name": "EN-DC MCG Mobility Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_PSCELL_CHANGE",
+                    "name": "EN-DC PSCell Change Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_SCG_MOBILITY",
+                    "name": "EN-DC SCG Mobility Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "SCG",
+                "kpis": [
+                  {
+                    "code": "ENDC_SCG_ADDITION",
+                    "name": "EN-DC SCG Addition Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_SCG_FAILURE",
+                    "name": "EN-DC SCG Failure Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_SCG_RELEASE",
+                    "name": "EN-DC SCG Release Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              },
+              {
+                "family": "DL",
+                "kpis": [
+                  {
+                    "code": "ENDC_DL_DATA_ATTEMPTS",
+                    "name": "EN-DC DL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_DL_DATA_FAILURES",
+                    "name": "EN-DC DL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_DL_DATA_SR",
+                    "name": "EN-DC DL Data Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_DL_DATA_SUCCESS",
+                    "name": "EN-DC DL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_DL_DATA_VOLUME",
+                    "name": "EN-DC DL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "UL",
+                "kpis": [
+                  {
+                    "code": "ENDC_UL_DATA_ATTEMPTS",
+                    "name": "EN-DC UL Data Transfer Attempts",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_UL_DATA_FAILURES",
+                    "name": "EN-DC UL Data Transfer Failures",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_UL_DATA_SR",
+                    "name": "EN-DC UL Data Transfer Success Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_UL_DATA_SUCCESS",
+                    "name": "EN-DC UL Data Transfer Success",
+                    "nature": "Compteur",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_UL_DATA_VOLUME",
+                    "name": "EN-DC UL Application Data Volume",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Latence",
+                "kpis": [
+                  {
+                    "code": "ENDC_LAT_HTTP_RESPONSE",
+                    "name": "EN-DC HTTP Response Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_LAT_RTT",
+                    "name": "EN-DC Round Trip Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_LAT_TRANSFER_SETUP",
+                    "name": "EN-DC Data Transfer Setup Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Data",
+                "kpis": [
+                  {
+                    "code": "ENDC_LTE_CONTRIBUTION",
+                    "name": "EN-DC LTE Contribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_NR_CONTRIBUTION",
+                    "name": "EN-DC NR Contribution",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_TOTAL_THROUGHPUT",
+                    "name": "EN-DC Total Throughput",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  }
+                ]
+              },
+              {
+                "family": "Usage",
+                "kpis": [
+                  {
+                    "code": "ENDC_NR_USAGE_RATIO",
+                    "name": "EN-DC NR Usage Ratio Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  },
+                  {
+                    "code": "ENDC_SCG_ACTIVE_TIME",
+                    "name": "EN-DC SCG Active Time",
+                    "nature": "Métrique mesurée",
+                    "unit": null,
+                    "source": "(indisponible : technologie absente du corpus)",
+                    "formula": null,
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNAVAILABLE",
+                    "reason": "aucun NMF ENDC ingéré avec succès dans le corpus actuel (REF = LTE uniquement)."
+                  },
+                  {
+                    "code": "ENDC_SPLIT_BEARER_USAGE",
+                    "name": "EN-DC Split Bearer Usage Rate",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "(compteurs frères — contrat non certifié)",
+                    "formula": "100 × SUCCESS / ATTEMPTS (frères Compteur du catalogue)",
+                    "service_scope": [],
+                    "aliases": [],
+                    "status": "UNVALIDATED",
+                    "reason": "le contrat tentative/réussite/échec n'est pas certifié par le décodeur 2.0.0 ; un taux n'est pas calculé tant que ses frères ne sont pas prouvés."
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "techno": "AGGREGATE",
+            "families": [
+              {
+                "family": "Débit applicatif",
+                "kpis": [
+                  {
+                    "code": "AGG_APP_DL_THR",
+                    "name": "Débit APP DL agrégé",
+                    "nature": "Métrique mesurée",
+                    "unit": "Mbit/s",
+                    "source": "table des transferts (compute_transfers → DSUMMARY DL verdict=proven), jamais measurement_points.dl pondéré",
+                    "formula": "percentile_cont sur transferts proven (compute_transfers) direction=dl — 1 ligne par DSUMMARY DL",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "AGG_APP_UL_THR",
+                    "name": "Débit APP UL agrégé",
+                    "nature": "Métrique mesurée",
+                    "unit": "Mbit/s",
+                    "source": "table des transferts (compute_transfers → DSUMMARY UL verdict=proven), jamais measurement_points.thrpt_ul pondéré",
+                    "formula": "percentile_cont sur transferts proven (compute_transfers) direction=ul",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "compute_transfers retourne 0 transfert `proven` UL — aucun DSUMMARY UL rattaché à un Start CMDREQ dans la plage 0..300 Mbit/s."
+                  }
+                ]
+              },
+              {
+                "family": "DMS DL",
+                "kpis": [
+                  {
+                    "code": "AGG_DMS_DL_30_MBPS",
+                    "name": "DMS DL 30 Mbit/s",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "table des transferts (compute_transfers → DSUMMARY DL verdict=proven)",
+                    "formula": "100 × count(measurement_points.dl ≥ 30) / count(measurement_points.dl IS NOT NULL)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "AGG_DMS_DL_3_MBPS",
+                    "name": "DMS DL 3 Mbit/s",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "table des transferts (compute_transfers → DSUMMARY DL verdict=proven)",
+                    "formula": "100 × count(measurement_points.dl ≥ 3) / count(measurement_points.dl IS NOT NULL)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  },
+                  {
+                    "code": "AGG_DMS_DL_8_MBPS",
+                    "name": "DMS DL 8 Mbit/s",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "table des transferts (compute_transfers → DSUMMARY DL verdict=proven)",
+                    "formula": "100 × count(measurement_points.dl ≥ 8) / count(measurement_points.dl IS NOT NULL)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "AVAILABLE",
+                    "reason": null
+                  }
+                ]
+              },
+              {
+                "family": "DMS UL",
+                "kpis": [
+                  {
+                    "code": "AGG_DMS_UL_1_MBPS",
+                    "name": "DMS UL 1 Mbit/s",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "table des transferts (compute_transfers → DSUMMARY UL verdict=proven)",
+                    "formula": "100 × count(measurement_points.thrpt_ul ≥ 1) / count(measurement_points.thrpt_ul IS NOT NULL)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "compute_transfers retourne 0 transfert UL `proven`."
+                  },
+                  {
+                    "code": "AGG_DMS_UL_3_MBPS",
+                    "name": "DMS UL 3 Mbit/s",
+                    "nature": "KPI calculé",
+                    "unit": "%",
+                    "source": "table des transferts (compute_transfers → DSUMMARY UL verdict=proven)",
+                    "formula": "100 × count(measurement_points.thrpt_ul ≥ 3) / count(measurement_points.thrpt_ul IS NOT NULL)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "compute_transfers retourne 0 transfert UL `proven`."
+                  }
+                ]
+              },
+              {
+                "family": "Latence",
+                "kpis": [
+                  {
+                    "code": "AGG_APP_LATENCY",
+                    "name": "Latence applicative",
+                    "nature": "Métrique mesurée",
+                    "unit": "ms",
+                    "source": "measurement_points.latency (DAA/DCOMP-derived)",
+                    "formula": "percentile_cont sur measurement_points.latency (tous opérateurs)",
+                    "service_scope": [
+                      "HTTP_DOWNLOAD",
+                      "HTTP_UPLOAD"
+                    ],
+                    "aliases": [],
+                    "status": "PENDING",
+                    "reason": "measurement_points.latency NULL partout — latence pas encore extraite des events data_* (écart 0.24.0)."
+                  }
+                ]
+              }
+            ]
+          }
+        ],
+        "source_xlsx": "BC4_Catalogue_KPI_LTE_NR_ENDC_Agreges.xlsx",
+        "source_xlsx_sha256": "6869c001c1b61009fe4570241775d3ede9df78320a142c096eb8a0a6b347833d",
+        "total_input_rows": 208,
+        "normalizations": [
+          "'EN-DC_' → 'ENDC_' (EN-DC_LAT_RTT)",
+          "'EN-DC_' → 'ENDC_' (EN-DC_LAT_HTTP_RESPONSE)",
+          "'EN-DC_' → 'ENDC_' (EN-DC_LAT_TRANSFER_SETUP)"
+        ],
+        "aliases": [
+          {
+            "alias": "LTE_INTRA_FREQUENCY_HANDOVER_SR",
+            "canonical": "LTE_HO_INTRA_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_INTER_FREQUENCY_HANDOVER_SR",
+            "canonical": "LTE_HO_INTER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_INTER_RAT_HANDOVER_SR",
+            "canonical": "LTE_HO_IRAT_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_INTRA_FREQUENCY_HANDOVER_SR",
+            "canonical": "NR_HO_INTRA_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_INTER_FREQUENCY_HANDOVER_SR",
+            "canonical": "NR_HO_INTER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_INTER_RAT_HANDOVER_SR",
+            "canonical": "NR_HO_IRAT_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_DL_DATA_SR",
+            "canonical": "LTE_HTTP_DL_TRANSFER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_UL_DATA_SR",
+            "canonical": "LTE_HTTP_UL_TRANSFER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_DL_DATA_SR",
+            "canonical": "NR_HTTP_DL_TRANSFER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_UL_DATA_SR",
+            "canonical": "NR_HTTP_UL_TRANSFER_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_RACH_SR",
+            "canonical": "LTE_RACH_ACCESS_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "LTE_RRC_SR",
+            "canonical": "LTE_RRC_SETUP_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_RACH_SR",
+            "canonical": "NR_RACH_ACCESS_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          },
+          {
+            "alias": "NR_RRC_SR",
+            "canonical": "NR_RRC_SETUP_SR",
+            "reason": "même KPI, deux dénominations dans le xlsx"
+          }
+        ],
+        "services_requested": []
+      }
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band",
+      "body": {
+        "requested_code": "LTE_RRC_ATTEMPTS",
+        "code": "LTE_RRC_ATTEMPTS",
+        "name": "LTE RRC Connection Attempts",
+        "techno": "LTE",
+        "family": "Accessibilité",
+        "nature": "Compteur",
+        "unit": "occurrences",
+        "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionRequest'",
+        "source": "stg_event (message=RRCConnectionRequest)",
+        "service_scope": [],
+        "aliases": [],
+        "status": "AVAILABLE",
+        "reason": null,
+        "value": 887,
+        "n": 887,
+        "p10": null,
+        "p50": null,
+        "p90": null,
+        "group_by": "operator_band",
+        "groups": [
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 82,
+            "operator": "Bouygues",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#059669"
+          },
+          {
+            "n": 125,
+            "operator": "Bouygues",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 3,
+            "operator": "Free",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 1,
+            "operator": "Free",
+            "band": "B28",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#7C3AED"
+          },
+          {
+            "n": 29,
+            "operator": "Free",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 191,
+            "operator": "Free",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 22,
+            "operator": "Orange",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 4,
+            "operator": "Orange",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 40,
+            "operator": "Orange",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#059669"
+          },
+          {
+            "n": 190,
+            "operator": "Orange",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 8,
+            "operator": "SFR",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 111,
+            "operator": "SFR",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 76,
+            "operator": "SFR",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888",
+            "band_color": "#4F46E5"
+          }
+        ],
+        "table": [
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 82,
+            "operator": "Bouygues",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#059669"
+          },
+          {
+            "n": 125,
+            "operator": "Bouygues",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 3,
+            "operator": "Free",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 1,
+            "operator": "Free",
+            "band": "B28",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#7C3AED"
+          },
+          {
+            "n": 29,
+            "operator": "Free",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 191,
+            "operator": "Free",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 22,
+            "operator": "Orange",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 4,
+            "operator": "Orange",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 40,
+            "operator": "Orange",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#059669"
+          },
+          {
+            "n": 190,
+            "operator": "Orange",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 8,
+            "operator": "SFR",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 111,
+            "operator": "SFR",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 76,
+            "operator": "SFR",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888",
+            "band_color": "#4F46E5"
+          }
+        ],
+        "coverage": null,
+        "group_by_options": [
+          {
+            "key": "operator",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "operator_band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dor",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dr",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "plaque",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "arcep_zone",
+            "available": true,
+            "reason": null
+          }
+        ],
+        "services_requested": [],
+        "operators_requested": [],
+        "phases_requested": [],
+        "by_operator": [
+          {
+            "operator": "Bouygues",
+            "n": 211
+          },
+          {
+            "operator": "Free",
+            "n": 224
+          },
+          {
+            "operator": "Orange",
+            "n": 256
+          },
+          {
+            "operator": "SFR",
+            "n": 195
+          },
+          {
+            "operator": null,
+            "n": 1
+          }
+        ],
+        "comparability": "COMPARABLE_WITH_LIMITATIONS"
+      }
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator",
+      "body": {
+        "requested_code": "LTE_RRC_ATTEMPTS",
+        "code": "LTE_RRC_ATTEMPTS",
+        "name": "LTE RRC Connection Attempts",
+        "techno": "LTE",
+        "family": "Accessibilité",
+        "nature": "Compteur",
+        "unit": "occurrences",
+        "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionRequest'",
+        "source": "stg_event (message=RRCConnectionRequest)",
+        "service_scope": [],
+        "aliases": [],
+        "status": "AVAILABLE",
+        "reason": null,
+        "value": 887,
+        "n": 887,
+        "p10": null,
+        "p50": null,
+        "p90": null,
+        "group_by": "operator",
+        "groups": [
+          {
+            "n": 211,
+            "operator": "Bouygues",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1"
+          },
+          {
+            "n": 224,
+            "operator": "Free",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A"
+          },
+          {
+            "n": 256,
+            "operator": "Orange",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900"
+          },
+          {
+            "n": 195,
+            "operator": "SFR",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888"
+          }
+        ],
+        "table": [
+          {
+            "n": 211,
+            "operator": "Bouygues",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1"
+          },
+          {
+            "n": 224,
+            "operator": "Free",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A"
+          },
+          {
+            "n": 256,
+            "operator": "Orange",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900"
+          },
+          {
+            "n": 195,
+            "operator": "SFR",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888"
+          }
+        ],
+        "coverage": null,
+        "group_by_options": [
+          {
+            "key": "operator",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "operator_band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dor",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dr",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "plaque",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "arcep_zone",
+            "available": true,
+            "reason": null
+          }
+        ],
+        "services_requested": [],
+        "operators_requested": [],
+        "phases_requested": [],
+        "by_operator": [
+          {
+            "operator": "Bouygues",
+            "n": 211
+          },
+          {
+            "operator": "Free",
+            "n": 224
+          },
+          {
+            "operator": "Orange",
+            "n": 256
+          },
+          {
+            "operator": "SFR",
+            "n": 195
+          },
+          {
+            "operator": null,
+            "n": 1
+          }
+        ],
+        "comparability": "COMPARABLE_WITH_LIMITATIONS"
+      }
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?operator=Free&operator=Orange&operator=SFR&group_by=operator",
+      "body": {
+        "requested_code": "LTE_RRC_ATTEMPTS",
+        "code": "LTE_RRC_ATTEMPTS",
+        "name": "LTE RRC Connection Attempts",
+        "techno": "LTE",
+        "family": "Accessibilité",
+        "nature": "Compteur",
+        "unit": "occurrences",
+        "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionRequest'",
+        "source": "stg_event (message=RRCConnectionRequest)",
+        "service_scope": [],
+        "aliases": [],
+        "status": "AVAILABLE",
+        "reason": null,
+        "value": 675,
+        "n": 675,
+        "p10": null,
+        "p50": null,
+        "p90": null,
+        "group_by": "operator",
+        "groups": [
+          {
+            "n": 224,
+            "operator": "Free",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A"
+          },
+          {
+            "n": 256,
+            "operator": "Orange",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900"
+          },
+          {
+            "n": 195,
+            "operator": "SFR",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A"
+          }
+        ],
+        "table": [
+          {
+            "n": 224,
+            "operator": "Free",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A"
+          },
+          {
+            "n": 256,
+            "operator": "Orange",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900"
+          },
+          {
+            "n": 195,
+            "operator": "SFR",
+            "band": null,
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A"
+          }
+        ],
+        "coverage": null,
+        "group_by_options": [
+          {
+            "key": "operator",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "operator_band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dor",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dr",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "plaque",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "arcep_zone",
+            "available": true,
+            "reason": null
+          }
+        ],
+        "services_requested": [],
+        "operators_requested": [
+          "Free",
+          "Orange",
+          "SFR"
+        ],
+        "phases_requested": [],
+        "by_operator": [
+          {
+            "operator": "Free",
+            "n": 224
+          },
+          {
+            "operator": "Orange",
+            "n": 256
+          },
+          {
+            "operator": "SFR",
+            "n": 195
+          }
+        ],
+        "comparability": "COMPARABLE"
+      }
+    },
+    {
+      "url": "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_SETUP_COUNT?group_by=operator_band",
+      "body": {
+        "requested_code": "LTE_RRC_SETUP_COUNT",
+        "code": "LTE_RRC_SETUP_COUNT",
+        "name": "LTE RRC Setup Count",
+        "techno": "LTE",
+        "family": "Accessibilité",
+        "nature": "Compteur",
+        "unit": "occurrences",
+        "formula": "COUNT(DISTINCT stg_event.id) WHERE message = 'RRCConnectionSetup'",
+        "source": "stg_event (message=RRCConnectionSetup)",
+        "service_scope": [],
+        "aliases": [],
+        "status": "AVAILABLE",
+        "reason": null,
+        "value": 917,
+        "n": 917,
+        "p10": null,
+        "p50": null,
+        "p90": null,
+        "group_by": "operator_band",
+        "groups": [
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 82,
+            "operator": "Bouygues",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#059669"
+          },
+          {
+            "n": 129,
+            "operator": "Bouygues",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 3,
+            "operator": "Free",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 1,
+            "operator": "Free",
+            "band": "B28",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#7C3AED"
+          },
+          {
+            "n": 29,
+            "operator": "Free",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 189,
+            "operator": "Free",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 22,
+            "operator": "Orange",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 4,
+            "operator": "Orange",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 42,
+            "operator": "Orange",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#059669"
+          },
+          {
+            "n": 202,
+            "operator": "Orange",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 8,
+            "operator": "SFR",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 116,
+            "operator": "SFR",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 85,
+            "operator": "SFR",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888",
+            "band_color": "#4F46E5"
+          }
+        ],
+        "table": [
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 2,
+            "operator": "Bouygues",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 82,
+            "operator": "Bouygues",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#059669"
+          },
+          {
+            "n": 129,
+            "operator": "Bouygues",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#1E6EC1",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 3,
+            "operator": "Free",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 1,
+            "operator": "Free",
+            "band": "B28",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#7C3AED"
+          },
+          {
+            "n": 29,
+            "operator": "Free",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 189,
+            "operator": "Free",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#CD1F2A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 22,
+            "operator": "Orange",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 4,
+            "operator": "Orange",
+            "band": "B20",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#D97706"
+          },
+          {
+            "n": 42,
+            "operator": "Orange",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#059669"
+          },
+          {
+            "n": 202,
+            "operator": "Orange",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#FF7900",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 8,
+            "operator": "SFR",
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#4F46E5"
+          },
+          {
+            "n": 116,
+            "operator": "SFR",
+            "band": "B3",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#059669"
+          },
+          {
+            "n": 85,
+            "operator": "SFR",
+            "band": "B7",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#E2001A",
+            "band_color": "#DC2626"
+          },
+          {
+            "n": 1,
+            "operator": null,
+            "band": "B1",
+            "dor": null,
+            "dr": null,
+            "plaque": null,
+            "arcep_zone": null,
+            "p10": null,
+            "p50": null,
+            "p90": null,
+            "status": "PRESENT",
+            "reason": null,
+            "operator_color": "#888888",
+            "band_color": "#4F46E5"
+          }
+        ],
+        "coverage": null,
+        "group_by_options": [
+          {
+            "key": "operator",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "operator_band",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dor",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "dr",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "plaque",
+            "available": true,
+            "reason": null
+          },
+          {
+            "key": "arcep_zone",
+            "available": true,
+            "reason": null
+          }
+        ],
+        "services_requested": [],
+        "operators_requested": [],
+        "phases_requested": [],
+        "by_operator": [
+          {
+            "operator": "Bouygues",
+            "n": 215
+          },
+          {
+            "operator": "Free",
+            "n": 222
+          },
+          {
+            "operator": "Orange",
+            "n": 270
+          },
+          {
+            "operator": "SFR",
+            "n": 209
+          },
+          {
+            "operator": null,
+            "n": 1
+          }
+        ],
+        "comparability": "COMPARABLE_WITH_LIMITATIONS"
+      }
+    }
+  ],
+  "errors": [],
+  "baselineCsv": "﻿code,metric,techno,operator,band,dor,cell,service,env,statistic,value,unit,n,denominator,result_id\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Bouygues\",\"B1\",\"\",\"\",\"\",\"\",\"value\",\"2\",\"occurrences\",\"2\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Bouygues\",\"B20\",\"\",\"\",\"\",\"\",\"value\",\"2\",\"occurrences\",\"2\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Bouygues\",\"B3\",\"\",\"\",\"\",\"\",\"value\",\"82\",\"occurrences\",\"82\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Bouygues\",\"B7\",\"\",\"\",\"\",\"\",\"value\",\"125\",\"occurrences\",\"125\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Free\",\"B1\",\"\",\"\",\"\",\"\",\"value\",\"3\",\"occurrences\",\"3\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Free\",\"B28\",\"\",\"\",\"\",\"\",\"value\",\"1\",\"occurrences\",\"1\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Free\",\"B3\",\"\",\"\",\"\",\"\",\"value\",\"29\",\"occurrences\",\"29\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Free\",\"B7\",\"\",\"\",\"\",\"\",\"value\",\"191\",\"occurrences\",\"191\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Orange\",\"B1\",\"\",\"\",\"\",\"\",\"value\",\"22\",\"occurrences\",\"22\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Orange\",\"B20\",\"\",\"\",\"\",\"\",\"value\",\"4\",\"occurrences\",\"4\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Orange\",\"B3\",\"\",\"\",\"\",\"\",\"value\",\"40\",\"occurrences\",\"40\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"Orange\",\"B7\",\"\",\"\",\"\",\"\",\"value\",\"190\",\"occurrences\",\"190\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"SFR\",\"B1\",\"\",\"\",\"\",\"\",\"value\",\"8\",\"occurrences\",\"8\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"SFR\",\"B3\",\"\",\"\",\"\",\"\",\"value\",\"111\",\"occurrences\",\"111\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"SFR\",\"B7\",\"\",\"\",\"\",\"\",\"value\",\"76\",\"occurrences\",\"76\",\"\",\"\"\r\n\"LTE_RRC_ATTEMPTS\",\"LTE RRC Connection Attempts\",\"LTE\",\"\",\"B1\",\"\",\"\",\"\",\"\",\"value\",\"1\",\"occurrences\",\"1\",\"\",\"\""
+}

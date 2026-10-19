@@ -1,0 +1,39 @@
+RRC multiple-selection Bad Gateway — 1.32.0 -> 1.32.1 (PATCH)
+
+CAUSE
+Frontend proxy logs at 2026-10-18 20:54:34 show failed map/distribution requests for multiple parameters, followed by ECONNREFUSED. Docker records the API container start at 20:54:34.901 UTC, matching the interruption. Another API restart at 20:57:06 interrupted the first verification login. The backend was not restarted or changed for this correction.
+The exact 2- and 3-parameter combinations from the proxy error log were retried through the frontend proxy after service recovery: all four requests returned HTTP 200 (distribution 300/305 ms; map 60/38 ms). No multi-selection API defect was reproduced on the available backend.
+
+CORRECTION
+Map/distribution requests retry only network and HTTP 502/503/504 errors, at most five retries, with backoff 2/4/8/10/10 seconds. Validation, authentication, schema, cancellation and server-logic errors are not automatically retried. Selections, applied filters and existing data remain intact. Reconnection status is explicit; exhausted failures retain a manual Retry action, now also available for histogram/table results.
+
+VALIDATION
+TypeScript PASS.
+Scoped ESLint PASS.
+79 tests in 12 files PASS, including retry classification, cap and delay tests.
+Production build PASS.
+Real Chromium browser PASS: selected three real Test_3 parameters, injected one HTTP 502 for each analytical endpoint, recovered automatically to three distribution blocks and 144 mapped occurrences, preserved all three selections, no uncaught browser errors. Fault injection was confined to the test browser; no server outage or data changes were introduced.
+
+FILES
+src/features/dict-v2/request-recovery.ts
+src/features/dict-v2/DictV2Page.tsx
+src/features/dict-v2/RrcMapPanel.tsx
+src/features/dict-v2/ValueExplorer.tsx
+src/test/rrc-request-recovery.test.ts
+package.json
+CHANGELOG.md
+scripts/rrc-multiselect-api-check.mjs
+scripts/rrc-multiselect-recovery-check.mjs
+rrc-recovery-evidence/*
+
+COMMANDS
+npm run typecheck
+npx eslint (changed files)
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+docker exec bc4-front-1 bun run build
+node scripts/rrc-multiselect-api-check.mjs
+node scripts/rrc-multiselect-recovery-check.mjs
+git diff --check
+
+LIMITATION
+Retries cannot make an offline backend available. If the interruption outlasts the retry budget, the UI keeps the error and offers Retry. No deployment or backend configuration was modified in this correction.

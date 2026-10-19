@@ -1,0 +1,1 @@
+PASS: 3 independent tabs, full parameter tree preserved, independent searches, keyboard tabs, 11 categories, DRX selection, 3 comparison modes, Raw isolation, 400px overflow, admin read-only, no runtime errors; 8 PNG.

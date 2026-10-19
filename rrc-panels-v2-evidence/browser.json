@@ -1,0 +1,213 @@
+{
+  "parameters": [
+    "dl-Bandwidth",
+    "spare",
+    "phich-Duration",
+    "phich-Resource"
+  ],
+  "mapContract": {
+    "status": 200,
+    "responseFields": [
+      "path",
+      "system",
+      "points"
+    ],
+    "pointCount": 6,
+    "pointFields": [
+      "lat",
+      "lon",
+      "value_raw",
+      "value_converted",
+      "operator",
+      "band"
+    ]
+  },
+  "G1": "PASS",
+  "G2": "PASS",
+  "G6": "PASS",
+  "G7": "PASS",
+  "G5": "PASS (Unavailable panel fullscreen)",
+  "G9": "PASS",
+  "appliedContext": "PASS",
+  "G8": "PASS",
+  "resize": {
+    "before": 400,
+    "after": 450.515625
+  },
+  "size1920": {
+    "height": 1080,
+    "document": 1080,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1184.359375,
+        "position": "absolute",
+        "overflow": "hidden"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 1080,
+        "bottom": 1080
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 1080
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size1440": {
+    "height": 900,
+    "document": 900,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1184.359375,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 969.421875,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 900,
+        "bottom": 900
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 900
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size1280": {
+    "height": 800,
+    "document": 800,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 1307.359375,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 987.921875,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 800,
+        "bottom": 800
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 800
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "size400": {
+    "height": 900,
+    "document": 3744,
+    "overflowNodes": [
+      {
+        "tag": "CAPTION",
+        "cls": "sr-only",
+        "bottom": 2370.671875,
+        "position": "absolute",
+        "overflow": "hidden"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1987.734375,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1620.859375,
+        "position": "absolute",
+        "overflow": "clip"
+      },
+      {
+        "tag": "CANVAS",
+        "cls": "",
+        "bottom": 1253.984375,
+        "position": "absolute",
+        "overflow": "clip"
+      }
+    ],
+    "root": [
+      {
+        "tag": "DIV",
+        "cls": "flex min-h-screen flex-col bg-background",
+        "height": 3743.578125,
+        "bottom": 3743.578125
+      },
+      {
+        "tag": "SECTION",
+        "cls": "",
+        "height": 0,
+        "bottom": 3743.578125
+      },
+      {
+        "tag": "SCRIPT",
+        "cls": "",
+        "height": 0,
+        "bottom": 0
+      }
+    ]
+  },
+  "scroll": {
+    "top": 1696,
+    "height": 519,
+    "total": 2215
+  },
+  "G10": "PASS",
+  "G11": "PASS",
+  "consoleErrors": [],
+  "result": "PASS"
+}

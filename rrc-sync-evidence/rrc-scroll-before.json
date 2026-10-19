@@ -1,0 +1,308 @@
+[
+  {
+    "width": 1440,
+    "count": "1003",
+    "table": {
+      "h": 520,
+      "scroll": 40121,
+      "top": 39601,
+      "lastBottom": 1357.09375,
+      "viewportBottom": 1358.09375
+    },
+    "root": {
+      "h": 844,
+      "scroll": 844
+    },
+    "body": 900,
+    "ancestor": [
+      {
+        "cls": "rrc-table-viewport",
+        "h": 520,
+        "scroll": 40121,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "rrc-results rrc-grouped rrc-hierarchy",
+        "h": 640,
+        "scroll": 640,
+        "min": "auto",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "flex min-w-0 flex-col gap-3 p-1",
+        "h": 1075,
+        "scroll": 1075,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "h-full overflow-auto pr-0.5",
+        "h": 596,
+        "scroll": 1075,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 596,
+        "scroll": 596,
+        "min": "auto",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 596,
+        "scroll": 596,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 596,
+        "scroll": 596,
+        "min": "0px",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 844,
+        "scroll": 844,
+        "min": "844px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex-1",
+        "h": 844,
+        "scroll": 844,
+        "min": "auto",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex min-h-screen flex-col bg-background",
+        "h": 900,
+        "scroll": 900,
+        "min": "900px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 900,
+        "scroll": 900,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 900,
+        "scroll": 900,
+        "min": "0px",
+        "overflow": "visible"
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "count": "4",
+    "table": {
+      "h": 161,
+      "scroll": 161,
+      "top": 0,
+      "lastBottom": 998.59375,
+      "viewportBottom": 999.09375
+    },
+    "root": {
+      "h": 844,
+      "scroll": 844
+    },
+    "body": 900,
+    "ancestor": [
+      {
+        "cls": "rrc-table-viewport",
+        "h": 161,
+        "scroll": 161,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "rrc-results rrc-grouped rrc-hierarchy",
+        "h": 281,
+        "scroll": 281,
+        "min": "auto",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "flex min-w-0 flex-col gap-3 p-1",
+        "h": 716,
+        "scroll": 716,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "h-full overflow-auto pr-0.5",
+        "h": 596,
+        "scroll": 716,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 596,
+        "scroll": 596,
+        "min": "auto",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 596,
+        "scroll": 596,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 596,
+        "scroll": 596,
+        "min": "0px",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 844,
+        "scroll": 844,
+        "min": "844px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex-1",
+        "h": 844,
+        "scroll": 844,
+        "min": "auto",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex min-h-screen flex-col bg-background",
+        "h": 900,
+        "scroll": 900,
+        "min": "900px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 900,
+        "scroll": 900,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 900,
+        "scroll": 900,
+        "min": "0px",
+        "overflow": "visible"
+      }
+    ]
+  },
+  {
+    "width": 400,
+    "count": "4",
+    "table": {
+      "h": 161,
+      "scroll": 161,
+      "top": 0,
+      "lastBottom": 1697.8125,
+      "viewportBottom": 1698.3125
+    },
+    "root": {
+      "h": 1497,
+      "scroll": 1497
+    },
+    "body": 1577,
+    "ancestor": [
+      {
+        "cls": "rrc-table-viewport",
+        "h": 161,
+        "scroll": 161,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "rrc-results rrc-grouped rrc-hierarchy",
+        "h": 449,
+        "scroll": 449,
+        "min": "auto",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "flex min-w-0 flex-col gap-3 p-1",
+        "h": 926,
+        "scroll": 926,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "h-full overflow-auto pr-0.5",
+        "h": 764,
+        "scroll": 926,
+        "min": "0px",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 764,
+        "scroll": 764,
+        "min": "auto",
+        "overflow": "auto"
+      },
+      {
+        "cls": "",
+        "h": 764,
+        "scroll": 764,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 1100,
+        "scroll": 1100,
+        "min": "1100px",
+        "overflow": "hidden"
+      },
+      {
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 1497,
+        "scroll": 1497,
+        "min": "844px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex-1",
+        "h": 1497,
+        "scroll": 1497,
+        "min": "auto",
+        "overflow": "visible"
+      },
+      {
+        "cls": "flex min-h-screen flex-col bg-background",
+        "h": 1553,
+        "scroll": 1553,
+        "min": "900px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 1553,
+        "scroll": 1553,
+        "min": "0px",
+        "overflow": "visible"
+      },
+      {
+        "cls": "",
+        "h": 900,
+        "scroll": 1577,
+        "min": "0px",
+        "overflow": "visible"
+      }
+    ]
+  }
+]

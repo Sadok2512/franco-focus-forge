@@ -1,0 +1,96 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_MAP_INFO_INDEPENDENT_PANELS_V2
+
+PREVIOUS_VERSION = 1.27.1
+NEW_VERSION = 1.28.0
+CHANGE_TYPE = MINOR
+
+MAP_TOGGLE = TRUE
+INFO_TOGGLE = TRUE
+FOUR_LAYOUT_STATES = TRUE
+MAP_MARKERS = UNAVAILABLE — contrat insuffisant
+MAP_LEGEND = UNAVAILABLE — aucune population cartographiable validée
+MAP_COLOR_MODES = UNAVAILABLE — aucune population cartographiable validée
+MAP_FULLSCREEN = TRUE — panneau Unavailable uniquement
+MULTI_PARAMETER_INFO = TRUE
+RESIZABLE_LAYOUT = TRUE
+DATA_INTEGRITY = TRUE
+
+G1 = PASS
+G2 = PASS
+G3 = NOT RUN — zoom/pan/marqueurs/infobulles bloqués par le contrat
+G4 = NOT RUN — légende et colorations de mesures indisponibles
+G5 = PASS — plein écran du panneau, fermeture, Échap, aucune requête de distribution supplémentaire; redimensionnement d’un moteur cartographique NOT RUN
+G6 = PASS
+G7 = PASS
+G8 = PASS
+G9 = PASS
+G10 = PASS
+G11 = PASS
+G12 = FAIL — lint global préexistant; lint ciblé, TypeScript, tests et build PASS
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+KNOWN_LIMITATIONS =
+- La carte interactive de mesures n’est pas livrable avec le contrat existant. Aucun moteur cartographique supplémentaire créé.
+- GET /projects/{id}/dict/param/map?path=&system= renvoie lat/lon/value_raw/value_converted/operator/band, sans capture_id, seq, result_id ou preuve d’association à la mesure.
+- Son implémentation actuelle par chemin ignore les filtres opérateur/bande/géographie de la page RRC. Le chemin canonique v2 n’est pas non plus une garantie d’identité avec toutes les occurrences brutes.
+- Audit réel TEST2: HTTP 200, six coordonnées retournées pour le paramètre sondé, mais aucun champ de traçabilité par point. Ces points sont volontairement exclus de l’affichage.
+- Aucune légende, aucun compteur cartographique, aucune couleur par valeur, aucun clustering, export de points, choix de fond ou recherche de zone ne sont simulés.
+- Le panneau Carte affiche explicitement l’indisponibilité; aucune vue de la France n’est présentée comme une carte de mesures.
+- Les champs ASN.1, conversion 3GPP et valeur dominante absents des réponses restent —. La source des métadonnées est étiquetée comme information du projet.
+- Les occurrences et valeurs distinctes viennent de la projection existante de la distribution appliquée, identique aux histogrammes/tableau. La comparabilité globale n’est pas reprise sur une population opérateur/bande filtrée localement.
+- Les gardes navigateur utilisent Chromium. Autres navigateurs et tests de charge non exécutés.
+- Lint global: 700 erreurs et 29 avertissements sur le code préexistant; lint ciblé propre.
+
+NEXT_STEP = Mission API distincte pour fournir des observations RRC géolocalisées traçables, leur contexte appliqué complet et leur identité canonique. Ensuite brancher la carte existante et valider G3/G4 ainsi que le redimensionnement réel du moteur.
+
+FICHIERS MODIFIÉS PAR CETTE MISSION
+- src/features/dict-v2/DictV2Page.tsx: toggles indépendants, panneau droit conditionnel, fiches multiples, dimensions sidebar et panneau droit.
+- src/features/dict-v2/SelectedParameterInfo.tsx: nouveau panneau Infos, cache et annulation des lectures de métadonnées, recherche, accordéons et copie (avec repli HTTP non sécurisé).
+- src/features/dict-v2/RrcMapPanel.tsx: contrôle explicite du contrat cartographique, contexte appliqué, état Unavailable et plein écran.
+- src/features/dict-v2/premium.css: styles limités RRC, layout/scroll responsive, positionnement du workspace corrigeant le débordement de la caption accessible.
+- package.json: 1.27.1 → 1.28.0.
+- CHANGELOG.md: entrée 1.28.0.
+- scripts/rrc-panels-v2-check.mjs: tests navigateur et audit API.
+- rrc-panels-v2-evidence/: preuves de livraison.
+
+Pas de modification du backend, du composant cartographique KPI, de KPI Analytics, des conversions, du catalogue, de l’arbre ASN.1, des histogrammes ou du tableau hiérarchique. Les changements étrangers déjà présents dans le workspace sont conservés.
+
+COMMANDES EXÉCUTÉES
+npm run lint
+  FAIL: 729 problèmes, dont 700 erreurs et 29 avertissements.
+npx eslint src/features/dict-v2/DictV2Page.tsx src/features/dict-v2/SelectedParameterInfo.tsx src/features/dict-v2/RrcMapPanel.tsx scripts/rrc-panels-v2-check.mjs
+  PASS: code 0.
+npm run typecheck
+  PASS: code 0.
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+  PASS: 11 fichiers, 77 tests, code 0.
+docker exec bc4-front-1 bun run build
+  PASS: build client/server/Nitro, code 0.
+node scripts/rrc-panels-v2-check.mjs
+  PASS: contrôles réels sur TEST2, code 0.
+
+PREUVES NAVIGATEUR (browser.json)
+- Quatre combinaisons Carte/Infos; largeur centrale récupérée après fermeture des panneaux.
+- Trois paramètres: dl-Bandwidth, spare, phich-Duration; ajout/retrait de phich-Resource sans réouvrir les autres fiches.
+- Tout développer/réduire, recherche et copie ASN.1 vérifiés.
+- Plein écran: ouverture, fermeture bouton, Échap, pas de nouvel appel de distribution.
+- Brouillon opérateur Orange sans changement du contexte carte; application met à jour le contexte; toggles conservés.
+- Comparaison des result_id et des occurrences rendus avec la réponse API et sa projection opérateur existante.
+- Panneau droit redimensionné de 400 à environ 450 px, dans les bornes 350–600.
+- Desktop: hauteur document limitée à la hauteur viewport; pas de grand espace blanc inférieur.
+- Scroll Infos atteint exactement la fin; aucune erreur JavaScript.
+- Captures 1920×1080, 1440×900, 1280×800 et 400×900. Absence de débordement horizontal vérifiée.
+
+CAPTURES
+1920.png
+1440.png
+1280.png
+400.png
+
+AUDIT DU CONTRAT
+Lecture seule de bc4-back/app/routes/dictionary.py, fonctions _build_param_map_v2 et get_dict_param_map (autour des lignes 471–550), et du schéma frontend ParamMapPointSchema.
+La branche path/system filtre uniquement project_id/path/system et lat/lon non null, puis applique LIMIT. Les colonnes sélectionnées n’incluent pas de référence de preuve.
+Aucune correction backend effectuée, conformément au périmètre.

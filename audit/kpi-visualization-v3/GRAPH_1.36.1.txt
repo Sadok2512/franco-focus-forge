@@ -1,0 +1,18 @@
+BC4-FRONT — correction Graphique — 1.36.0 → 1.36.1 (patch)
+
+Graphique is now selectable in both sidebar and card menus. It renders an
+ECharts scatter series with category indices on X and actual API-derived KPI
+values on Y. No lines, synthesized points, statistical recalculation or pairing.
+Operator colors, per-KPI configuration, selected points, fullscreen and PNG/CSV
+remain available. Graph preference is accepted by session restoration.
+
+Live guard: node scripts/kpi-v3-check.mjs — PASS on Test_3.
+Graph renders, lower table text remains identical, no extra API call, PNG export.
+Remaining existing menu/draft/apply/group/CSV/responsive/focus checks PASS.
+Screenshot: kpi-v3-evidence/graph.png (live data).
+10 tests PASS (kpi-visualization and kpi-workspace suites).
+Targeted ESLint, TypeScript and production build checked separately.
+
+Limitations unchanged: no real Task Time or numeric metric-pair contract. The
+new graph compares aggregate categories; it does not claim to implement
+RSRP-versus-throughput or a temporal series. No backend or other-module edits.

@@ -1,0 +1,58 @@
+{
+  "recorded_at": "2026-10-18T22:38:16.759241+00:00",
+  "image": "sha256:225d4999b233ed9583b6b101150a1bff570a5d502a9de7e82404fd3d7f978f88",
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": true,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 137,
+    "Error": "",
+    "StartedAt": "2026-10-18T20:57:06.018705194Z",
+    "FinishedAt": "2026-10-18T22:37:19.547009403Z",
+    "Health": {
+      "Status": "unhealthy",
+      "FailingStreak": 1,
+      "Log": [
+        {
+          "Start": "2026-10-18T22:29:03.90595618Z",
+          "End": "2026-10-18T22:29:12.495673518Z",
+          "ExitCode": -1,
+          "Output": "Health check exceeded timeout (3s): {\"status\":\"ok\",\"env\":\"development\",\"version\":\"0.51.0\"}"
+        },
+        {
+          "Start": "2026-10-18T22:29:17.532740904Z",
+          "End": "2026-10-18T22:29:36.803903943Z",
+          "ExitCode": -1,
+          "Output": "Health check exceeded timeout (3s)"
+        },
+        {
+          "Start": "2026-10-18T22:29:42.182357666Z",
+          "End": "2026-10-18T22:29:56.102363654Z",
+          "ExitCode": -1,
+          "Output": "Health check exceeded timeout (3s)"
+        },
+        {
+          "Start": "2026-10-18T22:30:01.776858602Z",
+          "End": "2026-10-18T22:30:25.406915436Z",
+          "ExitCode": 0,
+          "Output": "{\"status\":\"ok\",\"env\":\"development\",\"version\":\"0.51.0\"}"
+        },
+        {
+          "Start": "2026-10-18T22:30:30.473611894Z",
+          "End": "2026-10-18T22:36:36.818665522Z",
+          "ExitCode": -1,
+          "Output": "timed out starting health check for container 6949d291c1fe7e11b3761ea85fedf4c70b02583dada92d328a0d85e933588048"
+        }
+      ]
+    }
+  },
+  "old_command": [
+    "sh",
+    "-c",
+    "alembic upgrade head && python -m app.seed.run && uvicorn app.main:app --host 0.0.0.0 --port 8000"
+  ]
+}

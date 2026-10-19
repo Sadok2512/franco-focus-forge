@@ -1,0 +1,68 @@
+{
+  "baseline": {
+    "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/measConfig/reportConfigToAddModList/reportConfig/triggerType/eventId/a2-Threshold": 3098,
+    "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/measConfig/reportConfigToAddModList/reportConfig/triggerType/eventId/a3-Offset": 1129
+  },
+  "histograms": {
+    "a2-Threshold": 3098,
+    "a3-Offset": 1129
+  },
+  "rawMapping": "PASS",
+  "draft": "PASS",
+  "selectionPending": "PASS",
+  "filtered": {
+    "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/measConfig/reportConfigToAddModList/reportConfig/triggerType/eventId/a2-Threshold": 77,
+    "rrcConnectionReconfiguration/rrcConnectionReconfiguration-r8/measConfig/reportConfigToAddModList/reportConfig/triggerType/eventId/a3-Offset": 31
+  },
+  "filteredHistograms": {
+    "a2-Threshold": 77,
+    "a3-Offset": 31
+  },
+  "reset": "PASS",
+  "sizes": [
+    {
+      "width": 1920,
+      "height": 1080,
+      "toolbar": 108.21875,
+      "bodyWidth": 1920,
+      "rootHeight": 1024
+    },
+    {
+      "width": 1440,
+      "height": 900,
+      "toolbar": 108.21875,
+      "bodyWidth": 1440,
+      "rootHeight": 844
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "toolbar": 108.21875,
+      "bodyWidth": 1280,
+      "rootHeight": 744
+    },
+    {
+      "width": 400,
+      "height": 900,
+      "toolbar": 318.65625,
+      "bodyWidth": 400,
+      "rootHeight": 2342.796875
+    }
+  ],
+  "staleResponses": "PASS",
+  "failureContext": "PASS",
+  "geography": "PASS: isolated DOR draft selection sends no analysis; Tous/disabled omit restriction and preserve real baseline counts",
+  "requests": [
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmobilityControlInfo%2FradioResourceConfigCommon%2Fprach-Config%2Fprach-ConfigInfo%2FhighSpeedFlag&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold&group_by=operator_band",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/distribution?keys=rrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa2-Threshold%2CrrcConnectionReconfiguration%2FrrcConnectionReconfiguration-r8%2FmeasConfig%2FreportConfigToAddModList%2FreportConfig%2FtriggerType%2FeventId%2Fa3-Offset&group_by=operator_band"
+  ],
+  "errors": []
+}

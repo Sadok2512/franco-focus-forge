@@ -1,0 +1,17 @@
+{
+  "baseline_changed_files": [
+    "/home/devmat/BC4/franco-focus-forge/src/routes/_app.kpi.tsx",
+    "/home/devmat/BC4/franco-focus-forge/src/lib/api/client.ts",
+    "/home/devmat/BC4/franco-focus-forge/src/features/dict-v2/DictV2Page.tsx",
+    "/home/devmat/BC4/franco-focus-forge/src/features/dict-v2/GeographicFilter.tsx"
+  ],
+  "mission_existing_files": [
+    "src/routes/_app.kpi.tsx",
+    "src/lib/api/client.ts"
+  ],
+  "concurrent_unrelated_changes": [
+    "src/features/dict-v2/DictV2Page.tsx",
+    "src/features/dict-v2/GeographicFilter.tsx"
+  ],
+  "backend_changed": false
+}

@@ -1,0 +1,248 @@
+[
+  {
+    "width": 1920,
+    "height": 1080,
+    "body": {
+      "scroll": 1080,
+      "client": 1080
+    },
+    "nodes": [
+      {
+        "tag": "MAIN",
+        "cls": "flex-1",
+        "h": 1024,
+        "height": "1024px",
+        "min": "auto",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "visible",
+        "scroll": 1024,
+        "client": 1024
+      },
+      {
+        "tag": "DIV",
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 1024,
+        "height": "1024px",
+        "min": "1024px",
+        "max": "none",
+        "flex": "0 1 auto",
+        "overflow": "visible",
+        "scroll": 1024,
+        "client": 1024
+      },
+      {
+        "tag": "SECTION",
+        "cls": "rrc-toolbar",
+        "h": 200.21875,
+        "height": "200.219px",
+        "min": "auto",
+        "max": "none",
+        "flex": "0 0 auto",
+        "overflow": "hidden",
+        "scroll": 198,
+        "client": 198
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 775.78125,
+        "height": "775.781px",
+        "min": "0px",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "hidden",
+        "scroll": 776,
+        "client": 776
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 775.78125,
+        "height": "775.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "21.444 1 0px",
+        "overflow": "visible",
+        "scroll": 776,
+        "client": 776
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 775.78125,
+        "height": "775.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "78.556 1 0px",
+        "overflow": "visible",
+        "scroll": 776,
+        "client": 776
+      }
+    ]
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "body": {
+      "scroll": 900,
+      "client": 900
+    },
+    "nodes": [
+      {
+        "tag": "MAIN",
+        "cls": "flex-1",
+        "h": 844,
+        "height": "844px",
+        "min": "auto",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "visible",
+        "scroll": 844,
+        "client": 844
+      },
+      {
+        "tag": "DIV",
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 844,
+        "height": "844px",
+        "min": "844px",
+        "max": "none",
+        "flex": "0 1 auto",
+        "overflow": "visible",
+        "scroll": 844,
+        "client": 844
+      },
+      {
+        "tag": "SECTION",
+        "cls": "rrc-toolbar",
+        "h": 200.21875,
+        "height": "200.219px",
+        "min": "auto",
+        "max": "none",
+        "flex": "0 0 auto",
+        "overflow": "hidden",
+        "scroll": 198,
+        "client": 198
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 595.78125,
+        "height": "595.781px",
+        "min": "0px",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "hidden",
+        "scroll": 596,
+        "client": 596
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 595.78125,
+        "height": "595.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "21.444 1 0px",
+        "overflow": "visible",
+        "scroll": 596,
+        "client": 596
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 595.78125,
+        "height": "595.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "78.556 1 0px",
+        "overflow": "visible",
+        "scroll": 596,
+        "client": 596
+      }
+    ]
+  },
+  {
+    "width": 1280,
+    "height": 800,
+    "body": {
+      "scroll": 800,
+      "client": 800
+    },
+    "nodes": [
+      {
+        "tag": "MAIN",
+        "cls": "flex-1",
+        "h": 744,
+        "height": "744px",
+        "min": "auto",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "visible",
+        "scroll": 744,
+        "client": 744
+      },
+      {
+        "tag": "DIV",
+        "cls": "rrc-premium flex min-h-[calc(100vh-56px)] flex-col gap-4 p-3 md:h-[calc(100vh-56px)] md:p-4",
+        "h": 744,
+        "height": "744px",
+        "min": "744px",
+        "max": "none",
+        "flex": "0 1 auto",
+        "overflow": "visible",
+        "scroll": 744,
+        "client": 744
+      },
+      {
+        "tag": "SECTION",
+        "cls": "rrc-toolbar",
+        "h": 200.21875,
+        "height": "200.219px",
+        "min": "auto",
+        "max": "none",
+        "flex": "0 0 auto",
+        "overflow": "hidden",
+        "scroll": 198,
+        "client": 198
+      },
+      {
+        "tag": "DIV",
+        "cls": "flex h-full w-full data-[panel-group-direction=vertical]:flex-col min-h-0 flex-1",
+        "h": 495.78125,
+        "height": "495.781px",
+        "min": "0px",
+        "max": "none",
+        "flex": "1 1 0%",
+        "overflow": "hidden",
+        "scroll": 496,
+        "client": 496
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 495.78125,
+        "height": "495.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "21.444 1 0px",
+        "overflow": "visible",
+        "scroll": 496,
+        "client": 496
+      },
+      {
+        "tag": "DIV",
+        "cls": "",
+        "h": 495.78125,
+        "height": "495.781px",
+        "min": "0px",
+        "max": "100%",
+        "flex": "78.556 1 0px",
+        "overflow": "visible",
+        "scroll": 496,
+        "client": 496
+      }
+    ]
+  }
+]

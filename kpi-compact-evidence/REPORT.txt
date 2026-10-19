@@ -1,0 +1,73 @@
+PROJECT = BC4-FRONT
+MISSION = KPI_ANALYTICS_COMPACT_LAYOUT_REDESIGN_V2
+
+PREVIOUS_VERSION = 1.33.2
+NEW_VERSION = 1.34.0
+CHANGE_TYPE = MINOR — évolution UI et interactions compatibles
+
+FILTERS_TOP = TRUE
+FILTERS_COMPACT = TRUE
+APPLY_FILTERS = TRUE
+SIDEBAR_PRESERVED = TRUE
+MULTI_SELECT = TRUE
+MULTIGRAPH_SECTION_REMOVED = TRUE
+MAP_INFO_SECTION_REMOVED = TRUE
+DYNAMIC_CHART_LAYOUT = TRUE
+CHART_ERROR_STATES = TRUE
+SCROLL_OPTIMIZED = TRUE
+DATA_INTEGRITY = TRUE
+
+G1 = PASS
+G2 = PASS
+G3 = PASS
+G4 = PASS
+G5 = PASS
+G6 = PASS
+G7 = PASS
+G8 = PASS
+G9 = PASS
+G10 = FAIL — lint global : 697 erreurs et 29 avertissements ; lint ciblé, typecheck, 82 tests et build passent.
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+KNOWN_LIMITATIONS = Le contrat KPI existant ne permet pas le filtrage par dates ni les séries Task Time ; période réelle affichée, histogrammes d’agrégats conservés. Géographie limitée aux dimensions fournies. Limite existante de 8 graphiques conservée. Lint global non propre hors du périmètre modifié.
+NEXT_STEP = Recette utilisateur sur /kpi ; traiter séparément la dette de lint globale.
+
+Validation exécutée :
+- Navigateur Chromium automatisé sur le serveur réel, projet TEST2.
+- Filtres au-dessus du catalogue ; modification opérateur sans requête avant Appliquer.
+- Recherche, sélection de trois KPI, fermeture et redimensionnement du catalogue.
+- Dispositions 1, 2 et 3 graphiques vérifiées géométriquement.
+- 1920×1080, 1440×900, 1280×800 et 400×844 : aucune largeur de page excédentaire.
+- Infos individuel et export CSV conservés.
+- Réponse invalide n=null injectée exclusivement dans le navigateur de test : message lisible, diagnostic exact, autre KPI disponible, reprise après retrait de l’injection.
+- Tests du modèle : zéro/null, populations, result_id, dénominateurs, statistiques, absence de fausse série temporelle.
+- Captures desktop et mobile inspectées visuellement. Ces validations ne constituent pas une recette manuelle humaine.
+
+Fichiers modifiés dans ce lot :
+src/features/kpi/KpiWorkspace.tsx
+src/features/kpi/KpiFilters.tsx
+src/features/kpi/KpiGraphCard.tsx
+src/features/kpi/workspace.css
+package.json
+CHANGELOG.md
+
+Fichiers ajoutés :
+scripts/kpi-compact-check.mjs
+kpi-compact-evidence/ (rapport, captures et journaux)
+
+Commandes exécutées :
+npm run typecheck
+npm run lint
+npx eslint src/features/kpi/KpiWorkspace.tsx src/features/kpi/KpiFilters.tsx src/features/kpi/KpiGraphCard.tsx scripts/kpi-compact-check.mjs
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+docker exec bc4-front-1 bun run build
+node scripts/kpi-compact-check.mjs
+
+Preuves :
+browser.json et browser.log
+1920.png, 1440.png, 1280.png, 400.png, error.png
+typecheck.log, scoped-lint.log, lint.log, tests.log, build.log
+
+Les modifications préexistantes du dépôt, notamment RRC et backend, ont été conservées sans intervention dans ce lot.

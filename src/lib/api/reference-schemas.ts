@@ -3,6 +3,41 @@
 // jamais être « lissé » par un défaut : null reste null, affiché « N/D ».
 import { z } from "zod";
 
+// -----------------------------------------------------------------------
+// 1.19.0 — POST /settings/cell-ref/upload (bc4-back 0.47.1).
+// Réponse : {status, status_reason, reject_reasons, processed, matched,
+// inserted, updated_lines, cells_affected, source_path, …}. `status` ∈
+// {"ok","rejected"}. UI : status="rejected" → bandeau rouge avec
+// status_reason + ventilation reject_reasons. Jamais un bandeau vert
+// si cells_affected = 0. `.passthrough()` : nouveaux champs back ne
+// cassent pas le safeParse.
+// -----------------------------------------------------------------------
+export const CellRefUploadReportSchema = z
+  .object({
+    reference_id: z.string(),
+    filename: z.string(),
+    sha256: z.string().optional(),
+    size_bytes: z.number().int().nonnegative().optional(),
+    source_path: z.string().nullable().optional(),
+    status: z.enum(["ok", "rejected"]),
+    status_reason: z.string().nullable().optional(),
+    processed: z.number().int().nonnegative(),
+    matched: z.number().int().nonnegative(),
+    cells_affected: z.number().int().nonnegative().optional(),
+    inserted: z.number().int().nonnegative(),
+    updated_lines: z.number().int().nonnegative().optional(),
+    skipped_empty: z.number().int().nonnegative().optional(),
+    not_found: z.number().int().nonnegative(),
+    rejected: z.number().int().nonnegative(),
+    ambiguous: z.number().int().nonnegative().optional(),
+    reject_reasons: z.record(z.string(), z.number().int()).optional(),
+    rejected_detail: z.array(z.unknown()).optional(),
+    ambiguous_detail: z.array(z.unknown()).optional(),
+    warnings: z.array(z.string()).optional(),
+  })
+  .passthrough();
+export type CellRefUploadReport = z.infer<typeof CellRefUploadReportSchema>;
+
 export const ImportReportSchema = z.object({
   rows_read: z.number().int(),
   rows_loaded: z.number().int(),

@@ -1,0 +1,18 @@
+{
+  "initialRequests": [
+    "http://localhost:5174/src/features/kpi/workspace-model.ts?t=1792361191963",
+    "http://localhost:5174/src/features/kpi/KpiMapOSM.tsx?t=1792356423360",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/filters",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/dict/v2/tree?view=catalog",
+    "http://localhost:5174/src/features/kpi/KpiWorkspace.tsx?t=1792409960186",
+    "http://localhost:5174/src/features/kpi/KpiCatalogSidebar.tsx?t=1792409823881",
+    "http://localhost:5174/src/features/kpi/KpiFilters.tsx?t=1792361470974",
+    "http://localhost:5174/src/features/kpi/KpiGraphCard.tsx?t=1792361191963",
+    "http://localhost:5174/src/features/kpi/KpiDataTable.tsx?t=1792361191963",
+    "http://localhost:5174/src/features/kpi/workspace.css?t=1792360156799",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/catalog",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/filters",
+    "http://localhost:5174/api/projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band"
+  ],
+  "repeatRequests": []
+}

@@ -10,11 +10,15 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronRight, FileText, Folder, RotateCcw, Search } from "lucide-react";
 import type { DictLeaf, DictTreeResponse } from "@/lib/api/dict-v2";
+import { selectionId } from "./parameter-identity";
 import { fmtInt } from "@/features/dictionary/shared";
 import { discriminatorChips, originLabel } from "./types";
 
+import type { TemplateCategory } from "@/lib/api/dict-templates";
+
 type Techno = "LTE" | "NR" | "LTE+NR";
-type View = "catalog" | "raw";
+export type TreePanelView = "catalog" | "raw" | "templates";
+type View = TreePanelView;
 
 export function TreePanel({
   techno,
@@ -25,7 +29,19 @@ export function TreePanel({
   onInfo,
   onReset,
   resetTick,
+  categories,
+  activeCategory,
+  onCategory,
+  templatesLoading,
+  templatesError,
+  onViewChange,
 }: {
+  onViewChange: (view: TreePanelView) => void;
+  categories: TemplateCategory[];
+  activeCategory: TemplateCategory | null;
+  onCategory: (category: TemplateCategory) => void;
+  templatesLoading: boolean;
+  templatesError: boolean;
   techno: Techno;
   catalog: DictTreeResponse | null;
   raw: DictTreeResponse | null;
@@ -39,7 +55,13 @@ export function TreePanel({
   resetTick: number;
 }) {
   const [tab, setTab] = useState<View>("catalog");
-  const [q, setQ] = useState("");
+  const [searches, setSearches] = useState<Record<View, string>>({
+    catalog: "",
+    raw: "",
+    templates: "",
+  });
+  const q = searches[tab];
+  const setQ = (value: string) => setSearches((previous) => ({ ...previous, [tab]: value }));
   // Signal interne vers TreeView pour qu'il replie à l'état initial —
   // bumpé par le même tick que celui du bouton Réinitialiser.
   const [internalResetTick, setInternalResetTick] = useState(0);
@@ -48,7 +70,7 @@ export function TreePanel({
   useEffect(() => {
     if (resetTick === 0) return;
     setTab("catalog");
-    setQ("");
+    setSearches({ catalog: "", raw: "", templates: "" });
     setInternalResetTick((t) => t + 1);
   }, [resetTick]);
 
@@ -62,33 +84,86 @@ export function TreePanel({
         aria-label="Vue du dictionnaire"
         data-testid="dict-tree-tabs"
       >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "catalog"}
-          onClick={() => setTab("catalog")}
-          className={`border-b-2 px-3 py-1.5 text-xs font-medium ${
-            tab === "catalog"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Paramètres
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === "raw"}
-          onClick={() => setTab("raw")}
-          className={`border-b-2 px-3 py-1.5 text-xs font-medium ${
-            tab === "raw"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          Raw parameter
-        </button>
+        {(
+          [
+            ["catalog", "Paramètres"],
+            ["raw", "Raw parameter"],
+            ["templates", "Templates"],
+          ] as const
+        ).map(([view, label], index, tabs) => (
+          <button
+            key={view}
+            id={`rrc-tab-${view}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === view}
+            aria-controls={`rrc-panel-${view}`}
+            tabIndex={tab === view ? 0 : -1}
+            onClick={() => {
+              setTab(view);
+              onViewChange(view);
+            }}
+            onKeyDown={(event) => {
+              const next =
+                event.key === "ArrowRight"
+                  ? (index + 1) % tabs.length
+                  : event.key === "ArrowLeft"
+                    ? (index + tabs.length - 1) % tabs.length
+                    : event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? tabs.length - 1
+                        : null;
+              if (next === null) return;
+              event.preventDefault();
+              const nextView = tabs[next]![0];
+              setTab(nextView);
+              onViewChange(nextView);
+              document.getElementById(`rrc-tab-${nextView}`)?.focus();
+            }}
+            className={`min-w-0 flex-1 whitespace-nowrap border-b-2 px-1 py-2 text-xs font-medium ${tab === view ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+      {tab === "templates" && (
+        <section
+          id="rrc-panel-templates"
+          role="tabpanel"
+          aria-labelledby="rrc-tab-templates"
+          aria-label="Catégories"
+          className="min-h-0 flex-1 overflow-auto border-b py-2"
+        >
+          <h3 className="px-3 pb-1 text-xs font-semibold">Catégories</h3>
+          {templatesLoading && (
+            <div role="status" className="h-72 animate-pulse bg-muted mx-2 rounded">
+              Chargement des catégories…
+            </div>
+          )}
+          {templatesError && (
+            <p role="alert" className="px-3 text-xs text-destructive">
+              Templates indisponibles. Réessayez en rechargeant la page.
+            </p>
+          )}
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              disabled={!catalog}
+              type="button"
+              aria-pressed={activeCategory?.id === category.id}
+              title={category.n_in_project === 0 ? "0 occurrence dans le projet" : category.label}
+              onClick={() => onCategory(category)}
+              className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs hover:bg-muted ${activeCategory?.id === category.id ? "bg-primary/10 text-primary" : category.n_in_project === 0 ? "text-muted-foreground" : ""}`}
+            >
+              <span>{category.label}</span>
+              <span className="shrink-0 font-mono text-[10px]">
+                {fmtInt(category.n_parameters)} params · {fmtInt(category.n_in_project)} détections
+              </span>
+            </button>
+          ))}
+        </section>
+      )}
       <div className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
         <span className="text-[11px] text-muted-foreground" data-testid="dict-selected-count">
           <b className="font-mono text-foreground">{nSel}</b> sélectionné{nSel > 1 ? "s" : ""}
@@ -103,53 +178,69 @@ export function TreePanel({
           <RotateCcw className="h-3 w-3" /> Réinitialiser
         </button>
       </div>
-      <div className="border-b p-2">
-        <label className="relative block">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Rechercher un paramètre…"
-            aria-label="Rechercher un paramètre dans l'arbre"
-            className="h-8 w-full rounded-md border bg-card pl-7 pr-2 text-xs"
-            data-testid="dict-tree-search"
-          />
-        </label>
-        {activeTree && (
-          <p className="mt-1.5 text-[10.5px] text-muted-foreground">
-            {/* 1.19.1 — Raw expose "paramètres · détections" ; catalog garde
+      {tab !== "templates" && (
+        <div className="border-b p-2">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Rechercher un paramètre…"
+              aria-label="Rechercher un paramètre dans l'arbre"
+              className="h-8 w-full rounded-md border bg-card pl-7 pr-2 text-xs"
+              data-testid="dict-tree-search"
+            />
+          </label>
+          {activeTree && (
+            <p className="mt-1.5 text-[10.5px] text-muted-foreground">
+              {/* 1.19.1 — Raw expose "paramètres · détections" ; catalog garde
                 "paramètres · lignes". Les deux comptes viennent de la racine
                 du payload back (distinct_param_keys / total_rows), jamais
                 recalculés côté front. */}
-            {fmtInt(activeTree.distinct_param_keys)} paramètres · {fmtInt(activeTree.total_rows)}{" "}
-            {tab === "raw" ? "détections" : "lignes"}
-          </p>
-        )}
-      </div>
-      <div className="min-h-0 flex-1 overflow-auto">
-        {!activeTree ? (
-          <p className="p-3 text-xs text-muted-foreground">Chargement…</p>
-        ) : tab === "raw" ? (
-          <RawTreeView
-            tree={activeTree}
-            techno={techno}
-            needle={q.trim().toLowerCase()}
-            selected={selected}
-            onToggle={onToggle}
-            resetTick={internalResetTick}
-          />
-        ) : (
-          <TreeView
-            tree={activeTree}
-            techno={techno}
-            needle={q.trim().toLowerCase()}
-            selected={selected}
-            onToggle={onToggle}
-            onInfo={onInfo}
-            resetTick={internalResetTick}
-          />
-        )}
-      </div>
+              {fmtInt(activeTree.distinct_param_keys)} paramètres · {fmtInt(activeTree.total_rows)}{" "}
+              {tab === "raw" ? "détections" : "lignes"} dans le projet. Sélection : projet /
+              affichées.
+            </p>
+          )}
+        </div>
+      )}
+      {(["catalog", "raw"] as const).map((view) => {
+        const tree = view === "catalog" ? catalog : raw;
+        return (
+          <div
+            key={view}
+            id={`rrc-panel-${view}`}
+            role="tabpanel"
+            aria-labelledby={`rrc-tab-${view}`}
+            hidden={tab !== view}
+            className="min-h-0 flex-1 overflow-auto"
+            data-testid={tab === view ? "dict-tree-scroll" : undefined}
+          >
+            {!tree ? (
+              <p className="p-3 text-xs text-muted-foreground">Chargement…</p>
+            ) : view === "raw" ? (
+              <RawTreeView
+                tree={tree}
+                techno={techno}
+                needle={searches[view].trim().toLowerCase()}
+                selected={selected}
+                onToggle={onToggle}
+                resetTick={internalResetTick}
+              />
+            ) : (
+              <TreeView
+                tree={tree}
+                techno={techno}
+                needle={searches[view].trim().toLowerCase()}
+                selected={selected}
+                onToggle={onToggle}
+                onInfo={onInfo}
+                resetTick={internalResetTick}
+              />
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -181,12 +272,12 @@ export function TreePanel({
 // court dans le même message, on ajoute le segment parent discriminant
 // entre parenthèses — jamais le chemin complet dans la ligne.
 type RawAggItem = {
-  key:          string;          // path canonique (sans [n]) — clé React stable
-  shortName:    string;          // dernier segment (nom 3GPP)
-  display:      string;          // shortName + ' (parentSeg)' si ambigu
-  fullPath:     string;          // path complet du 1er leaf (pour tooltip)
-  n:            number;          // somme des occurrences agrégées
-  leafRef:      DictLeaf;        // 1er leaf (sert pour selected/onToggle)
+  key: string; // path canonique (sans [n]) — clé React stable
+  shortName: string; // dernier segment (nom 3GPP)
+  display: string; // shortName + ' (parentSeg)' si ambigu
+  fullPath: string; // path complet du 1er leaf (pour tooltip)
+  n: number; // somme des occurrences agrégées
+  leafRef: DictLeaf; // 1er leaf (sert pour selected/onToggle)
 };
 
 function stripIndices(path: string): string {
@@ -204,7 +295,10 @@ function lastSegment(path: string): string {
 
 function aggregateRawLeaves(leafs: DictLeaf[]): RawAggItem[] {
   // Première passe : fusion par path dédupliqué (sans [n]).
-  const byKey = new Map<string, { leaf: DictLeaf; n: number; shortName: string; canonicalSegs: string[] }>();
+  const byKey = new Map<
+    string,
+    { leaf: DictLeaf; n: number; shortName: string; canonicalSegs: string[] }
+  >();
   for (const l of leafs) {
     const canonical = stripIndices(l.display_name);
     const segs = canonical.split("/").filter(Boolean);
@@ -364,6 +458,7 @@ function RawTreeView({
             <button
               role="treeitem"
               aria-level={1}
+              data-rrc-root={t.techno}
               aria-expanded={tOpen}
               onClick={() => toggle(t.techno)}
               className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left font-semibold hover:bg-muted"
@@ -373,7 +468,7 @@ function RawTreeView({
               ) : (
                 <ChevronRight className="h-3.5 w-3.5" />
               )}
-              <Folder className="h-3.5 w-3.5 text-primary" />
+              <Folder className="h-3.5 w-3.5" />
               {t.techno}
               <span className="ml-auto font-mono text-[10px] tabular-nums text-muted-foreground">
                 {fmtInt(nMessages)} msg · {fmtInt(nLeafs)}
@@ -442,7 +537,7 @@ function RawLeafRow({
   selected: Set<string>;
   onToggle: (leaf: DictLeaf) => void;
 }) {
-  const isSelected = selected.has(item.leafRef.param_key);
+  const isSelected = selected.has(selectionId(item.leafRef));
   const n = item.n;
   return (
     <li role="none">
@@ -451,6 +546,7 @@ function RawLeafRow({
           isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted"
         } ${n === 0 ? "opacity-60" : ""}`}
         data-testid={`dict-raw-leaf-${item.shortName}`}
+        data-selection-id={selectionId(item.leafRef)}
       >
         <input
           type="checkbox"
@@ -471,6 +567,15 @@ function RawLeafRow({
         </span>
         <span className="shrink-0 self-start pt-[1px] font-mono text-[10px] tabular-nums text-muted-foreground">
           {fmtInt(n)}
+          {isSelected && (
+            <span title="Occurrences affichées avec les filtres appliqués">
+              {" "}
+              /{" "}
+              {typeof item.leafRef["displayed_n"] === "number"
+                ? fmtInt(item.leafRef["displayed_n"])
+                : "—"}
+            </span>
+          )}
         </span>
       </label>
     </li>
@@ -523,7 +628,8 @@ function TreeView({
         for (const m of o.messages) {
           for (const g of m.groups) {
             for (const leaf of g.kpis) {
-              const hay = `${leaf.display_name} ${leaf.param_key} ${JSON.stringify(leaf.discriminators ?? {})}`.toLowerCase();
+              const hay =
+                `${leaf.display_name} ${leaf.param_key} ${JSON.stringify(leaf.discriminators ?? {})}`.toLowerCase();
               if (
                 hay.includes(needle) ||
                 m.message.toLowerCase().includes(needle) ||
@@ -568,6 +674,7 @@ function TreeView({
             <button
               role="treeitem"
               aria-level={1}
+              data-rrc-root={t.techno}
               aria-expanded={tOpen}
               onClick={() => toggle(t.techno)}
               className="flex w-full items-center gap-1.5 rounded px-1 py-1 text-left font-semibold hover:bg-muted"
@@ -577,7 +684,7 @@ function TreeView({
               ) : (
                 <ChevronRight className="h-3.5 w-3.5" />
               )}
-              <Folder className="h-3.5 w-3.5 text-primary" />
+              <Folder className="h-3.5 w-3.5" />
               {t.techno}
             </button>
             {tOpen && (
@@ -621,10 +728,7 @@ function TreeView({
                             const mid = messageId(t.techno, o.origin, m.message);
                             if (needle && filteredIds && !filteredIds.has(mid)) return null;
                             const mOpen = open.has(mid) || !!needle;
-                            const nMsg = m.groups.reduce(
-                              (a, g) => a + g.kpis.length,
-                              0,
-                            );
+                            const nMsg = m.groups.reduce((a, g) => a + g.kpis.length, 0);
                             return (
                               <li key={mid} role="none">
                                 <button
@@ -736,7 +840,7 @@ function LeafRow({
   onInfo: (leaf: DictLeaf) => void;
 }) {
   const chips = discriminatorChips(leaf.discriminators);
-  const isSelected = selected.has(leaf.param_key);
+  const isSelected = selected.has(selectionId(leaf));
   const n = leaf.n ?? 0;
   return (
     <li role="none">
@@ -745,6 +849,7 @@ function LeafRow({
           isSelected ? "bg-accent text-accent-foreground" : "hover:bg-muted"
         } ${n === 0 ? "opacity-60" : ""}`}
         data-testid={`dict-leaf-${leaf.display_name}`}
+        data-selection-id={selectionId(leaf)}
       >
         <input
           type="checkbox"
@@ -767,7 +872,15 @@ function LeafRow({
             {chips.join(" ")}
           </span>
         )}
-        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{fmtInt(n)}</span>
+        <span className="shrink-0 font-mono text-[10px] text-muted-foreground">
+          {fmtInt(n)}
+          {isSelected && (
+            <span title="Occurrences affichées avec les filtres appliqués">
+              {" "}
+              / {typeof leaf["displayed_n"] === "number" ? fmtInt(leaf["displayed_n"]) : "—"}
+            </span>
+          )}
+        </span>
       </div>
     </li>
   );

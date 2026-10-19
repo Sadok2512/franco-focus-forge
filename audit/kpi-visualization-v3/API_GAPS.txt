@@ -1,0 +1,36 @@
+BC4 KPI advanced visualization — audit 2026-10-19
+Existing contract read from GET http://localhost:8000/openapi.json.
+Live evidence: GET /projects/4b7bfd50ddb6/kpi/LTE_RRC_ATTEMPTS?group_by=operator_band
+Response: aggregates/groups/table/by_operator, unit, value/n/percentiles, status and sources.
+No task_time, capture/seq observation records, paired metric samples or KPI coordinates.
+Raw live responses and URLs: kpi-v3-evidence/report.json.
+
+IMPLEMENTED WITHOUT A NEW CONTRACT
+- Separate sidebar visualization menu and card settings menu.
+- Per-code selection/config, histogram or lower table, explicit unavailable map.
+- Category X axis from available project dimensions; Y is the actual KPI and unit.
+- Only statistics already supplied by the API; `value` is not relabelled Mean.
+- Same analytical rows for charts, lower table and CSV, no new calculations.
+- Request key includes project/code/applied filters/group_by. Presentation and
+  percentile changes reuse the same response because it already contains them.
+- Configuration changes cancel the obsolete grouped query; navigation continues
+  to reuse in-flight/completed responses. Different contexts cannot overwrite one another.
+
+MISSING BACKEND CAPABILITIES — PROPOSED CONTRACT, NOT IMPLEMENTED OR CALLED
+An authorized future API must supply:
+1) Semantic capabilities per KPI: stable metric IDs, labels, units, supported
+   visualization types, eligible X/Y axes, available statistics and groupings.
+2) An observations response scoped to project_id injected server-side and the same
+   applied filters: capture_id, seq, observation_id, decoded task_time_s (nullable),
+   metric_id/value/unit, nullable lat/lng, operator/band and source references/result_id.
+3) A validated pairing response for numerical XY: pair_id, capture_id, seq,
+   x/y metric IDs, values and units, join rule/evidence, eligible pair count,
+   missing/excluded counts, source population and explicit incompatibility reasons.
+4) Canonical (capture_id, seq) ordering and cursor/pagination bound to the context.
+   Separate capture series or capture selector; no inter-capture timestamp axis.
+5) Aggregate mean only if returned as such; no inference from value or percentiles.
+
+No raw points reconstructed from counts, means or percentiles. No call to a
+hypothetical endpoint. Since 1.36.1, Graphique renders aggregate points on a categorical X axis
+(operator/band) and the actual KPI statistic on Y. It is not a paired numerical
+XY plot or a time series. Carte shows an explicit unavailable state. No imaginary Task Time or RSRP/throughput pairing.

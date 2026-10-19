@@ -1,0 +1,66 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_GROUPED_PARAMETER_VALUES_TABLE_V2
+
+PREVIOUS_VERSION = 1.23.1
+NEW_VERSION = 1.24.0
+CHANGE_TYPE = MINOR (CSV export schema changed)
+
+FAMILY_GROUPING = Catalog metadata only; unknown/conflicting membership -> Famille non renseignée.
+PARAMETER_DEDUPLICATION = Stable param_key; one visible family and parameter label per group; repeated screen-reader context retained.
+PERCENTAGES = Full effective parameter/group counts before table search; operator+band denominators independent; no rounded-percentage reconstruction.
+MISSING_VALUES = Null remains null; displayed —; explicit zero remains 0 · 0,0 % with a positive denominator.
+SEARCH = Family, parameter, displayed/raw value; matching parameter retains every value.
+SORTING = Family then stable parameter group then value/count/percentage/total; missing last.
+CSV_EXPORT = One record per filtered value × group; explicit family/parameter_id/name and raw value/count/denominator/percentage/total. Band field added for band/combined mode. All data columns exported regardless of visual column visibility.
+DATA_INTEGRITY = Real TEST2 values, counts, distinct values, verdicts, comparability and result_id matched saved pre-change API baseline exactly for both selected parameters. No writes to project data.
+
+G1 = PASS — browser: 6 rows, 1 visible family label, 2 visible parameter labels. Unit tests cover stable IDs and unknown family.
+G2 = PASS — browser: prach-ConfigIndex has 5 rows (3, 4, 5, 20, 35), one visible label.
+G3 = PASS — browser: Orange 39/54=72.2%; Free 4/9=44.4%. Unit tests verify operator+band denominators and search-independent populations.
+G4 = PASS — executed rendering/model tests verify null -> — and explicit 0/2 -> 0 · 0,0 %. Zero-only denominator produces unavailable percentage.
+G5 = PASS — browser: family search 6 rows, parameter search 5, value 35 search 1 retaining family/parameter context.
+G6 = PASS — browser: total sorting preserves groups. Unit tests cover count/value sorts and same display name with distinct param_key.
+G7 = PASS — browser clipboard CSV has header +18 records, explicit family on all records. Unit tests assert exact schema, stable IDs, raw counts, denominators, null exports and band field.
+G8 = PASS — baseline comparison for all measurement/evidence fields above; 2 charts and 2 selected parameters retained. Existing distribution/filter tests pass. No API/client/chart/sidebar/filter implementation changed by this table mission. Exhaustive browser exercise of every global filter NOT RUN.
+G9 = FAIL — full repository lint: 817 errors, 33 warnings. Targeted lint PASS; typecheck PASS; full test suite 57 tests in 9 files PASS; production build PASS. Global lint errors are outside the table mission's changed frontend files.
+
+BACKEND_CHANGED = FALSE (this table mission)
+OTHER_MODULES_CHANGED = FALSE (this table mission; existing unrelated working-tree changes preserved)
+
+FILES_MODIFIED =
+package.json
+CHANGELOG.md
+src/features/dict-v2/DictV2Page.tsx (pass existing catalog to table)
+src/features/dict-v2/ValueExplorer.tsx (replace old table only)
+src/features/dict-v2/GroupedValueTable.tsx (new)
+src/features/dict-v2/grouped-table.ts (new)
+src/features/dict-v2/premium.css (table-scoped styling)
+src/test/rrc-grouped-table.test.tsx (new)
+scripts/rrc-grouped-check.mjs (new, real local TEST2 validation)
+RRC_GROUPED_TABLE_ACCEPTANCE.txt
+rrc-grouped-evidence/* (screenshots, logs, API baseline and CSV evidence)
+
+EXECUTED COMMANDS (frontend root /home/devmat/BC4/franco-focus-forge) =
+npm run lint
+npx eslint src/features/dict-v2/grouped-table.ts src/features/dict-v2/GroupedValueTable.tsx src/features/dict-v2/ValueExplorer.tsx src/features/dict-v2/DictV2Page.tsx src/test/rrc-grouped-table.test.tsx
+npm run typecheck
+VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config /tmp/rrc-tests.config.mjs
+docker exec bc4-front-1 bun run build
+node scripts/rrc-grouped-check.mjs
+
+The external Vitest config works around root-owned node_modules/.vite-temp and contains:
+import {defineConfig} from '/home/devmat/BC4/franco-focus-forge/node_modules/vitest/dist/config.js';
+export default defineConfig({root:'/home/devmat/BC4/franco-focus-forge',cacheDir:'/tmp/rrc-vitest-cache',test:{environment:'jsdom',globals:true,setupFiles:['./src/test/setup.ts'],include:['src/**/*.{test,spec}.{ts,tsx}']},resolve:{alias:{'@':'/home/devmat/BC4/franco-focus-forge/src'}}});
+
+VISUAL / ACCESSIBILITY =
+Desktop 1440×900 and mobile 400px exercised in Chromium; table width366px at mobile, internal horizontal scroll798px with viewport364px. Screenshots inspected in light/dark mode. Column visibility and Escape/focus restoration tested in table popover. No page errors. Full WCAG contrast audit and screen-reader session NOT RUN.
+
+GEOGRAPHIC LINKAGE DIAGNOSIS (read-only; NOT FIXED) =
+TEST2: 153 SIB1 observations, 21 distinct cell identities; all identities found in cell_ref, 12 have DOR/Plaque/ARCEP data (Orange; DOR UPR Nord-Est).
+No valid measurement_points ECGI linkage currently supports the geographic query. Existing SIB1 enrichment found zero associated EARFCNs although stg_event.freq contains actual frequencies. 11 of the 12 capture/frequency groups contain multiple cell identities. None of the 19,655 measurement_points matches a stg_event on exact project/capture/seq. Assigning one cell to a capture/frequency or joining unrelated sequences would invent associations.
+Thus options remain unavailable. Repair requires a separately scoped backend event-to-cell association using actual PLMN/identity and capture-local evidence; frontend-only cannot repair it. No database updates or backend changes made.
+
+KNOWN_LIMITATIONS =
+Global lint remains failing outside scope. Geographic linkage unresolved as above. Global app header already overflows at400px; table itself fits and scrolls internally. Family catalog has no declared family ID, so its approved category key/name is used unless API supplies an ID; parameters always use param_key. Existing project operator badges reused as requested; progress bars use prescribed RRC operator palette. No approved screenshot was attached for pixel-level comparison.
+
+NEXT_STEP = Resolve the backend geographic association under a separately agreed backend scope; resolve repository-wide lint outside this table mission. Table implementation is delivered with reproducible evidence.

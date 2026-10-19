@@ -1,0 +1,83 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_COMPACT_FILTERS_FULL_MAP_REDESIGN
+PREVIOUS_VERSION = 1.29.1
+NEW_VERSION = 1.30.0
+CHANGE_TYPE = MINOR
+
+FILTERS_COMPACT = IMPLEMENTED
+FILTERS_ADVANCED = DISABLED (no supported advanced dimensions in the current dictionary contract)
+MAP_FULL_WIDTH = PASS
+MAP_FULLSCREEN = PASS
+MAP_MARKERS = UNAVAILABLE (missing per-point evidence and compatible filter contract)
+MAP_LEGEND = UNAVAILABLE (no traceable mapped measurement population)
+MAP_INFO_INDEPENDENT = PASS
+CHART_LAYOUT = PASS
+TABLE_LAYOUT = PASS
+SIDEBAR_PRESERVED = PASS
+SCROLL_FIXED = PASS
+DATA_INTEGRITY = PASS
+
+G1 = PASS
+G2 = PASS
+G3 = NOT RUN (full width/zoom/pan PASS; measurement markers and legend blocked by API)
+G4 = PASS
+G5 = PASS
+G6 = PASS
+G7 = PASS
+G8 = PASS
+G9 = PASS
+G10 = PASS
+G11 = PASS
+G12 = FAIL (global lint; scoped lint, typecheck, tests and build PASS)
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+KNOWN_LIMITATIONS = The existing dictionary map endpoint supplies lat/lon but no per-point source/result_id and lacks the required applied geographic context. No fabricated markers or operator/value legend are shown. The existing shared OSM map remains interactive with a compact explicit empty-measurement status. Search navigates to coordinates, not addresses; no geocoding or map export endpoint is available. Dates reflect the real project period but cannot be applied as a range with this API. Advanced filters remain disabled with an explanatory tooltip because the dictionary contract does not support these dimensions. Global repository lint remains failing outside this delivery. Browser guards were executed through Playwright; no human manual acceptance is claimed.
+NEXT_STEP = Visual acceptance on /rrc. Traceable map points, dynamic legends, date-range filtering and advanced dimensions require a separately scoped API contract update.
+
+FILES MODIFIED FOR THIS MISSION:
+package.json (1.29.1 -> 1.30.0)
+CHANGELOG.md
+src/features/dict-v2/DictV2Page.tsx
+src/features/dict-v2/FilterSelect.tsx
+src/features/dict-v2/ValueExplorer.tsx
+src/features/dict-v2/premium.css
+scripts/rrc-full-map-check.mjs
+scripts/rrc-full-map-controls-check.mjs
+scripts/rrc-full-map-filters-check.mjs
+rrc-full-map-evidence/*
+Existing unrelated workspace edits were preserved. No shared KPI map or KPI Analytics file was edited for this mission.
+
+IMPLEMENTATION:
+Map moved from the right sidebar into the full central scroll workspace. Info cards independently appear below it and reserve no space when closed. The existing RRC sidebar remains independently scrollable and resizable. Chart/table arrangement uses the actual available container width: two columns only from 1400px, with at least 650px for the table; otherwise the table follows the charts. Single-chart and three-chart full-row rules are preserved. Main filters use compact controls, all-operator selections show a summary, repeated operator/band chips are omitted when their selectors are already visible. Unsupported advanced dimensions are disabled instead of displaying an empty panel. No data queries, calculations, transformations, conversions or backend contracts were changed.
+
+COMMANDS EXECUTED:
+npm run typecheck
+npm run lint
+npx eslint src/features/dict-v2/DictV2Page.tsx src/features/dict-v2/FilterSelect.tsx src/features/dict-v2/ValueExplorer.tsx scripts/rrc-full-map-check.mjs scripts/rrc-full-map-controls-check.mjs
+npx eslint --fix scripts/rrc-full-map-filters-check.mjs
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+docker exec bc4-front-1 bun run build
+node scripts/rrc-full-map-check.mjs
+node scripts/rrc-full-map-controls-check.mjs
+node scripts/rrc-full-map-filters-check.mjs
+node scripts/rrc-v3-table-check.mjs
+npx prettier --write (scoped edited source/CSS/scripts)
+git diff --check
+
+RESULTS / EVIDENCE:
+77 tests passed in 11 files (tests.log).
+Typecheck and production build passed (typecheck.log, build.log).
+Scoped lint passed (scoped-lint.log); full lint failed (lint.log).
+Browser assertions passed (browser.json): four toggle states, map width equal to central workspace, map height 350-450px, 1/2/3-chart layouts, multiple Infos, stable selections, API-derived occurrences/result_id, no analytical request before Apply, LTE/NR colors, resizing, no global horizontal overflow at 1920x1080, 1440x900, 1280x800, 400x900. Desktop document height equals viewport height.
+Map controls passed (map.log): zoom/pan, coordinate search/validation, recenter, layer visibility, fullscreen/Escape, same map canvas instance and no extra distribution requests.
+Table regression passed (table.log): 13 CSV columns and 32 data records unchanged through LTE/NR/default transitions; selected parameters preserved.
+Filter interactions and row-height measurement: filters.log.
+Initial browser run reported a transient document-is-not-defined error while the development server/build were updating; repeated complete browser run passed with no page errors.
+Browser script G labels retain historical V2 numbering; this report maps executed assertions to the current mission guard numbering.
+
+SCREENSHOTS:
+final.png: full-width map above charts/table, both LTE and NR roots visible.
+analysis.png: charts/table side-by-side on wide workspace.
+1920.png, 1440.png, 1280.png, 400.png: both panels enabled at requested viewport sizes.
+rrc-basemap.png: interactive map control verification.

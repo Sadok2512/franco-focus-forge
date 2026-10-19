@@ -1,7 +1,33 @@
-import { AlertTriangle, CheckCircle2, Loader2, Lock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Loader2, Lock, Unplug } from "lucide-react";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { getActor } from "@/lib/auth";
 import type { Actor } from "@/lib/api/settings-schemas";
+
+/** 1.19.0 — Bandeau "NON CONNECTÉ AU BACK" (rouge). À placer en tête de
+ *  tout panel qui lit encore des fixtures. L'écran ne doit JAMAIS
+ *  ressembler à du réel sans source back. */
+export function NotWiredBanner({
+  what,
+  why,
+}: {
+  what: string;
+  why: string;
+}) {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-2 rounded-md border border-destructive/60 bg-destructive/10 p-3 text-xs text-destructive"
+    >
+      <Unplug className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+      <div>
+        <p className="font-semibold uppercase tracking-wider">
+          NON CONNECTÉ AU BACK — {what}
+        </p>
+        <p className="mt-0.5 text-destructive/90">{why}</p>
+      </div>
+    </div>
+  );
+}
 
 export const errMsg = (e: unknown) =>
   e && typeof e === "object" && "message" in e
@@ -80,7 +106,7 @@ export function SaveStatus({
     saved: (
       <span className="inline-flex items-center gap-1 text-sev-good">
         <CheckCircle2 className="h-3 w-3" />
-        Enregistré (mock)
+        Enregistré
       </span>
     ),
     failed: (

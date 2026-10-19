@@ -1,0 +1,75 @@
+PROJECT = BC4-FRONT
+MISSION = RRC_PREMIUM_MAP_CHART_INFO_REDESIGN_V3
+PREVIOUS_VERSION = 1.28.1
+NEW_VERSION = 1.29.0
+CHANGE_TYPE = MINOR
+
+MAP_UI = IMPLEMENTED
+MAP_FULLSCREEN = PASS
+MAP_LEGEND = UNAVAILABLE (no traceable measurement population)
+MAP_MARKERS = UNAVAILABLE (existing API contract insufficient)
+MAP_INFO_INDEPENDENT = PASS
+SINGLE_CHART_FULL_WIDTH = PASS
+MULTI_CHART_LAYOUT = PASS
+MULTI_PARAMETER_INFO = PASS
+LTE_ROOT_COLOR = #1769E0
+NR_ROOT_COLOR = #16A34A
+TABLE_PRESERVED = PASS
+FILTERS_PRESERVED = PASS
+DATA_INTEGRITY = PASS
+
+G1 = NOT RUN (zoom/pan tested PASS; measurement markers/tooltips unavailable)
+G2 = PASS
+G3 = NOT RUN (no traceable population for measurement legend)
+G4 = PASS
+G5 = PASS
+G6 = PASS
+G7 = PASS
+G8 = PASS
+G9 = PASS
+G10 = PASS
+G11 = PASS
+G12 = FAIL (global lint; targeted lint, typecheck, 77 tests and build PASS)
+
+BACKEND_CHANGED = FALSE
+OTHER_MODULES_CHANGED = FALSE
+
+KNOWN_LIMITATIONS = Existing map API returns coordinates without per-point evidence and does not support the required applied geographic context. No real measurement points, operator counts or value legend are shown. A navigable OSM background is displayed with a compact empty-measurement status and explanatory tooltip. Search navigates to user-entered coordinates; address geocoding, additional map backgrounds and export are not provided by the existing integration. Global lint remains failing. No human manual acceptance performed: interaction guards executed in a real Chromium browser with Playwright and screenshots visually reviewed.
+NEXT_STEP = User visual acceptance on /rrc; a separately authorized backend contract update is required for traceable measurement markers and dynamic legends.
+
+CHANGED FILES IN THIS DELIVERY (preserving preexisting workspace changes):
+package.json
+CHANGELOG.md
+src/features/dict-v2/RrcMapPanel.tsx
+src/features/dict-v2/SelectedParameterInfo.tsx
+src/features/dict-v2/TreePanel.tsx
+src/features/dict-v2/ValueExplorer.tsx
+src/features/dict-v2/premium.css
+src/features/kpi/KpiMapOSM.tsx (existing shared map; opt-in premium controls for RRC, default KPI presentation retained)
+scripts/rrc-v3-check.mjs
+scripts/rrc-v3-map-check.mjs
+scripts/rrc-v3-table-check.mjs
+rrc-v3-evidence/*
+
+COMMANDS EXECUTED:
+npm run typecheck
+npm run lint
+npx eslint src/features/dict-v2/RrcMapPanel.tsx src/features/dict-v2/SelectedParameterInfo.tsx src/features/dict-v2/TreePanel.tsx src/features/dict-v2/ValueExplorer.tsx src/features/kpi/KpiMapOSM.tsx scripts/rrc-v3-check.mjs scripts/rrc-v3-map-check.mjs scripts/rrc-v3-table-check.mjs
+VITE_BC4_DATA=mock npm test -- --config scripts/kpi-vitest.config.mjs --configLoader runner
+docker exec bc4-front-1 bun run build
+node scripts/rrc-v3-check.mjs
+node scripts/rrc-v3-map-check.mjs
+node scripts/rrc-v3-table-check.mjs
+npx prettier --write (scoped changed source and verification scripts)
+
+EVIDENCE:
+browser.json / browser.log: real catalog selections, independent toggles, stable accordion state, applied-filter context, API-derived counts/result_id, resize, screenshots at 1920x1080/1440x900/1280x800/400x900. Historical G labels inside this reused script retain V2 numbering; above report maps assertions to V3 guards.
+Chart widths measured: one=968; two=476+476; three=476+476+968, within 968px workspace.
+map.log: actual OSM zoom/pan, coordinate validation/navigation, layer visibility, recenter, fullscreen/Escape, preserved canvas instance, no extra distribution requests or invented markers.
+table.log: 13 CSV columns / 32 data records preserved across LTE/NR/default transitions.
+tests.log: 11 files, 77 tests passed.
+scoped-lint.log: no diagnostics (exit 0).
+typecheck.log: exit 0.
+build.log: exit 0.
+lint.log: global repository diagnostics remain; unrelated files were not reformatted.
+1920.png, 1440.png, 1280.png, 400.png, rrc-basemap.png: final screenshots.
