@@ -250,8 +250,11 @@ export function csvText(rows: AnalyticRow[]) {
   ].join("\r\n");
 }
 export function exportRows(rows: AnalyticRow[], name = "bc4-kpi") {
+  downloadCsv(csvText(rows), name);
+}
+export function downloadCsv(text: string, name: string) {
   const url = URL.createObjectURL(
-    new Blob(["\uFEFF", csvText(rows)], { type: "text/csv;charset=utf-8" }),
+    new Blob(["\uFEFF", text], { type: "text/csv;charset=utf-8" }),
   );
   const anchor = document.createElement("a");
   anchor.href = url;

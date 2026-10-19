@@ -92,7 +92,7 @@ function buildMultiQuery(
 }
 
 /** Fetch brut + safeParse Zod. Toute non-conformité → KpiContractMismatchError. */
-async function kpiFetch<T>(
+export async function kpiFetch<T>(
   path: string,
   schema: z.ZodType<T>,
   signal?: AbortSignal,

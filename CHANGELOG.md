@@ -1,3 +1,11 @@
+## 1.38.0 (minor) — bc4-front 2026-10-19 — Séries KPI Task Time, lot C partiel (Agent BC2)
+
+- Vue Série (Task Time) pour les KPI Mbit/s : enveloppes P10/P50/P90 de l’API par opérateur, sélection d’une tâche et courbe capture-locale, axes à zéro.
+- Tâches filtrées par les filtres appliqués ; tâches incomplètes visibles, désactivées avec motif API en tooltip. Couleurs opérateurs conformes au lot C.
+- Tableau et CSV des points reçus, Infos avec populations/unités/result_id et consultation administrateur authentifiée /results/{id}.
+- Nuage (vs radio) visible et grisé : catalogue des axes absent du contrat 0.54.0. TEST2 Orange LTE renvoie en outre zéro point apparié ; aucun axe ni point fabriqué.
+- Aucun calcul de mesure/percentile au front. Audit et preuves réelles dans audit/bc2-lot-c.
+
 ## 1.37.0 (minor) — bc4-front 2026-10-19 — Dictionnaire catégoriel dict v2.2, lot B (Agent BC2)
 
 - Onglet Paramètres aligné sur le contrat 0.53.0 : catégories, sous-catégories, paramètres agrégés et feuilles avec badges message ; aucun niveau message.

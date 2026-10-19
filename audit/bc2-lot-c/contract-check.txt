@@ -1,0 +1,8 @@
+2026-10-19 — TEST2 134af70a06eb — back 0.54.0
+Commande : bun run contract:check dans bc4-front-1.
+BC4_API_BASE=http://api:8000 ; BC4_PROJECT_ID=134af70a06eb ; BC4_ADMIN_EMAIL=admin@bc4.local.
+Mot de passe transmis en mémoire via stdin, non sauvegardé.
+Résultat observé : SUMMARY — pass=8 fail=0 ; All contracts match — PASS.
+OpenAPI catalogue/filtres/détail déclarés ; catalogue v2.0.0 ; filtres et détail conformes.
+Les routes Task Time sont couvertes par openapi-extract.json, le parse Zod des
+réponses live et le parcours Playwright scripts/bc2-lot-c-proof.mjs.

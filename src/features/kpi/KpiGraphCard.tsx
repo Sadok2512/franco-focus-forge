@@ -1,3 +1,5 @@
+import { TaskAnalytics, type TaskAnalyticsHandle } from "./TaskAnalytics";
+import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
@@ -198,6 +200,8 @@ export function KpiPlot({
 }
 
 export function KpiGraphCard({
+  projectId,
+  appliedFilters,
   entry,
   query,
   rows,
@@ -216,6 +220,8 @@ export function KpiGraphCard({
   onConfig,
   groupOptions,
 }: {
+  projectId: string;
+  appliedFilters: KpiQueryFilters;
   entry: Entry;
   query: UseQueryResult<ProjectKpiDetail, Error>;
   rows: AnalyticRow[];
@@ -234,6 +240,12 @@ export function KpiGraphCard({
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
 }) {
+  const taskView = config.visualization === "task_series";
+  const taskPanel = useRef<TaskAnalyticsHandle>(null);
+  const [taskId, setTaskId] = useState<string>();
+  useEffect(() => {
+    setTaskId(undefined);
+  }, [appliedFilters]);
   const [info, setInfo] = useState(false),
     [full, setFull] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -278,7 +290,18 @@ export function KpiGraphCard({
   const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
   const body = (
     <>
-      {status === "Loading" ? (
+      {taskView && !blockedReason ? (
+        <TaskAnalytics
+          key={JSON.stringify(appliedFilters)}
+          ref={taskPanel}
+          projectId={projectId}
+          code={entry.item.code}
+          unit={entry.item.unit ?? ""}
+          filters={appliedFilters}
+          taskId={taskId}
+          setTaskId={setTaskId}
+        />
+      ) : status === "Loading" ? (
         <div className="kpi-chart-state animate-pulse" role="status">
           Chargement de la métrique…
         </div>
@@ -375,7 +398,7 @@ export function KpiGraphCard({
             className="kpi-icon"
             title="Infos et preuves"
             aria-label={`Infos ${entry.item.name}`}
-            onClick={() => setInfo(true)}
+            onClick={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
           >
             <Info size={15} />
           </button>
@@ -383,8 +406,10 @@ export function KpiGraphCard({
             className="kpi-icon"
             title="Exporter les données CSV"
             aria-label={`Exporter ${entry.item.name}`}
-            disabled={!rows.length}
-            onClick={() => exportRows(rows, entry.item.code)}
+            disabled={!taskView && !rows.length}
+            onClick={() =>
+              taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
+            }
           >
             <Download size={15} />
           </button>
@@ -421,10 +446,15 @@ export function KpiGraphCard({
                   >
                     <DropdownMenuLabel>Paramètres du graphique</DropdownMenuLabel>
                     <VisualizationItems
+                      throughput={entry.item.unit === "Mbit/s"}
                       onChange={(visualization) => onConfig({ ...config, visualization })}
                     />
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      title={
+                        taskView ? "Task Time et unité définis par le contrat de série" : undefined
+                      }
+                      disabled={taskView}
                       onSelect={() => {
                         settingsRequested.current = true;
                       }}
@@ -435,6 +465,12 @@ export function KpiGraphCard({
                     {groupOptions.map((group) => (
                       <DropdownMenuItem
                         key={group}
+                        disabled={taskView}
+                        title={
+                          taskView
+                            ? "La série utilise les opérateurs et points de l’API"
+                            : undefined
+                        }
                         onSelect={() => onConfig({ ...config, groupBy: group, xMetric: group })}
                       >
                         {GROUP_LABELS[group]}
@@ -442,7 +478,12 @@ export function KpiGraphCard({
                     ))}
                     <DropdownMenuLabel>Statistique</DropdownMenuLabel>
                     {choices.map((stat) => (
-                      <DropdownMenuItem key={stat} onSelect={() => onStatistic(stat)}>
+                      <DropdownMenuItem
+                        key={stat}
+                        disabled={taskView}
+                        title={taskView ? "Percentiles fournis par le contrat de série" : undefined}
+                        onSelect={() => onStatistic(stat)}
+                      >
                         {STAT_LABELS[stat]}
                       </DropdownMenuItem>
                     ))}
@@ -451,6 +492,11 @@ export function KpiGraphCard({
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
+                      title={
+                        taskView
+                          ? "Export PNG de la série non disponible ; les points sont exportables en CSV"
+                          : "Exporter le graphique disponible"
+                      }
                       disabled={
                         !plot ||
                         !["histogram", "graph"].includes(config.visualization) ||
@@ -461,8 +507,10 @@ export function KpiGraphCard({
                       Exporter PNG
                     </DropdownMenuItem>
                     <DropdownMenuItem
-                      disabled={!rows.length}
-                      onSelect={() => exportRows(rows, entry.item.code)}
+                      disabled={!taskView && !rows.length}
+                      onSelect={() =>
+                        taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
+                      }
                     >
                       Exporter CSV
                     </DropdownMenuItem>
@@ -510,13 +558,17 @@ export function KpiGraphCard({
         </div>
       </header>
       <div className="kpi-card-meta">
-        <span className={`kpi-state state-${status.toLowerCase()}`}>{status}</span>
-        <span className="text-[10px] text-muted-foreground">
-          {config.visualization === "graph"
-            ? "Points agrégés · aucune série temporelle"
-            : "Comparaison des agrégats"}
+        <span className={`kpi-state state-${status.toLowerCase()}`}>
+          {taskView ? "Task Time" : status}
         </span>
-        {choices.length > 1 ? (
+        <span className="text-[10px] text-muted-foreground">
+          {taskView
+            ? "Série temporelle · points API"
+            : config.visualization === "graph"
+              ? "Points agrégés · aucune série temporelle"
+              : "Comparaison des agrégats"}
+        </span>
+        {taskView ? null : choices.length > 1 ? (
           <select
             aria-label={`Statistique ${entry.item.name}`}
             value={statistic}

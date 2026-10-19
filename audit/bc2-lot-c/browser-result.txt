@@ -1,0 +1,1 @@
+PASS: login UI TEST2; Orange LTE envelope; HTTP_DL task; incomplete reason; points CSV; Infos/result admin. Scatter BLOCKED: missing API axes catalogue.

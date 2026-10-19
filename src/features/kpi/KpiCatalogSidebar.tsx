@@ -166,6 +166,7 @@ export function KpiCatalogSidebar({
                               <DropdownMenuContent align="start">
                                 <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
                                 <VisualizationItems
+                                  throughput={item.unit === "Mbit/s"}
                                   onChange={(mode) => onVisualization(item.code, mode)}
                                 />
                               </DropdownMenuContent>

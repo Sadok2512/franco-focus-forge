@@ -1,0 +1,80 @@
+BC2 — LOT C PARTIEL — front 1.38.0 — 2026-10-19
+
+Prérequis : back 0.54.0 ; routes tasks, kpi/{code}/series, kpi/{code}/points,
+results/{result_id} réellement servies. Voir openapi-extract.json, api-details.json
+et browser-responses.json (URLs et horodatages). Auth : Authorization: Bearer
+[session admin expurgée]. Projet TEST2 134af70a06eb, login admin@bc4.local par
+formulaire, ouverture TEST2 depuis Projets, navigation KPI Analytics.
+Aucun backend modifié/redémarré, aucune migration, aucun push.
+
+Livré
+- Menu existant : Série (Task Time) visible pour les KPI dont l’unité catalogue
+  est Mbit/s. Les autres vues existantes restent disponibles.
+- Enveloppes P10/P50/P90 directement issues de /series, séparées par opérateur
+  de la liste API. Aucune somme, moyenne, interpolation ou percentile calculé.
+  Si les tâches contiennent un opérateur null, la population filtrée entière
+  est affichée en gris avec libellé explicite, sans prétendre isoler ce groupe.
+- Tâche choisie : points de /series?task_id=... dans l’ordre API, t_rel_s en X,
+  valeur en Y. Axes à zéro, unités vérifiées s / unité catalogue. Aucun point à
+  t=0 ajouté. Couleurs Orange #FF7900, Bouygues #009DE0, SFR #E2001A,
+  Free #A0148C, N/D #9AA0A6.
+- Filtres appliqués uniquement ; tableaux de filtres envoyés comme paramètres
+  répétés conformément à OpenAPI. La sélection de tâche est réinitialisée lors
+  d’un changement de filtres. Toutes les tâches API restent listées ; statut
+  différent de ok désactivé, motif reason en tooltip.
+- Tableau sous la courbe = points exacts API, null => N/D. CSV reprend ces points
+  et result_id, via le mécanisme de téléchargement CSV existant ; le tableau
+  global n’affiche pas les anciens agrégats pour une vue Task Time.
+- Infos : result_id, population complète, unités, sampling et pairing. Lien
+  administrateur /results/{id} vers une page front authentifiée qui consulte
+  la route back avec le Bearer de session (aucun token dans l’URL).
+- Deux erreurs de typage des tests du lot B corrigées sans changement fonctionnel
+  de l’arbre : accès à l’index discriminators et option Testing Library exacte.
+
+Preuves réelles
+00-header.png : BC4 v1.38.0.
+01-envelope-orange-lte.png : Orange LTE, AGG_APP_DL_THR, population API 12 tâches,
+  110 mesures, 103 points retournés ; 4 tâches incomplètes dans la liste.
+02-http-dl-task.png : HTTP_DL 871a37d4-d919-5ab3-a06f-bfd8bc498663,
+  capture 705aa521e9e0, population 1 tâche / 10 points.
+04-infos-result-id.png : population, unités et result_id de la réponse live.
+05-incomplete-tasks.png : tâches incomplètes désactivées, motif API en tooltip.
+06-admin-result.png : résultat réel avec SQL, filtres, population, version, date.
+task-points.csv : export effectivement téléchargé depuis l’icône CSV de la carte.
+
+ÉCART BLOQUANT — NUAGE NON LIVRÉ
+Aucun catalogue d’axes dans OpenAPI, /projects/{id}/kpi/catalog ou la réponse
+KPI détaillée. Le paramètre x libre et son défaut rsrp ne constituent pas une
+liste d’axes. Nuage (vs radio) reste visible/grisé avec tooltip « Catalogue des
+axes non exposé par l’API ». Aucun sélecteur RSRP codé en dur.
+En outre /points?operator=Orange&rat=LTE renvoie 110 mesures, 0 admissible,
+0 retourné, 110 exclues. Il n’existe donc pas de PNG honnête « débit vs RSRP »
+pour cette population ; 03-scatter-blocked.png montre l’écart, pas un nuage livré.
+La légende échantillon n/N du nuage attend ce contrat et une population appariée.
+
+Autres limites déclarées
+- Les codes LTE_DL_APPLICATION_THR et LTE_UL_APPLICATION_THR du catalogue sont
+  pending ; les routes analytics renvoient 422 unsupported_KPI pour ces codes.
+  Le message d’erreur est affiché, sans substitution de code inventée. La preuve
+  utilise le KPI disponible AGG_APP_DL_THR.
+- L’enveloppe API aligne les temps exacts ; de nombreux points ont n=1 et leurs
+  trois percentiles se superposent. Aucun rééchantillonnage front.
+- Export PNG de la série non implémenté : action grisée avec explication ; PNG
+  de réception obtenus par Playwright. CSV des points opérationnel.
+- La tâche sélectionnée est conservée à l’ouverture/fermeture du plein écran.
+
+Validation
+20 suites / 103 tests Node ; TypeScript ; contract:check live PASS 8/8 ; Playwright
+parcours réel PASS (série, tâche, CSV, motif incomplete, Infos, résultat admin).
+Build et réception après commit propre : artifacts/reconciliation-1.36.2/lot-c/.
+Commandes :
+  VITE_BC4_DATA=mock node node_modules/vitest/vitest.mjs run --config scripts/kpi-vitest.config.mjs --configLoader native
+  node node_modules/typescript/bin/tsc --noEmit
+  node scripts/bc2-lot-c-proof.mjs
+  docker exec bc4-front-1 bun run build
+  docker compose -f /home/devmat/BC4/docker-compose.yml up -d --no-deps --force-recreate front
+Compose front n’a pas de build d’image ; build applicatif depuis HEAD propre.
+Le front est identifié par son header, /health désigne le backend.
+
+Surveillance : back 0.54.0 au dernier contrôle de ce lot. Attente du catalogue
+API d’axes pour le nuage. Pas de surveillance de fond laissée après la session.

@@ -15,7 +15,7 @@ const filtered = probe.responses[1]!.body as unknown as DictTreeResponse;
 const item = catalogParameters(tree).find(
   (i) =>
     i.parameter.display_name === "timeToTrigger" &&
-    i.parameter.leaves.some((l) => l.discriminators?.event === "A1"),
+    i.parameter.leaves.some((l) => l.discriminators?.["event"] === "A1"),
 )!;
 describe("catalog v2.2 API selections", () => {
   it("sends the opaque aggregate key and replaces it with remaining leaves on partial selection", () => {
@@ -44,7 +44,6 @@ describe("catalog v2.2 API selections", () => {
     );
     const parents = screen.getAllByRole("checkbox", {
       name: "Sélectionner le paramètre timeToTrigger",
-      exact: true,
     });
     expect(parents.some((p) => p.getAttribute("aria-checked") === "mixed")).toBe(true);
   });

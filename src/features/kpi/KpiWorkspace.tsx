@@ -81,7 +81,11 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
       dimensionsLoading={dimensions.isPending}
       dimensionsError={dimensions.isError}
       retryDimensions={() => void dimensions.refetch()}
-      period={project.data?.periodStart && project.data?.periodEnd ? `${project.data.periodStart} — ${project.data.periodEnd}` : null}
+      period={
+        project.data?.periodStart && project.data?.periodEnd
+          ? `${project.data.periodStart} — ${project.data.periodEnd}`
+          : null
+      }
     />
   );
 }
@@ -140,7 +144,7 @@ function Workspace({
             config &&
             config.kpiCode === code &&
             config.yMetric === code &&
-            ["histogram", "graph", "table", "map"].includes(config.visualization) &&
+            ["histogram", "graph", "table", "map", "task_series"].includes(config.visualization) &&
             ["operator", "band", "operator_band", "dor"].includes(config.groupBy) &&
             config.xMetric === config.groupBy &&
             [null, "value", "p10", "p50", "p90"].includes(config.statistic),
@@ -211,7 +215,9 @@ function Workspace({
     const stat = chosenStatistic(query.data, configFor(code).statistic ?? undefined);
     return [{ entry, query, stat, rows: query.data ? analyticRows(query.data, stat) : [] }];
   });
-  const rows = panels.flatMap((panel) => panel.rows);
+  const rows = panels
+    .filter((panel) => configFor(panel.entry.item.code).visualization !== "task_series")
+    .flatMap((panel) => panel.rows);
   const saveCodes = (next: string[]) => {
     setCodes(next);
     void navigate({
@@ -327,16 +333,22 @@ function Workspace({
                 </button>
               </nav>
               <section className="kpi-workspace-controls" aria-label="Organisation des graphiques">
-                <span
-                  className="kpi-chart-type"
-                  title="Le contrat fournit des agrégats, sans série Task Time"
-                >
+                <span className="kpi-chart-type" title="Choisir une vue dans le menu du graphique">
                   {effectiveActive ? "Visualisation active" : "Visualisations"}
                 </span>
                 <label className="kpi-select-label">
                   Grouper par
                   <select
                     aria-label="Grouper par"
+                    disabled={
+                      !!effectiveActive &&
+                      configFor(effectiveActive).visualization === "task_series"
+                    }
+                    title={
+                      effectiveActive && configFor(effectiveActive).visualization === "task_series"
+                        ? "La série utilise les opérateurs et points de l’API"
+                        : undefined
+                    }
                     value={effectiveActive ? configFor(effectiveActive).groupBy : "operator_band"}
                     onChange={(e) => {
                       if (effectiveActive)
@@ -357,6 +369,11 @@ function Workspace({
                 <button
                   className="kpi-button"
                   disabled={!rows.length}
+                  title={
+                    !rows.length
+                      ? "Les points Task Time sont exportables depuis leur graphique"
+                      : "Exporter les agrégats"
+                  }
                   onClick={() => exportRows(rows, "bc4-kpi-workspace")}
                 >
                   <Download size={14} />
@@ -372,6 +389,8 @@ function Workspace({
             <div className="kpi-graph-grid" data-count={panels.length}>
               {panels.map(({ entry, query, stat, rows: graphRows }) => (
                 <KpiGraphCard
+                  projectId={projectId}
+                  appliedFilters={applied}
                   key={entry.item.code}
                   entry={entry}
                   query={query}
@@ -429,7 +448,16 @@ function Workspace({
               </div>
             )}
             <div id="kpi-workspace-data">
-              <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+              {panels.length &&
+              panels.every(
+                (panel) => configFor(panel.entry.item.code).visualization === "task_series",
+              ) ? (
+                <p className="p-3 text-xs text-muted-foreground">
+                  Les points et leur export CSV figurent sous chaque série.
+                </p>
+              ) : (
+                <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+              )}
             </div>
           </div>
         </ResizablePanel>

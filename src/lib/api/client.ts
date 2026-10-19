@@ -264,3 +264,5 @@ export {
 export { getProjectKpi, getProjectKpiCatalog, getProjectKpiFilters } from "./project-kpi";
 export { getDictTemplates, getDictTemplateSummary } from "./dict-templates";
 export { updateDictTemplate } from "./dict-templates";
+
+export { getProjectTasks, getTaskSeries, getAnalyticsResult } from "./task-analytics";

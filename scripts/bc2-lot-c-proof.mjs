@@ -1,0 +1,68 @@
+import { chromium } from 'playwright';
+import { execFileSync } from 'node:child_process';
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const out=process.env.BC2_PROOF_DIR ?? 'audit/bc2-lot-c';
+fs.mkdirSync(out,{recursive:true});
+const password=execFileSync('docker',['exec','bc4-api-1','python','-c','import os; print(os.environ["BC4_ADMIN_PASSWORD"],end="")'],{encoding:'utf8'});
+const browser=await chromium.launch({args:['--no-sandbox']});
+const context=await browser.newContext({viewport:{width:1720,height:1200},acceptDownloads:true});
+const page=await context.newPage();
+page.setDefaultTimeout(60000);
+const responses=[],pending=[],errors=[];
+page.on('pageerror',e=>errors.push(e.message));
+page.on('response',r=>{if(/\/(tasks|series|points|results\/|kpi\/catalog)/.test(r.url())&&r.ok())pending.push(r.json().then(body=>responses.push({url:r.url(),at:new Date().toISOString(),body})).catch(()=>{}));});
+try{
+ await page.goto('http://localhost:5174/login'); await page.waitForTimeout(3000);
+ await page.getByLabel('Adresse e-mail').fill('admin@bc4.local');
+ await page.locator('input[autocomplete="current-password"]').fill(password);
+ await page.getByRole('button',{name:'Se connecter',exact:true}).click(); await page.waitForURL(/\/projects/);
+ await page.locator('tr').filter({has:page.getByText('TEST2',{exact:true})}).getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.locator('nav a').filter({hasText:'KPI Analytics'}).click();
+ await page.getByLabel('Rechercher un KPI',{exact:true}).waitFor();
+ await page.getByRole('group',{name:'Technologie',exact:true}).getByRole('button',{name:'LTE',exact:true}).click();
+ await page.getByRole('button',{name:/^Opérateur —/}).click();
+ const options=page.getByRole('group',{name:'Opérateur',exact:true}).getByRole('checkbox');
+ for(let i=0;i<await options.count();i++){const option=options.nth(i); if(!(await option.locator('..').innerText()).includes('Orange'))await option.uncheck();}
+ await page.keyboard.press('Escape');
+ await page.getByRole('button',{name:'Appliquer les filtres',exact:true}).click();
+ await page.getByLabel('Rechercher un KPI',{exact:true}).fill('AGG_APP_DL_THR');
+ const name='Débit APP DL agrégé';
+ await page.getByRole('button',{name:`Visualisation ${name}`,exact:true}).click();
+ await page.getByRole('menuitem',{name:'Série (Task Time)',exact:true}).click();
+ const others=page.locator('.kpi-graph-card:not([data-code="AGG_APP_DL_THR"])');
+ while(await others.count()){await others.first().getByRole('button',{name:/^Actions /}).click();await page.getByRole('menuitem',{name:'Retirer le graphique',exact:true}).click();}
+ const card=page.locator('[data-code="AGG_APP_DL_THR"]');
+ await card.getByTestId('task-series-chart').locator('svg.recharts-surface').first().waitFor();
+ await card.getByTestId('task-points-table').locator('tbody tr').first().waitFor();
+ assert.match(await page.locator('header').first().innerText(),/v1\.38\.0/);
+ assert((await card.innerText()).includes('Orange'));
+ await page.locator('header').first().screenshot({path:`${out}/00-header.png`});
+ await page.screenshot({path:`${out}/01-envelope-orange-lte.png`,fullPage:true});
+ await card.getByRole('button',{name:'Choisir une tâche'}).click();
+ const incomplete=page.locator('[data-task-id][aria-disabled=true]').first();
+ assert(await incomplete.count());assert(await incomplete.locator('..').getAttribute('title'));
+ await page.screenshot({path:`${out}/05-incomplete-tasks.png`,fullPage:true});
+ const task=page.locator('[data-task-id]:not([aria-disabled=true])').filter({hasText:'HTTP_DL'}).first();
+ const taskId=await task.getAttribute('data-task-id'); const seriesResponse=page.waitForResponse(r=>r.url().includes('/series?')&&r.url().includes(taskId)&&r.ok()); await task.click();
+ await seriesResponse;
+ await card.getByTestId('task-points-table').locator('tbody tr').first().getByText(taskId,{exact:true}).waitFor();
+ await page.screenshot({path:`${out}/02-http-dl-task.png`,fullPage:true});
+ await card.getByRole('button',{name:`Plein écran ${name}`,exact:true}).click();
+ const fullscreen=page.getByRole('dialog');assert((await fullscreen.getByRole('button',{name:'Choisir une tâche'}).innerText()).includes(taskId));await page.keyboard.press('Escape');
+ const download=page.waitForEvent('download');await card.getByRole('button',{name:`Exporter ${name}`,exact:true}).click();
+ const csv=fs.readFileSync(await (await download).path(),'utf8');assert(csv.includes(taskId));fs.writeFileSync(`${out}/task-points.csv`,csv);
+ await card.getByRole('button',{name:`Infos ${name}`,exact:true}).click();
+ await page.getByRole('heading',{name:'Infos Task Time — AGG_APP_DL_THR'}).waitFor();
+ const link=page.getByRole('link',{name:/^\/results\//});const href=await link.getAttribute('href');assert(href);
+ await page.screenshot({path:`${out}/04-infos-result-id.png`,fullPage:true});
+ const resultPage=await page.context().newPage(); await resultPage.goto(`http://localhost:5174${href}`);await resultPage.getByText(/SELECT s\.\*/).waitFor();await resultPage.screenshot({path:`${out}/06-admin-result.png`,fullPage:true});await resultPage.close();
+ await page.keyboard.press('Escape');
+ await card.getByRole('button',{name:`Actions ${name}`,exact:true}).click();
+ const scatter=page.getByRole('menuitem',{name:'Nuage (vs radio)',exact:true});assert.equal(await scatter.getAttribute('aria-disabled'),'true');assert.match(await scatter.locator('..').getAttribute('title'),/Catalogue des axes/);
+ await page.screenshot({path:`${out}/03-scatter-blocked.png`,fullPage:true});
+ await Promise.all(pending);assert.deepEqual(errors,[]);
+ const calls=responses.filter(r=>r.url.includes('/series?'));assert(calls.length);for(const call of calls){assert.equal(new URL(call.url).searchParams.get('operator'),'Orange');assert.equal(new URL(call.url).searchParams.get('rat'),'LTE');}
+ fs.writeFileSync(`${out}/browser-responses.json`,JSON.stringify(responses,null,2));
+ fs.writeFileSync(`${out}/browser-result.txt`,'PASS: login UI TEST2; Orange LTE envelope; HTTP_DL task; incomplete reason; points CSV; Infos/result admin. Scatter BLOCKED: missing API axes catalogue.\n');console.log('PASS lot C series; scatter contract gap');
+}catch(e){await page.screenshot({path:`${out}/failure.png`,fullPage:true});fs.writeFileSync(`${out}/failure.txt`,(await page.locator('body').innerText())+'\n'+String(e)+'\n'+errors.join('\n'));throw e;}finally{await browser.close();}

@@ -20,6 +20,7 @@ import { Route as AppRfRouteImport } from './routes/_app.rf'
 import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppProjectsProjectIdRouteImport } from './routes/_app.projects.$projectId'
+import { Route as AppResultsResultIdRouteImport } from './routes/_app.results.$resultId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
 import { Route as AppSettingsAboutRouteImport } from './routes/_app.settings.about'
 import { Route as AppSettingsAiRouteImport } from './routes/_app.settings.ai'
@@ -85,6 +86,11 @@ const AppProjectsProjectIdRoute = AppProjectsProjectIdRouteImport.update({
   path: '/$projectId',
   getParentRoute: () => AppProjectsRoute,
 } as any)
+const AppResultsResultIdRoute = AppResultsResultIdRouteImport.update({
+  id: '/results/$resultId',
+  path: '/results/$resultId',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/rrc': typeof AppRrcRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
+  '/results/$resultId': typeof AppResultsResultIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -170,6 +177,7 @@ export interface FileRoutesByTo {
   '/rf': typeof AppRfRoute
   '/rrc': typeof AppRrcRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
+  '/results/$resultId': typeof AppResultsResultIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/_app/rrc': typeof AppRrcRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
+  '/_app/results/$resultId': typeof AppResultsResultIdRoute
   '/_app/settings/about': typeof AppSettingsAboutRoute
   '/_app/settings/ai': typeof AppSettingsAiRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/rrc'
     | '/settings'
     | '/projects/$projectId'
+    | '/results/$resultId'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/rf'
     | '/rrc'
     | '/projects/$projectId'
+    | '/results/$resultId'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/_app/rrc'
     | '/_app/settings'
     | '/_app/projects/$projectId'
+    | '/_app/results/$resultId'
     | '/_app/settings/about'
     | '/_app/settings/ai'
     | '/_app/settings/appearance'
@@ -358,6 +370,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/projects/$projectId'
       preLoaderRoute: typeof AppProjectsProjectIdRouteImport
       parentRoute: typeof AppProjectsRoute
+    }
+    '/_app/results/$resultId': {
+      id: '/_app/results/$resultId'
+      path: '/results/$resultId'
+      fullPath: '/results/$resultId'
+      preLoaderRoute: typeof AppResultsResultIdRouteImport
+      parentRoute: typeof AppRoute
     }
     '/_app/settings/': {
       id: '/_app/settings/'
@@ -482,6 +501,7 @@ interface AppRouteChildren {
   AppRfRoute: typeof AppRfRoute
   AppRrcRoute: typeof AppRrcRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppResultsResultIdRoute: typeof AppResultsResultIdRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -492,6 +512,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRfRoute: AppRfRoute,
   AppRrcRoute: AppRrcRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppResultsResultIdRoute: AppResultsResultIdRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
