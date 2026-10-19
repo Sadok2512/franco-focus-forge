@@ -96,28 +96,14 @@ async function main(): Promise<number> {
     openapi = (await getJson("/openapi.json")) as typeof openapi;
   } catch (e) {
     fail("fetch /openapi.json", (e as Error).message);
-    try {
-      const status = DecodeStatusSchema.parse(
-        await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
-      );
-      if (
-        status.estimated_remaining_minutes !==
-        Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
-      )
-        throw new Error("API estimate mismatch");
-      UnknownMetricSchema.array().parse(
-        await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
-      );
-      pass("decode levels, API estimate and disabled unknown fields schema OK");
-    } catch (e) {
-      fail("decode contract", (e as Error).message);
-    }
     return summarize();
   }
   const backVersion = openapi.info?.version ?? "N/D";
   pass(`back OpenAPI info.version = ${backVersion}`);
   const paths = openapi.paths ?? {};
   const expected = [
+    "/projects/{project_id}/decode/status",
+    "/projects/{project_id}/metrics/unknown",
     "/projects/{project_id}/metrics",
     "/projects/{project_id}/metrics/series",
     "/projects/{project_id}/metrics/captures",
@@ -144,22 +130,6 @@ async function main(): Promise<number> {
     pass("login", `as ${EMAIL}`);
   } catch (e) {
     fail("login", (e as Error).message);
-    try {
-      const status = DecodeStatusSchema.parse(
-        await getJson(`/projects/${PROJECT_ID}/decode/status`, token),
-      );
-      if (
-        status.estimated_remaining_minutes !==
-        Math.round(status.captures_remaining * status.estimated_minutes_per_capture * 10) / 10
-      )
-        throw new Error("API estimate mismatch");
-      UnknownMetricSchema.array().parse(
-        await getJson(`/projects/${PROJECT_ID}/metrics/unknown`, token),
-      );
-      pass("decode levels, API estimate and disabled unknown fields schema OK");
-    } catch (e) {
-      fail("decode contract", (e as Error).message);
-    }
     return summarize();
   }
   console.log("");

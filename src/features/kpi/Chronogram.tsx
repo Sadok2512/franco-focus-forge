@@ -79,7 +79,7 @@ function Plot({
     ? [...new Set(numeric.map((s) => (s.unit === "Mbit/s" ? s.code : s.unit)))]
     : ["all"];
   const height = stacked
-    ? panels.length * 125 + categories.length * 65 + 110
+    ? Math.max(1, panels.length) * 125 + categories.length * 65 + 110
     : 490 + categories.length * 65;
   useEffect(() => {
     let disposed = false;
@@ -216,6 +216,17 @@ function Plot({
         backgroundColor: "#0f172a",
         textStyle: { color: "#cbd5e1" },
         legend: { top: 5, textStyle: { color: "#cbd5e1" }, type: "scroll" },
+        title: stacked
+          ? panels.map((_, i) => ({
+              text: numeric
+                .filter((s) => panelOf(s) === i)
+                .map((s) => s.label)
+                .join(" / "),
+              left: 120,
+              top: 43 + i * 125,
+              textStyle: { color: "#cbd5e1", fontSize: 11, fontWeight: "normal" },
+            }))
+          : [],
         grid: grids,
         xAxis,
         yAxis,
@@ -292,13 +303,19 @@ export const Chronogram = forwardRef<
     [info, setInfo] = useState(false),
     [stacked, setStacked] = useState(false),
     [taskId, setTaskId] = useState(""),
-    [unknownEvent, setUnknownEvent] = useState("CHI");
+    [unknownEvent, setUnknownEvent] = useState("CHI"),
+    [unknownOpen, setUnknownOpen] = useState(false);
   const metrics = useQuery({
     queryKey: ["metrics", projectId],
+    staleTime: 300_000,
+    refetchOnWindowFocus: false,
     queryFn: ({ signal }) => getMetrics(projectId, signal),
   });
   const unknown = useQuery({
     queryKey: ["unknown-metrics", projectId],
+    enabled: unknownOpen,
+    staleTime: 300_000,
+    refetchOnWindowFocus: false,
     queryFn: ({ signal }) => getUnknownMetrics(projectId, signal),
   });
   const tasks = useQuery({
@@ -388,7 +405,8 @@ export const Chronogram = forwardRef<
           </select>
         </label>
         <button
-          className="kpi-button"
+          className="kpi-button disabled:opacity-50"
+          disabled={!metrics.data}
           onClick={() => {
             setCodes(
               [
@@ -446,10 +464,15 @@ export const Chronogram = forwardRef<
           ))}
         </div>
       </details>
-      <details className="rounded border border-border p-3" data-testid="unknown-metrics">
+      <details
+        className="rounded border border-border p-3"
+        data-testid="unknown-metrics"
+        onToggle={(e) => setUnknownOpen(e.currentTarget.open)}
+      >
         <summary className="cursor-pointer text-sm text-muted-foreground">
           Non documentés — position non prouvée (NFF 2.19)
         </summary>
+        {unknown.isFetching && <p role="status">Chargement des champs non documentés…</p>}
         <label className="block text-xs mt-3">
           Événement{" "}
           <select

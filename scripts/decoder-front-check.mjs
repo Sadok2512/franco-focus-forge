@@ -6,29 +6,31 @@ const out=new URL('../../nmf-decoder-front-audit/',import.meta.url).pathname;
 const session=JSON.parse(execFileSync('docker',['exec','bc4-api-1','python','-c',`import os,json,httpx
 c=httpx.Client(base_url='http://localhost:8000');r=c.post('/auth/login',json={'email':os.environ['BC4_ADMIN_EMAIL'],'password':os.environ['BC4_ADMIN_PASSWORD']});r.raise_for_status();s=r.json();s['user']=c.get('/auth/me',headers={'Authorization':'Bearer '+s['token']}).json();print(json.dumps(s))`],{encoding:'utf8'}));
 const browser=await chromium.launch({args:['--no-sandbox']});
-const responses=[],errors=[];
+const responses=[],errors=[]; let page;
 try {
- const page=await browser.newPage({viewport:{width:1800,height:1500}});page.setDefaultTimeout(180000);
+ page=await browser.newPage({viewport:{width:1800,height:1500}});page.setDefaultTimeout(180000);
  await page.addInitScript(s=>localStorage.setItem('bc4.session',JSON.stringify(s)),session);
  page.on('pageerror',e=>errors.push(e.message));
  page.on('response',async r=>{if(/\/projects\/[^/]+\/(metrics|captures|decode|tasks)/.test(r.url())){try{responses.push({at:new Date().toISOString(),url:r.url(),status:r.status(),body:await r.json()});}catch{}}});
- await page.goto('http://localhost:5174/projects');
+ console.log('projects');await page.goto('http://localhost:5174/projects');
  await page.locator('tr',{hasText:'TEST2'}).first().getByRole('button',{name:'Ouvrir',exact:true}).click();
  await page.locator('nav a',{hasText:'KPI Analytics'}).click();
  const url=new URL(page.url());url.searchParams.set('kpi','AGG_APP_DL_THR');await page.goto(url.toString());
  const card=page.locator('#kpi-graph-AGG_APP_DL_THR');
  await card.getByRole('button',{name:/^Actions /}).click();await page.getByRole('menuitem',{name:'Chronogramme',exact:true}).click();
- const panel=page.getByTestId('chronogram');
+ console.log('chronogram TEST2');const panel=page.getByTestId('chronogram');
  await panel.getByRole('combobox',{name:'Capture du chronogramme'}).selectOption('047e3f34e0af');
  await panel.getByTestId('capture-decode').getByText('Deep 1.0.0',{exact:true}).waitFor();
- await panel.getByRole('button',{name:'Débits par couche + BLER / CQI / SINR'}).click();
  const select=panel.getByRole('combobox',{name:'Tâche du chronogramme'});
  await page.waitForFunction(()=>[...document.querySelectorAll('select[aria-label="Tâche du chronogramme"] option')].some(o=>o.textContent.includes('HTTP_DL')));
  const task=await select.locator('option').evaluateAll(options=>options.find(o=>o.textContent.includes('HTTP_DL')).value);
  await select.selectOption(task);
+ const seriesResponse=page.waitForResponse(r=>r.url().includes('/metrics/series?')&&r.url().includes('from_seq=')&&r.url().includes('pdsch_bitrate')&&r.status()===200);
+ await panel.getByRole('button',{name:'Débits par couche + BLER / CQI / SINR'}).click();
+ const series=await (await seriesResponse).json();
  await panel.getByText('Chargement du chronogramme…').waitFor({state:'hidden'});
  await panel.locator('canvas').waitFor();await page.waitForTimeout(1000);
- const series=responses.filter(r=>r.url.includes('/metrics/series?')&&r.url.includes('from_seq=')).at(-1)?.body;
+ console.log('task series loaded');
  assert.equal(series?.capture_id,'047e3f34e0af');assert.equal(series.decoder_version,'1.0.0');assert.equal(series.decode_level,'deep');assert.equal(series.series.length,9);assert.ok(series.series.every(s=>s.n_total>0));
  assert.ok(responses.some(r=>r.body.markers?.some(m=>m.label.startsWith('DAA'))));assert.ok(responses.some(r=>r.body.markers?.some(m=>m.label.startsWith('DCOMP'))));
  await panel.screenshot({path:out+'a-TEST2-deep-layers.png'});await page.screenshot({path:out+'a-TEST2-full.png',fullPage:true});
@@ -40,8 +42,12 @@ try {
  await card.getByRole('button',{name:/^Infos /}).click();await page.getByRole('heading',{name:'Infos et preuves — Chronogramme'}).waitFor();
  assert.ok(await page.getByRole('dialog').textContent().then(s=>s.includes('"decoder_version": "1.0.0"')));
  await page.screenshot({path:out+'infos-decoder-version.png'});await page.keyboard.press('Escape');
+ console.log('TEST2 evidence saved');
  // Same real KPI route and captured source, but Light exists only in Test_3.
- const lightUrl=new URL(page.url());lightUrl.searchParams.set('project','4b7bfd50ddb6');await page.goto(lightUrl.toString());
+ await page.goto('http://localhost:5174/projects');
+ await page.locator('tr',{hasText:'Test_3'}).first().getByRole('button',{name:'Ouvrir',exact:true}).click();
+ await page.locator('nav a',{hasText:'KPI Analytics'}).click();
+ const lightUrl=new URL(page.url());lightUrl.searchParams.set('kpi','AGG_APP_DL_THR');await page.goto(lightUrl.toString());
  const lightCard=page.locator('#kpi-graph-AGG_APP_DL_THR');
  if (!(await page.getByTestId('chronogram').count())) {await lightCard.getByRole('button',{name:/^Actions /}).click();await page.getByRole('menuitem',{name:'Chronogramme',exact:true}).click();}
  const lightPanel=page.getByTestId('chronogram');
@@ -62,4 +68,4 @@ try {
  assert.deepEqual(errors,[]);
  fs.writeFileSync(out+'browser.json',JSON.stringify({at:new Date().toISOString(),url:page.url(),task,errors,responses},null,2));
  console.log('PASS: real navigation, Deep/Light badges, API estimates, 9 task-local series, unknown disabled, decoder Infos, header');
-} catch(e) {fs.writeFileSync(out+'browser-failure.json',JSON.stringify({errors,responses},null,2));throw e;} finally {await browser.close();}
+} catch(e) {if(page) await page.screenshot({path:out+'failure.png',fullPage:true}).catch(()=>{});fs.writeFileSync(out+'browser-failure.json',JSON.stringify({errors,responses},null,2));throw e;} finally {await browser.close();}
