@@ -102,6 +102,7 @@ export function buildGroupedTable(
     const membership = families.get(block.param_key);
     const [familyId, family] =
       membership?.size === 1 ? [...membership][0]! : ["unknown", "Famille non renseignée"];
+    const denominators = new Map((block.group_totals ?? []).map((g) => [key(g), g.n]));
     const seen = new Map<string, number>();
     block.values.forEach((value) => {
       const occurrence = seen.get(value.value) ?? 0;
@@ -114,10 +115,15 @@ export function buildGroupedTable(
       for (const g of value.groups) if (g.n != null) counts.set(key(g), g.n);
       const cells: Record<string, Cell> = {};
       for (const id of columns.keys()) {
+        const count = counts.get(id) ?? null;
+        const denominator = denominators.get(id) ?? null;
         cells[id] = {
-          count: counts.get(id) ?? null,
-          denominator: null,
-          percentage: null,
+          count,
+          denominator,
+          percentage:
+            count !== null && denominator !== null && denominator > 0 && count <= denominator
+              ? (100 * count) / denominator
+              : null,
         };
       }
       rows.push({

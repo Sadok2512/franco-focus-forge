@@ -1,3 +1,8 @@
+## 1.42.3 (patch) — BC4-FRONT 2026-10-20 — RRC validated percentages and bars (Agent BC1)
+
+- Preserve explicit API group totals through applied operator/band filtering and regrouping; calculate cell percentages from these totals before table search, sorting or pagination.
+- Restore existing operator-colored progress bars and percentage sorting without changing hierarchy, source counts or conversions. Missing denominators remain unavailable; zero remains zero.
+
 ## 1.42.2 (patch) — BC4-FRONT 2026-10-20 — Catégories RRC progressives (Agent BC1)
 
 - Affiche les catégories depuis la réponse légère, puis actualise leurs compteurs en arrière-plan. Les compteurs en attente sont « — », jamais zéro.

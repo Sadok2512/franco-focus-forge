@@ -17,6 +17,14 @@ export function filterDistribution(
     ...data,
     group_by: groupBy,
     blocks: data.blocks.map((block) => {
+      // Aggregate explicit API population totals once, never from visible value rows.
+      const totals = new Map<string, DistributionValueGroup>();
+      for (const group of block.group_totals ?? []) {
+        if (op.length && !op.includes(group.operator ?? "N/D")) continue;
+        if (band.length && !band.includes(group.band ?? "N/D")) continue;
+        const key = groupKeyLabel(groupBy, group);
+        totals.set(key, { ...group, n: (totals.get(key)?.n ?? 0) + group.n });
+      }
       const values = block.values
         .map((value) => {
           const grouped = new Map<string, DistributionValueGroup>();
@@ -32,6 +40,7 @@ export function filterDistribution(
         .filter((value) => value.groups.length > 0);
       return {
         ...block,
+        group_totals: [...totals.values()],
         values,
         n_total:
           !op.length && !band.length

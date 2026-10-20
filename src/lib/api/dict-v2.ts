@@ -49,25 +49,45 @@ const DictCatalogLeafSchema = DictLeafSchema.extend({
   n_captures: z.number(),
   n_in_tech: z.number(),
 });
-const DictParameterNodeSchema = z.object({
-  param_key: z.string(), display_name: z.string(), unit: z.string().nullable().optional(),
-  category_id: z.string(), subcategory_id: z.string().nullable().optional(),
-  n: z.number(), n_occurrences: z.number(), n_captures: z.number(), n_in_tech: z.number(),
-  leaves: z.array(DictCatalogLeafSchema),
-}).passthrough();
-const DictSubcategoryNodeSchema = z.object({
-  id: z.string().nullable(), label: z.string(), position: z.number(),
-  parameters: z.array(DictParameterNodeSchema),
-}).passthrough();
-const DictCategoryNodeSchema = z.object({
-  id: z.string(), label: z.string(), position: z.number(),
-  subcategories: z.array(DictSubcategoryNodeSchema),
-}).passthrough();
+const DictParameterNodeSchema = z
+  .object({
+    param_key: z.string(),
+    display_name: z.string(),
+    unit: z.string().nullable().optional(),
+    category_id: z.string(),
+    subcategory_id: z.string().nullable().optional(),
+    n: z.number(),
+    n_occurrences: z.number(),
+    n_captures: z.number(),
+    n_in_tech: z.number(),
+    leaves: z.array(DictCatalogLeafSchema),
+  })
+  .passthrough();
+const DictSubcategoryNodeSchema = z
+  .object({
+    id: z.string().nullable(),
+    label: z.string(),
+    position: z.number(),
+    parameters: z.array(DictParameterNodeSchema),
+  })
+  .passthrough();
+const DictCategoryNodeSchema = z
+  .object({
+    id: z.string(),
+    label: z.string(),
+    position: z.number(),
+    subcategories: z.array(DictSubcategoryNodeSchema),
+  })
+  .passthrough();
 export type DictParameterNode = z.infer<typeof DictParameterNodeSchema>;
 export type DictCategoryNode = z.infer<typeof DictCategoryNodeSchema>;
 
 const DictOriginBucketSchema = z
-  .object({ origin: OriginSchema, messages: z.array(DictMessageBucketSchema), categories: z.array(DictCategoryNodeSchema).optional() })
+  .object({
+    origin: OriginSchema,
+    messages: z.array(DictMessageBucketSchema),
+    categories: z.array(DictCategoryNodeSchema).optional(),
+  })
   .passthrough();
 export type DictOriginBucket = z.infer<typeof DictOriginBucketSchema>;
 
@@ -120,6 +140,7 @@ const DistributionBlockSchema = z
     n_total: z.number(),
     distinct_values: z.number(),
     values: z.array(DistributionValueSchema),
+    group_totals: z.array(DistributionValueGroupSchema).optional(),
     comparability: z.string(),
     verdict: VerdictSchema,
     result_id: z.string(),
