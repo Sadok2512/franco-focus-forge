@@ -372,6 +372,13 @@ export function SignalingPage({
     enabled: !!capture,
     queryFn: ({ signal }) => getSignaling(projectId, "timeline", base, signal),
   });
+  // 1.52.0 — dedicated /signaling/procedures feed for the Procédure filter.
+  // Independent of the paginated /signaling response; groups per type.
+  const procedures = useQuery({
+    queryKey: ["signaling-procedures", projectId, capture],
+    enabled: !!capture,
+    queryFn: ({ signal }) => getSignaling(projectId, "procedures", { capture_id: capture }, signal),
+  });
   const points = useQuery({
     queryKey: ["signaling-points", projectId, filtered],
     enabled: !!capture,
@@ -549,12 +556,23 @@ export function SignalingPage({
                 resetPage();
               }}
             >
-              <option value="">Toutes</option>
-              {listing.data?.procedures.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.type} · seq {p.seq_start} · {shown(p.duration_ms)} ms · {p.outcome}
-                </option>
-              ))}
+              <option value="">Toutes{procedures.data ? ` (${procedures.data.total})` : ""}</option>
+              {procedures.data &&
+                Object.keys(procedures.data.types)
+                  .sort()
+                  .map((type) => (
+                    <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
+                      {procedures
+                        .data!.procedures.filter((p) => p.type === type)
+                        .map((p) => (
+                          <option key={p.id} value={p.id}>
+                            seq {p.seq_start}
+                            {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
+                            {p.outcome}
+                          </option>
+                        ))}
+                    </optgroup>
+                  ))}
             </select>
           </label>
           <label className="block">

@@ -1,11 +1,13 @@
 import { z } from "zod";
 import { apiFetch } from "./http";
 const envelope = { project_id: z.string(), capture_id: z.string(), result_id: z.string() };
+const layerSlug = z.enum(["rrc_lte", "rrc_nr", "nas", "event", "mac"]);
 const line = z.object({
   capture_id: z.string(),
   seq: z.number(),
   t_rel_s: z.number().nullable(),
   protocol: z.string(),
+  layer: layerSlug.optional(),
   technology: z.string().nullable(),
   direction: z.string().nullable(),
   message_name: z.string(),
@@ -34,6 +36,7 @@ const point = z.object({
   lat: z.number().nullable(),
   lng: z.number().nullable(),
   protocol: z.string(),
+  layer: layerSlug.optional(),
   gps_seq: z.number().nullable(),
   seq_gap: z.number().nullable(),
 });
@@ -52,8 +55,15 @@ export const signalingSchemas = {
     size: z.number(),
     pages: z.number(),
     protocol_counts: z.record(z.number()),
+    layer_counts: z.record(z.number()).optional(),
     procedures: z.array(procedure),
     selected_page: z.number().nullable(),
+  }),
+  procedures: z.object({
+    ...envelope,
+    procedures: z.array(procedure),
+    total: z.number(),
+    types: z.record(z.number()),
   }),
   timeline: z.object({
     ...envelope,

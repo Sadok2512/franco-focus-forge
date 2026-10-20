@@ -1,3 +1,9 @@
+## 1.52.0 (minor) — BC4-FRONT 2026-10-20 — Signaling : filtre Procédure sur `/signaling/procedures` + Zod layer dual (Agent BC3)
+
+- `src/lib/api/signaling.ts` : nouveau schéma `signalingSchemas.procedures` aligné sur l'endpoint back `GET /projects/{id}/signaling/procedures?capture_id=&type=` (shippé en 0.65.1). Ajout du champ `layer: 'rrc_lte'|'rrc_nr'|'nas'|'event'|'mac'` (optionnel) sur `Line` et `Point`, et de `layer_counts` sur la réponse `rows`, en parallèle de `protocol`/`protocol_counts` (back 0.67.0 dual).
+- `src/features/signaling/SignalingPage.tsx` : le menu « Procédure » lit maintenant la route dédiée `/signaling/procedures` (query indépendante de la liste paginée) et groupe les options par **type** via `<optgroup>` (`attach`, `bearer`, `data_session`, `ho`, `rrc_connection`, `rrc_setup`, `reestablishment`). Compteur « Toutes (n) » basé sur `total` du back.
+- Validé live sur TEST2 capture `41c13c9b4ce0` : dropdown rempli avec 97 procédures groupées par type ; `rrc_connection` ×30 présent (BC3 0.65.2) ; zéro erreur JS.
+
 ## 1.50.2 (patch) — BC4 2026-10-20 — Précision temporelle Signaling (Agent BC2)
 
 - Temps capture affiché à trois décimales, absence conservée en tiret.
