@@ -12,6 +12,14 @@ const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = ["#2563eb", "#7c3aed", "#ea580c", "#0891b2", "#16a34a"];
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
 
+const timeShown = (value: number | null | undefined) => (value == null ? "—" : value.toFixed(3));
+const radioShown = (value: number | null | undefined, unit: string) =>
+  value == null
+    ? "—"
+    : new Intl.NumberFormat("fr-FR", { maximumFractionDigits: unit === "km/h" ? 1 : 2 }).format(
+        value,
+      );
+
 function Timeline({
   data,
   onRange,
@@ -137,7 +145,7 @@ function SignalMap({
             geometry: { type: "Point", coordinates: [p.lng!, p.lat!] },
             properties: {
               seq: p.seq,
-              time: shown(p.t_rel_s),
+              time: timeShown(p.t_rel_s),
               protocol: p.protocol,
               color: colors[layers.indexOf(p.protocol)] ?? "#64748b",
               counts: JSON.stringify(p.counts),
@@ -664,7 +672,7 @@ export function SignalingPage({
                     className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
                   >
                     <td className="p-2 font-mono">{r.seq}</td>
-                    <td className="p-2 font-mono">{shown(r.t_rel_s)}</td>
+                    <td className="p-2 font-mono">{timeShown(r.t_rel_s)}</td>
                     <td className="p-2 whitespace-nowrap">{r.protocol}</td>
                     <td className="p-2">{shown(r.direction)}</td>
                     <td className="p-2">
@@ -730,7 +738,7 @@ export function SignalingPage({
               <dl className="mb-3 grid grid-cols-2 gap-2">
                 {Object.entries({
                   Séquence: seq,
-                  "Temps (s)": selected?.t_rel_s,
+                  "Temps (s)": timeShown(selected?.t_rel_s),
                   Sens: selected?.direction,
                   ECGI: context.data?.ecgi ?? selected?.ecgi,
                   PCI: context.data?.radio["pci"]?.value ?? selected?.pci,
@@ -739,7 +747,7 @@ export function SignalingPage({
                   Secteur: context.data?.sector,
                   Latitude: position?.lat,
                   Longitude: position?.lng,
-                  "Vitesse GPS": context.data?.radio["speed"]?.value,
+                  "Vitesse GPS": radioShown(context.data?.radio["speed"]?.value, "km/h"),
                 }).map(([k, v]) => (
                   <div key={k}>
                     <dt className="text-muted-foreground">{k}</dt>
@@ -763,9 +771,17 @@ export function SignalingPage({
                   <div key={name} title={v.reason ?? `${v.source}, seq ${shown(v.seq)}`}>
                     <span className="text-muted-foreground">{name}</span>
                     <div>
-                      {shown(v.value)} {v.unit}
+                      {radioShown(v.value, v.unit)} {v.unit}
                     </div>
-                    <small>écart seq : {shown(v.seq_gap)}</small>
+                    <small>
+                      Δseq : {shown(v.seq_gap)} · Δt : {timeShown(v.time_gap_s)}
+                      {v.time_gap_s == null ? "" : " s"}
+                    </small>
+                    <div className="text-xs text-muted-foreground">
+                      {v.temporal_relation === "same_timestamp"
+                        ? "Précédente en séquence · même horodatage"
+                        : "Mesure précédente"}
+                    </div>
                   </div>
                 ))}
               </div>

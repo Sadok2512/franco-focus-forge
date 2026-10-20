@@ -81,6 +81,8 @@ export const signalingSchemas = {
         source: z.string(),
         seq: z.number().nullable(),
         seq_gap: z.number().nullable(),
+        time_gap_s: z.number().nullable(),
+        temporal_relation: z.enum(["unavailable", "same_timestamp", "previous_timestamp"]),
         reason: z.string().nullable().optional(),
       }),
     ),

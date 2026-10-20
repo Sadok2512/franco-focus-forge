@@ -1,3 +1,9 @@
+## 1.50.2 (patch) — BC4 2026-10-20 — Précision temporelle Signaling (Agent BC2)
+
+- Temps capture affiché à trois décimales, absence conservée en tiret.
+- Contexte radio : précision numérique adaptée, Δseq et Δt calculé par API, mention du même horodatage sans prétendre une simultanéité physique.
+- Sélection, clés des requêtes, disposition et décodage inchangés. Lot B non commencé.
+
 ## 1.50.1 (patch) — BC4 2026-10-20 — Sélection Signaling isolée (Agent BC2)
 
 - Retrait du seq sélectionné de la clé et de la requête de liste ; conservation du compteur, de la pagination, du scroll et des filtres au clic.
