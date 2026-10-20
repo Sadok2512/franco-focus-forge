@@ -94,9 +94,19 @@ export function KpiRawDataTable({
   const rowsByKey = useMemo(() => {
     // Jointure stricte par `seq` au sein de la même capture : identité
     // (capture_id, seq) → une seule ligne, une colonne par métrique.
+    // GPS et nom du fichier NMF (0.60.0) proviennent du premier point
+    // qui les porte — ils sont identiques pour une même séquence
+    // puisque joints par la clé `(capture_id, seq)` côté back.
     const map = new Map<
       number,
-      { key: number; time_s: number; longitude: string; latitude: string; [code: string]: unknown }
+      {
+        key: number;
+        time_s: number;
+        longitude: number | null;
+        latitude: number | null;
+        nmf_file: string | null;
+        [code: string]: unknown;
+      }
     >();
     queries.forEach((q, idx) => {
       const payload = q.data as KpiTimeSeries | undefined;
@@ -107,13 +117,17 @@ export function KpiRawDataTable({
         const existing = map.get(p.seq);
         if (existing) {
           existing[metric.code] = p.value;
+          if (existing.longitude == null && p.longitude != null) existing.longitude = p.longitude;
+          if (existing.latitude == null && p.latitude != null) existing.latitude = p.latitude;
+          if (existing.nmf_file == null && p.nmf_file != null) existing.nmf_file = p.nmf_file;
           continue;
         }
         map.set(p.seq, {
           key: p.seq,
           time_s: p.time_s,
-          longitude: "—",
-          latitude: "—",
+          longitude: p.longitude ?? null,
+          latitude: p.latitude ?? null,
+          nmf_file: p.nmf_file ?? null,
           [metric.code]: p.value,
         });
       }
@@ -124,8 +138,9 @@ export function KpiRawDataTable({
   const columns = useMemo<Column[]>(() => {
     const base: Column[] = [
       { key: "time_s", label: "Time (s)", numeric: true },
-      { key: "longitude", label: "Longitude", optional: true },
-      { key: "latitude", label: "Latitude", optional: true },
+      { key: "longitude", label: "Longitude", numeric: true, optional: true },
+      { key: "latitude", label: "Latitude", numeric: true, optional: true },
+      { key: "nmf_file", label: "Fichier NMF", optional: true },
     ];
     const metricCols: Column[] = metrics.map((m) => ({
       key: m.code,
@@ -296,10 +311,14 @@ export function KpiRawDataTable({
                   {visibleColumns.map((col) => {
                     const raw = row[col.key as keyof typeof row];
                     let text: string;
+                    let title: string | undefined;
                     if (col.key === "time_s" && typeof raw === "number") {
                       text = timeFormatter.format(raw) + " s";
                     } else if (col.key === "longitude" || col.key === "latitude") {
-                      text = raw != null ? String(raw) : "—";
+                      text = typeof raw === "number" ? raw.toFixed(6) + "°" : "—";
+                    } else if (col.key === "nmf_file") {
+                      text = typeof raw === "string" && raw.length ? raw : "—";
+                      if (text !== "—") title = text;
                     } else {
                       const metric = metrics.find((m) => m.code === col.key);
                       text = valueFormatter(raw, metric?.unit ?? null);
@@ -307,7 +326,8 @@ export function KpiRawDataTable({
                     return (
                       <td
                         key={col.key}
-                        className={`px-3 py-1.5 border-b border-slate-100 tabular-nums ${col.numeric ? "text-right" : "text-left"} ${text === "—" ? "text-slate-400" : ""}`}
+                        title={title}
+                        className={`px-3 py-1.5 border-b border-slate-100 tabular-nums ${col.numeric ? "text-right" : "text-left"} ${col.key === "nmf_file" ? "max-w-[280px] truncate" : ""} ${text === "—" ? "text-slate-400" : ""}`}
                       >
                         {text}
                       </td>
@@ -321,8 +341,9 @@ export function KpiRawDataTable({
       )}
       <footer className="flex flex-wrap items-center gap-3 p-2 text-[11px] text-muted-foreground border-t">
         <span>
-          Observations brutes · jointure stricte sur (capture_id, seq) · GPS non exposé par le
-          contrat `/time-series` → `—` (limite déclarée).
+          Observations brutes · jointure stricte sur (capture_id, seq) · Longitude / Latitude /
+          Fichier NMF joints depuis `stg_event_raw` + `nmf_file` ; `—` quand la source ne porte pas
+          la valeur (ex. séquence indoor sans GPS).
         </span>
         <div className="ml-auto flex items-center gap-2">
           <label>

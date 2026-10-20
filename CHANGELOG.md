@@ -1,3 +1,11 @@
+## 1.44.0 (minor) — BC4-FRONT 2026-10-20 — Tableau brut : GPS + Fichier NMF réels (Agent BC2)
+
+- `KpiRawDataTable` lit les nouveaux champs du contrat back 0.60.0 (`longitude`, `latitude`, `nmf_file`) et peuple les colonnes correspondantes à partir du premier point qui porte la valeur. Les cellules affichent `0.123456°` pour les coordonnées et le nom complet du fichier (tronqué visuellement avec tooltip survol = nom complet).
+- Nouvelle colonne « Fichier NMF » (optionnelle via le menu Colonnes, cachable).
+- Zod `KpiTimeSeriesPointSchema` étendu avec `longitude: number | null | undefined`, `latitude: number | null | undefined`, `nmf_file: string | null | undefined` — `extra='allow'` déjà sur la réponse, pas de contract-check à rejouer.
+- Fallback : si une séquence n'a pas de ligne `stg_event_raw` (bucket Light pur), les champs restent `—` ; aucune coordonnée fabriquée.
+- Validation live : capture Test_3 `723547b196b3` → `longitude: 3.4776986 · latitude: 50.3778839 · nmf_file: BCNE 26S24_VD_T_MESURE-BENCH-CENTRE-COMMERCIAL-PETITE-FORET_incar_26Jun11_103519.2.nmf` (coordonnées Petite-Forêt confirmées par le nom du fichier).
+
 ## 1.43.0 (minor, livraison commune) — BC4-FRONT 2026-10-20 — Templates LTE/NR en arbre (Agent BC2)
 
 - Réutilise le composant Paramètres pour les racines LTE/NR, catégories dans l’ordre API et Autres en dernier ; largeurs et badges conservés.

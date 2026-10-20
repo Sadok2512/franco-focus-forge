@@ -12,6 +12,13 @@ export const KpiTimeSeriesPointSchema = z.object({
   seq: z.number().int(),
   time_s: z.number(),
   value: z.union([z.number(), z.string()]),
+  // 0.60.0 — Contexte joint depuis stg_event_raw / nmf_file sur
+  // (project_id, capture_id, seq). Les trois champs restent optionnels
+  // car la jointure est LEFT : une séquence sans ligne raw ou sans
+  // GPS reste présente mais avec `null`. Le front affiche `—`.
+  longitude: z.number().nullable().optional(),
+  latitude: z.number().nullable().optional(),
+  nmf_file: z.string().nullable().optional(),
 });
 
 export const KpiTimeSeriesSamplingSchema = z.object({
