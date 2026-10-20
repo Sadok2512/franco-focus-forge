@@ -152,10 +152,17 @@ export function KpiMeasurementMap({
       <KpiMapOSM
         premium
         showOperatorLegend={false}
-        measurementStatus={message}
+        measurementStatus={null}
         onMapReady={setMap}
         onRecenter={recenter}
-      />
+      >
+        <div
+          role="status"
+          className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+        >
+          {message}
+        </div>
+      </KpiMapOSM>
     </div>
   );
 }
