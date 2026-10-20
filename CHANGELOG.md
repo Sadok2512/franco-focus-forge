@@ -1,3 +1,9 @@
+## 1.45.1 (patch) — BC4-FRONT 2026-10-20 — Auto-sélection capture via /kpi/{code}/captures (Agent BC2)
+
+- `MetricVsTimeChart` consomme désormais `/projects/{p}/kpi/{code}/captures` (back 0.60.2) à la place de `/metrics/captures`. Résout le bug sur les projets Light-only (ex. `Test_outdoor`) : `measurement_points` est vide mais `nmf_event_light` contient les observations → le nouvel endpoint renvoie les 10 captures et le composant auto-sélectionne la plus riche en observations.
+- Tri côté client : capture à `n_observations` max en premier (meilleure chance d'avoir des points visibles immédiatement).
+- Message « Aucune capture disponible » reformulé : « Ce projet ne contient aucune capture avec observations décodées pour cette métrique » (plus précis que « mesures Nemo décodées » qui laissait entendre un problème global de décodage).
+
 ## 1.45.0 (minor) — BC4-FRONT 2026-10-20 — Types de graphiques RRC (Agent BC1)
 
 - Réglages indépendants par graphique : Histogramme, Points, Ligne et Ligne + points. Les catégories restent les valeurs réelles du paramètre, sans axe temporel inventé, interpolation ou connexion des valeurs absentes.
