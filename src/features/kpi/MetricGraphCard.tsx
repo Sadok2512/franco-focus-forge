@@ -101,14 +101,20 @@ function MetricAggregatePlot({
     const groups = query.data?.groups ?? [];
     const sorted = [...groups].sort((a, b) => (b.n || 0) - (a.n || 0));
     const labels = sorted.map((g) => g.operator ?? "Non attribué");
+    // 1.49.1 — grouper P10/P50/P90 côte à côte : une barre pleine
+    // (opérateur) pour chaque percentile. Évite les bars à hauteur 0
+    // invisibles quand p50=0 (ex. BLER où la médiane est 0 par
+    // définition et seul p90 porte l'info).
+    const stats: Array<{ key: "p10" | "p50" | "p90"; label: string; opacity: number }> = [
+      { key: "p10", label: "P10", opacity: 0.35 },
+      { key: "p50", label: "P50", opacity: 0.7 },
+      { key: "p90", label: "P90", opacity: 1 },
+    ];
     return {
       animationDuration: 150,
       grid: { left: 58, right: 20, top: 28, bottom: 44 },
-      tooltip: {
-        trigger: "axis",
-        confine: true,
-        renderMode: "richText",
-      },
+      tooltip: { trigger: "axis", confine: true, renderMode: "richText" },
+      legend: { top: 0, right: 20, itemHeight: 8, itemGap: 10, textStyle: { fontSize: 10 } },
       xAxis: {
         type: "category",
         data: labels,
@@ -123,24 +129,22 @@ function MetricAggregatePlot({
         axisLabel: { color: "#64748b", fontSize: 10 },
         splitLine: { lineStyle: { color: "#e7edf5", type: "dashed" } },
       },
-      series: [
-        {
-          type: "bar",
-          barMaxWidth: 46,
-          name: `${label} · P50`,
-          data: sorted.map((g) => ({
-            value: g.p50,
-            itemStyle: { color: operatorColor(g.operator) },
-          })),
-          label: {
-            show: true,
-            position: "top",
-            fontSize: 10,
-            formatter: (p: { value?: unknown }) =>
-              typeof p.value === "number" ? p.value.toFixed(1) : "—",
-          },
+      series: stats.map((s) => ({
+        type: "bar" as const,
+        barMaxWidth: 24,
+        name: s.label,
+        data: sorted.map((g) => ({
+          value: g[s.key],
+          itemStyle: { color: operatorColor(g.operator), opacity: s.opacity },
+        })),
+        label: {
+          show: s.key === "p50" || s.key === "p90",
+          position: "top" as const,
+          fontSize: 9,
+          formatter: (p: { value?: unknown }) =>
+            typeof p.value === "number" ? p.value.toFixed(unit === "%" ? 1 : 2) : "—",
         },
-      ],
+      })),
     };
   }, [query.data, label, unit]);
 

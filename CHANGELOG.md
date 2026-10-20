@@ -1,3 +1,8 @@
+## 1.49.1 (patch) — BC4-FRONT 2026-10-20 — Histogramme métrique : P10/P50/P90 groupés (Agent BC2)
+
+- `MetricGraphCard` : au lieu d'un seul barre P50 (qui vaut 0 pour les métriques comme BLER où la médiane est 0 par définition — rendant la carte "vide" visuellement), trois barres groupées P10/P50/P90 par opérateur avec opacités croissantes. L'utilisateur voit toujours au moins une valeur non nulle sur P90.
+- Formatage adaptatif : 1 décimale pour les % (BLER, PRB), 2 décimales pour les autres (débits en Mbit/s après fix back 0.64.1).
+
 ## 1.49.0 (minor) — BC4-FRONT 2026-10-20 — Deux onglets catalogue : KPI · Métriques (F2+F3) (Agent BC2)
 
 - `KpiWorkspace.tsx` : nouvelle barre d'onglets au-dessus du catalogue (KPI | Métriques) avec compteurs de sélections. L'onglet actif pilote la sidebar rendue à gauche. Les deux sélections sont **distinctes** dans l'URL : `?kpis=[]` (inchangé) + `?metrics=[]` (nouveau). Les deux ensembles sont rendus ensemble dans le panneau de droite.
