@@ -62,7 +62,8 @@ export function CatalogTree({
   const toggle = (key: string) =>
     setOpen((previous) => {
       const next = new Set(previous);
-      next.has(key) ? next.delete(key) : next.add(key);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   const hasSelection = (p: DictParameterNode) =>
@@ -111,7 +112,10 @@ export function CatalogTree({
               const rootOpen = !open.has(`closed:${root}`);
               return (
                 <section key={root} aria-label={`${t.techno} ${originLabel(o.origin)}`}>
-                  <div className="flex items-center gap-1 rounded bg-muted/60 py-1 font-semibold">
+                  <div
+                    data-technology={t.techno}
+                    className="rrc-catalog-root flex items-center gap-1 rounded py-1 font-semibold"
+                  >
                     <button
                       aria-label={`${rootOpen ? "Replier" : "Déplier"} ${t.techno}`}
                       aria-expanded={rootOpen}

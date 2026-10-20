@@ -85,7 +85,7 @@ export function TreePanel({
   const nSel = selected.size;
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="rrc-sidebar-content flex h-full min-h-0 flex-col">
       <div
         className="flex items-center gap-1 border-b px-2"
         role="tablist"
@@ -176,20 +176,6 @@ export function TreePanel({
           ))}
         </section>
       )}
-      <div className="flex items-center justify-between gap-2 border-b px-2 py-1.5">
-        <span className="text-[11px] text-muted-foreground" data-testid="dict-selected-count">
-          <b className="font-mono text-foreground">{nSel}</b> sélectionné{nSel > 1 ? "s" : ""}
-        </span>
-        <button
-          type="button"
-          onClick={onReset}
-          disabled={nSel === 0 && q === ""}
-          className="inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[11px] font-semibold text-primary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
-          data-testid="dict-reset"
-        >
-          <RotateCcw className="h-3 w-3" /> Réinitialiser
-        </button>
-      </div>
       {tab !== "templates" && (
         <div className="border-b p-2">
           <label className="relative block">
@@ -251,6 +237,20 @@ export function TreePanel({
           </div>
         );
       })}
+      <div className="rrc-sidebar-footer">
+        <span className="text-[11px] text-muted-foreground" data-testid="dict-selected-count">
+          <b className="font-mono text-foreground">{nSel}</b> sélectionné{nSel > 1 ? "s" : ""}
+        </span>
+        <button
+          type="button"
+          onClick={onReset}
+          disabled={nSel === 0 && q === ""}
+          className="inline-flex h-7 items-center gap-1.5 rounded-md border px-2 text-[11px] font-semibold text-primary hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+          data-testid="dict-reset"
+        >
+          <RotateCcw className="h-3 w-3" /> Réinitialiser
+        </button>
+      </div>
     </div>
   );
 }

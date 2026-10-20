@@ -1061,3 +1061,96 @@
 .rrc-mobile-layout > .rrc-left-info .rrc-selected-info {
   max-height: 420px;
 }
+
+/* RRC V5: keep hierarchy and scroll geometry; compact presentation only. */
+.rrc-sidebar-content > [role="tablist"],
+.rrc-sidebar-content > .border-b {
+  flex-shrink: 0;
+}
+.rrc-sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-top: auto;
+  padding: 9px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--card);
+}
+.rrc-charts > div {
+  border-radius: 10px;
+  box-shadow: 0 2px 7px rgb(15 23 42 / 4%);
+}
+.rrc-charts .panel {
+  border: 0;
+  box-shadow: none;
+}
+.rrc-charts .panel header {
+  padding: 4px 0 10px;
+}
+.rrc-charts .panel h3 {
+  font-size: 14px;
+}
+.rrc-chart-technical {
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+  background: color-mix(in srgb, var(--muted) 35%, var(--card));
+}
+.rrc-chart-technical summary {
+  cursor: pointer;
+  color: var(--muted-foreground);
+}
+.rrc-chart-technical dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 14px;
+  margin-top: 8px;
+}
+.rrc-chart-technical dt {
+  color: var(--muted-foreground);
+}
+.rrc-chart-technical dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.rrc-hierarchy {
+  font-variant-numeric: tabular-nums;
+}
+.rrc-hierarchy thead th {
+  height: 42px;
+}
+.rrc-tech-label[data-technology="LTE"] {
+  color: #1769e0;
+  background: #1769e012;
+}
+.rrc-tech-label[data-technology="NR"] {
+  color: #16a34a;
+  background: #16a34a12;
+}
+.rrc-tech-label {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.rrc-hierarchy .rrc-hierarchy-value {
+  min-width: 180px;
+}
+@media (max-width: 600px) {
+  .rrc-chart-technical dl {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rrc-sidebar-footer {
+    padding: 7px 8px;
+  }
+}
+.rrc-catalog-root[data-technology="LTE"] {
+  color: #1769e0;
+  background: #1769e00d;
+}
+.rrc-catalog-root[data-technology="NR"] {
+  color: #16a34a;
+  background: #16a34a0d;
+}
