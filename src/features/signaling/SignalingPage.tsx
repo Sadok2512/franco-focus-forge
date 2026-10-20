@@ -4,7 +4,7 @@ import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { getSignaling } from "@/lib/api/client";
-import type { SignalingTimeline, SignalingPoints } from "@/lib/api/signaling";
+import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 
@@ -15,11 +15,34 @@ const shown = (value: unknown) => (value === null || value === undefined ? "—"
 function Timeline({
   data,
   onRange,
+  selectedTime,
 }: {
   data: SignalingTimeline;
+  selectedTime: number | null;
   onRange: (range: [number, number] | undefined) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
+  const instance = useRef<ECharts | undefined>(undefined);
+  const time = useRef(selectedTime);
+  time.current = selectedTime;
+  const drawCursor = useCallback(() => {
+    instance.current?.setOption({
+      series: [
+        {
+          id: "selection",
+          type: "line",
+          data: [],
+          markLine: {
+            symbol: "none",
+            silent: true,
+            lineStyle: { color: "#dc2626", width: 2 },
+            data: time.current === null ? [] : [{ xAxis: time.current }],
+          },
+        },
+      ],
+    });
+  }, []);
+  useEffect(drawCursor, [selectedTime, drawCursor]);
   const callback = useRef(onRange);
   callback.current = onRange;
   useEffect(() => {
@@ -29,6 +52,7 @@ function Timeline({
     void import("echarts").then((e) => {
       if (disposed || !host.current) return;
       chart = e.init(host.current);
+      instance.current = chart;
       chart.setOption({
         animation: false,
         tooltip: { trigger: "axis" },
@@ -42,8 +66,10 @@ function Timeline({
           nameGap: 26,
         },
         yAxis: { type: "value", name: "Messages" },
+        dataZoom: [{ type: "inside", xAxisIndex: 0, zoomOnMouseWheel: "ctrl" }],
         brush: { xAxisIndex: 0, brushType: "lineX", toolbox: ["lineX", "clear"] },
         series: layers.map((name, i) => ({
+          id: name,
           name,
           type: "bar",
           stack: "protocol",
@@ -52,6 +78,7 @@ function Timeline({
           data: data.buckets.map((b) => [b.t_rel_s, b.counts[name]]),
         })),
       });
+      drawCursor();
       chart.on("brushEnd", (event: unknown) => {
         const area = (event as { areas?: { coordRange?: number[] }[] }).areas?.[0]?.coordRange;
         callback.current(area?.length === 2 ? [area[0]!, area[1]!] : undefined);
@@ -68,19 +95,29 @@ function Timeline({
       disposed = true;
       observer?.disconnect();
       chart?.dispose();
+      instance.current = undefined;
     };
-  }, [data]);
+  }, [data, drawCursor]);
   return (
     <div
       ref={host}
       className="h-56"
       data-testid="signaling-timeline"
+      data-selected-time={selectedTime ?? undefined}
       aria-label="Histogramme temporel, glisser pour filtrer"
     />
   );
 }
 
-function SignalMap({ data, onSelect }: { data: SignalingPoints; onSelect: (seq: number) => void }) {
+function SignalMap({
+  data,
+  onSelect,
+  selectedSeq,
+}: {
+  data: SignalingPoints;
+  onSelect: (seq: number) => void;
+  selectedSeq: number | undefined;
+}) {
   const [map, setMap] = useState<MlMap>();
   const ready = useCallback((m: MlMap) => setMap(m), []);
   const callback = useRef(onSelect);
@@ -182,6 +219,27 @@ function SignalMap({ data, onSelect }: { data: SignalingPoints; onSelect: (seq: 
       map.off("click", "signaling-points", click);
     };
   }, [map, data]);
+  useEffect(() => {
+    if (!map) return;
+    let marker: import("maplibre-gl").Marker | undefined;
+    let cancelled = false;
+    const point = data.points.find((p) => p.seq === selectedSeq);
+    if (point?.lat !== null && point?.lat !== undefined && point.lng !== null) {
+      void import("maplibre-gl").then((ml) => {
+        if (cancelled) return;
+        const el = document.createElement("div");
+        el.dataset["testid"] = "selected-gps";
+        el.dataset["seq"] = String(selectedSeq);
+        el.style.cssText =
+          "width:18px;height:18px;border:3px solid #dc2626;border-radius:50%;pointer-events:none;background:transparent";
+        marker = new ml.Marker({ element: el }).setLngLat([point.lng!, point.lat!]).addTo(map);
+      });
+    }
+    return () => {
+      cancelled = true;
+      marker?.remove();
+    };
+  }, [map, data, selectedSeq]);
   if (data.indoor)
     return (
       <div
@@ -264,6 +322,8 @@ export function SignalingPage({
   const [hover, setHover] = useState<string[]>([]),
     [tab, setTab] = useState("Arborescence"),
     [exportError, setExportError] = useState("");
+  const [selectedRecord, setSelectedRecord] = useState<Partial<SignalingLine>>();
+  const selectionCapture = useRef<string | undefined>(undefined);
   const caps = useQuery({
     queryKey: ["signaling-captures", projectId],
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
@@ -294,10 +354,10 @@ export function SignalingPage({
     [base, range],
   );
   const listing = useQuery({
-    queryKey: ["signaling", projectId, filtered, page, size, seq, sort, order],
+    queryKey: ["signaling", projectId, filtered, page, size, sort, order],
     enabled: !!capture,
     queryFn: ({ signal }) =>
-      getSignaling(projectId, "rows", { ...filtered, page, size, seq, sort, order }, signal),
+      getSignaling(projectId, "rows", { ...filtered, page, size, sort, order }, signal),
   });
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
@@ -311,17 +371,37 @@ export function SignalingPage({
   });
   const context = useQuery({
     queryKey: ["signaling-context", projectId, capture, seq],
+    staleTime: 60000,
     enabled: !!capture && seq !== undefined,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "context", { capture_id: capture, seq }, signal),
   });
   const details = useQuery({
     queryKey: ["signaling-details", projectId, capture, seq],
+    staleTime: 60000,
     enabled: !!capture && seq !== undefined,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "details", { capture_id: capture, seq }, signal),
   });
-  const selected = listing.data?.rows.find((r) => r.seq === seq);
+  const initialMessage = useQuery({
+    queryKey: ["signaling-initial-message", projectId, capture, initialSeq],
+    enabled: !!capture && capture === initialCapture && initialSeq !== undefined,
+    queryFn: ({ signal }) =>
+      getSignaling(projectId, "rows", { capture_id: capture, seq: initialSeq, size: 1 }, signal),
+    staleTime: Infinity,
+  });
+  const selected =
+    selectedRecord?.capture_id === capture && selectedRecord?.seq === seq
+      ? selectedRecord
+      : (listing.data?.rows.find((r) => r.seq === seq) ??
+        initialMessage.data?.rows.find((r) => r.seq === seq));
+  useEffect(() => {
+    if (selectionCapture.current && selectionCapture.current !== capture) {
+      setSeq(undefined);
+      setSelectedRecord(undefined);
+    }
+    selectionCapture.current = capture;
+  }, [capture]);
   const position = points.data?.points.find((p) => p.seq === seq);
   const resetPage = () => {
     setPage(1);
@@ -336,10 +416,21 @@ export function SignalingPage({
     setHover([]);
   };
   const chooseSeq = (value: number) => {
+    if (!capture) return;
+    const row = listing.data?.rows.find((r) => r.seq === value);
+    const point = points.data?.points.find((p) => p.seq === value);
+    setSelectedRecord(
+      row ?? {
+        seq: value,
+        capture_id: capture,
+        t_rel_s: point?.t_rel_s ?? null,
+        ...(point ? { protocol: point.protocol } : {}),
+      },
+    );
     setSeq(value);
     setTab("Arborescence");
   };
-  const error = [caps, listing, timeline, points, context, details].find((q) => q.isError)?.error;
+  const error = [caps, listing, timeline, points].find((q) => q.isError)?.error;
   const exportCsv = async () => {
     try {
       setExportError("");
@@ -498,6 +589,7 @@ export function SignalingPage({
           {timeline.data ? (
             <Timeline
               data={timeline.data}
+              selectedTime={selected?.t_rel_s ?? null}
               onRange={(r) => {
                 setRange(r);
                 resetPage();
@@ -512,7 +604,7 @@ export function SignalingPage({
         <section className="min-w-0 rounded-lg border bg-card p-3">
           <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
           {points.data ? (
-            <SignalMap data={points.data} onSelect={chooseSeq} />
+            <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
           ) : (
             <p role="status">Chargement des positions…</p>
           )}
@@ -564,6 +656,7 @@ export function SignalingPage({
                   <tr
                     key={r.seq}
                     data-seq={r.seq}
+                    aria-selected={r.seq === seq}
                     data-procedure-highlight={r.procedure_ids.some((id) => hover.includes(id))}
                     onMouseEnter={() => setHover(r.procedure_ids)}
                     onMouseLeave={() => setHover([])}
@@ -654,6 +747,16 @@ export function SignalingPage({
                   </div>
                 ))}
               </dl>
+              {context.isPending && <p role="status">Chargement du contexte radio…</p>}
+              {context.isError && (
+                <p role="alert">
+                  Contexte radio indisponible.{" "}
+                  <button onClick={() => void context.refetch()}>Réessayer le contexte</button>
+                </p>
+              )}
+              {points.data && (position?.lat == null || position?.lng == null) && (
+                <p role="status">Aucune position GPS prouvée pour ce message.</p>
+              )}
               <h3 className="border-t pt-3 font-semibold">Contexte radio précédent</h3>
               <div className="my-2 grid grid-cols-2 gap-2">
                 {Object.entries(context.data?.radio ?? {}).map(([name, v]) => (
@@ -679,7 +782,12 @@ export function SignalingPage({
                   </button>
                 ))}
               </div>
-              {details.isPending ? (
+              {details.isError ? (
+                <p role="alert">
+                  Erreur de récupération du décodage.{" "}
+                  <button onClick={() => void details.refetch()}>Réessayer le décodage</button>
+                </p>
+              ) : details.isPending ? (
                 <p role="status">Chargement du décodage…</p>
               ) : (
                 details.data && (
@@ -691,7 +799,7 @@ export function SignalingPage({
                       details.data.parameters.length ? (
                         <Tree node={details.data.tree} />
                       ) : (
-                        <p>Aucun arbre ASN.1 disponible pour cet événement.</p>
+                        <p>Décodage ASN.1 indisponible pour ce message</p>
                       )
                     ) : tab === "Vue texte" ? (
                       <pre className="whitespace-pre-wrap">
