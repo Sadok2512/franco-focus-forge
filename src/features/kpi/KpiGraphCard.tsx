@@ -301,7 +301,13 @@ export function KpiGraphCard({
             : "Aucune valeur validée pour cette population et cette statistique."
           : "Aucune donnée validée pour cette métrique.")));
   const choices = data ? statistics(data) : [];
-  const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
+  const operators = [
+    ...new Set(
+      rows.map(
+        (r) => r.operator ?? (config.groupBy === "none" ? "Population filtrée" : "Non attribué"),
+      ),
+    ),
+  ];
   const body = (
     <>
       {taskView && blockedReason ? (

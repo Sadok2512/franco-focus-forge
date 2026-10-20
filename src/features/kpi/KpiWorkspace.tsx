@@ -376,6 +376,7 @@ function Workspace({
                       setSelectedRows(new Set());
                     }}
                   >
+                    <option value="none">Population filtrée</option>
                     <option value="operator">Opérateur</option>
                     <option value="band">Bande</option>
                     <option value="operator_band">Opérateur + bande</option>
