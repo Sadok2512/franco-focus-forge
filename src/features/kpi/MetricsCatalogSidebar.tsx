@@ -1,8 +1,16 @@
 import { useMemo, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ChevronDown, ChevronRight, Search } from "lucide-react";
+import { Activity, ChevronDown, ChevronRight, MoreVertical, Search } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getMetrics } from "@/lib/api/metrics";
 import { MAX_GRAPHS, techLabel } from "./workspace-model";
+import { METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
 
 type MetricInfo = {
   code: string;
@@ -24,11 +32,13 @@ export function MetricsCatalogSidebar({
   projectId,
   selected,
   onToggle,
+  onVisualization,
   searchRef,
 }: {
   projectId: string;
   selected: string[];
   onToggle: (code: string) => void;
+  onVisualization?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
 }) {
   const [search, setSearch] = useState("");
@@ -180,6 +190,36 @@ export function MetricsCatalogSidebar({
                                   </span>
                                 </span>
                               </label>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="kpi-icon kpi-leaf-menu"
+                                    aria-label={`Visualisation ${m.label}`}
+                                    disabled={over}
+                                    data-testid={`metric-leaf-menu-${m.code}`}
+                                  >
+                                    <MoreVertical size={15} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
+                                  {(Object.keys(METRIC_VIEW_LABELS) as MetricView[]).map((mode) => {
+                                    const Icon = METRIC_VIEW_ICONS[mode];
+                                    return (
+                                      <DropdownMenuItem
+                                        key={mode}
+                                        onSelect={() => {
+                                          if (!isSelected) onToggle(m.code);
+                                          onVisualization?.(m.code, mode);
+                                        }}
+                                      >
+                                        <Icon size={14} />
+                                        {METRIC_VIEW_LABELS[mode]}
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </div>
                           );
                         })}

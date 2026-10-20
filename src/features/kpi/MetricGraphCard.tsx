@@ -35,14 +35,14 @@ import { operatorColor } from "./workspace-model";
  *   - **map** : indisponible — `/metrics/series` ne renvoie pas de GPS.
  *
  *  Règle 1/2 : aucune valeur fabriquée, aucune interpolation front. */
-type MetricView = "histogram" | "graph" | "table" | "map";
-const VIEW_LABELS: Record<MetricView, string> = {
+export type MetricView = "histogram" | "graph" | "table" | "map";
+export const METRIC_VIEW_LABELS: Record<MetricView, string> = {
   histogram: "Histogramme",
   graph: "Graphique",
   table: "Tableau",
   map: "Carte",
 };
-const VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
+export const METRIC_VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
   histogram: BarChart3,
   graph: ChartNoAxesCombined,
   table: Table2,
@@ -59,6 +59,8 @@ export function MetricGraphCard({
   eventCode,
   appliedFilters,
   onRemove,
+  view: viewProp,
+  onViewChange,
 }: {
   projectId: string;
   code: string;
@@ -69,9 +71,16 @@ export function MetricGraphCard({
   eventCode: string;
   appliedFilters: KpiQueryFilters;
   onRemove: () => void;
+  view?: MetricView | undefined;
+  onViewChange?: ((view: MetricView) => void) | undefined;
 }) {
-  const [view, setView] = useState<MetricView>("histogram");
-  const ActiveIcon = VIEW_ICONS[view];
+  const [localView, setLocalView] = useState<MetricView>("histogram");
+  const view = viewProp ?? localView;
+  const setView = (v: MetricView) => {
+    setLocalView(v);
+    onViewChange?.(v);
+  };
+  const ActiveIcon = METRIC_VIEW_ICONS[view];
   return (
     <article
       id={`metric-graph-${code}`}
@@ -97,17 +106,17 @@ export function MetricGraphCard({
                 data-testid="metric-view-trigger"
               >
                 <ActiveIcon size={13} />
-                {VIEW_LABELS[view]}
+                {METRIC_VIEW_LABELS[view]}
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
               <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
-              {(Object.keys(VIEW_LABELS) as MetricView[]).map((mode) => {
-                const Icon = VIEW_ICONS[mode];
+              {(Object.keys(METRIC_VIEW_LABELS) as MetricView[]).map((mode) => {
+                const Icon = METRIC_VIEW_ICONS[mode];
                 return (
                   <DropdownMenuItem key={mode} onSelect={() => setView(mode)}>
                     <Icon size={14} />
-                    {VIEW_LABELS[mode]}
+                    {METRIC_VIEW_LABELS[mode]}
                   </DropdownMenuItem>
                 );
               })}

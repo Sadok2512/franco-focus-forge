@@ -1,3 +1,11 @@
+## 1.49.5 (minor) — BC4-FRONT 2026-10-20 — Catalogue Métriques : menu "…" par métrique (Agent BC2)
+
+- `MetricsCatalogSidebar.tsx` : ajout du menu `MoreVertical` par métrique, identique à celui du `KpiCatalogSidebar`. Expose les 4 vues de la carte Métrique (Histogramme, Graphique, Tableau, Carte) directement depuis l'arbre, sans passer par la carte.
+- Clic sur une entrée du menu : auto-sélection de la métrique (si pas déjà cochée) + application immédiate de la vue choisie dans la carte correspondante.
+- `MetricGraphCard` : la vue est maintenant un prop contrôlé optionnel (`view` / `onViewChange`) ; état local conservé en fallback si la carte n'est pas pilotée.
+- `KpiWorkspace` : nouveau state `metricViews: Record<string, MetricView>` + handler `setMetricView(code, view)`, câblé en `onVisualization` sur la sidebar et en `view/onViewChange` sur la carte.
+- Validé : clic sur "Graphique" dans le menu de `pdsch_bler` → la carte affiche la courbe (2419 points) ; clic sur "Tableau" → bascule immédiate sur la table opérateurs. Zéro erreur JS.
+
 ## 1.49.4 (minor) — BC4-FRONT 2026-10-20 — MetricGraphCard : menu Visualisation 4 vues (Agent BC2)
 
 - `MetricGraphCard.tsx` : remplace le `<select>` histogramme/temps par un `DropdownMenu` identique au menu Visualisation du KPI. Quatre modes exposés : **Histogramme**, **Graphique**, **Tableau**, **Carte**.

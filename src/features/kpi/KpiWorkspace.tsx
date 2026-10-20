@@ -31,7 +31,7 @@ import type {
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
-import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { getMetrics } from "@/lib/api/metrics";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
@@ -227,6 +227,11 @@ function Workspace({
       return next;
     });
   };
+  // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
+  // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
+  const [metricViews, setMetricViews] = useState<Record<string, MetricView>>({});
+  const setMetricView = (code: string, view: MetricView) =>
+    setMetricViews((prev) => ({ ...prev, [code]: view }));
   const [draft, setDraft] = useState(() => fromSearch(search));
   // URL is the applied shared state; edits stay local until Apply.
   const urlDraft = useMemo(() => fromSearch(search), [search]);
@@ -421,6 +426,7 @@ function Workspace({
                 projectId={projectId}
                 selected={selectedMetrics}
                 onToggle={toggleMetric}
+                onVisualization={setMetricView}
                 searchRef={catalogSearch}
               />
             )}
@@ -603,6 +609,8 @@ function Workspace({
                     eventCode={m.event_code}
                     appliedFilters={applied}
                     onRemove={() => toggleMetric(m.code)}
+                    view={metricViews[m.code]}
+                    onViewChange={(v) => setMetricView(m.code, v)}
                   />
                 );
               })}
