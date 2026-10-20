@@ -1,3 +1,8 @@
+## 1.49.2 (patch) — BC4-FRONT 2026-10-20 — Fix MetricGraphCard : ECharts init différé (Agent BC2)
+
+- Correction : la carte Métrique n'affichait aucune barre après sélection (zone de tracé vide alors que le back renvoyait n>0). Cause : `useEffect` d'init avec `[]` tournait au 1er render (query.isPending → early return "Chargement…"), le div `ref=host` n'existait pas → `chart.current` restait `null` et le second `setOption` était un no-op.
+- Fix : l'effet d'init dépend maintenant de `ready = !isPending && !isError && groups.length > 0`. ECharts s'instancie une fois la donnée disponible et le DOM rendu.
+
 ## 1.49.1 (patch) — BC4-FRONT 2026-10-20 — Histogramme métrique : P10/P50/P90 groupés (Agent BC2)
 
 - `MetricGraphCard` : au lieu d'un seul barre P50 (qui vaut 0 pour les métriques comme BLER où la médiane est 0 par définition — rendant la carte "vide" visuellement), trois barres groupées P10/P50/P90 par opérateur avec opacités croissantes. L'utilisateur voit toujours au moins une valeur non nulle sur P90.

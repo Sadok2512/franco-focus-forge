@@ -148,7 +148,13 @@ function MetricAggregatePlot({
     };
   }, [query.data, label, unit]);
 
+  // 1.49.2 — le div hôte n'existe pas tant que query est pending (early
+  // return "Chargement…"). On attend que le DOM soit prêt (data arrivée)
+  // avant d'instancier ECharts. La dépendance query.data garantit que
+  // l'effet re-run quand le composant passe de "loading" au vrai render.
+  const ready = !query.isPending && !query.isError && !!query.data?.groups.length;
   useEffect(() => {
+    if (!ready) return;
     let disposed = false;
     let observer: ResizeObserver | undefined;
     import("echarts")
@@ -168,7 +174,8 @@ function MetricAggregatePlot({
       chart.current?.dispose();
       chart.current = null;
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready]);
 
   useEffect(() => {
     chart.current?.setOption(option, true);
