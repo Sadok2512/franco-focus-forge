@@ -36,6 +36,7 @@ export function defaultConfig(kpiCode: string, groupBy: KpiGroupBy): ChartConfig
   };
 }
 export const GROUP_LABELS: Record<KpiGroupBy, string> = {
+  none: "Population filtrée",
   operator: "Opérateur",
   band: "Bande",
   operator_band: "Opérateur + bande",

@@ -197,9 +197,10 @@ export type KpiByOperator = z.infer<typeof KpiByOperatorSchema>;
 
 /* ---------- Query input (filters passed to /kpi/{code}) ---------- */
 
-export type KpiGroupBy = "operator" | "band" | "operator_band" | "dor";
+export type KpiGroupBy = "none" | "operator" | "band" | "operator_band" | "dor";
 
 export type KpiQueryFilters = {
+  capture_id?: string | undefined;
   operator?: string[];
   service_type?: string[];
   phase?: string[];

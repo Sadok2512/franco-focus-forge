@@ -18,15 +18,21 @@ export const getMetricSeries = (
   codes: string[],
   signal?: AbortSignal,
   range?: { from_seq: number; to_seq: number },
+  filters: KpiQueryFilters = {},
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams({ capture_id: capture, codes: codes.join(","), ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })}`,
+    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })])}`,
     MetricSeriesSchema,
     signal,
   );
-export const getCaptureEvents = (p: string, capture: string, signal?: AbortSignal) =>
+export const getCaptureEvents = (
+  p: string,
+  capture: string,
+  signal?: AbortSignal,
+  filters: KpiQueryFilters = {},
+) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/captures/${encodeURIComponent(capture)}/events?types=task,ho,rlf,rrc`,
+    `/projects/${encodeURIComponent(p)}/captures/${encodeURIComponent(capture)}/events?types=task,ho,rlf,rrc&${new URLSearchParams(taskQuery(filters))}`,
     EventsSchema,
     signal,
   );

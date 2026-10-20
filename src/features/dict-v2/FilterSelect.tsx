@@ -12,8 +12,14 @@ export function FilterSelect({
   operatorBadges = false,
   showLabel = false,
   unavailableReason,
+  explicitSelection = false,
+  unrestricted = false,
+  onReset,
 }: {
   unavailableReason?: string;
+  explicitSelection?: boolean;
+  unrestricted?: boolean;
+  onReset?: (() => void) | undefined;
   operatorBadges?: boolean;
   showLabel?: boolean;
   label: string;
@@ -28,9 +34,16 @@ export function FilterSelect({
   const options = operatorBadges ? sourceOptions.filter(isIdentifiedOperator) : sourceOptions;
   const selectedValues = operatorBadges ? value.filter(isIdentifiedOperator) : value;
   // An empty API operator filter means all operators, not an empty population.
-  const selected = operatorBadges && !selectedValues.length ? [...options] : selectedValues;
+  const selected =
+    operatorBadges && (explicitSelection ? unrestricted : !selectedValues.length)
+      ? [...options]
+      : selectedValues;
   const commit = (next: string[]) =>
-    onChange(operatorBadges && options.every((option) => next.includes(option)) ? [] : next);
+    onChange(
+      operatorBadges && !explicitSelection && options.every((option) => next.includes(option))
+        ? []
+        : next,
+    );
   const [search, setSearch] = useState("");
   const shown = options.filter((option) =>
     option.toLocaleLowerCase().includes(search.toLocaleLowerCase()),
@@ -41,9 +54,11 @@ export function FilterSelect({
         <button
           aria-disabled={!!unavailableReason}
           title={unavailableReason}
-          onClick={(event) => { if (unavailableReason) event.preventDefault(); }}
+          onClick={(event) => {
+            if (unavailableReason) event.preventDefault();
+          }}
           className={`${unavailableReason ? "opacity-50 cursor-not-allowed" : ""} rrc-control ${showLabel ? "rrc-geographic-select" : ""}`}
-          aria-label={`${label} — ${selected.length ? (operatorBadges ? selected.join(", ") : `${selected.length} sélectionné(s)`) : "Tous"}`}
+          aria-label={`${label} — ${selected.length ? (operatorBadges ? selected.join(", ") : `${selected.length} sélectionné(s)`) : explicitSelection && !unrestricted ? "Aucun" : "Tous"}`}
         >
           {showLabel && <span className="font-medium">{label}</span>}
           {showLabel && !operatorBadges && (
@@ -62,7 +77,9 @@ export function FilterSelect({
                   ? selected[0]
                   : selected.length
                     ? `${selected.length} sélectionnés`
-                    : "Tous"}
+                    : explicitSelection && !unrestricted
+                      ? "Aucun"
+                      : "Tous"}
           </span>
           <ChevronDown size={14} />
         </button>
@@ -79,7 +96,10 @@ export function FilterSelect({
           <button onClick={() => commit([...options])} className="rounded px-1 py-2 text-primary">
             Tout sélectionner
           </button>
-          <button onClick={() => onChange([])} className="rounded px-1 py-2 text-primary">
+          <button
+            onClick={() => (onReset ? onReset() : onChange([]))}
+            className="rounded px-1 py-2 text-primary"
+          >
             {operatorBadges ? "Réinitialiser" : "Effacer"}
           </button>
         </div>
@@ -92,7 +112,12 @@ export function FilterSelect({
               <input
                 type="checkbox"
                 checked={selected.includes(option)}
-                disabled={operatorBadges && selected.length === 1 && selected.includes(option)}
+                disabled={
+                  !explicitSelection &&
+                  operatorBadges &&
+                  selected.length === 1 &&
+                  selected.includes(option)
+                }
                 onChange={() =>
                   commit(
                     selected.includes(option)

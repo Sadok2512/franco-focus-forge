@@ -94,6 +94,8 @@ export function taskQuery(filters: KpiQueryFilters, taskId?: string) {
     "insee",
   ] as const)
     for (const value of filters[key] ?? []) params.append(key, value);
+  if (filters.operator?.length === 0) params.set("operator_mode", "none");
+  if (filters.capture_id) params.set("capture_id", filters.capture_id);
   if (taskId) params.set("task_id", taskId);
   return params.toString() ? `?${params}` : "";
 }

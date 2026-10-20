@@ -153,7 +153,7 @@ function Workspace({
               "task_scatter",
               "chronogram",
             ].includes(config.visualization) &&
-            ["operator", "band", "operator_band", "dor"].includes(config.groupBy) &&
+            ["none", "operator", "band", "operator_band", "dor"].includes(config.groupBy) &&
             config.xMetric === config.groupBy &&
             [null, "value", "p10", "p50", "p90"].includes(config.statistic),
         ),
@@ -169,7 +169,7 @@ function Workspace({
       /* Memory-only when storage is unavailable. */
     }
   }, [configs, storageKey]);
-  const configFor = (code: string) => configs[code] ?? defaultConfig(code, "operator_band");
+  const configFor = (code: string) => configs[code] ?? defaultConfig(code, "none");
   const updateConfig = (code: string, next: ChartConfig) => {
     const previous = configFor(code);
     if (previous.groupBy !== next.groupBy) {
@@ -187,12 +187,20 @@ function Workspace({
     setConfigs((prev) => ({ ...prev, [code]: next }));
     setSelectedRows(new Set());
   };
+  const [captureId, setCaptureId] = useState<string>();
   const [draft, setDraft] = useState(() => fromSearch(search));
   // URL is the applied shared state; edits stay local until Apply.
   const urlDraft = useMemo(() => fromSearch(search), [search]);
-  const applied = useMemo(() => appliedPayload(urlDraft, dimensions), [urlDraft, dimensions]);
+  const applied = useMemo(
+    () => ({
+      ...appliedPayload(urlDraft, dimensions),
+      ...(captureId ? { capture_id: captureId } : {}),
+    }),
+    [urlDraft, dimensions, captureId],
+  );
   const draftPayload = appliedPayload(draft, dimensions);
-  const dirty = JSON.stringify(draftPayload) !== JSON.stringify(applied);
+  const dirty =
+    JSON.stringify(draftPayload) !== JSON.stringify(appliedPayload(urlDraft, dimensions));
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [limitMessage, setLimitMessage] = useState("");
   const catalogSearch = useRef<HTMLInputElement>(null);
@@ -207,8 +215,8 @@ function Workspace({
         code,
         { ...applied, group_by: configFor(code).groupBy },
       ],
-      queryFn: () =>
-        getProjectKpi(projectId, code, { ...applied, group_by: configFor(code).groupBy }),
+      queryFn: ({ signal }) =>
+        getProjectKpi(projectId, code, { ...applied, group_by: configFor(code).groupBy }, signal),
       enabled: !dimensionsLoading && !dimensionsError,
       staleTime: 60_000,
       retry: false,
@@ -399,19 +407,24 @@ function Workspace({
                 <KpiGraphCard
                   projectId={projectId}
                   appliedFilters={applied}
+                  captureId={captureId}
+                  onCaptureChange={setCaptureId}
                   key={entry.item.code}
                   entry={entry}
                   query={query}
                   blockedReason={
-                    dimensionsError
-                      ? "Dimensions du projet indisponibles. Réessayez depuis les filtres."
-                      : undefined
+                    dimensionsLoading
+                      ? "Chargement des dimensions du projet…"
+                      : dimensionsError
+                        ? "Dimensions du projet indisponibles. Réessayez depuis les filtres."
+                        : undefined
                   }
                   rows={graphRows}
                   statistic={stat}
                   config={configFor(entry.item.code)}
                   groupOptions={(
                     [
+                      "none",
                       "operator",
                       "band",
                       "operator_band",
@@ -419,6 +432,7 @@ function Workspace({
                     ] as KpiGroupBy[]
                   ).filter(
                     (g) =>
+                      g === "none" ||
                       g === "dor" ||
                       (g === "operator"
                         ? dimensions?.operators?.available

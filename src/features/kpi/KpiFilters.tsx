@@ -65,6 +65,17 @@ export function KpiFilters({
         label={label}
         showLabel
         operatorBadges={key === "operator"}
+        explicitSelection={key === "operator"}
+        unrestricted={draft.values.operator === undefined}
+        onReset={
+          key === "operator"
+            ? () => {
+                const values = { ...draft.values };
+                delete values.operator;
+                onChange({ ...draft, values });
+              }
+            : undefined
+        }
         options={Array.isArray(dim.values) ? (dim.values as string[]) : []}
         value={draft.values[key] ?? []}
         onChange={(v) => update(key, v)}
@@ -194,7 +205,11 @@ export function KpiFilters({
             className="kpi-unavailable-filter"
             aria-disabled="true"
             tabIndex={0}
-            title={period ? "Le contrat KPI ne prend pas en charge le filtrage par dates." : "plage non exposée par l'API"}
+            title={
+              period
+                ? "Le contrat KPI ne prend pas en charge le filtrage par dates."
+                : "plage non exposée par l'API"
+            }
           >
             Période : {period ?? "—"}
           </span>

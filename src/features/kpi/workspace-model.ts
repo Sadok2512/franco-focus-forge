@@ -61,7 +61,7 @@ export function toggleCode(codes: string[], code: string, limit = MAX_GRAPHS): s
       ? [...codes, code]
       : codes;
 }
-export type FilterKey = Exclude<keyof KpiQueryFilters, "group_by">;
+export type FilterKey = Exclude<keyof KpiQueryFilters, "group_by" | "capture_id">;
 export type FilterDraft = { values: Partial<Record<FilterKey, string[]>>; enabledGeo: FilterKey[] };
 export const GEO_DIMS = [
   { key: "dor", source: "dor", label: "DOR" },
@@ -120,7 +120,8 @@ export function appliedPayload(
     const values = [...new Set(draft.values[dim.key] ?? [])]
       .filter((v) => supported.values?.includes(v))
       .sort();
-    if (values.length) result[dim.key] = values;
+    if (values.length || (dim.key === "operator" && draft.values.operator !== undefined))
+      result[dim.key] = values;
   }
   return result;
 }
@@ -128,7 +129,11 @@ export function toSearch(filters: KpiQueryFilters) {
   return Object.fromEntries(
     Object.entries(URL_KEYS).map(([key, url]) => [
       url,
-      filters[key as FilterKey]?.length ? filters[key as FilterKey] : undefined,
+      key === "operator"
+        ? filters.operator
+        : filters[key as FilterKey]?.length
+          ? filters[key as FilterKey]
+          : undefined,
     ]),
   );
 }
@@ -186,7 +191,12 @@ export function analyticRows(data: ProjectKpiDetail, statistic: Statistic): Anal
   const rowValue = (g: Record<string, unknown>) => {
     if (g["status"] && !["AVAILABLE", "PRESENT"].includes(String(g["status"]))) return null;
     // A count of observations is not evidence for a ratio denominator.
-    if (data.unit === "%" && !(numberValue(g["denominator"])! > 0)) return null;
+    if (
+      data.unit === "%" &&
+      !(data.nature === "Métrique mesurée" && data.source?.startsWith("nmf_decoder ")) &&
+      !(numberValue(g["denominator"])! > 0)
+    )
+      return null;
     return (
       numberValue(g[statistic]) ?? (statistic === "value" && counter ? numberValue(g["n"]) : null)
     );
@@ -253,9 +263,7 @@ export function exportRows(rows: AnalyticRow[], name = "bc4-kpi") {
   downloadCsv(csvText(rows), name);
 }
 export function downloadCsv(text: string, name: string) {
-  const url = URL.createObjectURL(
-    new Blob(["\uFEFF", text], { type: "text/csv;charset=utf-8" }),
-  );
+  const url = URL.createObjectURL(new Blob(["\uFEFF", text], { type: "text/csv;charset=utf-8" }));
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = `${name}.csv`;

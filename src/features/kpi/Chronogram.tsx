@@ -297,10 +297,20 @@ function Plot({
 }
 export const Chronogram = forwardRef<
   { info: () => void; csv: () => void },
-  { projectId: string; filters: KpiQueryFilters }
->(({ projectId, filters }, ref) => {
-  const [selectedCapture, setCapture] = useState<string>(),
-    [selectedCodes, setCodes] = useState<string[]>(["rsrp", "sinr", "thr_dl", "pdsch_bler", "mac_dl_bler"]),
+  {
+    projectId: string;
+    filters: KpiQueryFilters;
+    selectedCapture: string | undefined;
+    onCaptureChange: (capture: string) => void;
+  }
+>(({ projectId, filters, selectedCapture, onCaptureChange }, ref) => {
+  const [selectedCodes, setCodes] = useState<string[]>([
+      "rsrp",
+      "sinr",
+      "thr_dl",
+      "pdsch_bler",
+      "mac_dl_bler",
+    ]),
     [info, setInfo] = useState(false),
     [stacked, setStacked] = useState(true),
     [taskId, setTaskId] = useState(""),
@@ -325,15 +335,17 @@ export const Chronogram = forwardRef<
   });
   const captures = useQuery({
     queryKey: ["metric-captures", projectId, filters],
-    queryFn: ({ signal }) => getMetricCaptures(projectId, filters, signal),
+    queryFn: ({ signal }) =>
+      getMetricCaptures(projectId, { ...filters, capture_id: undefined }, signal),
   });
-  const cap =
-    captures.data?.find((c) => c.capture_id === selectedCapture)?.capture_id ??
-    captures.data?.[0]?.capture_id;
+  const cap = selectedCapture ?? captures.data?.[0]?.capture_id;
+  useEffect(() => {
+    if (!selectedCapture && cap) onCaptureChange(cap);
+  }, [cap, selectedCapture, onCaptureChange]);
   const codes = selectedCodes.filter((code) => metrics.data?.some((m) => m.code === code));
   const task = tasks.data?.tasks.find((t) => t.id === taskId && t.capture_id === cap);
   const series = useQuery({
-    queryKey: ["metric-series", projectId, cap, codes, task?.id],
+    queryKey: ["metric-series", projectId, cap, codes, task?.id, filters],
     queryFn: ({ signal }) =>
       getMetricSeries(
         projectId,
@@ -341,12 +353,13 @@ export const Chronogram = forwardRef<
         codes,
         signal,
         task ? { from_seq: task.seq_start, to_seq: task.seq_end } : undefined,
+        filters,
       ),
     enabled: !!cap && codes.length > 0,
   });
   const events = useQuery({
-    queryKey: ["capture-events", projectId, cap],
-    queryFn: ({ signal }) => getCaptureEvents(projectId, cap!, signal),
+    queryKey: ["capture-events", projectId, cap, filters],
+    queryFn: ({ signal }) => getCaptureEvents(projectId, cap!, signal, filters),
     enabled: !!cap,
   });
   const data = codes.length ? series.data : undefined;
@@ -373,10 +386,13 @@ export const Chronogram = forwardRef<
             aria-label="Capture du chronogramme"
             value={cap ?? ""}
             onChange={(e) => {
-              setCapture(e.target.value);
+              onCaptureChange(e.target.value);
               setTaskId("");
             }}
           >
+            {cap && !captures.data?.some((c) => c.capture_id === cap) && (
+              <option value={cap}>{cap}</option>
+            )}
             {captures.data?.map((c) => (
               <option key={c.capture_id} value={c.capture_id}>
                 {c.label}
@@ -436,13 +452,24 @@ export const Chronogram = forwardRef<
         </label>
       </div>
       <div className="flex flex-wrap gap-4 text-sm" aria-label="Métriques BLER">
-        {metrics.data?.filter((m) => m.code === "pdsch_bler" || m.code === "mac_dl_bler").map((m) => (
-          <label key={m.code} className="flex items-center gap-2">
-            <input type="checkbox" checked={codes.includes(m.code)}
-              onChange={(e) => setCodes(e.target.checked ? [...selectedCodes, m.code] : selectedCodes.filter((c) => c !== m.code))} />
-            {m.label} ({m.unit})
-          </label>
-        ))}
+        {metrics.data
+          ?.filter((m) => m.code === "pdsch_bler" || m.code === "mac_dl_bler")
+          .map((m) => (
+            <label key={m.code} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={codes.includes(m.code)}
+                onChange={(e) =>
+                  setCodes(
+                    e.target.checked
+                      ? [...selectedCodes, m.code]
+                      : selectedCodes.filter((c) => c !== m.code),
+                  )
+                }
+              />
+              {m.label} ({m.unit})
+            </label>
+          ))}
       </div>
       <details className="rounded border border-border p-3" data-testid="metric-selector">
         <summary className="cursor-pointer text-sm font-medium">Métriques par événement</summary>

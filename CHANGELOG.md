@@ -1,3 +1,10 @@
+## 1.40.3 (patch) — BC4 2026-10-20 — Filtre opérateur fonctionnel (Agent BC2)
+
+- Réutilise les contrôles existants : sélection préparée séparée de la sélection appliquée, vide distinct de Tous, validation sur la liste du projet.
+- Transmet les filtres appliqués aux mesures et événements, conserve la capture lors des changements de mode et sépare les caches par population ; annule les requêtes obsolètes.
+- Histogramme global par défaut, regroupements explicites conservés, mêmes agrégats filtrés pour le Graphique et le Tableau actuels. Leur conversion en série temporelle/table brute reste hors livraison pour respecter l’interdiction de modifier l’UI existante.
+- Aucun contrôle opérateur, panneau, style ni composant visuel ajouté.
+
 ## 1.40.2 (patch) — BC4 2026-10-19 — BLER et axe temps accessibles (Agent BC2)
 
 - Sélecteur de vue visible et accès direct « BLER / temps par capture » depuis chaque graphique KPI.

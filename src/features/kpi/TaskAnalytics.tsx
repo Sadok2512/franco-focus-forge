@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
   ResponsiveContainer,
@@ -39,18 +39,25 @@ export const TaskAnalytics = forwardRef<
     filters: KpiQueryFilters;
     taskId: string | undefined;
     setTaskId: (id: string | undefined) => void;
+    onCaptureChange: (capture: string) => void;
   }
->(({ projectId, code, unit, filters, taskId, setTaskId }, ref) => {
+>(({ projectId, code, unit, filters, taskId, setTaskId, onCaptureChange }, ref) => {
   const [info, setInfo] = useState(false);
   const tasks = useQuery({
     queryKey: ["tasks", projectId, filters],
     queryFn: ({ signal }) => getProjectTasks(projectId, filters, signal),
   });
+  useEffect(() => {
+    const first = tasks.data?.tasks[0]?.capture_id;
+    if (!filters.capture_id && first) onCaptureChange(first);
+  }, [filters.capture_id, tasks.data, onCaptureChange]);
   const selected = tasks.data?.tasks.find((t) => t.id === taskId && t.status === "ok");
   const operators = [...new Set(tasks.data?.tasks.map((t) => t.operator) ?? [])];
   const groups = selected
     ? [{ label: selected.operator ?? "N/D", filters, id: selected.id }]
-    : operators.length && operators.every((op) => op !== null)
+    : ["operator", "operator_band"].includes(filters.group_by ?? "none") &&
+        operators.length &&
+        operators.every((op) => op !== null)
       ? operators.map((op) => ({
           label: op!,
           filters: { ...filters, operator: [op!] },
@@ -62,7 +69,7 @@ export const TaskAnalytics = forwardRef<
       queryKey: ["task-series", projectId, code, group.filters, group.id],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
         getTaskSeries(projectId, code, group.filters, group.id, signal),
-      enabled: tasks.isSuccess,
+      enabled: tasks.isSuccess && !!filters.capture_id,
     })),
   });
   const results = queries.flatMap((q) => (q.data ? [q.data] : []));

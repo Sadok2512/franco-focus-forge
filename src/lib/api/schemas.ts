@@ -53,7 +53,7 @@ export type Project = z.infer<typeof ProjectSchema>;
 export const FilterContextSchema = z.object({
   rrc_message: z.string().optional(),
   project: z.string().optional(),
-  op: z.array(OperatorSchema).optional(),
+  op: z.array(z.string()).optional(),
   tech: z.array(TechSchema).optional(),
   // bc4-front 1.16.0 — `svc` est relâché à `string[]` pour accepter les
   // valeurs service_type réelles exposées par bc4-back 0.35.0+
@@ -135,7 +135,6 @@ export const OverviewPointSchema = MeasurementPointSchema.extend({
   site: z.string().nullable(),
 });
 export type OverviewPoint = z.infer<typeof OverviewPointSchema>;
-
 
 export const ApiErrorSchema = z.object({ code: z.string(), message: z.string() });
 export type ApiError = z.infer<typeof ApiErrorSchema>;

@@ -71,9 +71,7 @@ function encode(id: string): string {
   return encodeURIComponent(id);
 }
 
-function buildMultiQuery(
-  params: Record<string, string[] | string | undefined>,
-): string {
+function buildMultiQuery(params: Record<string, string[] | string | undefined>): string {
   const sp = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) {
     if (v == null) continue;
@@ -160,10 +158,11 @@ export async function kpiFetch<T>(
     .slice(0, 5)
     .map((i) => `${i.path.join(".") || "<root>"}: ${i.message}`);
   // eslint-disable-next-line no-console
-  console.error(
-    `[KPI contract] safeParse FAIL ${path}`,
-    { backVersion: version, zodIssues: messages, sample: raw },
-  );
+  console.error(`[KPI contract] safeParse FAIL ${path}`, {
+    backVersion: version,
+    zodIssues: messages,
+    sample: raw,
+  });
   throw new KpiContractMismatchError(version || null, messages, path);
 }
 
@@ -173,11 +172,7 @@ export async function getProjectKpiCatalog(
   signal?: AbortSignal,
 ): Promise<ProjectKpiCatalog> {
   if (isApiMode()) {
-    return kpiFetch(
-      `/projects/${encode(projectId)}/kpi/catalog`,
-      ProjectKpiCatalogSchema,
-      signal,
-    );
+    return kpiFetch(`/projects/${encode(projectId)}/kpi/catalog`, ProjectKpiCatalogSchema, signal);
   }
   // Mode mock : on garde le fallback historique.
   return ProjectKpiCatalogSchema.parse({
@@ -193,11 +188,7 @@ export async function getProjectKpiFilters(
   signal?: AbortSignal,
 ): Promise<ProjectKpiFilters> {
   if (isApiMode()) {
-    return kpiFetch(
-      `/projects/${encode(projectId)}/kpi/filters`,
-      ProjectKpiFiltersSchema,
-      signal,
-    );
+    return kpiFetch(`/projects/${encode(projectId)}/kpi/filters`, ProjectKpiFiltersSchema, signal);
   }
   return ProjectKpiFiltersSchema.parse({
     project_id: projectId,
@@ -220,6 +211,8 @@ export async function getProjectKpi(
 ): Promise<ProjectKpiDetail> {
   const qs = buildMultiQuery({
     operator: filters.operator,
+    operator_mode: filters.operator?.length === 0 ? "none" : undefined,
+    capture_id: filters.capture_id,
     service_type: filters.service_type,
     phase: filters.phase,
     band: filters.band,

@@ -17,7 +17,7 @@ export function useFilters() {
         const next = { ...prev, ...patch };
         for (const k of Object.keys(next) as (keyof FilterContext)[]) {
           const v = next[k];
-          if (v === undefined || (Array.isArray(v) && v.length === 0)) delete next[k];
+          if (v === undefined || (k !== "op" && Array.isArray(v) && v.length === 0)) delete next[k];
         }
         return next;
       },

@@ -5,7 +5,13 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import { MAP_UNAVAILABLE, GROUP_LABELS, VISUALIZATIONS, type VisualizationType, type ChartConfig } from "./visualization-model";
+import {
+  MAP_UNAVAILABLE,
+  GROUP_LABELS,
+  VISUALIZATIONS,
+  type VisualizationType,
+  type ChartConfig,
+} from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -204,6 +210,8 @@ export function KpiPlot({
 export function KpiGraphCard({
   projectId,
   appliedFilters,
+  captureId,
+  onCaptureChange,
   entry,
   query,
   rows,
@@ -224,6 +232,8 @@ export function KpiGraphCard({
 }: {
   projectId: string;
   appliedFilters: KpiQueryFilters;
+  captureId: string | undefined;
+  onCaptureChange: (capture: string) => void;
   entry: Entry;
   query: UseQueryResult<ProjectKpiDetail, Error>;
   rows: AnalyticRow[];
@@ -249,9 +259,7 @@ export function KpiGraphCard({
     config.visualization === "task_scatter";
   const taskPanel = useRef<TaskAnalyticsHandle>(null);
   const [taskId, setTaskId] = useState<string>();
-  useEffect(() => {
-    setTaskId(undefined);
-  }, [appliedFilters]);
+
   const [info, setInfo] = useState(false),
     [full, setFull] = useState(false);
   const [settings, setSettings] = useState(false);
@@ -296,12 +304,22 @@ export function KpiGraphCard({
   const operators = [...new Set(rows.map((r) => r.operator ?? "Non attribué"))];
   const body = (
     <>
-      {config.visualization === "task_series" && !seriesAvailable ? (
+      {taskView && blockedReason ? (
+        <div className="kpi-chart-state" role="status">
+          {blockedReason}
+        </div>
+      ) : config.visualization === "task_series" && !seriesAvailable ? (
         <div className="kpi-chart-state" role="status">
           pas de série temporelle pour ce KPI (source agrégée)
         </div>
       ) : config.visualization === "chronogram" ? (
-        <Chronogram ref={taskPanel} projectId={projectId} filters={appliedFilters} />
+        <Chronogram
+          ref={taskPanel}
+          projectId={projectId}
+          filters={appliedFilters}
+          selectedCapture={captureId}
+          onCaptureChange={onCaptureChange}
+        />
       ) : config.visualization === "task_scatter" && !blockedReason ? (
         <TaskScatter
           ref={taskPanel}
@@ -316,9 +334,10 @@ export function KpiGraphCard({
           projectId={projectId}
           code={entry.item.code}
           unit={entry.item.unit ?? ""}
-          filters={appliedFilters}
+          filters={{ ...appliedFilters, group_by: config.groupBy }}
           taskId={taskId}
           setTaskId={setTaskId}
+          onCaptureChange={onCaptureChange}
         />
       ) : status === "Loading" ? (
         <div className="kpi-chart-state animate-pulse" role="status">
@@ -584,20 +603,35 @@ export function KpiGraphCard({
             className="kpi-button"
             aria-label={`Vue ${entry.item.name}`}
             value={config.visualization}
-            onChange={(event) => onConfig({ ...config, visualization: event.target.value as VisualizationType })}
+            onChange={(event) =>
+              onConfig({ ...config, visualization: event.target.value as VisualizationType })
+            }
           >
             {(Object.keys(VISUALIZATIONS) as VisualizationType[])
               .filter((mode) => mode !== "task_scatter" || seriesAvailable)
               .map((mode) => (
-                <option key={mode} value={mode} disabled={mode === "task_series" && !seriesAvailable}
-                  title={mode === "task_series" && !seriesAvailable ? "pas de série temporelle pour ce KPI (source agrégée)" : undefined}>
-                  {mode === "chronogram" ? "Chronogramme — X = temps par capture" : VISUALIZATIONS[mode]}
+                <option
+                  key={mode}
+                  value={mode}
+                  disabled={mode === "task_series" && !seriesAvailable}
+                  title={
+                    mode === "task_series" && !seriesAvailable
+                      ? "pas de série temporelle pour ce KPI (source agrégée)"
+                      : undefined
+                  }
+                >
+                  {mode === "chronogram"
+                    ? "Chronogramme — X = temps par capture"
+                    : VISUALIZATIONS[mode]}
                 </option>
               ))}
           </select>
         </label>
         {config.visualization !== "chronogram" && (
-          <button className="kpi-button" onClick={() => onConfig({ ...config, visualization: "chronogram" })}>
+          <button
+            className="kpi-button"
+            onClick={() => onConfig({ ...config, visualization: "chronogram" })}
+          >
             BLER / temps par capture
           </button>
         )}
