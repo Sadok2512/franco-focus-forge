@@ -308,9 +308,9 @@ export function GroupedValueTable({
             recherche. L’export inclut toutes les valeurs filtrées, même repliées.
           </caption>
           <colgroup>
-            <col style={{ width: visible.length ? "40%" : "100%" }} />
+            <col style={{ width: visible.length ? "30%" : "100%" }} />
             {visible.map((column) => (
-              <col key={column.id} style={{ width: `${60 / visible.length}%` }} />
+              <col key={column.id} style={{ width: `${70 / visible.length}%` }} />
             ))}
           </colgroup>
           <thead>
@@ -404,7 +404,12 @@ export function GroupedValueTable({
                         ))}
                       <span className="rrc-hierarchy-name">{name}</span>
                       {!family && node.parameter.technology && (
-                        <span className="rrc-tech-label">{node.parameter.technology}</span>
+                        <span
+                          className="rrc-tech-label"
+                          data-technology={node.parameter.technology}
+                        >
+                          {node.parameter.technology}
+                        </span>
                       )}
                       <span className="rrc-hierarchy-count">
                         {count} {label}

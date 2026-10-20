@@ -1,3 +1,10 @@
+## 1.41.0 (minor) — BC4-FRONT 2026-10-20 — Dictionnaire RRC Premium V5 (Agent BC1)
+
+- Footer de sélection fixe dans la sidebar ; onglets et hiérarchie du catalogue conservés, racines LTE bleue et NR verte.
+- Titre unique par histogramme avec contexte disponible et détails techniques repliables issus du catalogue.
+- Tableau hiérarchique conservé, première colonne à 30 %, badges et présentation compacte. CSV, calculs, filtres, Carte et Infos inchangés.
+- Limite conservée : absence de dénominateurs opérateur dans le contrat actuel ; pourcentages et barres ne sont pas inventés.
+
 ## 1.40.3 (patch) — BC4 2026-10-20 — Filtre opérateur fonctionnel (Agent BC2)
 
 - Réutilise les contrôles existants : sélection préparée séparée de la sélection appliquée, vide distinct de Tous, validation sur la liste du projet.

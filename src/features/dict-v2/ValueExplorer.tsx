@@ -4,6 +4,7 @@ import { rrcRequestMessage } from "./request-recovery";
 // coché, verdict + chips, tableau commun avec export CSV.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { catalogMetadata } from "./catalog-model";
 import { GroupedValueTable } from "./GroupedValueTable";
 import type { EChartsOption } from "echarts";
 import { Chart } from "@/components/bc4/Chart";
@@ -37,6 +38,29 @@ export function ValueExplorer({
   onRetry?: () => void;
 }) {
   const blocks = distribution?.blocks ?? [];
+  const metadata = useMemo(() => {
+    const result = new Map<
+      string,
+      {
+        technology: string;
+        family: string;
+        message?: string | undefined;
+        path?: string | undefined;
+      }
+    >();
+    for (const tech of catalogMetadata(catalog ?? null)?.tree ?? [])
+      for (const origin of tech.origins)
+        for (const message of origin.messages)
+          for (const family of message.groups)
+            for (const leaf of family.kpis)
+              result.set(leaf.param_key, {
+                technology: tech.techno,
+                family: family.name,
+                message: typeof leaf["message"] === "string" ? leaf["message"] : message.message,
+                path: typeof leaf["path"] === "string" ? leaf["path"] : undefined,
+              });
+    return result;
+  }, [catalog]);
 
   return (
     <section className="flex min-w-0 flex-col gap-3 p-1" data-testid="dict-value-explorer">
@@ -85,7 +109,13 @@ export function ValueExplorer({
         {blocks.length > 0 && (
           <div className="rrc-charts" data-testid="dict-charts" data-chart-count={blocks.length}>
             {blocks.map((b) => (
-              <ChartCard key={b.param_key} block={b} groupBy={groupBy} filtered={filtered} />
+              <ChartCard
+                key={b.param_key}
+                block={b}
+                groupBy={groupBy}
+                filtered={filtered}
+                metadata={metadata.get(b.param_key)}
+              />
             ))}
           </div>
         )}
@@ -140,7 +170,16 @@ function ChartCard({
   block,
   groupBy,
   filtered,
+  metadata,
 }: {
+  metadata:
+    | {
+        technology: string;
+        family: string;
+        message?: string | undefined;
+        path?: string | undefined;
+      }
+    | undefined;
   block: DistributionBlock;
   groupBy: GroupByMode;
   filtered: boolean;
@@ -238,15 +277,7 @@ function ChartCard({
       className="panel flex flex-col gap-1.5 p-3"
       data-testid={`dict-chart-${block.display_name}`}
     >
-      <div className="flex items-baseline justify-between gap-2">
-        <div className="min-w-0">
-          <b className="truncate text-sm font-semibold">{block.display_name}</b>
-          <div className="text-[11px] text-muted-foreground">
-            {block.distinct_values} valeur{block.distinct_values > 1 ? "s" : ""} · n=
-            {block.n_total}
-          </div>
-        </div>
-      </div>
+      {empty && <h3 className="text-sm font-semibold">{block.display_name}</h3>}
       {empty ? (
         <div className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
           {block.n_total > 0
@@ -257,10 +288,44 @@ function ChartCard({
         <Chart
           key={dark ? "dark" : "light"}
           title={block.display_name}
+          subtitle={`${[metadata?.technology, metadata?.family].filter(Boolean).join(" · ")}${metadata ? " · " : ""}${block.distinct_values} valeurs · n = ${block.n_total}`}
           build={build}
           height={220}
           exportName={`dict_${block.display_name.replace(/[^a-z0-9]+/gi, "_")}`}
         />
+      )}
+      {metadata && (
+        <details className="rrc-chart-technical">
+          <summary>Informations techniques</summary>
+          <dl>
+            <div>
+              <dt>Technologie</dt>
+              <dd>{metadata.technology}</dd>
+            </div>
+            <div>
+              <dt>Famille</dt>
+              <dd>{metadata.family}</dd>
+            </div>
+            {metadata.message && (
+              <div>
+                <dt>Message porteur</dt>
+                <dd>{metadata.message}</dd>
+              </div>
+            )}
+            {metadata.path && (
+              <div>
+                <dt>Chemin ASN.1</dt>
+                <dd>{metadata.path}</dd>
+              </div>
+            )}
+            {block.unit && (
+              <div>
+                <dt>Unité</dt>
+                <dd>{block.unit}</dd>
+              </div>
+            )}
+          </dl>
+        </details>
       )}
       <div className="flex flex-wrap items-center gap-1 text-[11px]">
         {filtered ? (
