@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiFetch } from "./http";
 const reference = z.object({
   param_key: z.string(),
+  path_prefix: z.string().nullable().optional(),
   technology: z.string(),
   discriminators: z.record(z.unknown()),
 });

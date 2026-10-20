@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { categoryTree, templateLeaves } from "./template-model";
+import { categoryTree, templateLeaves, templateRows } from "./template-model";
 import { identifyTrees } from "./parameter-identity";
 import type { DictTreeResponse } from "@/lib/api/dict-v2";
 import type { TemplateCategory } from "@/lib/api/dict-templates";
@@ -93,5 +93,28 @@ describe("API template identity", () => {
     expect(
       categoryTree(tree, { ...category, id: "TEST-empty", n_parameters: 0, n_in_project: 0 })?.tree,
     ).toEqual([]);
+  });
+});
+
+describe("template missing references", () => {
+  it("keeps an absent zero-count template parameter visible without inventing a message", () => {
+    const zero = { ...category, entries: category.entries.map((e) => ({ ...e, n_in_project: 0 })) };
+    const rows = templateRows(null, zero, "LTE");
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({
+      n: 0,
+      message: null,
+      leaf: null,
+      discriminators: { mode: "TEST-AM" },
+    });
+    expect(templateRows(null, zero, "NR")).toEqual([]);
+  });
+  it("does not distribute a positive entry population onto unresolved parameters", () => {
+    expect(templateRows(null, category, "LTE")[0]?.n).toBeNull();
+    const pending = {
+      ...category,
+      entries: category.entries.map((e) => ({ ...e, n_in_project: null })),
+    };
+    expect(templateRows(null, pending, "LTE")[0]?.n).toBeNull();
   });
 });

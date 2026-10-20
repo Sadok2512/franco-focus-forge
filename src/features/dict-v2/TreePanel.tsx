@@ -33,10 +33,11 @@ export function TreePanel({
   onReset,
   resetTick,
   categories,
-  activeCategory,
+  onTemplateLeaf,
   onCategory,
   templatesLoading,
   templatesError,
+  templateCatalog,
   onViewChange,
 }: {
   onToggleCatalog: (
@@ -47,8 +48,9 @@ export function TreePanel({
   ) => void;
   onViewChange: (view: TreePanelView) => void;
   categories: TemplateCategory[];
-  activeCategory: TemplateCategory | null;
-  onCategory: (category: TemplateCategory) => void;
+  onTemplateLeaf: (leaf: DictLeaf, category: TemplateCategory, technology: string) => void;
+  onCategory: (category: TemplateCategory, technology: string, toggle?: boolean) => void;
+  templateCatalog: DictTreeResponse | null;
   templatesLoading: boolean;
   templatesError: boolean;
   techno: Techno;
@@ -156,32 +158,17 @@ export function TreePanel({
                 : "Templates indisponibles. Réessayez en rechargeant la page."}
             </p>
           )}
-          {categories.some((category) => category.n_in_project === null) && !templatesError && (
-            <p role="status" className="px-3 py-1 text-[11px] text-muted-foreground">
-              Calcul des compteurs…
-            </p>
+          {templateCatalog && (
+            <CatalogTree
+              tree={templateCatalog}
+              techno={techno}
+              needle=""
+              selected={selected}
+              onToggle={onToggleCatalog}
+              resetTick={internalResetTick}
+              templates={{ categories, onCategory, onLeaf: onTemplateLeaf }}
+            />
           )}
-          {categories.map((category) => (
-            <button
-              key={category.id}
-              disabled={!catalog}
-              type="button"
-              aria-pressed={activeCategory?.id === category.id}
-              title={category.n_in_project === 0 ? "0 occurrence dans le projet" : category.label}
-              onClick={() => {
-                onCategory(category);
-                setTab("catalog");
-                onViewChange("catalog");
-              }}
-              className={`flex w-full items-center justify-between gap-2 px-3 py-1 text-left text-xs hover:bg-muted ${activeCategory?.id === category.id ? "bg-primary/10 text-primary" : category.n_in_project === 0 ? "text-muted-foreground" : ""}`}
-            >
-              <span>{category.label}</span>
-              <span className="shrink-0 font-mono text-[10px]">
-                {category.n_parameters === null ? "—" : fmtInt(category.n_parameters)} params ·{" "}
-                {category.n_in_project === null ? "—" : fmtInt(category.n_in_project)} détections
-              </span>
-            </button>
-          ))}
         </section>
       )}
       {tab !== "templates" && (

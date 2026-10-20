@@ -1,6 +1,6 @@
 import { toggleCatalogSelection, messageAbbreviation } from "./catalog-model";
 import { getProject, getDictTemplates } from "@/lib/api/client";
-import { templateLeaves } from "./template-model";
+import { templateLeaves, templateRows } from "./template-model";
 import { TemplateTable } from "./TemplateTable";
 import { retryRrcRequest, rrcRetryDelay } from "./request-recovery";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
@@ -422,6 +422,7 @@ export function DictionaryPage({
   const [selected, setSelected] = useState<DictLeaf[]>([]);
   const beforeTemplate = useRef<DictLeaf[]>([]);
   const [categoryId, setCategoryId] = useState<string | null>(null);
+  const [categoryTech, setCategoryTech] = useState<string>("LTE");
   const [templateVisible, setTemplateVisible] = useState(true);
   const [treeView, setTreeView] = useState<TreePanelView>("catalog");
   const templateMetadataQ = useQuery({
@@ -664,19 +665,33 @@ export function DictionaryPage({
     <TreePanel
       onViewChange={setTreeView}
       categories={categories}
-      activeCategory={activeCategory}
+      onTemplateLeaf={(leaf, category, technology) => {
+        setCategoryId(category.id);
+        setCategoryTech(technology);
+        setTemplateVisible(true);
+        onToggle(leaf);
+      }}
       templatesLoading={!categories.length && templateMetadataQ.isPending}
       templatesError={templateMetadataQ.isError || templatesQ.isError}
-      onCategory={(category) => {
-        if (categoryId === category.id) {
-          setSelected(beforeTemplate.current);
-          setCategoryId(null);
-          return;
-        }
-        if (!categoryId) beforeTemplate.current = selected;
+      templateCatalog={identified.catalog}
+      onCategory={(category, technology, toggle) => {
         setCategoryId(category.id);
+        setCategoryTech(technology);
         setTemplateVisible(true);
-        setSelected(templateLeaves(identified.catalog, category).map(selectedParameter));
+        const resolvedLeaves = templateRows(identified.catalog, category, technology).flatMap(
+          (r) => (r.leaf && r.n !== 0 ? [selectedParameter(r.leaf)] : []),
+        );
+        const leaves = [
+          ...new Map(resolvedLeaves.map((leaf) => [selectionId(leaf), leaf])).values(),
+        ];
+        const keys = new Set(leaves.map(selectionId));
+        setSelected((previous) => {
+          const all =
+            leaves.length > 0 &&
+            leaves.every((leaf) => previous.some((p) => selectionId(p) === selectionId(leaf)));
+          const outside = previous.filter((p) => !keys.has(selectionId(p)));
+          return toggle && all ? outside : [...outside, ...leaves];
+        });
       }}
       techno={techno}
       catalog={populationTrees.catalog}
@@ -823,7 +838,15 @@ export function DictionaryPage({
               <TemplateTable
                 projectId={projectId}
                 category={activeCategory}
-                technology={techno}
+                technology={techno === "LTE+NR" ? categoryTech : techno}
+                selectedKeys={
+                  new Set(
+                    selected.flatMap((p) => [
+                      p.param_key,
+                      ...((p["source_param_keys"] as string[] | undefined) ?? []),
+                    ]),
+                  )
+                }
                 onGraph={(key, technology) => {
                   const leaf = templateLeaves(identified.catalog, activeCategory).find(
                     (l) => l.param_key === key && l["technology"] === technology,

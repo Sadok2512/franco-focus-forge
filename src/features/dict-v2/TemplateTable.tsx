@@ -10,7 +10,9 @@ export function TemplateTable({
   category,
   onGraph,
   technology,
+  selectedKeys,
 }: {
+  selectedKeys?: Set<string>;
   technology: string;
   projectId: string;
   category: TemplateCategory;
@@ -26,9 +28,11 @@ export function TemplateTable({
   const population = useMemo(
     () =>
       (query.data?.rows ?? []).filter(
-        (row) => technology === "LTE+NR" || row.technology === technology,
+        (row) =>
+          (technology === "LTE+NR" || row.technology === technology) &&
+          (!selectedKeys || (row.param_key !== null && selectedKeys.has(row.param_key))),
       ),
-    [query.data, technology],
+    [query.data, technology, selectedKeys],
   );
   const columns = useMemo(
     () => [
