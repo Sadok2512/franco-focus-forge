@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Brush,
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -133,66 +132,76 @@ export function MetricVsTimeChart({
 
   const xUnit = data.x_axis.unit ?? "s";
   const yUnit = data.y_axis.unit ?? unit ?? "";
-  const samplingLabel =
-    data.sampling && data.sampling.method !== "none"
-      ? ` · sous-échantillonné ${data.sampling.method} (${data.n_returned}/${data.n_total})`
-      : ` · ${data.n_total} points`;
 
+  // 1.43.0 — Marges resserrées : haut 10 px, droite 14 px, bas réservé
+  // uniquement à l'axe X + Brush, gauche calculée via l'axe Y
+  // (graduations + unité). Pas de titre dupliqué sur la zone de tracé —
+  // le nom du KPI vit uniquement dans l'en-tête de la carte. Pas de
+  // légende sur une série unique (règle du mandat §5).
   return (
     <div
-      className="w-full"
+      className="w-full h-full"
       style={{ height }}
       data-testid="metric-vs-time-chart"
       data-result-id={data.evidence.result_id ?? ""}
       data-n-total={data.n_total}
       data-n-returned={data.n_returned}
+      data-source-view={data.evidence.source_view ?? ""}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 15, right: 25, left: 10, bottom: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" />
+        <LineChart data={points} margin={{ top: 10, right: 14, left: 4, bottom: 24 }}>
+          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
           <XAxis
             type="number"
             dataKey="time_s"
             domain={[0, "dataMax"]}
-            tickFormatter={(v: number) => (typeof v === "number" ? v.toFixed(1) : String(v))}
-            label={{
-              value: `Temps capture (${xUnit})`,
-              position: "insideBottom",
-              offset: -12,
-            }}
+            tickCount={6}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+            tickFormatter={(v: number) => (typeof v === "number" ? v.toFixed(0) + " s" : String(v))}
           />
           <YAxis
-            width={70}
+            width={54}
             domain={["auto", "auto"]}
-            label={{ value: yUnit, angle: -90, position: "insideLeft" }}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+            tickFormatter={(v: number) =>
+              typeof v === "number"
+                ? yUnit === "%"
+                  ? v.toFixed(0) + " %"
+                  : v.toFixed(1)
+                : String(v)
+            }
           />
           <Tooltip
+            cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
+            contentStyle={{ fontSize: 11, padding: "4px 8px" }}
             formatter={(value: number) => [
-              `${value} ${yUnit}`,
+              `${value}${yUnit ? " " + yUnit : ""}`,
               data.metric_name ?? data.metric_code,
             ]}
-            labelFormatter={(label: number) => `${label} ${xUnit}`}
+            labelFormatter={(label: number) =>
+              typeof label === "number" ? `${label.toFixed(3)} ${xUnit}` : String(label)
+            }
           />
-          <Legend verticalAlign="top" />
           <Line
             type="linear"
             dataKey="value"
-            name={`${data.metric_name ?? data.metric_code}${samplingLabel}`}
             stroke="#1d4ed8"
-            strokeWidth={1.5}
+            strokeWidth={1.2}
             dot={false}
             connectNulls={false}
             isAnimationActive={false}
           />
           {points.length > 50 ? (
-            <Brush dataKey="time_s" height={18} travellerWidth={8} stroke="#64748b" />
+            <Brush
+              dataKey="time_s"
+              height={16}
+              travellerWidth={7}
+              stroke="#94a3b8"
+              fill="#f1f5f9"
+            />
           ) : null}
         </LineChart>
       </ResponsiveContainer>
-      <p className="text-[10px] text-muted-foreground mt-1">
-        Capture {data.capture_id} · {data.n_total} points bruts · {data.n_returned} affichés ·
-        source {data.evidence.source_view ?? "n/a"} · result_id {data.evidence.result_id ?? "n/a"}
-      </p>
     </div>
   );
 }

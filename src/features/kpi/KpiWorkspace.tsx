@@ -22,6 +22,7 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
+import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
 import {
   MAX_GRAPHS,
   appliedPayload,
@@ -471,16 +472,49 @@ function Workspace({
               </div>
             )}
             <div id="kpi-workspace-data">
-              {panels.length &&
-              panels.every((panel) =>
-                configFor(panel.entry.item.code).visualization.startsWith("task_"),
-              ) ? (
-                <p className="p-3 text-xs text-muted-foreground">
-                  Les points et leur export CSV figurent sous chaque série.
-                </p>
-              ) : (
-                <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
-              )}
+              {(() => {
+                if (!panels.length) return null;
+                // 1.43.0 — Tableau brut : si au moins un KPI « temporel »
+                // (temporal_source != null) est sélectionné en mode
+                // Graphique, on affiche les observations brutes de la
+                // capture active plutôt que l'agrégat (mandat §8). Les
+                // KPI task_* gardent leur rendu propre (points sous la
+                // série) comme avant.
+                const rawMetrics: KpiRawMetric[] = panels
+                  .filter(
+                    (panel) =>
+                      configFor(panel.entry.item.code).visualization === "graph" &&
+                      !!panel.entry.item.temporal_source,
+                  )
+                  .map((panel) => ({
+                    code: panel.entry.item.code,
+                    label: panel.entry.item.name,
+                    unit: panel.entry.item.unit ?? null,
+                  }));
+                if (rawMetrics.length > 0) {
+                  return (
+                    <KpiRawDataTable
+                      projectId={projectId}
+                      captureId={captureId}
+                      metrics={rawMetrics}
+                    />
+                  );
+                }
+                if (
+                  panels.every((panel) =>
+                    configFor(panel.entry.item.code).visualization.startsWith("task_"),
+                  )
+                ) {
+                  return (
+                    <p className="p-3 text-xs text-muted-foreground">
+                      Les points et leur export CSV figurent sous chaque série.
+                    </p>
+                  );
+                }
+                return (
+                  <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                );
+              })()}
             </div>
           </div>
         </ResizablePanel>
