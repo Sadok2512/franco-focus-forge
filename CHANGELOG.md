@@ -1,3 +1,8 @@
+## 1.45.0 (minor) — BC4-FRONT 2026-10-20 — Types de graphiques RRC (Agent BC1)
+
+- Réglages indépendants par graphique : Histogramme, Points, Ligne et Ligne + points. Les catégories restent les valeurs réelles du paramètre, sans axe temporel inventé, interpolation ou connexion des valeurs absentes.
+- Occurrences, couleurs opérateurs, tableau, filtres, export et plein écran conservés. Aucun composant partagé ni module KPI modifié.
+
 ## 1.44.1 (patch) — BC4-FRONT 2026-10-20 — Tableau brut : colonne Horodatage absolu (Agent BC2)
 
 - Nouvelle colonne « Horodatage » dans `KpiRawDataTable`, format normalisé `YYYY-MM-DD HH:MM:SS.ms`, composée depuis les deux chaînes brutes du back 0.60.1 : partie DATE de `nmf_file_start` (`DD.MM.YYYY HH:MM:SS.ms`) + `event_ts` (`HH:MM:SS.ms`). Aucun calcul temporel inventé — on relie simplement deux chaînes servies par la DB (règle n°2 BC4).

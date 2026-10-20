@@ -1,3 +1,5 @@
+import { Settings2 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { rrcRequestMessage } from "./request-recovery";
 // bc4-front — Panneau droit du Dict v2 : filtres (chips comparables à
 // /kpi), segmenté opérateur|bande|les deux, un graphe par paramètre
@@ -184,6 +186,7 @@ function ChartCard({
   groupBy: GroupByMode;
   filtered: boolean;
 }) {
+  const [chartType, setChartType] = useState<"bar" | "scatter" | "line" | "line_points">("bar");
   const [dark, setDark] = useState(
     () => typeof document !== "undefined" && document.documentElement.classList.contains("dark"),
   );
@@ -216,7 +219,11 @@ function ChartCard({
       // Chaque série (opérateur ou bande ou op·band) = une barre par valeur.
       const series = keys.map((k) => ({
         name: k,
-        type: "bar" as const,
+        type: chartType === "line_points" ? ("line" as const) : chartType,
+        showSymbol: chartType === "line_points",
+        symbolSize: 7,
+        connectNulls: false,
+        smooth: false,
         barMaxWidth: 28,
         itemStyle: {
           color: keyMap.get(k)!,
@@ -257,7 +264,7 @@ function ChartCard({
         series,
       };
     },
-    [block, groupBy, dark],
+    [block, groupBy, dark, chartType],
   );
 
   const verdictBadge = {
@@ -277,6 +284,41 @@ function ChartCard({
       className="panel flex flex-col gap-1.5 p-3"
       data-testid={`dict-chart-${block.display_name}`}
     >
+      {!empty && (
+        <div className="flex justify-end">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                aria-label={`Réglages du graphique ${block.display_name}`}
+                title="Réglages du graphique"
+                className="inline-flex items-center gap-1 rounded px-2 py-1 text-xs text-muted-foreground hover:bg-muted focus-visible:outline focus-visible:outline-2"
+              >
+                <Settings2 className="h-3.5 w-3.5" /> Réglages
+              </button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-56">
+              <label className="flex flex-col gap-2 text-xs font-medium">
+                Type de graphique
+                <select
+                  aria-label="Type de graphique"
+                  value={chartType}
+                  onChange={(event) => setChartType(event.target.value as typeof chartType)}
+                  className="rounded border bg-background px-2 py-1.5"
+                >
+                  <option value="bar">Histogramme</option>
+                  <option value="scatter">Points</option>
+                  <option value="line">Ligne</option>
+                  <option value="line_points">Ligne + points</option>
+                </select>
+              </label>
+              <p className="mt-2 text-xs text-muted-foreground">
+                Valeurs du paramètre en abscisse, occurrences en ordonnée.
+              </p>
+            </PopoverContent>
+          </Popover>
+        </div>
+      )}
       {empty && <h3 className="text-sm font-semibold">{block.display_name}</h3>}
       {empty ? (
         <div className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
