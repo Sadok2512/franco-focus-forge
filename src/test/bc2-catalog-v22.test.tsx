@@ -6,7 +6,7 @@ import {
   toggleCatalogSelection,
   messageAbbreviation,
 } from "@/features/dict-v2/catalog-model";
-import { templateLeaves } from "@/features/dict-v2/template-model";
+import { templateLeaves, templateRows } from "@/features/dict-v2/template-model";
 import type { DictTreeResponse } from "@/lib/api/dict-v2";
 import type { TemplateCategory } from "@/lib/api/dict-templates";
 import probe from "../../audit/bc2-lot-b/contract-probe.json";
@@ -101,5 +101,39 @@ describe("catalog v2.2 API selections", () => {
     expect(messageAbbreviation("SystemInformationBlockType1")).toBe("SIB1");
     expect(messageAbbreviation("RRCConnectionRelease")).toBe("RRCRel");
     expect(messageAbbreviation("TEST-unknown")).toBe("TEST-unknown");
+  });
+});
+
+describe("Templates technology tree", () => {
+  const categories = (probe.responses.at(-1)!.body as unknown as { categories: TemplateCategory[] })
+    .categories;
+  it("uses only API catalog references and counts for resolved leaves", () => {
+    const rows = templateRows(tree, categories[0]!, "LTE");
+    const declared = new Map(
+      catalogParameters(tree)
+        .filter((i) => i.technology === "LTE")
+        .flatMap((i) => i.parameter.leaves.map((l) => [l.param_key, l] as const)),
+    );
+    expect(rows.some((r) => r.leaf)).toBe(true);
+    for (const row of rows.filter((r) => r.leaf)) {
+      expect(row.n).toBe(declared.get(row.leaf!.param_key)?.n);
+      expect(row.message).toBe(declared.get(row.leaf!.param_key)?.message);
+    }
+  });
+  it("renders category counters unavailable rather than copies of project totals", () => {
+    const { container } = render(
+      <CatalogTree
+        tree={tree}
+        techno="LTE+NR"
+        needle=""
+        selected={new Set()}
+        onToggle={vi.fn()}
+        resetTick={0}
+        templates={{ categories, onCategory: vi.fn(), onLeaf: vi.fn() }}
+      />,
+    );
+    expect(container.querySelectorAll("section")).toHaveLength(2);
+    expect(container.textContent).toContain("— params · — détections");
+    expect(container.textContent).toContain("Compteurs par technologie non fournis par l’API");
   });
 });

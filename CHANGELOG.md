@@ -1,3 +1,11 @@
+## 1.43.0 (minor, livraison commune) — BC4-FRONT 2026-10-20 — Templates LTE/NR en arbre (Agent BC2)
+
+- Réutilise le composant Paramètres pour les racines LTE/NR, catégories dans l’ordre API et Autres en dernier ; largeurs et badges conservés.
+- Le clic catégorie sélectionne ses feuilles et ouvre le tableau des valeurs dominantes ; sélection individuelle, état partiel et réinitialisation existante conservés. Les références absentes restent visibles.
+- Écart API live 0.59.4 : aucun compteur de catégorie par technologie dans `/dict/v2/templates` ni OpenAPI. Affiche « — params · — détections », sans sommer les feuilles ni recopier les comptes toutes technologies. Les zéros prouvés restent grisés et expliqués.
+- Version 1.43.0 commune au lot KPI parallèle déjà intégré ; les modifications et son entrée ci-dessous sont conservées.
+- Preuves et limites : `/home/devmat/BC4/templates-tree-audit/` (réponse API brute, tests et captures du parcours TEST2).
+
 ## 1.43.0 (minor) — BC4-FRONT 2026-10-20 — KPI Analytics : graphique compact + tableau brut (Agent BC2)
 
 - **Carte KPI** : en-tête unique (`N  KPI_NAME` + `techno · famille · unité`) sans répétition du titre. Toolbar « Vue » / bouton « BLER / temps par capture » / ligne meta « Série temporelle · capture sélectionnée » / sélecteur de statistique permanent **retirés** ; mêmes fonctions restent accessibles via le menu ⋮ existant (VisualizationItems, Statistique, Regroupement, Export, Déplacer).

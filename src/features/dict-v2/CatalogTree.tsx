@@ -1,3 +1,4 @@
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
 import type { TemplateCategory } from "@/lib/api/dict-templates";
 import { templateRows } from "./template-model";
 import { selectionId } from "./parameter-identity";
@@ -111,133 +112,141 @@ export function CatalogTree({
   );
   if (templates)
     return (
-      <div className="p-2 text-xs" data-testid="dict-template-tree">
-        <p role="status" className="pb-2 text-[11px] text-muted-foreground">
-          Compteurs par technologie non fournis par l’API.
-        </p>
-        {(["LTE", "NR"] as const)
-          .filter((tech) => techno === "LTE+NR" || techno === tech)
-          .map((tech) => {
-            const root = `template:${tech}`;
-            const expandedRoot = !open.has(`closed:${root}`);
-            return (
-              <section key={tech} aria-label={`Templates ${tech}`}>
-                <div className="rrc-catalog-root flex items-center gap-1 rounded py-1 font-semibold">
-                  {disclosure(root, expandedRoot, `Templates ${tech}`)}
-                  {tech}
-                </div>
-                {expandedRoot &&
-                  [...templates.categories]
-                    .sort(
-                      (a, b) =>
-                        Number(a.id === "autres") - Number(b.id === "autres") ||
-                        a.position - b.position,
-                    )
-                    .map((category) => {
-                      const id = `${root}:${category.id}`;
-                      const rows = templateRows(tree, category, tech);
-                      const selectable = rows.filter((row) => row.leaf && row.n !== 0);
-                      const checked =
-                        selectable.length > 0 &&
-                        selectable.every((row) => selected.has(selectionId(row.leaf!)));
-                      const partial =
-                        !checked && selectable.some((row) => selected.has(selectionId(row.leaf!)));
-                      const expanded = open.has(id) && !open.has(`closed:${id}`);
-                      const zero = category.n_in_project === 0;
-                      const reason = zero
-                        ? "0 occurrence dans ce projet / cette techno"
-                        : "Compteurs par technologie non fournis par l’API";
-                      return (
-                        <div
-                          key={id}
-                          className="ml-2"
-                          data-testid={`template-category-${tech}-${category.id}`}
-                        >
+      <TooltipProvider>
+        <div className="p-2 text-xs" data-testid="dict-template-tree">
+          <p role="status" className="pb-2 text-[11px] text-muted-foreground">
+            Compteurs par technologie non fournis par l’API.
+          </p>
+          {(["LTE", "NR"] as const)
+            .filter((tech) => techno === "LTE+NR" || techno === tech)
+            .map((tech) => {
+              const root = `template:${tech}`;
+              const expandedRoot = !open.has(`closed:${root}`);
+              return (
+                <section key={tech} aria-label={`Templates ${tech}`}>
+                  <div className="rrc-catalog-root flex items-center gap-1 rounded py-1 font-semibold">
+                    {disclosure(root, expandedRoot, `Templates ${tech}`)}
+                    {tech}
+                  </div>
+                  {expandedRoot &&
+                    [...templates.categories]
+                      .sort(
+                        (a, b) =>
+                          Number(a.id === "autres") - Number(b.id === "autres") ||
+                          a.position - b.position,
+                      )
+                      .map((category) => {
+                        const id = `${root}:${category.id}`;
+                        const rows = templateRows(tree, category, tech);
+                        const selectable = rows.filter((row) => row.leaf && row.n !== 0);
+                        const checked =
+                          selectable.length > 0 &&
+                          selectable.every((row) => selected.has(selectionId(row.leaf!)));
+                        const partial =
+                          !checked &&
+                          selectable.some((row) => selected.has(selectionId(row.leaf!)));
+                        const expanded = open.has(id) && !open.has(`closed:${id}`);
+                        const zero = category.n_in_project === 0;
+                        const reason = zero
+                          ? "0 occurrence dans ce projet / cette techno"
+                          : "Compteurs par technologie non fournis par l’API";
+                        return (
                           <div
-                            title={reason}
-                            className={`flex items-center gap-1 py-1 font-semibold ${zero ? "text-muted-foreground opacity-50" : ""}`}
+                            key={id}
+                            className="ml-2"
+                            data-testid={`template-category-${tech}-${category.id}`}
                           >
-                            {disclosure(id, expanded, `${tech} ${category.label}`)}
-                            <Selection
-                              label={`Sélectionner ${tech} ${category.label}`}
-                              checked={checked}
-                              partial={partial}
-                              disabled={!selectable.length}
-                              onChange={() => {
-                                templates.onCategory(category, tech, true);
-                                setOpen((p) => {
-                                  const next = new Set([...p, id]);
-                                  next.delete(`closed:${id}`);
-                                  return next;
-                                });
-                              }}
-                            />
-                            <button
-                              type="button"
-                              className="min-w-0 flex-1 text-left"
-                              onClick={() => {
-                                templates.onCategory(category, tech);
-                                setOpen((p) => {
-                                  const next = new Set([...p, id]);
-                                  next.delete(`closed:${id}`);
-                                  return next;
-                                });
-                              }}
-                            >
-                              {category.label}
-                            </button>
-                            <span className="ml-auto w-36 shrink-0 text-right font-mono text-[10px] tabular-nums">
-                              — params · — détections
-                            </span>
-                          </div>
-                          {expanded &&
-                            rows.map((row) => (
-                              <label
-                                key={row.id}
-                                title={
-                                  row.n === 0
-                                    ? "0 occurrence dans ce projet / cette techno"
-                                    : row.leaf
-                                      ? String(row.leaf.param_key)
-                                      : "Référence absente du catalogue du projet ; compte individuel non fourni"
-                                }
-                                className={`ml-6 flex flex-wrap items-center gap-1 rounded py-1 ${row.n === 0 || !row.leaf ? "opacity-50" : ""}`}
-                                data-testid="template-leaf"
-                              >
-                                <Selection
-                                  label={`Sélectionner ${tech} ${row.label} ${row.message ?? ""}`}
-                                  checked={!!row.leaf && selected.has(selectionId(row.leaf))}
-                                  disabled={!row.leaf || row.n === 0}
-                                  onChange={() =>
-                                    row.leaf && templates.onLeaf(row.leaf, category, tech)
-                                  }
-                                />
-                                <span className="min-w-0 break-words">{row.label}</span>
-                                {row.message && (
-                                  <span
-                                    className="rounded bg-accent/40 px-1 font-mono text-[10px]"
-                                    title={row.message}
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div
+                                  title={reason}
+                                  className={`flex items-center gap-1 py-1 font-semibold ${zero ? "text-muted-foreground opacity-50" : ""}`}
+                                >
+                                  {disclosure(id, expanded, `${tech} ${category.label}`)}
+                                  <Selection
+                                    label={`Sélectionner ${tech} ${category.label}`}
+                                    checked={checked}
+                                    partial={partial}
+                                    disabled={!selectable.length}
+                                    onChange={() => {
+                                      templates.onCategory(category, tech, true);
+                                      setOpen((p) => {
+                                        const next = new Set([...p, id]);
+                                        next.delete(`closed:${id}`);
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                  <button
+                                    type="button"
+                                    className="min-w-0 flex-1 text-left"
+                                    onClick={() => {
+                                      templates.onCategory(category, tech);
+                                      setOpen((p) => {
+                                        const next = new Set([...p, id]);
+                                        next.delete(`closed:${id}`);
+                                        return next;
+                                      });
+                                    }}
                                   >
-                                    {messageAbbreviation(row.message)}
+                                    {category.label}
+                                  </button>
+                                  <span className="ml-auto w-36 shrink-0 text-right font-mono text-[10px] tabular-nums">
+                                    — params · — détections
                                   </span>
-                                )}
-                                {discriminatorChips(row.discriminators).map((chip) => (
-                                  <span className="text-[10px]" key={chip}>
-                                    [{chip.replace(/^(event|reportConfig_type)=/, "")}]
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="right">{reason}</TooltipContent>
+                            </Tooltip>
+                            {expanded &&
+                              rows.map((row) => (
+                                <label
+                                  key={row.id}
+                                  title={
+                                    row.n === 0
+                                      ? "0 occurrence dans ce projet / cette techno"
+                                      : row.leaf
+                                        ? String(row.leaf.param_key)
+                                        : "Référence absente du catalogue du projet ; compte individuel non fourni"
+                                  }
+                                  className={`ml-6 flex flex-wrap items-center gap-1 rounded py-1 ${row.n === 0 || !row.leaf ? "opacity-50" : ""}`}
+                                  data-testid="template-leaf"
+                                >
+                                  <Selection
+                                    label={`Sélectionner ${tech} ${row.label} ${row.message ?? ""}`}
+                                    checked={!!row.leaf && selected.has(selectionId(row.leaf))}
+                                    disabled={!row.leaf || row.n === 0}
+                                    onChange={() =>
+                                      row.leaf && templates.onLeaf(row.leaf, category, tech)
+                                    }
+                                  />
+                                  <span className="min-w-0 break-words">{row.label}</span>
+                                  {row.message && (
+                                    <span
+                                      className="rounded bg-accent/40 px-1 font-mono text-[10px]"
+                                      title={row.message}
+                                    >
+                                      {messageAbbreviation(row.message)}
+                                    </span>
+                                  )}
+                                  {discriminatorChips(row.discriminators).map((chip) => (
+                                    <span className="text-[10px]" key={chip}>
+                                      [{chip.replace(/^(event|reportConfig_type)=/, "")}]
+                                    </span>
+                                  ))}
+                                  <span className="ml-auto font-mono text-[10px] text-muted-foreground tabular-nums">
+                                    {row.n === null ? "—" : row.n}
                                   </span>
-                                ))}
-                                <span className="ml-auto font-mono text-[10px] text-muted-foreground tabular-nums">
-                                  {row.n === null ? "—" : row.n}
-                                </span>
-                              </label>
-                            ))}
-                        </div>
-                      );
-                    })}
-              </section>
-            );
-          })}
-      </div>
+                                </label>
+                              ))}
+                          </div>
+                        );
+                      })}
+                </section>
+              );
+            })}
+        </div>
+      </TooltipProvider>
     );
   return (
     <div className="p-2 text-xs" data-testid="dict-catalog-v22">
