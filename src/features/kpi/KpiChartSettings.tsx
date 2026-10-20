@@ -42,9 +42,9 @@ export function KpiChartSettings({
         {name}
       </p>
       <label>
-        Type de courbe
+        Type de graphique
         <select
-          aria-label="Type de courbe"
+          aria-label="Type de graphique"
           value={draft.visualization === "histogram" ? "histogram" : (draft.curveType ?? "line")}
           onChange={(e) =>
             e.target.value === "histogram"
@@ -62,6 +62,12 @@ export function KpiChartSettings({
           <option value="line_points">Ligne + points</option>
         </select>
       </label>
+      <p className="text-[11px] text-muted-foreground">
+        {temporal
+          ? "Temps en abscisse, valeur du KPI en ordonnée."
+          : "Regroupement sélectionné en abscisse, valeur du KPI en ordonnée."}
+        {unit ? ` Unité : ${unit}.` : ""}
+      </p>
       <label>
         Axe X
         <select

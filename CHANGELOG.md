@@ -1,3 +1,7 @@
+## 1.46.1 (patch) — BC4-FRONT 2026-10-20 — Libellé des réglages graphiques KPI (Agent BC1)
+
+- Harmonise le sélecteur « Type de graphique » avec le dictionnaire RRC. Ajoute une aide sur les axes et l’unité du KPI ; conserve Histogramme, Points, Ligne et Ligne + points selon les vues disponibles, sans changer les données ni les requêtes.
+
 ## 1.46.0 (minor) — BC4-FRONT 2026-10-20 — Types de courbes KPI et titres opérateurs centrés (Agent BC1)
 
 - Ajoute Points, Ligne et Ligne + points au panneau Paramètres du graphique KPI, avec application explicite. Rendu des agrégats, Metric vs Time et Task Time adapté sans changer les observations, requêtes, axes temporels ou valeurs absentes. Intervention dans le périmètre BC2 explicitement autorisée par l’utilisateur.

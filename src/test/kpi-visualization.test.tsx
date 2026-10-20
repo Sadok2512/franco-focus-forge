@@ -20,6 +20,10 @@ describe("KPI chart configuration", () => {
         onCancel={onCancel}
       />,
     );
+    expect(screen.getByLabelText("Type de graphique")).toBeInTheDocument();
+    expect(screen.getByText(/Regroupement sélectionné en abscisse/)).toHaveTextContent(
+      "Unité : dBm.",
+    );
     fireEvent.change(screen.getByLabelText("Axe X"), { target: { value: "band" } });
     expect(onApply).not.toHaveBeenCalled();
     expect(config.groupBy).toBe("operator_band");
@@ -71,7 +75,7 @@ it("applies curve style only on Apply and preserves temporal axes", () => {
     />,
   );
   for (const mode of ["points", "line", "line_points"]) {
-    fireEvent.change(screen.getByLabelText("Type de courbe"), { target: { value: mode } });
+    fireEvent.change(screen.getByLabelText("Type de graphique"), { target: { value: mode } });
     expect(onApply).not.toHaveBeenCalled();
   }
   expect(screen.getByLabelText("Axe X")).toBeDisabled();
