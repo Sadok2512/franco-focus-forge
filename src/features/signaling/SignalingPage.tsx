@@ -201,6 +201,7 @@ function SignalMap({ data, onSelect }: { data: SignalingPoints; onSelect: (seq: 
         onMapReady={ready}
         showOperatorLegend={false}
         contextLabel="Signalisation"
+        measurementStatus={null}
         nPoints={data.positioned_count}
       />
     </div>
