@@ -1,3 +1,12 @@
+## 1.42.0 (minor) — BC4-FRONT 2026-10-20 — Vue Graphique → série temporelle automatique (Agent BC2)
+
+- Mode Graphique : lorsque le KPI sélectionné a `temporal_source != null` ET qu'une capture est active, la vue affiche directement la courbe `(temps capture, valeur)` depuis le nouveau endpoint back `/projects/{pid}/captures/{cid}/kpi/{code}/time-series` (0.59.0).
+- Aucun contrôle, bouton, panneau ni filtre ajouté ; sélection catalogue + capture déjà active suffisent (règle du mandat #10). Chronogramme, Histogramme et Tableau inchangés.
+- Composant `MetricVsTimeChart` basé sur recharts (LineChart + Brush pour le zoom temporel) ; capture, metric_name, result_id, source_view et compte brut/affiché visibles dans la légende de bas de carte — règle n°2 BC4.
+- Si la série temporelle échoue ou n'est pas AVAILABLE, le composant affiche le statut et la raison : aucune bascule silencieuse vers un agrégat.
+- Fetch react-query dédié avec cancellation sur changement de capture / de métrique (clé `["kpi-timeseries", projectId, captureId, code, maxPoints]`), compat contract-check Zod complet (`KpiTimeSeriesSchema`).
+- Métrique démontrée bout en bout : LTE DL BLER sur capture Test_3 047e3f34e0af — 2581 points bruts, extrema (0 %, 50 %) préservés en downsampling.
+
 ## 1.41.0 (minor) — BC4-FRONT 2026-10-20 — Dictionnaire RRC Premium V5 (Agent BC1)
 
 - Footer de sélection fixe dans la sidebar ; onglets et hiérarchie du catalogue conservés, racines LTE bleue et NR verte.

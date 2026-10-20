@@ -1,4 +1,5 @@
 import { Chronogram } from "./Chronogram";
+import { MetricVsTimeChart } from "./MetricVsTimeChart";
 import { TaskScatter } from "./TaskScatter";
 import { TaskAnalytics, type TaskAnalyticsHandle } from "./TaskAnalytics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -325,6 +326,20 @@ export function KpiGraphCard({
           filters={appliedFilters}
           selectedCapture={captureId}
           onCaptureChange={onCaptureChange}
+        />
+      ) : config.visualization === "graph" && seriesAvailable && captureId ? (
+        // 1.42.0 — Metric vs Time : capture déjà sélectionnée + KPI
+        // avec `temporal_source` non-null → courbe (time_s, value) via
+        // la route générique `/captures/{cid}/kpi/{code}/time-series`.
+        // Pas de bouton, pas de panneau : branche indépendante de la
+        // requête KPI agrégée (son chargement/statut ne gate pas la
+        // courbe temporelle, qui a son propre endpoint).
+        <MetricVsTimeChart
+          projectId={projectId}
+          captureId={captureId}
+          code={entry.item.code}
+          unit={entry.item.unit ?? null}
+          height={full ? 430 : 235}
         />
       ) : config.visualization === "task_scatter" && !blockedReason ? (
         <TaskScatter
@@ -658,7 +673,9 @@ export function KpiGraphCard({
               ? "Observations appariées · points API"
               : "Série temporelle · points API"
             : config.visualization === "graph"
-              ? "Points agrégés · aucune série temporelle"
+              ? seriesAvailable && captureId
+                ? "Série temporelle · capture sélectionnée"
+                : "Points agrégés · aucune série temporelle"
               : "Comparaison des agrégats"}
         </span>
         {taskView ? null : choices.length > 1 ? (
