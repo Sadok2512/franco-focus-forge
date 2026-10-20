@@ -10,8 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
-import { getMetricCaptures } from "@/lib/api/metrics";
+import { getKpiCaptures, getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
 import { toUserMessage } from "@/lib/api/http";
 
 /** Vue Graphique — mode « Metric vs Time ».
@@ -44,16 +43,20 @@ export function MetricVsTimeChart({
   maxPoints?: number;
   height?: number;
 }) {
-  // Auto-sélection : si aucune capture n'est encore active au niveau
-  // du workspace (cas user qui ouvre Graphique sans passer par
-  // Chronogramme), on remonte la première capture connue du projet.
+  // 1.45.1 — Auto-sélection : si aucune capture n'est encore active au
+  // niveau du workspace (cas user qui ouvre Graphique sans passer par
+  // Chronogramme), on appelle `/projects/{p}/kpi/{code}/captures`
+  // (back 0.60.2) qui liste les captures ayant au moins 1 observation
+  // de ce KPI. On trie par n_observations décroissant pour afficher la
+  // capture la plus riche en premier.
   const captures = useQuery({
-    queryKey: ["metric-captures", projectId],
-    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    queryKey: ["kpi-captures", projectId, code],
+    queryFn: ({ signal }) => getKpiCaptures(projectId, code, signal),
     enabled: !captureId,
   });
   useEffect(() => {
-    const first = captures.data?.[0]?.capture_id;
+    const sorted = [...(captures.data ?? [])].sort((a, b) => b.n_observations - a.n_observations);
+    const first = sorted[0]?.capture_id;
     if (!captureId && first) onCaptureChange(first);
   }, [captureId, captures.data, onCaptureChange]);
 
@@ -86,7 +89,9 @@ export function MetricVsTimeChart({
       return (
         <div className="kpi-chart-state" role="status">
           <strong>Aucune capture disponible</strong>
-          <p>Ce projet ne contient pas de capture avec mesures Nemo décodées.</p>
+          <p>
+            Ce projet ne contient aucune capture avec observations décodées pour cette métrique.
+          </p>
         </div>
       );
     }

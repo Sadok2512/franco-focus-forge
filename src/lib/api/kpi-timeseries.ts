@@ -82,3 +82,25 @@ export const getKpiTimeSeries = (
     signal,
   );
 };
+
+/** 0.60.2 — Captures du projet qui ont au moins une observation du
+ *  KPI, triées par capture_id. Utilisé pour l'auto-sélection côté
+ *  Graphique (évite `/metrics/captures` qui dépend de
+ *  `measurement_points`, souvent vide sur Light-only). */
+export const KpiCaptureInfoSchema = z.object({
+  capture_id: z.string(),
+  decode_level: z.string().nullable().optional(),
+  n_observations: z.number().int(),
+});
+export type KpiCaptureInfo = z.infer<typeof KpiCaptureInfoSchema>;
+
+export const getKpiCaptures = (
+  projectId: string,
+  code: string,
+  signal?: AbortSignal,
+): Promise<KpiCaptureInfo[]> =>
+  kpiFetch(
+    `/projects/${encodeURIComponent(projectId)}/kpi/${encodeURIComponent(code)}/captures`,
+    z.array(KpiCaptureInfoSchema),
+    signal,
+  );
