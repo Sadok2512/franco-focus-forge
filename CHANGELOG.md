@@ -1,3 +1,8 @@
+## 1.42.2 (patch) — BC4-FRONT 2026-10-20 — Catégories RRC progressives (Agent BC1)
+
+- Affiche les catégories depuis la réponse légère, puis actualise leurs compteurs en arrière-plan. Les compteurs en attente sont « — », jamais zéro.
+- Chargement et erreur des compteurs explicites ; sélection et catégories restent conservées à la réception des résultats. Nécessite backend 0.59.3.
+
 ## 1.42.1 (patch) — BC4-FRONT 2026-10-20 — Auto-sélection capture en vue Graphique (Agent BC2)
 
 - Correction : la vue Graphique restait sur le rendu agrégé quand l'utilisateur n'avait pas d'abord ouvert Chronogramme (aucune `captureId` au niveau workspace). La courbe `(time_s, value)` ne se déclenchait jamais.

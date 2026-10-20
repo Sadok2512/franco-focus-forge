@@ -13,7 +13,7 @@ const entry = z.object({
   discriminators: z.record(z.unknown()),
   parameters: z.array(reference),
   reason: z.string().nullable(),
-  n_in_project: z.number(),
+  n_in_project: z.number().nullable(),
   resolved: z.boolean(),
 });
 export const TemplateCategorySchema = z.object({
@@ -21,8 +21,8 @@ export const TemplateCategorySchema = z.object({
   label: z.string(),
   position: z.number(),
   revision: z.number(),
-  n_parameters: z.number(),
-  n_in_project: z.number(),
+  n_parameters: z.number().nullable(),
+  n_in_project: z.number().nullable(),
   entries: z.array(entry),
 });
 export type TemplateCategory = z.infer<typeof TemplateCategorySchema>;
@@ -70,10 +70,14 @@ const summary = z.object({
   ),
 });
 export type TemplateSummary = z.infer<typeof summary>;
-export function getDictTemplates(projectId: string, signal?: AbortSignal) {
-  return apiFetch(`/projects/${encodeURIComponent(projectId)}/dict/v2/templates`, templates, {
-    signal,
-  });
+export function getDictTemplates(projectId: string, signal?: AbortSignal, includeCounts = true) {
+  return apiFetch(
+    `/projects/${encodeURIComponent(projectId)}/dict/v2/templates${includeCounts ? "" : "?include_counts=false"}`,
+    templates,
+    {
+      signal,
+    },
+  );
 }
 export function getDictTemplateSummary(
   projectId: string,

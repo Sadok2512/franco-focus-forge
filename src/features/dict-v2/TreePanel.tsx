@@ -145,13 +145,20 @@ export function TreePanel({
         >
           <h3 className="px-3 pb-1 text-xs font-semibold">Catégories</h3>
           {templatesLoading && (
-            <div role="status" className="h-72 animate-pulse bg-muted mx-2 rounded">
+            <div role="status" className="px-3 py-2 text-xs text-muted-foreground">
               Chargement des catégories…
             </div>
           )}
           {templatesError && (
             <p role="alert" className="px-3 text-xs text-destructive">
-              Templates indisponibles. Réessayez en rechargeant la page.
+              {categories.length
+                ? "Compteurs indisponibles. Les catégories restent accessibles."
+                : "Templates indisponibles. Réessayez en rechargeant la page."}
+            </p>
+          )}
+          {categories.some((category) => category.n_in_project === null) && !templatesError && (
+            <p role="status" className="px-3 py-1 text-[11px] text-muted-foreground">
+              Calcul des compteurs…
             </p>
           )}
           {categories.map((category) => (
@@ -170,7 +177,8 @@ export function TreePanel({
             >
               <span>{category.label}</span>
               <span className="shrink-0 font-mono text-[10px]">
-                {fmtInt(category.n_parameters)} params · {fmtInt(category.n_in_project)} détections
+                {category.n_parameters === null ? "—" : fmtInt(category.n_parameters)} params ·{" "}
+                {category.n_in_project === null ? "—" : fmtInt(category.n_in_project)} détections
               </span>
             </button>
           ))}

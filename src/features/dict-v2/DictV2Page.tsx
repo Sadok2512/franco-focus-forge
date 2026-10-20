@@ -221,11 +221,20 @@ function Toolbar({
           <details className="relative">
             <summary className="rrc-control cursor-pointer">Filtres avancés</summary>
             <div className="absolute right-0 z-50 mt-1 w-72 rounded border bg-card p-3 shadow-lg">
-              <label className="text-xs">Message
-                <select aria-label="Message" className="mt-1 w-full rounded border bg-card p-2"
-                  value={draft.message ?? ""} onChange={e=>setDraft({...draft,message:e.target.value})}>
+              <label className="text-xs">
+                Message
+                <select
+                  aria-label="Message"
+                  className="mt-1 w-full rounded border bg-card p-2"
+                  value={draft.message ?? ""}
+                  onChange={(e) => setDraft({ ...draft, message: e.target.value })}
+                >
                   <option value="">Tous les messages</option>
-                  {messages.map(message=><option key={message} value={message}>{messageAbbreviation(message)} — {message}</option>)}
+                  {messages.map((message) => (
+                    <option key={message} value={message}>
+                      {messageAbbreviation(message)} — {message}
+                    </option>
+                  ))}
                 </select>
               </label>
             </div>
@@ -234,9 +243,11 @@ function Toolbar({
             className="rrc-filter-period opacity-60"
             aria-disabled="true"
             tabIndex={0}
-            title={period
-              ? "Plage renvoyée par /projects/{id}. Le filtrage temporel n’est pas pris en charge par l’API du dictionnaire."
-              : "plage non exposée par l'API"}
+            title={
+              period
+                ? "Plage renvoyée par /projects/{id}. Le filtrage temporel n’est pas pris en charge par l’API du dictionnaire."
+                : "plage non exposée par l'API"
+            }
           >
             Période : {period ?? "—"}
           </span>
@@ -413,15 +424,24 @@ export function DictionaryPage({
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [templateVisible, setTemplateVisible] = useState(true);
   const [treeView, setTreeView] = useState<TreePanelView>("catalog");
-  const templatesQ = useQuery({
-    queryKey: ["dict-v2", "templates", projectId],
-    queryFn: () => getDictTemplates(projectId),
+  const templateMetadataQ = useQuery({
+    queryKey: ["dict-v2", "template-metadata", projectId],
+    queryFn: ({ signal }) => getDictTemplates(projectId, signal, false),
     enabled: !!projectId && treeView === "templates",
     staleTime: 60000,
   });
+  const templatesQ = useQuery({
+    queryKey: ["dict-v2", "templates", projectId],
+    queryFn: () => getDictTemplates(projectId),
+    enabled: !!projectId && treeView === "templates" && !!templateMetadataQ.data,
+    staleTime: 60000,
+  });
   const categories = useMemo(
-    () => [...(templatesQ.data?.categories ?? [])].sort((a, b) => a.position - b.position),
-    [templatesQ.data],
+    () =>
+      [...(templatesQ.data?.categories ?? templateMetadataQ.data?.categories ?? [])].sort(
+        (a, b) => a.position - b.position,
+      ),
+    [templatesQ.data, templateMetadataQ.data],
   );
   const activeCategory = categories.find((category) => category.id === categoryId) ?? null;
   useEffect(() => {
@@ -613,9 +633,11 @@ export function DictionaryPage({
           draft.techno === "LTE+NR" ||
           (draft.techno === "NR" ? /^n/i.test(band) : /^b/i.test(band)),
       )}
-      period={projectPeriod.data?.periodStart && projectPeriod.data?.periodEnd
-        ? `${projectPeriod.data.periodStart} → ${projectPeriod.data.periodEnd}`
-        : null}
+      period={
+        projectPeriod.data?.periodStart && projectPeriod.data?.periodEnd
+          ? `${projectPeriod.data.periodStart} → ${projectPeriod.data.periodEnd}`
+          : null
+      }
       mapOpen={mapOpen}
       setMapOpen={setMapOpen}
       infoOpen={infoOpen}
@@ -630,12 +652,7 @@ export function DictionaryPage({
     const counts = new Map(
       selected.map((leaf) => {
         const block = displayedDistribution?.blocks.find((b) => b.param_key === leaf.param_key);
-        return [
-          selectionId(leaf),
-          previousContext || !block
-            ? null
-            : block.n_total,
-        ] as const;
+        return [selectionId(leaf), previousContext || !block ? null : block.n_total] as const;
       }),
     );
     return {
@@ -648,8 +665,8 @@ export function DictionaryPage({
       onViewChange={setTreeView}
       categories={categories}
       activeCategory={activeCategory}
-      templatesLoading={templatesQ.isPending}
-      templatesError={templatesQ.isError}
+      templatesLoading={!categories.length && templateMetadataQ.isPending}
+      templatesError={templateMetadataQ.isError || templatesQ.isError}
       onCategory={(category) => {
         if (categoryId === category.id) {
           setSelected(beforeTemplate.current);
@@ -666,7 +683,16 @@ export function DictionaryPage({
       raw={populationTrees.raw}
       selected={selectedSet}
       onToggleCatalog={(parameter, technology, origin, leaf) => {
-        setSelected(previous=>toggleCatalogSelection(previous,parameter,technology,origin,leaf,!appliedFilters.message));
+        setSelected((previous) =>
+          toggleCatalogSelection(
+            previous,
+            parameter,
+            technology,
+            origin,
+            leaf,
+            !appliedFilters.message,
+          ),
+        );
       }}
       onToggle={onToggle}
       onInfo={() => setInfoOpen(true)}
@@ -691,12 +717,14 @@ export function DictionaryPage({
       <>
         {!!(filters.op?.length || filters.band?.length) && (
           <p role="status" className="rrc-context-notice">
-            Les filtres opérateur/bande de l’URL ne sont pas appliqués : l’API de distribution ne les prend pas en charge.
+            Les filtres opérateur/bande de l’URL ne sont pas appliqués : l’API de distribution ne
+            les prend pas en charge.
           </p>
         )}
         {!!appliedFilters.message && (
           <p role="status" className="rrc-context-notice">
-            Message : {messageAbbreviation(appliedFilters.message)}. Les distributions portent sur les feuilles de ce message ; l’API ne fournit pas d’agrégat filtré par message.
+            Message : {messageAbbreviation(appliedFilters.message)}. Les distributions portent sur
+            les feuilles de ce message ; l’API ne fournit pas d’agrégat filtré par message.
           </p>
         )}
         {previousContext && (
