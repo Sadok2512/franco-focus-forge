@@ -1,3 +1,13 @@
+## 1.43.0 (minor) — BC4-FRONT 2026-10-20 — KPI Analytics : graphique compact + tableau brut (Agent BC2)
+
+- **Carte KPI** : en-tête unique (`N  KPI_NAME` + `techno · famille · unité`) sans répétition du titre. Toolbar « Vue » / bouton « BLER / temps par capture » / ligne meta « Série temporelle · capture sélectionnée » / sélecteur de statistique permanent **retirés** ; mêmes fonctions restent accessibles via le menu ⋮ existant (VisualizationItems, Statistique, Regroupement, Export, Déplacer).
+- **MetricVsTimeChart** : marges resserrées (haut 10 px, droite 14 px, gauche 54 px pour l'axe Y, bas 24 px pour axe X + Brush), grille horizontale fine, pas de légende quand une seule série, graduations X avec « s » et Y avec unité (p.ex. `%`). Footer identifiants techniques (`result_id`, `source_view`) retiré de l'affichage principal — exposés comme attributs `data-*` et dans le menu Infos.
+- **KpiRawDataTable** (nouveau) : tableau d'observations brutes synchronisé avec la capture active quand au moins un KPI sélectionné déclare `temporal_source != null`. Colonnes : `Time (s)`, `Longitude`, `Latitude`, puis une colonne par métrique (`LTE DL BLER (%)` …). Jointure stricte sur `(capture_id, seq)` sans heuristique temporelle. GPS déclaré absent du contrat `/time-series` → cellules `—` (jamais fabriquées). Recherche, Colonnes, Export CSV, pagination 25/50/100/250, lignes compactes.
+- **Fallback** : si aucun KPI sélectionné n'est temporel, le tableau historique `KpiDataTable` (agrégats) reste affiché — compatibilité préservée (règle du mandat §13).
+- **Backend inchangé** (règle du mandat §13).
+- **Validation** : garde Playwright `metric-vs-time-audit/front/browser-redesign.mjs` → **G1–G13 PASS** (header unique · contrôles retirés · chart 73 % hauteur · axes avec unités · Brush · counts bruts publiés · menu ⋮ · colonnes Time/Lng/Lat/metric · capture synchro · 50 lignes brutes · gap chart↔table 45 px · snapshots 1800/1280/400 · tsc/eslint PASS).
+- **Limites documentées** : (a) GPS pas exposé par `/time-series` → colonnes Longitude/Latitude en `—` ; demande d'extension back si GPS brut doit figurer dans le tableau ; (b) `/time-series` ne porte aujourd'hui que `LTE_DL_BLER` (seul `nmf_metric` du catalogue v2) ; les autres KPI retombent sur le tableau agrégé historique.
+
 ## 1.42.2 (patch) — BC4-FRONT 2026-10-20 — Catégories RRC progressives (Agent BC1)
 
 - Affiche les catégories depuis la réponse légère, puis actualise leurs compteurs en arrière-plan. Les compteurs en attente sont « — », jamais zéro.

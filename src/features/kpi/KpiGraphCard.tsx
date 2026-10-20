@@ -6,13 +6,7 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import {
-  MAP_UNAVAILABLE,
-  GROUP_LABELS,
-  VISUALIZATIONS,
-  type VisualizationType,
-  type ChartConfig,
-} from "./visualization-model";
+import { MAP_UNAVAILABLE, GROUP_LABELS, type ChartConfig } from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -619,83 +613,26 @@ export function KpiGraphCard({
           </Popover>
         </div>
       </header>
-      <div className="px-4 py-2 flex flex-wrap items-center gap-3 text-sm">
-        <label>
-          Vue{" "}
-          <select
-            className="kpi-button"
-            aria-label={`Vue ${entry.item.name}`}
-            value={config.visualization}
-            onChange={(event) =>
-              onConfig({ ...config, visualization: event.target.value as VisualizationType })
-            }
-          >
-            {(Object.keys(VISUALIZATIONS) as VisualizationType[])
-              .filter((mode) => mode !== "task_scatter" || seriesAvailable)
-              .map((mode) => (
-                <option
-                  key={mode}
-                  value={mode}
-                  disabled={mode === "task_series" && !seriesAvailable}
-                  title={
-                    mode === "task_series" && !seriesAvailable
-                      ? "pas de série temporelle pour ce KPI (source agrégée)"
-                      : undefined
-                  }
-                >
-                  {mode === "chronogram"
-                    ? "Chronogramme — X = temps par capture"
-                    : VISUALIZATIONS[mode]}
-                </option>
-              ))}
-          </select>
-        </label>
-        {config.visualization !== "chronogram" && (
-          <button
-            className="kpi-button"
-            onClick={() => onConfig({ ...config, visualization: "chronogram" })}
-          >
-            BLER / temps par capture
-          </button>
-        )}
-      </div>
-      <div className="kpi-card-meta">
-        <span className={`kpi-state state-${status.toLowerCase()}`}>
-          {config.visualization === "chronogram"
-            ? "Chronogramme"
-            : config.visualization === "task_scatter"
-              ? "Nuage"
-              : taskView
-                ? "Task Time"
-                : status}
-        </span>
-        <span className="text-[10px] text-muted-foreground">
-          {taskView
-            ? config.visualization === "task_scatter"
-              ? "Observations appariées · points API"
-              : "Série temporelle · points API"
-            : config.visualization === "graph"
-              ? seriesAvailable
-                ? "Série temporelle · capture sélectionnée"
-                : "Points agrégés · aucune série temporelle"
-              : "Comparaison des agrégats"}
-        </span>
-        {taskView ? null : choices.length > 1 ? (
-          <select
-            aria-label={`Statistique ${entry.item.name}`}
-            value={statistic}
-            onChange={(e) => onStatistic(e.target.value as Statistic)}
-          >
-            {choices.map((s) => (
-              <option key={s} value={s}>
-                {STAT_LABELS[s]}
-              </option>
-            ))}
-          </select>
-        ) : choices.length === 1 ? (
-          <span className="ml-auto text-[11px]">{STAT_LABELS[statistic]}</span>
-        ) : null}
-      </div>
+      {/* 1.43.0 — toolbar « Vue » + bouton « BLER / temps par capture »
+          + ligne meta « Série temporelle · … » + sélecteur Statistique
+          permanent ont été retirés de l'affichage principal. Toutes ces
+          commandes restent accessibles via le menu ⋮ (VisualizationItems,
+          Statistique, Configurer X/Y). Le badge d'état reste exposé en
+          haut à droite pour que l'utilisateur voie Loading / Error /
+          Available sans ouvrir la carte. */}
+      {status !== "Available" || taskView ? (
+        <div className="kpi-card-state-row" aria-live="polite">
+          <span className={`kpi-state state-${status.toLowerCase()}`}>
+            {config.visualization === "chronogram"
+              ? "Chronogramme"
+              : config.visualization === "task_scatter"
+                ? "Nuage"
+                : taskView
+                  ? "Task Time"
+                  : status}
+          </span>
+        </div>
+      ) : null}
       {!full && body}
       <Dialog open={full} onOpenChange={setFull}>
         <DialogContent className="max-w-[94vw] w-[1100px]">
