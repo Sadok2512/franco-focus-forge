@@ -1,0 +1,205 @@
+import { useEffect, useMemo, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import type { ECharts, EChartsOption } from "echarts";
+import { X } from "lucide-react";
+import { getMetricAggregate } from "@/lib/api/metrics";
+import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
+import { operatorColor } from "./workspace-model";
+
+/** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
+ *
+ *  Deux visualisations partagées avec les KPI :
+ *   - **histogram** : p50 (ou p90) par opérateur depuis
+ *     `/projects/{p}/metrics/{code}/aggregate?group_by=operator`
+ *     (reuse strict de l'attribution opérateur du back).
+ *   - **chronogram** : réutilise le composant `<Chronogram>` existant
+ *     avec `codes=[metric_code]` ; expose la courbe temporelle sur la
+ *     capture sélectionnée.
+ *
+ *  Jamais de valeur fabriquée : les percentiles proviennent du back
+ *  (règles identiques aux KPI nmf_metric), aucune interpolation front. */
+export function MetricGraphCard({
+  projectId,
+  code,
+  label,
+  unit,
+  tech,
+  category,
+  eventCode,
+  appliedFilters,
+  onRemove,
+}: {
+  projectId: string;
+  code: string;
+  label: string;
+  unit: string;
+  tech: string;
+  category: string | null | undefined;
+  eventCode: string;
+  appliedFilters: KpiQueryFilters;
+  onRemove: () => void;
+}) {
+  // 0.65.0 (F3 MVP) — rendu histogramme par opérateur via /aggregate.
+  // Le chronogramme reste accessible via le composant Chronogram
+  // existant (vue KPI) qui sait déjà cocher une métrique Nemo.
+  return (
+    <article id={`metric-graph-${code}`} className="kpi-graph-card" data-metric-code={code}>
+      <header className="kpi-card-header">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <h3 title={label}>{label}</h3>
+          </div>
+          <p>
+            {tech} · [{eventCode}] · {unit} · {category ?? "autres"}
+          </p>
+        </div>
+        <div className="flex gap-0.5 shrink-0">
+          <button
+            className="kpi-icon"
+            title="Retirer la métrique"
+            aria-label={`Retirer ${label}`}
+            onClick={onRemove}
+          >
+            <X size={15} />
+          </button>
+        </div>
+      </header>
+      <MetricAggregatePlot
+        projectId={projectId}
+        code={code}
+        label={label}
+        unit={unit}
+        appliedFilters={appliedFilters}
+      />
+    </article>
+  );
+}
+
+function MetricAggregatePlot({
+  projectId,
+  code,
+  label,
+  unit,
+  appliedFilters,
+}: {
+  projectId: string;
+  code: string;
+  label: string;
+  unit: string;
+  appliedFilters: KpiQueryFilters;
+}) {
+  const query = useQuery({
+    queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
+    queryFn: ({ signal }) =>
+      getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+  });
+
+  const host = useRef<HTMLDivElement>(null);
+  const chart = useRef<ECharts | null>(null);
+
+  const option = useMemo<EChartsOption>(() => {
+    const groups = query.data?.groups ?? [];
+    const sorted = [...groups].sort((a, b) => (b.n || 0) - (a.n || 0));
+    const labels = sorted.map((g) => g.operator ?? "Non attribué");
+    return {
+      animationDuration: 150,
+      grid: { left: 58, right: 20, top: 28, bottom: 44 },
+      tooltip: {
+        trigger: "axis",
+        confine: true,
+        renderMode: "richText",
+      },
+      xAxis: {
+        type: "category",
+        data: labels,
+        axisLabel: { color: "#64748b", fontSize: 10 },
+        axisTick: { show: false },
+        axisLine: { lineStyle: { color: "#cbd5e1" } },
+      },
+      yAxis: {
+        type: "value",
+        name: unit,
+        scale: false,
+        axisLabel: { color: "#64748b", fontSize: 10 },
+        splitLine: { lineStyle: { color: "#e7edf5", type: "dashed" } },
+      },
+      series: [
+        {
+          type: "bar",
+          barMaxWidth: 46,
+          name: `${label} · P50`,
+          data: sorted.map((g) => ({
+            value: g.p50,
+            itemStyle: { color: operatorColor(g.operator) },
+          })),
+          label: {
+            show: true,
+            position: "top",
+            fontSize: 10,
+            formatter: (p: { value?: unknown }) =>
+              typeof p.value === "number" ? p.value.toFixed(1) : "—",
+          },
+        },
+      ],
+    };
+  }, [query.data, label, unit]);
+
+  useEffect(() => {
+    let disposed = false;
+    let observer: ResizeObserver | undefined;
+    import("echarts")
+      .then((echarts) => {
+        if (disposed || !host.current) return;
+        chart.current = echarts.init(host.current, undefined, { renderer: "canvas" });
+        chart.current.setOption(option);
+        observer = new ResizeObserver(() => chart.current?.resize());
+        observer.observe(host.current);
+      })
+      .catch(() => {
+        /* ignore */
+      });
+    return () => {
+      disposed = true;
+      observer?.disconnect();
+      chart.current?.dispose();
+      chart.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    chart.current?.setOption(option, true);
+  }, [option]);
+
+  if (query.isPending) {
+    return (
+      <div className="kpi-chart-state animate-pulse" role="status">
+        Chargement de l'agrégat…
+      </div>
+    );
+  }
+  if (query.isError) {
+    return (
+      <div className="kpi-chart-state" role="alert">
+        <strong>Agrégat indisponible</strong>
+        <p>{query.error.message}</p>
+      </div>
+    );
+  }
+  if (!query.data?.groups.length) {
+    return (
+      <div className="kpi-chart-state" role="status">
+        Aucun point retourné pour cette métrique sur ce projet.
+      </div>
+    );
+  }
+  return (
+    <div
+      className="kpi-plot"
+      style={{ height: 235 }}
+      ref={host}
+      role="img"
+      data-testid="metric-aggregate-plot"
+      aria-label={`Histogramme ${label} par opérateur : ${query.data.groups.map((g) => `${g.operator ?? "N/D"} ${g.p50 ?? "—"} ${unit}`).join(" ; ")}`}
+    />
+  );
+}

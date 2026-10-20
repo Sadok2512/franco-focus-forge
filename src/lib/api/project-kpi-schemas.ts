@@ -47,6 +47,10 @@ export const KpiCatalogItemSchema = z
     aliases: z.array(z.string()).optional(),
     status: KpiStatusSchema,
     reason: z.string().nullable(),
+    // 0.64.0 (F1 back) — enrichissements pour les 2 onglets KPI/Métriques
+    category: z.string().nullable().optional(),
+    metric_sources: z.array(z.string()).optional(),
+    available: z.boolean().optional(),
   })
   .passthrough();
 

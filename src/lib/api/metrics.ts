@@ -2,10 +2,29 @@ import { z } from "zod";
 import { kpiFetch } from "./project-kpi";
 import { taskQuery } from "./task-analytics";
 import type { KpiQueryFilters } from "./project-kpi-schemas";
-import { MetricSchema, MetricSeriesSchema, EventsSchema } from "./metrics-schemas";
+import {
+  MetricSchema,
+  MetricSeriesSchema,
+  EventsSchema,
+  MetricAggregateSchema,
+  type MetricAggregate,
+} from "./metrics-schemas";
 export type { ChronogramData, ChronogramEvents } from "./metrics-schemas";
 export const getMetrics = (p: string, signal?: AbortSignal) =>
   kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricSchema.array(), signal);
+/** 0.64.0 (F1) — agrégats d'une métrique NMF par groupe. */
+export const getMetricAggregate = (
+  p: string,
+  code: string,
+  groupBy: "none" | "operator" | "band" | "operator_band",
+  filters: KpiQueryFilters = {},
+  signal?: AbortSignal,
+): Promise<MetricAggregate> =>
+  kpiFetch(
+    `/projects/${encodeURIComponent(p)}/metrics/${encodeURIComponent(code)}/aggregate?group_by=${groupBy}&${new URLSearchParams(taskQuery(filters))}`,
+    MetricAggregateSchema,
+    signal,
+  );
 export const getMetricCaptures = (p: string, f: KpiQueryFilters, signal?: AbortSignal) =>
   kpiFetch(
     `/projects/${encodeURIComponent(p)}/metrics/captures${taskQuery(f)}`,

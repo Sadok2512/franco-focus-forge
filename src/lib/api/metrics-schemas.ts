@@ -11,7 +11,34 @@ export const MetricSchema = z.object({
   tech: z.enum(["LTE", "NR", "BOTH"]),
   kind: z.enum(["numeric", "categorical"]),
   n_in_project: z.number().int(),
+  // 0.64.0 (F1 back) — champ YAML `category` du décodeur (14 catégories).
+  category: z.string().nullable().optional(),
 });
+
+/** 0.64.0 (F1 back) — /projects/{p}/metrics/{code}/aggregate */
+export const MetricAggregateRowSchema = z.object({
+  operator: z.string().nullable(),
+  band: z.string().nullable(),
+  n: z.number().int(),
+  p10: z.number().nullable(),
+  p50: z.number().nullable(),
+  p90: z.number().nullable(),
+});
+
+export const MetricAggregateSchema = z.object({
+  project_id: z.string(),
+  metric_code: z.string(),
+  group_by: z.string(),
+  unit: z.string().nullable(),
+  tech: z.enum(["LTE", "NR", "BOTH"]),
+  kind: z.enum(["numeric", "categorical"]),
+  n: z.number().int(),
+  p10: z.number().nullable(),
+  p50: z.number().nullable(),
+  p90: z.number().nullable(),
+  groups: z.array(MetricAggregateRowSchema),
+});
+export type MetricAggregate = z.infer<typeof MetricAggregateSchema>;
 export const MetricSeriesSchema = z.object({
   decoder_version: z.string(),
   schema_version: z.string(),

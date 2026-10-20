@@ -30,6 +30,9 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
+import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
+import { MetricGraphCard } from "./MetricGraphCard";
+import { getMetrics } from "@/lib/api/metrics";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
@@ -200,6 +203,30 @@ function Workspace({
     setSelectedRows(new Set());
   };
   const [captureId, setCaptureId] = useState<string>();
+  // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
+  // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
+  // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
+  const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics">("kpi");
+  const metricsCatalog = useQuery({
+    queryKey: ["project-metrics", projectId],
+    queryFn: ({ signal }) => getMetrics(projectId, signal),
+    staleTime: 60_000,
+  });
+  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(() => {
+    const raw = Array.isArray(search["metrics"]) ? (search["metrics"] as unknown[]) : [];
+    return raw.filter((v): v is string => typeof v === "string");
+  });
+  const toggleMetric = (code: string) => {
+    setSelectedMetrics((prev) => {
+      const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code];
+      void navigate({
+        to: ".",
+        search: (p: Record<string, unknown>) => ({ ...p, metrics: next }),
+        replace: true,
+      } as never);
+      return next;
+    });
+  };
   const [draft, setDraft] = useState(() => fromSearch(search));
   // URL is the applied shared state; edits stay local until Apply.
   const urlDraft = useMemo(() => fromSearch(search), [search]);
@@ -327,14 +354,77 @@ function Workspace({
           maxSize="460px"
           className="kpi-sidebar-panel"
         >
-          <KpiCatalogSidebar
-            catalog={catalog}
-            selected={codes}
-            active={effectiveActive}
-            onToggle={toggle}
-            onVisualization={visualize}
-            searchRef={catalogSearch}
-          />
+          <div className="kpi-sidebar-tabs">
+            <div
+              className="kpi-sidebar-tabbar"
+              role="tablist"
+              aria-label="Catalogue"
+              style={{
+                display: "flex",
+                gap: 0,
+                borderBottom: "1px solid var(--border, #d9dee5)",
+                padding: "4px 6px 0",
+                background: "var(--panel, #fff)",
+              }}
+            >
+              <button
+                role="tab"
+                aria-selected={activeCatalog === "kpi"}
+                className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
+                onClick={() => setActiveCatalog("kpi")}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "4px 4px 0 0",
+                  border: "none",
+                  background: activeCatalog === "kpi" ? "transparent" : "transparent",
+                  borderBottom:
+                    activeCatalog === "kpi"
+                      ? "2px solid var(--primary, #1b5fd6)"
+                      : "2px solid transparent",
+                  fontWeight: activeCatalog === "kpi" ? 600 : 400,
+                }}
+              >
+                KPI <span className="text-[10px] text-muted-foreground">{codes.length}</span>
+              </button>
+              <button
+                role="tab"
+                aria-selected={activeCatalog === "metrics"}
+                className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
+                onClick={() => setActiveCatalog("metrics")}
+                style={{
+                  padding: "6px 12px",
+                  borderRadius: "4px 4px 0 0",
+                  border: "none",
+                  background: "transparent",
+                  borderBottom:
+                    activeCatalog === "metrics"
+                      ? "2px solid var(--primary, #1b5fd6)"
+                      : "2px solid transparent",
+                  fontWeight: activeCatalog === "metrics" ? 600 : 400,
+                }}
+              >
+                Métriques{" "}
+                <span className="text-[10px] text-muted-foreground">{selectedMetrics.length}</span>
+              </button>
+            </div>
+            {activeCatalog === "kpi" ? (
+              <KpiCatalogSidebar
+                catalog={catalog}
+                selected={codes}
+                active={effectiveActive}
+                onToggle={toggle}
+                onVisualization={visualize}
+                searchRef={catalogSearch}
+              />
+            ) : (
+              <MetricsCatalogSidebar
+                projectId={projectId}
+                selected={selectedMetrics}
+                onToggle={toggleMetric}
+                searchRef={catalogSearch}
+              />
+            )}
+          </div>
         </ResizablePanel>
         <ResizableHandle
           withHandle
@@ -498,6 +588,24 @@ function Workspace({
                   count={codes.length}
                 />
               ))}
+              {selectedMetrics.map((metricCode) => {
+                const m = (metricsCatalog.data ?? []).find((x) => x.code === metricCode);
+                if (!m) return null;
+                return (
+                  <MetricGraphCard
+                    key={`metric-${metricCode}`}
+                    projectId={projectId}
+                    code={m.code}
+                    label={m.label}
+                    unit={m.unit}
+                    tech={m.tech}
+                    category={m.category}
+                    eventCode={m.event_code}
+                    appliedFilters={applied}
+                    onRemove={() => toggleMetric(m.code)}
+                  />
+                );
+              })}
             </div>
             {!panels.length && (
               <div className="kpi-empty-workspace">

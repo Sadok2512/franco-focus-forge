@@ -1,3 +1,13 @@
+## 1.49.0 (minor) — BC4-FRONT 2026-10-20 — Deux onglets catalogue : KPI · Métriques (F2+F3) (Agent BC2)
+
+- `KpiWorkspace.tsx` : nouvelle barre d'onglets au-dessus du catalogue (KPI | Métriques) avec compteurs de sélections. L'onglet actif pilote la sidebar rendue à gauche. Les deux sélections sont **distinctes** dans l'URL : `?kpis=[]` (inchangé) + `?metrics=[]` (nouveau). Les deux ensembles sont rendus ensemble dans le panneau de droite.
+- `MetricsCatalogSidebar.tsx` (nouveau) : même composant visuel que `KpiCatalogSidebar` (racines carets compteurs badges, kpi-tree-root / family / leaf). Groupe les métriques par **tech → category** depuis les champs `tech` et `category` du back 0.64.0. Compteurs tabulaires `n métriques · n lignes dans le projet`. Checkbox par métrique, désactivée au-delà de `MAX_GRAPHS`.
+- `MetricGraphCard.tsx` (nouveau) : rendu d'une métrique Nemo brute. MVP = histogramme P50 par opérateur via `/projects/{p}/metrics/{code}/aggregate?group_by=operator` (ECharts, mêmes couleurs opérateur que les KPI). Le chronogramme reste accessible via la vue KPI historique.
+- Zod `KpiCatalogItemSchema` étend `category`, `metric_sources`, `available` (contrat back 0.64.0, non breaking).
+- Zod `MetricSchema` ajoute `category`.
+- Nouveau fetch `getMetricAggregate(projectId, code, groupBy, filters)` + schéma `MetricAggregateSchema`.
+- Impact runtime : zéro régression sur le flux KPI. Un utilisateur qui n'ouvre jamais l'onglet Métriques voit exactement la même UI qu'avant. Les URL partagées avec `?kpis=[]` seul continuent de fonctionner.
+
 ## 1.48.0 (minor) — BC4-FRONT 2026-10-20 — Points KPI géolocalisés par capture (Agent BC1)
 
 - Branche la carte KPI sur les coordonnées réelles de `/time-series`, avec sélection de capture, cadrage automatique et infobulle valeur/unité/capture/séquence/result_id. Réutilise le cache des observations ; aucun rapprochement GPS ni attribution opérateur supposés.
