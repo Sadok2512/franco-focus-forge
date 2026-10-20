@@ -1,3 +1,4 @@
+import type { CurveType } from "./visualization-model";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -34,6 +35,7 @@ export function MetricVsTimeChart({
   unit,
   maxPoints = 5000,
   height = 235,
+  curveType = "line",
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -42,6 +44,7 @@ export function MetricVsTimeChart({
   unit: string | null;
   maxPoints?: number;
   height?: number;
+  curveType?: CurveType;
 }) {
   // 1.45.1 — Auto-sélection : si aucune capture n'est encore active au
   // niveau du workspace (cas user qui ouvre Graphique sans passer par
@@ -191,8 +194,8 @@ export function MetricVsTimeChart({
             type="linear"
             dataKey="value"
             stroke="#1d4ed8"
-            strokeWidth={1.2}
-            dot={false}
+            strokeWidth={curveType === "points" ? 0 : 1.2}
+            dot={curveType === "line" ? false : { r: 2, fill: "#1d4ed8", strokeWidth: 0 }}
             connectNulls={false}
             isAnimationActive={false}
           />

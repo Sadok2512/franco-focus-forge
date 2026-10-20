@@ -1,3 +1,8 @@
+## 1.46.0 (minor) — BC4-FRONT 2026-10-20 — Types de courbes KPI et titres opérateurs centrés (Agent BC1)
+
+- Ajoute Points, Ligne et Ligne + points au panneau Paramètres du graphique KPI, avec application explicite. Rendu des agrégats, Metric vs Time et Task Time adapté sans changer les observations, requêtes, axes temporels ou valeurs absentes. Intervention dans le périmètre BC2 explicitement autorisée par l’utilisateur.
+- Centre le libellé, la pastille et le contrôle de tri des colonnes opérateurs du tableau RRC ; cellules numériques et calculs inchangés.
+
 ## 1.45.1 (patch) — BC4-FRONT 2026-10-20 — Auto-sélection capture via /kpi/{code}/captures (Agent BC2)
 
 - `MetricVsTimeChart` consomme désormais `/projects/{p}/kpi/{code}/captures` (back 0.60.2) à la place de `/metrics/captures`. Résout le bug sur les projets Light-only (ex. `Test_outdoor`) : `measurement_points` est vide mais `nmf_event_light` contient les observations → le nouvel endpoint renvoie les 10 captures et le composant auto-sélectionne la plus riche en observations.

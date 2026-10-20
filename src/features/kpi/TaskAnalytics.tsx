@@ -1,3 +1,4 @@
+import type { CurveType } from "./visualization-model";
 import { forwardRef, useEffect, useImperativeHandle, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import {
@@ -33,6 +34,7 @@ export type TaskAnalyticsHandle = { info: () => void; csv: () => void };
 export const TaskAnalytics = forwardRef<
   TaskAnalyticsHandle,
   {
+    curveType?: CurveType;
     projectId: string;
     code: string;
     unit: string;
@@ -41,7 +43,17 @@ export const TaskAnalytics = forwardRef<
     setTaskId: (id: string | undefined) => void;
     onCaptureChange: (capture: string) => void;
   }
->(({ projectId, code, unit, filters, taskId, setTaskId, onCaptureChange }, ref) => {
+>((props, ref) => {
+  const {
+    projectId,
+    code,
+    unit,
+    filters,
+    taskId,
+    setTaskId,
+    onCaptureChange,
+    curveType = "line",
+  } = props;
   const [info, setInfo] = useState(false);
   const tasks = useQuery({
     queryKey: ["tasks", projectId, filters],
@@ -196,11 +208,13 @@ export const TaskAnalytics = forwardRef<
                               : `${label} · ${key.toUpperCase()}`
                           }
                           stroke={color}
-                          strokeWidth={key === "p50" || key === "value" ? 2 : 1}
+                          strokeWidth={
+                            curveType === "points" ? 0 : key === "p50" || key === "value" ? 2 : 1
+                          }
                           strokeDasharray={
                             key === "p10" ? "3 3" : key === "p90" ? "8 3" : undefined
                           }
-                          dot={false}
+                          dot={curveType === "line" ? false : { r: 2, fill: color, strokeWidth: 0 }}
                           connectNulls={false}
                           isAnimationActive={false}
                         />

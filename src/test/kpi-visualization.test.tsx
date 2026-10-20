@@ -55,3 +55,33 @@ describe("KPI chart configuration", () => {
     expect(screen.getByLabelText("Statistique du graphique")).toBeDisabled();
   });
 });
+
+it("applies curve style only on Apply and preserves temporal axes", () => {
+  const onApply = vi.fn();
+  render(
+    <KpiChartSettings
+      config={{ ...defaultConfig("TEST", "operator"), visualization: "task_series" }}
+      temporal
+      name="TEST"
+      unit="bps"
+      groupOptions={[]}
+      choices={[]}
+      onApply={onApply}
+      onCancel={() => {}}
+    />,
+  );
+  for (const mode of ["points", "line", "line_points"]) {
+    fireEvent.change(screen.getByLabelText("Type de courbe"), { target: { value: mode } });
+    expect(onApply).not.toHaveBeenCalled();
+  }
+  expect(screen.getByLabelText("Axe X")).toBeDisabled();
+  fireEvent.click(screen.getByText("Appliquer", { exact: true }));
+  expect(onApply).toHaveBeenCalledWith(
+    expect.objectContaining({
+      curveType: "line_points",
+      visualization: "task_series",
+      groupBy: "operator",
+      kpiCode: "TEST",
+    }),
+  );
+});

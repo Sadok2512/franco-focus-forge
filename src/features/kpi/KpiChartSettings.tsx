@@ -1,6 +1,11 @@
 import { useState } from "react";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
-import { GROUP_LABELS, XY_UNAVAILABLE, type ChartConfig } from "./visualization-model";
+import {
+  GROUP_LABELS,
+  XY_UNAVAILABLE,
+  type ChartConfig,
+  type CurveType,
+} from "./visualization-model";
 import { STAT_LABELS, type Statistic } from "./workspace-model";
 
 export function KpiChartSettings({
@@ -9,10 +14,12 @@ export function KpiChartSettings({
   unit,
   groupOptions,
   choices,
+  temporal = false,
   onApply,
   onCancel,
 }: {
   config: ChartConfig;
+  temporal?: boolean;
   name: string;
   unit: string | null;
   groupOptions: KpiGroupBy[];
@@ -35,9 +42,31 @@ export function KpiChartSettings({
         {name}
       </p>
       <label>
+        Type de courbe
+        <select
+          aria-label="Type de courbe"
+          value={draft.visualization === "histogram" ? "histogram" : (draft.curveType ?? "line")}
+          onChange={(e) =>
+            e.target.value === "histogram"
+              ? setDraft({ ...draft, visualization: "histogram" })
+              : setDraft({
+                  ...draft,
+                  curveType: e.target.value as CurveType,
+                  visualization: draft.visualization === "task_series" ? "task_series" : "graph",
+                })
+          }
+        >
+          {!temporal && <option value="histogram">Histogramme</option>}
+          <option value="points">Points</option>
+          <option value="line">Ligne</option>
+          <option value="line_points">Ligne + points</option>
+        </select>
+      </label>
+      <label>
         Axe X
         <select
           aria-label="Axe X"
+          disabled={temporal}
           value={draft.xMetric}
           onChange={(e) =>
             setDraft({
@@ -47,16 +76,22 @@ export function KpiChartSettings({
             })
           }
         >
-          {!groupOptions.includes(draft.xMetric) && (
+          {temporal && (
+            <option value={draft.xMetric}>
+              {draft.visualization === "task_series" ? "Task Time" : "Temps de capture"}
+            </option>
+          )}
+          {!temporal && !groupOptions.includes(draft.xMetric) && (
             <option value={draft.xMetric} disabled>
               {GROUP_LABELS[draft.xMetric]} — indisponible
             </option>
           )}
-          {groupOptions.map((group) => (
-            <option key={group} value={group}>
-              {GROUP_LABELS[group]}
-            </option>
-          ))}
+          {!temporal &&
+            groupOptions.map((group) => (
+              <option key={group} value={group}>
+                {GROUP_LABELS[group]}
+              </option>
+            ))}
         </select>
       </label>
       <label>
@@ -71,6 +106,7 @@ export function KpiChartSettings({
         Regrouper par
         <select
           aria-label="Regroupement du graphique"
+          disabled={temporal}
           value={draft.groupBy}
           onChange={(e) =>
             setDraft({
@@ -97,7 +133,7 @@ export function KpiChartSettings({
         <select
           aria-label="Statistique du graphique"
           value={draft.statistic ?? ""}
-          disabled={!choices.length}
+          disabled={temporal || !choices.length}
           onChange={(e) => setDraft({ ...draft, statistic: e.target.value as Statistic })}
         >
           {!choices.length && <option value="">Indisponible</option>}
@@ -109,7 +145,9 @@ export function KpiChartSettings({
         </select>
       </label>
       <p className="text-[11px] text-muted-foreground">
-        {XY_UNAVAILABLE} L’axe Y reste le KPI sélectionné.
+        {temporal
+          ? "Axe temporel et unité conservés depuis la réponse API."
+          : `${XY_UNAVAILABLE} L’axe Y reste le KPI sélectionné.`}
       </p>
       <div className="flex justify-end gap-2">
         <button type="button" className="kpi-button" onClick={onCancel}>
@@ -118,7 +156,7 @@ export function KpiChartSettings({
         <button
           type="submit"
           className="kpi-button primary"
-          disabled={!groupOptions.includes(draft.groupBy)}
+          disabled={!temporal && !groupOptions.includes(draft.groupBy)}
         >
           Appliquer
         </button>

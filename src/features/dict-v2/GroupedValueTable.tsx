@@ -317,13 +317,17 @@ export function GroupedValueTable({
                 <th
                   key={column.id}
                   scope="col"
-                  className={index === 0 ? "text-left" : "text-right"}
+                  className={index === 0 ? "text-left" : "text-center"}
                   aria-sort={
                     sort.key === column.id ? (sort.desc ? "descending" : "ascending") : "none"
                   }
                 >
                   <button
-                    className="inline-flex items-center gap-1"
+                    className={
+                      index === 0
+                        ? "inline-flex items-center gap-1"
+                        : "flex w-full items-center justify-center gap-1"
+                    }
                     onClick={() =>
                       setSort({
                         ...sort,

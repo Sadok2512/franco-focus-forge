@@ -6,7 +6,12 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import { MAP_UNAVAILABLE, GROUP_LABELS, type ChartConfig } from "./visualization-model";
+import {
+  MAP_UNAVAILABLE,
+  GROUP_LABELS,
+  type ChartConfig,
+  type CurveType,
+} from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -63,6 +68,7 @@ export function KpiPlot({
   height = 235,
   onReady,
   mode = "histogram",
+  curveType = "points",
 }: {
   rows: AnalyticRow[];
   selectedRows: Set<string>;
@@ -70,6 +76,7 @@ export function KpiPlot({
   height?: number;
   onReady?: (chart: ECharts | null) => void;
   mode?: "histogram" | "graph";
+  curveType?: CurveType;
 }) {
   const host = useRef<HTMLDivElement>(null),
     chart = useRef<ECharts | null>(null);
@@ -124,12 +131,15 @@ export function KpiPlot({
       },
       series: [
         {
-          type: mode === "graph" ? "scatter" : "bar",
+          type: mode === "graph" ? (curveType === "points" ? "scatter" : "line") : "bar",
+          showSymbol: curveType === "line_points",
+          connectNulls: false,
+          smooth: false,
           symbolSize: 12,
           name: rows[0]?.metric ?? "",
           barMaxWidth: 46,
           data: rows.map((row, index) => ({
-            value: mode === "graph" ? [index, row.value] : row.value,
+            value: mode === "graph" && curveType === "points" ? [index, row.value] : row.value,
             itemStyle: {
               color: operatorColor(row.operator),
               borderRadius: [3, 3, 0, 0],
@@ -148,7 +158,7 @@ export function KpiPlot({
         },
       ],
     }),
-    [rows, selectedRows, mode],
+    [rows, selectedRows, mode, curveType],
   );
   const currentPlot = useRef({ option, rows });
   currentPlot.current = { option, rows };
@@ -330,6 +340,7 @@ export function KpiGraphCard({
         // auto-sélectionne la première capture connue via /metrics/captures
         // (règle du mandat #2 — ne pas demander de sélection manuelle).
         <MetricVsTimeChart
+          curveType={config.curveType ?? "line"}
           projectId={projectId}
           captureId={captureId}
           onCaptureChange={onCaptureChange}
@@ -346,6 +357,7 @@ export function KpiGraphCard({
         />
       ) : taskView && !blockedReason ? (
         <TaskAnalytics
+          curveType={config.curveType ?? "line"}
           key={JSON.stringify(appliedFilters)}
           ref={taskPanel}
           projectId={projectId}
@@ -408,6 +420,7 @@ export function KpiGraphCard({
         </div>
       ) : (
         <KpiPlot
+          curveType={config.curveType ?? "points"}
           rows={rows}
           onReady={setPlot}
           mode={config.visualization === "graph" ? "graph" : "histogram"}
@@ -510,7 +523,10 @@ export function KpiGraphCard({
                       title={
                         taskView ? "Task Time et unité définis par le contrat de série" : undefined
                       }
-                      disabled={taskView}
+                      disabled={
+                        config.visualization === "task_scatter" ||
+                        config.visualization === "chronogram"
+                      }
                       onSelect={() => {
                         settingsRequested.current = true;
                       }}
@@ -597,7 +613,15 @@ export function KpiGraphCard({
             >
               {settings && (
                 <KpiChartSettings
-                  config={{ ...config, statistic }}
+                  config={{
+                    ...config,
+                    statistic,
+                    curveType: config.curveType ?? (seriesAvailable ? "line" : "points"),
+                  }}
+                  temporal={
+                    (seriesAvailable && config.visualization === "graph") ||
+                    config.visualization === "task_series"
+                  }
                   name={entry.item.name}
                   unit={data?.unit ?? entry.item.unit ?? null}
                   choices={choices}

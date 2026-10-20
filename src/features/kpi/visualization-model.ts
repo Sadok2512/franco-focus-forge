@@ -3,7 +3,9 @@ import type { Statistic } from "./workspace-model";
 
 export type VisualizationType =
   "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter" | "chronogram";
+export type CurveType = "points" | "line" | "line_points";
 export type ChartConfig = {
+  curveType?: CurveType;
   kpiCode: string;
   visualization: VisualizationType;
   xMetric: KpiGroupBy;
