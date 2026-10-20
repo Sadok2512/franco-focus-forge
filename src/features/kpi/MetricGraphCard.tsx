@@ -1,8 +1,18 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
+import {
+  Brush,
+  CartesianGrid,
+  Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { X } from "lucide-react";
-import { getMetricAggregate } from "@/lib/api/metrics";
+import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { operatorColor } from "./workspace-model";
 
@@ -39,11 +49,17 @@ export function MetricGraphCard({
   appliedFilters: KpiQueryFilters;
   onRemove: () => void;
 }) {
-  // 0.65.0 (F3 MVP) — rendu histogramme par opérateur via /aggregate.
-  // Le chronogramme reste accessible via le composant Chronogram
-  // existant (vue KPI) qui sait déjà cocher une métrique Nemo.
+  // 1.49.3 — selector histogramme / temps. Deux lectures du même code :
+  //   - histogram : /metrics/{code}/aggregate?group_by=operator (ECharts)
+  //   - time      : /metrics/series?codes=X&capture_id=auto (recharts)
+  const [view, setView] = useState<"histogram" | "time">("histogram");
   return (
-    <article id={`metric-graph-${code}`} className="kpi-graph-card" data-metric-code={code}>
+    <article
+      id={`metric-graph-${code}`}
+      className="kpi-graph-card"
+      data-metric-code={code}
+      data-view={view}
+    >
       <header className="kpi-card-header">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -53,7 +69,16 @@ export function MetricGraphCard({
             {tech} · [{eventCode}] · {unit} · {category ?? "autres"}
           </p>
         </div>
-        <div className="flex gap-0.5 shrink-0">
+        <div className="flex gap-0.5 shrink-0 items-center">
+          <select
+            aria-label={`Vue ${label}`}
+            value={view}
+            onChange={(e) => setView(e.target.value as "histogram" | "time")}
+            className="rounded-md border bg-background px-2 py-1 text-xs"
+          >
+            <option value="histogram">Histogramme opérateur</option>
+            <option value="time">En fonction du temps</option>
+          </select>
           <button
             className="kpi-icon"
             title="Retirer la métrique"
@@ -64,13 +89,17 @@ export function MetricGraphCard({
           </button>
         </div>
       </header>
-      <MetricAggregatePlot
-        projectId={projectId}
-        code={code}
-        label={label}
-        unit={unit}
-        appliedFilters={appliedFilters}
-      />
+      {view === "histogram" ? (
+        <MetricAggregatePlot
+          projectId={projectId}
+          code={code}
+          label={label}
+          unit={unit}
+          appliedFilters={appliedFilters}
+        />
+      ) : (
+        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} />
+      )}
     </article>
   );
 }
@@ -146,7 +175,7 @@ function MetricAggregatePlot({
         },
       })),
     };
-  }, [query.data, label, unit]);
+  }, [query.data, unit]);
 
   // 1.49.2 — le div hôte n'existe pas tant que query est pending (early
   // return "Chargement…"). On attend que le DOM soit prêt (data arrivée)
@@ -212,5 +241,124 @@ function MetricAggregatePlot({
       data-testid="metric-aggregate-plot"
       aria-label={`Histogramme ${label} par opérateur : ${query.data.groups.map((g) => `${g.operator ?? "N/D"} ${g.p50 ?? "—"} ${unit}`).join(" ; ")}`}
     />
+  );
+}
+
+/** 1.49.3 — Courbe (seq, t_rel_s, value) via /metrics/series pour une
+ *  métrique Nemo. Auto-sélection de la 1re capture qui porte la
+ *  métrique (via /metrics/captures). Reuse exact du contrat existant
+ *  utilisé par Chronogram ; pas de nouveau endpoint back. */
+function MetricTimePlot({
+  projectId,
+  code,
+  label,
+  unit,
+}: {
+  projectId: string;
+  code: string;
+  label: string;
+  unit: string;
+}) {
+  const captures = useQuery({
+    queryKey: ["metric-captures", projectId],
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+  });
+  const captureId = captures.data?.[0]?.capture_id;
+  const series = useQuery({
+    queryKey: ["metric-series", projectId, captureId, code],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, [code], signal),
+    enabled: !!captureId,
+  });
+
+  const points = useMemo(() => {
+    const s = series.data?.series?.[0];
+    if (!s) return [];
+    return (s.points ?? [])
+      .filter((p) => typeof p.value === "number")
+      .map((p) => ({ t_rel_s: p.t_rel_s, value: p.value as number }));
+  }, [series.data]);
+
+  if (!captureId) {
+    if (captures.isPending)
+      return (
+        <div className="kpi-chart-state animate-pulse" role="status">
+          Sélection automatique d’une capture…
+        </div>
+      );
+    return (
+      <div className="kpi-chart-state" role="status">
+        Aucune capture décodée disponible pour ce projet.
+      </div>
+    );
+  }
+  if (series.isPending)
+    return (
+      <div className="kpi-chart-state animate-pulse" role="status">
+        Chargement de la série…
+      </div>
+    );
+  if (series.isError)
+    return (
+      <div className="kpi-chart-state" role="alert">
+        <strong>Série indisponible</strong>
+        <p>{series.error.message}</p>
+      </div>
+    );
+  if (!points.length)
+    return (
+      <div className="kpi-chart-state" role="status">
+        Aucun point retourné par /metrics/series pour cette capture.
+      </div>
+    );
+
+  return (
+    <div
+      className="w-full"
+      style={{ height: 235 }}
+      data-testid="metric-time-plot"
+      data-capture-id={captureId}
+      data-n-points={points.length}
+    >
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={points} margin={{ top: 10, right: 14, left: 4, bottom: 24 }}>
+          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            type="number"
+            dataKey="t_rel_s"
+            domain={[0, "dataMax"]}
+            tickCount={6}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+            tickFormatter={(v: number) => (typeof v === "number" ? v.toFixed(0) + " s" : String(v))}
+          />
+          <YAxis width={54} domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} />
+          <Tooltip
+            cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
+            contentStyle={{ fontSize: 11, padding: "4px 8px" }}
+            formatter={(value: number) => [`${value}${unit ? " " + unit : ""}`, label]}
+            labelFormatter={(l: number) =>
+              typeof l === "number" ? `${l.toFixed(3)} s` : String(l)
+            }
+          />
+          <Line
+            type="linear"
+            dataKey="value"
+            stroke="#1d4ed8"
+            strokeWidth={1.2}
+            dot={false}
+            connectNulls={false}
+            isAnimationActive={false}
+          />
+          {points.length > 50 ? (
+            <Brush
+              dataKey="t_rel_s"
+              height={16}
+              travellerWidth={7}
+              stroke="#94a3b8"
+              fill="#f1f5f9"
+            />
+          ) : null}
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   );
 }

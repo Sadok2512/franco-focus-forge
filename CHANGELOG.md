@@ -1,3 +1,10 @@
+## 1.49.3 (minor) — BC4-FRONT 2026-10-20 — MetricGraphCard : vue "en fonction du temps" (Agent BC2)
+
+- `MetricGraphCard.tsx` : nouveau sélecteur `Histogramme opérateur` / `En fonction du temps` dans l'en-tête de la carte. Deux lectures du même code métrique, aucun nouveau endpoint back.
+- Vue **Histogramme** (inchangée) : `/projects/{p}/metrics/{code}/aggregate?group_by=operator` → P10/P50/P90 groupés par opérateur (ECharts).
+- Vue **Temps** (nouvelle) : sélection automatique de la 1re capture disponible via `/projects/{p}/metrics/captures`, puis `/projects/{p}/metrics/series?codes=X&capture_id=…` (contrat exact utilisé par Chronogram). Courbe `recharts` `(t_rel_s, value)` ; filtrage des points non numériques ; Brush de zoom au-delà de 50 points. États loading / error / empty explicites.
+- Aucune valeur fabriquée côté front : les points proviennent intégralement de `/metrics/series`, pas d'interpolation.
+
 ## 1.49.2 (patch) — BC4-FRONT 2026-10-20 — Fix MetricGraphCard : ECharts init différé (Agent BC2)
 
 - Correction : la carte Métrique n'affichait aucune barre après sélection (zone de tracé vide alors que le back renvoyait n>0). Cause : `useEffect` d'init avec `[]` tournait au 1er render (query.isPending → early return "Chargement…"), le div `ref=host` n'existait pas → `chart.current` restait `null` et le second `setOption` était un no-op.
