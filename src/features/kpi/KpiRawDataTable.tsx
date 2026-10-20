@@ -51,6 +51,27 @@ const valueFormatter = (value: unknown, unit: string | null) => {
   return String(value);
 };
 
+/** 1.44.1 — Compose l'horodatage absolu depuis les deux chaînes brutes
+ *  servies par le back 0.60.1 : DATE(nmf_file_start) + event_ts.
+ *  Format normalisé : `YYYY-MM-DD HH:MM:SS.ms`.
+ *  - `nmf_file_start` arrive en `DD.MM.YYYY HH:MM:SS.ms` → on extrait
+ *    la date, on la convertit en ISO.
+ *  - `event_ts` arrive en `HH:MM:SS.ms` → tel quel.
+ *  Si l'un des deux manque, on affiche ce qu'on a (jamais fabriqué). */
+const absoluteTimestamp = (
+  event_ts: string | null | undefined,
+  nmf_file_start: string | null | undefined,
+): string => {
+  if (!event_ts && !nmf_file_start) return "—";
+  let dateIso: string | null = null;
+  if (nmf_file_start) {
+    const m = nmf_file_start.match(/^(\d{2})\.(\d{2})\.(\d{4})/);
+    if (m) dateIso = `${m[3]}-${m[2]}-${m[1]}`;
+  }
+  if (dateIso && event_ts) return `${dateIso} ${event_ts}`;
+  return event_ts ?? nmf_file_start ?? "—";
+};
+
 export function KpiRawDataTable({
   projectId,
   captureId,
@@ -102,6 +123,7 @@ export function KpiRawDataTable({
       {
         key: number;
         time_s: number;
+        timestamp: string;
         longitude: number | null;
         latitude: number | null;
         nmf_file: string | null;
@@ -120,11 +142,15 @@ export function KpiRawDataTable({
           if (existing.longitude == null && p.longitude != null) existing.longitude = p.longitude;
           if (existing.latitude == null && p.latitude != null) existing.latitude = p.latitude;
           if (existing.nmf_file == null && p.nmf_file != null) existing.nmf_file = p.nmf_file;
+          if (existing.timestamp === "—") {
+            existing.timestamp = absoluteTimestamp(p.event_ts, p.nmf_file_start);
+          }
           continue;
         }
         map.set(p.seq, {
           key: p.seq,
           time_s: p.time_s,
+          timestamp: absoluteTimestamp(p.event_ts, p.nmf_file_start),
           longitude: p.longitude ?? null,
           latitude: p.latitude ?? null,
           nmf_file: p.nmf_file ?? null,
@@ -138,6 +164,7 @@ export function KpiRawDataTable({
   const columns = useMemo<Column[]>(() => {
     const base: Column[] = [
       { key: "time_s", label: "Time (s)", numeric: true },
+      { key: "timestamp", label: "Horodatage", optional: true },
       { key: "longitude", label: "Longitude", numeric: true, optional: true },
       { key: "latitude", label: "Latitude", numeric: true, optional: true },
       { key: "nmf_file", label: "Fichier NMF", optional: true },
@@ -314,6 +341,9 @@ export function KpiRawDataTable({
                     let title: string | undefined;
                     if (col.key === "time_s" && typeof raw === "number") {
                       text = timeFormatter.format(raw) + " s";
+                    } else if (col.key === "timestamp") {
+                      text = typeof raw === "string" && raw.length ? raw : "—";
+                      if (text !== "—") title = text;
                     } else if (col.key === "longitude" || col.key === "latitude") {
                       text = typeof raw === "number" ? raw.toFixed(6) + "°" : "—";
                     } else if (col.key === "nmf_file") {

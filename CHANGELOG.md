@@ -1,3 +1,9 @@
+## 1.44.1 (patch) — BC4-FRONT 2026-10-20 — Tableau brut : colonne Horodatage absolu (Agent BC2)
+
+- Nouvelle colonne « Horodatage » dans `KpiRawDataTable`, format normalisé `YYYY-MM-DD HH:MM:SS.ms`, composée depuis les deux chaînes brutes du back 0.60.1 : partie DATE de `nmf_file_start` (`DD.MM.YYYY HH:MM:SS.ms`) + `event_ts` (`HH:MM:SS.ms`). Aucun calcul temporel inventé — on relie simplement deux chaînes servies par la DB (règle n°2 BC4).
+- Colonne cachable via le menu « Colonnes » (optionnelle). `Time (s)` relatif à la capture reste disponible pour les comparaisons intra-capture.
+- Si l'un des deux champs manque, affiche ce qui est disponible (ex. heure sans date) ; si les deux sont absents, affiche `—`. Pas de fabrication (règle n°1 BC4).
+
 ## 1.44.0 (minor) — BC4-FRONT 2026-10-20 — Tableau brut : GPS + Fichier NMF réels (Agent BC2)
 
 - `KpiRawDataTable` lit les nouveaux champs du contrat back 0.60.0 (`longitude`, `latitude`, `nmf_file`) et peuple les colonnes correspondantes à partir du premier point qui porte la valeur. Les cellules affichent `0.123456°` pour les coordonnées et le nom complet du fichier (tronqué visuellement avec tooltip survol = nom complet).

@@ -19,6 +19,13 @@ export const KpiTimeSeriesPointSchema = z.object({
   longitude: z.number().nullable().optional(),
   latitude: z.number().nullable().optional(),
   nmf_file: z.string().nullable().optional(),
+  // 0.60.1 — Horodatage absolu : event_ts est l'heure-du-jour depuis
+  // stg_event_raw ("HH:MM:SS.ms") et nmf_file_start est la date+heure
+  // de début de fichier ("DD.MM.YYYY HH:MM:SS.ms"). Le front compose
+  // l'horodatage absolu de l'observation : DATE(nmf_file_start) +
+  // event_ts.
+  event_ts: z.string().nullable().optional(),
+  nmf_file_start: z.string().nullable().optional(),
 });
 
 export const KpiTimeSeriesSamplingSchema = z.object({
