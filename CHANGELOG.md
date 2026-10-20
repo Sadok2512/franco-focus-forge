@@ -1,3 +1,8 @@
+## 1.47.0 (minor) — BC4-FRONT 2026-10-20 — Carte dans Visualisation KPI (Agent BC1)
+
+- Rend le menu Visualisation du KPI actif accessible dans la barre du workspace, avec l’option Carte et les vues existantes.
+- Réutilise la carte OpenStreetMap interactive (zoom, déplacement, coordonnées, couches et plein écran). Aucun marqueur ni légende opérateur fictifs : un état compact indique que les points KPI filtrés ne sont pas disponibles. Les agrégats et les API restent inchangés.
+
 ## 1.46.1 (patch) — BC4-FRONT 2026-10-20 — Libellé des réglages graphiques KPI (Agent BC1)
 
 - Harmonise le sélecteur « Type de graphique » avec le dictionnaire RRC. Ajoute une aide sur les axes et l’unité du KPI ; conserve Histogramme, Points, Ligne et Ligne + points selon les vues disponibles, sans changer les données ni les requêtes.

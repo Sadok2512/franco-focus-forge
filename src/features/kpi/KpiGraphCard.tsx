@@ -1,3 +1,4 @@
+import { KpiMapOSM } from "./KpiMapOSM";
 import { Chronogram } from "./Chronogram";
 import { MetricVsTimeChart } from "./MetricVsTimeChart";
 import { TaskScatter } from "./TaskScatter";
@@ -6,12 +7,7 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import {
-  MAP_UNAVAILABLE,
-  GROUP_LABELS,
-  type ChartConfig,
-  type CurveType,
-} from "./visualization-model";
+import { GROUP_LABELS, type ChartConfig, type CurveType } from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -315,7 +311,13 @@ export function KpiGraphCard({
   ];
   const body = (
     <>
-      {taskView && blockedReason ? (
+      {config.visualization === "map" ? (
+        <KpiMapOSM
+          premium
+          showOperatorLegend={false}
+          measurementStatus="Fond de carte uniquement · points KPI filtrés indisponibles"
+        />
+      ) : taskView && blockedReason ? (
         <div className="kpi-chart-state" role="status">
           {blockedReason}
         </div>
@@ -394,11 +396,6 @@ export function KpiGraphCard({
               Réessayer
             </button>
           )}
-        </div>
-      ) : config.visualization === "map" ? (
-        <div className="kpi-chart-state" role="status">
-          <strong>Carte indisponible</strong>
-          <p>{MAP_UNAVAILABLE}</p>
         </div>
       ) : config.visualization === "table" ? (
         <div className="kpi-table-mode" role="status">

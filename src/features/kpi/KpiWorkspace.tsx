@@ -1,4 +1,15 @@
-import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
+import { VisualizationItems } from "./VisualizationMenu";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "@/components/ui/dropdown-menu";
+import {
+  VISUALIZATIONS,
+  defaultConfig,
+  type ChartConfig,
+  type VisualizationType,
+} from "./visualization-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -350,9 +361,37 @@ function Workspace({
                 </button>
               </nav>
               <section className="kpi-workspace-controls" aria-label="Organisation des graphiques">
-                <span className="kpi-chart-type" title="Choisir une vue dans le menu du graphique">
-                  {effectiveActive ? "Visualisation active" : "Visualisations"}
-                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className="kpi-button"
+                      disabled={!effectiveActive}
+                      aria-label="Visualisation du KPI actif"
+                    >
+                      Visualisation ·{" "}
+                      {effectiveActive
+                        ? VISUALIZATIONS[configFor(effectiveActive).visualization]
+                        : "Aucun KPI"}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    <VisualizationItems
+                      throughput={
+                        !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
+                      }
+                      seriesAvailable={
+                        !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
+                      }
+                      onChange={(visualization) => {
+                        if (effectiveActive)
+                          updateConfig(effectiveActive, {
+                            ...configFor(effectiveActive),
+                            visualization,
+                          });
+                      }}
+                    />
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <label className="kpi-select-label">
                   Grouper par
                   <select
