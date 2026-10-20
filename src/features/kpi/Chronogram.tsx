@@ -169,6 +169,7 @@ function Plot({
       )
       .map((e) => ({
         name: e.label,
+        seq: e.seq,
         xAxis: e.t_rel_s,
         label: {
           formatter: e.type === "task" ? e.label.split(" · ")[0] : e.type.toUpperCase(),
@@ -269,12 +270,20 @@ function Plot({
             xAxisIndex: i,
             yAxisIndex: stacked ? i : 0,
             data: [],
-            markLine: { symbol: "none", silent: true, data: markers },
+            markLine: { symbol: "none", silent: false, triggerEvent: true, data: markers },
           })),
         ],
       } as EChartsOption,
       true,
     );
+    chart.current.off("click");
+    chart.current.on("click", (event: unknown) => {
+      const hit = event as { componentType?: string; data?: { seq?: number } };
+      if (hit.componentType === "markLine" && hit.data?.seq !== undefined)
+        window.location.assign(
+          `/signaling?capture_id=${encodeURIComponent(data.capture_id)}&seq=${hit.data.seq}`,
+        );
+    });
   }, [ready, data, events, stacked, start, end]);
   return (
     <>

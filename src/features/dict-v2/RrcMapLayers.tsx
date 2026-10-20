@@ -126,7 +126,10 @@ export function RrcMapLayers({ map, data }: { map: MlMap | null; data: DictMapRe
             );
       const observations = [
         ...new Map(
-          matches.map((f) => [String(f.properties?.id), byId.get(String(f.properties?.id))]),
+          matches.map((f) => [
+            String(f.properties?.["id"]),
+            byId.get(String(f.properties?.["id"])),
+          ]),
         ).values(),
       ].filter((p): p is (typeof colored)[number] => !!p);
       if (!observations.length || cancelled) return;

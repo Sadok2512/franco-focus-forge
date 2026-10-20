@@ -19,6 +19,7 @@ import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRfRouteImport } from './routes/_app.rf'
 import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
+import { Route as AppSignalingRouteImport } from './routes/_app.signaling'
 import { Route as AppProjectsProjectIdRouteImport } from './routes/_app.projects.$projectId'
 import { Route as AppResultsResultIdRouteImport } from './routes/_app.results.$resultId'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
@@ -79,6 +80,11 @@ const AppRrcRoute = AppRrcRouteImport.update({
 const AppSettingsRoute = AppSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSignalingRoute = AppSignalingRouteImport.update({
+  id: '/signaling',
+  path: '/signaling',
   getParentRoute: () => AppRoute,
 } as any)
 const AppProjectsProjectIdRoute = AppProjectsProjectIdRouteImport.update({
@@ -154,6 +160,7 @@ export interface FileRoutesByFullPath {
   '/rf': typeof AppRfRoute
   '/rrc': typeof AppRrcRoute
   '/settings': typeof AppSettingsRouteWithChildren
+  '/signaling': typeof AppSignalingRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/results/$resultId': typeof AppResultsResultIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
@@ -176,6 +183,7 @@ export interface FileRoutesByTo {
   '/projects': typeof AppProjectsRouteWithChildren
   '/rf': typeof AppRfRoute
   '/rrc': typeof AppRrcRoute
+  '/signaling': typeof AppSignalingRoute
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/results/$resultId': typeof AppResultsResultIdRoute
   '/settings/about': typeof AppSettingsAboutRoute
@@ -201,6 +209,7 @@ export interface FileRoutesById {
   '/_app/rf': typeof AppRfRoute
   '/_app/rrc': typeof AppRrcRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
+  '/_app/signaling': typeof AppSignalingRoute
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/results/$resultId': typeof AppResultsResultIdRoute
   '/_app/settings/about': typeof AppSettingsAboutRoute
@@ -226,6 +235,7 @@ export interface FileRouteTypes {
     | '/rf'
     | '/rrc'
     | '/settings'
+    | '/signaling'
     | '/projects/$projectId'
     | '/results/$resultId'
     | '/settings/about'
@@ -248,6 +258,7 @@ export interface FileRouteTypes {
     | '/projects'
     | '/rf'
     | '/rrc'
+    | '/signaling'
     | '/projects/$projectId'
     | '/results/$resultId'
     | '/settings/about'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/_app/rf'
     | '/_app/rrc'
     | '/_app/settings'
+    | '/_app/signaling'
     | '/_app/projects/$projectId'
     | '/_app/results/$resultId'
     | '/_app/settings/about'
@@ -362,6 +374,13 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/signaling': {
+      id: '/_app/signaling'
+      path: '/signaling'
+      fullPath: '/signaling'
+      preLoaderRoute: typeof AppSignalingRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/projects/$projectId': {
@@ -501,6 +520,7 @@ interface AppRouteChildren {
   AppRfRoute: typeof AppRfRoute
   AppRrcRoute: typeof AppRrcRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
+  AppSignalingRoute: typeof AppSignalingRoute
   AppResultsResultIdRoute: typeof AppResultsResultIdRoute
 }
 
@@ -512,6 +532,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppRfRoute: AppRfRoute,
   AppRrcRoute: AppRrcRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
+  AppSignalingRoute: AppSignalingRoute,
   AppResultsResultIdRoute: AppResultsResultIdRoute,
 }
 

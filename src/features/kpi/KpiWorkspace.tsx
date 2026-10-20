@@ -1,3 +1,4 @@
+import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
 import {
   DropdownMenu,
@@ -202,7 +203,7 @@ function Workspace({
     setConfigs((prev) => ({ ...prev, [code]: next }));
     setSelectedRows(new Set());
   };
-  const [captureId, setCaptureId] = useState<string>();
+  const [captureId, setCaptureId] = useCaptureContext(projectId);
   // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
   // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.

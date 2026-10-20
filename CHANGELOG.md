@@ -1,3 +1,11 @@
+## 1.50.0 (minor) — BC4 2026-10-20 — Signaling View (Agent BC2)
+
+- Nouvelle page par capture : cinq couches, timeline brossable, trajet GPS précédent, liste triée/paginée et export CSV serveur.
+- Procédures explicites, contexte radio avec seq_gap, arbre des paramètres BC1 assainis et hex masqué si identité/non-certifié.
+- Capture partagée avec le chronogramme ; navigation depuis ses marqueurs vers le seq sélectionné.
+- Contrat OpenAPI 0.65.0, aucun calcul radio ou compteur au front. Adaptation TypeScript de deux accès à une propriété GeoJSON existante.
+- Écarts : maquette signaling-view.png absente ; route BC1 d’arbre par message absente (projection param_occurrence) ; aucune capture TEST2 déclarée indoor pour preuve réelle.
+
 ## 1.49.5 (minor) — BC4-FRONT 2026-10-20 — Catalogue Métriques : menu "…" par métrique (Agent BC2)
 
 - `MetricsCatalogSidebar.tsx` : ajout du menu `MoreVertical` par métrique, identique à celui du `KpiCatalogSidebar`. Expose les 4 vues de la carte Métrique (Histogramme, Graphique, Tableau, Carte) directement depuis l'arbre, sans passer par la carte.
