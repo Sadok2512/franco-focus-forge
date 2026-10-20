@@ -34,13 +34,20 @@ function Timeline({
         tooltip: { trigger: "axis" },
         legend: { top: 0, left: "center", data: layers, textStyle: { color: "#64748b" } },
         grid: { left: 48, right: 20, top: 40, bottom: 42 },
-        xAxis: { type: "value", name: "Temps capture (s)", nameLocation: "middle", nameGap: 26 },
+        xAxis: {
+          min: 0,
+          type: "value",
+          name: "Temps capture (s)",
+          nameLocation: "middle",
+          nameGap: 26,
+        },
         yAxis: { type: "value", name: "Messages" },
         brush: { xAxisIndex: 0, brushType: "lineX", toolbox: ["lineX", "clear"] },
         series: layers.map((name, i) => ({
           name,
           type: "bar",
           stack: "protocol",
+          barMaxWidth: 8,
           itemStyle: { color: colors[i] },
           data: data.buckets.map((b) => [b.t_rel_s, b.counts[name]]),
         })),
@@ -194,7 +201,7 @@ function SignalMap({ data, onSelect }: { data: SignalingPoints; onSelect: (seq: 
       </div>
     );
   return (
-    <div className="h-56 overflow-hidden rounded border">
+    <div className="h-56 overflow-hidden rounded border [&>div]:h-full">
       <KpiMapOSM
         center={[data.markers[0]!.lng!, data.markers[0]!.lat!]}
         zoom={13}
