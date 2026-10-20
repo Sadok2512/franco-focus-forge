@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Brush,
@@ -12,37 +12,57 @@ import {
   YAxis,
 } from "recharts";
 import { getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
+import { getMetricCaptures } from "@/lib/api/metrics";
 import { toUserMessage } from "@/lib/api/http";
 
 /** Vue Graphique — mode « Metric vs Time ».
  *
  *  Lit `(seq, time_s, value)` depuis
  *  `/projects/{pid}/captures/{cid}/kpi/{code}/time-series` et affiche
- *  une courbe simple. **Aucun contrôle UI ajouté** : capture déjà
- *  sélectionnée en amont, axes imposés par le contrat (X = capture
- *  time secondes, Y = unité catalogue), tooltip + zoom Brush fournis
- *  par recharts.
+ *  une courbe simple. **Aucun contrôle UI ajouté** : si aucune capture
+ *  n'est encore sélectionnée dans le workspace, le composant pré-charge
+ *  la liste `/metrics/captures` et appelle `onCaptureChange` sur la
+ *  première capture retournée. Axes imposés par le contrat
+ *  (X = capture time secondes, Y = unité catalogue), tooltip + zoom
+ *  Brush fournis par recharts.
  *
  *  Statuts non `AVAILABLE` : message explicite (jamais de bascule
  *  silencieuse vers un agrégat — règle du mandat #7). */
 export function MetricVsTimeChart({
   projectId,
   captureId,
+  onCaptureChange,
   code,
   unit,
   maxPoints = 5000,
   height = 235,
 }: {
   projectId: string;
-  captureId: string;
+  captureId: string | undefined;
+  onCaptureChange: (capture: string) => void;
   code: string;
   unit: string | null;
   maxPoints?: number;
   height?: number;
 }) {
+  // Auto-sélection : si aucune capture n'est encore active au niveau
+  // du workspace (cas user qui ouvre Graphique sans passer par
+  // Chronogramme), on remonte la première capture connue du projet.
+  const captures = useQuery({
+    queryKey: ["metric-captures", projectId],
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    enabled: !captureId,
+  });
+  useEffect(() => {
+    const first = captures.data?.[0]?.capture_id;
+    if (!captureId && first) onCaptureChange(first);
+  }, [captureId, captures.data, onCaptureChange]);
+
   const query = useQuery({
     queryKey: ["kpi-timeseries", projectId, captureId, code, maxPoints],
-    queryFn: ({ signal }) => getKpiTimeSeries(projectId, captureId, code, maxPoints, signal),
+    queryFn: ({ signal }) =>
+      getKpiTimeSeries(projectId, captureId as string, code, maxPoints, signal),
+    enabled: !!captureId,
   });
 
   const data = query.data;
@@ -53,6 +73,30 @@ export function MetricVsTimeChart({
         .map((p) => ({ seq: p.seq, time_s: p.time_s, value: p.value as number })),
     [data],
   );
+
+  if (!captureId) {
+    if (captures.isError) {
+      return (
+        <div className="kpi-chart-state" role="alert">
+          <strong>Capture indisponible</strong>
+          <p>{toUserMessage(captures.error)}</p>
+        </div>
+      );
+    }
+    if (!captures.isPending && captures.data && captures.data.length === 0) {
+      return (
+        <div className="kpi-chart-state" role="status">
+          <strong>Aucune capture disponible</strong>
+          <p>Ce projet ne contient pas de capture avec mesures Nemo décodées.</p>
+        </div>
+      );
+    }
+    return (
+      <div className="kpi-chart-state animate-pulse" role="status">
+        Sélection automatique d’une capture…
+      </div>
+    );
+  }
 
   if (query.isPending) {
     return (

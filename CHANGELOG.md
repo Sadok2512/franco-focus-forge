@@ -1,3 +1,10 @@
+## 1.42.1 (patch) — BC4-FRONT 2026-10-20 — Auto-sélection capture en vue Graphique (Agent BC2)
+
+- Correction : la vue Graphique restait sur le rendu agrégé quand l'utilisateur n'avait pas d'abord ouvert Chronogramme (aucune `captureId` au niveau workspace). La courbe `(time_s, value)` ne se déclenchait jamais.
+- `MetricVsTimeChart` prend désormais `captureId: string | undefined` et appelle `/projects/{p}/metrics/captures` pour choisir la 1re capture et la remonter via `onCaptureChange` — zéro contrôle UI ajouté, zéro clic supplémentaire demandé (règle du mandat #2).
+- `KpiGraphCard` retire la gate `&& captureId` sur la branche Graphique : la décision de rendu dépend uniquement de `temporal_source != null`. Le composant gère son propre état de pré-chargement et affiche "Sélection automatique d'une capture…" pendant l'auto-sélection.
+- Validé par la garde Playwright `browser-no-capture.mjs` qui ouvre directement Graphique sans passer par Chronogramme : `/metrics/captures` déclenché, `/time-series` déclenché, courbe recharts rendue (1826 points, Test_3 047e3f34e0af).
+
 ## 1.42.0 (minor) — BC4-FRONT 2026-10-20 — Vue Graphique → série temporelle automatique (Agent BC2)
 
 - Mode Graphique : lorsque le KPI sélectionné a `temporal_source != null` ET qu'une capture est active, la vue affiche directement la courbe `(temps capture, valeur)` depuis le nouveau endpoint back `/projects/{pid}/captures/{cid}/kpi/{code}/time-series` (0.59.0).

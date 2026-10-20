@@ -327,16 +327,18 @@ export function KpiGraphCard({
           selectedCapture={captureId}
           onCaptureChange={onCaptureChange}
         />
-      ) : config.visualization === "graph" && seriesAvailable && captureId ? (
-        // 1.42.0 — Metric vs Time : capture déjà sélectionnée + KPI
-        // avec `temporal_source` non-null → courbe (time_s, value) via
-        // la route générique `/captures/{cid}/kpi/{code}/time-series`.
-        // Pas de bouton, pas de panneau : branche indépendante de la
-        // requête KPI agrégée (son chargement/statut ne gate pas la
-        // courbe temporelle, qui a son propre endpoint).
+      ) : config.visualization === "graph" && seriesAvailable ? (
+        // 1.42.0 — Metric vs Time : si le KPI a `temporal_source` non-null,
+        // la vue Graphique rend la courbe (time_s, value) issue de la route
+        // générique `/captures/{cid}/kpi/{code}/time-series`. Pas de bouton,
+        // pas de panneau : branche indépendante de la requête KPI agrégée.
+        // Si aucune capture n'est encore active au workspace, le composant
+        // auto-sélectionne la première capture connue via /metrics/captures
+        // (règle du mandat #2 — ne pas demander de sélection manuelle).
         <MetricVsTimeChart
           projectId={projectId}
           captureId={captureId}
+          onCaptureChange={onCaptureChange}
           code={entry.item.code}
           unit={entry.item.unit ?? null}
           height={full ? 430 : 235}
@@ -673,7 +675,7 @@ export function KpiGraphCard({
               ? "Observations appariées · points API"
               : "Série temporelle · points API"
             : config.visualization === "graph"
-              ? seriesAvailable && captureId
+              ? seriesAvailable
                 ? "Série temporelle · capture sélectionnée"
                 : "Points agrégés · aucune série temporelle"
               : "Comparaison des agrégats"}
