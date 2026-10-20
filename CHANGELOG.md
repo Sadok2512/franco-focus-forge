@@ -1,3 +1,8 @@
+## 1.48.0 (minor) — BC4-FRONT 2026-10-20 — Points KPI géolocalisés par capture (Agent BC1)
+
+- Branche la carte KPI sur les coordonnées réelles de `/time-series`, avec sélection de capture, cadrage automatique et infobulle valeur/unité/capture/séquence/result_id. Réutilise le cache des observations ; aucun rapprochement GPS ni attribution opérateur supposés.
+- Affiche uniquement les observations AVAILABLE avec coordonnées valides et preuve ; explique les absences, erreurs et l’échantillonnage API. Les filtres non pris en charge par cet endpoint bloquent explicitement les marqueurs, sans être ignorés. Backend inchangé.
+
 ## 1.47.0 (minor) — BC4-FRONT 2026-10-20 — Carte dans Visualisation KPI (Agent BC1)
 
 - Rend le menu Visualisation du KPI actif accessible dans la barre du workspace, avec l’option Carte et les vues existantes.

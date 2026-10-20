@@ -1,4 +1,4 @@
-import { KpiMapOSM } from "./KpiMapOSM";
+import { KpiMeasurementMap } from "./KpiMeasurementMap";
 import { Chronogram } from "./Chronogram";
 import { MetricVsTimeChart } from "./MetricVsTimeChart";
 import { TaskScatter } from "./TaskScatter";
@@ -312,10 +312,12 @@ export function KpiGraphCard({
   const body = (
     <>
       {config.visualization === "map" ? (
-        <KpiMapOSM
-          premium
-          showOperatorLegend={false}
-          measurementStatus="Fond de carte uniquement · points KPI filtrés indisponibles"
+        <KpiMeasurementMap
+          projectId={projectId}
+          code={entry.item.code}
+          captureId={captureId}
+          onCaptureChange={onCaptureChange}
+          filters={appliedFilters}
         />
       ) : taskView && blockedReason ? (
         <div className="kpi-chart-state" role="status">
