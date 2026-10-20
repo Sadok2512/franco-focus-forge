@@ -11,23 +11,44 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { X } from "lucide-react";
+import { BarChart3, ChartNoAxesCombined, MapPin, Table2, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { operatorColor } from "./workspace-model";
 
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *
- *  Deux visualisations partagées avec les KPI :
- *   - **histogram** : p50 (ou p90) par opérateur depuis
- *     `/projects/{p}/metrics/{code}/aggregate?group_by=operator`
- *     (reuse strict de l'attribution opérateur du back).
- *   - **chronogram** : réutilise le composant `<Chronogram>` existant
- *     avec `codes=[metric_code]` ; expose la courbe temporelle sur la
- *     capture sélectionnée.
+ *  Quatre visualisations alignées sur le menu KPI :
+ *   - **histogram** : P10/P50/P90 par opérateur depuis
+ *     `/projects/{p}/metrics/{code}/aggregate?group_by=operator`.
+ *   - **graph** : courbe (t_rel_s, value) depuis `/metrics/series` sur
+ *     la 1re capture auto-sélectionnée (`/metrics/captures`).
+ *   - **table** : table HTML des groupes de l'agrégat (opérateur, n,
+ *     P10/P50/P90). Même source que histogram, affichage brut.
+ *   - **map** : indisponible — `/metrics/series` ne renvoie pas de GPS.
  *
- *  Jamais de valeur fabriquée : les percentiles proviennent du back
- *  (règles identiques aux KPI nmf_metric), aucune interpolation front. */
+ *  Règle 1/2 : aucune valeur fabriquée, aucune interpolation front. */
+type MetricView = "histogram" | "graph" | "table" | "map";
+const VIEW_LABELS: Record<MetricView, string> = {
+  histogram: "Histogramme",
+  graph: "Graphique",
+  table: "Tableau",
+  map: "Carte",
+};
+const VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
+  histogram: BarChart3,
+  graph: ChartNoAxesCombined,
+  table: Table2,
+  map: MapPin,
+};
+
 export function MetricGraphCard({
   projectId,
   code,
@@ -49,10 +70,8 @@ export function MetricGraphCard({
   appliedFilters: KpiQueryFilters;
   onRemove: () => void;
 }) {
-  // 1.49.3 — selector histogramme / temps. Deux lectures du même code :
-  //   - histogram : /metrics/{code}/aggregate?group_by=operator (ECharts)
-  //   - time      : /metrics/series?codes=X&capture_id=auto (recharts)
-  const [view, setView] = useState<"histogram" | "time">("histogram");
+  const [view, setView] = useState<MetricView>("histogram");
+  const ActiveIcon = VIEW_ICONS[view];
   return (
     <article
       id={`metric-graph-${code}`}
@@ -70,15 +89,30 @@ export function MetricGraphCard({
           </p>
         </div>
         <div className="flex gap-0.5 shrink-0 items-center">
-          <select
-            aria-label={`Vue ${label}`}
-            value={view}
-            onChange={(e) => setView(e.target.value as "histogram" | "time")}
-            className="rounded-md border bg-background px-2 py-1 text-xs"
-          >
-            <option value="histogram">Histogramme opérateur</option>
-            <option value="time">En fonction du temps</option>
-          </select>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button
+                className="kpi-button"
+                aria-label={`Visualisation ${label}`}
+                data-testid="metric-view-trigger"
+              >
+                <ActiveIcon size={13} />
+                {VIEW_LABELS[view]}
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start">
+              <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
+              {(Object.keys(VIEW_LABELS) as MetricView[]).map((mode) => {
+                const Icon = VIEW_ICONS[mode];
+                return (
+                  <DropdownMenuItem key={mode} onSelect={() => setView(mode)}>
+                    <Icon size={14} />
+                    {VIEW_LABELS[mode]}
+                  </DropdownMenuItem>
+                );
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <button
             className="kpi-icon"
             title="Retirer la métrique"
@@ -97,8 +131,23 @@ export function MetricGraphCard({
           unit={unit}
           appliedFilters={appliedFilters}
         />
-      ) : (
+      ) : view === "graph" ? (
         <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} />
+      ) : view === "table" ? (
+        <MetricAggregateTable
+          projectId={projectId}
+          code={code}
+          unit={unit}
+          appliedFilters={appliedFilters}
+        />
+      ) : (
+        <div className="kpi-chart-state" role="status" data-testid="metric-map-state">
+          <strong>Carte non disponible pour cette métrique</strong>
+          <p>
+            L'endpoint <code>/metrics/series</code> ne retourne pas de coordonnées GPS. Utilisez un
+            KPI géolocalisé (vue Carte) pour positionner les mesures.
+          </p>
+        </div>
       )}
     </article>
   );
@@ -241,6 +290,93 @@ function MetricAggregatePlot({
       data-testid="metric-aggregate-plot"
       aria-label={`Histogramme ${label} par opérateur : ${query.data.groups.map((g) => `${g.operator ?? "N/D"} ${g.p50 ?? "—"} ${unit}`).join(" ; ")}`}
     />
+  );
+}
+
+/** 1.49.4 — Table HTML des groupes de l'agrégat métrique. Même source
+ *  que l'histogramme (`/metrics/{code}/aggregate?group_by=operator`),
+ *  rendu brut : opérateur, n, P10/P50/P90. Pas de calcul front. */
+function MetricAggregateTable({
+  projectId,
+  code,
+  unit,
+  appliedFilters,
+}: {
+  projectId: string;
+  code: string;
+  unit: string;
+  appliedFilters: KpiQueryFilters;
+}) {
+  const query = useQuery({
+    queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
+    queryFn: ({ signal }) =>
+      getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+  });
+  if (query.isPending)
+    return (
+      <div className="kpi-chart-state animate-pulse" role="status">
+        Chargement de l'agrégat…
+      </div>
+    );
+  if (query.isError)
+    return (
+      <div className="kpi-chart-state" role="alert">
+        <strong>Agrégat indisponible</strong>
+        <p>{query.error.message}</p>
+      </div>
+    );
+  const groups = query.data?.groups ?? [];
+  if (!groups.length)
+    return (
+      <div className="kpi-chart-state" role="status">
+        Aucun point retourné pour cette métrique sur ce projet.
+      </div>
+    );
+  const fmt = (v: number | null) =>
+    v === null ? "—" : v.toFixed(unit === "%" ? 2 : unit === "dB" || unit === "dBm" ? 1 : 2);
+  return (
+    <div className="kpi-data-table" data-testid="metric-aggregate-table">
+      <div className="kpi-table-scroll" style={{ maxHeight: 235 }}>
+        <table>
+          <thead>
+            <tr>
+              <th>Opérateur</th>
+              <th className="numeric">n</th>
+              <th className="numeric">P10</th>
+              <th className="numeric">P50</th>
+              <th className="numeric">P90</th>
+              <th>Unité</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[...groups]
+              .sort((a, b) => (b.n || 0) - (a.n || 0))
+              .map((g, i) => (
+                <tr key={`${g.operator ?? "nd"}-${i}`}>
+                  <td>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: 8,
+                        height: 8,
+                        borderRadius: 2,
+                        background: operatorColor(g.operator),
+                        marginRight: 6,
+                      }}
+                    />
+                    {g.operator ?? "Non attribué"}
+                  </td>
+                  <td className="numeric">{g.n.toLocaleString("fr-FR")}</td>
+                  <td className="numeric">{fmt(g.p10)}</td>
+                  <td className="numeric">{fmt(g.p50)}</td>
+                  <td className="numeric">{fmt(g.p90)}</td>
+                  <td>{unit}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
   );
 }
 

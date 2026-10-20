@@ -1,3 +1,13 @@
+## 1.49.4 (minor) — BC4-FRONT 2026-10-20 — MetricGraphCard : menu Visualisation 4 vues (Agent BC2)
+
+- `MetricGraphCard.tsx` : remplace le `<select>` histogramme/temps par un `DropdownMenu` identique au menu Visualisation du KPI. Quatre modes exposés : **Histogramme**, **Graphique**, **Tableau**, **Carte**.
+- **Histogramme** (inchangé) : P10/P50/P90 par opérateur, ECharts barres groupées (`/metrics/{code}/aggregate?group_by=operator`).
+- **Graphique** (anciennement "Temps") : courbe `(t_rel_s, value)` recharts depuis `/metrics/series` sur la 1re capture auto-sélectionnée.
+- **Tableau** (nouveau) : table HTML des groupes de l'agrégat (opérateur, n, P10/P50/P90, unité). Même source que l'histogramme, aucun recalcul front.
+- **Carte** (nouveau) : état "indisponible" explicite — l'endpoint `/metrics/series` ne renvoie pas de coordonnées GPS. Pas de valeur fabriquée (Règle 2).
+- Icônes alignées sur `VisualizationMenu` KPI : `BarChart3`, `ChartNoAxesCombined`, `Table2`, `MapPin`.
+- Validé en navigateur sur `pdsch_bler` (Test_outdoor) : histogramme 3 opérateurs, graphique 2419 points, table 3 lignes, carte état indisponible — zéro erreur JS.
+
 ## 1.49.3 (minor) — BC4-FRONT 2026-10-20 — MetricGraphCard : vue "en fonction du temps" (Agent BC2)
 
 - `MetricGraphCard.tsx` : nouveau sélecteur `Histogramme opérateur` / `En fonction du temps` dans l'en-tête de la carte. Deux lectures du même code métrique, aucun nouveau endpoint back.
