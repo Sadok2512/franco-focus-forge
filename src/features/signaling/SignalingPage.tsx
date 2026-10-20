@@ -8,6 +8,10 @@ import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/ap
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 
+import { Group, Panel, Separator } from "react-resizable-panels";
+import { DecoderTree } from "./DecoderTree";
+import "./signaling.css";
+
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = ["#2563eb", "#7c3aed", "#ea580c", "#0891b2", "#16a34a"];
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
@@ -109,7 +113,7 @@ function Timeline({
   return (
     <div
       ref={host}
-      className="h-56"
+      className="h-full min-h-0 flex-1"
       data-testid="signaling-timeline"
       data-selected-time={selectedTime ?? undefined}
       aria-label="Histogramme temporel, glisser pour filtrer"
@@ -238,8 +242,9 @@ function SignalMap({
         const el = document.createElement("div");
         el.dataset["testid"] = "selected-gps";
         el.dataset["seq"] = String(selectedSeq);
+        el.title = `GPS précédent · seq ${point.gps_seq} · Δseq ${point.seq_gap} ; position exacte du message non prouvée`;
         el.style.cssText =
-          "width:18px;height:18px;border:3px solid #dc2626;border-radius:50%;pointer-events:none;background:transparent";
+          "width:18px;height:18px;border:3px dashed #dc2626;border-radius:50%;pointer-events:none;background:transparent";
         marker = new ml.Marker({ element: el }).setLngLat([point.lng!, point.lat!]).addTo(map);
       });
     }
@@ -252,7 +257,7 @@ function SignalMap({
     return (
       <div
         role="status"
-        className="flex h-56 items-center justify-center rounded border bg-muted text-sm"
+        className="flex h-full items-center justify-center rounded border bg-muted text-sm"
       >
         plan {data.floorplan_id ?? "non renseigné"}, pas de position
       </div>
@@ -261,13 +266,13 @@ function SignalMap({
     return (
       <div
         role="status"
-        className="flex h-56 items-center justify-center rounded border bg-muted text-sm"
+        className="flex h-full items-center justify-center rounded border bg-muted text-sm"
       >
         Aucun GPS précédent prouvé dans cette capture
       </div>
     );
   return (
-    <div className="h-56 overflow-hidden rounded border [&>div]:h-full">
+    <div className="h-full min-h-0 flex-1 overflow-hidden rounded border [&>div]:h-full">
       <KpiMapOSM
         center={[data.markers[0]!.lng!, data.markers[0]!.lat!]}
         zoom={13}
@@ -281,31 +286,6 @@ function SignalMap({
   );
 }
 
-function Tree({ node }: { node: Record<string, unknown> }) {
-  return (
-    <ul className="space-y-1 border-l pl-3">
-      {Object.entries(node).map(([key, value]) =>
-        key === "$value" ? (
-          <li key={key} className="font-mono text-primary">
-            {shown(value)}
-          </li>
-        ) : value && typeof value === "object" ? (
-          <li key={key}>
-            <details open>
-              <summary className="cursor-pointer">{key}</summary>
-              <Tree node={value as Record<string, unknown>} />
-            </details>
-          </li>
-        ) : (
-          <li key={key}>
-            {key}: {shown(value)}
-          </li>
-        ),
-      )}
-    </ul>
-  );
-}
-
 export function SignalingPage({
   projectId,
   initialCapture,
@@ -315,6 +295,14 @@ export function SignalingPage({
   initialCapture?: string | undefined;
   initialSeq?: number | undefined;
 }) {
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 900px)");
+    const update = () => setNarrow(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -473,408 +461,517 @@ export function SignalingPage({
           {String(error?.message ?? exportError)}
         </p>
       )}
-      <div className="grid items-start gap-3 xl:grid-cols-[230px_minmax(420px,1fr)_420px]">
-        <aside className="row-span-2 space-y-5 rounded-lg border bg-card p-3 text-sm">
-          <label className="block">
-            Technologie
-            <select
-              aria-label="Technologie signalisation"
-              className="mt-1 w-full rounded border bg-background p-2"
-              value={technology}
-              onChange={(e) => {
-                setTechnology(e.target.value);
-                resetPage();
-              }}
-            >
-              <option value="">LTE + NR / états non attribués</option>
-              <option>LTE</option>
-              <option>NR</option>
-            </select>
-          </label>
-          <fieldset className="space-y-2">
-            <legend className="mb-2 font-semibold">Couches</legend>
-            {layers.map((p, i) => (
-              <label key={p} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={protocols.includes(p)}
+      <div className="signaling-workspace">
+        <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-workspace">
+          <Panel
+            id="filters"
+            defaultSize={narrow ? "17%" : "16%"}
+            minSize={narrow ? 220 : 185}
+            maxSize={narrow ? "30%" : "26%"}
+          >
+            <aside className="signaling-pane overflow-auto space-y-4 rounded-lg border bg-card p-3 text-sm">
+              <label className="block">
+                Technologie
+                <select
+                  aria-label="Technologie signalisation"
+                  className="mt-1 w-full rounded border bg-background p-2"
+                  value={technology}
                   onChange={(e) => {
-                    setProtocols((old) =>
-                      e.target.checked ? [...old, p] : old.filter((x) => x !== p),
-                    );
+                    setTechnology(e.target.value);
                     resetPage();
                   }}
-                />
-                <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
-                {p}
-                <span className="ml-auto font-mono text-xs">
-                  {shown(listing.data?.protocol_counts[p])}
-                </span>
+                >
+                  <option value="">LTE + NR / états non attribués</option>
+                  <option>LTE</option>
+                  <option>NR</option>
+                </select>
               </label>
-            ))}
-          </fieldset>
-          <label className="block">
-            Direction
-            <select
-              aria-label="Direction"
-              className="mt-1 w-full rounded border bg-background p-2"
-              value={direction}
-              onChange={(e) => {
-                setDirection(e.target.value);
-                resetPage();
-              }}
-            >
-              <option value="">Toutes</option>
-              <option>UL</option>
-              <option>DL</option>
-              <option value="unknown">Non documentée</option>
-            </select>
-          </label>
-          <label className="block">
-            Capture
-            <select
-              aria-label="Capture signalisation"
-              className="mt-1 w-full rounded border bg-background p-2"
-              value={capture ?? ""}
-              onChange={(e) => chooseCapture(e.target.value)}
-            >
-              {caps.data?.captures.map((c) => (
-                <option key={c.capture_id} value={c.capture_id}>
-                  {c.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block">
-            Procédure
-            <select
-              aria-label="Procédure"
-              className="mt-1 w-full rounded border bg-background p-2"
-              value={procedure}
-              onChange={(e) => {
-                setProcedure(e.target.value);
-                resetPage();
-              }}
-            >
-              <option value="">Toutes{procedures.data ? ` (${procedures.data.total})` : ""}</option>
-              {procedures.data &&
-                Object.keys(procedures.data.types)
-                  .sort()
-                  .map((type) => (
-                    <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
-                      {procedures
-                        .data!.procedures.filter((p) => p.type === type)
-                        .map((p) => (
-                          <option key={p.id} value={p.id}>
-                            seq {p.seq_start}
-                            {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
-                            {p.outcome}
-                          </option>
-                        ))}
-                    </optgroup>
+              <fieldset className="space-y-2">
+                <legend className="mb-2 font-semibold">Couches</legend>
+                {layers.map((p, i) => (
+                  <label key={p} className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={protocols.includes(p)}
+                      onChange={(e) => {
+                        setProtocols((old) =>
+                          e.target.checked ? [...old, p] : old.filter((x) => x !== p),
+                        );
+                        resetPage();
+                      }}
+                    />
+                    <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
+                    {p}
+                    <span className="ml-auto font-mono text-xs">
+                      {shown(listing.data?.protocol_counts[p])}
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+              <label className="block">
+                Direction
+                <select
+                  aria-label="Direction"
+                  className="mt-1 w-full rounded border bg-background p-2"
+                  value={direction}
+                  onChange={(e) => {
+                    setDirection(e.target.value);
+                    resetPage();
+                  }}
+                >
+                  <option value="">Toutes</option>
+                  <option>UL</option>
+                  <option>DL</option>
+                  <option value="unknown">Non documentée</option>
+                </select>
+              </label>
+              <label className="block">
+                Capture
+                <select
+                  aria-label="Capture signalisation"
+                  className="mt-1 w-full rounded border bg-background p-2"
+                  value={capture ?? ""}
+                  onChange={(e) => chooseCapture(e.target.value)}
+                >
+                  {caps.data?.captures.map((c) => (
+                    <option key={c.capture_id} value={c.capture_id}>
+                      {c.label}
+                    </option>
                   ))}
-            </select>
-          </label>
-          <label className="block">
-            Recherche
-            <input
-              aria-label="Rechercher un message"
-              placeholder="Nom du message"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                resetPage();
-              }}
-              className="mt-1 w-full rounded border bg-background p-2"
-            />
-          </label>
-          <label className="block">
-            Taille de page
-            <select
-              aria-label="Taille de page"
-              value={size}
-              onChange={(e) => {
-                setSize(Number(e.target.value));
-                resetPage();
-              }}
-              className="ml-2 rounded border bg-background p-1"
-            >
-              {[50, 100, 250, 500].map((n) => (
-                <option key={n}>{n}</option>
-              ))}
-            </select>
-          </label>
-          {range && (
-            <button className="kpi-button" onClick={() => setRange(undefined)}>
-              Effacer la brosse
-            </button>
-          )}
-        </aside>
-        <section className="min-w-0 rounded-lg border bg-card p-3">
-          <h2 className="text-sm font-semibold">Timeline</h2>
-          {timeline.data ? (
-            <Timeline
-              data={timeline.data}
-              selectedTime={selected?.t_rel_s ?? null}
-              onRange={(r) => {
-                setRange(r);
-                resetPage();
-              }}
-            />
-          ) : (
-            <p role="status" className="p-10">
-              Chargement de la timeline…
-            </p>
-          )}
-        </section>
-        <section className="min-w-0 rounded-lg border bg-card p-3">
-          <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
-          {points.data ? (
-            <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
-          ) : (
-            <p role="status">Chargement des positions…</p>
-          )}
-        </section>
-        <section className="min-w-0 overflow-hidden rounded-lg border bg-card">
-          <header className="flex items-center justify-between border-b p-3 text-sm">
-            <span>{shown(listing.data?.total)} messages</span>
-            <button
-              className="kpi-button"
-              disabled={!listing.data}
-              onClick={() => void exportCsv()}
-            >
-              Export CSV
-            </button>
-          </header>
-          <div className="max-h-[65vh] overflow-auto">
-            <table className="w-full text-xs" aria-label="Messages de signalisation">
-              <thead className="sticky top-0 bg-muted">
-                <tr>
-                  {[
-                    ["seq", "#"],
-                    ["t_rel_s", "Temps (s)"],
-                    ["protocol", "Couche"],
-                    ["direction", "Sens"],
-                    ["message_name", "Message"],
-                    ["cell", "ECGI / PCI"],
-                    ["size_bytes", "Octets"],
-                  ].map(([key, label]) => (
-                    <th key={key} className="p-2 text-left">
-                      {key === "direction" || key === "cell" ? (
-                        label
-                      ) : (
-                        <button
-                          onClick={() => {
-                            setSort(key!);
-                            setOrder((old) => (sort === key && old === "asc" ? "desc" : "asc"));
+                </select>
+              </label>
+              <label className="block">
+                Procédure
+                <select
+                  aria-label="Procédure"
+                  className="mt-1 w-full rounded border bg-background p-2"
+                  value={procedure}
+                  onChange={(e) => {
+                    setProcedure(e.target.value);
+                    resetPage();
+                  }}
+                >
+                  <option value="">
+                    Toutes{procedures.data ? ` (${procedures.data.total})` : ""}
+                  </option>
+                  {procedures.data &&
+                    Object.keys(procedures.data.types)
+                      .sort()
+                      .map((type) => (
+                        <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
+                          {procedures
+                            .data!.procedures.filter((p) => p.type === type)
+                            .map((p) => (
+                              <option key={p.id} value={p.id}>
+                                seq {p.seq_start}
+                                {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
+                                {p.outcome}
+                              </option>
+                            ))}
+                        </optgroup>
+                      ))}
+                </select>
+              </label>
+              <label className="block">
+                Recherche
+                <input
+                  aria-label="Rechercher un message"
+                  placeholder="Nom du message"
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    resetPage();
+                  }}
+                  className="mt-1 w-full rounded border bg-background p-2"
+                />
+              </label>
+              <label className="block">
+                Taille de page
+                <select
+                  aria-label="Taille de page"
+                  value={size}
+                  onChange={(e) => {
+                    setSize(Number(e.target.value));
+                    resetPage();
+                  }}
+                  className="ml-2 rounded border bg-background p-1"
+                >
+                  {[50, 100, 250, 500].map((n) => (
+                    <option key={n}>{n}</option>
+                  ))}
+                </select>
+              </label>
+              {range && (
+                <button className="kpi-button" onClick={() => setRange(undefined)}>
+                  Effacer la brosse
+                </button>
+              )}
+            </aside>
+          </Panel>
+          <Separator className="signaling-separator" aria-label="Largeur des filtres" />
+          <Panel id="workspace" minSize="55%">
+            <Group orientation="vertical" id="signaling-rows">
+              <Panel id="overview" defaultSize="32%" minSize={190}>
+                <Group orientation="horizontal" id="signaling-overview">
+                  <Panel id="timeline" defaultSize="65%" minSize="35%">
+                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
+                      <h2 className="text-sm font-semibold">Timeline</h2>
+                      {timeline.data ? (
+                        <Timeline
+                          data={timeline.data}
+                          selectedTime={selected?.t_rel_s ?? null}
+                          onRange={(r) => {
+                            setRange(r);
                             resetPage();
                           }}
-                        >
-                          {label}
-                        </button>
-                      )}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {listing.data?.rows.map((r) => (
-                  <tr
-                    key={r.seq}
-                    data-seq={r.seq}
-                    aria-selected={r.seq === seq}
-                    data-procedure-highlight={r.procedure_ids.some((id) => hover.includes(id))}
-                    onMouseEnter={() => setHover(r.procedure_ids)}
-                    onMouseLeave={() => setHover([])}
-                    onClick={() => chooseSeq(r.seq)}
-                    className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
-                  >
-                    <td className="p-2 font-mono">{r.seq}</td>
-                    <td className="p-2 font-mono">{timeShown(r.t_rel_s)}</td>
-                    <td className="p-2 whitespace-nowrap">{r.protocol}</td>
-                    <td className="p-2">{shown(r.direction)}</td>
-                    <td className="p-2">
-                      {r.message_name}
-                      {r.procedure_ids.map((id) => {
-                        const p = listing.data.procedures.find((p) => p.id === id);
-                        return p ? (
-                          <div key={id} className="text-[10px] text-muted-foreground">
-                            {p.type} · {shown(p.duration_ms)} ms · {p.outcome}
-                          </div>
-                        ) : null;
-                      })}
-                    </td>
-                    <td className="p-2">
-                      {shown(r.ecgi)} / {shown(r.pci)}
-                    </td>
-                    <td className="p-2">{shown(r.size_bytes)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <footer className="flex items-center justify-between p-3 text-xs">
-            <button
-              className="kpi-button"
-              disabled={!listing.data || listing.data.page <= 1}
-              onClick={() => {
-                setPage((listing.data?.page ?? 1) - 1);
-                setSeq(undefined);
-              }}
-            >
-              Précédent
-            </button>
-            <span>
-              Page {shown(listing.data?.page)} / {shown(listing.data?.pages)}
-            </span>
-            <button
-              className="kpi-button"
-              disabled={!listing.data || listing.data.page >= listing.data.pages}
-              onClick={() => {
-                setPage((listing.data?.page ?? 1) + 1);
-                setSeq(undefined);
-              }}
-            >
-              Suivant
-            </button>
-          </footer>
-          {listing.isFetching && (
-            <p role="status" className="p-2 text-xs">
-              Chargement des messages…
-            </p>
-          )}
-        </section>
-        <section
-          className="min-w-0 rounded-lg border bg-card p-3 text-xs"
-          aria-label="Détails du message"
-        >
-          <h2 className="mb-3 text-sm font-semibold">
-            {selected?.message_name ?? "Sélectionnez un message"}
-          </h2>
-          {seq !== undefined && (
-            <>
-              <dl className="mb-3 grid grid-cols-2 gap-2">
-                {Object.entries({
-                  Séquence: seq,
-                  "Temps (s)": timeShown(selected?.t_rel_s),
-                  Sens: selected?.direction,
-                  ECGI: context.data?.ecgi ?? selected?.ecgi,
-                  PCI: context.data?.radio["pci"]?.value ?? selected?.pci,
-                  "Taille (octets)": selected?.size_bytes,
-                  "eNB/gNB": context.data?.enb_gnb_id,
-                  Secteur: context.data?.sector,
-                  Latitude: position?.lat,
-                  Longitude: position?.lng,
-                  "Vitesse GPS": radioShown(context.data?.radio["speed"]?.value, "km/h"),
-                }).map(([k, v]) => (
-                  <div key={k}>
-                    <dt className="text-muted-foreground">{k}</dt>
-                    <dd className="break-all font-mono">{shown(v)}</dd>
-                  </div>
-                ))}
-              </dl>
-              {context.isPending && <p role="status">Chargement du contexte radio…</p>}
-              {context.isError && (
-                <p role="alert">
-                  Contexte radio indisponible.{" "}
-                  <button onClick={() => void context.refetch()}>Réessayer le contexte</button>
-                </p>
-              )}
-              {points.data && (position?.lat == null || position?.lng == null) && (
-                <p role="status">Aucune position GPS prouvée pour ce message.</p>
-              )}
-              <h3 className="border-t pt-3 font-semibold">Contexte radio précédent</h3>
-              <div className="my-2 grid grid-cols-2 gap-2">
-                {Object.entries(context.data?.radio ?? {}).map(([name, v]) => (
-                  <div key={name} title={v.reason ?? `${v.source}, seq ${shown(v.seq)}`}>
-                    <span className="text-muted-foreground">{name}</span>
-                    <div>
-                      {radioShown(v.value, v.unit)} {v.unit}
-                    </div>
-                    <small>
-                      Δseq : {shown(v.seq_gap)} · Δt : {timeShown(v.time_gap_s)}
-                      {v.time_gap_s == null ? "" : " s"}
-                    </small>
-                    <div className="text-xs text-muted-foreground">
-                      {v.temporal_relation === "same_timestamp"
-                        ? "Précédente en séquence · même horodatage"
-                        : "Mesure précédente"}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div role="tablist" className="mt-3 flex flex-wrap gap-1 border-t py-2">
-                {["Arborescence", "Vue texte", "Hexadécimal", "Paramètres"].map((name) => (
-                  <button
-                    role="tab"
-                    aria-selected={tab === name}
-                    key={name}
-                    className={`rounded px-2 py-1 ${tab === name ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                    onClick={() => setTab(name)}
-                  >
-                    {name}
-                  </button>
-                ))}
-              </div>
-              {details.isError ? (
-                <p role="alert">
-                  Erreur de récupération du décodage.{" "}
-                  <button onClick={() => void details.refetch()}>Réessayer le décodage</button>
-                </p>
-              ) : details.isPending ? (
-                <p role="status">Chargement du décodage…</p>
-              ) : (
-                details.data && (
-                  <div
-                    className="max-h-[45vh] overflow-auto break-words"
-                    data-testid="signaling-details"
-                  >
-                    {tab === "Arborescence" ? (
-                      details.data.parameters.length ? (
-                        <Tree node={details.data.tree} />
+                        />
                       ) : (
-                        <p>Décodage ASN.1 indisponible pour ce message</p>
-                      )
-                    ) : tab === "Vue texte" ? (
-                      <pre className="whitespace-pre-wrap">
-                        {details.data.text || "Aucun paramètre décodé disponible."}
-                      </pre>
-                    ) : tab === "Hexadécimal" ? (
-                      details.data.hex ? (
-                        <pre className="whitespace-pre-wrap break-all">{details.data.hex}</pre>
-                      ) : (
-                        <p role="status" className="rounded bg-muted p-3">
-                          {details.data.hex_reason}
+                        <p role="status" className="p-10">
+                          Chargement de la timeline…
                         </p>
-                      )
-                    ) : (
-                      <ul>
-                        {details.data.parameters.map((p, i) => (
-                          <li key={`${p.path}:${i}`} className="border-b py-1">
-                            <a
-                              href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
-                              className="text-primary underline"
-                            >
-                              {p.path}
-                            </a>{" "}
-                            = {shown(p.value)}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )
-              )}
-              <details className="mt-3 text-muted-foreground">
-                <summary>Sources et limites</summary>
-                <p>{details.data?.tree_source}</p>
-                <p>{details.data?.tree_route_gap}</p>
-                <p>{context.data?.identity_reason}</p>
-                <p>result_id : {details.data?.result_id}</p>
-              </details>
-            </>
-          )}
-        </section>
+                      )}
+                    </section>
+                  </Panel>
+                  <Separator
+                    className="signaling-separator"
+                    aria-label="Largeur timeline et carte"
+                  />
+                  <Panel id="map" minSize="25%">
+                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
+                      <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
+                      {points.data ? (
+                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
+                      ) : (
+                        <p role="status">Chargement des positions…</p>
+                      )}
+                    </section>
+                  </Panel>
+                </Group>
+              </Panel>
+              <Separator
+                className="signaling-separator"
+                aria-label="Hauteur de la vue d’ensemble"
+              />
+              <Panel id="inspection" minSize={300}>
+                <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
+                  <Panel id="messages" defaultSize="55%" minSize={narrow ? 220 : "30%"}>
+                    <section className="signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card">
+                      <header className="flex items-center justify-between border-b p-3 text-sm">
+                        <span>{shown(listing.data?.total)} messages</span>
+                        <button
+                          className="kpi-button"
+                          disabled={!listing.data}
+                          onClick={() => void exportCsv()}
+                        >
+                          Export CSV
+                        </button>
+                      </header>
+                      <div className="min-h-0 flex-1 overflow-auto">
+                        <table className="w-full text-xs" aria-label="Messages de signalisation">
+                          <thead className="sticky top-0 bg-muted">
+                            <tr>
+                              {[
+                                ["seq", "#"],
+                                ["t_rel_s", "Temps (s)"],
+                                ["protocol", "Couche"],
+                                ["direction", "Sens"],
+                                ["message_name", "Message"],
+                                ["cell", "ECGI / PCI"],
+                                ["size_bytes", "Octets"],
+                              ].map(([key, label]) => (
+                                <th key={key} className="p-2 text-left">
+                                  {key === "direction" || key === "cell" ? (
+                                    label
+                                  ) : (
+                                    <button
+                                      onClick={() => {
+                                        setSort(key!);
+                                        setOrder((old) =>
+                                          sort === key && old === "asc" ? "desc" : "asc",
+                                        );
+                                        resetPage();
+                                      }}
+                                    >
+                                      {label}
+                                    </button>
+                                  )}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {listing.data?.rows.map((r) => (
+                              <tr
+                                key={r.seq}
+                                data-seq={r.seq}
+                                aria-selected={r.seq === seq}
+                                data-procedure-highlight={r.procedure_ids.some((id) =>
+                                  hover.includes(id),
+                                )}
+                                onMouseEnter={() => setHover(r.procedure_ids)}
+                                onMouseLeave={() => setHover([])}
+                                onClick={() => chooseSeq(r.seq)}
+                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
+                              >
+                                <td className="p-2 font-mono">{r.seq}</td>
+                                <td className="p-2 font-mono">{timeShown(r.t_rel_s)}</td>
+                                <td className="p-2 whitespace-nowrap">{r.protocol}</td>
+                                <td className="p-2">{shown(r.direction)}</td>
+                                <td className="p-2">
+                                  {r.message_name}
+                                  {r.procedure_ids.map((id) => {
+                                    const p = listing.data.procedures.find((p) => p.id === id);
+                                    return p ? (
+                                      <div key={id} className="text-[10px] text-muted-foreground">
+                                        {p.type} · {shown(p.duration_ms)} ms · {p.outcome}
+                                      </div>
+                                    ) : null;
+                                  })}
+                                </td>
+                                <td className="p-2">
+                                  {shown(r.ecgi)} / {shown(r.pci)}
+                                </td>
+                                <td className="p-2">{shown(r.size_bytes)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      <footer className="flex items-center justify-between p-3 text-xs">
+                        <button
+                          className="kpi-button"
+                          disabled={!listing.data || listing.data.page <= 1}
+                          onClick={() => {
+                            setPage((listing.data?.page ?? 1) - 1);
+                            setSeq(undefined);
+                          }}
+                        >
+                          Précédent
+                        </button>
+                        <span>
+                          Page {shown(listing.data?.page)} / {shown(listing.data?.pages)}
+                        </span>
+                        <button
+                          className="kpi-button"
+                          disabled={!listing.data || listing.data.page >= listing.data.pages}
+                          onClick={() => {
+                            setPage((listing.data?.page ?? 1) + 1);
+                            setSeq(undefined);
+                          }}
+                        >
+                          Suivant
+                        </button>
+                      </footer>
+                      {listing.isFetching && (
+                        <p role="status" className="p-2 text-xs">
+                          Chargement des messages…
+                        </p>
+                      )}
+                    </section>
+                  </Panel>
+                  <Separator
+                    className="signaling-separator"
+                    aria-label="Taille de la liste et du décodeur"
+                  />
+                  <Panel id="details" minSize={narrow ? 300 : "28%"}>
+                    <section
+                      className="signaling-pane flex flex-col rounded-lg border bg-card p-3 text-xs"
+                      aria-label="Détails du message"
+                    >
+                      <h2 className="mb-1 shrink-0 break-words text-sm font-semibold">
+                        {selected?.message_name ?? "Sélectionnez un message"}
+                      </h2>
+                      {seq !== undefined && (
+                        <>
+                          <div className="mb-2 flex shrink-0 flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
+                            <span>{shown(selected?.protocol)}</span>
+                            <span>{shown(selected?.direction)}</span>
+                            <span>{timeShown(selected?.t_rel_s)} s</span>
+                            <span>seq {seq}</span>
+                          </div>
+                          <div
+                            className="min-h-0 max-h-[44%] shrink-0 overflow-auto pr-1"
+                            data-testid="radio-scroll"
+                          >
+                            <dl className="mb-2 grid grid-cols-3 gap-x-3 gap-y-1">
+                              {Object.entries({
+                                ECGI: context.data?.ecgi ?? selected?.ecgi,
+                                "PCI message": selected?.pci,
+                                "Taille (octets)": selected?.size_bytes,
+                                "eNB/gNB": context.data?.enb_gnb_id,
+                                Secteur: context.data?.sector,
+                                "GPS précédent":
+                                  position?.lat != null && position?.lng != null
+                                    ? `${position.lat}, ${position.lng}`
+                                    : null,
+                              }).map(([k, v]) => (
+                                <div key={k}>
+                                  <dt className="text-muted-foreground">{k}</dt>
+                                  <dd className="break-all font-mono">{shown(v)}</dd>
+                                </div>
+                              ))}
+                            </dl>
+                            {context.isPending && (
+                              <p role="status">Chargement du contexte radio…</p>
+                            )}
+                            {context.isError && (
+                              <p role="alert">
+                                Contexte radio indisponible.{" "}
+                                <button onClick={() => void context.refetch()}>
+                                  Réessayer le contexte
+                                </button>
+                              </p>
+                            )}
+                            {points.data && (position?.lat == null || position?.lng == null) && (
+                              <p role="status">Aucune position GPS prouvée pour ce message.</p>
+                            )}
+                            {position?.lat != null && position?.lng != null && (
+                              <p className="mb-2 text-muted-foreground">
+                                GPS précédent · seq {shown(position.gps_seq)} · Δseq{" "}
+                                {shown(position.seq_gap)}. Position exacte du message non prouvée ;
+                                repère pointillé sur la carte.
+                              </p>
+                            )}
+                            <h3 className="border-t pt-2 font-semibold">
+                              Contexte radio précédent
+                            </h3>
+                            <div className="my-2 grid grid-cols-2 gap-x-3 gap-y-2">
+                              {Object.entries(context.data?.radio ?? {}).map(([name, v]) => (
+                                <div
+                                  key={name}
+                                  title={v.reason ?? `${v.source}, seq ${shown(v.seq)}`}
+                                >
+                                  <span className="text-muted-foreground">
+                                    {name === "pci"
+                                      ? "PCI précédent"
+                                      : name === "band"
+                                        ? "Bande"
+                                        : name === "speed"
+                                          ? "Vitesse"
+                                          : name === "bler_mac"
+                                            ? "BLER MAC"
+                                            : name.toUpperCase()}
+                                  </span>
+                                  <div>
+                                    {radioShown(v.value, v.unit)} {v.unit}
+                                  </div>
+                                  <small>
+                                    Δseq : {shown(v.seq_gap)} · Δt : {timeShown(v.time_gap_s)}
+                                    {v.time_gap_s == null ? "" : " s"}
+                                  </small>
+                                  <div className="text-xs text-muted-foreground">
+                                    {v.temporal_relation === "same_timestamp"
+                                      ? "Précédente en séquence · même horodatage"
+                                      : v.seq == null
+                                        ? "Aucune mesure précédente"
+                                        : "Mesure précédente"}
+                                  </div>
+                                  <div
+                                    className="truncate text-[10px] text-muted-foreground"
+                                    title={v.source}
+                                  >
+                                    Source : {v.source}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                          <div
+                            role="tablist"
+                            className="flex shrink-0 flex-wrap gap-1 border-t py-2"
+                          >
+                            {["Arborescence", "Vue texte", "Hexadécimal", "Paramètres"].map(
+                              (name) => (
+                                <button
+                                  role="tab"
+                                  aria-selected={tab === name}
+                                  key={name}
+                                  className={`rounded px-2 py-1 ${tab === name ? "bg-primary text-primary-foreground" : "bg-muted"}`}
+                                  onClick={() => setTab(name)}
+                                >
+                                  {name}
+                                </button>
+                              ),
+                            )}
+                          </div>
+                          {details.isError ? (
+                            <p role="alert">
+                              Erreur de récupération du décodage.{" "}
+                              <button onClick={() => void details.refetch()}>
+                                Réessayer le décodage
+                              </button>
+                            </p>
+                          ) : details.isPending ? (
+                            <p role="status">Chargement du décodage…</p>
+                          ) : (
+                            details.data && (
+                              <div
+                                className={`min-h-0 flex-1 break-words ${tab === "Arborescence" ? "overflow-hidden" : "overflow-auto"}`}
+                                data-testid="signaling-details"
+                              >
+                                {tab === "Arborescence" ? (
+                                  details.data.parameters.length ? (
+                                    <DecoderTree
+                                      key={`${capture}:${seq}`}
+                                      parameters={details.data.parameters}
+                                    />
+                                  ) : (
+                                    <div>
+                                      <p>Décodage ASN.1 indisponible pour ce message</p>
+                                      <p className="mt-1 text-muted-foreground">
+                                        {details.data.hex_reason ??
+                                          "Aucun paramètre décodé fourni par la source."}
+                                      </p>
+                                    </div>
+                                  )
+                                ) : tab === "Vue texte" ? (
+                                  <pre className="whitespace-pre-wrap">
+                                    {details.data.text || "Aucun paramètre décodé disponible."}
+                                  </pre>
+                                ) : tab === "Hexadécimal" ? (
+                                  details.data.hex ? (
+                                    <pre className="whitespace-pre-wrap break-all">
+                                      {details.data.hex}
+                                    </pre>
+                                  ) : (
+                                    <p role="status" className="rounded bg-muted p-3">
+                                      {details.data.hex_reason}
+                                    </p>
+                                  )
+                                ) : (
+                                  <ul>
+                                    {details.data.parameters.map((p, i) => (
+                                      <li key={`${p.path}:${i}`} className="border-b py-1">
+                                        <a
+                                          href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
+                                          className="text-primary underline"
+                                        >
+                                          {p.path}
+                                        </a>{" "}
+                                        = {shown(p.value)}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            )
+                          )}
+                          <details className="mt-2 max-h-24 shrink-0 overflow-auto border-t pt-1 text-muted-foreground">
+                            <summary>Sources et limites</summary>
+                            <p>{details.data?.tree_source}</p>
+                            <p>{details.data?.tree_route_gap}</p>
+                            <p>{context.data?.identity_reason}</p>
+                            <p>result_id : {details.data?.result_id}</p>
+                          </details>
+                        </>
+                      )}
+                    </section>
+                  </Panel>
+                </Group>
+              </Panel>
+            </Group>
+          </Panel>
+        </Group>
       </div>
     </main>
   );

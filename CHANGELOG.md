@@ -1,3 +1,10 @@
+## 1.53.0 (minor) — BC4 2026-10-20 — Signaling View : inspection redimensionnable (Agent BC2)
+
+- Panneaux filtres, timeline/carte et liste/décodeur redimensionnables, navigation clavier et disposition mobile ; scroll indépendant sans remonter les composants à la sélection.
+- Détails compacts, contexte radio avec source et fraîcheur du lot A ; GPS précédent explicitement identifié, repère pointillé et absence de position exacte déclarée.
+- Explorateur des paramètres ASN.1 fournis par l’API : recherche chemin/valeur, branches repliables, tout développer/réduire, copie du chemin exact ; onglets et protections d’identité conservés.
+- Aucun changement backend, parsing, calcul de temps ou clé de requête de population.
+
 ## 1.52.0 (minor) — BC4-FRONT 2026-10-20 — Signaling : filtre Procédure sur `/signaling/procedures` + Zod layer dual (Agent BC3)
 
 - `src/lib/api/signaling.ts` : nouveau schéma `signalingSchemas.procedures` aligné sur l'endpoint back `GET /projects/{id}/signaling/procedures?capture_id=&type=` (shippé en 0.65.1). Ajout du champ `layer: 'rrc_lte'|'rrc_nr'|'nas'|'event'|'mac'` (optionnel) sur `Line` et `Point`, et de `layer_counts` sur la réponse `rows`, en parallèle de `protocol`/`protocol_counts` (back 0.67.0 dual).
