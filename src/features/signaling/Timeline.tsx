@@ -106,6 +106,32 @@ export function Timeline({
   const inView = (t: number) => t >= view.start && t <= view.end;
   const ticks = useMemo(() => ticksFor(view.start, view.end), [view.start, view.end]);
 
+  // --- Curseur temporel interactif (survol, clic, glisser, clavier) ---
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef(false);
+  const [focusRing, setFocusRing] = useState(false);
+  const timeFromClientX = (clientX: number) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return view.start;
+    const px = ((clientX - rect.left) / rect.width) * VIEW_W;
+    const clamped = Math.min(VIEW_W, Math.max(LABEL_W, px));
+    return view.start + ((clamped - LABEL_W) / LANE_W) * span;
+  };
+  const startDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    dragRef.current = true;
+    const move = (ev: PointerEvent) => {
+      if (dragRef.current) onCursorDrag?.(timeFromClientX(ev.clientX));
+    };
+    const up = () => {
+      dragRef.current = false;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
+
   const zoom = (factor: number) => {
     const c = (view.start + view.end) / 2;
     const half = Math.max((span * factor) / 2, 2);
