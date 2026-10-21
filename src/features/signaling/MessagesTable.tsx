@@ -295,7 +295,7 @@ export function MessagesTable({
         </div>
       )}
       <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full table-fixed text-[11px]">
+        <table className="w-full min-w-[1120px] table-fixed text-[11px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b text-left text-muted-foreground">
               <th className="w-8 px-1 py-1.5" />
@@ -306,7 +306,7 @@ export function MessagesTable({
                 <span className="flex items-center gap-1">Temps (s) {sortIcon("t")}</span>
               </th>
               {nameAfter === 0 && (
-                <th className="cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
+                <th className="w-56 cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
                   <span className="flex items-center gap-1">Message {sortIcon("name")}</span>
                 </th>
               )}
@@ -314,7 +314,7 @@ export function MessagesTable({
                 <Fragment key={c.key}>
                   <th className={`${c.w} px-2 py-1.5`}>{c.label}</th>
                   {i + 1 === nameAfter && (
-                    <th className="cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
+                    <th className="w-56 cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
                       <span className="flex items-center gap-1">Message {sortIcon("name")}</span>
                     </th>
                   )}
