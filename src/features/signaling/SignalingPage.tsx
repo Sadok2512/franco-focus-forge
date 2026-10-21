@@ -104,6 +104,13 @@ export function SignalingPage() {
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
       {/* En-tête : technologie, capture, nombre de messages, durée */}
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b bg-card px-4 py-2">
+        <button
+          aria-label={sideOpen ? "Replier les filtres" : "Déplier les filtres"}
+          onClick={() => setSideOpen((v) => !v)}
+          className="rounded border p-1 text-muted-foreground hover:bg-muted"
+        >
+          {sideOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
+        </button>
         <h1 className="text-sm font-bold">Signaling View</h1>
         {capture && <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">{capture.tech}</span>}
         {capture && (

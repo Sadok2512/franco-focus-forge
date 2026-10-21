@@ -208,12 +208,12 @@ const SPECIAL_ROWS: Record<
 > = {
   782: { t: 120.452, dir: "UL", layer: "NAS", name: "ServiceRequest", procedure: "VoNR", rsrp: -92.1, rsrq: -11.3, sinr: 5.2, octets: 42 },
   783: { t: 120.462, dir: "DL", layer: "NAS", name: "ServiceReject", procedure: "VoNR", rsrp: -91.8, rsrq: -10.9, sinr: 5.8, octets: 28 },
-  1012: { t: 245.318, dir: "DL", layer: "RRC", name: "SCGAdditionRequest", procedure: "EN-DC", rsrp: -82.3, rsrq: -10.1, sinr: 8.4, octets: 96 },
-  1013: { t: 245.322, dir: "UL", layer: "RRC", name: "SCGAdditionRequestAcknowledge", procedure: "EN-DC", rsrp: -81.9, rsrq: -9.8, sinr: 8.6, octets: 84 },
-  1421: { t: 412.703, dir: "UL", layer: "RRC", name: "HandoverRequest", procedure: "HO", rsrp: -88.5, rsrq: -11.2, sinr: 6.1, octets: 76 },
-  1422: { t: 412.708, dir: "DL", layer: "RRC", name: "HandoverCommand", procedure: "HO", rsrp: -88.1, rsrq: -10.8, sinr: 6.5, octets: 104 },
-  1438: { t: 412.912, dir: "UL", layer: "RRC", name: "HandoverConfirm", procedure: "HO", rsrp: -87.4, rsrq: -10.6, sinr: 6.9, octets: 62 },
-  1587: { t: 478.115, dir: "DL", layer: "RRC", name: "RLFReport", procedure: "HO-Drop", rsrp: -105.7, rsrq: -15.2, sinr: -1.3, octets: 48 },
+  1012: { t: 245.318, dir: "DL", layer: "RRC NR", name: "SCGAdditionRequest", procedure: "EN-DC", rsrp: -82.3, rsrq: -10.1, sinr: 8.4, octets: 96 },
+  1013: { t: 245.322, dir: "UL", layer: "RRC NR", name: "SCGAdditionRequestAcknowledge", procedure: "EN-DC", rsrp: -81.9, rsrq: -9.8, sinr: 8.6, octets: 84 },
+  1421: { t: 412.703, dir: "UL", layer: "RRC NR", name: "HandoverRequest", procedure: "HO", rsrp: -88.5, rsrq: -11.2, sinr: 6.1, octets: 76 },
+  1422: { t: 412.708, dir: "DL", layer: "RRC NR", name: "HandoverCommand", procedure: "HO", rsrp: -88.1, rsrq: -10.8, sinr: 6.5, octets: 104 },
+  1438: { t: 412.912, dir: "UL", layer: "RRC NR", name: "HandoverConfirm", procedure: "HO", rsrp: -87.4, rsrq: -10.6, sinr: 6.9, octets: 62 },
+  1587: { t: 478.115, dir: "DL", layer: "RRC NR", name: "RLFReport", procedure: "HO-Drop", rsrp: -105.7, rsrq: -15.2, sinr: -1.3, octets: 48 },
   1734: { t: 590.226, dir: "UL", layer: "NAS", name: "ServiceRequest", procedure: "VoNR", rsrp: -94.3, rsrq: -12.1, sinr: 4.7, octets: 42 },
 };
 

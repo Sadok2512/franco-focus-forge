@@ -338,7 +338,7 @@ export function Timeline({
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex flex-col">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b px-3 py-1.5">
         <h3 className="text-xs font-semibold">Timeline des événements, connectivité et mesures radio</h3>
         <div className="ml-auto flex items-center gap-3">
