@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import type { ECharts } from "echarts";
 import type { SigSeries } from "@/lib/api/signaling-schemas";
+import { prevPoint } from "./cursor";
 import type { View } from "./Timeline";
 
 // Couleurs de référence de la maquette : RSRP NR rouge, RSRP LTE bleu,
@@ -19,11 +20,14 @@ export function RadioChart({
   series,
   view,
   cursorT,
+  previewT = null,
   height = 150,
 }: {
   series: SigSeries[];
   view: View;
   cursorT: number | null;
+  /** Curseur de prévisualisation (survol) — pointillé, jamais de sélection. */
+  previewT?: number | null;
   height?: number;
 }) {
   const el = useRef<HTMLDivElement>(null);
