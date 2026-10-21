@@ -1,3 +1,13 @@
+## 1.64.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : carte prédominante par défaut (Agent BC3)
+
+- Rééquilibrage majeur du haut de Signaling View pour rendre la carte **immédiatement visible et utile** sans manipulation :
+  - Overview Panel height : 32% → **40%** (le bloc Timeline+Map prend davantage de hauteur).
+  - Timeline largeur : 55% → **40%**.
+  - Map largeur : 45% → **60%**.
+- Résultat mesuré en Playwright : canvas MapLibre passe de **634×250 à 855×326 px** (TEST2 cap `723547b196b3`, viewport 1800×1100). Tuiles OSM nettes, trajet GPS complet, markers couche visibles sans scroll.
+- Aucune modification du contrat de données ni du worker fallback (1.62.0 maintenu).
+- **Rappel** : si la map reste blanche sur ton navigateur, hard-reload Ctrl+Shift+R pour purger le cache HMR.
+
 ## 1.63.0 (minor) — BC4-FRONT 2026-10-21 — i18n foundation and navigation (Agent BC1)
 
 - Add react-i18next with English by default and French available from the user menu. Persist the preference safely; set the document language accordingly.
