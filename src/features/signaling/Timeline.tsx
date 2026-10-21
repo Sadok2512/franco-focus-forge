@@ -77,6 +77,11 @@ export function Timeline({
   onSelectTime,
   onHover,
   scaleY = 1,
+  hoverT = null,
+  onHoverTime,
+  onCursorDrag,
+  onStepCursor,
+  onClearCursor,
 }: {
   capture: SigCapture;
   view: View;
@@ -86,6 +91,15 @@ export function Timeline({
   onSelectTime: (t: number, messageIndex: number | null) => void;
   onHover: (h: HoverState | null) => void;
   scaleY?: number;
+  /** Curseur de prévisualisation (survol) — ne change jamais la sélection. */
+  hoverT?: number | null;
+  onHoverTime?: (t: number | null, x: number, y: number) => void;
+  /** Glisser du curseur : temps mis à jour en continu, zoom conservé. */
+  onCursorDrag?: (t: number) => void;
+  /** Clavier : événement/échantillon précédent ou suivant. */
+  onStepCursor?: (dir: 1 | -1) => void;
+  /** Échap : efface la sélection du curseur. */
+  onClearCursor?: () => void;
 }) {
   const span = Math.max(view.end - view.start, 1e-6);
   const scale = (t: number) => LABEL_W + ((t - view.start) / span) * LANE_W;
