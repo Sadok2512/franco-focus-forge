@@ -92,24 +92,40 @@ export function RadioChart({
     inst.current?.setOption({ xAxis: { min: view.start * 1000, max: view.end * 1000 } });
   }, [view.start, view.end]);
 
-  // Curseur vertical partagé.
+  // Curseur vertical partagé : rouge plein (sélection), rouge pointillé (survol),
+  // marqueurs sur les courbes à la dernière mesure prouvée (jamais interpolée).
   useEffect(() => {
     inst.current?.setOption({
-      series: series.map((s) => ({
-        name: s.label,
-        markLine:
-          cursorT == null
-            ? { data: [] }
-            : {
-                silent: true,
-                symbol: "none",
-                label: { show: false },
-                lineStyle: { color: "#0F172A", width: 1, type: "dashed" },
-                data: [{ xAxis: cursorT * 1000 }],
-              },
-      })),
+      series: series.map((s) => {
+        const lines: { xAxis: number; lineStyle?: object }[] = [];
+        if (cursorT != null) lines.push({ xAxis: cursorT * 1000 });
+        if (previewT != null && (cursorT == null || Math.abs(previewT - cursorT) > (view.end - view.start) / 500))
+          lines.push({ xAxis: previewT * 1000, lineStyle: { color: "#EF4444", width: 1, type: "dashed", opacity: 0.7 } });
+        const rd = cursorT != null ? prevPoint(s, cursorT) : null;
+        return {
+          name: s.label,
+          markLine: {
+            silent: true,
+            symbol: "none",
+            label: { show: false },
+            lineStyle: { color: "#EF4444", width: 2 },
+            data: lines,
+          },
+          markPoint:
+            rd != null
+              ? {
+                  silent: true,
+                  symbol: "circle",
+                  symbolSize: 6,
+                  itemStyle: { color: SERIES_STYLE[s.key]?.color ?? "#64748B", borderColor: "#FFFFFF", borderWidth: 1.5 },
+                  label: { show: false },
+                  data: [{ coord: [rd.t * 1000, rd.v] }],
+                }
+              : { data: [] },
+        };
+      }),
     });
-  }, [cursorT, series]);
+  }, [cursorT, previewT, view.start, view.end, series]);
 
   return (
     <div className="border-t">
