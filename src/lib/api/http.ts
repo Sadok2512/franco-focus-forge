@@ -26,7 +26,15 @@ function readMode(): DataSource {
 }
 
 function readBase(): string {
-  return (env("VITE_BC4_API_BASE") ?? DEFAULT_API_BASE).replace(/\/+$/, "");
+  const configured = env("VITE_BC4_API_BASE") ?? DEFAULT_API_BASE;
+  // Browser clients must use the same-origin proxy. A container's
+  // `localhost:8000` is the frontend container, not the API, and a remote
+  // browser's localhost is the operator's workstation. SSR/CLI calls keep
+  // the configured upstream.
+  if (typeof window !== "undefined" && /^(https?:\/\/)?localhost(?::8000)?$/i.test(configured)) {
+    return "/api";
+  }
+  return configured.replace(/\/+$/, "");
 }
 
 export function isApiMode(): boolean {
