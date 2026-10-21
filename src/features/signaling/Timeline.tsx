@@ -541,11 +541,57 @@ export function Timeline({
         {rows.some((r) => r.key === "mob") && laneLabel("mob", "swap", "#1769E0", "Mobilité")}
         {rows.some((r) => r.key === "mob") && renderMobility()}
 
-        {/* Curseur temporel partagé */}
-        {cursorT != null && inView(cursorT) && (
+        {/* Curseur de prévisualisation (survol) — fin, rouge, pointillé */}
+        {hoverT != null && inView(hoverT) && (cursorT == null || Math.abs(hoverT - cursorT) > span / 500) && (
           <g pointerEvents="none">
-            <line x1={scale(cursorT)} y1={axisH} x2={scale(cursorT)} y2={totalH} stroke="#0F172A" strokeWidth={1.2} strokeDasharray="4 3" />
-            <path d="M-4 0 L4 0 L0 6 Z" transform={`translate(${scale(cursorT)} ${axisH})`} fill="#0F172A" />
+            <line x1={scale(hoverT)} y1={axisH} x2={scale(hoverT)} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />
+          </g>
+        )}
+
+        {/* Curseur temporel partagé : rouge, 2 px, poignée glissable, étiquette flottante */}
+        {cursorT != null && inView(cursorT) && (
+          <g
+            tabIndex={0}
+            role="slider"
+            aria-label="Curseur temporel"
+            aria-valuemin={Math.round(view.start * 1000)}
+            aria-valuemax={Math.round(view.end * 1000)}
+            aria-valuenow={Math.round(cursorT * 1000)}
+            aria-valuetext={fmtSec(cursorT)}
+            className="cursor-ew-resize outline-none"
+            onPointerDown={startDrag}
+            onFocus={() => setFocusRing(true)}
+            onBlur={() => setFocusRing(false)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                onStepCursor?.(-1);
+              } else if (e.key === "ArrowRight") {
+                e.preventDefault();
+                onStepCursor?.(1);
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                onClearCursor?.();
+              }
+            }}
+          >
+            {(() => {
+              const cx = scale(cursorT);
+              const labelW = 64;
+              const lx = Math.min(Math.max(cx, LABEL_W + labelW / 2 + 2), VIEW_W - labelW / 2 - 2);
+              return (
+                <>
+                  <line x1={cx} y1={axisH - 6} x2={cx} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={2} />
+                  <rect x={cx - 6} y={axisH - 7} width={12} height={8} rx={2} fill={CURSOR_COLOR} stroke={focusRing ? "#0F172A" : "none"} strokeWidth={1.2} />
+                  <rect x={lx - labelW / 2} y={1} width={labelW} height={15} rx={4} fill={CURSOR_COLOR} />
+                  <text x={lx} y={12} textAnchor="middle" fontSize={9} fontWeight={700} fill="#FFFFFF">
+                    {fmtSec(cursorT)}
+                  </text>
+                  {/* Zone de préhension élargie pour le glisser */}
+                  <rect x={cx - 5} y={axisH - 7} width={10} height={totalH - axisH + 7} fill="transparent" />
+                </>
+              );
+            })()}
           </g>
         )}
       </svg>
