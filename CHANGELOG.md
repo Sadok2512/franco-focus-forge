@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.10.0 (minor) — bc4-front 2026-10-21 — Signaling View : timeline RF & signalisation premium
+
+- Nouvelle page `/signaling` (mission BC4_SIGNALING_TIMELINE_LOVABLE_V1) : timeline à axe temporel unique partagé (connectivité LTE/NSA/SA, événements réseau nommés, tâches DL/UL Data, appels VoLTE/VoNR, mobilité, bloc mesures radio RSRP/RSRQ/SINR intégré).
+- Carte GPS synchronisée (trajet, événements géolocalisés, sélection), masquable via le bouton « Carte ».
+- Tableau des messages (recherche, tri, pagination, colonnes, export CSV, développement du payload) et inspecteur à onglets (Payload décodé, Hexadécimal, Paramètres, Call Flow, Détails).
+- Sidebar de filtres redimensionnable et repliable (technologie, couches, direction, capture, procédure) ; modes Timeline/Compact ; zoom +/−/reset ; plein écran.
+- Contrats Zod `signaling-schemas.ts` + adaptateur `src/lib/api/signaling.ts` (re-exporté par `client.ts`) ; scénarios démo déterministes dans `src/mocks/signaling.ts`. Mesures manquantes = `null` → « N/D », jamais 0 ; les événements proches sont regroupés à faible zoom sans perdre leurs références ; un appel non confirmé n'apparaît jamais comme connecté.
+
 ## 1.9.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC : espace de travail dynamique unique
 
 - Page unique sans onglets ni bandeau KPI : arbre ASN.1 à gauche, histogramme + table détaillée au centre, carte optionnelle à droite.
