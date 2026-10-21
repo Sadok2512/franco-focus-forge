@@ -1,8 +1,15 @@
+## 1.71.0 (minor) — BC4-FRONT 2026-10-21 — Metrics catalogue v6 workspace (Agent BC1)
+
+- Render the approved v6 Metrics hierarchy node for node, with source badges, search, expand/collapse all and seven cell leaves under each starred metric.
+- Keep zero-population and P4-open leaves visible and disabled with their explicit reason; selecting a starred branch selects its available proven leaves.
+- Consume the versioned catalogue response while preserving the existing chronogram, table, capture filters and metric analysis APIs.
+
 ## 1.70.0 (minor) — BC4 2026-10-21 — RF and signaling timeline (Agent BC2)
 
 - RF timeline is the default Signaling View: synchronized event/connectivity/task tracks and distinct LTE RSRP, RSRQ and SINR panels, with measured points, shared zoom, brush, fullscreen and evidence navigation. Compact protocol histogram remains available.
 - Independent capture-scoped queries preserve message selection, pagination, map and chart instances. Unsupported NR/VoNR states and physical-unit conversions are explicitly declared.
 - Theme palette and EN/FR translations; no fabricated intervals or interpolated radio samples.
+
 
 ## 1.70.0 (minor) — BC4-FRONT 2026-10-21 — DecoderTree : badges REDACTED + réf 3GPP + hiérarchie compacte (Agent BC3)
 

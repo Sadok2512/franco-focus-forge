@@ -353,7 +353,7 @@ export const Chronogram = forwardRef<
   useEffect(() => {
     if (!selectedCapture && cap) onCaptureChange(cap);
   }, [cap, selectedCapture, onCaptureChange]);
-  const codes = selectedCodes.filter((code) => metrics.data?.some((m) => m.code === code));
+  const codes = selectedCodes.filter((code) => metrics.data?.metrics.some((m) => m.code === code));
   const task = tasks.data?.tasks.find((t) => t.id === taskId && t.capture_id === cap);
   const series = useQuery({
     queryKey: ["metric-series", projectId, cap, codes, task?.id, filters],
@@ -382,7 +382,7 @@ export const Chronogram = forwardRef<
   }));
   const error =
     metrics.error ?? captures.error ?? series.error ?? events.error ?? unknown.error ?? tasks.error;
-  const eventGroups = [...new Set(metrics.data?.map((m) => m.event_code) ?? [])].sort();
+  const eventGroups = [...new Set(metrics.data?.metrics.map((m) => m.event_code) ?? [])].sort();
   return (
     <section className="p-4 space-y-3" data-testid="chronogram">
       <p className="text-sm font-medium" data-testid="chronogram-time-axis">
@@ -453,7 +453,7 @@ export const Chronogram = forwardRef<
                 "mac_dl_bler",
                 "cqi",
                 "sinr",
-              ].filter((c) => metrics.data?.some((m) => m.code === c)),
+              ].filter((c) => metrics.data?.metrics.some((m) => m.code === c)),
             );
             setStacked(true);
           }}
@@ -467,7 +467,7 @@ export const Chronogram = forwardRef<
         </label>
       </div>
       <div className="flex flex-wrap gap-4 text-sm" aria-label={i18n.t("metrics.e1efdb136cc6")}>
-        {metrics.data
+        {metrics.data?.metrics
           ?.filter((m) => m.code === "pdsch_bler" || m.code === "mac_dl_bler")
           .map((m) => (
             <label key={m.code} className="flex items-center gap-2">
@@ -494,7 +494,7 @@ export const Chronogram = forwardRef<
           {eventGroups.map((eventCode) => (
             <fieldset key={eventCode} className="text-xs space-y-1">
               <legend className="font-semibold mb-1">{eventCode}</legend>
-              {metrics.data
+              {metrics.data?.metrics
                 ?.filter((m) => m.event_code === eventCode)
                 .map((m) => (
                   <label
@@ -618,7 +618,7 @@ export const Chronogram = forwardRef<
                       result_id: data.result_id,
                       capture_id: data.capture_id,
                       time_policy: data.time_policy,
-                      metrics: metrics.data,
+                      metrics: metrics.data?.metrics ?? [],
                       events_result_id: events.data?.result_id,
                       markers: events.data?.markers,
                     },
