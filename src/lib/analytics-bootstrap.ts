@@ -1,4 +1,4 @@
-import { queryOptions, useQueries } from "@tanstack/react-query";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import { getProject, getProjectKpiCatalog, getProjectKpiFilters } from "@/lib/api/client";
 import { getMetrics } from "@/lib/api/metrics";
 
@@ -30,14 +30,10 @@ export const analyticsProjectQuery = (projectId: string) =>
   });
 
 export function useAnalyticsBootstrap(projectId: string | undefined) {
-  useQueries({
-    queries: projectId
-      ? [
-          kpiCatalogQuery(projectId),
-          kpiFiltersQuery(projectId),
-          metricsCatalogQuery(projectId),
-          analyticsProjectQuery(projectId),
-        ]
-      : [],
-  });
+  const id = projectId ?? "";
+  const enabled = Boolean(projectId);
+  useQuery({ ...kpiCatalogQuery(id), enabled });
+  useQuery({ ...kpiFiltersQuery(id), enabled });
+  useQuery({ ...metricsCatalogQuery(id), enabled });
+  useQuery({ ...analyticsProjectQuery(id), enabled });
 }
