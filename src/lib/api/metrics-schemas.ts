@@ -72,6 +72,37 @@ export const MetricCatalogResponseSchema = z.object({
   nodes: z.array(MetricCatalogNodeSchema),
 });
 
+/** Metrics v6 catalogue envelope. The API returns presentation metadata plus
+ * the selectable metric rows; consumers of getMetrics use the rows only. */
+export const MetricCatalogResponseSchema = z.object({
+  catalogue_version: z.string(),
+  title: z.string(),
+  header: z.string(),
+  metrics: z.array(MetricSchema),
+  nodes: z.array(
+    z.object({
+      node_id: z.string(),
+      parent_id: z.string().nullable(),
+      order: z.number().int(),
+      label: z.string(),
+      note: z.string().nullable(),
+      source: z.string().nullable(),
+      node_type: z.enum(["category", "group", "metric", "leaf"]),
+      metric_id: z.string().nullable(),
+      selection: z.string().nullable(),
+      event: z.string().nullable(),
+      field_idx: z.number().int().nullable(),
+      source_column: z.string().nullable(),
+      unit: z.string(),
+      cell: z.string().nullable(),
+      n: z.number().int(),
+      proof: z.enum(["documented", "content", "open"]),
+      selectable: z.boolean(),
+      reason: z.string().nullable(),
+    }),
+  ),
+});
+
 /** 0.64.0 (F1 back) — /projects/{p}/metrics/{code}/aggregate */
 export const MetricAggregateRowSchema = z.object({
   operator: z.string().nullable(),
