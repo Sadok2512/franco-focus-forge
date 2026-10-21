@@ -207,15 +207,15 @@ function Workspace({
     return raw.filter((v): v is string => typeof v === "string");
   });
   const toggleMetric = (code: string) => {
-    setSelectedMetrics((prev) => {
-      const next = prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code];
-      void navigate({
-        to: ".",
-        search: (p: Record<string, unknown>) => ({ ...p, metrics: next }),
-        replace: true,
-      } as never);
-      return next;
-    });
+    const next = selectedMetrics.includes(code)
+      ? selectedMetrics.filter((candidate) => candidate !== code)
+      : [...selectedMetrics, code];
+    setSelectedMetrics(next);
+    void navigate({
+      to: ".",
+      search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
+      replace: true,
+    } as never);
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.

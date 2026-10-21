@@ -1,3 +1,7 @@
+## 1.71.1 (patch) — BC4-FRONT 2026-10-21 — Metrics selection render safety (Agent BC1)
+
+- Keep Metrics selection and URL synchronization outside React state updater callbacks, removing the runtime render-phase update warning exposed by the real TEST2 Playwright flow.
+
 ## 1.71.0 (minor) — BC4-FRONT 2026-10-21 — Metrics catalogue v6 workspace (Agent BC1)
 
 - Render the approved v6 Metrics hierarchy node for node, with source badges, search, expand/collapse all and seven cell leaves under each starred metric.
