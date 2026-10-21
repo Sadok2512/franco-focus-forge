@@ -156,11 +156,11 @@ export function MetricsCatalogSidebar({
     );
   };
   const expandableIds = (query.data?.nodes ?? [])
-    // Match the reference HTML: catalogue/category groups are open, while
-    // each starred metric keeps its seven cell leaves collapsed until opened.
+    // Keep the catalogue responsive like the reference tree: root categories
+    // are open, while groups and starred metrics expand on demand.
     .filter(
       (node) =>
-        node.node_type !== "metric" && (byParent.get(node.node_id) ?? []).length > 0,
+        node.node_type === "category" && (byParent.get(node.node_id) ?? []).length > 0,
     )
     .map((node) => node.node_id);
   // The reference catalogue is fully expanded on first render. Keep the
