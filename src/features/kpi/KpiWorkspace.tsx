@@ -1,3 +1,9 @@
+import {
+  kpiCatalogQuery,
+  kpiFiltersQuery,
+  metricsCatalogQuery,
+  analyticsProjectQuery,
+} from "@/lib/analytics-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
@@ -16,12 +22,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { BarChart3, Download, Plus, RefreshCw, X } from "lucide-react";
-import {
-  getProject,
-  getProjectKpi,
-  getProjectKpiCatalog,
-  getProjectKpiFilters,
-} from "@/lib/api/client";
+import { getProjectKpi } from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
@@ -35,7 +36,6 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { MetricsWorkspace } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 
-import { getMetrics } from "@/lib/api/metrics";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
@@ -62,21 +62,9 @@ export function KpiWorkspace() {
 function ProjectWorkspace({ projectId }: { projectId: string }) {
   const { t: translate } = useTranslation();
   // Project/filter-keyed requests can finish into the cache after navigation.
-  const catalog = useQuery({
-    queryKey: ["project-kpi", "catalog", projectId],
-    queryFn: () => getProjectKpiCatalog(projectId),
-    staleTime: 300_000,
-  });
-  const dimensions = useQuery({
-    queryKey: ["project-kpi", "filters", projectId],
-    queryFn: () => getProjectKpiFilters(projectId),
-    staleTime: 60_000,
-  });
-  const project = useQuery({
-    queryKey: ["project", projectId],
-    queryFn: () => getProject(projectId),
-    staleTime: 60_000,
-  });
+  const catalog = useQuery(kpiCatalogQuery(projectId));
+  const dimensions = useQuery(kpiFiltersQuery(projectId));
+  const project = useQuery(analyticsProjectQuery(projectId));
   if (catalog.isPending)
     return (
       <p className="p-6" role="status">
@@ -213,11 +201,7 @@ function Workspace({
   // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
   const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics">("kpi");
-  const metricsCatalog = useQuery({
-    queryKey: ["project-metrics", projectId],
-    queryFn: ({ signal }) => getMetrics(projectId, signal),
-    staleTime: 60_000,
-  });
+  const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
   const [selectedMetrics, setSelectedMetrics] = useState<string[]>(() => {
     const raw = Array.isArray(search["metrics"]) ? (search["metrics"] as unknown[]) : [];
     return raw.filter((v): v is string => typeof v === "string");

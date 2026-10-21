@@ -1,6 +1,6 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 
-const analyticalKeys = ["overview", "dict-v2", "dict", "project-kpi", "kpi"];
+const analyticalKeys = ["overview", "dict-v2", "dict", "project-kpi", "project-metrics", "kpi"];
 
 // Keep completed analytical results across page navigation. Explicit invalidation
 // still reloads them; a different project/filter key always gets its own result.

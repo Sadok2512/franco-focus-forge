@@ -50,7 +50,7 @@ describe("navigation cache", () => {
       client.clear();
     }
   });
-  for (const prefix of ["overview", "dict-v2", "project-kpi"]) {
+  for (const prefix of ["overview", "dict-v2", "project-kpi", "project-metrics"]) {
     it(`${prefix}: reuses stale results, reloads invalidated results and isolates filters`, async () => {
       const client = createQueryClient();
       const queryFn = vi.fn(async () => ({ count: 7 }));

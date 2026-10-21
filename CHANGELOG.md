@@ -1,3 +1,8 @@
+## 1.68.2 (patch) — BC4 2026-10-21 — Preload analytics on app opening (Agent BC2)
+
+- Start KPI and Metrics catalogues, filter dimensions and project metadata in parallel from the authenticated app shell for the active project.
+- Share query options with KPI Analytics to reuse in-flight requests and completed data on navigation. Keep Metrics cached and invalidate it with project population changes. No draft filter application or speculative capture analytics.
+
 ## 1.68.1 (patch) — BC4 2026-10-21 — English KPI and Metrics rollout (Agent BC2)
 
 - Reset saved language preferences from the initial rollout to English once. Subsequent explicit language choices remain available.
