@@ -803,7 +803,18 @@ export function SignalingPage({
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("Payload");
   // 1.58.0 (V3 LOT 5) — Toggle Carte ON/OFF, session-local useState.
   // Jamais inclus dans un queryKey (ne déclenche aucun refetch des points).
+  // Panel map garde la même instance mountée (collapsedSize=0) pour éviter
+  // le bug react-resizable-panels de remount dynamique.
   const [mapVisible, setMapVisible] = useState(true);
+  const mapPanelRef = useRef<PanelImperativeHandle>(null);
+  const toggleMap = () => {
+    setMapVisible((prev) => {
+      const next = !prev;
+      if (next) mapPanelRef.current?.expand();
+      else mapPanelRef.current?.collapse();
+      return next;
+    });
+  };
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -955,7 +966,7 @@ export function SignalingPage({
           <button
             type="button"
             className="kpi-button"
-            onClick={() => setMapVisible((v) => !v)}
+            onClick={toggleMap}
             aria-pressed={mapVisible}
             data-testid="signaling-map-toggle"
             title={mapVisible ? "Masquer la carte" : "Afficher la carte"}
@@ -1182,24 +1193,29 @@ export function SignalingPage({
                       )}
                     </section>
                   </Panel>
-                  {mapVisible && (
-                    <>
-                      <Separator
-                        className="signaling-separator"
-                        aria-label="Largeur timeline et carte"
-                      />
-                      <Panel id="map" minSize="25%" data-testid="signaling-map-panel">
-                        <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                          <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
-                          {points.data ? (
-                            <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
-                          ) : (
-                            <p role="status">Chargement des positions…</p>
-                          )}
-                        </section>
-                      </Panel>
-                    </>
-                  )}
+                  <Separator
+                    className="signaling-separator"
+                    aria-label="Largeur timeline et carte"
+                    style={mapVisible ? undefined : { display: "none" }}
+                  />
+                  <Panel
+                    id="map"
+                    panelRef={mapPanelRef}
+                    minSize={mapVisible ? 25 : 0}
+                    collapsible
+                    collapsedSize={0}
+                    defaultSize={35}
+                    data-testid="signaling-map-panel"
+                  >
+                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
+                      <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
+                      {points.data ? (
+                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
+                      ) : (
+                        <p role="status">Chargement des positions…</p>
+                      )}
+                    </section>
+                  </Panel>
                 </Group>
               </Panel>
               <Separator

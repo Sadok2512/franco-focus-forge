@@ -1,3 +1,19 @@
+## 1.60.0 (minor) — BC4-FRONT 2026-10-21 — Signaling V3 LOT 5 fix + LOT 6 validation finale (Agent BC3)
+
+- Fix toggle Map : passage de la mécanique « conditional unmount » (buggée au re-ON à cause de react-resizable-panels qui ne ré-enregistre pas un Panel dynamiquement) à `collapsible + collapsedSize=0 + imperativePanelHandle`. Le Panel reste **toujours monté** ; `toggleMap()` appelle `expand()` / `collapse()`. Le re-ON restaure correctement la largeur par défaut.
+- Validation visuelle LOT 6 Playwright (TEST2 `723547b196b3`) : Map OFF libère toute la largeur pour la timeline (icône `MapPinOff`), re-ON remet le Panel map à sa largeur de 35%. Screenshots : `signaling-final-{01-default,02-map-off,03-map-on,04-sidebar-off,05-sidebar-on}.png`.
+- **Rapport consolidé V3 (Agent BC3)** :
+  - LOT 1 (1.54.0) sidebar repliable + rail 44px — G1 PASS
+  - LOT 2 (1.55.0) Colonnes + flèches UL/DL — G4+G5 PASS
+  - LOT 3 (1.56.0) Inspector Payload First (5 onglets, Payload default, Détails nouveau) — G6+G7+G8+G12 PASS
+  - LOT 4 (1.57.0) Call Flow réel via /signaling?procedure= — G9+G11 PASS, G10 NOT RUN (pas de capture NR)
+  - LOT 5 (1.58.0 + 1.60.0) Toggle Carte global — validation visuelle PASS
+  - LOT 6 (ce commit) Fix toggle + rapport
+- **P0 1.50.1 préservé** sur tous les lots : aucun état d'UI (sidebar/colonnes/onglet/map) inclus dans un `queryKey` ou provoquant un remount du MessagesList. Sélection, pagination, scroll, filtres intacts.
+- **Call Flow backend** : audit confirmé — AUCUN nouveau endpoint back créé. `/signaling/procedures` (BC3 0.65.1) + `/signaling?procedure=<id>` (filtre serveur sur `procedure_ids` prouvés) suffisants.
+- **Colonnes spec non implémentées** (volontairement) : EARFCN, Bande, Service, RSRP/RSRQ/SINR/CQI/BLER, eNB/gNB, Lat/Lng/Vitesse GPS — absentes du contrat `/signaling.rows`. Attendre que le back les expose plutôt que d'inventer (Règle d'intégrité §17).
+- **Thème sombre défaut hérité** signalé par BC2 dans 1.53.0 reste ouvert — toucherait le rail compact et les badges UL/DL ; recommandé de traiter dans un lot design-system dédié.
+
 ## 1.59.0 (minor) — BC4 2026-10-21 — Arbre Métriques v3 (Agent BC2)
 
 - Arbre existant enrichi : cellules ★ Total CA/PCell/SCell et événements ⚑ avec attributs depuis /metrics. Positions non documentées et hypothèses SCell grisées avec leur raison.
