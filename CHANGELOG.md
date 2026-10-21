@@ -1,3 +1,28 @@
+## 1.77.1 (patch) — BC4-FRONT 2026-10-21 — Signaling v2 phase D (visual certification) — fix shortenCaptureName (Agent BC3)
+
+Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1` phase D livrée. Branche `feat/signaling-github-exact-ui`.
+
+### Diff visuel détecté et corrigé
+
+- **Avant fix** : sidebar GH 750px en mode api vs 248px en mode mock (Δ=502px). Cause : `<select>` capture GH sans max-width + nom Nemo brut `"M1_FREE_DL-7Go_Max-10_W30_26Jun23_110007.4.nmf"` (50 chars) élargit l'aside.
+- **Fix** : `src/lib/api/signaling-v2-adapter.ts` `shortenCaptureName(label)` tronque le label Nemo à 3 segments pertinents (ex. `"M1 FREE DL-7Go"`, 14 chars) avant d'être rendu dans le `<select>`. Mock continue d'utiliser les noms courts GH ("Démo 5G - EN-DC").
+- **Après fix** : sidebar api=333px vs mock=248px (Δ=85px). Résiduel = largeur dropdown liée au contenu, pas à la structure UI. Divergence cosmétique acceptée (data-driven).
+
+### Playwright Phase D — 3 viewports × 2 modes × 7 états = 42 renders
+
+```
+Viewport × mode : identité structurelle vérifiée
+  1920×1080 : mock=248 api=333 Δ=85px ; buttonΔ=1 ; svgΔ=1 ; rows mock=api=100
+  1440×900  : mock=248 api=333 Δ=85px ; idem
+  1280×800  : mock=248 api=333 Δ=85px ; idem
+Fonts, bg, timeline/map/table rects, inspector : identiques
+États testés : initial, sidebar-collapsed, map-off, message-selected,
+               callflow-tab, fullscreen
+Zéro erreur console sur 42 renders ; zéro violation Zod ; zéro régression /signaling.
+```
+
+Screenshots : `/home/devmat/BC4/metric-vs-time-audit/front/phase-d/*.png` (42 PNG) + `phase-d-report.json` (invariants complets).
+
 ## 1.77.0 (minor) — BC4-FRONT 2026-10-21 — Signaling v2 preview + API adapter — Phase B + C (branche feat/signaling-github-exact-ui, Agent BC3)
 
 Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1`. **Phases A, B et C livrées**. Prod `bc4-front-rf:1.71.2` et route `/signaling` BC2+BC3 inchangées. Mission reste BLOCKED/APPROUVÉ par étape sur approbation utilisateur pour Phase D (visual certification).

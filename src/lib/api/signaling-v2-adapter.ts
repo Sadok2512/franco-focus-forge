@@ -143,6 +143,20 @@ const seqByCapture = new Map<string, number[]>();
 const captureMetaCache = new Map<string, { name: string; label: string }>();
 
 // --------- Helpers de mapping ---------
+// Phase D fix : noms de capture Nemo sont longs (50+ chars), ils élargissent
+// le <select> du Sidebar GH (pas de max-width côté UI). On tronque pour
+// préserver le layout attendu (short-name mock = "Démo 5G - EN-DC").
+function shortenCaptureName(label: string): string {
+  // Garder la partie significative : avant la date _NNNNN_HHMMSS.N.nmf
+  const stripped = label.replace(/\.nmf$/i, "").replace(/\.\d+$/, "");
+  const parts = stripped.split("_");
+  if (parts.length >= 4) {
+    // ex. "M1_FREE_DL-7Go_Max-10_W30_26Jun23_110007" → "M1 FREE DL-7Go"
+    return parts.slice(0, 3).join(" ");
+  }
+  return stripped.length > 30 ? stripped.slice(0, 28) + "…" : stripped;
+}
+
 function extractCapturedAt(label: string): string {
   // Nemo label pattern: ..._26Jun23_110007.4.nmf → 2023-06-26T11:00:07
   const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_(\d{2})(\d{2})(\d{2})/);
@@ -241,13 +255,14 @@ export async function listSignalingCaptures(signal?: AbortSignal): Promise<SigCa
   );
   captureMetaCache.clear();
   const metas: SigCaptureMeta[] = env.captures.map((c) => {
-    captureMetaCache.set(c.capture_id, { name: c.label, label: c.label });
+    const shortName = shortenCaptureName(c.label);
+    captureMetaCache.set(c.capture_id, { name: shortName, label: c.label });
     return SigCaptureMetaSchema.parse({
       id: c.capture_id,
-      name: c.label,
+      name: shortName,
       captured_at: extractCapturedAt(c.label),
-      tech: "LTE", // enrichi dans getSignalingCapture
-      message_count: 0, // enrichi à la sélection
+      tech: "LTE",
+      message_count: 0,
       duration_s: 0,
     });
   });
