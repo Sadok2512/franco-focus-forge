@@ -263,6 +263,59 @@ export function SignalingPage() {
                   ))}
                 </div>
               )}
+              {/* Infobulle du curseur de survol : temps, état UE, tâches, mesures RF.
+                  Repositionnée près des bords, jamais au-dessus d'une infobulle d'élément. */}
+              {tipInfo && !hover && hoverCur && (
+                <div
+                  className="pointer-events-none fixed z-[70] w-64 rounded-md border bg-popover p-2.5 text-[11px] shadow-xl"
+                  style={{
+                    left: Math.min(hoverCur.x + 14, Math.max(8, window.innerWidth - 280)),
+                    top: Math.min(hoverCur.y + 14, Math.max(8, window.innerHeight - 260)),
+                  }}
+                >
+                  <p className="num font-mono font-semibold" style={{ color: "#EF4444" }}>
+                    t = {fmtSec(tipInfo.t)}
+                  </p>
+                  {tipInfo.events.map((e) => (
+                    <p key={e.id} className="mt-0.5 font-medium">
+                      {e.name}
+                      {e.tech ? ` — ${e.tech}` : ""}
+                      {e.ecgi ? ` · ECGI ${e.ecgi}` : ""}
+                      {e.pci != null ? ` · PCI ${e.pci}` : ""}
+                    </p>
+                  ))}
+                  <p className="mt-0.5 text-muted-foreground">
+                    État UE : {tipInfo.conns.length ? tipInfo.conns.map((c) => CONN_LABEL[c] ?? c).join(" + ") : "Inconnu"}
+                  </p>
+                  {tipInfo.tasks.length ? (
+                    tipInfo.tasks.map((k) => (
+                      <p key={k.id} className="mt-0.5 text-muted-foreground">
+                        {k.label} ({k.dir}) : {fmtSec(k.start_s)} → {fmtSec(k.end_s)}
+                        {k.throughput ? ` · ${k.throughput}` : ""}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="mt-0.5 text-muted-foreground">Aucune tâche active</p>
+                  )}
+                  {tipInfo.calls.map((c) => (
+                    <p key={c.id} className="mt-0.5 text-muted-foreground">
+                      Appel {c.kind} — {c.state === "dropped" ? "drop" : "connecté"}
+                    </p>
+                  ))}
+                  {tipInfo.rf.some((r) => r.value != null) ? (
+                    tipInfo.rf.map((r) =>
+                      r.value != null ? (
+                        <p key={r.label} className="num mt-0.5 text-muted-foreground">
+                          {r.label} : {r.value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} {r.unit}
+                          {r.dt != null && r.dt > 0.5 ? ` (mesure à −${fmtSec(r.dt)})` : ""}
+                        </p>
+                      ) : null,
+                    )
+                  ) : (
+                    <p className="mt-0.5 text-muted-foreground">Aucune mesure RF à cet instant</p>
+                  )}
+                </div>
+              )}
             </section>
             {/* Poignée de redimensionnement vertical de la timeline */}
             <div
