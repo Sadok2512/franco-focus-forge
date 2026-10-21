@@ -156,7 +156,12 @@ export function MetricsCatalogSidebar({
     );
   };
   const expandableIds = (query.data?.nodes ?? [])
-    .filter((node) => (byParent.get(node.node_id) ?? []).length > 0)
+    // Match the reference HTML: catalogue/category groups are open, while
+    // each starred metric keeps its seven cell leaves collapsed until opened.
+    .filter(
+      (node) =>
+        node.node_type !== "metric" && (byParent.get(node.node_id) ?? []).length > 0,
+    )
     .map((node) => node.node_id);
   // The reference catalogue is fully expanded on first render. Keep the
   // server-provided order and labels; the user can still collapse any branch.
