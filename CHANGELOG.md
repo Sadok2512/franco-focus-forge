@@ -1,3 +1,17 @@
+## 1.61.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : toggle Timeline + badges couleur couches (Agent BC3)
+
+- **Toggle Timeline** symétrique au toggle Carte. Nouveau bouton « Timeline · ON/OFF » dans l'en-tête (icône `Activity`/`ActivitySquare`). Timeline Panel passé en `collapsible + collapsedSize=0 + panelRef`.
+- Quand **les deux** (Timeline + Map) sont OFF : la rangée `overview` entière se replie (`overviewPanelRef.collapse()`) → tout l'espace vertical passe à la liste + inspecteur. Quand au moins un est ON, l'overview reprend sa taille.
+- **Badges couleur par couche** dans la colonne « Couche » (spec §5) :
+  - RRC LTE → bleu (`bg-blue-100 text-blue-800`)
+  - RRC NR → violet (`bg-violet-100 text-violet-800`)
+  - NAS → orange (`bg-orange-100 text-orange-800`)
+  - Événements Nemo → cyan (`bg-cyan-100 text-cyan-800`, libellé compact « Nemo »)
+  - MAC-RACH → vert (`bg-emerald-100 text-emerald-800`)
+  - Variantes dark-mode fournies pour chaque.
+- États `timelineVisible` + `mapVisible` session-local, jamais inclus dans un `queryKey` → aucun refetch au toggle. P0 1.50.1 préservé.
+- Validé Playwright (TEST2 `723547b196b3`) : badges rendus, Timeline toggle fonctionnel, Map toggle fonctionnel, les deux OFF → libération complète du haut vérifiée en screenshot `signaling-161-03-both-off.png`.
+
 ## 1.60.0 (minor) — BC4-FRONT 2026-10-21 — Signaling V3 LOT 5 fix + LOT 6 validation finale (Agent BC3)
 
 - Fix toggle Map : passage de la mécanique « conditional unmount » (buggée au re-ON à cause de react-resizable-panels qui ne ré-enregistre pas un Panel dynamiquement) à `collapsible + collapsedSize=0 + imperativePanelHandle`. Le Panel reste **toujours monté** ; `toggleMap()` appelle `expand()` / `collapse()`. Le re-ON restaure correctement la largeur par défaut.

@@ -11,6 +11,8 @@ import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { Group, Panel, Separator } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import {
+  Activity,
+  ActivitySquare,
   ArrowDown,
   ArrowUp,
   ChevronLeft,
@@ -64,6 +66,43 @@ const COL_LABELS: Record<ColKey, string> = {
   source: "Source",
 };
 const MANDATORY_COLS: readonly ColKey[] = ["seq", "t_rel_s", "message_name"];
+
+// 1.61.0 — Badges couleur par couche. Spec §5 : RRC LTE bleu, RRC NR
+// violet, NAS orange, Événements Nemo cyan, MAC-RACH vert. Mapping sur
+// les slugs servis par le back (layer) et sur les étiquettes françaises
+// (protocol) pour compat avec les lignes anciennes.
+const LAYER_BADGE: Record<string, { label: string; className: string }> = {
+  "RRC LTE": {
+    label: "RRC LTE",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200",
+  },
+  "RRC NR": {
+    label: "RRC NR",
+    className: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200",
+  },
+  NAS: {
+    label: "NAS",
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
+  },
+  "Événements Nemo": {
+    label: "Nemo",
+    className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200",
+  },
+  "MAC-RACH": {
+    label: "MAC-RACH",
+    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200",
+  },
+};
+function layerBadge(protocol: string | null | undefined) {
+  if (!protocol) return <span className="text-muted-foreground">—</span>;
+  const b = LAYER_BADGE[protocol];
+  if (!b) return <span>{protocol}</span>;
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${b.className}`}>
+      {b.label}
+    </span>
+  );
+}
 
 // 1.55.0 — Directional badge. Spec §5 : UL = ↑ vert, DL = ↓ bleu, inconnu = —.
 // Jamais déduire du nom du message : on lit uniquement row.direction retourné
@@ -806,12 +845,31 @@ export function SignalingPage({
   // Panel map garde la même instance mountée (collapsedSize=0) pour éviter
   // le bug react-resizable-panels de remount dynamique.
   const [mapVisible, setMapVisible] = useState(true);
+  const [timelineVisible, setTimelineVisible] = useState(true);
   const mapPanelRef = useRef<PanelImperativeHandle>(null);
+  const timelinePanelRef = useRef<PanelImperativeHandle>(null);
+  const overviewPanelRef = useRef<PanelImperativeHandle>(null);
+  // Si les deux (timeline + map) sont OFF, on replie aussi la rangée
+  // « overview » entière pour libérer verticalement l'espace à l'inspecteur.
+  const syncOverview = (nextMap: boolean, nextTimeline: boolean) => {
+    if (!nextMap && !nextTimeline) overviewPanelRef.current?.collapse();
+    else overviewPanelRef.current?.expand();
+  };
   const toggleMap = () => {
     setMapVisible((prev) => {
       const next = !prev;
       if (next) mapPanelRef.current?.expand();
       else mapPanelRef.current?.collapse();
+      syncOverview(next, timelineVisible);
+      return next;
+    });
+  };
+  const toggleTimeline = () => {
+    setTimelineVisible((prev) => {
+      const next = !prev;
+      if (next) timelinePanelRef.current?.expand();
+      else timelinePanelRef.current?.collapse();
+      syncOverview(mapVisible, next);
       return next;
     });
   };
@@ -963,6 +1021,17 @@ export function SignalingPage({
       <header className="mb-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Signaling View</h1>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="kpi-button"
+            onClick={toggleTimeline}
+            aria-pressed={timelineVisible}
+            data-testid="signaling-timeline-toggle"
+            title={timelineVisible ? "Masquer la timeline" : "Afficher la timeline"}
+          >
+            {timelineVisible ? <Activity size={14} /> : <ActivitySquare size={14} />}
+            Timeline · {timelineVisible ? "ON" : "OFF"}
+          </button>
           <button
             type="button"
             className="kpi-button"
@@ -1172,9 +1241,25 @@ export function SignalingPage({
           <Separator className="signaling-separator" aria-label="Largeur des filtres" />
           <Panel id="workspace" minSize="55%">
             <Group orientation="vertical" id="signaling-rows">
-              <Panel id="overview" defaultSize="32%" minSize={190}>
+              <Panel
+                id="overview"
+                panelRef={overviewPanelRef}
+                defaultSize="32%"
+                minSize={timelineVisible || mapVisible ? 190 : 0}
+                collapsible
+                collapsedSize={0}
+                data-testid="signaling-overview-panel"
+              >
                 <Group orientation="horizontal" id="signaling-overview">
-                  <Panel id="timeline" defaultSize="65%" minSize="35%">
+                  <Panel
+                    id="timeline"
+                    panelRef={timelinePanelRef}
+                    defaultSize={65}
+                    minSize={timelineVisible ? 25 : 0}
+                    collapsible
+                    collapsedSize={0}
+                    data-testid="signaling-timeline-panel"
+                  >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
                       <h2 className="text-sm font-semibold">Timeline</h2>
                       {timeline.data ? (
@@ -1196,7 +1281,6 @@ export function SignalingPage({
                   <Separator
                     className="signaling-separator"
                     aria-label="Largeur timeline et carte"
-                    style={mapVisible ? undefined : { display: "none" }}
                   />
                   <Panel
                     id="map"
@@ -1344,7 +1428,7 @@ export function SignalingPage({
                                         : c === "t_rel_s"
                                           ? timeShown(r.t_rel_s)
                                           : c === "layer"
-                                            ? r.protocol
+                                            ? layerBadge(r.protocol)
                                             : c === "direction"
                                               ? directionBadge(r.direction)
                                               : c === "message_name"
