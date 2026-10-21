@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.11.1 (patch) — bc4-front 2026-10-21 — Signaling View : alignement et sélection
+
+- Espace central contenu dans la largeur disponible ; timeline plus compacte et hauteur limitée pour garder les messages visibles.
+- Une ligne rouge continue traverse pistes et mesures radio, avec une géométrie temporelle unique et interactions dans le bloc RF.
+- Infobulle disponible après sélection, mesures précédentes avec écart explicite, lien vers les messages ; événement prouvé synchronisé avec la carte sans déplacer son centre.
+- Bornes de tâches et appels sélectionnables à leur timestamp exact, tâches actives surlignées ; groupes d’événements développés par zoom sans sélection arbitraire.
+- Navigation clavier inclut les observations RF disponibles. Aucun changement de source de données ou de backend.
+
 ## 1.11.0 (minor) — bc4-front 2026-10-21 — Signaling View : curseur temporel interactif
 
 - Curseur rouge (#EF4444, 2 px) traversant toutes les pistes, de l'axe temps partagé jusqu'au bloc Mesures radio : poignée glissable en tête, étiquette de temps flottante rouge à texte blanc.

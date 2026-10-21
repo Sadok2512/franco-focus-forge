@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { SigCapture, SigSeries } from "@/lib/api/signaling-schemas";
-import { callsAt, connectivityAt, eventsAt, prevPoint, rfReadings, snapTimes, stepTime, tasksAt } from "@/features/signaling/cursor";
+import { callsAt, connectivityAt, eventForMessage, eventsAt, prevPoint, rfReadings, snapTimes, stepTime, tasksAt } from "@/features/signaling/cursor";
+import { timeAtClientX, timeFraction } from "@/features/signaling/time-scale";
 
 const series = (key: string, points: { t: number; v: number | null }[]): SigSeries => ({ key, label: key, unit: "dBm", points });
 
@@ -77,6 +78,26 @@ describe("curseur temporel — états et tâches", () => {
 });
 
 describe("curseur temporel — navigation clavier", () => {
+  it("includes exact available RF timestamps, not missing samples", () => {
+    const times = snapTimes(capture());
+    expect(times).toContain(240);
+    expect(times).not.toContain(50);
+    expect(stepTime(times, 205.318, 1, 0)).toBe(240);
+  });
+
+  it("links messages only through proven event references", () => {
+    expect(eventForMessage(capture(), 1012)?.id).toBe("e2");
+    expect(eventForMessage(capture(), 1013)).toBeNull();
+  });
+
+  it("uses identical plot geometry for tracks and radio at every width", () => {
+    for (const width of [430, 1000, 1280]) {
+      const fraction = timeFraction(245.318, 0, 632.851);
+      expect(timeAtClientX(20 + width * fraction, 20, width, 0, 632.851)).toBeCloseTo(245.318, 8);
+      expect(timeAtClientX(20 + width * 0.132, 20, width, 0, 632.851)).toBe(0);
+      expect(timeAtClientX(20 + width * 0.992, 20, width, 0, 632.851)).toBeCloseTo(632.851, 8);
+    }
+  });
   it("snapTimes contient événements, mobilité, bornes de tâches et appels, triés", () => {
     const ts = snapTimes(capture());
     expect(ts).toEqual([...ts].sort((a, b) => a - b));
@@ -90,7 +111,7 @@ describe("curseur temporel — navigation clavier", () => {
   it("stepTime va à l'instant suivant/précédent sans arrondi", () => {
     const ts = snapTimes(capture());
     expect(stepTime(ts, 100, 1, 0)).toBe(120.452);
-    expect(stepTime(ts, 245.318, -1, 0)).toBe(205.318);
+    expect(stepTime(ts, 245.318, -1, 0)).toBe(240);
     expect(stepTime(ts, null, 1, 42)).toBe(42);
     expect(stepTime(ts, 900, 1, 0)).toBe(900); // dernier instant : on reste
   });
