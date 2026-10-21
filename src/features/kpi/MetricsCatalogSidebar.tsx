@@ -170,17 +170,8 @@ export function MetricsCatalogSidebar({
     <aside className="kpi-catalog" aria-label={t("metrics.498227f2b5c6")}>
       <header className="border-b p-3">
         <h2 className="flex gap-2 text-sm font-semibold">
-          <Activity size={16} /> {query.data?.title ?? t("metrics.498227f2b5c6")}
+          <Activity size={16} /> {t("metrics.498227f2b5c6")}
         </h2>
-        {query.data?.header && (
-          <p className="mt-1 text-[10px] leading-snug text-muted-foreground">
-            {query.data.header}
-          </p>
-        )}
-        <p className="text-[11px] text-muted-foreground">
-          {t("metrics.f05f8e96265b")} {selected.length}
-          {t("metrics.16df3032f7a1")}
-        </p>
         <label className="relative mt-3 block">
           <Search className="absolute left-2 top-3" size={14} />
           <input
