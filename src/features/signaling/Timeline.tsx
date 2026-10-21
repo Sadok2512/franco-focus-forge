@@ -412,6 +412,18 @@ export function Timeline({
               1:1
             </button>
           </div>
+          {cursorT != null && !inView(cursorT) && (
+            <button
+              onClick={() => {
+                const half = span / 2;
+                onView({ start: Math.max(0, cursorT - half), end: Math.min(capture.duration_s, cursorT + half) });
+              }}
+              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+              style={{ color: CURSOR_COLOR, background: "rgba(239,68,68,0.1)" }}
+            >
+              Curseur {fmtSec(cursorT)} — hors vue, recentrer
+            </button>
+          )}
         </div>
       </div>
       <svg
