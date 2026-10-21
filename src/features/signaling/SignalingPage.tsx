@@ -184,14 +184,6 @@ export function SignalingPage() {
               document.addEventListener("mouseup", up);
             }}
           />
-          <button
-            aria-label={sideOpen ? "Replier les filtres" : "Déplier les filtres"}
-            onClick={() => setSideOpen((v) => !v)}
-            className="absolute left-1 top-16 z-20 rounded border bg-card p-1 text-muted-foreground shadow hover:bg-muted"
-          >
-            {sideOpen ? <PanelLeftClose className="h-3.5 w-3.5" /> : <PanelLeftOpen className="h-3.5 w-3.5" />}
-          </button>
-
           {/* Colonne centrale : timeline + tableau des messages */}
           <div className="flex min-w-0 flex-1 flex-col gap-2 overflow-hidden p-2">
             <section className="panel relative shrink-0" aria-label="Timeline RF et signalisation">
