@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import type { SigCapture } from "@/lib/api/signaling-schemas";
 import { SEV_COLOR } from "./Timeline";
+import { Button } from "@/components/ui/button";
 import { fmtSec } from "./shared";
 
 /** Carte GPS synchronisée : trajet réel, événements géolocalisés, sélection. */
@@ -130,7 +131,7 @@ export function SignalingMap({
         // Cadrage initial sur le trajet réel.
         const lngs = capture.track.map((p) => p.lng);
         const lats = capture.track.map((p) => p.lat);
-        m.fitBounds(
+        if (capture.track.length) m.fitBounds(
           [
             [Math.min(...lngs), Math.min(...lats)],
             [Math.max(...lngs), Math.max(...lats)],
@@ -160,27 +161,32 @@ export function SignalingMap({
   useEffect(() => {
     if (!ready || !map.current) return;
     map.current.setFilter("sel", ["==", ["get", "id"], selectedEventId ?? ""]);
-    if (selectedEventId) {
-      const g = capture.events_gps.find((x) => x.event_id === selectedEventId);
-      if (g) map.current.easeTo({ center: [g.lng, g.lat], duration: 400 });
-    }
+
   }, [selectedEventId, ready, capture.events_gps]);
 
   useEffect(() => {
-    setTimeout(() => map.current?.resize(), 30);
+    const node = el.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => map.current?.resize());
+    observer.observe(node);
+    map.current?.resize();
+    return () => observer.disconnect();
   }, [full]);
 
   return (
     <div className={`relative overflow-hidden ${full ? "fixed inset-4 z-50 rounded-md border bg-card shadow-2xl" : "h-full"}`}>
       <div ref={el} className="h-full w-full bg-muted" role="region" aria-label="Carte — Trajet GPS" />
       <div className="panel absolute left-2 top-2 z-10 px-2 py-1 text-[11px] font-semibold shadow">Carte - Trajet GPS</div>
-      <button
+      <Button variant="outline" size="sm"
         onClick={() => setFull((f) => !f)}
         aria-label={full ? "Quitter plein écran" : "Carte plein écran"}
         className="panel absolute right-2 top-2 z-10 p-1.5 shadow"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-      </button>
+      </Button>
+      {selectedEventId && !capture.events_gps.some((g) => g.event_id === selectedEventId) && (
+        <p role="status" className="absolute bottom-2 right-2 rounded border bg-card px-2 py-1 text-[10px] text-muted-foreground">GPS de l’événement : N/D</p>
+      )}
       <div className="panel absolute bottom-2 left-2 z-10 p-2 text-[10px] shadow">
         <p className="mb-1 font-semibold">Événements géolocalisés</p>
         {capture.events_gps.slice(0, 5).map((g) => {

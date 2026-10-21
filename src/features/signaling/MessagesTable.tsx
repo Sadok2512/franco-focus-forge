@@ -142,8 +142,7 @@ export function MessagesTable({
     if (selectedIndex == null) return;
     const pos = filtered.findIndex((m) => m.index === selectedIndex);
     if (pos >= 0) setPage(Math.floor(pos / pageSize) + 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIndex]);
+  }, [selectedIndex, filtered, pageSize]);
 
   useEffect(() => {
     if (selectedIndex == null) return;

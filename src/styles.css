@@ -45,6 +45,7 @@
   --color-sev-bad: var(--sev-bad);
   --color-warning: var(--warning);
   --color-warning-foreground: var(--warning-foreground);
+  --color-time-cursor: var(--time-cursor);
   --color-sidebar: var(--card);
   --color-sidebar-foreground: var(--foreground);
   --color-sidebar-border: var(--border);
@@ -96,6 +97,11 @@
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --time-cursor: #EF4444;
+  --radio-nr-rsrp: #DC2626;
+  --radio-lte-rsrp: #1769E0;
+  --radio-rsrq: #16A34A;
+  --radio-sinr: #F97316;
   color-scheme: light;
   --radius: 0.5rem;
   --chart-1: oklch(0.6 0.18 250);
@@ -192,3 +198,13 @@
 }
 
 html[data-density="comfortable"] body { font-size: 14px; }
+
+.signaling-workspace { min-width: 0; }
+.signaling-workspace .signaling-filters { width: min(var(--filter-width), 19vw); }
+.signaling-workspace .signaling-inspector { width: min(var(--inspector-width), 27vw); }
+.signaling-cursor-line { position: absolute; bottom: 0; width: 2px; background: var(--time-cursor); pointer-events: none; z-index: 10; }
+.signaling-cursor-preview { width: 1px; background: none; border-left: 1px dashed var(--time-cursor); opacity: .7; }
+@media (max-width: 760px) {
+  .signaling-workspace .signaling-filters { width: 160px; }
+  .signaling-workspace .signaling-inspector { width: 230px; }
+}

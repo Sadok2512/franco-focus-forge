@@ -21,4 +21,5 @@
 
 - RRC chart and table share effective grouping, value/legend filtering, normalization and semantic color mapping from `chart-data.ts` so displayed cells and marks remain synchronized.
 - Signaling View lives in `src/features/signaling/`, its deterministic scenarios in `src/mocks/signaling.ts` and its adapter in `src/lib/api/signaling.ts` (re-exported by client.ts); the timeline SVG and the ECharts radio block share one time window and one cursor, and unproven states (NR connectivity, unconfirmed calls) render as neutral markers, never as filled bars.
-- The interactive time cursor's pure logic lives in `src/features/signaling/cursor.ts`; RF values at the cursor use the last proven observation at or before t (never interpolation, never zero), and keyboard stepping uses `snapTimes` (exact event/task/call timestamps, never rounded).
+- The interactive time cursor's pure logic lives in `src/features/signaling/cursor.ts`; RF readings use the last proven observation at or before t and keyboard stepping uses exact event/task/call/available RF timestamps, so selection never depends on display rounding.
+- Signaling plot geometry lives in `src/features/signaling/time-scale.ts`; SVG tracks, RF canvas and the continuous overlay use the same margins, so their cursor positions remain aligned at every width.
