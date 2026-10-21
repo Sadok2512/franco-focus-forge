@@ -583,6 +583,13 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
+      {!events.isPending &&
+        !events.isError &&
+        !displayed.some((e) => laneOf(e.attrs.track) === "uestate") && (
+          <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
+            {t("rfTimeline.ueStateEmpty")}
+          </p>
+        )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
           <div

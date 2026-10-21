@@ -434,6 +434,7 @@
    "Procedures": "Procedures"
   },
   "uestate": "UE State",
+  "ueStateEmpty": "UE State: no connectivity period provided by the source for this capture (not inferred).",
   "rfMetrics": "RF Metrics",
   "legend": {
    "info": "Info",
