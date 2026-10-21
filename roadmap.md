@@ -1,5 +1,5 @@
 # BC4 roadmap
-- [ ] U12 Signaling View (BC4_SIGNALING_TIMELINE_LOVABLE_V1): /signaling page — shared-time-axis RF timeline (connectivity, events, DL/UL tasks, VoLTE/VoNR, mobility, radio measurements), GPS map, messages table, payload inspector, version bump + Playwright check.
+- [x] U12 Signaling View (BC4_SIGNALING_TIMELINE_LOVABLE_V1): /signaling page — shared-time-axis RF timeline, GPS map, messages table, payload inspector; v1.10.0; typecheck + 44 tests + Playwright verified.
 - [x] Synchronize RRC table filters, groups, measures and colors with the chart — eight tests and browser search/legend checks passed.
 - [x] RRC chart types and independent value/band/operator colors — six tests and nine browser combinations verified.
 - [x] U0 foundation (tokens, shell, routes, mock API)
