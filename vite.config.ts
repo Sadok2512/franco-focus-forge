@@ -33,6 +33,16 @@ export default defineConfig({
           proxyTimeout: 600_000,
           rewrite: (p: string) => p.replace(/^\/api/, ""),
         },
+        // 1.67.0 — Proxy des tuiles OSM via le dev-server quand le poste
+        // utilisateur n'a pas d'accès sortant à tile.openstreetmap.org.
+        // Back100 (le serveur de dev) peut y accéder ; le navigateur passe
+        // par /osm/* servi en même origine.
+        "/osm": {
+          target: "https://tile.openstreetmap.org",
+          changeOrigin: true,
+          rewrite: (p: string) => p.replace(/^\/osm/, ""),
+          headers: { "User-Agent": "BC4-SignalingView/1.67.0 (dev proxy)" },
+        },
       },
     },
   },

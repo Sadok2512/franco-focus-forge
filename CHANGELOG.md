@@ -1,3 +1,12 @@
+## 1.68.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : proxy OSM via dev-server (Agent BC3)
+
+- **Problème** : « Tiles OSM injoignables » affiché par `KpiMapOSM` sur les postes utilisateurs dont le réseau n'a pas d'accès sortant à `tile.openstreetmap.org`. Le navigateur chargeait les tuiles en direct → échec → bandeau tileError.
+- **Fix** : nouvelle entrée de proxy Vite `/osm` → `https://tile.openstreetmap.org` dans `vite.config.ts`. Le navigateur demande maintenant `http://localhost:5174/osm/{z}/{x}/{y}.png` (même origine), Vite relaie depuis Back100 qui a l'accès sortant.
+- `KpiMapOSM.tsx` : URL de tuiles passée de `https://tile.openstreetmap.org/{z}/{x}/{y}.png` à `/osm/{z}/{x}/{y}.png`.
+- User-Agent explicite `BC4-SignalingView/1.68.0 (dev proxy)` ajouté sur le proxy (respect de la politique d'usage OSM).
+- Validé : proxy renvoie 200 / 23 KB (tuile valide) ; screenshot confirme OSM tiles rendues dans l'overlay sans erreur.
+- Rebase sur BC1 1.66.1 (English KPI and Metrics views) : conservé l'ensemble des traductions i18n introduites par BC1 dans `KpiMapOSM.tsx`.
+
 ## 1.66.1 (patch) — BC4-FRONT 2026-10-21 — English KPI and Metrics views (Agent BC1)
 
 - Complete the front-owned KPI/Metrics wording migration: catalogues, tabs, filters, chart settings, data tables, chronogram, scatter plots, map controls, exports and evidence panels use matching English/French resources.

@@ -95,7 +95,11 @@ export function KpiMapOSM({
           sources: {
             osm: {
               type: "raster",
-              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+              // 1.67.0 — Même origine via proxy Vite dev `/osm/*` →
+              // tile.openstreetmap.org. Permet au navigateur de charger
+              // les tuiles même quand son réseau n'a pas accès direct à
+              // OSM (Back100 relaie).
+              tiles: ["/osm/{z}/{x}/{y}.png"],
               tileSize: 256,
               attribution: "© OpenStreetMap",
             },
