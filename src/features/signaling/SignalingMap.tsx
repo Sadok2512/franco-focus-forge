@@ -165,7 +165,12 @@ export function SignalingMap({
   }, [selectedEventId, ready, capture.events_gps]);
 
   useEffect(() => {
-    setTimeout(() => map.current?.resize(), 30);
+    const node = el.current;
+    if (!node) return;
+    const observer = new ResizeObserver(() => map.current?.resize());
+    observer.observe(node);
+    map.current?.resize();
+    return () => observer.disconnect();
   }, [full]);
 
   return (
