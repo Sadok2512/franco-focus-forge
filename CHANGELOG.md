@@ -1,3 +1,8 @@
+## 1.77.1 — Catalogue tab labels
+
+- Sidebar tabs now read "KPI catalogue" / "Metrics catalogue" (fr: "Catalogue KPI" / "Catalogue Métriques") instead of the bare "KPI" / "Metrics" + count.
+- Selected counts moved to each tab's tooltip and accessible name; no data, query or layout change.
+
 ## 1.77.0 — Interactive Signaling time cursor
 
 - Extended the existing RF timeline with one continuous red cursor, exact event snap, free click, drag and observed-time keyboard navigation.
