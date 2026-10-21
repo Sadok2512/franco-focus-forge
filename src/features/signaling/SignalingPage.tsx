@@ -10,13 +10,115 @@ import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  SlidersHorizontal,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { DecoderTree } from "./DecoderTree";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = ["#2563eb", "#7c3aed", "#ea580c", "#0891b2", "#16a34a"];
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
+
+// 1.55.0 (V3 LOT 2) — Column catalog. Only fields supported by the back
+// Line contract. Section 6 of the V3 spec forbids inventing values; any
+// column requested by the spec but not provided by /signaling (EARFCN,
+// Bande, Service, RSRP/RSRQ/SINR/CQI/BLER, eNB/gNB, Lat/Lng/Speed) is
+// absent from this catalog and must stay hidden until the back supplies
+// the data.
+type ColKey =
+  | "seq"
+  | "t_rel_s"
+  | "layer"
+  | "direction"
+  | "message_name"
+  | "ecgi"
+  | "pci"
+  | "size_bytes"
+  | "technology"
+  | "source";
+const COL_LABELS: Record<ColKey, string> = {
+  seq: "#",
+  t_rel_s: "Temps (s)",
+  layer: "Couche",
+  direction: "Sens",
+  message_name: "Message",
+  ecgi: "ECGI",
+  pci: "PCI",
+  size_bytes: "Octets",
+  technology: "Techno",
+  source: "Source",
+};
+const MANDATORY_COLS: readonly ColKey[] = ["seq", "t_rel_s", "message_name"];
+
+// 1.55.0 — Directional badge. Spec §5 : UL = ↑ vert, DL = ↓ bleu, inconnu = —.
+// Jamais déduire du nom du message : on lit uniquement row.direction retourné
+// par le back. null/undefined → — (pas d'inversion ni d'invention).
+function directionBadge(direction: string | null | undefined) {
+  if (direction === "UL")
+    return (
+      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+        <ArrowUp size={12} aria-hidden="true" />
+        UL
+      </span>
+    );
+  if (direction === "DL")
+    return (
+      <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+        <ArrowDown size={12} aria-hidden="true" />
+        DL
+      </span>
+    );
+  return <span className="text-muted-foreground">—</span>;
+}
+
+type RowLike = {
+  message_name: string;
+  procedure_ids: string[];
+};
+type ProcLike = {
+  id: string;
+  type: string;
+  duration_ms: number | null;
+  outcome: string;
+};
+function messageCell(row: RowLike, procedures: ProcLike[]) {
+  return (
+    <>
+      {row.message_name}
+      {row.procedure_ids.map((id) => {
+        const p = procedures.find((q) => q.id === id);
+        return p ? (
+          <div key={id} className="text-[10px] text-muted-foreground">
+            {p.type} · {p.duration_ms ?? "—"} ms · {p.outcome}
+          </div>
+        ) : null;
+      })}
+    </>
+  );
+}
+const DEFAULT_COLS: readonly ColKey[] = [
+  "seq",
+  "t_rel_s",
+  "layer",
+  "direction",
+  "message_name",
+  "ecgi",
+  "pci",
+  "size_bytes",
+];
 
 const timeShown = (value: number | null | undefined) => (value == null ? "—" : value.toFixed(3));
 const radioShown = (value: number | null | undefined, unit: string) =>
@@ -316,6 +418,19 @@ export function SignalingPage({
     if (next) filtersPanelRef.current?.collapse();
     else filtersPanelRef.current?.expand();
   };
+  // 1.55.0 (V3 LOT 2) — visibilité des colonnes, session-scoped useState
+  // (jamais inclus dans un queryKey, jamais déclencheur de refetch).
+  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => new Set<ColKey>(DEFAULT_COLS));
+  const toggleCol = (c: ColKey) => {
+    if (MANDATORY_COLS.includes(c)) return;
+    setVisibleCols((prev) => {
+      const next = new Set(prev);
+      if (next.has(c)) next.delete(c);
+      else next.add(c);
+      return next;
+    });
+  };
+  const resetCols = () => setVisibleCols(new Set<ColKey>(DEFAULT_COLS));
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -707,47 +822,93 @@ export function SignalingPage({
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
                   <Panel id="messages" defaultSize="55%" minSize={narrow ? 220 : "30%"}>
                     <section className="signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card">
-                      <header className="flex items-center justify-between border-b p-3 text-sm">
+                      <header className="flex items-center justify-between gap-2 border-b p-3 text-sm">
                         <span>{shown(listing.data?.total)} messages</span>
-                        <button
-                          className="kpi-button"
-                          disabled={!listing.data}
-                          onClick={() => void exportCsv()}
-                        >
-                          Export CSV
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="kpi-button"
+                                aria-label="Colonnes du tableau"
+                                data-testid="signaling-columns-trigger"
+                              >
+                                <Columns3 size={14} />
+                                Colonnes ({visibleCols.size}/{Object.keys(COL_LABELS).length})
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-56">
+                              <DropdownMenuLabel>Colonnes affichées</DropdownMenuLabel>
+                              {(Object.keys(COL_LABELS) as ColKey[]).map((c) => {
+                                const mandatory = MANDATORY_COLS.includes(c);
+                                return (
+                                  <label
+                                    key={c}
+                                    className="flex cursor-pointer items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
+                                    title={mandatory ? "Colonne obligatoire" : ""}
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={visibleCols.has(c)}
+                                      disabled={mandatory}
+                                      onChange={() => toggleCol(c)}
+                                      data-testid={`signaling-column-${c}`}
+                                    />
+                                    {COL_LABELS[c]}
+                                    {mandatory && (
+                                      <span className="ml-auto text-[10px] text-muted-foreground">
+                                        obl.
+                                      </span>
+                                    )}
+                                  </label>
+                                );
+                              })}
+                              <DropdownMenuSeparator />
+                              <button
+                                type="button"
+                                onClick={resetCols}
+                                className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
+                              >
+                                Réinitialiser
+                              </button>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <button
+                            className="kpi-button"
+                            disabled={!listing.data}
+                            onClick={() => void exportCsv()}
+                          >
+                            Export CSV
+                          </button>
+                        </div>
                       </header>
                       <div className="min-h-0 flex-1 overflow-auto">
                         <table className="w-full text-xs" aria-label="Messages de signalisation">
                           <thead className="sticky top-0 bg-muted">
                             <tr>
-                              {[
-                                ["seq", "#"],
-                                ["t_rel_s", "Temps (s)"],
-                                ["protocol", "Couche"],
-                                ["direction", "Sens"],
-                                ["message_name", "Message"],
-                                ["cell", "ECGI / PCI"],
-                                ["size_bytes", "Octets"],
-                              ].map(([key, label]) => (
-                                <th key={key} className="p-2 text-left">
-                                  {key === "direction" || key === "cell" ? (
-                                    label
-                                  ) : (
-                                    <button
-                                      onClick={() => {
-                                        setSort(key!);
-                                        setOrder((old) =>
-                                          sort === key && old === "asc" ? "desc" : "asc",
-                                        );
-                                        resetPage();
-                                      }}
-                                    >
-                                      {label}
-                                    </button>
-                                  )}
-                                </th>
-                              ))}
+                              {(Object.keys(COL_LABELS) as ColKey[])
+                                .filter((c) => visibleCols.has(c))
+                                .map((c) => (
+                                  <th key={c} className="p-2 text-left" data-col={c}>
+                                    {c === "direction" || c === "source" ? (
+                                      COL_LABELS[c]
+                                    ) : (
+                                      <button
+                                        onClick={() => {
+                                          const sortKey =
+                                            c === "layer" ? "protocol" : (c as string);
+                                          setSort(sortKey);
+                                          setOrder((old) =>
+                                            sort === sortKey && old === "asc" ? "desc" : "asc",
+                                          );
+                                          resetPage();
+                                        }}
+                                      >
+                                        {COL_LABELS[c]}
+                                      </button>
+                                    )}
+                                  </th>
+                                ))}
                             </tr>
                           </thead>
                           <tbody>
@@ -764,25 +925,39 @@ export function SignalingPage({
                                 onClick={() => chooseSeq(r.seq)}
                                 className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
                               >
-                                <td className="p-2 font-mono">{r.seq}</td>
-                                <td className="p-2 font-mono">{timeShown(r.t_rel_s)}</td>
-                                <td className="p-2 whitespace-nowrap">{r.protocol}</td>
-                                <td className="p-2">{shown(r.direction)}</td>
-                                <td className="p-2">
-                                  {r.message_name}
-                                  {r.procedure_ids.map((id) => {
-                                    const p = listing.data.procedures.find((p) => p.id === id);
-                                    return p ? (
-                                      <div key={id} className="text-[10px] text-muted-foreground">
-                                        {p.type} · {shown(p.duration_ms)} ms · {p.outcome}
-                                      </div>
-                                    ) : null;
-                                  })}
-                                </td>
-                                <td className="p-2">
-                                  {shown(r.ecgi)} / {shown(r.pci)}
-                                </td>
-                                <td className="p-2">{shown(r.size_bytes)}</td>
+                                {(Object.keys(COL_LABELS) as ColKey[])
+                                  .filter((c) => visibleCols.has(c))
+                                  .map((c) => (
+                                    <td
+                                      key={c}
+                                      className={
+                                        c === "seq" || c === "t_rel_s" ? "p-2 font-mono" : "p-2"
+                                      }
+                                      data-col={c}
+                                    >
+                                      {c === "seq"
+                                        ? r.seq
+                                        : c === "t_rel_s"
+                                          ? timeShown(r.t_rel_s)
+                                          : c === "layer"
+                                            ? r.protocol
+                                            : c === "direction"
+                                              ? directionBadge(r.direction)
+                                              : c === "message_name"
+                                                ? messageCell(r, listing.data?.procedures ?? [])
+                                                : c === "ecgi"
+                                                  ? shown(r.ecgi)
+                                                  : c === "pci"
+                                                    ? shown(r.pci)
+                                                    : c === "size_bytes"
+                                                      ? shown(r.size_bytes)
+                                                      : c === "technology"
+                                                        ? shown(r.technology)
+                                                        : c === "source"
+                                                          ? shown(r.source)
+                                                          : null}
+                                    </td>
+                                  ))}
                               </tr>
                             ))}
                           </tbody>

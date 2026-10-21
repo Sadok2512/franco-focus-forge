@@ -1,3 +1,16 @@
+## 1.55.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 2 : colonnes + flèches UL/DL (Agent BC3)
+
+- `SignalingPage.tsx` : bouton **« Colonnes (n/N) »** à côté de « Export CSV » avec `DropdownMenu` dédié. Checkbox par colonne, colonnes obligatoires (`#`, `Temps (s)`, `Message`) désactivées, bouton « Réinitialiser » restaure la vue par défaut. État de visibilité en `useState` **session-local**, jamais inclus dans un `queryKey`.
+- Catalogue de colonnes **strictement limité aux champs servis par `/signaling`** (section 6 : « Afficher uniquement les champs supportés par le contrat de données ») : `seq, t_rel_s, layer, direction, message_name, ecgi, pci, size_bytes, technology, source`. Les colonnes spec non fournies par le back (`EARFCN`, `Bande`, `Service`, `RSRP/RSRQ/SINR/CQI/BLER`, `eNB/gNB`, `Lat/Lng/Speed`) sont **volontairement absentes** jusqu'à ce que le back les expose — spec Règle d'intégrité « Aucun champ inventé ».
+- Nouvelle colonne « Sens » : badges `↑ UL` (vert `emerald-600`) / `↓ DL` (bleu `blue-600`) / `—` (direction null). **Jamais déduit du nom du message** : lecture directe de `row.direction` servi par le back (section §5 « Ne jamais déduire le sens uniquement du nom du message »).
+- Export CSV **inchangé** : respecte le contrat back existant, pas de mode « colonnes visibles seulement » (spec §6 « Si l'export des seules colonnes visibles est souhaité, prévoir une option explicite plutôt que modifier le comportement actuel »).
+- Validé Playwright (G4 + G5 + G12 non-régression P0) sur TEST2 cap `723547b196b3` filtrée RRC LTE :
+  - Default columns = 8, popover 10 options, ECGI+PCI décochés → 6 colonnes, `seq` disabled (obligatoire).
+  - Première ligne RRC LTE : `DL · Paging` ; 2e ligne : `UL · RRCConnectionRequest`.
+  - Click sur ligne → `aria-selected=true` sans changement de pagination (P0 1.50.1 préservé).
+  - Zéro erreur JS.
+- Call Flow API audit (LOT 4 prep) : `/signaling/procedures` + `/signaling?procedure=<id>` suffisants. `boundary_seqs` = **stages prouvés uniquement** (ex. HO 4171→4180 = `[4171, 4180]`), appartenance via `row.procedure_ids`. **Aucun nouveau endpoint back requis** pour LOT 4.
+
 ## 1.54.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 1 : sidebar repliable (Agent BC3)
 
 - `SignalingPage.tsx` : panneau « Filtres » devient **repliable** (`collapsible`, `collapsedSize=44px`) sur le `react-resizable-panels` déjà en place depuis 1.53.0. Nouveau bouton chevron dans l'en-tête de la sidebar (`Masquer les filtres` / `Afficher les filtres`) et rail compact 44 px avec icône `SlidersHorizontal` quand replié.
