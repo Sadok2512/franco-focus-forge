@@ -775,13 +775,23 @@ function SignalMap({
   // texte brut, on affiche la carte OSM centrée sur la France (centroid
   // 2.4/46.6) + bandeau en overlay. L'utilisateur voit bien la carte.
   const hasMarkers = data.markers.length > 0;
+  // Paris centre, zoom 10 : reconnaissable visuellement sans inventer de
+  // position par capture (spec §4). Pas de centroid France (46.6 → Atlantique
+  // moyen, visuellement vide).
   const center: [number, number] = hasMarkers
     ? [data.markers[0]!.lng!, data.markers[0]!.lat!]
-    : [2.4, 46.6];
-  const zoom = hasMarkers ? 13 : 5;
+    : [2.35, 48.85];
+  const zoom = hasMarkers ? 13 : 10;
+  // 1.66.0 — key force le remount de KpiMapOSM quand le centre/zoom change.
+  // Sans ça, le composant garde la position de la capture précédente car son
+  // useEffect d'init a [] en deps (voir KpiMapOSM.tsx:71-122).
+  const mapKey = hasMarkers
+    ? `markers-${data.markers[0]!.lat!.toFixed(3)}-${data.markers[0]!.lng!.toFixed(3)}`
+    : "empty";
   return (
     <div className="relative h-full min-h-0 flex-1 overflow-hidden rounded border [&>div]:h-full">
       <KpiMapOSM
+        key={mapKey}
         center={center}
         zoom={zoom}
         onMapReady={ready}
@@ -791,12 +801,12 @@ function SignalMap({
         nPoints={data.positioned_count}
       />
       {!hasMarkers && (
-        <div
+        <span
           role="status"
-          className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-background/90 px-3 py-1 text-xs shadow"
+          className="pointer-events-none absolute left-1/2 top-3 z-10 inline-block -translate-x-1/2 rounded-full bg-background/90 px-3 py-1 text-xs shadow"
         >
           Aucun GPS précédent prouvé dans cette capture
-        </div>
+        </span>
       )}
     </div>
   );
