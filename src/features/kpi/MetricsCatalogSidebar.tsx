@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
@@ -156,8 +156,9 @@ export function MetricsCatalogSidebar({
     );
   };
   const expandableIds = (query.data?.nodes ?? [])
-    // Keep the catalogue responsive like the reference tree: root categories
-    // are open, while groups and starred metrics expand on demand.
+  // Keep the catalogue responsive: branches expand on demand. The reference
+  // ordering and labels remain server-provided; no client-side catalogue is
+  // synthesized.
     .filter(
       (node) =>
         node.node_type === "category" && (byParent.get(node.node_id) ?? []).length > 0,
@@ -165,10 +166,6 @@ export function MetricsCatalogSidebar({
     .map((node) => node.node_id);
   // The reference catalogue is fully expanded on first render. Keep the
   // server-provided order and labels; the user can still collapse any branch.
-  useEffect(() => {
-    if (expandableIds.length === 0) return;
-    setOpen((previous) => (previous.size ? previous : new Set(expandableIds)));
-  }, [query.data, expandableIds.join("|")]);
   return (
     <aside className="kpi-catalog" aria-label={t("metrics.498227f2b5c6")}>
       <header className="border-b p-3">
