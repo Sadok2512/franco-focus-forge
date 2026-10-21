@@ -3,6 +3,7 @@
 - Render the approved v6 Metrics hierarchy node for node, with source badges, search, expand/collapse all and seven cell leaves under each starred metric.
 - Keep zero-population and P4-open leaves visible and disabled with their explicit reason; selecting a starred branch selects its available proven leaves.
 - Consume the versioned catalogue response while preserving the existing chronogram, table, capture filters and metric analysis APIs.
+- Fix the catalogue adapter to retain the complete `{title, header, metrics, nodes}` envelope; render the HTML reference tree fully expanded on first load while keeping unavailable/P4 leaves visible and disabled.
 
 ## 1.70.0 (minor) — BC4 2026-10-21 — RF and signaling timeline (Agent BC2)
 
