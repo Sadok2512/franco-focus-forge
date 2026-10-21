@@ -1,3 +1,77 @@
+## 1.77.0 (minor) — BC4-FRONT 2026-10-21 — Signaling v2 preview + API adapter — Phase B + C (branche feat/signaling-github-exact-ui, Agent BC3)
+
+Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1`. **Phases A, B et C livrées**. Prod `bc4-front-rf:1.71.2` et route `/signaling` BC2+BC3 inchangées. Mission reste BLOCKED/APPROUVÉ par étape sur approbation utilisateur pour Phase D (visual certification).
+
+### Phase B — Preview coexistente (déjà commit e822eaa)
+
+- Nouvelle route `/signaling-v2` chargeant la UI GitHub exacte (pin `75061ccbc4cb38c036f5d03ab08ccd5f89b60474`, repo Sadok2512/franco-focus-forge).
+- 10 fichiers UI copiés byte-identiques depuis GitHub (seuls les paths d'import diffèrent : `@/lib/api/signaling-schemas` → `-v2`, `@/lib/api/client` → `./signaling-v2` ; diff sémantique = 0 ligne après revert des renames).
+- `src/mocks/signaling.ts` (468 l fixtures GitHub) importé pour mode mock.
+- Mode `?mode=mock` par défaut ; aucune API BC4 appelée en Phase B.
+
+### Phase C — Adaptateur BC4 (nouveau)
+
+- **`src/lib/api/signaling-v2-adapter.ts`** (nouveau, ~250 l) : traduit les 10 endpoints BC4 `/projects/{pid}/signaling/*` vers les 4 contrats GitHub `SigCaptureMeta / SigCapture / SigMessage / SigPayload`. Zod-validé à l'entrée (`BcRowsEnvelopeSchema`, `BcEventsEnvelopeSchema`, `BcPointsEnvelopeSchema`, `BcDetailsSchema`) et à la sortie (schémas GH).
+- **`src/lib/api/signaling-v2.ts`** : switch mode `mock` / `api` via `setSignalingV2Mode()`. Les 4 fonctions délèguent soit aux fixtures mock, soit à l'adaptateur BC4.
+- **`src/routes/_app.signaling-v2.tsx`** : accepte `?mode=api` (défaut `mock`), injecte le projet actif via `setSignalingV2Project()`, retourne un placeholder si API mode sans projet actif.
+
+### Fanout API et stratégie d'intégrité (CLAUDE.md Rule 2)
+
+Pour une capture donnée, l'adaptateur orchestre :
+```
+listSignalingCaptures()  → 1 call   /signaling/captures
+getSignalingCapture(id)  → 3 calls parallèles  /signaling (size=1) + /signaling/events + /signaling/points
+getSignalingMessages(id) → N pages parallèles  /signaling (size=500, N = ceil(total/500))
+getSignalingPayload(id,i) → 1 call  /signaling/details?seq=<cache[id][i]>
+```
+
+**N/D explicites** (sources BC4 absentes) :
+- `connectivity[]` = `[]` (BC4 ne reconstruit pas d'intervals LTE/EN-DC/NR-SA)
+- `tasks[]` = `[]` (lane=services existe mais pas de direction DL/UL fiable)
+- `calls[]` = `[]` (pas de source VoLTE/VoNR)
+- `measurements[]` = `[]` (métriques radio séparées via `/metrics`, non intégrées Phase C)
+- `events_gps[]` = `[]` (jointure events ↔ points par seq_gap non implémentée)
+- `SigMessage.earfcn/rsrp/rsrq/sinr` = `null` (BC4 ne joint pas aux rows signaling)
+- `SigPayload.call_flow[]` = `[]`
+
+**Fallbacks documentés** (contrainte schéma GH non-nullable) :
+- `SigMessage.octets` : `null → 0` (schéma GH exige int)
+- `SigMessage.dir` : `null → "DL"` (schéma GH exige UL|DL, BC4 state events n'ont pas de direction)
+- `SigCaptureMeta.captured_at` : extrait du label Nemo `..._26Jun23_110007...` → `"2023-06-26T11:00:07Z"` ; fallback = label brut
+
+### Preuves Playwright TEST2/Test_3, mode `?mode=api` (1920×1080)
+
+```
+BC4 requests interceptés (10 au total) :
+  GET /projects/{pid}/signaling/captures
+  GET /projects/{pid}/signaling?capture_id=X&page=1&size=1
+  GET /projects/{pid}/signaling/events?capture_id=X
+  GET /projects/{pid}/signaling/points?capture_id=X
+  GET /projects/{pid}/signaling?capture_id=X&page=1..6&size=500   (6 pages)
+
+Rendu UI :
+  title            = "Signaling View v2 — BC4 (GitHub exact preview)"
+  h1               = "Signaling View"
+  capture_selector = "M1_FREE_DL-7Go_Max-10_W30_26Jun23_110007.4.nmf
+                      - 2023-06-26T11:00:07Z" (captured_at extraction OK)
+  msgCounter       = "Messages (2 681)"   ← BC4 /signaling total exact
+  msgRows          = 100                   (pagination 100/page par défaut)
+  clic 1er row     → "GAA #0" sélectionné, Inspector :
+                     Payload / Hexadécimal / Paramètres / Call Flow / Détails
+  Zéro erreur console
+
+Zod violations : aucune (SigMessage.array().parse() sur 2681 rows OK,
+                 SigCapture.parse() OK, SigPayload.parse() OK sur GAA#0).
+```
+
+### Zéro régression
+
+- `/signaling` (BC2+BC3) : intact
+- `/kpi`, `/metrics`, Overview, RRC : intacts
+- Prod `bc4-front-rf:1.71.2` : non reconstruite
+- Branche `feat/signaling-github-exact-ui` isolée de `main`
+- `tsc --noEmit` : clean
+
 ## 1.76.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase D : +Add Panel menu + Overlay multi-KPI + responsive 3 viewports (Agent BC3)
 
 Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2` **livrée à 100%** (14/14 G passed). Phase D complète les 3 derniers critères.
