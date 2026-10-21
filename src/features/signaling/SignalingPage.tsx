@@ -13,7 +13,8 @@ import { MessagesTable } from "./MessagesTable";
 import { RadioChart } from "./RadioChart";
 import { Sidebar, DEFAULT_SIDEBAR, type SidebarFilters } from "./Sidebar";
 import { SignalingMap } from "./SignalingMap";
-import { Timeline, type HoverState, type View } from "./Timeline";
+import { CONN_LABEL, Timeline, type HoverState, type View } from "./Timeline";
+import { callsAt, connectivityAt, eventsAt, rfReadings, snapTimes, stepTime, tasksAt } from "./cursor";
 import { fmtNum, fmtSec } from "./shared";
 
 export function SignalingPage() {
@@ -37,6 +38,8 @@ export function SignalingPage() {
   const [inspW, setInspW] = useState(340);
   const [view, setView] = useState<View | null>(null);
   const [cursorT, setCursorT] = useState<number | null>(null);
+  // Curseur de prévisualisation (survol) : temps + position écran pour l'infobulle.
+  const [hoverCur, setHoverCur] = useState<{ t: number; x: number; y: number } | null>(null);
   const [selIdx, setSelIdx] = useState<number | null>(null);
   const [selEventId, setSelEventId] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverState | null>(null);
@@ -63,6 +66,7 @@ export function SignalingPage() {
     if (capture) {
       setView({ start: 0, end: capture.duration_s });
       setCursorT(null);
+      setHoverCur(null);
       setSelIdx(null);
       setSelEventId(null);
       setSf((f) => ({ ...f, tech: capture.tech === "LTE" ? "LTE" : "NR" }));
@@ -108,6 +112,34 @@ export function SignalingPage() {
     setSelIdx(m.index);
     setCursorT(m.t);
   };
+
+  // --- Curseur temporel interactif ---
+  const snaps = useMemo(() => (capture ? snapTimes(capture) : []), [capture]);
+  const onHoverTime = (t: number | null, x: number, y: number) => setHoverCur(t == null ? null : { t, x, y });
+  const onCursorDrag = (t: number) => {
+    setCursorT(t);
+    setHoverCur(null);
+  };
+  const onStepCursor = (dir: 1 | -1) => setCursorT((cur) => stepTime(snaps, cur, dir, effView.start));
+  const onClearCursor = () => {
+    setCursorT(null);
+    setSelEventId(null);
+  };
+
+  // Contenu de l'infobulle du curseur : uniquement des valeurs prouvées
+  // (dernière mesure RF à ou avant t, états/tâches dont l'intervalle contient t).
+  const tipInfo = useMemo(() => {
+    if (!capture || !hoverCur) return null;
+    const t = hoverCur.t;
+    return {
+      t,
+      events: eventsAt(capture, t),
+      conns: connectivityAt(capture, t),
+      tasks: tasksAt(capture, t),
+      calls: callsAt(capture, t),
+      rf: rfReadings(capture, t),
+    };
+  }, [capture, hoverCur]);
 
   const effView = view ?? { start: 0, end: capture?.duration_s ?? 1 };
   const chartH = Math.max(80, Math.round((compact ? 110 : 150) * tlScale));
@@ -201,8 +233,22 @@ export function SignalingPage() {
             <section className="panel relative shrink-0" aria-label="Timeline RF et signalisation">
               {capture ? (
                 <>
-                  <Timeline capture={capture} view={effView} onView={setView} compact={compact} cursorT={cursorT} onSelectTime={onSelectTime} onHover={setHover} scaleY={tlScale} />
-                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} height={chartH} />
+                  <Timeline
+                    capture={capture}
+                    view={effView}
+                    onView={setView}
+                    compact={compact}
+                    cursorT={cursorT}
+                    onSelectTime={onSelectTime}
+                    onHover={setHover}
+                    scaleY={tlScale}
+                    hoverT={hoverCur?.t ?? null}
+                    onHoverTime={onHoverTime}
+                    onCursorDrag={onCursorDrag}
+                    onStepCursor={onStepCursor}
+                    onClearCursor={onClearCursor}
+                  />
+                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} previewT={hoverCur?.t ?? null} height={chartH} />
                 </>
               ) : (
                 <div className="flex h-40 items-center justify-center text-xs text-muted-foreground">
@@ -215,6 +261,59 @@ export function SignalingPage() {
                   {hover.lines.map((l, i) => (
                     <p key={i} className="mt-0.5 text-muted-foreground">{l}</p>
                   ))}
+                </div>
+              )}
+              {/* Infobulle du curseur de survol : temps, état UE, tâches, mesures RF.
+                  Repositionnée près des bords, jamais au-dessus d'une infobulle d'élément. */}
+              {tipInfo && !hover && hoverCur && (
+                <div
+                  className="pointer-events-none fixed z-[70] w-64 rounded-md border bg-popover p-2.5 text-[11px] shadow-xl"
+                  style={{
+                    left: Math.min(hoverCur.x + 14, Math.max(8, window.innerWidth - 280)),
+                    top: Math.min(hoverCur.y + 14, Math.max(8, window.innerHeight - 260)),
+                  }}
+                >
+                  <p className="num font-mono font-semibold" style={{ color: "#EF4444" }}>
+                    t = {fmtSec(tipInfo.t)}
+                  </p>
+                  {tipInfo.events.map((e) => (
+                    <p key={e.id} className="mt-0.5 font-medium">
+                      {e.name}
+                      {e.tech ? ` — ${e.tech}` : ""}
+                      {e.ecgi ? ` · ECGI ${e.ecgi}` : ""}
+                      {e.pci != null ? ` · PCI ${e.pci}` : ""}
+                    </p>
+                  ))}
+                  <p className="mt-0.5 text-muted-foreground">
+                    État UE : {tipInfo.conns.length ? tipInfo.conns.map((c) => CONN_LABEL[c] ?? c).join(" + ") : "Inconnu"}
+                  </p>
+                  {tipInfo.tasks.length ? (
+                    tipInfo.tasks.map((k) => (
+                      <p key={k.id} className="mt-0.5 text-muted-foreground">
+                        {k.label} ({k.dir}) : {fmtSec(k.start_s)} → {fmtSec(k.end_s)}
+                        {k.throughput ? ` · ${k.throughput}` : ""}
+                      </p>
+                    ))
+                  ) : (
+                    <p className="mt-0.5 text-muted-foreground">Aucune tâche active</p>
+                  )}
+                  {tipInfo.calls.map((c) => (
+                    <p key={c.id} className="mt-0.5 text-muted-foreground">
+                      Appel {c.kind} — {c.state === "dropped" ? "drop" : "connecté"}
+                    </p>
+                  ))}
+                  {tipInfo.rf.some((r) => r.value != null) ? (
+                    tipInfo.rf.map((r) =>
+                      r.value != null ? (
+                        <p key={r.label} className="num mt-0.5 text-muted-foreground">
+                          {r.label} : {r.value.toLocaleString("fr-FR", { maximumFractionDigits: 1 })} {r.unit}
+                          {r.dt != null && r.dt > 0.5 ? ` (mesure à −${fmtSec(r.dt)})` : ""}
+                        </p>
+                      ) : null,
+                    )
+                  ) : (
+                    <p className="mt-0.5 text-muted-foreground">Aucune mesure RF à cet instant</p>
+                  )}
                 </div>
               )}
             </section>

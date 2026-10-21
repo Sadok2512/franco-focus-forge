@@ -1,5 +1,5 @@
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { SigCapture, SigEvent, SigMobilityEvent, SigTask } from "@/lib/api/signaling-schemas";
 import { clusterEvents, fmtSec, fmtTick, ticksFor } from "./shared";
 
@@ -15,7 +15,8 @@ export const SEV_COLOR: Record<string, string> = {
   event: "#9333EA",
 };
 const CONN_COLOR: Record<string, string> = { LTE: "#1769E0", "EN-DC": "#9333EA", "NR-SA": "#16A34A" };
-const CONN_LABEL: Record<string, string> = { LTE: "LTE CONNECTED", "EN-DC": "NSA (EN-DC)", "NR-SA": "NR SA" };
+export const CONN_LABEL: Record<string, string> = { LTE: "LTE CONNECTED", "EN-DC": "NSA (EN-DC)", "NR-SA": "NR SA" };
+const CURSOR_COLOR = "#EF4444";
 const MOB_COLOR: Record<string, string> = { ho: "#1769E0", success: "#16A34A", failure: "#DC2626", drop: "#DC2626" };
 const TASK_COLOR: Record<string, string> = { DL: "#1769E0", UL: "#16A34A" };
 const CALL_COLOR: Record<string, string> = { VoLTE: "#F97316", VoNR: "#9333EA" };
@@ -76,6 +77,11 @@ export function Timeline({
   onSelectTime,
   onHover,
   scaleY = 1,
+  hoverT = null,
+  onHoverTime,
+  onCursorDrag,
+  onStepCursor,
+  onClearCursor,
 }: {
   capture: SigCapture;
   view: View;
@@ -85,11 +91,46 @@ export function Timeline({
   onSelectTime: (t: number, messageIndex: number | null) => void;
   onHover: (h: HoverState | null) => void;
   scaleY?: number;
+  /** Curseur de prévisualisation (survol) — ne change jamais la sélection. */
+  hoverT?: number | null;
+  onHoverTime?: (t: number | null, x: number, y: number) => void;
+  /** Glisser du curseur : temps mis à jour en continu, zoom conservé. */
+  onCursorDrag?: (t: number) => void;
+  /** Clavier : événement/échantillon précédent ou suivant. */
+  onStepCursor?: (dir: 1 | -1) => void;
+  /** Échap : efface la sélection du curseur. */
+  onClearCursor?: () => void;
 }) {
   const span = Math.max(view.end - view.start, 1e-6);
   const scale = (t: number) => LABEL_W + ((t - view.start) / span) * LANE_W;
   const inView = (t: number) => t >= view.start && t <= view.end;
   const ticks = useMemo(() => ticksFor(view.start, view.end), [view.start, view.end]);
+
+  // --- Curseur temporel interactif (survol, clic, glisser, clavier) ---
+  const svgRef = useRef<SVGSVGElement>(null);
+  const dragRef = useRef(false);
+  const [focusRing, setFocusRing] = useState(false);
+  const timeFromClientX = (clientX: number) => {
+    const rect = svgRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return view.start;
+    const px = ((clientX - rect.left) / rect.width) * VIEW_W;
+    const clamped = Math.min(VIEW_W, Math.max(LABEL_W, px));
+    return view.start + ((clamped - LABEL_W) / LANE_W) * span;
+  };
+  const startDrag = (e: React.PointerEvent) => {
+    e.preventDefault();
+    dragRef.current = true;
+    const move = (ev: PointerEvent) => {
+      if (dragRef.current) onCursorDrag?.(timeFromClientX(ev.clientX));
+    };
+    const up = () => {
+      dragRef.current = false;
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+  };
 
   const zoom = (factor: number) => {
     const c = (view.start + view.end) / 2;
@@ -371,9 +412,39 @@ export function Timeline({
               1:1
             </button>
           </div>
+          {cursorT != null && !inView(cursorT) && (
+            <button
+              onClick={() => {
+                const half = span / 2;
+                onView({ start: Math.max(0, cursorT - half), end: Math.min(capture.duration_s, cursorT + half) });
+              }}
+              className="rounded px-1.5 py-0.5 text-[10px] font-medium"
+              style={{ color: CURSOR_COLOR, background: "rgba(239,68,68,0.1)" }}
+            >
+              Curseur {fmtSec(cursorT)} — hors vue, recentrer
+            </button>
+          )}
         </div>
       </div>
-      <svg viewBox={`0 0 ${VIEW_W} ${totalH}`} preserveAspectRatio="none" className="block w-full text-foreground" style={{ height: Math.round((compact ? 280 : 430) * scaleY) }} role="img" aria-label="Timeline des événements, connectivité et mesures radio">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW_W} ${totalH}`}
+        preserveAspectRatio="none"
+        className="block w-full text-foreground"
+        style={{ height: Math.round((compact ? 280 : 430) * scaleY) }}
+        role="img"
+        aria-label="Timeline des événements, connectivité et mesures radio"
+        onMouseMove={(e) => {
+          if (dragRef.current) return;
+          onHoverTime?.(timeFromClientX(e.clientX), e.clientX, e.clientY);
+        }}
+        onMouseLeave={() => onHoverTime?.(null, 0, 0)}
+        onClick={(e) => {
+          // Un marqueur interactif gère son propre clic (snap exact) — ne pas le doubler.
+          if ((e.target as Element).closest("g.cursor-pointer")) return;
+          onSelectTime(timeFromClientX(e.clientX), null);
+        }}
+      >
         {/* Axe X unique en haut + grille verticale partagée par toutes les pistes */}
         {ticks.map((t) => {
           const x = scale(t);
@@ -482,11 +553,57 @@ export function Timeline({
         {rows.some((r) => r.key === "mob") && laneLabel("mob", "swap", "#1769E0", "Mobilité")}
         {rows.some((r) => r.key === "mob") && renderMobility()}
 
-        {/* Curseur temporel partagé */}
-        {cursorT != null && inView(cursorT) && (
+        {/* Curseur de prévisualisation (survol) — fin, rouge, pointillé */}
+        {hoverT != null && inView(hoverT) && (cursorT == null || Math.abs(hoverT - cursorT) > span / 500) && (
           <g pointerEvents="none">
-            <line x1={scale(cursorT)} y1={axisH} x2={scale(cursorT)} y2={totalH} stroke="#0F172A" strokeWidth={1.2} strokeDasharray="4 3" />
-            <path d="M-4 0 L4 0 L0 6 Z" transform={`translate(${scale(cursorT)} ${axisH})`} fill="#0F172A" />
+            <line x1={scale(hoverT)} y1={axisH} x2={scale(hoverT)} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />
+          </g>
+        )}
+
+        {/* Curseur temporel partagé : rouge, 2 px, poignée glissable, étiquette flottante */}
+        {cursorT != null && inView(cursorT) && (
+          <g
+            tabIndex={0}
+            role="slider"
+            aria-label="Curseur temporel"
+            aria-valuemin={Math.round(view.start * 1000)}
+            aria-valuemax={Math.round(view.end * 1000)}
+            aria-valuenow={Math.round(cursorT * 1000)}
+            aria-valuetext={fmtSec(cursorT)}
+            className="cursor-ew-resize outline-none"
+            onPointerDown={startDrag}
+            onFocus={() => setFocusRing(true)}
+            onBlur={() => setFocusRing(false)}
+            onKeyDown={(e) => {
+              if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                onStepCursor?.(-1);
+              } else if (e.key === "ArrowRight") {
+                e.preventDefault();
+                onStepCursor?.(1);
+              } else if (e.key === "Escape") {
+                e.preventDefault();
+                onClearCursor?.();
+              }
+            }}
+          >
+            {(() => {
+              const cx = scale(cursorT);
+              const labelW = 64;
+              const lx = Math.min(Math.max(cx, LABEL_W + labelW / 2 + 2), VIEW_W - labelW / 2 - 2);
+              return (
+                <>
+                  <line x1={cx} y1={axisH - 6} x2={cx} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={2} />
+                  <rect x={cx - 6} y={axisH - 7} width={12} height={8} rx={2} fill={CURSOR_COLOR} stroke={focusRing ? "#0F172A" : "none"} strokeWidth={1.2} />
+                  <rect x={lx - labelW / 2} y={1} width={labelW} height={15} rx={4} fill={CURSOR_COLOR} />
+                  <text x={lx} y={12} textAnchor="middle" fontSize={9} fontWeight={700} fill="#FFFFFF">
+                    {fmtSec(cursorT)}
+                  </text>
+                  {/* Zone de préhension élargie pour le glisser */}
+                  <rect x={cx - 5} y={axisH - 7} width={10} height={totalH - axisH + 7} fill="transparent" />
+                </>
+              );
+            })()}
           </g>
         )}
       </svg>

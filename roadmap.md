@@ -1,4 +1,5 @@
 # BC4 roadmap
+- [x] U13 Interactive time cursor (BC4_SIGNALING_INTERACTIVE_TIME_CURSOR_V1): red cursor across all tracks + RF metrics, hover preview + RF tooltip, click lock, drag, keyboard step/Escape, event snap, prev-measurement rule; v1.11.0.
 - [x] U12 Signaling View (BC4_SIGNALING_TIMELINE_LOVABLE_V1): /signaling page — shared-time-axis RF timeline, GPS map, messages table, payload inspector; v1.10.0; typecheck + 44 tests + Playwright verified.
 - [x] Synchronize RRC table filters, groups, measures and colors with the chart — eight tests and browser search/legend checks passed.
 - [x] RRC chart types and independent value/band/operator colors — six tests and nine browser combinations verified.

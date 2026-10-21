@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.11.0 (minor) — bc4-front 2026-10-21 — Signaling View : curseur temporel interactif
+
+- Curseur rouge (#EF4444, 2 px) traversant toutes les pistes, de l'axe temps partagé jusqu'au bloc Mesures radio : poignée glissable en tête, étiquette de temps flottante rouge à texte blanc.
+- Survol : curseur de prévisualisation fin en pointillé + infobulle RF (temps, état UE prouvé — LTE et NSA peuvent se chevaucher —, tâches et appels actifs, RSRP/RSRQ/SINR) ; la sélection n'est jamais modifiée au survol.
+- Clic : verrouillage du curseur au temps cliqué ; clic sur un marqueur d'événement = snap sur son timestamp exact (jamais de valeur arrondie).
+- Glisser : déplacement horizontal fluide en continu, zoom et timeline conservés.
+- Clavier (curseur focalisé, role slider) : ← / → = événement/échantillon précédent ou suivant, Échap = effacer la sélection du curseur.
+- Mesures RF au curseur : dernière observation prouvée à ou avant t avec écart temporel affiché (« mesure à −x s ») — jamais d'interpolation, jamais de zéro ; « Aucune mesure RF à cet instant » si rien de valide. Marqueurs sur les courbes du bloc Mesures radio.
+- Zoom/pan : le temps sélectionné est conservé et la position recalculée ; s'il sort de la fenêtre visible, un bouton « hors vue, recentrer » apparaît sans jamais écraser le temps choisi.
+- Logique pure dans `src/features/signaling/cursor.ts` (prevPoint, rfReadings, connectivityAt, tasksAt, callsAt, eventsAt, snapTimes, stepTime) — 12 tests Vitest.
+
 ## 1.10.1 (patch) — bc4-front 2026-10-21 — Signaling View : « Message » après « Couche »
 
 - Le nom du message s'affiche immédiatement après la colonne « Couche » dans le tableau des messages ; l'export CSV suit le même ordre.
