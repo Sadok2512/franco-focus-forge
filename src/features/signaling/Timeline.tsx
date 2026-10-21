@@ -433,7 +433,7 @@ export function Timeline({
         viewBox={`0 0 ${VIEW_W} ${totalH}`}
         preserveAspectRatio="none"
         className="block w-full text-foreground"
-        style={{ height: Math.round((compact ? 280 : 430) * scaleY) }}
+        style={{ height: Math.round((compact ? 240 : 320) * scaleY) }}
         role="img"
         aria-label="Timeline des événements, connectivité et mesures radio"
         onMouseMove={(e) => {
@@ -541,9 +541,9 @@ export function Timeline({
         })}
 
         {/* Tâches Data */}
-        {rows.some((r) => r.key === "dl") && laneLabel("dl", "dl", TASK_COLOR["DL"], "DL Data", "Tâches Data")}
+        {rows.some((r) => r.key === "dl") && laneLabel("dl", "dl", TASK_COLOR["DL"] ?? "currentColor", "DL Data", "Tâches Data")}
         {rows.some((r) => r.key === "dl") && renderTask("dl", "DL")}
-        {rows.some((r) => r.key === "ul") && laneLabel("ul", "ul", TASK_COLOR["UL"], "UL Data")}
+        {rows.some((r) => r.key === "ul") && laneLabel("ul", "ul", TASK_COLOR["UL"] ?? "currentColor", "UL Data")}
         {rows.some((r) => r.key === "ul") && renderTask("ul", "UL")}
 
         {/* Appels VoLTE / VoNR */}
