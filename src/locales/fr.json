@@ -385,6 +385,11 @@
     "timestamp": "Horodatage"
   },
   "rfTimeline": {
+    "cursor": "Curseur temporel",
+    "outside": "Hors vue · recentrer",
+    "exact": "Observation exacte",
+    "noRF": "Aucune mesure RF à cet instant",
+    "messageCount": "Messages : {{count}}",
     "title": "Événements, connectivité et mesures radio",
     "rf": "Timeline RF",
     "compact": "Compact",

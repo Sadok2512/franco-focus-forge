@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ECharts, EChartsOption, CustomSeriesRenderItem } from "echarts";
 import { getSignaling, getMetricSeries } from "@/lib/api/client";
-import type { RfEvent, SignalingContext } from "@/lib/api/signaling";
+import type { RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
+import { TimeCursor } from "./TimeCursor";
+import { activeIntervals } from "./cursor";
+import { Button } from "@/components/ui/button";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 
 const tracks = ["lte", "nsa", "sa", "network", "dl", "ul", "volte", "vonr", "mobility"];
 const codes = ["cell_rsrp", "cell_rsrq", "ci_rs_snr"];
@@ -20,6 +24,8 @@ export function RfTimeline({
   captureId,
   selectedTime,
   onSelect,
+  onTime,
+  selectedEventId,
   onRange,
   technology,
   direction,
@@ -30,6 +36,8 @@ export function RfTimeline({
   captureId: string;
   selectedTime: number | null;
   onSelect: (e: RfEvent, seq?: number) => void;
+  onTime: (time: number | null) => void;
+  selectedEventId: string | null;
   onRange: (range: [number, number] | undefined) => void;
   technology: string;
   direction: string;
@@ -37,7 +45,6 @@ export function RfTimeline({
   allowedProtocols: string[];
 }) {
   const { t, i18n } = useTranslation();
-  const queryClient = useQueryClient();
   const [layers, setLayers] = useState(protocols);
   const [measures, setMeasures] = useState(codes);
   const [linked, setLinked] = useState<RfEvent>();
@@ -47,8 +54,6 @@ export function RfTimeline({
   const host = useRef<HTMLDivElement>(null),
     root = useRef<HTMLDivElement>(null);
   const chart = useRef<ECharts | undefined>(undefined);
-  const hovered = useRef<number | null>(null);
-  const contextErrors = useRef(new Set<number>());
   const callbacks = useRef({ onSelect, onRange });
   callbacks.current = { onSelect, onRange };
   const selection = useRef(selectedTime);
@@ -114,7 +119,30 @@ export function RfTimeline({
     [events.data, layers, allowedProtocols],
   );
   const series = (detailed.data ?? radio.data)?.series;
-  const duration = radio.data?.duration_s;
+  const duration =
+    radio.data?.duration_s ??
+    Math.max(0, ...displayed.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
+  const cursorSeries = useMemo(
+    () =>
+      codes.map((code) => ({
+        code,
+        label: t(`rfTimeline.${code}`),
+        unit: code === "cell_rsrp" ? "dBm" : "dB",
+        points:
+          measures.includes(code) && technology !== "NR"
+            ? (series ?? [])
+                .filter((s) => s.code === code)
+                .flatMap((s) => s.points)
+                .filter((p): p is typeof p & { value: number } => typeof p.value === "number")
+                .sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq)
+            : [],
+      })),
+    [series, measures, technology, t],
+  );
+  const visibleTracks = useMemo(
+    () => tracks.filter((track) => displayed.some((e) => e.attrs.track === track)),
+    [displayed],
+  );
   const current = useRef({ displayed, series, duration });
   current.current = { displayed, series, duration };
   useEffect(() => {
@@ -170,16 +198,30 @@ export function RfTimeline({
       chart.current = undefined;
     };
   }, []);
-  // Selection has its own small update; it never rebuilds data or resets zoom.
+  // Highlighting changes only item styles; the time axis and zoom are untouched.
   useEffect(() => {
-    if (!chart.current?.getOption()?.["xAxis"]) return;
-    chart.current.setOption({
-      series: [0, 1, 2, 3].map((i) => ({
-        id: `cursor-${i}`,
-        markLine: { data: selectedTime === null ? [] : [{ xAxis: selectedTime }] },
-      })),
+    const c = chart.current;
+    if (!c || !c.getOption()?.["xAxis"]) return;
+    const active = new Set(
+      selectedTime === null ? [] : activeIntervals(displayed, selectedTime).map((e) => e.id),
+    );
+    c.setOption({
+      series: [
+        {
+          id: "events",
+          data: displayed.map((e) => ({
+            value: [
+              visibleTracks.indexOf(e.attrs.track ?? ""),
+              e.t_rel_s,
+              e.t_rel_end_s ?? e.t_rel_s,
+            ],
+            event: e,
+            itemStyle: { opacity: e.id === selectedEventId || active.has(e.id) ? 1 : 0.65 },
+          })),
+        },
+      ],
     });
-  }, [selectedTime, ready]);
+  }, [selectedTime, selectedEventId, displayed, visibleTracks, ready]);
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -199,7 +241,11 @@ export function RfTimeline({
       return {
         type: "rect",
         shape: { x: start[0]!, y: start[1]! - 7, width, height: 14, r: 3 },
-        style: { fill: color, opacity: item.attrs.evidence_status === "PARTIAL" ? 0.45 : 0.9 },
+        style: {
+          ...api.style(),
+          fill: color,
+          opacity: item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9),
+        },
       };
     };
     const xAxes = [0, 1, 2, 3].map((i) => ({
@@ -207,8 +253,10 @@ export function RfTimeline({
       gridIndex: i,
       min: 0,
       ...(duration !== undefined ? { max: duration } : {}),
-      axisLabel: { color: "#94a3b8" },
-      name: i === 3 ? t("rfTimeline.time") : "",
+      axisLabel: { color: rfColors["unknown"] ?? "currentColor" },
+      position: "top" as const,
+      show: i === 0,
+      name: "",
       nameLocation: "middle" as const,
       nameGap: 28,
     }));
@@ -233,15 +281,15 @@ export function RfTimeline({
       animation: false,
       backgroundColor: "transparent",
       grid: [
-        { top: 12, height: 220, left: 112, right: 24 },
-        ...[260, 365, 470].map((top) => ({ top, height: 70, left: 112, right: 24 })),
+        { top: 30, height: 190, left: 112, right: 24 },
+        ...[244, 302, 360].map((top) => ({ top, height: 42, left: 112, right: 24 })),
       ],
       xAxis: xAxes,
       yAxis: [
         {
           type: "category",
           inverse: true,
-          data: tracks.map((k) => t(`rfTimeline.${k}`)),
+          data: visibleTracks.map((k) => t(`rfTimeline.${k}`)),
           axisLabel: { color: "#94a3b8", fontSize: 11 },
         },
         ...["dBm", "dB", "dB"].map((unit, i) => ({
@@ -250,7 +298,7 @@ export function RfTimeline({
           scale: true,
           name: t(`rfTimeline.${codes[i]}`) + ` (${unit})`,
           nameTextStyle: { color: rfColors[codes[i]!]! },
-          axisLabel: { color: "#94a3b8" },
+          axisLabel: { color: rfColors["unknown"] ?? "currentColor" },
           splitLine: { lineStyle: { color: "#334155", opacity: 0.3 } },
         })),
       ],
@@ -273,47 +321,8 @@ export function RfTimeline({
               .filter((k) => e.attrs[k] != null)
               .map((k) => `${escape(k)}: ${escape(e.attrs[k])}`)
               .join("<br/>");
-            hovered.current = e.seq;
-            const key = ["signaling-context", projectId, captureId, e.seq];
-            const ctx = queryClient.getQueryData<SignalingContext>(key);
-            if (ctx) {
-              const f = (v: number | null) =>
-                v === null ? "—" : v.toLocaleString(i18n.language, { maximumFractionDigits: 2 });
-              const radioHtml = ["rsrp", "rsrq", "sinr"]
-                .map((k) => {
-                  const m = ctx.radio[k];
-                  return m
-                    ? `${escape(k.toUpperCase())}: ${escape(f(m.value))} ${escape(m.unit)}<br/><small>${escape(t(m.temporal_relation === "unavailable" ? "rfTimeline.contextUnavailable" : m.temporal_relation === "same_timestamp" ? "rfTimeline.sameTimestamp" : "rfTimeline.previous"))} · Δseq ${escape(m.seq_gap)} · Δt ${escape(m.time_gap_s)} s · ${escape(m.source)}</small>`
-                    : "";
-                })
-                .join("<br/>");
-              return header + "<br/>" + fields + "<br/>" + radioHtml;
-            }
-            if (contextErrors.current.has(e.seq))
-              return header + "<br/>" + escape(t("rfTimeline.contextUnavailable"));
-            const refresh = () => {
-              if (hovered.current === e.seq && host.current?.matches(":hover"))
-                c.dispatchAction({
-                  type: "showTip",
-                  seriesIndex: 0,
-                  dataIndex: (p as { dataIndex: number }).dataIndex,
-                });
-            };
-            void queryClient
-              .fetchQuery({
-                queryKey: key,
-                queryFn: ({ signal }) =>
-                  getSignaling(projectId, "context", { capture_id: captureId, seq: e.seq }, signal),
-                staleTime: 60000,
-              })
-              .then(refresh)
-              .catch(() => {
-                contextErrors.current.add(e.seq);
-                refresh();
-              });
             return header + "<br/>" + fields;
           }
-          hovered.current = null;
           return `${escape(d.source)}<br/>${escape(d.value?.[0])} s · #${d.seq}<br/>${escape(d.value?.[1])}`;
         },
       },
@@ -325,37 +334,27 @@ export function RfTimeline({
           encode: { x: [1, 2], y: 0 },
           clip: true,
           data: displayed.map((e) => ({
-            value: [tracks.indexOf(e.attrs.track ?? ""), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
+            value: [
+              visibleTracks.indexOf(e.attrs.track ?? ""),
+              e.t_rel_s,
+              e.t_rel_end_s ?? e.t_rel_s,
+            ],
             event: e,
           })),
         },
         ...metricSeries,
-        ...[0, 1, 2, 3].map((i) => ({
-          id: `cursor-${i}`,
-          type: "line" as const,
-          xAxisIndex: i,
-          yAxisIndex: i,
-          data: [],
-          silent: true,
-          markLine: {
-            symbol: "none",
-            silent: true,
-            lineStyle: { color: rfColors["selection"]!, width: 2 },
-            data: selection.current === null ? [] : [{ xAxis: selection.current }],
-          },
-        })),
       ],
     };
     c.setOption(options);
   }, [
     ready,
     displayed,
+    visibleTracks,
     series,
     duration,
     measures,
     t,
     technology,
-    queryClient,
     projectId,
     captureId,
     i18n.language,
@@ -406,39 +405,51 @@ export function RfTimeline({
             ))}
           </div>
         </details>
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           className="kpi-button"
           onClick={() => zoomBy(0.5)}
           aria-label={t("rfTimeline.zoomIn")}
         >
-          +
-        </button>
-        <button
+          <ZoomIn />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           className="kpi-button"
           onClick={() => zoomBy(2)}
           aria-label={t("rfTimeline.zoomOut")}
         >
-          −
-        </button>
-        <button
+          <ZoomOut />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           className="kpi-button"
+          aria-label={t("rfTimeline.reset")}
+          title={t("rfTimeline.reset")}
           onClick={() => {
             chart.current?.dispatchAction({ type: "dataZoom", start: 0, end: 100 });
             setWindowSeq(undefined);
             callbacks.current.onRange(undefined);
           }}
         >
-          {t("rfTimeline.reset")}
-        </button>
-        <button
+          <RotateCcw />
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
           className="kpi-button"
+          aria-label={t("rfTimeline.fullscreen")}
+          title={t("rfTimeline.fullscreen")}
           onClick={() => {
             if (document.fullscreenElement) void document.exitFullscreen();
             else void root.current?.requestFullscreen();
           }}
         >
-          {t("rfTimeline.fullscreen")}
-        </button>
+          <Maximize />
+        </Button>
       </div>
       {(events.isPending || radio.isPending) && <p role="status">{t("rfTimeline.loading")}</p>}
       {[events, radio, detailed]
@@ -449,21 +460,41 @@ export function RfTimeline({
           </p>
         ))}
       <div className="min-h-0 flex-1 overflow-auto">
-        <div
-          ref={host}
-          style={{ height: 600, minWidth: 480 }}
-          data-testid="rf-chart"
-          data-selected-time={selectedTime ?? undefined}
-          data-zoom={zoom.join(",")}
-        />
+        <div className="relative" style={{ minWidth: 320 }}>
+          <div
+            ref={host}
+            style={{ height: 440, minWidth: 320 }}
+            data-testid="rf-chart"
+            data-selected-time={selectedTime ?? undefined}
+            data-zoom={zoom.join(",")}
+          />
+          <TimeCursor
+            chart={chart.current}
+            host={host}
+            selectedTime={selectedTime}
+            eventId={selectedEventId}
+            events={displayed}
+            series={cursorSeries}
+            zoom={zoom}
+            duration={duration}
+            onTime={onTime}
+            onMessage={onSelect}
+          />
+        </div>
       </div>
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}
           {linked.linked_seqs.map((s) => (
-            <button key={s} className="kpi-button" onClick={() => onSelect(linked, s)}>
+            <Button
+              variant="outline"
+              size="sm"
+              key={s}
+              className="kpi-button"
+              onClick={() => onSelect(linked, s)}
+            >
               #{s}
-            </button>
+            </Button>
           ))}
         </div>
       )}

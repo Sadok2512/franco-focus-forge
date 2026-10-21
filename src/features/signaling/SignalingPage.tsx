@@ -2,6 +2,7 @@ import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
 import { EventRibbon } from "./EventRibbon";
+import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
@@ -748,15 +749,15 @@ function SignalMap({
     let marker: import("maplibre-gl").Marker | undefined;
     let cancelled = false;
     const point = data.points.find((p) => p.seq === selectedSeq);
-    if (point?.lat !== null && point?.lat !== undefined && point.lng !== null) {
+    if (point?.lat !== null && point?.lat !== undefined && point.lng !== null && point.seq_gap === 0 && point.gps_seq === point.seq) {
       void import("maplibre-gl").then((ml) => {
         if (cancelled) return;
         const el = document.createElement("div");
         el.dataset["testid"] = "selected-gps";
         el.dataset["seq"] = String(selectedSeq);
-        el.title = `GPS précédent · seq ${point.gps_seq} · Δseq ${point.seq_gap} ; position exacte du message non prouvée`;
+        el.title = `GPS · seq ${point.gps_seq}`;
         el.style.cssText =
-          "width:18px;height:18px;border:3px dashed #dc2626;border-radius:50%;pointer-events:none;background:transparent";
+          "width:18px;height:18px;border:3px solid var(--signaling-cursor);border-radius:50%;pointer-events:none;background:transparent";
         marker = new ml.Marker({ element: el }).setLngLat([point.lng!, point.lat!]).addTo(map);
       });
     }
@@ -829,7 +830,7 @@ export function SignalingPage({
   const [compact, setCompact] = useState(false);
   // 1.72.0 (BC3) — Vue timeline : ribbon (BC3 lanes), rf (BC2), compact (histogram).
   // Défaut = ribbon (addendum spec signaling_timeline.html).
-  const [timelineView, setTimelineView] = useState<"ribbon" | "rf" | "compact">("ribbon");
+  const [timelineView, setTimelineView] = useState<"ribbon" | "rf" | "compact">("rf");
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
@@ -914,6 +915,8 @@ export function SignalingPage({
     [order, setOrder] = useState("asc");
   const [hover, setHover] = useState<string[]>([]),
     [exportError, setExportError] = useState("");
+  const [cursor, setCursor] = useState<TimelineCursorState>(emptyCursor);
+  const [linkedMessages, setLinkedMessages] = useState<number[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<Partial<SignalingLine>>();
   const selectionCapture = useRef<string | undefined>(undefined);
   const caps = useQuery({
@@ -998,6 +1001,8 @@ export function SignalingPage({
     if (selectionCapture.current && selectionCapture.current !== capture) {
       setSeq(undefined);
       setSelectedRecord(undefined);
+      setCursor(emptyCursor);
+      setLinkedMessages([]);
     }
     selectionCapture.current = capture;
   }, [capture]);
@@ -1027,6 +1032,8 @@ export function SignalingPage({
       },
     );
     setSeq(value);
+    setCursor({ selectedTimeS: row?.t_rel_s ?? point?.t_rel_s ?? null, hoveredTimeS: null, selectedEventId: null, selectedMessageSeq: value });
+    setLinkedMessages([]);
   };
   const error = [caps, listing, timeline, points].find((q) => q.isError)?.error;
   const exportCsv = async () => {
@@ -1342,7 +1349,13 @@ export function SignalingPage({
                           key={capture}
                           projectId={projectId}
                           captureId={capture}
-                          selectedTime={selected?.t_rel_s ?? null}
+                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
+                          selectedEventId={cursor.selectedEventId}
+                          onTime={(time) => {
+                            setCursor({ selectedTimeS: time, hoveredTimeS: null, selectedEventId: null, selectedMessageSeq: time === null ? null : seq ?? null });
+                            setLinkedMessages([]);
+                            if (time === null) { setSeq(undefined); setSelectedRecord(undefined); }
+                          }}
                           technology={technology}
                           direction={direction}
                           search={search}
@@ -1352,25 +1365,26 @@ export function SignalingPage({
                             resetPage();
                           }}
                           onSelect={(e, sourceSeq) => {
-                            const target = sourceSeq ?? e.seq;
-                            chooseSeq(target);
-                            if (target === e.seq)
-                              setSelectedRecord({
-                                capture_id: capture,
-                                seq: target,
-                                t_rel_s: e.t_rel_s,
-                                message_name:
-                                  typeof e.attrs["source_message"] === "string"
-                                    ? e.attrs["source_message"]
-                                    : e.label,
-                                protocol: e.attrs["protocol"] ?? "",
-                              });
+                            const target = sourceSeq ?? eventMessage(e);
+                            setLinkedMessages(e.linked_seqs);
+                            setCursor({ selectedTimeS: e.t_rel_s, hoveredTimeS: null, selectedEventId: e.id, selectedMessageSeq: target });
+                            if (target === null || !capture) return;
+                            const row = listing.data?.rows.find(r => r.seq === target);
+                            setSeq(target);
+                            setSelectedRecord(row ?? { capture_id: capture, seq: target, t_rel_s: e.t_rel_s,
+                              message_name: typeof e.attrs['source_message'] === 'string' ? e.attrs['source_message'] : e.label,
+                              protocol: e.attrs.protocol ?? '' });
+                            if (!row) void getSignaling(projectId, 'rows', { ...filtered, seq: target, page, size, sort, order }).then(data => {
+                              const selectedRow = data.rows.find(r => r.seq === target);
+                              if (selectedRow) setSelectedRecord(selectedRow);
+                              if (data.selected_page !== null && data.selected_page !== page) setPage(data.selected_page);
+                            }).catch(() => undefined);
                           }}
                         />
                       ) : timeline.data ? (
                         <Timeline
                           data={timeline.data}
-                          selectedTime={selected?.t_rel_s ?? null}
+                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
                           onRange={(r) => {
                             setRange(r);
                             resetPage();
@@ -1398,7 +1412,7 @@ export function SignalingPage({
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
                       <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
-                      {points.data ? (
+                      {mapVisible && points.data ? (
                         <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
                       ) : (
                         <p role="status">Chargement des positions…</p>
@@ -1510,13 +1524,14 @@ export function SignalingPage({
                                 key={r.seq}
                                 data-seq={r.seq}
                                 aria-selected={r.seq === seq}
+                                data-event-linked={linkedMessages.includes(r.seq)}
                                 data-procedure-highlight={r.procedure_ids.some((id) =>
                                   hover.includes(id),
                                 )}
                                 onMouseEnter={() => setHover(r.procedure_ids)}
                                 onMouseLeave={() => setHover([])}
                                 onClick={() => chooseSeq(r.seq)}
-                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
+                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : (linkedMessages.includes(r.seq) || r.procedure_ids.some((id) => hover.includes(id))) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
                               >
                                 {(Object.keys(COL_LABELS) as ColKey[])
                                   .filter((c) => visibleCols.has(c))

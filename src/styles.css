@@ -112,6 +112,8 @@
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --signaling-cursor: #EF4444;
+  --signaling-cursor-foreground: #FFFFFF;
   color-scheme: light;
   --radius: 0.5rem;
   --chart-1: oklch(0.6 0.18 250);
