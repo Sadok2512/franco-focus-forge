@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { BarChart3, ChartNoAxesCombined, Table2, MapPin } from "lucide-react";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { VISUALIZATIONS, type VisualizationType } from "./visualization-model";
@@ -19,6 +20,7 @@ export function VisualizationItems({
   seriesAvailable?: boolean;
   onChange: (mode: VisualizationType) => void;
 }) {
+  const { t: translate } = useTranslation();
   return (
     <>
       {(Object.keys(VISUALIZATIONS) as VisualizationType[])
@@ -30,7 +32,7 @@ export function VisualizationItems({
               key={mode}
               title={
                 mode === "task_series" && !seriesAvailable
-                  ? "pas de série temporelle pour ce KPI (source agrégée)"
+                  ? translate("kpi.20b75fa9e2fc")
                   : undefined
               }
             >
@@ -45,7 +47,8 @@ export function VisualizationItems({
           );
         })}
       <p className="max-w-64 px-2 py-1 text-[10px] text-muted-foreground">
-        Graphique : points agrégés par groupe, sans liaison temporelle.
+        {" "}
+        {translate("kpi.d47bfcc9869e")}{" "}
       </p>
     </>
   );

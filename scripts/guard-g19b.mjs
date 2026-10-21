@@ -9,4 +9,9 @@ const read = (lang) =>
 const en = read("en"),
   fr = read("fr");
 assert.deepEqual(keys(en), keys(fr));
+for (const key of keys(en)) {
+  const at = (obj) => key.split(".").reduce((value, part) => value[part], obj);
+  const placeholders = (text) => [...text.matchAll(/\{\{([^}]+)\}\}/g)].map((m) => m[1]).sort();
+  assert.deepEqual(placeholders(at(en)), placeholders(at(fr)), `Interpolation mismatch: ${key}`);
+}
 console.log(`G19b PASS: ${keys(en).length} matching EN/FR keys`);

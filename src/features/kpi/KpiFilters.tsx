@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { Check, ChevronDown, MapPin, RotateCcw, SlidersHorizontal } from "lucide-react";
 import { FilterSelect } from "@/features/dict-v2/FilterSelect";
@@ -38,6 +39,7 @@ export function KpiFilters({
   onApply: () => void;
   onReset: () => void;
 }) {
+  const { t: translate } = useTranslation();
   const [advanced, setAdvanced] = useState(false);
   const update = (key: FilterKey, values: string[]) =>
     onChange({ ...draft, values: { ...draft.values, [key]: values } });
@@ -53,11 +55,11 @@ export function KpiFilters({
           className="kpi-unavailable-filter"
           title={
             typeof dim === "object" && dim && "reason" in dim
-              ? String(dim.reason ?? "Indisponible")
-              : "Dimension non prise en charge"
+              ? String(dim.reason ?? translate("kpi.dae75cff3b98"))
+              : translate("kpi.a2c506bd8c6f")
           }
         >
-          {label} · Indisponible
+          {label} {translate("kpi.e0cc6566490b")}{" "}
         </span>
       );
     return (
@@ -86,41 +88,42 @@ export function KpiFilters({
   const activeGeo = VISIBLE_GEO_DIMS.filter((d) => draft.enabledGeo.includes(d.key));
   const advancedSupported = ADVANCED_DIMS.filter((d) => dimensions?.[d.source]?.available);
   return (
-    <section className="kpi-filterbar" aria-label="Filtres KPI">
+    <section className="kpi-filterbar" aria-label={translate("kpi.e6ca9fdfc3d7")}>
       <div className="kpi-filter-actions">
         <SlidersHorizontal size={15} className="text-primary" />
-        <h2 className="text-xs font-semibold">Filtres d’analyse</h2>
+        <h2 className="text-xs font-semibold">{translate("kpi.60e2409d395d")}</h2>
         {dirty && (
           <span role="status" className="kpi-dirty">
-            Modifications non appliquées
+            {" "}
+            {translate("kpi.56d4d0f86ed2")}{" "}
           </span>
         )}
         <div className="ml-auto flex items-center gap-2">
           <button className="kpi-button" onClick={onReset}>
-            <RotateCcw size={13} />
-            Réinitialiser
+            <RotateCcw size={13} /> {translate("kpi.5b35e0e35591")}{" "}
           </button>
           <button
             className="kpi-button primary"
             disabled={loading || error || !dirty}
             onClick={onApply}
           >
-            <Check size={14} />
-            Appliquer les filtres
+            <Check size={14} /> {translate("kpi.d74d6056d0bb")}{" "}
           </button>
         </div>
       </div>
       <div id="kpi-filter-controls" className="kpi-filter-controls">
         {error && (
           <div role="alert" className="text-xs text-destructive">
-            Les dimensions du projet n’ont pas pu être chargées.{" "}
+            {" "}
+            {translate("kpi.4de40565f9c7")}{" "}
             <button className="underline" onClick={onRetry}>
-              Réessayer
+              {" "}
+              {translate("kpi.af273d956b5b")}{" "}
             </button>
           </div>
         )}
         <div className="flex flex-wrap items-center gap-2">
-          <div className="kpi-tech-filter" role="group" aria-label="Technologie">
+          <div className="kpi-tech-filter" role="group" aria-label={translate("kpi.8a5cefc36adb")}>
             {[
               { label: "LTE", values: ["LTE"] },
               { label: "NR", values: ["NR"] },
@@ -147,19 +150,18 @@ export function KpiFilters({
               );
             })}
           </div>
-          {select("operator", "operators", "Opérateur")}
-          {select("band", "bands", "Bande")}
+          {select("operator", "operators", translate("kpi.16602c56b3e8"))}
+          {select("band", "bands", translate("kpi.39c716cec99a"))}
           <Popover>
             <PopoverTrigger asChild>
               <button className="kpi-button">
-                <MapPin size={14} />
-                Zone géographique
+                <MapPin size={14} /> {translate("kpi.52487233fd25")}{" "}
                 {activeGeo.length > 0 && <span className="kpi-count">{activeGeo.length}</span>}
                 <ChevronDown size={13} />
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-80 max-w-[calc(100vw-32px)] p-3" align="start">
-              <h3 className="font-semibold text-sm mb-3">Dimensions géographiques</h3>
+              <h3 className="font-semibold text-sm mb-3">{translate("kpi.2f0c43fa988d")}</h3>
               <div className="space-y-3">
                 {VISIBLE_GEO_DIMS.map((dim) => {
                   const supported = dimensions?.[dim.source];
@@ -189,7 +191,7 @@ export function KpiFilters({
                       </label>
                       {!supported?.available && (
                         <p className="mt-1 ml-5 text-[11px] text-muted-foreground">
-                          {supported?.reason ?? "Dimension non prise en charge pour ce projet."}
+                          {supported?.reason ?? translate("kpi.962dfc8b07eb")}
                         </p>
                       )}
                     </div>
@@ -208,20 +210,21 @@ export function KpiFilters({
             title={
               period
                 ? "Le contrat KPI ne prend pas en charge le filtrage par dates."
-                : "plage non exposée par l'API"
+                : translate("kpi.8051e234549e")
             }
           >
-            Période : {period ?? "—"}
+            {" "}
+            {translate("kpi.b1570881bd3e")} {period ?? "—"}
           </span>
           {advancedSupported.length > 0 && (
             <Popover open={advanced} onOpenChange={setAdvanced}>
               <PopoverTrigger asChild>
                 <button className="kpi-button" aria-expanded={advanced}>
-                  <SlidersHorizontal size={14} /> Filtres avancés
+                  <SlidersHorizontal size={14} /> {translate("kpi.3fd72b5095f0")}{" "}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-80 max-w-[calc(100vw-32px)] p-3" align="end">
-                <div className="flex flex-wrap gap-2" aria-label="Filtres avancés">
+                <div className="flex flex-wrap gap-2" aria-label={translate("kpi.3fd72b5095f0")}>
                   {advancedSupported.map((dim) => (
                     <div key={dim.key}>{select(dim.key, dim.source, dim.label)}</div>
                   ))}
@@ -232,9 +235,10 @@ export function KpiFilters({
         </div>
       </div>
       {FILTER_DIMS.some((dim) => dim.key !== "operator" && applied[dim.key]?.length) && (
-        <div className="kpi-applied-chips" aria-label="Filtres appliqués">
+        <div className="kpi-applied-chips" aria-label={translate("kpi.25167872ded5")}>
           <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Appliqués
+            {" "}
+            {translate("kpi.4d4bc761a24d")}{" "}
           </span>
           {FILTER_DIMS.filter((dim) => dim.key !== "operator").flatMap((dim) =>
             (applied[dim.key] ?? []).map((value) => (
@@ -247,7 +251,7 @@ export function KpiFilters({
             )),
           )}
           {!FILTER_DIMS.some((dim) => applied[dim.key]?.length) && (
-            <span className="text-xs text-muted-foreground">Toute la population du projet</span>
+            <span className="text-xs text-muted-foreground">{translate("kpi.35a4cc0ee9f3")}</span>
           )}
         </div>
       )}

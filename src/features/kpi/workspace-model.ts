@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import type {
   KpiCatalogItem,
   KpiQueryFilters,
@@ -14,13 +15,15 @@ export const MAX_GRAPHS = Math.max(
 export type Entry = { techno: string; family: string; item: KpiCatalogItem };
 export type Statistic = "value" | "p10" | "p50" | "p90";
 export const STAT_LABELS: Record<Statistic, string> = {
-  value: "Valeur",
+  get value() {
+    return i18n.t("kpi.6e8f3132d8e2");
+  },
   p10: "P10",
   p50: "P50",
   p90: "P90",
 };
 export const techLabel = (value: string) =>
-  ({ ENDC: "EN-DC", AGGREGATE: "KPI agrégés" })[value] ?? value;
+  ({ ENDC: "EN-DC", AGGREGATE: i18n.t("kpi.5dcc75c368f9") })[value] ?? value;
 export const operatorColor = (operator: string | null | undefined) =>
   OP_FALLBACK[operator ?? ""] ?? "#CBD5E1";
 export const numberValue = (v: unknown): number | null =>
@@ -28,7 +31,9 @@ export const numberValue = (v: unknown): number | null =>
 export const textValue = (v: unknown): string | null =>
   typeof v === "string" && v.trim() ? v : null;
 export const formatValue = (v: unknown) =>
-  numberValue(v)?.toLocaleString("fr-FR", { maximumFractionDigits: 3 }) ?? "—";
+  numberValue(v)?.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB", {
+    maximumFractionDigits: 3,
+  }) ?? "—";
 export function catalogEntries(catalog: ProjectKpiCatalog): Entry[] {
   const seen = new Set<string>();
   return catalog.tree.flatMap((t) =>
@@ -66,21 +71,69 @@ export type FilterDraft = { values: Partial<Record<FilterKey, string[]>>; enable
 export const GEO_DIMS = [
   { key: "dor", source: "dor", label: "DOR" },
   { key: "dr", source: "dr", label: "DR" },
-  { key: "plaque", source: "plaque", label: "Plaque" },
-  { key: "arcep", source: "arcep", label: "Zone ARCEP" },
-  { key: "commune", source: "commune", label: "Commune" },
+  {
+    key: "plaque",
+    source: "plaque",
+    get label() {
+      return i18n.t("kpi.03d088bb06c0");
+    },
+  },
+  {
+    key: "arcep",
+    source: "arcep",
+    get label() {
+      return i18n.t("kpi.5fcd67575ab2");
+    },
+  },
+  {
+    key: "commune",
+    source: "commune",
+    get label() {
+      return i18n.t("kpi.eaf0dc2a430e");
+    },
+  },
   { key: "insee", source: "insee", label: "INSEE" },
 ] as const;
 export const ADVANCED_DIMS = [
   { key: "service_type", source: "service_types", label: "Service" },
-  { key: "env", source: "envs", label: "Environnement" },
+  {
+    key: "env",
+    source: "envs",
+    get label() {
+      return i18n.t("kpi.8c95c96815f1");
+    },
+  },
   { key: "phase", source: "phases", label: "Phase" },
-  { key: "dep", source: "deps", label: "Département" },
+  {
+    key: "dep",
+    source: "deps",
+    get label() {
+      return i18n.t("kpi.5e4596ae9d83");
+    },
+  },
 ] as const;
 export const FILTER_DIMS = [
-  { key: "operator", source: "operators", label: "Opérateur" },
-  { key: "rat", source: "rats", label: "Technologie" },
-  { key: "band", source: "bands", label: "Bande" },
+  {
+    key: "operator",
+    source: "operators",
+    get label() {
+      return i18n.t("kpi.16602c56b3e8");
+    },
+  },
+  {
+    key: "rat",
+    source: "rats",
+    get label() {
+      return i18n.t("kpi.8a5cefc36adb");
+    },
+  },
+  {
+    key: "band",
+    source: "bands",
+    get label() {
+      return i18n.t("kpi.39c716cec99a");
+    },
+  },
   ...GEO_DIMS,
   ...ADVANCED_DIMS,
 ] as const;
@@ -193,7 +246,7 @@ export function analyticRows(data: ProjectKpiDetail, statistic: Statistic): Anal
     // A count of observations is not evidence for a ratio denominator.
     if (
       data.unit === "%" &&
-      !(data.nature === "Métrique mesurée" && data.source?.startsWith("nmf_decoder ")) &&
+      !(data.nature === i18n.t("kpi.423fa6ca66e2") && data.source?.startsWith("nmf_decoder ")) &&
       !(numberValue(g["denominator"])! > 0)
     )
       return null;
@@ -231,7 +284,7 @@ export function analyticRows(data: ProjectKpiDetail, statistic: Statistic): Anal
       denominator: numberValue(g["denominator"]),
       label:
         [operator, band, dor].filter(Boolean).join(" · ") ||
-        (groups.length === 1 ? "Population filtrée" : "Non attribué"),
+        (groups.length === 1 ? i18n.t("kpi.f6306ab41d27") : i18n.t("kpi.51d3aaf58c26")),
     };
   });
 }

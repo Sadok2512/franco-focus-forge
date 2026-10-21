@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
 import {
@@ -53,11 +54,13 @@ import {
 import "./workspace.css";
 
 export function KpiWorkspace() {
+  useTranslation();
   const { activeProject } = useActiveProject();
   if (!activeProject) return <NoActiveProject scope="KPI Analytics" />;
   return <ProjectWorkspace key={activeProject.id} projectId={activeProject.id} />;
 }
 function ProjectWorkspace({ projectId }: { projectId: string }) {
+  const { t: translate } = useTranslation();
   // Project/filter-keyed requests can finish into the cache after navigation.
   const catalog = useQuery({
     queryKey: ["project-kpi", "catalog", projectId],
@@ -77,7 +80,8 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
   if (catalog.isPending)
     return (
       <p className="p-6" role="status">
-        Chargement du catalogue KPI…
+        {" "}
+        {translate("kpi.3b735c01e192")}{" "}
       </p>
     );
   if (catalog.isError)
@@ -85,8 +89,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
       <div className="p-6" role="alert">
         <p>{catalog.error.message}</p>
         <button className="kpi-button" onClick={() => void catalog.refetch()}>
-          <RefreshCw size={14} />
-          Réessayer le catalogue
+          <RefreshCw size={14} /> {translate("kpi.d61cacf6ec3e")}{" "}
         </button>
       </div>
     );
@@ -123,6 +126,7 @@ function Workspace({
   retryDimensions: () => void;
   period: string | null;
 }) {
+  const { t: translate } = useTranslation();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
@@ -363,7 +367,7 @@ function Workspace({
             <div
               className="kpi-sidebar-tabbar"
               role="tablist"
-              aria-label="Catalogue"
+              aria-label={translate("kpi.103451395067")}
               style={{
                 display: "flex",
                 gap: 0,
@@ -410,7 +414,8 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                Métriques{" "}
+                {" "}
+                {translate("kpi.358dd0007b59")}{" "}
                 <span className="text-[10px] text-muted-foreground">{selectedMetrics.length}</span>
               </button>
             </div>
@@ -436,39 +441,50 @@ function Workspace({
         <ResizableHandle
           withHandle
           className="kpi-resize-handle"
-          aria-label="Redimensionner le catalogue KPI"
+          aria-label={translate("kpi.9afd5ab37dac")}
         />
         <ResizablePanel id="kpi-analysis-panel" minSize="300px">
           <div className="kpi-analysis-scroll">
             <div className="kpi-analysis-toolbar">
-              <nav className="kpi-graph-tabs" aria-label="Graphiques sélectionnés">
+              <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (
                   <div key={code} className={effectiveActive === code ? "is-active" : ""}>
                     <button aria-pressed={effectiveActive === code} onClick={() => focus(code)}>
                       <span>{index + 1}</span>
                       {entries.find((e) => e.item.code === code)?.item.name ?? code}
                     </button>
-                    <button aria-label={`Fermer ${code}`} onClick={() => toggle(code)}>
+                    <button
+                      aria-label={translate("kpi.1f4632ebd015", { v0: code })}
+                      onClick={() => toggle(code)}
+                    >
                       <X size={13} />
                     </button>
                   </div>
                 ))}
-                <button className="kpi-icon" aria-label="Ajouter une métrique" onClick={addGraph}>
+                <button
+                  className="kpi-icon"
+                  aria-label={translate("kpi.1b7bfd15b343")}
+                  onClick={addGraph}
+                >
                   <Plus size={16} />
                 </button>
               </nav>
-              <section className="kpi-workspace-controls" aria-label="Organisation des graphiques">
+              <section
+                className="kpi-workspace-controls"
+                aria-label={translate("kpi.2566f74ceb28")}
+              >
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
                       className="kpi-button"
                       disabled={!effectiveActive}
-                      aria-label="Visualisation du KPI actif"
+                      aria-label={translate("kpi.76e0bb111df3")}
                     >
-                      Visualisation ·{" "}
+                      {" "}
+                      {translate("kpi.6adf7bb9ea8d")}{" "}
                       {effectiveActive
                         ? VISUALIZATIONS[configFor(effectiveActive).visualization]
-                        : "Aucun KPI"}
+                        : translate("kpi.6573afdf5cce")}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
@@ -490,16 +506,17 @@ function Workspace({
                   </DropdownMenuContent>
                 </DropdownMenu>
                 <label className="kpi-select-label">
-                  Grouper par
+                  {" "}
+                  {translate("kpi.38f09bd4a0a4")}{" "}
                   <select
-                    aria-label="Grouper par"
+                    aria-label={translate("kpi.38f09bd4a0a4")}
                     disabled={
                       !!effectiveActive &&
                       configFor(effectiveActive).visualization === "task_series"
                     }
                     title={
                       effectiveActive && configFor(effectiveActive).visualization === "task_series"
-                        ? "La série utilise les opérateurs et points de l’API"
+                        ? translate("kpi.2403c2e13659")
                         : undefined
                     }
                     value={effectiveActive ? configFor(effectiveActive).groupBy : "operator_band"}
@@ -513,10 +530,10 @@ function Workspace({
                       setSelectedRows(new Set());
                     }}
                   >
-                    <option value="none">Population filtrée</option>
-                    <option value="operator">Opérateur</option>
-                    <option value="band">Bande</option>
-                    <option value="operator_band">Opérateur + bande</option>
+                    <option value="none">{translate("kpi.f6306ab41d27")}</option>
+                    <option value="operator">{translate("kpi.16602c56b3e8")}</option>
+                    <option value="band">{translate("kpi.39c716cec99a")}</option>
+                    <option value="operator_band">{translate("kpi.1e186e6f36c5")}</option>
                     {dimensions?.dor?.available && <option value="dor">DOR</option>}
                   </select>
                 </label>
@@ -524,9 +541,7 @@ function Workspace({
                   className="kpi-button"
                   disabled={!rows.length}
                   title={
-                    !rows.length
-                      ? "Les points Task Time sont exportables depuis leur graphique"
-                      : "Exporter les agrégats"
+                    !rows.length ? translate("kpi.f63512f443a2") : translate("kpi.9d2e5183b79e")
                   }
                   onClick={() => exportRows(rows, "bc4-kpi-workspace")}
                 >
@@ -552,9 +567,9 @@ function Workspace({
                   query={query}
                   blockedReason={
                     dimensionsLoading
-                      ? "Chargement des dimensions du projet…"
+                      ? translate("kpi.f58ddd1effba")
                       : dimensionsError
-                        ? "Dimensions du projet indisponibles. Réessayez depuis les filtres."
+                        ? translate("kpi.a237d197caeb")
                         : undefined
                   }
                   rows={graphRows}
@@ -617,11 +632,10 @@ function Workspace({
             {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
-                <h2>Choisissez vos métriques</h2>
-                <p>Cochez un ou plusieurs KPI dans le catalogue pour commencer l’analyse.</p>
+                <h2>{translate("kpi.97f764ab0b74")}</h2>
+                <p>{translate("kpi.ed0d56673d65")}</p>
                 <button className="kpi-button primary" onClick={addGraph}>
-                  <Plus size={14} />
-                  Ajouter un graphique
+                  <Plus size={14} /> {translate("kpi.b8982dc44102")}{" "}
                 </button>
               </div>
             )}
@@ -661,7 +675,8 @@ function Workspace({
                 ) {
                   return (
                     <p className="p-3 text-xs text-muted-foreground">
-                      Les points et leur export CSV figurent sous chaque série.
+                      {" "}
+                      {translate("kpi.717260829dcc")}{" "}
                     </p>
                   );
                 }

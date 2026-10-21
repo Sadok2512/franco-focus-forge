@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { KpiMeasurementMap } from "./KpiMeasurementMap";
 import { Chronogram } from "./Chronogram";
 import { MetricVsTimeChart } from "./MetricVsTimeChart";
@@ -74,6 +75,7 @@ export function KpiPlot({
   mode?: "histogram" | "graph";
   curveType?: CurveType;
 }) {
+  const { t: translate } = useTranslation();
   const host = useRef<HTMLDivElement>(null),
     chart = useRef<ECharts | null>(null);
   const [visible, setVisible] = useState(false),
@@ -196,12 +198,13 @@ export function KpiPlot({
       style={{ height }}
       ref={host}
       role="img"
-      aria-label={`${mode === "graph" ? "Graphique en points agrégés" : "Histogramme"} ${rows[0]?.metric ?? "KPI"} : ${rows.map((r) => `${r.label} ${formatValue(r.value)} ${r.unit ?? ""}`).join(" ; ")}`}
+      aria-label={`${mode === "graph" ? translate("kpi.1bbcd8f9d0c3") : translate("kpi.86eb05ab111d")} ${rows[0]?.metric ?? "KPI"} : ${rows.map((r) => `${r.label} ${formatValue(r.value)} ${r.unit ?? ""}`).join(" ; ")}`}
     >
-      {!visible && <p className="kpi-chart-state">Rendu du graphique à l’affichage…</p>}
+      {!visible && <p className="kpi-chart-state">{translate("kpi.ad60f82629ae")}</p>}
       {error && (
         <p role="alert" className="p-4 text-sm">
-          Le graphique n’a pas pu être rendu. Les valeurs restent disponibles dans Données.
+          {" "}
+          {translate("kpi.38224854ef6a")}{" "}
         </p>
       )}
     </div>
@@ -253,6 +256,7 @@ export function KpiGraphCard({
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
 }) {
+  const { t: translate } = useTranslation();
   const seriesAvailable = !!entry.item.temporal_source;
   const taskView =
     config.visualization === "chronogram" ||
@@ -298,14 +302,18 @@ export function KpiGraphCard({
       : (data?.reason ??
         (status === "Empty"
           ? data?.unit === "%"
-            ? "Aucun pourcentage affichable : valeur validée et dénominateur explicite positif requis."
-            : "Aucune valeur validée pour cette population et cette statistique."
-          : "Aucune donnée validée pour cette métrique.")));
+            ? translate("kpi.ef497da95fa0")
+            : translate("kpi.33de0f18df8f")
+          : translate("kpi.26bea1feb8ec"))));
   const choices = data ? statistics(data) : [];
   const operators = [
     ...new Set(
       rows.map(
-        (r) => r.operator ?? (config.groupBy === "none" ? "Population filtrée" : "Non attribué"),
+        (r) =>
+          r.operator ??
+          (config.groupBy === "none"
+            ? translate("kpi.f6306ab41d27")
+            : translate("kpi.51d3aaf58c26")),
       ),
     ),
   ];
@@ -325,7 +333,8 @@ export function KpiGraphCard({
         </div>
       ) : config.visualization === "task_series" && !seriesAvailable ? (
         <div className="kpi-chart-state" role="status">
-          pas de série temporelle pour ce KPI (source agrégée)
+          {" "}
+          {translate("kpi.20b75fa9e2fc")}{" "}
         </div>
       ) : config.visualization === "chronogram" ? (
         <Chronogram
@@ -374,37 +383,34 @@ export function KpiGraphCard({
         />
       ) : status === "Loading" ? (
         <div className="kpi-chart-state animate-pulse" role="status">
-          Chargement de la métrique…
+          {" "}
+          {translate("kpi.705a2156c1b4")}{" "}
         </div>
       ) : status !== "Available" ? (
         <div className="kpi-chart-state" role={status === "Error" ? "alert" : "status"}>
-          <strong>{status === "Error" ? "Données indisponibles" : status}</strong>
+          <strong>{status === "Error" ? translate("kpi.f1d7675032b2") : status}</strong>
           <p>
             {query.isError
               ? /contract|contrat|expected|schema/i.test(reason)
-                ? "La réponse du service ne respecte pas le contrat attendu."
-                : "Le service n’a pas pu charger cette métrique. Réessayez."
+                ? translate("kpi.b058be3e63f7")
+                : translate("kpi.3e274b917f78")
               : reason}
           </p>
           {query.isError && (
             <details className="kpi-error-details">
-              <summary>Voir le détail technique</summary>
+              <summary>{translate("kpi.e6c5023dd74d")}</summary>
               <pre>{reason}</pre>
             </details>
           )}
           {query.isError && (
             <button className="kpi-button" onClick={() => void query.refetch()}>
-              <RefreshCw size={13} />
-              Réessayer
+              <RefreshCw size={13} /> {translate("kpi.af273d956b5b")}{" "}
             </button>
           )}
         </div>
       ) : config.visualization === "table" ? (
         <div className="kpi-table-mode" role="status">
-          <p>
-            Les données de ce KPI figurent dans le tableau Données, avec les autres KPI
-            sélectionnés.
-          </p>
+          <p> {translate("kpi.34b95a87be37")} </p>
           <button
             className="kpi-button"
             onClick={() => {
@@ -414,7 +420,8 @@ export function KpiGraphCard({
                 ?.scrollIntoView({ block: "start", behavior: "smooth" });
             }}
           >
-            Voir les données
+            {" "}
+            {translate("kpi.950a63aea890")}{" "}
           </button>
         </div>
       ) : (
@@ -457,13 +464,13 @@ export function KpiGraphCard({
           </div>
           <p>
             {techLabel(entry.techno)} · {entry.family} ·{" "}
-            {data?.unit ?? entry.item.unit ?? "Unité non renseignée"}
+            {data?.unit ?? entry.item.unit ?? translate("kpi.8246d8942ee4")}
           </p>
         </div>
         <div className="flex gap-0.5 shrink-0">
           <button
             className="kpi-icon"
-            title="Infos et preuves"
+            title={translate("kpi.f8786dbaf46f")}
             aria-label={`Infos ${entry.item.name}`}
             onClick={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
           >
@@ -471,8 +478,8 @@ export function KpiGraphCard({
           </button>
           <button
             className="kpi-icon"
-            title="Exporter les données CSV"
-            aria-label={`Exporter ${entry.item.name}`}
+            title={translate("kpi.503e014294cc")}
+            aria-label={translate("kpi.9fca71a31208", { v0: entry.item.name })}
             disabled={!taskView && !rows.length}
             onClick={() =>
               taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
@@ -482,8 +489,8 @@ export function KpiGraphCard({
           </button>
           <button
             className="kpi-icon"
-            title="Plein écran"
-            aria-label={`Plein écran ${entry.item.name}`}
+            title={translate("kpi.dee312b0129c")}
+            aria-label={translate("kpi.165b4b5c8a8d", { v0: entry.item.name })}
             onClick={() => setFull(true)}
           >
             <Maximize2 size={15} />
@@ -511,7 +518,7 @@ export function KpiGraphCard({
                       }
                     }}
                   >
-                    <DropdownMenuLabel>Paramètres du graphique</DropdownMenuLabel>
+                    <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
                     <VisualizationItems
                       throughput={seriesAvailable}
                       seriesAvailable={seriesAvailable}
@@ -519,9 +526,7 @@ export function KpiGraphCard({
                     />
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      title={
-                        taskView ? "Task Time et unité définis par le contrat de série" : undefined
-                      }
+                      title={taskView ? translate("kpi.853624eed2fd") : undefined}
                       disabled={
                         config.visualization === "task_scatter" ||
                         config.visualization === "chronogram"
@@ -530,43 +535,38 @@ export function KpiGraphCard({
                         settingsRequested.current = true;
                       }}
                     >
-                      Configurer X / Y
+                      {" "}
+                      {translate("kpi.c50196dca9cc")}{" "}
                     </DropdownMenuItem>
-                    <DropdownMenuLabel>Regroupement</DropdownMenuLabel>
+                    <DropdownMenuLabel>{translate("kpi.4d7107c7bbd7")}</DropdownMenuLabel>
                     {groupOptions.map((group) => (
                       <DropdownMenuItem
                         key={group}
                         disabled={taskView}
-                        title={
-                          taskView
-                            ? "La série utilise les opérateurs et points de l’API"
-                            : undefined
-                        }
+                        title={taskView ? translate("kpi.2403c2e13659") : undefined}
                         onSelect={() => onConfig({ ...config, groupBy: group, xMetric: group })}
                       >
                         {GROUP_LABELS[group]}
                       </DropdownMenuItem>
                     ))}
-                    <DropdownMenuLabel>Statistique</DropdownMenuLabel>
+                    <DropdownMenuLabel>{translate("kpi.a6fc812e6cb4")}</DropdownMenuLabel>
                     {choices.map((stat) => (
                       <DropdownMenuItem
                         key={stat}
                         disabled={taskView}
-                        title={taskView ? "Percentiles fournis par le contrat de série" : undefined}
+                        title={taskView ? translate("kpi.4ad1fbe164ab") : undefined}
                         onSelect={() => onStatistic(stat)}
                       >
                         {STAT_LABELS[stat]}
                       </DropdownMenuItem>
                     ))}
                     {!choices.length && (
-                      <DropdownMenuItem disabled>Aucune statistique disponible</DropdownMenuItem>
+                      <DropdownMenuItem disabled>{translate("kpi.c4e1ed3eaecc")}</DropdownMenuItem>
                     )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       title={
-                        taskView
-                          ? "Export PNG de la série non disponible ; les points sont exportables en CSV"
-                          : "Exporter le graphique disponible"
+                        taskView ? translate("kpi.88838bdebe9c") : translate("kpi.71776885807e")
                       }
                       disabled={
                         !plot ||
@@ -575,7 +575,8 @@ export function KpiGraphCard({
                       }
                       onSelect={exportPng}
                     >
-                      Exporter PNG
+                      {" "}
+                      {translate("kpi.724ac19af72e")}{" "}
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       disabled={!taskView && !rows.length}
@@ -583,20 +584,18 @@ export function KpiGraphCard({
                         taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
                       }
                     >
-                      Exporter CSV
+                      {" "}
+                      {translate("kpi.b84f9613287b")}{" "}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(-1)}>
-                      <ArrowLeft size={14} />
-                      Déplacer avant
+                      <ArrowLeft size={14} /> {translate("kpi.e88429ea6b60")}{" "}
                     </DropdownMenuItem>
                     <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(1)}>
-                      <ArrowRight size={14} />
-                      Déplacer après
+                      <ArrowRight size={14} /> {translate("kpi.e26063a217d2")}{" "}
                     </DropdownMenuItem>
                     <DropdownMenuItem onSelect={onRemove}>
-                      <X size={14} />
-                      Retirer le graphique
+                      <X size={14} /> {translate("kpi.bc0501383465")}{" "}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
@@ -647,9 +646,9 @@ export function KpiGraphCard({
         <div className="kpi-card-state-row" aria-live="polite">
           <span className={`kpi-state state-${status.toLowerCase()}`}>
             {config.visualization === "chronogram"
-              ? "Chronogramme"
+              ? translate("kpi.a7947fb8c07b")
               : config.visualization === "task_scatter"
-                ? "Nuage"
+                ? translate("kpi.388e3e33d196")
                 : taskView
                   ? "Task Time"
                   : status}
@@ -662,8 +661,8 @@ export function KpiGraphCard({
           <DialogHeader>
             <DialogTitle>{entry.item.name}</DialogTitle>
             <DialogDescription>
-              {STAT_LABELS[statistic]} · {data?.unit ?? entry.item.unit ?? "—"} · mêmes filtres
-              appliqués
+              {STAT_LABELS[statistic]} · {data?.unit ?? entry.item.unit ?? "—"}{" "}
+              {translate("kpi.e81fea56c8f7")}{" "}
             </DialogDescription>
           </DialogHeader>
           {full && body}
@@ -673,9 +672,7 @@ export function KpiGraphCard({
         <SheetContent className="w-[430px] sm:max-w-[430px] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>{entry.item.name}</SheetTitle>
-            <SheetDescription>
-              Définition et preuves du catalogue et de la réponse API.
-            </SheetDescription>
+            <SheetDescription> {translate("kpi.7fae579aed13")} </SheetDescription>
           </SheetHeader>
           <dl className="kpi-info-list">
             {Object.entries({
@@ -701,13 +698,10 @@ export function KpiGraphCard({
               ))}
           </dl>
           <p className="mt-4 rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-            Comparabilité : vérifier les sources, unités, formules et populations avant de comparer
-            deux métriques. Aucun référentiel temporel commun n’est établi par cette réponse.
+            {" "}
+            {translate("kpi.154d3daccf41")}{" "}
           </p>
-          <p className="mt-3 text-xs text-muted-foreground">
-            Task Time indisponible dans ce contrat. Aucune série temporelle, interpolation ou
-            concaténation de captures n’est créée.
-          </p>
+          <p className="mt-3 text-xs text-muted-foreground"> {translate("kpi.2d9edb679f3a")} </p>
         </SheetContent>
       </Sheet>
     </article>

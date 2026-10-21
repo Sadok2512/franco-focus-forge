@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,6 +29,7 @@ export function KpiCatalogSidebar({
   onVisualization: (code: string, mode: VisualizationType) => void;
   searchRef: RefObject<HTMLInputElement | null>;
 }) {
+  const { t: translate } = useTranslation();
   const [search, setSearch] = useState("");
   const initial =
     catalog.tree.find((t) => t.families.some((f) => f.kpis.some((k) => k.code === active))) ??
@@ -64,13 +66,14 @@ export function KpiCatalogSidebar({
     }))
     .filter((t) => t.families.length);
   return (
-    <aside className="kpi-catalog" aria-label="Catalogue KPI">
+    <aside className="kpi-catalog" aria-label={translate("kpi.3ad34a87a145")}>
       <header className="p-3 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
-          <BarChart3 size={16} className="text-primary" /> Catalogue KPI
+          <BarChart3 size={16} className="text-primary" /> {translate("kpi.3ad34a87a145")}{" "}
         </h2>
         <p className="mt-1 text-[11px] text-muted-foreground">
-          v{catalog.catalog_version} · {selected.length}/{MAX_GRAPHS} sélectionnés
+          v{catalog.catalog_version} · {selected.length}/{MAX_GRAPHS}{" "}
+          {translate("kpi.76b9fda37ce9")}{" "}
         </p>
         <label className="relative block mt-3">
           <Search size={14} className="absolute left-2.5 top-3 text-muted-foreground" />
@@ -78,8 +81,8 @@ export function KpiCatalogSidebar({
             ref={searchRef}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Rechercher un KPI…"
-            aria-label="Rechercher un KPI"
+            placeholder={translate("kpi.cee7b35d8aa1")}
+            aria-label={translate("kpi.a3a628e99080")}
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
@@ -131,7 +134,7 @@ export function KpiCatalogSidebar({
                             <label className="flex min-w-0 flex-1 items-center gap-2">
                               <input
                                 type="checkbox"
-                                aria-label={`Sélectionner ${item.name}`}
+                                aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
                                 checked={selected.includes(item.code)}
                                 disabled={
                                   !selected.includes(item.code) && selected.length >= MAX_GRAPHS
@@ -164,7 +167,9 @@ export function KpiCatalogSidebar({
                                 </button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start">
-                                <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
+                                <DropdownMenuLabel>
+                                  {translate("kpi.af3aaf87ff99")}
+                                </DropdownMenuLabel>
                                 <VisualizationItems
                                   throughput={item.unit === "Mbit/s"}
                                   onChange={(mode) => onVisualization(item.code, mode)}
@@ -180,13 +185,11 @@ export function KpiCatalogSidebar({
           );
         })}
         {!tree.length && (
-          <li className="p-4 text-xs text-muted-foreground">
-            Aucun KPI ne correspond à cette recherche.
-          </li>
+          <li className="p-4 text-xs text-muted-foreground"> {translate("kpi.7f626224ba1f")} </li>
         )}
       </ul>
       <footer className="border-t p-3 text-[10px] text-muted-foreground">
-        front v{APP_VERSION} · Catalogue du projet actif
+        front v{APP_VERSION} {translate("kpi.daee2b836d5a")}{" "}
       </footer>
     </aside>
   );

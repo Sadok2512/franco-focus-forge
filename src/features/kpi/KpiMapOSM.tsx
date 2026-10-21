@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 // -----------------------------------------------------------------------
 // 1.20.4 — Carte OSM sur /kpi via MapLibre (dépendance déjà présente,
 // cf. RadioMap). Pas de fake coords : la carte base OSM est affichée
@@ -47,6 +48,7 @@ export function KpiMapOSM({
   children?: ReactNode;
   measurementStatus?: string | null;
 }) {
+  const { t: translate, i18n: locale } = useTranslation();
   const readyCallback = useRef(onMapReady);
   readyCallback.current = onMapReady;
   const el = useRef<HTMLDivElement>(null);
@@ -156,18 +158,20 @@ export function KpiMapOSM({
           : "relative h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
-      <div ref={el} className="h-full w-full" aria-label="Carte OpenStreetMap du projet" />
+      <div ref={el} className="h-full w-full" aria-label={translate("kpi.37f8ac5eacf2")} />
       {!ready && !tileError && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground">
-          Chargement de la carte OSM…
+          {" "}
+          {translate("kpi.97076ba0b624")}{" "}
         </div>
       )}
       {tileError && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-card p-6 text-center text-[11px] text-muted-foreground">
           <MapIcon className="h-6 w-6" />
-          <p className="font-medium">Tiles OSM injoignables</p>
+          <p className="font-medium">{translate("kpi.f083f735c91a")}</p>
           <p>
-            Vérifier la connexion sortante vers <code>tile.openstreetmap.org</code>.
+            {" "}
+            {translate("kpi.db5f5c2f28f7")} <code>tile.openstreetmap.org</code>.
           </p>
         </div>
       )}
@@ -176,8 +180,8 @@ export function KpiMapOSM({
           <div className="flex gap-1">
             <button
               className="rrc-map-icon"
-              aria-label="Recherche géographique par coordonnées"
-              title="Aller à des coordonnées"
+              aria-label={translate("kpi.633863fe6e73")}
+              title={translate("kpi.e873044509c4")}
               aria-expanded={searchOpen}
               onClick={() => {
                 setSearchOpen(!searchOpen);
@@ -188,16 +192,16 @@ export function KpiMapOSM({
             </button>
             <button
               className="rrc-map-icon"
-              aria-label="Recentrer la carte"
-              title="Recentrer la carte"
+              aria-label={translate("kpi.fb2563ef77c2")}
+              title={translate("kpi.fb2563ef77c2")}
               onClick={() => (onRecenter ? onRecenter() : map.current?.flyTo({ center, zoom }))}
             >
               <LocateFixed size={15} />
             </button>
             <button
               className="rrc-map-icon"
-              aria-label="Couches cartographiques"
-              title="Couches cartographiques"
+              aria-label={translate("kpi.2544123cbe41")}
+              title={translate("kpi.2544123cbe41")}
               aria-expanded={layersOpen}
               onClick={() => {
                 setLayersOpen(!layersOpen);
@@ -244,7 +248,8 @@ export function KpiMapOSM({
                 />
               </label>
               <button className="rrc-control mt-2" type="submit">
-                Aller
+                {" "}
+                {translate("kpi.9e3df88a709a")}{" "}
               </button>
               {coordinateError && (
                 <p role="alert" className="text-xs mt-1">
@@ -268,8 +273,8 @@ export function KpiMapOSM({
                       e.target.checked ? "visible" : "none",
                     );
                   }}
-                />
-                Fond OpenStreetMap
+                />{" "}
+                {translate("kpi.6f6ba4244731")}{" "}
               </label>
             </div>
           )}
@@ -280,26 +285,33 @@ export function KpiMapOSM({
       {measurementStatus !== null && (
         <div
           className={`absolute left-2 ${premium ? "bottom-2" : "top-2"} z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm`}
-          title="Aucune coordonnée de mesure traçable pour le contexte appliqué. Fond de carte uniquement."
+          title={translate("kpi.9988d7ea6ad3")}
         >
           {nPoints != null && (
             <span className="mr-2">
-              {nPoints.toLocaleString("fr-FR")} obs. {contextLabel}
+              {nPoints.toLocaleString(locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")} obs.{" "}
+              {contextLabel}
             </span>
           )}
           <span className="text-sev-warn">
             {measurementStatus ??
               (premium
-                ? "Aucun point géolocalisé"
-                : `Fond de carte · coordonnées ${contextLabel} indisponibles`)}
+                ? translate("kpi.a5802ba6f148")
+                : translate("kpi.8b720795f9b0", { v0: contextLabel }))}
           </span>
         </div>
       )}
       {/* Bouton plein écran ⤢ en haut à droite */}
       <button
         onClick={() => setFull(!full)}
-        aria-label={full ? "Quitter le plein écran" : premium ? "Plein écran carte" : "Plein écran"}
-        title={full ? "Quitter le plein écran (Échap)" : "Plein écran"}
+        aria-label={
+          full
+            ? translate("kpi.3645da627202")
+            : premium
+              ? translate("kpi.2668a681be64")
+              : translate("kpi.dee312b0129c")
+        }
+        title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
         className="absolute right-12 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
@@ -307,7 +319,9 @@ export function KpiMapOSM({
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
       {showOperatorLegend && (
         <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">
-          <div className="mb-0.5 font-semibold text-foreground">Opérateurs</div>
+          <div className="mb-0.5 font-semibold text-foreground">
+            {translate("kpi.5bb4229062a5")}
+          </div>
           <div className="flex flex-wrap gap-x-2 gap-y-0.5">
             {OPERATOR_COLORS.map(({ op, hex }) => (
               <span key={op} className="inline-flex items-center gap-1">
@@ -317,7 +331,7 @@ export function KpiMapOSM({
             ))}
             <span className="inline-flex items-center gap-1">
               <span className="h-2 w-2 rounded-full border border-dashed border-muted-foreground" />
-              <span className="text-muted-foreground">N/D</span>
+              <span className="text-muted-foreground">{translate("kpi.eb34623b71cd")}</span>
             </span>
           </div>
         </div>

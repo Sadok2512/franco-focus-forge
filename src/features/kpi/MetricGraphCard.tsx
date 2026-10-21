@@ -1,3 +1,6 @@
+import { formatNumber } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
@@ -37,10 +40,18 @@ import { operatorColor } from "./workspace-model";
  *  Règle 1/2 : aucune valeur fabriquée, aucune interpolation front. */
 export type MetricView = "histogram" | "graph" | "table" | "map";
 export const METRIC_VIEW_LABELS: Record<MetricView, string> = {
-  histogram: "Histogramme",
-  graph: "Graphique",
-  table: "Tableau",
-  map: "Carte",
+  get histogram() {
+    return i18n.t("metrics.86eb05ab111d");
+  },
+  get graph() {
+    return i18n.t("metrics.ef006991fd7c");
+  },
+  get table() {
+    return i18n.t("metrics.e86755d376aa");
+  },
+  get map() {
+    return i18n.t("metrics.8ae525330384");
+  },
 };
 export const METRIC_VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
   histogram: BarChart3,
@@ -74,6 +85,7 @@ export function MetricGraphCard({
   view?: MetricView | undefined;
   onViewChange?: ((view: MetricView) => void) | undefined;
 }) {
+  const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
   const view = viewProp ?? localView;
   const setView = (v: MetricView) => {
@@ -110,7 +122,7 @@ export function MetricGraphCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start">
-              <DropdownMenuLabel>Visualisation</DropdownMenuLabel>
+              <DropdownMenuLabel>{translate("metrics.af3aaf87ff99")}</DropdownMenuLabel>
               {(Object.keys(METRIC_VIEW_LABELS) as MetricView[]).map((mode) => {
                 const Icon = METRIC_VIEW_ICONS[mode];
                 return (
@@ -124,7 +136,7 @@ export function MetricGraphCard({
           </DropdownMenu>
           <button
             className="kpi-icon"
-            title="Retirer la métrique"
+            title={translate("metrics.68144408eb29")}
             aria-label={`Retirer ${label}`}
             onClick={onRemove}
           >
@@ -151,10 +163,11 @@ export function MetricGraphCard({
         />
       ) : (
         <div className="kpi-chart-state" role="status" data-testid="metric-map-state">
-          <strong>Carte non disponible pour cette métrique</strong>
+          <strong>{translate("metrics.cdb583a56010")}</strong>
           <p>
-            L'endpoint <code>/metrics/series</code> ne retourne pas de coordonnées GPS. Utilisez un
-            KPI géolocalisé (vue Carte) pour positionner les mesures.
+            {" "}
+            {translate("metrics.62a5dc8d2766")} <code>/metrics/series</code>{" "}
+            {translate("metrics.2870ce5d97d0")}{" "}
           </p>
         </div>
       )}
@@ -175,6 +188,7 @@ function MetricAggregatePlot({
   unit: string;
   appliedFilters: KpiQueryFilters;
 }) {
+  const { t: translate } = useTranslation();
   const query = useQuery({
     queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
     queryFn: ({ signal }) =>
@@ -187,7 +201,7 @@ function MetricAggregatePlot({
   const option = useMemo<EChartsOption>(() => {
     const groups = query.data?.groups ?? [];
     const sorted = [...groups].sort((a, b) => (b.n || 0) - (a.n || 0));
-    const labels = sorted.map((g) => g.operator ?? "Non attribué");
+    const labels = sorted.map((g) => g.operator ?? translate("metrics.51d3aaf58c26"));
     // 1.49.1 — grouper P10/P50/P90 côte à côte : une barre pleine
     // (opérateur) pour chaque percentile. Évite les bars à hauteur 0
     // invisibles quand p50=0 (ex. BLER où la médiane est 0 par
@@ -229,11 +243,16 @@ function MetricAggregatePlot({
           position: "top" as const,
           fontSize: 9,
           formatter: (p: { value?: unknown }) =>
-            typeof p.value === "number" ? p.value.toFixed(unit === "%" ? 1 : 2) : "—",
+            typeof p.value === "number"
+              ? formatNumber(p.value, {
+                  minimumFractionDigits: unit === "%" ? 1 : 2,
+                  maximumFractionDigits: unit === "%" ? 1 : 2,
+                })
+              : "—",
         },
       })),
     };
-  }, [query.data, unit]);
+  }, [translate, query.data, unit]);
 
   // 1.49.2 — le div hôte n'existe pas tant que query est pending (early
   // return "Chargement…"). On attend que le DOM soit prêt (data arrivée)
@@ -271,14 +290,15 @@ function MetricAggregatePlot({
   if (query.isPending) {
     return (
       <div className="kpi-chart-state animate-pulse" role="status">
-        Chargement de l'agrégat…
+        {" "}
+        {translate("metrics.fc725ec040f4")}{" "}
       </div>
     );
   }
   if (query.isError) {
     return (
       <div className="kpi-chart-state" role="alert">
-        <strong>Agrégat indisponible</strong>
+        <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
       </div>
     );
@@ -286,7 +306,8 @@ function MetricAggregatePlot({
   if (!query.data?.groups.length) {
     return (
       <div className="kpi-chart-state" role="status">
-        Aucun point retourné pour cette métrique sur ce projet.
+        {" "}
+        {translate("metrics.d02d5671d4a1")}{" "}
       </div>
     );
   }
@@ -297,7 +318,12 @@ function MetricAggregatePlot({
       ref={host}
       role="img"
       data-testid="metric-aggregate-plot"
-      aria-label={`Histogramme ${label} par opérateur : ${query.data.groups.map((g) => `${g.operator ?? "N/D"} ${g.p50 ?? "—"} ${unit}`).join(" ; ")}`}
+      aria-label={translate("metrics.d5b4f0dc6e6e", {
+        v0: label,
+        v1: query.data.groups
+          .map((g) => `${g.operator ?? "N/D"} ${g.p50 ?? "—"} ${unit}`)
+          .join(" ; "),
+      })}
     />
   );
 }
@@ -316,6 +342,7 @@ function MetricAggregateTable({
   unit: string;
   appliedFilters: KpiQueryFilters;
 }) {
+  const { t: translate, i18n: locale } = useTranslation();
   const query = useQuery({
     queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
     queryFn: ({ signal }) =>
@@ -324,13 +351,14 @@ function MetricAggregateTable({
   if (query.isPending)
     return (
       <div className="kpi-chart-state animate-pulse" role="status">
-        Chargement de l'agrégat…
+        {" "}
+        {translate("metrics.fc725ec040f4")}{" "}
       </div>
     );
   if (query.isError)
     return (
       <div className="kpi-chart-state" role="alert">
-        <strong>Agrégat indisponible</strong>
+        <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
       </div>
     );
@@ -338,23 +366,29 @@ function MetricAggregateTable({
   if (!groups.length)
     return (
       <div className="kpi-chart-state" role="status">
-        Aucun point retourné pour cette métrique sur ce projet.
+        {" "}
+        {translate("metrics.d02d5671d4a1")}{" "}
       </div>
     );
   const fmt = (v: number | null) =>
-    v === null ? "—" : v.toFixed(unit === "%" ? 2 : unit === "dB" || unit === "dBm" ? 1 : 2);
+    v === null
+      ? "—"
+      : formatNumber(v, {
+          minimumFractionDigits: unit === "%" ? 2 : unit === "dB" || unit === "dBm" ? 1 : 2,
+          maximumFractionDigits: unit === "%" ? 2 : unit === "dB" || unit === "dBm" ? 1 : 2,
+        });
   return (
     <div className="kpi-data-table" data-testid="metric-aggregate-table">
       <div className="kpi-table-scroll" style={{ maxHeight: 235 }}>
         <table>
           <thead>
             <tr>
-              <th>Opérateur</th>
+              <th>{translate("metrics.16602c56b3e8")}</th>
               <th className="numeric">n</th>
               <th className="numeric">P10</th>
               <th className="numeric">P50</th>
               <th className="numeric">P90</th>
-              <th>Unité</th>
+              <th>{translate("metrics.1ee30a8526db")}</th>
             </tr>
           </thead>
           <tbody>
@@ -373,9 +407,11 @@ function MetricAggregateTable({
                         marginRight: 6,
                       }}
                     />
-                    {g.operator ?? "Non attribué"}
+                    {g.operator ?? translate("metrics.51d3aaf58c26")}
                   </td>
-                  <td className="numeric">{g.n.toLocaleString("fr-FR")}</td>
+                  <td className="numeric">
+                    {g.n.toLocaleString(locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
+                  </td>
                   <td className="numeric">{fmt(g.p10)}</td>
                   <td className="numeric">{fmt(g.p50)}</td>
                   <td className="numeric">{fmt(g.p90)}</td>
@@ -404,6 +440,7 @@ function MetricTimePlot({
   label: string;
   unit: string;
 }) {
+  const { t: translate } = useTranslation();
   const captures = useQuery({
     queryKey: ["metric-captures", projectId],
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
@@ -427,32 +464,36 @@ function MetricTimePlot({
     if (captures.isPending)
       return (
         <div className="kpi-chart-state animate-pulse" role="status">
-          Sélection automatique d’une capture…
+          {" "}
+          {translate("metrics.de3b78444032")}{" "}
         </div>
       );
     return (
       <div className="kpi-chart-state" role="status">
-        Aucune capture décodée disponible pour ce projet.
+        {" "}
+        {translate("metrics.31a32f546ca5")}{" "}
       </div>
     );
   }
   if (series.isPending)
     return (
       <div className="kpi-chart-state animate-pulse" role="status">
-        Chargement de la série…
+        {" "}
+        {translate("metrics.d90f3037b488")}{" "}
       </div>
     );
   if (series.isError)
     return (
       <div className="kpi-chart-state" role="alert">
-        <strong>Série indisponible</strong>
+        <strong>{translate("metrics.a0f3fe3387b3")}</strong>
         <p>{series.error.message}</p>
       </div>
     );
   if (!points.length)
     return (
       <div className="kpi-chart-state" role="status">
-        Aucun point retourné par /metrics/series pour cette capture.
+        {" "}
+        {translate("metrics.fab2de7753e5")}{" "}
       </div>
     );
 
@@ -473,7 +514,11 @@ function MetricTimePlot({
             domain={[0, "dataMax"]}
             tickCount={6}
             tick={{ fontSize: 10, fill: "#64748b" }}
-            tickFormatter={(v: number) => (typeof v === "number" ? v.toFixed(0) + " s" : String(v))}
+            tickFormatter={(v: number) =>
+              typeof v === "number"
+                ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " s"
+                : String(v)
+            }
           />
           <YAxis width={54} domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} />
           <Tooltip
@@ -481,7 +526,9 @@ function MetricTimePlot({
             contentStyle={{ fontSize: 11, padding: "4px 8px" }}
             formatter={(value: number) => [`${value}${unit ? " " + unit : ""}`, label]}
             labelFormatter={(l: number) =>
-              typeof l === "number" ? `${l.toFixed(3)} s` : String(l)
+              typeof l === "number"
+                ? `${formatNumber(l, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} s`
+                : String(l)
             }
           />
           <Line

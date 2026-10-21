@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { mapFeatures } from "./map-model";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -19,6 +20,7 @@ export function KpiMeasurementMap({
   onCaptureChange: (capture: string) => void;
   filters: KpiQueryFilters;
 }) {
+  const { t: translate, i18n: locale } = useTranslation();
   // The capture endpoint has no analytical filter arguments. Never silently ignore them.
   const unsupported = Object.entries(filters)
     .filter(
@@ -92,7 +94,15 @@ export function KpiMeasurementMap({
       if (disposed) return;
       const content = document.createElement("div");
       content.style.whiteSpace = "pre-line";
-      content.textContent = `${code}\nValeur : ${p["value"]} ${p["unit"]}\nCapture : ${p["capture_id"]}\nSéquence : ${p["seq"]}\nSource : ${p["result_id"]}\nFichier : ${p["file"]}`;
+      content.textContent = translate("kpi.e4b37c222c49", {
+        v0: code,
+        v1: p["value"],
+        v2: p["unit"],
+        v3: p["capture_id"],
+        v4: p["seq"],
+        v5: p["result_id"],
+        v6: p["file"],
+      });
       popup?.remove();
       popup = new Popup().setLngLat(event.lngLat).setDOMContent(content).addTo(map);
     };
@@ -102,18 +112,29 @@ export function KpiMeasurementMap({
       popup?.remove();
       map.off("click", "kpi-measures", click);
     };
-  }, [map, code, features]);
+  }, [map, code, features, translate]);
   const message = !allowed
-    ? `Points indisponibles avec ces filtres : ${unsupported.join(", ")}. L’API cartographique par capture ne les prend pas en charge.`
+    ? translate("kpi.a5bacfb3bfd4", { v0: unsupported.join(", ") })
     : captures.isError || query.isError
-      ? "Échec du chargement des points KPI."
+      ? translate("kpi.aa502d0dbdf4")
       : (!captureId && captures.isPending) || (!!captureId && query.isPending)
-        ? "Chargement des observations géolocalisées…"
+        ? translate("kpi.db30f893cb8b")
         : query.data && query.data.status !== "AVAILABLE"
           ? (query.data.reason ?? "Mesures indisponibles.")
           : features.length
-            ? `${features.length.toLocaleString("fr-FR")} points géolocalisés sur ${query.data?.n_returned.toLocaleString("fr-FR")} observations retournées${query.data?.sampling?.method !== "none" && query.data?.sampling ? " · échantillonnage API" : ""}`
-            : "Aucune observation avec coordonnées et preuve disponibles pour cette capture.";
+            ? translate("kpi.f3625a33de19", {
+                v0: features.length.toLocaleString(
+                  locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB",
+                ),
+                v1: query.data?.n_returned.toLocaleString(
+                  locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB",
+                ),
+                v2:
+                  query.data?.sampling?.method !== "none" && query.data?.sampling
+                    ? translate("kpi.apiSampling")
+                    : "",
+              })
+            : translate("kpi.912d53fb4f88");
   return (
     <div>
       {allowed && !!captures.data?.length && (
@@ -125,7 +146,8 @@ export function KpiMeasurementMap({
             onChange={(event) => onCaptureChange(event.target.value)}
           >
             <option value="" disabled>
-              Choisir une capture
+              {" "}
+              {translate("kpi.b07b688a46b7")}{" "}
             </option>
             {captureId && !captures.data.some((c) => c.capture_id === captureId) && (
               <option value={captureId}>{captureId}</option>
@@ -146,7 +168,8 @@ export function KpiMeasurementMap({
             if (captureId) void query.refetch();
           }}
         >
-          Réessayer
+          {" "}
+          {translate("kpi.af273d956b5b")}{" "}
         </button>
       )}
       <KpiMapOSM

@@ -1,3 +1,10 @@
+import { beforeEach } from "vitest";
+import { setLanguage } from "@/lib/i18n";
+
+// Existing French accessibility assertions remain a French-language regression suite.
+beforeEach(async () => {
+  await setLanguage("fr");
+});
 import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import {

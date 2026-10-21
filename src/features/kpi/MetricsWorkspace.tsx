@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
@@ -9,19 +11,32 @@ import { KpiMapOSM } from "./KpiMapOSM";
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 type View = "table" | "graph" | "histogram" | "scatter" | "map";
 const LABELS: Record<View, string> = {
-  table: "Tableau",
-  graph: "Chronogramme",
-  histogram: "Histogramme",
-  scatter: "Nuage",
-  map: "Carte",
+  get table() {
+    return i18n.t("metrics.e86755d376aa");
+  },
+  get graph() {
+    return i18n.t("metrics.a7947fb8c07b");
+  },
+  get histogram() {
+    return i18n.t("metrics.86eb05ab111d");
+  },
+  get scatter() {
+    return i18n.t("metrics.388e3e33d196");
+  },
+  get map() {
+    return i18n.t("metrics.8ae525330384");
+  },
 };
 const fmt = (v: unknown) =>
   v === null || v === undefined
     ? "—"
     : typeof v === "number"
-      ? v.toLocaleString("fr-FR", { maximumFractionDigits: 3 })
+      ? v.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB", {
+          maximumFractionDigits: 3,
+        })
       : String(v);
 function Plot({ option, label }: { option: EChartsOption; label: string }) {
+  useTranslation();
   const host = useRef<HTMLDivElement>(null);
   const chart = useRef<ECharts | null>(null);
   const latest = useRef(option);
@@ -62,6 +77,7 @@ function Plot({ option, label }: { option: EChartsOption; label: string }) {
   );
 }
 function MetricMap({ data }: { data: MetricAnalysis }) {
+  const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const features = useMemo(
     () =>
@@ -118,11 +134,9 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       {...(first ? { center: [first.lng, first.lat] as [number, number] } : {})}
       zoom={first ? 13 : 5}
       showOperatorLegend={false}
-      contextLabel="Métriques · positions exactes enregistrées"
+      contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
-      measurementStatus={
-        first ? null : "Aucune position GPS prouvée pour les observations sélectionnées"
-      }
+      measurementStatus={first ? null : translate("metrics.59d5ea1eb6a5")}
     />
   );
 }
@@ -143,6 +157,7 @@ export function MetricsWorkspace({
   filters: KpiQueryFilters;
   onClear: () => void;
 }) {
+  const { t: translate } = useTranslation();
   const [view, setView] = useState<View>("table");
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
@@ -197,7 +212,7 @@ export function MetricsWorkspace({
       if (hasDistribution) {
         const rows = data.histogram.flatMap((h) =>
           h.distribution.map((d) => ({
-            label: `${h.operator ?? "Non attribué"} · ${h.label} · ${d.value}`,
+            label: `${h.operator ?? translate("metrics.51d3aaf58c26")} · ${h.label} · ${d.value}`,
             n: d.n,
           })),
         );
@@ -216,7 +231,7 @@ export function MetricsWorkspace({
         ...new Set(
           data.columns
             .filter((c) => c.kind !== "categorical")
-            .map((c) => (c.kind === "event" ? "Événements / h connectée" : c.unit)),
+            .map((c) => (c.kind === "event" ? translate("metrics.4e1802024d49") : c.unit)),
         ),
       ];
       return {
@@ -224,7 +239,8 @@ export function MetricsWorkspace({
         xAxis: {
           type: "category",
           data: data.histogram.map(
-            (h) => `${h.operator ?? "Non attribué"}${h.band ? " · " + h.band : ""} · ${h.label}`,
+            (h) =>
+              `${h.operator ?? translate("metrics.51d3aaf58c26")}${h.band ? " · " + h.band : ""} · ${h.label}`,
           ),
           axisLabel: { rotate: 20, fontSize: 10 },
         },
@@ -240,7 +256,9 @@ export function MetricsWorkspace({
             (c.kind === "event" ? ["per_connected_hour"] : ["p10", "p50", "p90"]).map((k) => ({
               type: "bar" as const,
               name: `${c.label} ${k}`,
-              yAxisIndex: units.indexOf(c.kind === "event" ? "Événements / h connectée" : c.unit),
+              yAxisIndex: units.indexOf(
+                c.kind === "event" ? translate("metrics.4e1802024d49") : c.unit,
+              ),
               data: data.histogram.map((h) =>
                 h.code === c.code ? h[k as "p10" | "p50" | "p90" | "per_connected_hour"] : null,
               ),
@@ -275,7 +293,7 @@ export function MetricsWorkspace({
           offset: i > 1 ? (i - 1) * 48 : 0,
           splitLine: { show: i === 0 },
         }))
-      : [{ type: "value", name: "Événement" }];
+      : [{ type: "value", name: translate("metrics.81c7cdb0866e") }];
     const lines = numeric.map((s, i) => ({
       name: s.label,
       type: "line" as const,
@@ -337,10 +355,10 @@ export function MetricsWorkspace({
         : base.grid,
       xAxis: cats.length
         ? [
-            { type: "value", min: 0, name: "Temps capture (s)" },
+            { type: "value", min: 0, name: translate("metrics.46c537ebda08") },
             { type: "value", min: 0, gridIndex: 1 },
           ]
-        : { type: "value", min: 0, name: "Temps capture (s)" },
+        : { type: "value", min: 0, name: translate("metrics.46c537ebda08") },
       yAxis: yAxes,
       dataZoom: [
         { type: "inside", xAxisIndex: cats.length ? [0, 1] : [0] },
@@ -348,7 +366,7 @@ export function MetricsWorkspace({
       ],
       series: [...lines, ...(!numeric.length ? eventSeries : []), ...categorical],
     };
-  }, [data, view, x]);
+  }, [translate, data, view, x]);
   const exportCsv = () => {
     if (!data) return;
     const url = URL.createObjectURL(new Blob([data.csv], { type: "text/csv;charset=utf-8" }));
@@ -362,27 +380,28 @@ export function MetricsWorkspace({
     <article className="kpi-graph-card col-span-full" data-testid="metrics-v3-workspace">
       <header className="kpi-card-header">
         <div>
-          <h3>Métriques · cellules et événements</h3>
+          <h3>{translate("metrics.ba86c69725e4")}</h3>
           <p>
             {data
               ? `${data.decode_level === "deep" ? "Deep" : "Light"} ${data.decoder_version}`
-              : "Une capture à la fois"}
+              : translate("metrics.8d75f000495f")}
           </p>
         </div>
         <button className="kpi-button" onClick={onClear}>
-          Réinitialiser
+          {" "}
+          {translate("metrics.5b35e0e35591")}{" "}
         </button>
       </header>
       <div className="flex flex-wrap gap-2 items-center p-3 border-b">
         <label className="text-xs">
           Capture{" "}
           <select
-            aria-label="Capture Métriques"
+            aria-label={translate("metrics.bd26d0b73036")}
             className="kpi-select"
             value={captureId ?? ""}
             onChange={(e) => onCaptureChange(e.target.value)}
           >
-            <option value="">Sélectionner une capture</option>
+            <option value="">{translate("metrics.afe552c801ae")}</option>
             {captureId && !captureQuery.data?.some((c) => c.capture_id === captureId) && (
               <option value={captureId}>{captureId}</option>
             )}
@@ -394,10 +413,11 @@ export function MetricsWorkspace({
           </select>
         </label>
         <label className="text-xs">
-          Vue{" "}
+          {" "}
+          {translate("metrics.b111a2a2185c")}{" "}
           <select
             className="kpi-select"
-            aria-label="Vue Métriques"
+            aria-label={translate("metrics.015e85219fb0")}
             value={view}
             onChange={(e) => setView(e.target.value as View)}
           >
@@ -410,17 +430,18 @@ export function MetricsWorkspace({
         </label>
         {view === "histogram" && (
           <label className="text-xs">
-            Grouper{" "}
+            {" "}
+            {translate("metrics.560b1e430bba")}{" "}
             <select
               className="kpi-select"
-              aria-label="Grouper Métriques"
+              aria-label={translate("metrics.b7a9555413fc")}
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value)}
             >
               <option value="none">Population</option>
-              <option value="operator">Opérateur × cellule</option>
-              <option value="band">Bande × cellule</option>
-              <option value="operator_band">Opérateur + bande × cellule</option>
+              <option value="operator">{translate("metrics.3ec1ead23ec6")}</option>
+              <option value="band">{translate("metrics.a78d899fbf01")}</option>
+              <option value="operator_band">{translate("metrics.d070df0886e1")}</option>
             </select>
           </label>
         )}
@@ -429,11 +450,11 @@ export function MetricsWorkspace({
             X{" "}
             <select
               className="kpi-select"
-              aria-label="Axe X Métriques"
+              aria-label={translate("metrics.7c804dfaa372")}
               value={x}
               onChange={(e) => setX(e.target.value)}
             >
-              <option value="">Sélectionner</option>
+              <option value="">{translate("metrics.bec8087f7b17")}</option>
               {catalog
                 .filter((m) => m.available && m.kind === "numeric" && !m.alias_of)
                 .flatMap((m) =>
@@ -455,14 +476,16 @@ export function MetricsWorkspace({
           </label>
         )}
         <button className="kpi-button ml-auto" disabled={!data} onClick={exportCsv}>
-          Exporter CSV
+          {" "}
+          {translate("metrics.b84f9613287b")}{" "}
         </button>
       </div>
       {!captureId ? (
-        <div className="kpi-chart-state">Sélectionnez la capture à analyser.</div>
+        <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : query.isPending ? (
         <div className="kpi-chart-state" role="status">
-          Chargement des mesures…
+          {" "}
+          {translate("metrics.eb724a908f1f")}{" "}
         </div>
       ) : query.isError ? (
         <div className="kpi-chart-state" role="alert">
@@ -475,8 +498,8 @@ export function MetricsWorkspace({
               <div className="kpi-data-table">
                 <input
                   className="m-2 border rounded px-2 bg-background text-xs"
-                  placeholder="Rechercher dans les secondes…"
-                  aria-label="Rechercher Métriques tableau"
+                  placeholder={translate("metrics.59623fc4cc6e")}
+                  aria-label={translate("metrics.5da2cea99150")}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -524,28 +547,36 @@ export function MetricsWorkspace({
             ) : view === "map" ? (
               <MetricMap data={data} />
             ) : (
-              <Plot option={option} label={`${LABELS[view]} Métriques`} />
+              <Plot
+                option={option}
+                label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
+              />
             )}
             {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
               <div className="p-3 text-xs">
                 <p>
-                  Temps connecté prouvé : {fmt(data.connected_seconds)} s {data.connected_reason}
+                  {" "}
+                  {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
+                  {data.connected_reason}
                 </p>
                 {data.pair_rates.map((p) => (
                   <p key={p.type}>
-                    {p.type} : {p.success}/{p.known_outcomes} issues connues · {fmt(p.success_pct)}{" "}
-                    % · {p.attempts} tentatives
+                    {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
+                    {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
                   </p>
                 ))}
               </div>
             )}
             <details className="p-3 border-t text-xs">
-              <summary>Infos · {data.result_id}</summary>
+              <summary>
+                {translate("metrics.23c32c5569dc")} {data.result_id}
+              </summary>
               <p>{data.aggregation}</p>
               <p>{data.time_policy}</p>
               <p>{data.pairing}</p>
               <p>
-                Décodeur {data.decoder_version} · {data.decode_level}
+                {" "}
+                {translate("metrics.11d1fa9f3de9")} {data.decoder_version} · {data.decode_level}
               </p>
               {data.gaps.map((g) => (
                 <p key={g}>{g}</p>

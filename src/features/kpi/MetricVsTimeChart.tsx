@@ -1,3 +1,5 @@
+import { formatNumber } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
 import type { CurveType } from "./visualization-model";
 import { useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -46,6 +48,7 @@ export function MetricVsTimeChart({
   height?: number;
   curveType?: CurveType;
 }) {
+  const { t: translate } = useTranslation();
   // 1.45.1 — Auto-sélection : si aucune capture n'est encore active au
   // niveau du workspace (cas user qui ouvre Graphique sans passer par
   // Chronogramme), on appelle `/projects/{p}/kpi/{code}/captures`
@@ -83,7 +86,7 @@ export function MetricVsTimeChart({
     if (captures.isError) {
       return (
         <div className="kpi-chart-state" role="alert">
-          <strong>Capture indisponible</strong>
+          <strong>{translate("metrics.d854ce90120a")}</strong>
           <p>{toUserMessage(captures.error)}</p>
         </div>
       );
@@ -91,16 +94,15 @@ export function MetricVsTimeChart({
     if (!captures.isPending && captures.data && captures.data.length === 0) {
       return (
         <div className="kpi-chart-state" role="status">
-          <strong>Aucune capture disponible</strong>
-          <p>
-            Ce projet ne contient aucune capture avec observations décodées pour cette métrique.
-          </p>
+          <strong>{translate("metrics.3fd2fa69202a")}</strong>
+          <p> {translate("metrics.ce1d87439ed3")} </p>
         </div>
       );
     }
     return (
       <div className="kpi-chart-state animate-pulse" role="status">
-        Sélection automatique d’une capture…
+        {" "}
+        {translate("metrics.de3b78444032")}{" "}
       </div>
     );
   }
@@ -108,14 +110,15 @@ export function MetricVsTimeChart({
   if (query.isPending) {
     return (
       <div className="kpi-chart-state animate-pulse" role="status">
-        Chargement de la métrique…
+        {" "}
+        {translate("metrics.705a2156c1b4")}{" "}
       </div>
     );
   }
   if (query.isError) {
     return (
       <div className="kpi-chart-state" role="alert">
-        <strong>Données indisponibles</strong>
+        <strong>{translate("metrics.f1d7675032b2")}</strong>
         <p>{toUserMessage(query.error)}</p>
       </div>
     );
@@ -126,14 +129,15 @@ export function MetricVsTimeChart({
     return (
       <div className="kpi-chart-state" role="status">
         <strong>{data.status}</strong>
-        <p>{data.reason ?? "Aucune série temporelle validée pour cette métrique."}</p>
+        <p>{data.reason ?? translate("metrics.03cba548e162")}</p>
       </div>
     );
   }
   if (!points.length) {
     return (
       <div className="kpi-chart-state" role="status">
-        Aucun point retourné par l’API pour cette capture.
+        {" "}
+        {translate("metrics.cb634d687df7")}{" "}
       </div>
     );
   }
@@ -165,7 +169,11 @@ export function MetricVsTimeChart({
             domain={[0, "dataMax"]}
             tickCount={6}
             tick={{ fontSize: 10, fill: "#64748b" }}
-            tickFormatter={(v: number) => (typeof v === "number" ? v.toFixed(0) + " s" : String(v))}
+            tickFormatter={(v: number) =>
+              typeof v === "number"
+                ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " s"
+                : String(v)
+            }
           />
           <YAxis
             width={54}
@@ -174,8 +182,8 @@ export function MetricVsTimeChart({
             tickFormatter={(v: number) =>
               typeof v === "number"
                 ? yUnit === "%"
-                  ? v.toFixed(0) + " %"
-                  : v.toFixed(1)
+                  ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " %"
+                  : formatNumber(v, { minimumFractionDigits: 1, maximumFractionDigits: 1 })
                 : String(v)
             }
           />
@@ -187,7 +195,9 @@ export function MetricVsTimeChart({
               data.metric_name ?? data.metric_code,
             ]}
             labelFormatter={(label: number) =>
-              typeof label === "number" ? `${label.toFixed(3)} ${xUnit}` : String(label)
+              typeof label === "number"
+                ? `${formatNumber(label, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} ${xUnit}`
+                : String(label)
             }
           />
           <Line

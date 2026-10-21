@@ -1,3 +1,6 @@
+import { formatNumber } from "@/lib/i18n";
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { Columns3, Download, Search } from "lucide-react";
@@ -35,17 +38,21 @@ type Column = {
   optional?: boolean;
 };
 
-const timeFormatter = new Intl.NumberFormat("fr-FR", {
-  minimumFractionDigits: 3,
-  maximumFractionDigits: 3,
-  useGrouping: false,
-});
+const timeFormatter = () =>
+  new Intl.NumberFormat(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB", {
+    minimumFractionDigits: 3,
+    maximumFractionDigits: 3,
+    useGrouping: false,
+  });
 
 const valueFormatter = (value: unknown, unit: string | null) => {
   if (value == null) return "—";
   if (typeof value === "number") {
     const digits = unit === "%" ? 1 : 2;
-    const base = Number.isInteger(value) ? value.toFixed(0) : value.toFixed(digits);
+    const base = new Intl.NumberFormat(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB", {
+      minimumFractionDigits: Number.isInteger(value) ? 0 : digits,
+      maximumFractionDigits: digits,
+    }).format(value);
     return unit ? `${base} ${unit}` : base;
   }
   return String(value);
@@ -81,6 +88,7 @@ export function KpiRawDataTable({
   captureId: string | undefined;
   metrics: KpiRawMetric[];
 }) {
+  const { t: translate, i18n: locale } = useTranslation();
   const [search, setSearch] = useState("");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<{ key: string; descending: boolean }>({
@@ -189,14 +197,14 @@ export function KpiRawDataTable({
       const result =
         typeof av === "number" && typeof bv === "number"
           ? av - bv
-          : String(av).localeCompare(String(bv), "fr", { numeric: true });
+          : String(av).localeCompare(String(bv), locale.resolvedLanguage, { numeric: true });
       return sort.descending ? -result : result;
     });
     if (!needle) return sorted;
     return sorted.filter((row) =>
       Object.values(row).some((v) => v != null && String(v).toLocaleLowerCase().includes(needle)),
     );
-  }, [rowsByKey, search, sort]);
+  }, [rowsByKey, search, sort, locale.resolvedLanguage]);
 
   const pages = Math.max(1, Math.ceil(filtered.length / size));
   const currentPage = Math.min(page, pages - 1);
@@ -210,7 +218,7 @@ export function KpiRawDataTable({
           .map((c) => {
             const v = row[c.key as keyof typeof row];
             if (v == null) return "";
-            if (c.key === "time_s" && typeof v === "number") return timeFormatter.format(v);
+            if (c.key === "time_s" && typeof v === "number") return timeFormatter().format(v);
             return typeof v === "object" ? JSON.stringify(v) : String(v);
           })
           .join(";"),
@@ -226,19 +234,21 @@ export function KpiRawDataTable({
   };
 
   return (
-    <section className="kpi-data-table" aria-label="Données brutes" data-mode="raw">
+    <section className="kpi-data-table" aria-label={translate("kpi.9bef38ad5182")} data-mode="raw">
       <header className="flex flex-wrap items-center gap-2 p-3 border-b">
         <h2 className="text-sm font-semibold mr-2">
-          Données <span className="kpi-count">{filtered.length}</span>
+          {" "}
+          {translate("kpi.6ef4db3c1dca")} <span className="kpi-count">{filtered.length}</span>
         </h2>
         <span className="text-[10px] text-muted-foreground">
-          observations brutes · capture {captureId ?? "non sélectionnée"}
+          {" "}
+          {translate("kpi.ad4d960966f1")} {captureId ?? translate("kpi.d7dff346e5d0")}
         </span>
         <label className="relative">
           <Search size={13} className="absolute left-2 top-2.5 text-muted-foreground" />
           <input
-            aria-label="Rechercher dans les observations"
-            placeholder="Rechercher…"
+            aria-label={translate("kpi.9d950fd2b4b6")}
+            placeholder={translate("kpi.2bd604574ca4")}
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -251,8 +261,7 @@ export function KpiRawDataTable({
           <Popover>
             <PopoverTrigger asChild>
               <button className="kpi-button" type="button">
-                <Columns3 size={14} />
-                Colonnes
+                <Columns3 size={14} /> {translate("kpi.bd9a317f77ed")}{" "}
               </button>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-3" align="end">
@@ -279,30 +288,29 @@ export function KpiRawDataTable({
             </PopoverContent>
           </Popover>
           <button className="kpi-button" type="button" disabled={!filtered.length} onClick={toCsv}>
-            <Download size={14} />
-            Exporter CSV
+            <Download size={14} /> {translate("kpi.b84f9613287b")}{" "}
           </button>
         </div>
       </header>
       {errors.length > 0 && (
         <p className="px-3 py-2 text-xs text-amber-700 bg-amber-50 border-b" role="alert">
-          {errors.length} métrique(s) sans série temporelle live :{" "}
+          {errors.length} {translate("kpi.fa59be47c349")}{" "}
           {errors.map((e) => `${e.metric.code} (${e.message})`).join(" · ")}
         </p>
       )}
       {!enabled ? (
         <p className="p-6 text-xs text-muted-foreground" role="status">
-          {metrics.length === 0
-            ? "Aucune métrique temporelle sélectionnée."
-            : "En attente d’une capture active pour charger les observations brutes."}
+          {metrics.length === 0 ? translate("kpi.10ffed269cda") : translate("kpi.363721ccc8eb")}
         </p>
       ) : pending ? (
         <p className="p-6 text-xs text-muted-foreground animate-pulse" role="status">
-          Chargement des observations…
+          {" "}
+          {translate("kpi.928c8c7a315a")}{" "}
         </p>
       ) : filtered.length === 0 ? (
         <p className="p-6 text-xs text-muted-foreground" role="status">
-          Aucune observation retournée pour cette capture et ces métriques.
+          {" "}
+          {translate("kpi.bce9ac6f135d")}{" "}
         </p>
       ) : (
         <div className="overflow-auto">
@@ -340,12 +348,18 @@ export function KpiRawDataTable({
                     let text: string;
                     let title: string | undefined;
                     if (col.key === "time_s" && typeof raw === "number") {
-                      text = timeFormatter.format(raw) + " s";
+                      text = timeFormatter().format(raw) + " s";
                     } else if (col.key === "timestamp") {
                       text = typeof raw === "string" && raw.length ? raw : "—";
                       if (text !== "—") title = text;
                     } else if (col.key === "longitude" || col.key === "latitude") {
-                      text = typeof raw === "number" ? raw.toFixed(6) + "°" : "—";
+                      text =
+                        typeof raw === "number"
+                          ? formatNumber(raw, {
+                              minimumFractionDigits: 6,
+                              maximumFractionDigits: 6,
+                            }) + "°"
+                          : "—";
                     } else if (col.key === "nmf_file") {
                       text = typeof raw === "string" && raw.length ? raw : "—";
                       if (text !== "—") title = text;
@@ -370,15 +384,11 @@ export function KpiRawDataTable({
         </div>
       )}
       <footer className="flex flex-wrap items-center gap-3 p-2 text-[11px] text-muted-foreground border-t">
-        <span>
-          Observations brutes · jointure stricte sur (capture_id, seq) · Longitude / Latitude /
-          Fichier NMF joints depuis `stg_event_raw` + `nmf_file` ; `—` quand la source ne porte pas
-          la valeur (ex. séquence indoor sans GPS).
-        </span>
+        <span> {translate("kpi.d6756cf758fc")} </span>
         <div className="ml-auto flex items-center gap-2">
           <label>
             <select
-              aria-label="Lignes par page"
+              aria-label={translate("kpi.154b06321991")}
               value={size}
               onChange={(e) => {
                 setSize(Number(e.target.value));
@@ -388,7 +398,7 @@ export function KpiRawDataTable({
             >
               {[25, 50, 100, 250].map((s) => (
                 <option key={s} value={s}>
-                  {s} lignes
+                  {s} {translate("kpi.e0fd3c8b26e5")}{" "}
                 </option>
               ))}
             </select>

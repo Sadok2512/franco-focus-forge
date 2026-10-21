@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -27,6 +28,7 @@ export function FilterSelect({
   value: string[];
   onChange: (value: string[]) => void;
 }) {
+  const { t } = useTranslation();
   const isIdentifiedOperator = (label: string) =>
     !["", "n/d", "nd", "n/a", "non attribué", "non attribue", "unknown", "inconnu", "—"].includes(
       label.trim().toLocaleLowerCase(),
@@ -58,11 +60,11 @@ export function FilterSelect({
             if (unavailableReason) event.preventDefault();
           }}
           className={`${unavailableReason ? "opacity-50 cursor-not-allowed" : ""} rrc-control ${showLabel ? "rrc-geographic-select" : ""}`}
-          aria-label={`${label} — ${selected.length ? (operatorBadges ? selected.join(", ") : `${selected.length} sélectionné(s)`) : explicitSelection && !unrestricted ? "Aucun" : "Tous"}`}
+          aria-label={`${label} — ${selected.length ? (operatorBadges ? selected.join(", ") : t("common.selectedCount", { count: selected.length })) : explicitSelection && !unrestricted ? t("common.none") : t("common.all")}`}
         >
           {showLabel && <span className="font-medium">{label}</span>}
           {showLabel && !operatorBadges && (
-            <span className="rrc-selection-count">{selected.length || "Tous"}</span>
+            <span className="rrc-selection-count">{selected.length || t("common.all")}</span>
           )}
           <span
             className={
@@ -72,35 +74,35 @@ export function FilterSelect({
             {operatorBadges && selected.length > 0
               ? selected.map((operator) => <OperatorChip key={operator} label={operator} />)
               : selected.length > 1 && selected.length === options.length
-                ? `Tous (${selected.length})`
+                ? t("common.allCount", { count: selected.length })
                 : selected.length === 1
                   ? selected[0]
                   : selected.length
-                    ? `${selected.length} sélectionnés`
+                    ? t("common.selectedCount", { count: selected.length })
                     : explicitSelection && !unrestricted
-                      ? "Aucun"
-                      : "Tous"}
+                      ? t("common.none")
+                      : t("common.all")}
           </span>
           <ChevronDown size={14} />
         </button>
       </PopoverTrigger>
       <PopoverContent align="start" className="rrc-premium-popover w-64 p-3">
         <input
-          aria-label={`Rechercher ${label}`}
-          placeholder="Rechercher…"
+          aria-label={t("common.searchLabel", { label })}
+          placeholder={t("common.search")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="h-9 w-full rounded-md border bg-background px-2 text-sm"
         />
         <div className="my-2 flex justify-between gap-2 text-xs">
           <button onClick={() => commit([...options])} className="rounded px-1 py-2 text-primary">
-            Tout sélectionner
+            {t("common.selectAll")}
           </button>
           <button
             onClick={() => (onReset ? onReset() : onChange([]))}
             className="rounded px-1 py-2 text-primary"
           >
-            {operatorBadges ? "Réinitialiser" : "Effacer"}
+            {operatorBadges ? t("common.reset") : t("common.clear")}
           </button>
         </div>
         <div className="max-h-60 overflow-auto" role="group" aria-label={label}>
@@ -129,10 +131,12 @@ export function FilterSelect({
               {operatorBadges ? <OperatorChip label={option} /> : option}
             </label>
           ))}
-          {!shown.length && <p className="p-2 text-sm text-muted-foreground">Aucune option</p>}
+          {!shown.length && (
+            <p className="p-2 text-sm text-muted-foreground">{t("common.noOptions")}</p>
+          )}
         </div>
         <p className="mt-2 border-t pt-2 text-xs text-muted-foreground">
-          {selected.length} sélectionné(s) · {options.length} options
+          {t("common.selectionSummary", { count: selected.length, total: options.length })}
         </p>
       </PopoverContent>
     </Popover>

@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 import {
   Sheet,
   SheetContent,
@@ -69,6 +71,7 @@ function Plot({
   start?: number | undefined;
   end?: number | undefined;
 }) {
+  const { t: translate } = useTranslation();
   const host = useRef<HTMLDivElement>(null),
     chart = useRef<ECharts | null>(null);
   const [ready, setReady] = useState(false);
@@ -124,7 +127,7 @@ function Plot({
       gridIndex: i,
       min: start ?? 0,
       max: end ?? data.duration_s,
-      name: i === grids.length - 1 ? "Temps capture (s)" : "",
+      name: i === grids.length - 1 ? translate("metrics.46c537ebda08") : "",
       nameLocation: "middle" as const,
       nameGap: 24,
       axisLabel: { show: !stacked || i === grids.length - 1, color: "#cbd5e1" },
@@ -284,7 +287,7 @@ function Plot({
           `/signaling?capture_id=${encodeURIComponent(data.capture_id)}&seq=${hit.data.seq}`,
         );
     });
-  }, [ready, data, events, stacked, start, end]);
+  }, [ready, data, events, stacked, start, end, translate]);
   return (
     <>
       <button
@@ -296,9 +299,7 @@ function Plot({
         Zoom 0–30 s
       </button>
       {stacked && (
-        <p className="text-xs text-muted-foreground">
-          Panneaux empilés · débits par couche non cumulés · temps commun à la capture
-        </p>
+        <p className="text-xs text-muted-foreground"> {translate("metrics.67767b11ff63")} </p>
       )}
       <div ref={host} data-testid="chronogram-chart" style={{ height }} />
     </>
@@ -313,6 +314,7 @@ export const Chronogram = forwardRef<
     onCaptureChange: (capture: string) => void;
   }
 >(({ projectId, filters, selectedCapture, onCaptureChange }, ref) => {
+  useTranslation();
   const [selectedCodes, setCodes] = useState<string[]>([
       "rsrp",
       "sinr",
@@ -384,7 +386,8 @@ export const Chronogram = forwardRef<
   return (
     <section className="p-4 space-y-3" data-testid="chronogram">
       <p className="text-sm font-medium" data-testid="chronogram-time-axis">
-        Axe X = temps de la capture (s) · origine : début de capture
+        {" "}
+        {i18n.t("metrics.9d97a52428f2")}{" "}
       </p>
       <DecodePanel projectId={projectId} />
       <div className="flex flex-wrap items-center gap-3">
@@ -392,7 +395,7 @@ export const Chronogram = forwardRef<
           Capture{" "}
           <select
             className="kpi-button"
-            aria-label="Capture du chronogramme"
+            aria-label={i18n.t("metrics.230ea3917561")}
             value={cap ?? ""}
             onChange={(e) => {
               onCaptureChange(e.target.value);
@@ -410,20 +413,22 @@ export const Chronogram = forwardRef<
           </select>
         </label>
         <button className="kpi-button" disabled={!data} onClick={() => data && saveCsv(data)}>
-          CSV des points
+          {" "}
+          {i18n.t("metrics.4d778fd1b318")}{" "}
         </button>
       </div>
       {cap && <DecodePanel projectId={projectId} captureId={cap} />}
       <div className="flex flex-wrap gap-3 items-center text-xs">
         <label>
-          Tâche{" "}
+          {" "}
+          {i18n.t("metrics.e4c05d29dfb3")}{" "}
           <select
             className="kpi-button"
-            aria-label="Tâche du chronogramme"
+            aria-label={i18n.t("metrics.022ad9a8cbc5")}
             value={task?.id ?? ""}
             onChange={(e) => setTaskId(e.target.value)}
           >
-            <option value="">Toute la capture</option>
+            <option value="">{i18n.t("metrics.3044469e7d81")}</option>
             {tasks.data?.tasks
               .filter((t) => t.capture_id === cap)
               .map((t) => (
@@ -453,14 +458,15 @@ export const Chronogram = forwardRef<
             setStacked(true);
           }}
         >
-          Débits par couche + BLER / CQI / SINR
+          {" "}
+          {i18n.t("metrics.c9b1c6da18c9")}{" "}
         </button>
         <label className="flex gap-2">
-          <input type="checkbox" checked={stacked} onChange={(e) => setStacked(e.target.checked)} />
-          Panneaux empilés
+          <input type="checkbox" checked={stacked} onChange={(e) => setStacked(e.target.checked)} />{" "}
+          {i18n.t("metrics.1b6f5dbaf1ce")}{" "}
         </label>
       </div>
-      <div className="flex flex-wrap gap-4 text-sm" aria-label="Métriques BLER">
+      <div className="flex flex-wrap gap-4 text-sm" aria-label={i18n.t("metrics.e1efdb136cc6")}>
         {metrics.data
           ?.filter((m) => m.code === "pdsch_bler" || m.code === "mac_dl_bler")
           .map((m) => (
@@ -481,7 +487,9 @@ export const Chronogram = forwardRef<
           ))}
       </div>
       <details className="rounded border border-border p-3" data-testid="metric-selector">
-        <summary className="cursor-pointer text-sm font-medium">Métriques par événement</summary>
+        <summary className="cursor-pointer text-sm font-medium">
+          {i18n.t("metrics.f6a75a90f56e")}
+        </summary>
         <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5 max-h-96 overflow-auto mt-3">
           {eventGroups.map((eventCode) => (
             <fieldset key={eventCode} className="text-xs space-y-1">
@@ -519,14 +527,16 @@ export const Chronogram = forwardRef<
         onToggle={(e) => setUnknownOpen(e.currentTarget.open)}
       >
         <summary className="cursor-pointer text-sm text-muted-foreground">
-          Non documentés — position non prouvée (NFF 2.19)
+          {" "}
+          {i18n.t("metrics.6472a990ae0f")}{" "}
         </summary>
-        {unknown.isFetching && <p role="status">Chargement des champs non documentés…</p>}
+        {unknown.isFetching && <p role="status">{i18n.t("metrics.6bc594de5217")}</p>}
         <label className="block text-xs mt-3">
-          Événement{" "}
+          {" "}
+          {i18n.t("metrics.81c7cdb0866e")}{" "}
           <select
             className="kpi-button"
-            aria-label="Événement non documenté"
+            aria-label={i18n.t("metrics.425172f9859d")}
             value={unknownEvent}
             onChange={(e) => setUnknownEvent(e.target.value)}
           >
@@ -559,15 +569,15 @@ export const Chronogram = forwardRef<
       </details>
       {error && <p role="alert">{toUserMessage(error)}</p>}
       {(metrics.isPending || captures.isPending || series.isFetching || events.isFetching) && (
-        <p role="status">Chargement du chronogramme…</p>
+        <p role="status">{i18n.t("metrics.3b3cb70ae062")}</p>
       )}
-      {captures.data?.length === 0 && <p>Aucune capture pour ces filtres.</p>}
-      {!codes.length && <p>Sélectionnez une métrique.</p>}
+      {captures.data?.length === 0 && <p>{i18n.t("metrics.83a847061d36")}</p>}
+      {!codes.length && <p>{i18n.t("metrics.6a0225657516")}</p>}
       {data && (
         <>
           <p className="text-xs">
-            Capture {data.capture_id} · origine {data.origin_ts} (seq {data.origin_seq}) ·{" "}
-            {data.duration_s} s
+            Capture {data.capture_id} {i18n.t("metrics.21ebc78f9d73")} {data.origin_ts} (seq{" "}
+            {data.origin_seq}) · {data.duration_s} s
           </p>
           <Plot
             key={data.capture_id}
@@ -584,24 +594,19 @@ export const Chronogram = forwardRef<
           <div className="text-xs">
             {data.series.map((s) => (
               <p key={s.code}>
-                {s.label} : {s.n_returned} / {s.n_total} points · {s.sampling.method} · facteur{" "}
-                {s.sampling.factor}
+                {s.label} : {s.n_returned} / {s.n_total} {i18n.t("metrics.160ef05875c7")}{" "}
+                {s.sampling.method} {i18n.t("metrics.d56421f8efd3")} {s.sampling.factor}
               </p>
             ))}
           </div>
-          <p className="text-xs text-muted-foreground">
-            Une seule capture. Valeurs au seq survolé ; N/D si aucune observation à ce seq. Aucun
-            appariement ni interpolation.
-          </p>
+          <p className="text-xs text-muted-foreground"> {i18n.t("metrics.654afae6676f")} </p>
           <p className="text-[10px]">result_id : {data.result_id}</p>
           {info && (
             <Sheet open={info} onOpenChange={setInfo}>
               <SheetContent className="overflow-auto">
                 <SheetHeader>
-                  <SheetTitle>Infos et preuves — Chronogramme</SheetTitle>
-                  <SheetDescription>
-                    Sources, capture et provenance du résultat affiché.
-                  </SheetDescription>
+                  <SheetTitle>{i18n.t("metrics.a5f6619a0954")}</SheetTitle>
+                  <SheetDescription> {i18n.t("metrics.a40a66a10e04")} </SheetDescription>
                 </SheetHeader>
                 <pre className="text-xs whitespace-pre-wrap">
                   {JSON.stringify(

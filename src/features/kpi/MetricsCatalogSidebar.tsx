@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useMemo, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ChevronDown, ChevronRight, Search } from "lucide-react";
@@ -34,6 +35,7 @@ export function MetricsCatalogSidebar({
   onVisualization?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
 }) {
+  const { t: translate, i18n: locale } = useTranslation();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(new Set(["LTE"]));
   const toggle = (key: string) =>
@@ -59,7 +61,7 @@ export function MetricsCatalogSidebar({
           .includes(search.toLowerCase())
       )
         continue;
-      const tech = m.tech === "BOTH" ? "Commun LTE / NR" : m.tech;
+      const tech = m.tech === "BOTH" ? translate("metrics.8096e435d7f1") : m.tech;
       if (!groups.has(tech)) groups.set(tech, new Map());
       const cats = groups.get(tech)!;
       const category = m.category ?? "session";
@@ -72,7 +74,7 @@ export function MetricsCatalogSidebar({
         tech,
         cats: [...cats].sort(([a], [b]) => ORDER.indexOf(a) - ORDER.indexOf(b)),
       }));
-  }, [query.data, search]);
+  }, [translate, query.data, search]);
   const check = (key: string, label: string, disabled = false, reason?: string | null) => (
     <label
       className={`kpi-tree-leaf ${disabled ? "opacity-45" : ""}`}
@@ -83,7 +85,7 @@ export function MetricsCatalogSidebar({
         type="checkbox"
         checked={selected.includes(key)}
         disabled={disabled || (!selected.includes(key) && selected.length >= 64)}
-        aria-label={`Sélectionner ${label}`}
+        aria-label={translate("metrics.46d8d72f28dd", { v0: label })}
         onChange={() => onToggle(key)}
       />
       <span className="truncate">{label}</span>
@@ -102,7 +104,7 @@ export function MetricsCatalogSidebar({
         >
           {expandable && (
             <button
-              aria-label={`Déplier ${m.label}`}
+              aria-label={translate("metrics.e1c5d6e890fb", { v0: m.label })}
               aria-expanded={expanded}
               onClick={() => toggle(key)}
             >
@@ -111,7 +113,7 @@ export function MetricsCatalogSidebar({
           )}
           <input
             type="checkbox"
-            aria-label={`Sélectionner ${m.label}`}
+            aria-label={translate("metrics.46d8d72f28dd", { v0: m.label })}
             checked={selected.includes(parent)}
             disabled={!m.available || (!selected.includes(parent) && selected.length >= 64)}
             onChange={() => onToggle(parent)}
@@ -126,7 +128,7 @@ export function MetricsCatalogSidebar({
             </small>
           </span>
           <span className="text-[10px] tabular-nums text-muted-foreground">
-            {m.n_in_project.toLocaleString("fr-FR")}
+            {m.n_in_project.toLocaleString(locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
           </span>
         </div>
         {expanded && expandable && (
@@ -144,22 +146,23 @@ export function MetricsCatalogSidebar({
     );
   };
   return (
-    <aside className="kpi-catalog" aria-label="Catalogue Métriques">
+    <aside className="kpi-catalog" aria-label={translate("metrics.498227f2b5c6")}>
       <header className="p-3 border-b">
         <h2 className="flex gap-2 font-semibold text-sm">
-          <Activity size={16} />
-          Catalogue Métriques
+          <Activity size={16} /> {translate("metrics.498227f2b5c6")}{" "}
         </h2>
         <p className="text-[11px] text-muted-foreground">
-          ★ cellule · ⚑ événement · {selected.length}/64 sélectionnées
+          {" "}
+          {translate("metrics.f05f8e96265b")} {selected.length}
+          {translate("metrics.16df3032f7a1")}{" "}
         </p>
         <label className="relative block mt-3">
           <Search className="absolute left-2 top-3" size={14} />
           <input
             ref={searchRef}
             className="h-9 w-full rounded-md border bg-background pl-8 text-xs"
-            placeholder="Rechercher une métrique…"
-            aria-label="Rechercher une métrique"
+            placeholder={translate("metrics.433e83817682")}
+            aria-label={translate("metrics.bf6a6c500977")}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -167,7 +170,8 @@ export function MetricsCatalogSidebar({
       </header>
       {query.isPending && (
         <p className="p-3 text-xs" role="status">
-          Chargement du catalogue…
+          {" "}
+          {translate("metrics.109826adfba2")}{" "}
         </p>
       )}
       {query.isError && (
@@ -244,7 +248,7 @@ export function MetricsCatalogSidebar({
             aria-disabled="true"
           >
             {n.label}
-            <span className="text-[10px] font-normal"> · non documenté</span>
+            <span className="text-[10px] font-normal"> {translate("metrics.7ec57685dd80")}</span>
           </li>
         ))}
       </ul>

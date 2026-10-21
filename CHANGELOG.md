@@ -1,3 +1,11 @@
+## 1.64.1 (patch) — BC4-FRONT 2026-10-21 — English KPI and Metrics views (Agent BC1)
+
+- Complete the front-owned KPI/Metrics wording migration: catalogues, tabs, filters, chart settings, data tables, chronogram, scatter plots, map controls, exports and evidence panels use matching English/French resources.
+- Language switching updates labels and Intl number formatting while preserving selected metrics, capture, applied filters and pending edits. API query keys, formulas and source values are unchanged.
+- Translate the shared filter control without altering operator attribution or the distinction between all operators and an explicit empty selection.
+- Add scoped G19a and interpolation-aware G19b guards plus EN/FR state-preservation regressions. Existing French accessibility tests explicitly use French.
+- Backend-provided catalogue names, categories, reasons and payload wording remain unchanged pending the API language lot; no client-side substitution of backend text.
+
 ## 1.64.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : carte prédominante par défaut (Agent BC3)
 
 - Rééquilibrage majeur du haut de Signaling View pour rendre la carte **immédiatement visible et utile** sans manipulation :

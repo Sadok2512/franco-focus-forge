@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import type { ProjectKpiDetail } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { type Entry, techLabel } from "./workspace-model";
@@ -9,6 +10,7 @@ export function KpiMapInfo({
   entry: Entry | undefined;
   data: ProjectKpiDetail | undefined;
 }) {
+  const { t: translate } = useTranslation();
   const fields: Record<string, unknown> = entry
     ? {
         "Code KPI": entry.item.code,
@@ -26,18 +28,16 @@ export function KpiMapInfo({
       }
     : {};
   return (
-    <section id="kpi-map-info" aria-label="Carte et informations" className="kpi-map-info">
+    <section id="kpi-map-info" aria-label={translate("kpi.14f7a7c545f8")} className="kpi-map-info">
       <div className="min-w-0">
-        <h2 className="mb-2 text-sm font-semibold">Carte</h2>
+        <h2 className="mb-2 text-sm font-semibold">{translate("kpi.8ae525330384")}</h2>
         <KpiMapOSM />
-        <p className="mt-2 text-xs text-muted-foreground">
-          Fond OpenStreetMap, vue générale de la France. Le contrat actuel ne fournit pas de
-          coordonnées pour ces KPI : aucun emplacement de mesure n’est représenté.
-        </p>
+        <p className="mt-2 text-xs text-muted-foreground"> {translate("kpi.d06f2a57cfc8")} </p>
       </div>
       <div className="min-w-0">
         <h2 className="mb-2 text-sm font-semibold">
-          Infos · {entry?.item.name ?? "Aucun KPI actif"}
+          {" "}
+          {translate("kpi.23c32c5569dc")} {entry?.item.name ?? translate("kpi.967a13eec1c9")}
         </h2>
         {entry ? (
           <dl className="kpi-info-list max-h-[310px] overflow-y-auto">
@@ -51,7 +51,7 @@ export function KpiMapInfo({
               ))}
           </dl>
         ) : (
-          <p className="text-xs text-muted-foreground">Sélectionnez un KPI dans le catalogue.</p>
+          <p className="text-xs text-muted-foreground">{translate("kpi.af42ea85ff28")}</p>
         )}
       </div>
     </section>

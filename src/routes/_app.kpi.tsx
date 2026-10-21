@@ -1,3 +1,4 @@
+import i18n from "@/lib/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 import { URL_KEYS } from "@/features/kpi/workspace-model";
 import { KpiWorkspace } from "@/features/kpi/KpiWorkspace";
@@ -8,8 +9,7 @@ export const Route = createFileRoute("/_app/kpi")({
       { title: "KPI Analytics — BC4" },
       {
         name: "description",
-        content:
-          "Analyse radio multi-graphes : catalogue KPI, filtres appliqués et données synchronisées.",
+        content: i18n.t("kpi.49c60a76f5cb"),
       },
     ],
   }),
