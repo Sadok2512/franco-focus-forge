@@ -1,3 +1,8 @@
+## 1.68.1 (patch) — BC4 2026-10-21 — English KPI and Metrics rollout (Agent BC2)
+
+- Reset saved language preferences from the initial rollout to English once. Subsequent explicit language choices remain available.
+- Consume English KPI and Metrics API wording without client-side substitutions; preserve layout, selected capture, filters and computations.
+
 ## 1.68.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : proxy OSM via dev-server (Agent BC3)
 
 - **Problème** : « Tiles OSM injoignables » affiché par `KpiMapOSM` sur les postes utilisateurs dont le réseau n'a pas d'accès sortant à `tile.openstreetmap.org`. Le navigateur chargeait les tuiles en direct → échec → bandeau tileError.

@@ -4,8 +4,15 @@ import en from "@/locales/en.json";
 import fr from "@/locales/fr.json";
 
 export const LANGUAGE_STORAGE_KEY = "bc4.language";
+const LANGUAGE_PREFERENCE_VERSION = "bc4.language.english-default.v2";
 export function readLanguage(): "en" | "fr" {
   try {
+    // Reset preferences from the initial rollout once, as requested.
+    if (typeof window !== "undefined" && !window.localStorage.getItem(LANGUAGE_PREFERENCE_VERSION)) {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, "en");
+      window.localStorage.setItem(LANGUAGE_PREFERENCE_VERSION, "1");
+      return "en";
+    }
     return typeof window !== "undefined" &&
       window.localStorage.getItem(LANGUAGE_STORAGE_KEY) === "fr"
       ? "fr"
@@ -30,6 +37,7 @@ export async function setLanguage(value: string) {
   if (typeof document !== "undefined") document.documentElement.lang = language;
   try {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, language);
+    window.localStorage.setItem(LANGUAGE_PREFERENCE_VERSION, "1");
   } catch {
     /* Storage may be unavailable. */
   }

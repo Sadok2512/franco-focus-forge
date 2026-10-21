@@ -13,6 +13,12 @@ describe("UI language", () => {
     localStorage.setItem(LANGUAGE_STORAGE_KEY, "de");
     expect(readLanguage()).toBe("en");
   });
+  it("resets a saved French preference from the initial rollout to English", () => {
+    localStorage.clear();
+    localStorage.setItem(LANGUAGE_STORAGE_KEY, "fr");
+    expect(readLanguage()).toBe("en");
+    expect(localStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe("en");
+  });
   it("switches, persists and formats without changing the source value", async () => {
     await setLanguage("fr");
     expect(readLanguage()).toBe("fr");
