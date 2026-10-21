@@ -136,7 +136,11 @@
     "5ed4837057bd": "tentatives",
     "23c32c5569dc": "Infos ·",
     "11d1fa9f3de9": "Décodeur",
-    "commonTech": "Commun LTE / NR"
+    "commonTech": "Commun LTE / NR",
+    "catalogExpand": "Développer",
+    "catalogCollapse": "Réduire",
+    "catalogExpandAll": "Tout développer",
+    "catalogCollapseAll": "Tout réduire"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",

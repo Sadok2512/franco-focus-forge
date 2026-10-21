@@ -136,7 +136,11 @@
     "5ed4837057bd": "attempts",
     "23c32c5569dc": "Information ·",
     "11d1fa9f3de9": "Decoder",
-    "commonTech": "Shared LTE / NR"
+    "commonTech": "Shared LTE / NR",
+    "catalogExpand": "Expand",
+    "catalogCollapse": "Collapse",
+    "catalogExpandAll": "Expand all",
+    "catalogCollapseAll": "Collapse all"
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",

@@ -3,7 +3,7 @@ import { kpiFetch } from "./project-kpi";
 import { taskQuery } from "./task-analytics";
 import type { KpiQueryFilters } from "./project-kpi-schemas";
 import {
-  MetricSchema,
+  MetricCatalogResponseSchema,
   MetricAnalysisSchema,
   MetricSeriesSchema,
   EventsSchema,
@@ -12,7 +12,7 @@ import {
 } from "./metrics-schemas";
 export type { ChronogramData, ChronogramEvents } from "./metrics-schemas";
 export const getMetrics = (p: string, signal?: AbortSignal) =>
-  kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricSchema.array(), signal);
+  kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricCatalogResponseSchema, signal);
 /** 0.64.0 (F1) — agrégats d'une métrique NMF par groupe. */
 export const getMetricAggregate = (
   p: string,

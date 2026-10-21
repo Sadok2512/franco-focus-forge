@@ -1,28 +1,13 @@
 import { useTranslation } from "react-i18next";
-import { useMemo, useState, type RefObject } from "react";
+import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Activity, ChevronDown, ChevronRight, Search } from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
-import type { MetricInfo } from "@/lib/api/metrics-schemas";
+import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { MetricView } from "./MetricGraphCard";
-const ORDER = [
-  "radio_serving",
-  "neighbours",
-  "carrier_aggregation",
-  "throughput_layers",
-  "link_quality",
-  "allocation_mcs",
-  "csi",
-  "mimo_port",
-  "ul_power",
-  "voice",
-  "services",
-  "position",
-  "signalling_states",
-  "session",
-  "terminal_cell",
-  "undocumented",
-];
+
+const rootKey = "__root__";
+
 export function MetricsCatalogSidebar({
   projectId,
   selected,
@@ -35,143 +20,177 @@ export function MetricsCatalogSidebar({
   onVisualization?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
 }) {
-  const { t: translate, i18n: locale } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(new Set(["LTE"]));
-  const toggle = (key: string) =>
-    setOpen((prev) => {
-      const n = new Set(prev);
-      if (n.has(key)) n.delete(key);
-      else n.add(key);
-      return n;
-    });
+  const [open, setOpen] = useState<Set<string>>(new Set());
   const query = useQuery({
     queryKey: ["project-metrics", projectId],
     queryFn: ({ signal }) => getMetrics(projectId, signal),
     staleTime: 300_000,
   });
-  const tree = useMemo(() => {
-    const groups = new Map<string, Map<string, MetricInfo[]>>();
-    for (const m of query.data ?? []) {
-      if (m.alias_of) continue;
-      if (
-        search &&
-        !`${m.label} ${m.code} ${m.event} ${m.category_label}`
-          .toLowerCase()
-          .includes(search.toLowerCase())
-      )
-        continue;
-      const tech = m.tech;
-      if (!groups.has(tech)) groups.set(tech, new Map());
-      const cats = groups.get(tech)!;
-      const category = m.category ?? "session";
-      if (!cats.has(category)) cats.set(category, []);
-      cats.get(category)!.push(m);
+  const byParent = useMemo(() => {
+    const result = new Map<string, MetricCatalogNode[]>();
+    for (const node of query.data?.nodes ?? []) {
+      const key = node.parent_id ?? rootKey;
+      result.set(key, [...(result.get(key) ?? []), node]);
     }
-    return [...groups]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([tech, cats]) => ({
-        tech,
-        cats: [...cats].sort(([a], [b]) => ORDER.indexOf(a) - ORDER.indexOf(b)),
-      }));
+    for (const children of result.values()) children.sort((a, b) => a.order - b.order);
+    return result;
+  }, [query.data]);
+  const matching = useMemo(() => {
+    if (!search.trim()) return null;
+    const needle = search.trim().toLocaleLowerCase();
+    const own = new Set(
+      (query.data?.nodes ?? [])
+        .filter((node) =>
+          `${node.label} ${node.source ?? ""} ${node.event ?? ""}`
+            .toLocaleLowerCase()
+            .includes(needle),
+        )
+        .map((node) => node.node_id),
+    );
+    const visible = new Set(own);
+    const byId = new Map((query.data?.nodes ?? []).map((node) => [node.node_id, node]));
+    for (const id of own) {
+      let node = byId.get(id);
+      while (node?.parent_id) {
+        visible.add(node.parent_id);
+        node = byId.get(node.parent_id);
+      }
+    }
+    return visible;
   }, [query.data, search]);
-  const check = (key: string, label: string, disabled = false, reason?: string | null) => (
-    <label
-      className={`kpi-tree-leaf ${disabled ? "opacity-45" : ""}`}
-      title={reason ?? label}
-      key={key}
-    >
-      <input
-        type="checkbox"
-        checked={selected.includes(key)}
-        disabled={disabled || (!selected.includes(key) && selected.length >= 64)}
-        aria-label={translate("metrics.46d8d72f28dd", { v0: label })}
-        onChange={() => onToggle(key)}
-      />
-      <span className="truncate">{label}</span>
-    </label>
-  );
-  const metric = (m: MetricInfo) => {
-    const key = m.code;
-    const expanded = !!search || open.has(key);
-    const parent = m.cell_scoped ? `${key}@all` : key;
-    const expandable = m.cell_scoped || m.attributes.length > 0 || m.unproven_cells.length > 0;
+  const descendantSelections = useMemo(() => {
+    const cache = new Map<string, string[]>();
+    const collect = (id: string): string[] => {
+      const cached = cache.get(id);
+      if (cached) return cached;
+      const values = (byParent.get(id) ?? []).flatMap((node) => [
+        ...(node.selectable && node.selection ? [node.selection] : []),
+        ...collect(node.node_id),
+      ]);
+      cache.set(id, values);
+      return values;
+    };
+    for (const node of query.data?.nodes ?? []) collect(node.node_id);
+    return cache;
+  }, [byParent, query.data]);
+  const toggleOpen = (id: string) =>
+    setOpen((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const toggleBranch = (node: MetricCatalogNode) => {
+    const values = descendantSelections.get(node.node_id) ?? [];
+    const remove = values.length > 0 && values.every((value) => selected.includes(value));
+    const candidates = values.filter((value) => remove === selected.includes(value));
+    const permitted = remove ? candidates : candidates.slice(0, Math.max(0, 64 - selected.length));
+    for (const value of permitted) onToggle(value);
+  };
+  const renderNode = (node: MetricCatalogNode, depth = 0): ReactNode => {
+    if (matching && !matching.has(node.node_id)) return null;
+    const children = byParent.get(node.node_id) ?? [];
+    const expanded = Boolean(matching) || open.has(node.node_id);
+    const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
+    const branchChecked =
+      branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
+    const branchPartial =
+      branchSelections.some((value) => selected.includes(value)) && !branchChecked;
+    const disabled = node.node_type === "leaf" && !node.selectable;
     return (
-      <li key={key} className="ml-2">
+      <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
         <div
-          className={`kpi-tree-leaf ${!m.available ? "opacity-45" : ""}`}
-          title={m.reason ?? m.proof_ref}
+          className={`${node.node_type === "category" ? "kpi-tree-root" : node.node_type === "leaf" ? "kpi-tree-leaf" : "kpi-tree-family"} ${disabled ? "opacity-45" : ""}`}
+          title={node.reason ?? node.source ?? node.label}
         >
-          {expandable && (
+          {children.length > 0 ? (
             <button
-              aria-label={translate("metrics.e1c5d6e890fb", { v0: m.label })}
+              type="button"
+              aria-label={`${expanded ? t("metrics.catalogCollapse") : t("metrics.catalogExpand")} ${node.label}`}
               aria-expanded={expanded}
-              onClick={() => toggle(key)}
+              onClick={() => toggleOpen(node.node_id)}
             >
               {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
             </button>
+          ) : (
+            <span className="w-[13px]" aria-hidden="true" />
           )}
-          <input
-            type="checkbox"
-            aria-label={translate("metrics.46d8d72f28dd", { v0: m.label })}
-            checked={selected.includes(parent)}
-            disabled={!m.available || (!selected.includes(parent) && selected.length >= 64)}
-            onChange={() => onToggle(parent)}
-          />
-          <span className="min-w-0 flex-1">
-            <span className="block truncate">
-              {m.cell_scoped ? "★ " : m.kind === "event" ? "⚑ " : ""}
-              {m.label}
+          {(node.selectable || branchSelections.length > 0) && (
+            <input
+              type="checkbox"
+              checked={node.selectable ? selected.includes(node.selection ?? "") : branchChecked}
+              ref={(element) => {
+                if (element) element.indeterminate = branchPartial;
+              }}
+              disabled={
+                disabled ||
+                (!branchPartial &&
+                  !branchChecked &&
+                  !selected.includes(node.selection ?? "") &&
+                  selected.length >= 64)
+              }
+              aria-label={t("metrics.46d8d72f28dd", { v0: node.label })}
+              onChange={() =>
+                node.selectable && node.selection ? onToggle(node.selection) : toggleBranch(node)
+              }
+            />
+          )}
+          <span className="min-w-0 flex-1 truncate">{node.label}</span>
+          {node.source && (
+            <small className="shrink-0 text-[9px] text-muted-foreground">{node.source}</small>
+          )}
+          {node.node_type === "leaf" && (
+            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+              {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
             </span>
-            <small className="text-muted-foreground">
-              [{m.event}] · {m.unit}
-            </small>
-          </span>
-          <span className="text-[10px] tabular-nums text-muted-foreground">
-            {m.n_in_project.toLocaleString(locale.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
-          </span>
+          )}
         </div>
-        {expanded && expandable && (
-          <ul className="ml-5 border-l pl-2">
-            {m.cell_options.map((c) =>
-              check(`${key}@${c.cell}`, `${m.label} · ${c.label}`, !c.available, c.reason),
-            )}
-            {m.attributes.map((a) =>
-              check(`${key}~${a.code}`, `${m.event} · ${a.label} ${a.unit}`, false, a.proof_ref),
-            )}
-            {m.unproven_cells.map((c) => check(`${key}@${c.cell}`, c.label, true, c.reason))}
+        {children.length > 0 && expanded && (
+          <ul className="border-l border-border/60">
+            {children.map((child) => renderNode(child, depth + 1))}
           </ul>
         )}
       </li>
     );
   };
+  const expandableIds = (query.data?.nodes ?? [])
+    .filter((node) => (byParent.get(node.node_id) ?? []).length > 0)
+    .map((node) => node.node_id);
   return (
-    <aside className="kpi-catalog" aria-label={translate("metrics.498227f2b5c6")}>
-      <header className="p-3 border-b">
-        <h2 className="flex gap-2 font-semibold text-sm">
-          <Activity size={16} /> {translate("metrics.498227f2b5c6")}{" "}
+    <aside className="kpi-catalog" aria-label={t("metrics.498227f2b5c6")}>
+      <header className="border-b p-3">
+        <h2 className="flex gap-2 text-sm font-semibold">
+          <Activity size={16} /> {t("metrics.498227f2b5c6")}
         </h2>
         <p className="text-[11px] text-muted-foreground">
-          {" "}
-          {translate("metrics.f05f8e96265b")} {selected.length}
-          {translate("metrics.16df3032f7a1")}{" "}
+          {t("metrics.f05f8e96265b")} {selected.length}
+          {t("metrics.16df3032f7a1")}
         </p>
-        <label className="relative block mt-3">
+        <label className="relative mt-3 block">
           <Search className="absolute left-2 top-3" size={14} />
           <input
             ref={searchRef}
             className="h-9 w-full rounded-md border bg-background pl-8 text-xs"
-            placeholder={translate("metrics.433e83817682")}
-            aria-label={translate("metrics.bf6a6c500977")}
+            placeholder={t("metrics.433e83817682")}
+            aria-label={t("metrics.bf6a6c500977")}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
           />
         </label>
+        <div className="mt-2 flex gap-2 text-[11px]">
+          <button type="button" onClick={() => setOpen(new Set(expandableIds))}>
+            {t("metrics.catalogExpandAll")}
+          </button>
+          <button type="button" onClick={() => setOpen(new Set())}>
+            {t("metrics.catalogCollapseAll")}
+          </button>
+        </div>
       </header>
       {query.isPending && (
         <p className="p-3 text-xs" role="status">
-          {" "}
-          {translate("metrics.109826adfba2")}{" "}
+          {t("metrics.109826adfba2")}
         </p>
       )}
       {query.isError && (
@@ -179,79 +198,8 @@ export function MetricsCatalogSidebar({
           {query.error.message}
         </p>
       )}
-      <ul className="kpi-tree p-2 space-y-1">
-        {tree.map((t) => (
-          <li key={t.tech}>
-            <button
-              className="kpi-tree-root"
-              aria-expanded={!!search || open.has(t.tech)}
-              onClick={() => toggle(t.tech)}
-            >
-              {open.has(t.tech) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}{" "}
-              {t.tech === "BOTH" ? translate("metrics.commonTech") : t.tech}
-            </button>
-            <ul>
-              {(!!search || open.has(t.tech)) &&
-                t.cats.map(([cat, items]) => {
-                  const key = t.tech + cat;
-                  const expanded = !!search || open.has(key);
-                  const events = cat === "signalling_states";
-                  const eventGroups = [...new Set(items.map((m) => m.event_group))];
-                  return (
-                    <li key={key} className="ml-2">
-                      <button
-                        className="kpi-tree-family"
-                        aria-expanded={expanded}
-                        onClick={() => toggle(key)}
-                      >
-                        {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}{" "}
-                        {items[0]?.category_label}
-                        {items.some((m) => m.cell_scoped) ? " ★" : ""}
-                      </button>
-                      {expanded && (
-                        <ul>
-                          {events
-                            ? eventGroups.map((group) => (
-                                <li key={group}>
-                                  <button
-                                    className="kpi-tree-family ml-2"
-                                    aria-expanded={!!search || open.has(key + group)}
-                                    onClick={() => toggle(key + group)}
-                                  >
-                                    {open.has(key + group) ? (
-                                      <ChevronDown size={12} />
-                                    ) : (
-                                      <ChevronRight size={12} />
-                                    )}{" "}
-                                    {group}
-                                  </button>
-                                  {(!!search || open.has(key + group)) && (
-                                    <ul>
-                                      {items.filter((m) => m.event_group === group).map(metric)}
-                                    </ul>
-                                  )}
-                                </li>
-                              ))
-                            : items.map(metric)}
-                        </ul>
-                      )}
-                    </li>
-                  );
-                })}
-            </ul>
-          </li>
-        ))}
-        {query.data?.[0]?.root_notices.map((n) => (
-          <li
-            key={n.label}
-            className="kpi-tree-root opacity-45"
-            title={n.reason}
-            aria-disabled="true"
-          >
-            {n.label}
-            <span className="text-[10px] font-normal"> {translate("metrics.7ec57685dd80")}</span>
-          </li>
-        ))}
+      <ul className="kpi-tree space-y-1 p-2">
+        {(byParent.get(rootKey) ?? []).map((node) => renderNode(node))}
       </ul>
     </aside>
   );

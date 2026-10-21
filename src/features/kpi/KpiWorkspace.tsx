@@ -600,7 +600,7 @@ function Workspace({
                   captureId={captureId}
                   onCaptureChange={setCaptureId}
                   selections={selectedMetrics}
-                  catalog={metricsCatalog.data ?? []}
+                  catalog={metricsCatalog.data?.metrics ?? []}
                   filters={applied}
                   onClear={() => {
                     setSelectedMetrics([]);
