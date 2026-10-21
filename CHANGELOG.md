@@ -1,3 +1,9 @@
+## 1.65.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : afficher la carte même sans GPS prouvé (Agent BC3)
+
+- `SignalMap` : quand une capture n'a aucun point GPS prouvé (`data.markers.length === 0`), on affiche désormais la carte OSM centrée sur la France (`[2.4, 46.6]`, zoom 5) avec un **badge overlay discret** « Aucun GPS précédent prouvé dans cette capture » au lieu d'un bloc texte vide. Spec §4 « Si la position n'est pas disponible, afficher une indication discrète sans inventer de point » : respecté. Aucun marker fabriqué, aucun centre inventé par capture.
+- Résultat vérifié sur TEST2 captures : `723547b196b3` (46 markers → carte zoomée sur route Petite-Forêt), `289784700e72` et `d2a0064faa9a` (0 markers → OSM France centrée + badge).
+- La branche `indoor` (plan FLOORPLAN) reste séparée et conserve son message sans tuiles OSM (spec §4).
+
 ## 1.64.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : carte prédominante par défaut (Agent BC3)
 
 - Rééquilibrage majeur du haut de Signaling View pour rendre la carte **immédiatement visible et utile** sans manipulation :

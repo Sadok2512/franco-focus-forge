@@ -770,26 +770,34 @@ function SignalMap({
         plan {data.floorplan_id ?? "non renseigné"}, pas de position
       </div>
     );
-  if (!data.markers.length)
-    return (
-      <div
-        role="status"
-        className="flex h-full items-center justify-center rounded border bg-muted text-sm"
-      >
-        Aucun GPS précédent prouvé dans cette capture
-      </div>
-    );
+  // 1.65.0 — Spec §4 : « Si la position n'est pas disponible, afficher
+  // une indication discrète sans inventer de point. » Au lieu d'un bloc
+  // texte brut, on affiche la carte OSM centrée sur la France (centroid
+  // 2.4/46.6) + bandeau en overlay. L'utilisateur voit bien la carte.
+  const hasMarkers = data.markers.length > 0;
+  const center: [number, number] = hasMarkers
+    ? [data.markers[0]!.lng!, data.markers[0]!.lat!]
+    : [2.4, 46.6];
+  const zoom = hasMarkers ? 13 : 5;
   return (
-    <div className="h-full min-h-0 flex-1 overflow-hidden rounded border [&>div]:h-full">
+    <div className="relative h-full min-h-0 flex-1 overflow-hidden rounded border [&>div]:h-full">
       <KpiMapOSM
-        center={[data.markers[0]!.lng!, data.markers[0]!.lat!]}
-        zoom={13}
+        center={center}
+        zoom={zoom}
         onMapReady={ready}
         showOperatorLegend={false}
         contextLabel="Signalisation"
         measurementStatus={null}
         nPoints={data.positioned_count}
       />
+      {!hasMarkers && (
+        <div
+          role="status"
+          className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2 rounded-full bg-background/90 px-3 py-1 text-xs shadow"
+        >
+          Aucun GPS précédent prouvé dans cette capture
+        </div>
+      )}
     </div>
   );
 }
