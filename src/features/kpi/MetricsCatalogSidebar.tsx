@@ -7,17 +7,13 @@ import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Activity,
-  BarChart3,
-  ChartNoAxesCombined,
   ChevronDown,
   ChevronRight,
   Copy,
   Info,
-  MapPin,
-  MoreHorizontal,
+  MoreVertical,
   Search,
   Star,
-  Table2,
 } from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
 import {
@@ -30,6 +26,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { MetricView } from "./MetricGraphCard";
+import { VisualizationItems } from "./VisualizationMenu";
+import type { VisualizationType } from "./visualization-model";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -212,32 +210,27 @@ export function MetricsCatalogSidebar({
                 <button
                   type="button"
                   className="kpi-icon kpi-leaf-menu shrink-0"
-                  aria-label={t("metrics.catalogMenu")}
+                  aria-label={`Visualisation ${node.label.replace(STAR, "").trim()}`}
                   data-testid={`metric-menu-${node.node_id}`}
                 >
-                  <MoreHorizontal size={14} />
+                  <MoreVertical size={15} />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[160px]">
-                <DropdownMenuLabel className="truncate text-[11px]">
-                  {node.label.replace(STAR, "").trim()}
-                </DropdownMenuLabel>
+              <DropdownMenuContent align="start">
+                <DropdownMenuLabel>{t("kpi.af3aaf87ff99")}</DropdownMenuLabel>
                 {onVisualization && node.selectable && node.selection && (
                   <>
-                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "graph")}>
-                      <ChartNoAxesCombined size={13} /> {t("metrics.catalogChart")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => onVisualization(node.selection!, "histogram")}
-                    >
-                      <BarChart3 size={13} /> {t("metrics.86eb05ab111d")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "table")}>
-                      <Table2 size={13} /> {t("metrics.catalogTable")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "map")}>
-                      <MapPin size={13} /> {t("metrics.catalogMap")}
-                    </DropdownMenuItem>
+                    <VisualizationItems
+                      throughput={node.unit === "Mbit/s" || node.unit === "Mbps"}
+                      onChange={(mode: VisualizationType) => {
+                        // MetricView = sous-ensemble de VisualizationType
+                        // (histogram|graph|table|map). Autres modes (chronogram,
+                        // task_*) ne sont pas routés côté Metrics — ignorés.
+                        if (mode === "histogram" || mode === "graph" || mode === "table" || mode === "map") {
+                          onVisualization(node.selection!, mode as MetricView);
+                        }
+                      }}
+                    />
                     <DropdownMenuSeparator />
                   </>
                 )}
