@@ -434,6 +434,7 @@
    "Procedures": "Procédures"
   },
   "uestate": "État UE",
+  "ueStateEmpty": "État UE : aucune période de connectivité fournie par la source pour cette capture (non déduite).",
   "rfMetrics": "Métriques RF",
   "legend": {
    "info": "Info",

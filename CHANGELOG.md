@@ -1,3 +1,8 @@
+## 1.78.1 — Ribbon time cursor & empty UE-state note
+
+- Event ribbon (Ruban view) gains the red time cursor: click anywhere on the ribbon to place it at the exact capture time, clicking an event snaps the cursor to its proven timestamp, Escape clears it. Cursor state stays local — never a query key.
+- RF timeline shows an explicit note when the source provides no connectivity periods (track lte/nsa/sa) for the capture, instead of a silently empty UE State lane; UE state is never inferred.
+
 ## 1.78.0 — Signaling timeline redesign
 
 - RF timeline restyled to the reference layout: title + severity legend (Info/Success/Warning/Error/Event), fixed lanes (UE State, Network events, DL Data, UL Data, VoNR, Mobility), and one combined RF Metrics grid.

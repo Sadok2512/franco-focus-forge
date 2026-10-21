@@ -62,6 +62,8 @@ export function EventRibbon({
   const [enabledLanes, setEnabledLanes] = useState<Set<Lane>>(
     () => new Set(LANES.map((l) => l.key)),
   );
+  // Curseur temporel rouge : état local au ruban, jamais une clé de requête.
+  const [cursorT, setCursorT] = useState<number | null>(null);
 
   const q = useQuery({
     queryKey: ["signaling-events", projectId, captureId, failuresOnly],
@@ -158,6 +160,16 @@ export function EventRibbon({
           preserveAspectRatio="none"
           style={{ minHeight: H, maxHeight: H * 1.4 }}
           aria-label="Ruban des événements de signalisation"
+          tabIndex={0}
+          onClick={(ev) => {
+            const rect = ev.currentTarget.getBoundingClientRect();
+            const px = ((ev.clientX - rect.left) / rect.width) * W;
+            const t = ((px - L_LABEL) / (W - L_LABEL - R_PAD)) * maxT;
+            setCursorT(Math.max(0, Math.min(maxT, t)));
+          }}
+          onKeyDown={(ev) => {
+            if (ev.key === "Escape") setCursorT(null);
+          }}
         >
           {/* Axis labels at top */}
           {Array.from({ length: 11 }, (_, i) => {
@@ -212,7 +224,11 @@ export function EventRibbon({
               selectedSeq != null && (e.seq === selectedSeq || e.linked_seqs.includes(selectedSeq));
             const common = {
               className: "cursor-pointer",
-              onClick: () => onSelect(e),
+              onClick: (ev: { stopPropagation(): void }) => {
+                ev.stopPropagation();
+                if (e.t_rel_s !== null) setCursorT(e.t_rel_s);
+                onSelect(e);
+              },
               "data-testid": `ribbon-event-${e.id}`,
             };
             if (e.kind === "bar" || t1 > t0) {
@@ -283,6 +299,29 @@ export function EventRibbon({
               </g>
             );
           })}
+          {/* Curseur temporel rouge (clic pour placer, Échap pour effacer) */}
+          {cursorT !== null && (
+            <g data-testid="ribbon-cursor" pointerEvents="none">
+              <line
+                x1={X(cursorT)}
+                y1={TOP - 6}
+                x2={X(cursorT)}
+                y2={H - 6}
+                stroke="#EF4444"
+                strokeWidth={2}
+              />
+              <text
+                x={X(cursorT)}
+                y={TOP - 18}
+                fontSize={9}
+                fontWeight={700}
+                fill="#EF4444"
+                textAnchor="middle"
+              >
+                {cursorT.toFixed(3)}s
+              </text>
+            </g>
+          )}
         </svg>
       </div>
       <footer className="text-[10px] text-muted-foreground">
