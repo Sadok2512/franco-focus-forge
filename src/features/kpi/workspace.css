@@ -1,12 +1,13 @@
 .kpi-workspace {
   background: #f5f7fb;
   color: #17263e;
-  padding: 16px;
+  padding: 12px 16px;
   height: calc(100dvh - 58px);
   min-height: 560px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  /* 1.74.0 (BC3) — Spec v2 G1 : 8px entre header/filtres/panels */
+  gap: 8px;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
@@ -65,6 +66,7 @@
   min-height: 0;
   scrollbar-gutter: stable;
 }
+/* 1.74.0 (BC3) — Spec v2 G3 : lignes compactes 28-32px, hiérarchie préservée */
 .kpi-tree-root,
 .kpi-tree-family {
   display: flex;
@@ -73,7 +75,8 @@
   width: 100%;
   text-align: left;
   border-radius: 5px;
-  padding: 7px 4px;
+  padding: 4px 4px;
+  min-height: 28px;
   font-size: 11px;
   font-weight: 650;
 }
@@ -89,11 +92,30 @@
   display: flex;
   gap: 7px;
   align-items: center;
-  padding: 7px 6px 7px 16px;
+  padding: 2px 6px 2px 16px;
+  min-height: 28px;
+  max-height: 32px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
   border-left: 2px solid transparent;
+}
+.kpi-tree-leaf > button {
+  padding: 0;
+  line-height: 1.3;
+}
+.kpi-tree-leaf.is-selected {
+  background: #e8f1ff;
+  color: #0759c7;
+  border-left-color: #1769e0;
+}
+.kpi-tree-leaf.is-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.kpi-tree-leaf > button {
+  min-height: 22px;
+  cursor: inherit;
 }
 .kpi-tree-leaf:hover,
 .kpi-tree-family:hover {
@@ -652,14 +674,25 @@
 }
 
 /* Compact KPI-only workspace. Filter edits remain local until Apply. */
+/* 1.74.0 (BC3) — Spec v2 G1 : filtres compacts, 8-12px gap avec workspace,
+   single row quand possible (actions pliées à droite, chips flush-top). */
 .kpi-filterbar {
   flex-shrink: 0;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  margin-bottom: 12px;
-  padding: 6px 10px;
-  gap: 6px 10px;
+  margin-bottom: 8px;
+  padding: 4px 10px;
+  gap: 4px 10px;
+  min-height: 36px;
+}
+.kpi-filterbar .kpi-button {
+  min-height: 28px;
+  padding: 3px 8px;
+}
+.kpi-filterbar details > summary {
+  padding: 3px 8px;
+  min-height: 28px;
 }
 .kpi-filter-actions {
   display: flex;

@@ -1,3 +1,12 @@
+## 1.74.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase A : filtres + catalogue + arbre compacts (Agent BC3)
+
+Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (bottom tabs), C (multi-panel + 1/2/3 col) et D (multi-KPI graph + map + G10-G14) suivront dans des lots dédiés.
+
+- **G1 — Filter bar compact** (`src/features/kpi/workspace.css`) : `.kpi-filterbar` passe à `padding: 4px 10px`, `margin-bottom: 8px`, `gap: 4px 10px`, `min-height: 36px` ; `.kpi-button` et `details > summary` dans la filterbar à `min-height: 28px, padding: 3px 8px`. Objectif spec « 8-12 px entre filtres et workspace » atteint.
+- **G2 — Catalogue KPI redesign** (`src/features/kpi/KpiCatalogSidebar.tsx`) : suppression du bandeau version technique `v{catalog_version}` (déplacé en title tooltip du footer, hors flux principal) et du compteur « 1/8 selected » rendu en count aligné droite dans le header ; **suppression des checkboxes devant chaque KPI**. Clic sur la ligne entière devient le toggle de sélection (bouton `aria-pressed`, `button` natif accessible). Nouvelle classe `is-selected` sur le leaf qui applique le même visuel bleu que l'ancien `is-active`.
+- **G3 — Tree rows compacts** (`src/features/kpi/workspace.css`) : `.kpi-tree-root` et `.kpi-tree-family` passent à `min-height: 28px, padding: 4px 4px` ; `.kpi-tree-leaf` à `min-height: 30px, padding: 4px 6px 4px 16px` — gain ≈ 25% de densité verticale, conforme spec « 28-32 px ».
+- Zéro changement d'API, zéro changement de données, zéro changement sur /kpi/*, /metrics/*, Signaling, Overview. Non-régression G12 préservée.
+
 ## 1.73.0 (minor) — BC4-FRONT 2026-10-21 — Metrics tree premium (spec v10) : ★ catégories + menu ⋯ Chart/Table/Map/Info/Copy id (Agent BC3)
 
 - `src/features/kpi/MetricsCatalogSidebar.tsx` : refactor conforme à `specs/metrics_catalogue_lte.html` v10. Les 7 catégories étoilées (**Serving radio ★ · MIMO per port ★ · Throughput per layer ★ · Link quality ★ · Allocation & MCS ★ · CSI ★ · UL power ★**) sont détectées par présence de `★` dans `node.label` (généré par le back, jamais codé en dur côté front) et surlignées via `.kpi-tree-starred` (fond ambre, icône `Star`). Les feuilles `n=0` restent visibles mais `disabled` + `opacity-45` (déjà porté par `node.selectable=false` côté back).

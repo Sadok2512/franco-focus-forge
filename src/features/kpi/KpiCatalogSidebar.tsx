@@ -67,15 +67,14 @@ export function KpiCatalogSidebar({
     .filter((t) => t.families.length);
   return (
     <aside className="kpi-catalog" aria-label={translate("kpi.3ad34a87a145")}>
-      <header className="p-3 border-b">
+      <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
-          <BarChart3 size={16} className="text-primary" /> {translate("kpi.3ad34a87a145")}{" "}
+          <BarChart3 size={16} className="text-primary" /> {translate("kpi.3ad34a87a145")}
+          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
+            {selected.length}/{MAX_GRAPHS}
+          </span>
         </h2>
-        <p className="mt-1 text-[11px] text-muted-foreground">
-          v{catalog.catalog_version} · {selected.length}/{MAX_GRAPHS}{" "}
-          {translate("kpi.76b9fda37ce9")}{" "}
-        </p>
-        <label className="relative block mt-3">
+        <label className="relative block mt-2">
           <Search size={14} className="absolute left-2.5 top-3 text-muted-foreground" />
           <input
             ref={searchRef}
@@ -125,22 +124,23 @@ export function KpiCatalogSidebar({
                         </span>
                       </button>
                       {familyOpen &&
-                        f.kpis.map((item) => (
+                        f.kpis.map((item) => {
+                          const isSelected = selected.includes(item.code);
+                          const canAdd = isSelected || selected.length < MAX_GRAPHS;
+                          return (
                           <div
                             key={item.code}
                             title={`${t.techno} / ${f.family} / ${item.code}${item.reason ? ` — ${item.reason}` : ""}`}
-                            className={`kpi-tree-leaf ${active === item.code ? "is-active" : ""}`}
+                            className={`kpi-tree-leaf ${active === item.code ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canAdd ? "is-disabled" : ""}`}
                           >
-                            <label className="flex min-w-0 flex-1 items-center gap-2">
-                              <input
-                                type="checkbox"
-                                aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
-                                checked={selected.includes(item.code)}
-                                disabled={
-                                  !selected.includes(item.code) && selected.length >= MAX_GRAPHS
-                                }
-                                onChange={() => onToggle(item.code)}
-                              />
+                            <button
+                              type="button"
+                              className="flex min-w-0 flex-1 items-center gap-2 text-left bg-transparent border-0 p-0"
+                              onClick={() => canAdd && onToggle(item.code)}
+                              disabled={!canAdd}
+                              aria-pressed={isSelected}
+                              aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
+                            >
                               <span
                                 className={`kpi-status-dot status-${item.status.toLowerCase()}`}
                                 title={item.status}
@@ -153,7 +153,7 @@ export function KpiCatalogSidebar({
                                   </span>
                                 )}
                               </span>
-                            </label>
+                            </button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <button
@@ -177,7 +177,8 @@ export function KpiCatalogSidebar({
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        ))}
+                          );
+                        })}
                     </div>
                   );
                 })}
@@ -188,8 +189,11 @@ export function KpiCatalogSidebar({
           <li className="p-4 text-xs text-muted-foreground"> {translate("kpi.7f626224ba1f")} </li>
         )}
       </ul>
-      <footer className="border-t p-3 text-[10px] text-muted-foreground">
-        front v{APP_VERSION} {translate("kpi.daee2b836d5a")}{" "}
+      <footer
+        className="border-t p-2 text-[10px] text-muted-foreground"
+        title={`front v${APP_VERSION} · ${translate("kpi.daee2b836d5a")}`}
+      >
+        {translate("kpi.daee2b836d5a")}
       </footer>
     </aside>
   );
