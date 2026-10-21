@@ -11,6 +11,10 @@ export const Route = createFileRoute("/_app/kpi")({
         name: "description",
         content: i18n.t("kpi.49c60a76f5cb"),
       },
+      { property: "og:title", content: "KPI Analytics — BC4" },
+      { property: "og:description", content: i18n.t("kpi.49c60a76f5cb") },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   // Additional URL fields belong to KPI only; shared operator/technology/band

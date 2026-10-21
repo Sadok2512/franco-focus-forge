@@ -43,6 +43,11 @@
     "selectionSummary": "{{count}} selected · {{total}} options"
   },
   "metrics": {
+    "captureLabel": "Capture",
+    "actions": "Metrics actions",
+    "showInfo": "Information and evidence",
+    "occurrences": "Occurrences",
+    "population": "Population",
     "46c537ebda08": "Capture time (s)",
     "67767b11ff63": "Stacked panels · throughput layers shown separately · shared capture time",
     "9d97a52428f2": "X axis = capture time (s) · origin: capture start",

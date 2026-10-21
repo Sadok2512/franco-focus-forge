@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { MetricView } from "./MetricGraphCard";
+import { Button } from "@/components/ui/button";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -137,6 +138,7 @@ export function MetricsCatalogSidebar({
     const branchPartial =
       branchSelections.some((value) => selected.includes(value)) && !branchChecked;
     const disabled = node.node_type === "leaf" && !node.selectable;
+    const isSelected = node.selectable && selected.includes(node.selection ?? "");
     const starred = node.label.includes(STAR);
     const kindClass =
       node.node_type === "category"
@@ -152,7 +154,7 @@ export function MetricsCatalogSidebar({
     return (
       <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
         <div
-          className={`${kindClass}${starClass} ${disabled ? "opacity-45" : ""}`}
+          className={`${kindClass}${starClass} ${isSelected ? "is-selected" : ""} ${disabled ? "is-disabled opacity-45" : ""}`}
           title={node.reason ?? node.source ?? node.label}
         >
           {children.length > 0 ? (
@@ -265,32 +267,29 @@ export function MetricsCatalogSidebar({
     .map((node) => node.node_id);
   return (
     <aside className="kpi-catalog" aria-label={t("metrics.498227f2b5c6")}>
-      <header className="border-b p-3">
-        <h2 className="flex gap-2 text-sm font-semibold">
-          <Activity size={16} /> {t("metrics.498227f2b5c6")}
+      <header className="border-b p-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold">
+          <Activity size={16} className="text-primary" /> {t("metrics.498227f2b5c6")}
+          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">{selected.length}/64</span>
         </h2>
-        <p className="text-[11px] text-muted-foreground">
-          {t("metrics.f05f8e96265b")} {selected.length}
-          {t("metrics.16df3032f7a1")}
-        </p>
-        <label className="relative mt-3 block">
-          <Search className="absolute left-2 top-3" size={14} />
+        <label className="relative mt-2 block">
+          <Search className="absolute left-2.5 top-3 text-muted-foreground" size={14} />
           <input
             ref={searchRef}
-            className="h-9 w-full rounded-md border bg-background pl-8 text-xs"
+            className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
             placeholder={t("metrics.433e83817682")}
             aria-label={t("metrics.bf6a6c500977")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
           />
         </label>
-        <div className="mt-2 flex gap-2 text-[11px]">
-          <button type="button" onClick={() => setOpen(new Set(expandableIds))}>
+        <div className="mt-1 flex gap-1">
+          <Button variant="ghost" size="sm" className="h-6 px-1 text-[10px]" onClick={() => setOpen(new Set(expandableIds))}>
             {t("metrics.catalogExpandAll")}
-          </button>
-          <button type="button" onClick={() => setOpen(new Set())}>
+          </Button>
+          <Button variant="ghost" size="sm" className="h-6 px-1 text-[10px]" onClick={() => setOpen(new Set())}>
             {t("metrics.catalogCollapseAll")}
-          </button>
+          </Button>
         </div>
       </header>
       {query.isPending && (

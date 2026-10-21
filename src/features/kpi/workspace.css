@@ -1085,3 +1085,48 @@
   font-size: 12px;
   flex-wrap: wrap;
 }
+
+/* Metrics follows the same compact card rhythm as KPI. */
+.metrics-card-controls {
+  flex-wrap: wrap;
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.metrics-card-controls select {
+  margin-left: 0;
+  max-width: 220px;
+  min-width: 0;
+}
+.metrics-analysis-card .kpi-card-header {
+  align-items: center;
+}
+.metrics-observations {
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 11px;
+}
+.metrics-observations table {
+  width: 100%;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+.metrics-observations :is(th, td) {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.metrics-observations th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-weight: 600;
+}
+.metrics-observations td.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.metrics-observations tr:hover td {
+  background: var(--accent);
+}
