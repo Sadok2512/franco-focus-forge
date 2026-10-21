@@ -194,7 +194,7 @@ export function RfTimeline({
           ? rfColors["failure"]!
           : item.attrs.track === "network"
             ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
-            : (rfColors[item.attrs.track] ?? rfColors["unknown"]!);
+            : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
       const width = Math.max(3, end[0]! - start[0]!);
       return {
         type: "rect",
@@ -268,7 +268,7 @@ export function RfTimeline({
           ).data;
           if (d.event) {
             const e = d.event;
-            const header = `<b>${escape(e.label)}</b><br/>${escape(e.t_rel_s)} s · #${e.seq}<br/>${escape(e.attrs.technology)} · ${escape(e.attrs.status)}<br/>${escape(e.attrs.evidence_status)} · ${escape(e.attrs.source)}<br/>${escape(e.attrs.source_seqs.join(", "))}<br/>${e.duration_ms === null ? "" : escape(e.duration_ms) + " ms"}`;
+            const header = `<b>${escape(e.label)}</b><br/>${escape(e.t_rel_s)} s · #${e.seq}<br/>${escape(e.attrs.technology)} · ${escape(e.attrs.status)}<br/>${escape(e.attrs.evidence_status)} · ${escape(e.attrs.source)}<br/>${escape((e.attrs.source_seqs ?? []).join(", "))}<br/>${e.duration_ms === null ? "" : escape(e.duration_ms) + " ms"}`;
             const fields = ["hoa_pci", "hoa_att_pci", "hoa_ch_number", "hoa_att_ch", "cause"]
               .filter((k) => e.attrs[k] != null)
               .map((k) => `${escape(k)}: ${escape(e.attrs[k])}`)
@@ -325,7 +325,7 @@ export function RfTimeline({
           encode: { x: [1, 2], y: 0 },
           clip: true,
           data: displayed.map((e) => ({
-            value: [tracks.indexOf(e.attrs.track), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
+            value: [tracks.indexOf(e.attrs.track ?? ""), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
             event: e,
           })),
         },

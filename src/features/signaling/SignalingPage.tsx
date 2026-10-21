@@ -1,6 +1,7 @@
 import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
+import { EventRibbon } from "./EventRibbon";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
@@ -826,6 +827,9 @@ export function SignalingPage({
 }) {
   const { t } = useTranslation();
   const [compact, setCompact] = useState(false);
+  // 1.72.0 (BC3) — Vue timeline : ribbon (BC3 lanes), rf (BC2), compact (histogram).
+  // Défaut = ribbon (addendum spec signaling_timeline.html).
+  const [timelineView, setTimelineView] = useState<"ribbon" | "rf" | "compact">("ribbon");
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
@@ -1286,14 +1290,54 @@ export function SignalingPage({
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
                       <div className="flex items-center justify-between gap-2">
                         <h2 className="text-sm font-semibold">{t("rfTimeline.title")}</h2>
-                        <button
-                          className="kpi-button text-xs"
-                          onClick={() => setCompact((v) => !v)}
+                        <div
+                          className="flex items-center gap-1"
+                          role="tablist"
+                          aria-label="Vue timeline"
                         >
-                          {compact ? t("rfTimeline.rf") : t("rfTimeline.compact")}
-                        </button>
+                          {(["ribbon", "rf", "compact"] as const).map((v) => (
+                            <button
+                              key={v}
+                              type="button"
+                              role="tab"
+                              aria-selected={timelineView === v}
+                              className={`kpi-button text-xs ${timelineView === v ? "bg-primary/15 text-primary" : ""}`}
+                              onClick={() => {
+                                setTimelineView(v);
+                                setCompact(v === "compact");
+                              }}
+                              data-testid={`timeline-view-${v}`}
+                            >
+                              {v === "ribbon" ? "Ruban" : v === "rf" ? "RF" : "Histogram"}
+                            </button>
+                          ))}
+                        </div>
                       </div>
-                      {!compact && capture ? (
+                      {timelineView === "ribbon" && capture ? (
+                        <EventRibbon
+                          key={capture}
+                          projectId={projectId}
+                          captureId={capture}
+                          selectedSeq={seq}
+                          onSelect={(e) => {
+                            // Spec signaling_timeline §interactions : clic →
+                            // sélectionne pivot_seq (ou le seq lui-même si pas
+                            // de pivot), surlignes messages liés dans la
+                            // liste, ouvre l'arbre ASN.1 sur le pivot. On
+                            // réutilise chooseSeq qui déjà met à jour seq +
+                            // selected pour le highlight et ouvre /details.
+                            const target = e.pivot_seq ?? e.seq;
+                            chooseSeq(target);
+                            setSelectedRecord({
+                              capture_id: capture,
+                              seq: target,
+                              t_rel_s: e.t_rel_s,
+                              message_name: e.label,
+                              protocol: "",
+                            });
+                          }}
+                        />
+                      ) : timelineView === "rf" && capture ? (
                         <RfTimeline
                           key={capture}
                           projectId={projectId}
@@ -1319,7 +1363,7 @@ export function SignalingPage({
                                   typeof e.attrs["source_message"] === "string"
                                     ? e.attrs["source_message"]
                                     : e.label,
-                                protocol: e.attrs.protocol ?? "",
+                                protocol: e.attrs["protocol"] ?? "",
                               });
                           }}
                         />

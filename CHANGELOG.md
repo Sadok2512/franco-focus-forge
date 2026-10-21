@@ -1,3 +1,11 @@
+## 1.72.0 (minor) — BC4-FRONT 2026-10-21 — Signaling event ribbon + Zod α aligné back (Agent BC3)
+
+- **Nouveau composant `EventRibbon.tsx`** : ruban SVG 8 couloirs (`radio / connexion / mobilite / endc / ca / services / acces / contexte`) consomme `/signaling/events` back 0.71.0 (shape α). Chips par couloir avec compteurs, bascule « Échecs seulement » (passe `failures_only=true` au back), événements rendus en circles (mark/tri), ✕ (fail/x), barres (bar) selon `kind` + `outcome`. Clic événement → `onSelect(e)` → `chooseSeq(e.pivot_seq ?? e.seq)` → surlignes messages liés dans la liste principale et ouvre l'arbre ASN.1 sur le pivot.
+- `src/features/signaling/SignalingPage.tsx` : vue timeline passe de binaire (RF / Histogram) à **ternaire** (`Ruban | RF | Histogram`), défaut **Ruban** (BC3). State `timelineView: "ribbon" | "rf" | "compact"`. Les 3 vues partagent le même Panel, chacune lazy sur `capture`.
+- `src/lib/api/signaling.ts` : **remplacement complet** du Zod `events` pour matcher le back live 0.71.0 shape α (`lane / type / kind / outcome / pivot_seq / linked_seqs / link_rule / seq_gap`). Les champs `rule_version`, `unavailable`, `missing_time` top-level sont conservés (déjà présents). `attrs` défini comme union des champs produits par `view=rf` (BC2 : `track/status/source_seqs/evidence_status/rule_id/rule_version/protocol`) et `view=legacy` (BC3 : `{}` ou `{technology}`), tous optionnels + passthrough — préserve la compatibilité avec `RfTimeline.tsx` existant.
+- `src/features/signaling/RfTimeline.tsx` : ajout de null-guards sur les lectures `attrs.track`, `attrs.source_seqs` suite à la nouvelle typage optionnelle.
+- Zéro impact sur /details, /captures, /procedures, /points. BC2 `RfTimeline` continue de fonctionner côté `view=rf`.
+
 ## 1.71.2 (patch) — BC4-FRONT 2026-10-21 — Preserve Metrics v6 catalogue envelope (Agent BC1)
 
 - Preserve both `metrics` and `nodes` from `/projects/{id}/metrics`; the v6 sidebar now receives the complete hierarchy after concurrent API adapter changes.

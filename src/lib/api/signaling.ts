@@ -65,38 +65,68 @@ export const signalingSchemas = {
     total: z.number(),
     types: z.record(z.number()),
   }),
+  // 1.72.0 (BC3) — Zod aligné sur back 0.71.0 /signaling/events (shape α).
+  // Attributs par événement : lane canonique (connexion/mobilite/endc/ca/
+  // services/acces/contexte/radio), link_rule explicite, pivot_seq +
+  // linked_seqs + seq_gap pour l'appartenance prouvée (règles de
+  // app/signaling/links.py). attrs est volontairement libre (passthrough)
+  // car dépend du type d'événement (ex. {technology} pour procedures).
   events: z.object({
     ...envelope,
-    total: z.number(),
-    missing_time: z.number(),
-    rule_version: z.string().nullable(),
-    unavailable: z.record(z.string()),
     events: z.array(
       z.object({
         id: z.string(),
+        lane: z.enum([
+          "radio",
+          "connexion",
+          "mobilite",
+          "endc",
+          "ca",
+          "services",
+          "acces",
+          "contexte",
+        ]),
+        type: z.string(),
+        kind: z.enum(["mark", "bar", "band", "fail", "tri", "x"]),
         seq: z.number(),
         seq_end: z.number().nullable(),
         t_rel_s: z.number().nullable(),
         t_rel_end_s: z.number().nullable(),
-        kind: z.string(),
-        label: z.string(),
         duration_ms: z.number().nullable(),
-        linked_seqs: z.array(z.number()),
+        outcome: z.enum(["ok", "fail", "incomplete"]).nullable(),
+        cause: z.string().nullable(),
+        label: z.string(),
+        // attrs : union des champs produits par les deux routes du back.
+        // view=rf (BC2) → track/status/source_seqs/evidence_status/rule_id/
+        //                 rule_version/protocol ;
+        // view=legacy (BC3) → {} ou {technology}.
+        // Tous optionnels + passthrough pour laisser passer les extras.
         attrs: z
           .object({
-            track: z.string(),
-            technology: z.string(),
-            status: z.string(),
-            source: z.string(),
-            source_seqs: z.array(z.number()),
-            evidence_status: z.string(),
-            rule_id: z.string(),
-            rule_version: z.string(),
-            protocol: z.string().nullable(),
+            track: z.string().optional(),
+            technology: z.string().nullable().optional(),
+            status: z.string().optional(),
+            source: z.string().optional(),
+            source_seqs: z.array(z.number()).optional(),
+            evidence_status: z.string().optional(),
+            rule_id: z.string().optional(),
+            rule_version: z.string().optional(),
+            protocol: z.string().nullable().optional(),
           })
           .passthrough(),
+        pivot_seq: z.number().nullable(),
+        linked_seqs: z.array(z.number()),
+        link_rule: z.string(),
+        seq_gap: z.number().nullable(),
       }),
     ),
+    total: z.number(),
+    lanes: z.array(z.string()),
+    counts_by_lane: z.record(z.number()),
+    link_rule_counts: z.record(z.number()),
+    rule_version: z.string().nullable(),
+    unavailable: z.record(z.string()),
+    missing_time: z.number(),
   }),
   timeline: z.object({
     ...envelope,
