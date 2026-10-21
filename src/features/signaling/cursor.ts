@@ -46,6 +46,11 @@ export function eventsAt(capture: SigCapture, t: number, eps = 1e-6): SigEvent[]
   return capture.events.filter((e) => Math.abs(e.t - t) <= eps);
 }
 
+/** Only a proven message reference links a selected message to an event. */
+export function eventForMessage(capture: SigCapture, index: number): SigEvent | null {
+  return capture.events.find((event) => event.message_index === index) ?? null;
+}
+
 /** Instants « snappables » pour la navigation clavier : événements, mobilité, bornes de tâches, appels. */
 export function snapTimes(capture: SigCapture): number[] {
   const ts = new Set<number>();
@@ -60,6 +65,9 @@ export function snapTimes(capture: SigCapture): number[] {
     if (c.start_s != null) ts.add(c.start_s);
     if (c.end_s != null) ts.add(c.end_s);
   }
+  for (const series of capture.measurements) {
+    for (const point of series.points) if (point.v != null) ts.add(point.t);
+  }
   return [...ts].sort((a, b) => a - b);
 }
 
@@ -67,6 +75,9 @@ export function snapTimes(capture: SigCapture): number[] {
 export function stepTime(times: number[], t: number | null, dir: 1 | -1, fallback: number): number {
   if (t == null) return fallback;
   if (dir === 1) return times.find((x) => x > t + 1e-6) ?? t;
-  for (let i = times.length - 1; i >= 0; i--) if (times[i]! < t - 1e-6) return times[i]!;
+  for (let i = times.length - 1; i >= 0; i--) {
+    const previous = times[i];
+    if (previous != null && previous < t - 1e-6) return previous;
+  }
   return t;
 }
