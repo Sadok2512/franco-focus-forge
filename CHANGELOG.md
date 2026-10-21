@@ -1,3 +1,10 @@
+## 1.62.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : fix map worker + rééquilibrage default sizes (Agent BC3)
+
+- `KpiMapOSM.tsx` : fallback main-thread (`maplibregl.workerCount = 0`) pour contourner le bug Vite dev « Worker failed to load. Check that the worker URL is correct. » qui empêchait parfois les tuiles OSM de se charger (le worker URL calculé par MapLibre GL v4+ pointe sur `@fs/.../maplibre-gl.mjs` qui échoue en dev ESM). Aucun impact prod (le build Vite gère les workers correctement).
+- Rééquilibrage des tailles par défaut du haut : Timeline 55% / Carte 45% (au lieu de 65/35), pour que la carte soit visible dès l'ouverture sans toucher au séparateur.
+- Validation : map OSM rendue en screenshot `check-map.png` sur TEST2 cap `723547b196b3` (9847 positioned points, 46 markers), tuiles chargées, trajet GPS visible, markers par couche.
+- **Si la map reste absente côté utilisateur** : forcer un hard-reload (Ctrl+Shift+R) pour purger le cache HMR Vite qui garde l'ancien module `maplibre-gl` chargé.
+
 ## 1.61.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : toggle Timeline + badges couleur couches (Agent BC3)
 
 - **Toggle Timeline** symétrique au toggle Carte. Nouveau bouton « Timeline · ON/OFF » dans l'en-tête (icône `Activity`/`ActivitySquare`). Timeline Panel passé en `collapsible + collapsedSize=0 + panelRef`.

@@ -1254,7 +1254,7 @@ export function SignalingPage({
                   <Panel
                     id="timeline"
                     panelRef={timelinePanelRef}
-                    defaultSize={65}
+                    defaultSize={55}
                     minSize={timelineVisible ? 25 : 0}
                     collapsible
                     collapsedSize={0}
@@ -1288,7 +1288,7 @@ export function SignalingPage({
                     minSize={mapVisible ? 25 : 0}
                     collapsible
                     collapsedSize={0}
-                    defaultSize={35}
+                    defaultSize={45}
                     data-testid="signaling-map-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
