@@ -1,10 +1,17 @@
-## 1.62.0 (minor) — BC4-FRONT 2026-10-21 — i18n foundation and navigation (Agent BC1)
+## 1.63.0 (minor) — BC4-FRONT 2026-10-21 — i18n foundation and navigation (Agent BC1)
 
 - Add react-i18next with English by default and French available from the user menu. Persist the preference safely; set the document language accordingly.
 - Translate navigation, shell actions and root error states without changing analytical queries, filters or source data.
 - Add shared Intl number/date formatters, matching EN/FR resource guard and language preference tests.
 - Intermediate delivery: page content migration follows in patches. Backend-provided wording remains an API responsibility; see i18n audit boundary CSV.
-- Version 1.61.0 was already published by the Signaling lot; this new capability uses the next available minor, 1.62.0.
+- Versions 1.61.0 and 1.62.0 were already published by the Signaling lot; this new capability uses the next available minor, 1.63.0.
+
+## 1.62.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : fix map worker + rééquilibrage default sizes (Agent BC3)
+
+- `KpiMapOSM.tsx` : fallback main-thread (`maplibregl.workerCount = 0`) pour contourner le bug Vite dev « Worker failed to load. Check that the worker URL is correct. » qui empêchait parfois les tuiles OSM de se charger (le worker URL calculé par MapLibre GL v4+ pointe sur `@fs/.../maplibre-gl.mjs` qui échoue en dev ESM). Aucun impact prod (le build Vite gère les workers correctement).
+- Rééquilibrage des tailles par défaut du haut : Timeline 55% / Carte 45% (au lieu de 65/35), pour que la carte soit visible dès l'ouverture sans toucher au séparateur.
+- Validation : map OSM rendue en screenshot `check-map.png` sur TEST2 cap `723547b196b3` (9847 positioned points, 46 markers), tuiles chargées, trajet GPS visible, markers par couche.
+- **Si la map reste absente côté utilisateur** : forcer un hard-reload (Ctrl+Shift+R) pour purger le cache HMR Vite qui garde l'ancien module `maplibre-gl` chargé.
 
 ## 1.61.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : toggle Timeline + badges couleur couches (Agent BC3)
 

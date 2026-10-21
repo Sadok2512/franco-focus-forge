@@ -73,6 +73,15 @@ export function KpiMapOSM({
     (async () => {
       const maplibregl = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
+      // 1.62.0 — Vite ESM dev-only : le worker URL calculé par MapLibre
+      // v4+ échoue (@fs/.../maplibre-gl.mjs:5...). Fallback main-thread
+      // (workerCount=0) : lent sur très gros datasets mais garantit
+      // l'affichage des tuiles OSM. Pas d'impact en build production.
+      try {
+        (maplibregl as unknown as { workerCount: number }).workerCount = 0;
+      } catch {
+        /* ignore */
+      }
       if (disposed || !el.current) return;
       const instance = new maplibregl.Map({
         container: el.current,
