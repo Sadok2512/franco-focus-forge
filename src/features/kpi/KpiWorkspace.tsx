@@ -52,6 +52,19 @@ import {
   toSearch,
   toggleCode,
 } from "./workspace-model";
+import {
+  type WorkspaceLayout,
+  type WorkspaceTabsState,
+  activeTab as pickActiveTab,
+  addTab,
+  decodeTabs,
+  encodeTabs,
+  newTabsState,
+  removeTab,
+  reorderTab,
+  updateTab,
+} from "./workspace-tabs";
+import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -120,7 +133,25 @@ function Workspace({
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
-  const [codes, setCodes] = useState<string[]>(() => {
+  // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
+  // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
+  // décodé en un tab par défaut si ?tabs= absent.
+  const tabsStorageKey = `bc4.kpi.tabs.${projectId}`;
+  const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() => {
+    const raw = typeof search["tabs"] === "string" ? (search["tabs"] as string) : "";
+    if (raw) {
+      const decoded = decodeTabs(raw);
+      if (decoded) return decoded;
+    }
+    try {
+      const stored = localStorage.getItem(tabsStorageKey);
+      if (stored) {
+        const decoded = decodeTabs(stored);
+        if (decoded) return decoded;
+      }
+    } catch {
+      /* ignore */
+    }
     const requested = Array.isArray(search["kpis"])
       ? search["kpis"]
       : typeof search["kpi"] === "string"
@@ -132,15 +163,42 @@ function Workspace({
           typeof code === "string" && entries.some((e) => e.item.code === code),
       )
       .slice(0, MAX_GRAPHS);
-    return requested.length || Array.isArray(search["kpis"])
-      ? valid
-      : entries.find((e) => e.item.status === "AVAILABLE")
-        ? [entries.find((e) => e.item.status === "AVAILABLE")!.item.code]
-        : entries[0]
-          ? [entries[0].item.code]
-          : [];
+    const seedCodes =
+      requested.length || Array.isArray(search["kpis"])
+        ? valid
+        : entries.find((e) => e.item.status === "AVAILABLE")
+          ? [entries.find((e) => e.item.status === "AVAILABLE")!.item.code]
+          : entries[0]
+            ? [entries[0].item.code]
+            : [];
+    return newTabsState(seedCodes);
   });
-  const [active, setActive] = useState<string | null>(codes[0] ?? null);
+  const currentTab = pickActiveTab(tabsState);
+  const codes = currentTab.codes;
+  const active = currentTab.activeCode;
+  const persistTabs = (next: WorkspaceTabsState) => {
+    setTabsStateRaw(next);
+    const encoded = encodeTabs(next);
+    try {
+      localStorage.setItem(tabsStorageKey, encoded);
+    } catch {
+      /* ignore */
+    }
+    void navigate({
+      to: ".",
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        tabs: encoded,
+        kpis: pickActiveTab(next).codes,
+        kpi: pickActiveTab(next).codes[0],
+      }),
+      replace: true,
+    } as never);
+  };
+  const setActive = (code: string | null) =>
+    persistTabs(updateTab(tabsState, tabsState.activeTabId, { activeCode: code }));
+  const setLayout = (tabId: string, layout: WorkspaceLayout) =>
+    persistTabs(updateTab(tabsState, tabId, { layout }));
   const queryClient = useQueryClient();
   const storageKey = `bc4.kpi.visualizations.${projectId}`;
   const [configs, setConfigs] = useState<Record<string, ChartConfig>>(() => {
@@ -283,39 +341,49 @@ function Workspace({
   const rows = panels
     .filter((panel) => !configFor(panel.entry.item.code).visualization.startsWith("task_"))
     .flatMap((panel) => panel.rows);
-  const saveCodes = (next: string[]) => {
-    setCodes(next);
-    void navigate({
-      to: ".",
-      search: (prev: Record<string, unknown>) => ({ ...prev, kpis: next, kpi: next[0] }),
-      replace: true,
-    } as never);
+  const saveCodes = (nextCodes: string[]) => {
+    persistTabs(
+      updateTab(tabsState, tabsState.activeTabId, {
+        codes: nextCodes,
+        activeCode:
+          nextCodes.includes(currentTab.activeCode ?? "")
+            ? currentTab.activeCode
+            : (nextCodes[0] ?? null),
+      }),
+    );
   };
   const toggle = (code: string) => {
     if (!codes.includes(code) && codes.length >= MAX_GRAPHS) {
       setLimitMessage(`Limite de ${MAX_GRAPHS} graphiques atteinte.`);
       return;
     }
-    const next = toggleCode(codes, code);
-    saveCodes(next);
+    const nextCodes = toggleCode(codes, code);
+    persistTabs(
+      updateTab(tabsState, tabsState.activeTabId, {
+        codes: nextCodes,
+        activeCode: nextCodes.includes(code) ? code : (nextCodes[0] ?? null),
+      }),
+    );
     setLimitMessage("");
-    if (next.includes(code)) setActive(code);
   };
   const visualize = (code: string, visualization: VisualizationType) => {
-    if (!codes.includes(code)) {
-      if (codes.length >= MAX_GRAPHS) return;
-      saveCodes([...codes, code]);
-    }
+    const nextCodes = codes.includes(code) ? codes : [...codes, code];
+    if (!codes.includes(code) && codes.length >= MAX_GRAPHS) return;
+    persistTabs(
+      updateTab(tabsState, tabsState.activeTabId, {
+        codes: nextCodes,
+        activeCode: code,
+      }),
+    );
     updateConfig(code, { ...configFor(code), visualization });
-    setActive(code);
   };
   const move = (code: string, direction: -1 | 1) => {
-    const next = [...codes],
-      index = next.indexOf(code),
+    const nextCodes = [...codes],
+      index = nextCodes.indexOf(code),
       target = index + direction;
-    if (target < 0 || target >= next.length) return;
-    [next[index], next[target]] = [next[target]!, next[index]!];
-    saveCodes(next);
+    if (target < 0 || target >= nextCodes.length) return;
+    [nextCodes[index], nextCodes[target]] = [nextCodes[target]!, nextCodes[index]!];
+    saveCodes(nextCodes);
   };
   const focus = (code: string) => {
     setActive(code);
@@ -557,7 +625,11 @@ function Workspace({
                 {limitMessage}
               </p>
             )}
-            <div className="kpi-graph-grid" data-count={panels.length}>
+            <div
+              className="kpi-graph-grid"
+              data-count={panels.length}
+              data-layout={currentTab.layout}
+            >
               {panels.map(({ entry, query, stat, rows: graphRows }) => (
                 <KpiGraphCard
                   projectId={projectId}
@@ -692,6 +764,16 @@ function Workspace({
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      <WorkspaceTabsBar
+        tabs={tabsState.tabs}
+        activeTabId={tabsState.activeTabId}
+        onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}
+        onCreate={() => persistTabs(addTab(tabsState))}
+        onClose={(id) => persistTabs(removeTab(tabsState, id))}
+        onRename={(id, name) => persistTabs(updateTab(tabsState, id, { name }))}
+        onReorder={(from, to) => persistTabs(reorderTab(tabsState, from, to))}
+        onLayoutChange={setLayout}
+      />
     </main>
   );
 }

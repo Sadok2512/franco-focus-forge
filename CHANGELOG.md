@@ -1,3 +1,39 @@
+## 1.75.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase B+C+G11 : bottom tabs stateful + layout 1/2/3 colonnes + perf active-tab-only (Agent BC3)
+
+Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase B+C+G11 sur 4. **Phases A (1.74.0), B, C et G11 livrées** ; **G6 (multi-KPI overlay single chart), G7 (multi-KPI table avec jointure dimensionnelle), G8 (map panel ajouté via +Add Panel), G13 (responsive 3 viewports) et G10/G14 complets** restent à faire par Lovable ou lot ultérieur BC3 (voir KNOWN_LIMITATIONS).
+
+### G4 — Bottom tabs stateful
+
+- Nouveau fichier `src/features/kpi/workspace-tabs.ts` : type `WorkspaceTab = { id, name, codes, activeCode, layout }`, `WorkspaceTabsState = { tabs, activeTabId }`. Helpers `newTabsState / addTab / removeTab / updateTab / reorderTab / activeTab`.
+- Encodage URL : `?tabs=<base64url-JSON>` (petit payload avec clés `i/n/c/a/l`), déséralisé en priorité sur `?kpis=/?kpi=` (backcompat mono-onglet). Fallback `localStorage['bc4.kpi.tabs.{projectId}']` pour l'inter-session.
+- Nouveau composant `src/features/kpi/WorkspaceTabsBar.tsx` : barre fixée **sous** le workspace (via flex-column + flex-shrink:0, pas d'overlay). [+] bouton d'ajout, liste draggable (`draggable`+`onDrop`), renommage inline (double-clic → `<input autofocus>` + Enter/Esc), bouton `×` par onglet (masqué si un seul onglet).
+- `src/features/kpi/KpiWorkspace.tsx` : refactor interne — `codes` et `active` dérivent de l'onglet actif (`pickActiveTab(tabsState)`), les handlers `toggle / visualize / move / saveCodes / setActive` passent par `updateTab(tabsState, activeTabId, …)` + `persistTabs()` qui écrit URL + localStorage en un appel atomique.
+- CSS : `.kpi-workspace-tabsbar / .kpi-tab / .kpi-tab-add / .kpi-tab-close / .kpi-tab-label / .kpi-tab-rename / .kpi-tab-layout` dans `workspace.css`. Hauteur barre min 38 px, scroll-x des onglets si surplus.
+
+### G5 + G9 — Layout 1/2/3/auto colonnes
+
+- `WorkspaceTabsBar.tsx` ajoute un `<select>` à droite de la barre : Auto / 1 / 2 / 3 colonnes. L'option écrit `tab.layout` et persiste.
+- `.kpi-graph-grid[data-layout="1|2|3"]` dans `workspace.css` écrase le `data-count` existant : `grid-template-columns: minmax(0,1fr) | repeat(2|3, minmax(0,1fr))`. Dernier enfant impair en layout 2 et dernier enfant unique en layout 3 étirent sur toute la largeur pour éviter l'orphelin.
+
+### G11 — Perf : seul l'onglet actif requête
+
+- `useQueries` mape maintenant `currentTab.codes` (dérivé de l'onglet actif) et non une liste globale. Les onglets inactifs retiennent leur sélection `codes[]` dans `tabsState.tabs` mais ne déclenchent **aucune** `getProjectKpi()`. Changement d'onglet → nouveau set `codes` → `useQueries` re-hydrate avec le cache react-query existant (staleTime 60s préservé).
+- Zéro régression G12 : aucun contrat back touché, `/kpi/catalog`, `/kpi/{code}`, `/metrics`, `/signaling/*`, Overview intacts.
+
+### Preuves Playwright (TEST2 / Test_3, 1800×1100)
+
+```
+G4 bar bottom edge        = 1086/1100 (barre fixée au bas, 14px marge)
+G4 initial tabs           = 1 (default)
+G4 tabs after +           = 2
+G4 renamed name           = "RRC & Accessibility" (double-clic + Enter)
+G4 active after click     = index 0 (switch OK)
+G4 tabs after × close     = 1 (close OK, dernier reste)
+G9 data-layout attr       = "2" (après select → applied)
+G10 URL ?tabs= present    = true (persistence URL OK)
+Zéro erreur console
+```
+
 ## 1.74.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase A : filtres + catalogue + arbre compacts (Agent BC3)
 
 Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (bottom tabs), C (multi-panel + 1/2/3 col) et D (multi-KPI graph + map + G10-G14) suivront dans des lots dédiés.

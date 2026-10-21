@@ -380,6 +380,149 @@
 .kpi-graph-grid[data-count="3"] > :last-child {
   grid-column: 1 / -1;
 }
+/* 1.75.0 (BC3) — Spec v2 G9 : layout control 1/2/3/auto.
+   `data-layout` écrase `data-count` (sauf si count=0). */
+.kpi-graph-grid[data-layout="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.kpi-graph-grid[data-layout="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpi-graph-grid[data-layout="2"] > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+.kpi-graph-grid[data-layout="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.kpi-graph-grid[data-layout="3"] > :last-child:nth-child(2) {
+  grid-column: 1 / -1;
+}
+/* 1.75.0 (BC3) — Spec v2 G4 : bottom tab bar fixée sous le workspace.
+   NE PAS afficher au-dessus des graphiques — toujours au bas de .kpi-workspace. */
+.kpi-workspace-tabsbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--card, #fff);
+  border: 1px solid #dfe7f1;
+  border-radius: 9px;
+  min-height: 38px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.kpi-tab-add {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  color: #64748b;
+}
+.kpi-tab-add:hover {
+  background: #eff4fa;
+  color: #0759c7;
+  border-style: solid;
+}
+.kpi-tab-list {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.kpi-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 2px 2px 8px;
+  border: 1px solid #dce5ef;
+  border-radius: 6px;
+  background: #f8fafc;
+  font-size: 11.5px;
+  min-height: 26px;
+  cursor: grab;
+}
+.kpi-tab.is-active {
+  background: #e8f1ff;
+  border-color: #1769e0;
+  color: #0759c7;
+  font-weight: 600;
+}
+.kpi-tab.is-dragging {
+  opacity: 0.4;
+}
+.kpi-tab-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 2px 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: inherit;
+  max-width: 240px;
+}
+.kpi-tab-index {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10px;
+  opacity: 0.6;
+}
+.kpi-tab-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+}
+.kpi-tab-rename {
+  padding: 2px 6px;
+  border: 1px solid #1769e0;
+  border-radius: 4px;
+  font: inherit;
+  min-width: 120px;
+}
+.kpi-tab-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  background: transparent;
+  color: #94a3b8;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.kpi-tab-close:hover {
+  color: #ef4444;
+  background: #fef2f2;
+}
+.kpi-tab-layout {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.kpi-tab-layout select {
+  padding: 2px 4px;
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  background: var(--card, #fff);
+  font-size: 11px;
+}
 .kpi-graph-card {
   min-width: 0;
   overflow: hidden;
