@@ -1,3 +1,10 @@
+## 1.78.0 — Signaling timeline redesign
+
+- RF timeline restyled to the reference layout: title + severity legend (Info/Success/Warning/Error/Event), fixed lanes (UE State, Network events, DL Data, UL Data, VoNR, Mobility), and one combined RF Metrics grid.
+- Connectivity events (LTE/NSA/SA) render as filled UE-state bands with the state label inside; task intervals render as rounded bars with Start/End captions when zoomed; point events render as icon dots with label + timestamp when the zoom span is ≤ 30 %.
+- The three radio series (LTE RSRP/RSRQ/SINR) render as lines on a single shared axis with a vertical legend on the left; no NR series is synthesized.
+- Time cursor RF markers now read the combined RF grid; zoom controls moved to the right of the toolbar.
+
 ## 1.77.1 — Catalogue tab labels
 
 - Sidebar tabs now read "KPI catalogue" / "Metrics catalogue" (fr: "Catalogue KPI" / "Catalogue Métriques") instead of the bare "KPI" / "Metrics" + count.

@@ -163,7 +163,7 @@ export function TimeCursor({
           if (!chart || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
             return null;
           const coords = chart.convertToPixel(
-            { xAxisIndex: s.index + 1, yAxisIndex: s.index + 1 },
+            { xAxisIndex: 1, yAxisIndex: 1 },
             [s.point.t_rel_s, s.point.value],
           ) as number[];
           const [cx, cy] = coords;
