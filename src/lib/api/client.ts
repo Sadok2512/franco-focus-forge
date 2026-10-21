@@ -241,6 +241,8 @@ export async function getKpiCatalog(signal?: AbortSignal) {
 export * from "./dictionary";
 export * from "./assistant";
 export type * from "./assistant-schemas";
+export * from "./signaling";
+export type * from "./signaling-schemas";
 export * from "./settings";
 export type * from "./settings-schemas";
 export * from "./reference";

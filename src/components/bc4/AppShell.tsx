@@ -28,6 +28,7 @@ import { useFilters } from "@/lib/filters";
 const NAV = [
   { to: "/projects", label: "Projets" },
   { to: "/overview", label: "Vue d'ensemble" },
+  { to: "/signaling", label: "Signaling" },
   { to: "/rrc", label: "Dictionnaire RRC" },
   { to: "/kpi", label: "KPI Analytics" },
   { to: "/assistant", label: "Assistant IA" },

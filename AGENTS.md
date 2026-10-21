@@ -20,3 +20,4 @@
 - RRC Dictionary grouping (none/operator/band/operator+band) is computed in `src/features/dictionary/grouping.ts` from the API `value_matrix` so histogram and table always share one dataset; without `value_matrix` only totals are shown.
 
 - RRC chart and table share effective grouping, value/legend filtering, normalization and semantic color mapping from `chart-data.ts` so displayed cells and marks remain synchronized.
+- Signaling View lives in `src/features/signaling/`, its deterministic scenarios in `src/mocks/signaling.ts` and its adapter in `src/lib/api/signaling.ts` (re-exported by client.ts); the timeline SVG and the ECharts radio block share one time window and one cursor, and unproven states (NR connectivity, unconfirmed calls) render as neutral markers, never as filled bars.
