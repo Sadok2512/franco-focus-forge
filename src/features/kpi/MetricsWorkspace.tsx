@@ -8,6 +8,9 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { BarChart3, ChartNoAxesCombined, ChevronDown, Download, Info, MapPin, MoreVertical, Table2, X } from "lucide-react";
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
 const LABELS: Record<View, string> = {
@@ -27,6 +30,7 @@ const LABELS: Record<View, string> = {
     return i18n.t("metrics.8ae525330384");
   },
 };
+const VIEW_ICONS = { table: Table2, graph: ChartNoAxesCombined, histogram: BarChart3, scatter: ChartNoAxesCombined, map: MapPin };
 const fmt = (v: unknown) =>
   v === null || v === undefined
     ? "—"
@@ -69,7 +73,7 @@ function Plot({ option, label }: { option: EChartsOption; label: string }) {
   ) : (
     <div
       ref={host}
-      style={{ height: 420 }}
+      className="kpi-plot h-[235px]"
       role="img"
       aria-label={label}
       data-testid="metrics-v3-plot"
@@ -171,6 +175,7 @@ export function MetricsWorkspace({
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
   const [search, setSearch] = useState("");
+  const [infoOpen, setInfoOpen] = useState(false);
   const captureQuery = useQuery({
     queryKey: ["metric-captures", projectId, filters],
     queryFn: ({ signal }) => getMetricCaptures(projectId, filters, signal),
@@ -232,7 +237,7 @@ export function MetricsWorkspace({
             data: rows.map((r) => r.label),
             axisLabel: { rotate: 25, fontSize: 10 },
           },
-          yAxis: { type: "value", name: "Occurrences" },
+          yAxis: { type: "value", name: translate("metrics.occurrences") },
           series: [{ type: "bar", data: rows.map((r) => r.n) }],
         };
       }
@@ -386,24 +391,35 @@ export function MetricsWorkspace({
     URL.revokeObjectURL(url);
   };
   return (
-    <article className="kpi-graph-card col-span-full" data-testid="metrics-v3-workspace">
+    <article className="kpi-graph-card metrics-analysis-card col-span-full" data-testid="metrics-v3-workspace">
       <header className="kpi-card-header">
-        <div>
-          <h3>{translate("metrics.ba86c69725e4")}</h3>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="kpi-order">{selections.length}</span>
+            <h3 title={translate("metrics.ba86c69725e4")}>{translate("metrics.ba86c69725e4")}</h3>
+          </div>
           <p>
             {data
               ? `${data.decode_level === "deep" ? "Deep" : "Light"} ${data.decoder_version}`
               : translate("metrics.8d75f000495f")}
           </p>
         </div>
-        <button className="kpi-button" onClick={onClear}>
-          {" "}
-          {translate("metrics.5b35e0e35591")}{" "}
-        </button>
+        <div className="flex gap-0.5 shrink-0">
+          <Button variant="ghost" size="icon" className="kpi-icon" disabled={!data} aria-label={translate("metrics.showInfo")} title={translate("metrics.showInfo")} aria-expanded={infoOpen} onClick={() => setInfoOpen((open) => !open)}><Info /></Button>
+          <Button variant="ghost" size="icon" className="kpi-icon" disabled={!data} aria-label={translate("metrics.b84f9613287b")} title={translate("metrics.b84f9613287b")} onClick={exportCsv}><Download /></Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon" className="kpi-icon" aria-label={translate("metrics.actions")} title={translate("metrics.actions")}><MoreVertical /></Button></DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {Object.entries(LABELS).map(([key, label]) => { const Icon = VIEW_ICONS[key as View]; return <DropdownMenuItem key={key} onSelect={() => setView(key as View)}><Icon size={14} />{label}</DropdownMenuItem>; })}
+              <DropdownMenuItem onSelect={onClear}><X size={14} />{translate("metrics.5b35e0e35591")}</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="ghost" size="icon" className="kpi-icon" onClick={onClear} title={translate("metrics.68144408eb29")} aria-label={translate("metrics.68144408eb29")}><X /></Button>
+        </div>
       </header>
-      <div className="flex flex-wrap gap-2 items-center p-3 border-b">
-        <label className="text-xs">
-          Capture{" "}
+      <div className="kpi-card-meta metrics-card-controls">
+        <label className="kpi-select-label min-w-0">
+          {translate("metrics.captureLabel")}
           <select
             aria-label={translate("metrics.bd26d0b73036")}
             className="kpi-select"
@@ -421,24 +437,18 @@ export function MetricsWorkspace({
             ))}
           </select>
         </label>
-        <label className="text-xs">
-          {" "}
-          {translate("metrics.b111a2a2185c")}{" "}
-          <select
-            className="kpi-select"
-            aria-label={translate("metrics.015e85219fb0")}
-            value={view}
-            onChange={(e) => setView(e.target.value as View)}
-          >
-            {Object.entries(LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="kpi-button" aria-label={translate("metrics.015e85219fb0")}>
+              {translate("metrics.af3aaf87ff99")} · {LABELS[view]}<ChevronDown size={13} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            {Object.entries(LABELS).map(([key, label]) => { const Icon = VIEW_ICONS[key as View]; return <DropdownMenuItem key={key} onSelect={() => setView(key as View)}><Icon size={14} />{label}</DropdownMenuItem>; })}
+          </DropdownMenuContent>
+        </DropdownMenu>
         {view === "histogram" && (
-          <label className="text-xs">
+          <label className="kpi-select-label">
             {" "}
             {translate("metrics.560b1e430bba")}{" "}
             <select
@@ -447,7 +457,7 @@ export function MetricsWorkspace({
               value={groupBy}
               onChange={(e) => setGroupBy(e.target.value)}
             >
-              <option value="none">Population</option>
+              <option value="none">{translate("metrics.population")}</option>
               <option value="operator">{translate("metrics.3ec1ead23ec6")}</option>
               <option value="band">{translate("metrics.a78d899fbf01")}</option>
               <option value="operator_band">{translate("metrics.d070df0886e1")}</option>
@@ -455,7 +465,7 @@ export function MetricsWorkspace({
           </label>
         )}
         {view === "scatter" && (
-          <label className="text-xs">
+          <label className="kpi-select-label">
             X{" "}
             <select
               className="kpi-select"
@@ -484,10 +494,6 @@ export function MetricsWorkspace({
             </select>
           </label>
         )}
-        <button className="kpi-button ml-auto" disabled={!data} onClick={exportCsv}>
-          {" "}
-          {translate("metrics.b84f9613287b")}{" "}
-        </button>
       </div>
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
@@ -504,7 +510,7 @@ export function MetricsWorkspace({
         data && (
           <>
             {view === "table" ? (
-              <div className="kpi-data-table">
+              <div className="metrics-observations">
                 <input
                   className="m-2 border rounded px-2 bg-background text-xs"
                   placeholder={translate("metrics.59623fc4cc6e")}
@@ -512,11 +518,11 @@ export function MetricsWorkspace({
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
-                <div className="kpi-table-scroll" style={{ maxHeight: 420 }}>
+                <div className="kpi-table-scroll max-h-[235px]">
                   <table>
                     <thead>
                       <tr>
-                        <th>t capture (s)</th>
+                        <th>{translate("metrics.46c537ebda08")}</th>
                         {data.columns.map((c) => (
                           <th key={c.code} title={c.code}>
                             {c.label}
@@ -576,7 +582,7 @@ export function MetricsWorkspace({
                 ))}
               </div>
             )}
-            <details className="p-3 border-t text-xs">
+            <details open={infoOpen} onToggle={(event) => setInfoOpen(event.currentTarget.open)} className="p-2 border-t text-xs text-muted-foreground">
               <summary>
                 {translate("metrics.23c32c5569dc")} {data.result_id}
               </summary>

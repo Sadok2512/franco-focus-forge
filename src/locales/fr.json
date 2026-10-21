@@ -43,6 +43,11 @@
     "selectionSummary": "{{count}} sélectionné(s) · {{total}} options"
   },
   "metrics": {
+    "captureLabel": "Capture",
+    "actions": "Actions des métriques",
+    "showInfo": "Informations et preuves",
+    "occurrences": "Occurrences",
+    "population": "Population",
     "46c537ebda08": "Temps capture (s)",
     "67767b11ff63": "Panneaux empilés · débits par couche non cumulés · temps commun à la capture",
     "9d97a52428f2": "Axe X = temps de la capture (s) · origine : début de capture",
