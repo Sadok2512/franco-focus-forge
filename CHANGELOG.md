@@ -1,3 +1,16 @@
+## 1.70.0 (minor) — BC4-FRONT 2026-10-21 — DecoderTree : badges REDACTED + réf 3GPP + hiérarchie compacte (Agent BC3)
+
+- `DecoderTree.tsx` enrichi pour accompagner le back NAS sanitized (0.72.1) :
+  - **Badge rouge `🔒 REDACTED`** sur chaque champ identité/crypto masqué (tooltip = raison back).
+  - **Badge jaune `<binary · N bytes · redacted>`** sur les blobs binaires auto-maskés.
+  - **Badge global** `🔒 N/Total masqués` dans la barre d'outils (visible seulement si redacted > 0).
+  - **Référence 3GPP** par IE (allowlist statique `TS_REFS` sur ~45 IE EMM/ESM/5GMM/UMTS/RRC). Ex. `KSI → TS 24.301 §9.9.3.21`, `UENetCap → TS 24.301 §9.9.3.34`. L'IE sans mapping affiche juste son nom.
+  - **Collapse par défaut** des conteneurs intermédiaires (profondeur ≥ 2). UX : 150+ IE d'un ATTACH_REQUEST ne noient plus l'utilisateur.
+  - **Compteur enfants `(N)`** après le nom des conteneurs.
+  - **Indentation + traits en pointillés** par niveau pour la lisibilité hiérarchique.
+- `src/lib/api/signaling.ts` : Zod schema `parameters[]` étend avec `redacted_reason: string | null | optional`.
+- Validé live : TAU_REQUEST #36 TEST2 → 17/155 champs REDACTED, OldGUTI/EPSID, TMSIBasedNRICont, NAS_KSI entièrement masqués ; badge visible ; références 3GPP affichées sur UENetCap, EpsUpdateType, SecHdr, ProtDisc.
+
 ## 1.68.2 (patch) — BC4 2026-10-21 — Preload analytics on app opening (Agent BC2)
 
 - Start KPI and Metrics catalogues, filter dimensions and project metadata in parallel from the authenticated app shell for the active project.

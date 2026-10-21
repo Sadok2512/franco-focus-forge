@@ -107,7 +107,12 @@ export const signalingSchemas = {
     seq: z.number(),
     tree: z.record(z.unknown()),
     parameters: z.array(
-      z.object({ path: z.string(), value: z.unknown(), param_key: z.string().nullable() }),
+      z.object({
+        path: z.string(),
+        value: z.unknown(),
+        param_key: z.string().nullable(),
+        redacted_reason: z.string().nullable().optional(),
+      }),
     ),
     text: z.string(),
     hex: z.string().nullable(),
