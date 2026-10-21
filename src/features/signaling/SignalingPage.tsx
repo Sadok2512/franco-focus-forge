@@ -66,6 +66,7 @@ export function SignalingPage() {
     if (capture) {
       setView({ start: 0, end: capture.duration_s });
       setCursorT(null);
+      setHoverCur(null);
       setSelIdx(null);
       setSelEventId(null);
       setSf((f) => ({ ...f, tech: capture.tech === "LTE" ? "LTE" : "NR" }));
@@ -111,6 +112,34 @@ export function SignalingPage() {
     setSelIdx(m.index);
     setCursorT(m.t);
   };
+
+  // --- Curseur temporel interactif ---
+  const snaps = useMemo(() => (capture ? snapTimes(capture) : []), [capture]);
+  const onHoverTime = (t: number | null, x: number, y: number) => setHoverCur(t == null ? null : { t, x, y });
+  const onCursorDrag = (t: number) => {
+    setCursorT(t);
+    setHoverCur(null);
+  };
+  const onStepCursor = (dir: 1 | -1) => setCursorT((cur) => stepTime(snaps, cur, dir, effView.start));
+  const onClearCursor = () => {
+    setCursorT(null);
+    setSelEventId(null);
+  };
+
+  // Contenu de l'infobulle du curseur : uniquement des valeurs prouvées
+  // (dernière mesure RF à ou avant t, états/tâches dont l'intervalle contient t).
+  const tipInfo = useMemo(() => {
+    if (!capture || !hoverCur) return null;
+    const t = hoverCur.t;
+    return {
+      t,
+      events: eventsAt(capture, t),
+      conns: connectivityAt(capture, t),
+      tasks: tasksAt(capture, t),
+      calls: callsAt(capture, t),
+      rf: rfReadings(capture, t),
+    };
+  }, [capture, hoverCur]);
 
   const effView = view ?? { start: 0, end: capture?.duration_s ?? 1 };
   const chartH = Math.max(80, Math.round((compact ? 110 : 150) * tlScale));
