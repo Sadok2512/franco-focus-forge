@@ -342,7 +342,9 @@ export function RfTimeline({
             },
           } as never);
       }
-      return { type: "group", children };
+      return { type: "group", children } as unknown as ReturnType<
+        NonNullable<CustomSeriesRenderItem>
+      >;
     };
     const xAxes = [0, 1].map((i) => ({
       type: "value" as const,
