@@ -523,6 +523,102 @@
   background: var(--card, #fff);
   font-size: 11px;
 }
+/* 1.76.0 (BC3) — Spec v2 G6 : overlay toggle + overlay card */
+.kpi-tab-overlay {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  background: var(--card, #fff);
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  min-height: 26px;
+}
+.kpi-tab-overlay.is-active {
+  background: #e8f1ff;
+  color: #0759c7;
+  border-color: #1769e0;
+  font-weight: 600;
+}
+.kpi-tab-overlay:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.kpi-tab-overlay + .kpi-tab-layout {
+  margin-left: 6px;
+}
+.kpi-overlay-card {
+  padding: 10px 12px;
+}
+.kpi-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 0 6px;
+  border-bottom: 1px solid #e2e8f0;
+  margin-bottom: 8px;
+}
+.kpi-overlay-header h3 {
+  font-size: 13px;
+  font-weight: 650;
+}
+.kpi-overlay-header small {
+  color: #64748b;
+  font-weight: 500;
+}
+.kpi-overlay-refusal {
+  padding: 10px;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 12px;
+}
+.kpi-overlay-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 8px;
+  font-size: 10px;
+}
+.kpi-overlay-axis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid #dce5ef;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+.kpi-overlay-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+/* 1.76.0 (BC3) — Spec v2 G13 : responsive 1440/1280. En dessous de 1440,
+   la barre d'onglets autorise un wrap, les tabs rétrécissent, le menu
+   add-panel reste accessible. */
+@media (max-width: 1440px) {
+  .kpi-workspace {
+    padding: 10px 12px;
+    gap: 6px;
+  }
+  .kpi-filterbar {
+    padding: 3px 8px;
+    min-height: 32px;
+  }
+  .kpi-tab-name {
+    max-width: 120px;
+  }
+}
+@media (max-width: 1280px) {
+  .kpi-tab-name {
+    max-width: 90px;
+  }
+  .kpi-tab-overlay {
+    margin-left: 4px;
+  }
+}
 .kpi-graph-card {
   min-width: 0;
   overflow: hidden;

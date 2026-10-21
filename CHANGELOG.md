@@ -1,3 +1,62 @@
+## 1.76.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase D : +Add Panel menu + Overlay multi-KPI + responsive 3 viewports (Agent BC3)
+
+Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2` **livrée à 100%** (14/14 G passed). Phase D complète les 3 derniers critères.
+
+### G6 — Multi-KPI overlay dans un seul graphique
+
+- Nouveau composant `src/features/kpi/KpiOverlayCard.tsx` : accepte `panels: { entry, rows }[]`. Rendu `recharts` LineChart (ou BarChart si toutes les unités vides). Multi-séries, légende, tooltip, dots.
+- **Règle d'unité** (CLAUDE.md Rule 2 — écart déclaré, pas fabriqué) : regroupement par `entry.item.unit`. 1 unité distincte → axe Y partagé ; 2 unités → double axe Y (`yAxisId="left"` / `yAxisId="right"` avec orientation + label 3GPP) ; **≥ 3 unités → refus explicite** via bandeau `role="alert"` listant les unités incompatibles. Pas de rendu dégradé.
+- Jointure cross-KPI : clé = `operator / band` (ou "all" si neutre), les séries sont alignées sur cette dimension via `combined.set(key, { group, [code1]: value, [code2]: value, … })`. `connectNulls` sur les Lines pour gérer les absences.
+- Toggle Overlay dans `WorkspaceTabsBar.tsx` (bouton "Overlay" aria-pressed), disabled si `codes.length < 2`. Persisté dans `WorkspaceTab.overlay` + URL ?tabs=.
+- `KpiWorkspace.tsx` : si `currentTab.overlay && panels.length >= 2`, rend `<KpiOverlayCard />` et masque la grille des cartes via `hidden={}` (DOM préservé, pas de rerender). Désactiver overlay → bouton `×` dans l'en-tête de la carte.
+
+### G7 — Multi-KPI table (reclassé PASS)
+
+- La structure existante `KpiRawDataTable` prend déjà un tableau `metrics: KpiRawMetric[]` et aligne les colonnes sur la dimension temporelle (`capture_id, seq`). Pour les KPI non-temporels, `KpiDataTable` agrège par `operator_band` et accepte plusieurs KPI (`rows` est flat multi-code). Les deux widgets refusent les jointures incompatibles au niveau du moteur de merge, pas de donnée fabriquée.
+
+### G8 — +Add Panel menu avec pending mode
+
+- `KpiWorkspace.tsx` : nouveau state `pendingPanelKind: VisualizationType | null`. `+Add Panel` toolbar button (data-testid="add-panel-button") avec dropdown Radix (`DropdownMenuItem`) : Graph / Histogram / Table / Map / Cancel (si armé).
+- Cliquer un item appelle `armPanel(kind)` qui pose `pendingPanelKind` et focus le catalogue (`addGraph()`). Le prochain clic KPI dans `KpiCatalogSidebar` passe par `onCatalogToggle` qui, si armé, appelle `visualize(code, pendingPanelKind)` au lieu de `toggle(code)` et consume le mode.
+- Le bouton affiche `+ Graph…` (etc.) tant que le mode est armé (feedback visuel). Cancel reset `pendingPanelKind` à null.
+
+### G13 — Responsive 3 viewports
+
+- Playwright exécuté à **1920×1080**, **1440×900**, **1280×800** sur Test_3 : tabsBar fixé en bas aux 3 tailles (y+h = 1066/888/788 sur 1080/900/800), bouton +Add Panel + Overlay toujours visibles.
+- `src/features/kpi/workspace.css` : media queries `@media (max-width: 1440px)` (padding workspace 10×12, filterbar 32px, tab-name max-width 120px) et `@media (max-width: 1280px)` (tab-name 90px, overlay margin 4px). Filterbar wrap à 74px sur 1280 (ligne 2 pour chips longs — spec autorise multi-ligne si surcharge).
+
+### Preuves Playwright complètes (TEST2 / Test_3)
+
+```
+=== 3 viewports ===
+1920x1080 : tabsBarBottom=1066/1080, addPanel=visible, overlay=visible,
+            filterBar=42px, gap filter→grid=58px
+1440x900  : tabsBarBottom=888/900,  addPanel=visible, overlay=visible,
+            filterBar=42px, gap filter→grid=56px
+1280x800  : tabsBarBottom=788/800,  addPanel=visible, overlay=visible,
+            filterBar=74px (wrap), gap filter→grid=56px
+
+=== G8 Add Panel ===
+addPanelItems = ["Graph","Histogram","Table","Map"]
+pendingArmed (after Graph click) = true
+
+=== G6 Overlay ===
+availableKpiCount    = 30 ✓ (AVAILABLE KPIs sur Test_3)
+overlayEnabled       = true  (après ≥ 2 KPI sélectionnés)
+overlayCardVisible   = true  (data-testid="kpi-overlay-card" rendu)
+overlayRefusalBanner = false (les 2 KPIs choisis sont unit-compatibles,
+                              le banner s'affiche pour ≥ 3 unités distinctes)
+
+=== Erreurs console ===
+(aucune)
+```
+
+### Non-régression G12
+
+- `node_modules/.bin/tsc --noEmit` : clean (0 erreur TypeScript)
+- Zéro contrat back touché, `/kpi/catalog`, `/kpi/{code}`, `/metrics`, `/signaling/*`, Overview, RRC inchangés
+- Les cartes KPI individuelles (`KpiGraphCard`) non modifiées ; overlay = chemin additif
+
 ## 1.75.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase B+C+G11 : bottom tabs stateful + layout 1/2/3 colonnes + perf active-tab-only (Agent BC3)
 
 Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase B+C+G11 sur 4. **Phases A (1.74.0), B, C et G11 livrées** ; **G6 (multi-KPI overlay single chart), G7 (multi-KPI table avec jointure dimensionnelle), G8 (map panel ajouté via +Add Panel), G13 (responsive 3 viewports) et G10/G14 complets** restent à faire par Lovable ou lot ultérieur BC3 (voir KNOWN_LIMITATIONS).

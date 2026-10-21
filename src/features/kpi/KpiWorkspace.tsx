@@ -11,6 +11,7 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import {
   VISUALIZATIONS,
@@ -40,6 +41,7 @@ import type { MetricView } from "./MetricGraphCard";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
+import { KpiOverlayCard } from "./KpiOverlayCard";
 import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
 import {
   MAX_GRAPHS,
@@ -199,6 +201,8 @@ function Workspace({
     persistTabs(updateTab(tabsState, tabsState.activeTabId, { activeCode: code }));
   const setLayout = (tabId: string, layout: WorkspaceLayout) =>
     persistTabs(updateTab(tabsState, tabId, { layout }));
+  const setOverlay = (tabId: string, overlay: boolean) =>
+    persistTabs(updateTab(tabsState, tabId, { overlay }));
   const queryClient = useQueryClient();
   const storageKey = `bc4.kpi.visualizations.${projectId}`;
   const [configs, setConfigs] = useState<Record<string, ChartConfig>>(() => {
@@ -402,6 +406,22 @@ function Workspace({
     catalogSearch.current?.focus();
     catalogSearch.current?.scrollIntoView({ block: "nearest" });
   };
+  // 1.76.0 (BC3) — Spec v2 G8 : +Add Panel pré-arme un mode (graph /
+  // histogram / table / map / task_series) ; le prochain clic KPI dans le
+  // catalogue l'ajoute avec ce mode via visualize(). Null = toggle par défaut.
+  const [pendingPanelKind, setPendingPanelKind] = useState<VisualizationType | null>(null);
+  const armPanel = (kind: VisualizationType) => {
+    setPendingPanelKind(kind);
+    addGraph();
+  };
+  const onCatalogToggle = (code: string) => {
+    if (pendingPanelKind) {
+      visualize(code, pendingPanelKind);
+      setPendingPanelKind(null);
+      return;
+    }
+    toggle(code);
+  };
   const toggleRow = (id: string) =>
     setSelectedRows((prev) => {
       const next = new Set(prev);
@@ -493,7 +513,7 @@ function Workspace({
                 catalog={catalog}
                 selected={codes}
                 active={effectiveActive}
-                onToggle={toggle}
+                onToggle={onCatalogToggle}
                 onVisualization={visualize}
                 searchRef={catalogSearch}
               />
@@ -543,6 +563,39 @@ function Workspace({
                 className="kpi-workspace-controls"
                 aria-label={translate("kpi.2566f74ceb28")}
               >
+                {/* 1.76.0 (BC3) — Spec v2 G8 : +Add Panel menu Graph/Histogram/
+                    Table/Map. Pré-arme un mode ; prochain clic KPI dans le
+                    catalogue l'ajoute avec ce mode via visualize(). */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      className={`kpi-button ${pendingPanelKind ? "primary" : ""}`}
+                      aria-label="Add panel"
+                      data-testid="add-panel-button"
+                    >
+                      <Plus size={14} /> {pendingPanelKind ? `+ ${VISUALIZATIONS[pendingPanelKind]}…` : "Add panel"}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[180px]">
+                    <DropdownMenuItem onSelect={() => armPanel("graph")} data-testid="add-panel-graph">
+                      Graph
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => armPanel("histogram")} data-testid="add-panel-histogram">
+                      Histogram
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => armPanel("table")} data-testid="add-panel-table">
+                      Table
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => armPanel("map")} data-testid="add-panel-map">
+                      Map
+                    </DropdownMenuItem>
+                    {pendingPanelKind && (
+                      <DropdownMenuItem onSelect={() => setPendingPanelKind(null)}>
+                        Cancel
+                      </DropdownMenuItem>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <button
@@ -625,10 +678,17 @@ function Workspace({
                 {limitMessage}
               </p>
             )}
+            {currentTab.overlay && panels.length >= 2 ? (
+              <KpiOverlayCard
+                panels={panels.map((p) => ({ entry: p.entry, rows: p.rows }))}
+                onDisable={() => setOverlay(tabsState.activeTabId, false)}
+              />
+            ) : null}
             <div
               className="kpi-graph-grid"
               data-count={panels.length}
               data-layout={currentTab.layout}
+              hidden={currentTab.overlay && panels.length >= 2}
             >
               {panels.map(({ entry, query, stat, rows: graphRows }) => (
                 <KpiGraphCard
@@ -773,6 +833,7 @@ function Workspace({
         onRename={(id, name) => persistTabs(updateTab(tabsState, id, { name }))}
         onReorder={(from, to) => persistTabs(reorderTab(tabsState, from, to))}
         onLayoutChange={setLayout}
+        onOverlayToggle={setOverlay}
       />
     </main>
   );

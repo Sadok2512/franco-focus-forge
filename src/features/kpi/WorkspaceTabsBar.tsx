@@ -14,6 +14,7 @@ export function WorkspaceTabsBar({
   onRename,
   onReorder,
   onLayoutChange,
+  onOverlayToggle,
 }: {
   tabs: WorkspaceTab[];
   activeTabId: string;
@@ -23,6 +24,7 @@ export function WorkspaceTabsBar({
   onRename: (tabId: string, name: string) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
   onLayoutChange: (tabId: string, layout: WorkspaceLayout) => void;
+  onOverlayToggle: (tabId: string, overlay: boolean) => void;
 }) {
   const [editing, setEditing] = useState<string | null>(null);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
@@ -115,21 +117,40 @@ export function WorkspaceTabsBar({
         })}
       </ol>
       {activeTab && (
-        <label className="kpi-tab-layout" data-testid="workspace-layout-select">
-          <span className="text-[10px] text-muted-foreground">Layout</span>
-          <select
-            value={activeTab.layout}
-            onChange={(e) =>
-              onLayoutChange(activeTab.id, e.target.value as WorkspaceLayout)
+        <>
+          <button
+            type="button"
+            className={`kpi-tab-overlay ${activeTab.overlay ? "is-active" : ""}`}
+            onClick={() => onOverlayToggle(activeTab.id, !activeTab.overlay)}
+            disabled={activeTab.codes.length < 2}
+            title={
+              activeTab.codes.length < 2
+                ? "Overlay nécessite ≥ 2 KPI sélectionnés"
+                : activeTab.overlay
+                  ? "Désactiver overlay"
+                  : "Combiner les KPI dans un graphique"
             }
-            aria-label="Panel layout"
+            data-testid="workspace-overlay-toggle"
+            aria-pressed={activeTab.overlay}
           >
-            <option value="auto">Auto</option>
-            <option value="1">1 column</option>
-            <option value="2">2 columns</option>
-            <option value="3">3 columns</option>
-          </select>
-        </label>
+            Overlay
+          </button>
+          <label className="kpi-tab-layout" data-testid="workspace-layout-select">
+            <span className="text-[10px] text-muted-foreground">Layout</span>
+            <select
+              value={activeTab.layout}
+              onChange={(e) =>
+                onLayoutChange(activeTab.id, e.target.value as WorkspaceLayout)
+              }
+              aria-label="Panel layout"
+            >
+              <option value="auto">Auto</option>
+              <option value="1">1 column</option>
+              <option value="2">2 columns</option>
+              <option value="3">3 columns</option>
+            </select>
+          </label>
+        </>
       )}
     </nav>
   );

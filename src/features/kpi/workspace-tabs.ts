@@ -9,6 +9,9 @@ export type WorkspaceTab = {
   codes: string[];
   activeCode: string | null;
   layout: WorkspaceLayout;
+  // 1.76.0 (BC3) — Spec v2 G6 : overlay = tous les codes du tab rendus dans
+  // UN seul graphique avec check d'unités (max 2 distinctes).
+  overlay: boolean;
 };
 export type WorkspaceTabsState = {
   tabs: WorkspaceTab[];
@@ -25,6 +28,7 @@ export function defaultTab(codes: string[] = [], name = DEFAULT_NAME): Workspace
     codes,
     activeCode: codes[0] ?? null,
     layout: "auto",
+    overlay: false,
   };
 }
 
@@ -46,6 +50,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
       c: t.codes,
       a: t.activeCode,
       l: t.layout,
+      o: t.overlay ? 1 : 0,
     })),
     a: state.activeTabId,
   };
@@ -77,7 +82,15 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
         r["l"] === "1" || r["l"] === "2" || r["l"] === "3" || r["l"] === "auto"
           ? (r["l"] as WorkspaceLayout)
           : "auto";
-      tabs.push({ id: r["i"] as string, name: r["n"] as string, codes, activeCode, layout });
+      const overlay = r["o"] === 1 || r["o"] === true;
+      tabs.push({
+        id: r["i"] as string,
+        name: r["n"] as string,
+        codes,
+        activeCode,
+        layout,
+        overlay,
+      });
     }
     if (!tabs.length) return null;
     const activeTabId = tabs.find((t) => t.id === obj.a)?.id ?? tabs[0]!.id;
