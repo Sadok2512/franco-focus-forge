@@ -75,6 +75,7 @@ export function Timeline({
   cursorT,
   onSelectTime,
   onHover,
+  scaleY = 1,
 }: {
   capture: SigCapture;
   view: View;
@@ -83,6 +84,7 @@ export function Timeline({
   cursorT: number | null;
   onSelectTime: (t: number, messageIndex: number | null) => void;
   onHover: (h: HoverState | null) => void;
+  scaleY?: number;
 }) {
   const span = Math.max(view.end - view.start, 1e-6);
   const scale = (t: number) => LABEL_W + ((t - view.start) / span) * LANE_W;
@@ -99,13 +101,13 @@ export function Timeline({
   const reset = () => onView({ start: 0, end: capture.duration_s });
 
   const rows: { key: string; h: number }[] = [
-    { key: "conn", h: compact ? 24 : 34 },
-    { key: "events", h: compact ? 44 : 72 },
-    { key: "dl", h: compact ? 22 : 32 },
-    { key: "ul", h: compact ? 22 : 32 },
-    ...(capture.calls.some((c) => c.kind === "VoLTE") ? [{ key: "volte", h: compact ? 22 : 32 }] : []),
-    ...(capture.calls.some((c) => c.kind === "VoNR") ? [{ key: "vonr", h: compact ? 22 : 32 }] : []),
-    ...(capture.mobility.length ? [{ key: "mob", h: compact ? 30 : 52 }] : []),
+    { key: "conn", h: Math.round((compact ? 24 : 34) * scaleY) },
+    { key: "events", h: Math.round((compact ? 44 : 72) * scaleY) },
+    { key: "dl", h: Math.round((compact ? 22 : 32) * scaleY) },
+    { key: "ul", h: Math.round((compact ? 22 : 32) * scaleY) },
+    ...(capture.calls.some((c) => c.kind === "VoLTE") ? [{ key: "volte", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
+    ...(capture.calls.some((c) => c.kind === "VoNR") ? [{ key: "vonr", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
+    ...(capture.mobility.length ? [{ key: "mob", h: Math.round((compact ? 30 : 52) * scaleY) }] : []),
   ];
   const axisH = 26;
   const sep = 4;
