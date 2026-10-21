@@ -1,3 +1,9 @@
+## 1.70.0 (minor) — BC4 2026-10-21 — RF and signaling timeline (Agent BC2)
+
+- RF timeline is the default Signaling View: synchronized event/connectivity/task tracks and distinct LTE RSRP, RSRQ and SINR panels, with measured points, shared zoom, brush, fullscreen and evidence navigation. Compact protocol histogram remains available.
+- Independent capture-scoped queries preserve message selection, pagination, map and chart instances. Unsupported NR/VoNR states and physical-unit conversions are explicitly declared.
+- Theme palette and EN/FR translations; no fabricated intervals or interpolated radio samples.
+
 ## 1.68.2 (patch) — BC4 2026-10-21 — Preload analytics on app opening (Agent BC2)
 
 - Start KPI and Metrics catalogues, filter dimensions and project metadata in parallel from the authenticated app shell for the active project.

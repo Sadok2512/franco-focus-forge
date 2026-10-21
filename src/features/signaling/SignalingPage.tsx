@@ -1,3 +1,6 @@
+import { rfProtocolColors } from "@/theme/rf-timeline";
+import { useTranslation } from "react-i18next";
+import { RfTimeline } from "./RfTimeline";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
@@ -33,7 +36,7 @@ import { DecoderTree } from "./DecoderTree";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
-const colors = ["#2563eb", "#7c3aed", "#ea580c", "#0891b2", "#16a34a"];
+const colors = layers.map((layer) => rfProtocolColors[layer]!);
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
 
 // 1.55.0 (V3 LOT 2) — Column catalog. Only fields supported by the back
@@ -821,6 +824,8 @@ export function SignalingPage({
   initialCapture?: string | undefined;
   initialSeq?: number | undefined;
 }) {
+  const { t } = useTranslation();
+  const [compact, setCompact] = useState(false);
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const media = window.matchMedia("(max-width: 900px)");
@@ -944,7 +949,7 @@ export function SignalingPage({
   });
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
-    enabled: !!capture,
+    enabled: !!capture && compact,
     queryFn: ({ signal }) => getSignaling(projectId, "timeline", base, signal),
   });
   // 1.52.0 — dedicated /signaling/procedures feed for the Procédure filter.
@@ -1262,7 +1267,7 @@ export function SignalingPage({
               <Panel
                 id="overview"
                 panelRef={overviewPanelRef}
-                defaultSize="40%"
+                defaultSize="58%"
                 minSize={timelineVisible || mapVisible ? 190 : 0}
                 collapsible
                 collapsedSize={0}
@@ -1272,15 +1277,53 @@ export function SignalingPage({
                   <Panel
                     id="timeline"
                     panelRef={timelinePanelRef}
-                    defaultSize={40}
+                    defaultSize={60}
                     minSize={timelineVisible ? 20 : 0}
                     collapsible
                     collapsedSize={0}
                     data-testid="signaling-timeline-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      <h2 className="text-sm font-semibold">Timeline</h2>
-                      {timeline.data ? (
+                      <div className="flex items-center justify-between gap-2">
+                        <h2 className="text-sm font-semibold">{t("rfTimeline.title")}</h2>
+                        <button
+                          className="kpi-button text-xs"
+                          onClick={() => setCompact((v) => !v)}
+                        >
+                          {compact ? t("rfTimeline.rf") : t("rfTimeline.compact")}
+                        </button>
+                      </div>
+                      {!compact && capture ? (
+                        <RfTimeline
+                          key={capture}
+                          projectId={projectId}
+                          captureId={capture}
+                          selectedTime={selected?.t_rel_s ?? null}
+                          technology={technology}
+                          direction={direction}
+                          search={search}
+                          allowedProtocols={protocols}
+                          onRange={(r) => {
+                            setRange(r);
+                            resetPage();
+                          }}
+                          onSelect={(e, sourceSeq) => {
+                            const target = sourceSeq ?? e.seq;
+                            chooseSeq(target);
+                            if (target === e.seq)
+                              setSelectedRecord({
+                                capture_id: capture,
+                                seq: target,
+                                t_rel_s: e.t_rel_s,
+                                message_name:
+                                  typeof e.attrs["source_message"] === "string"
+                                    ? e.attrs["source_message"]
+                                    : e.label,
+                                protocol: e.attrs.protocol ?? "",
+                              });
+                          }}
+                        />
+                      ) : timeline.data ? (
                         <Timeline
                           data={timeline.data}
                           selectedTime={selected?.t_rel_s ?? null}
@@ -1306,7 +1349,7 @@ export function SignalingPage({
                     minSize={mapVisible ? 25 : 0}
                     collapsible
                     collapsedSize={0}
-                    defaultSize={60}
+                    defaultSize={40}
                     data-testid="signaling-map-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">

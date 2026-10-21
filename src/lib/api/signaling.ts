@@ -65,6 +65,39 @@ export const signalingSchemas = {
     total: z.number(),
     types: z.record(z.number()),
   }),
+  events: z.object({
+    ...envelope,
+    total: z.number(),
+    missing_time: z.number(),
+    rule_version: z.string().nullable(),
+    unavailable: z.record(z.string()),
+    events: z.array(
+      z.object({
+        id: z.string(),
+        seq: z.number(),
+        seq_end: z.number().nullable(),
+        t_rel_s: z.number().nullable(),
+        t_rel_end_s: z.number().nullable(),
+        kind: z.string(),
+        label: z.string(),
+        duration_ms: z.number().nullable(),
+        linked_seqs: z.array(z.number()),
+        attrs: z
+          .object({
+            track: z.string(),
+            technology: z.string(),
+            status: z.string(),
+            source: z.string(),
+            source_seqs: z.array(z.number()),
+            evidence_status: z.string(),
+            rule_id: z.string(),
+            rule_version: z.string(),
+            protocol: z.string().nullable(),
+          })
+          .passthrough(),
+      }),
+    ),
+  }),
   timeline: z.object({
     ...envelope,
     buckets: z.array(z.object({ t_rel_s: z.number(), counts: z.record(z.number()) })),
@@ -134,3 +167,6 @@ export function getSignaling<K extends keyof typeof signalingSchemas>(
     z.infer<(typeof signalingSchemas)[K]>
   >;
 }
+
+export type RfEvents = z.infer<typeof signalingSchemas.events>;
+export type RfEvent = RfEvents["events"][number];
