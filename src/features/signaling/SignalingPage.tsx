@@ -233,8 +233,22 @@ export function SignalingPage() {
             <section className="panel relative shrink-0" aria-label="Timeline RF et signalisation">
               {capture ? (
                 <>
-                  <Timeline capture={capture} view={effView} onView={setView} compact={compact} cursorT={cursorT} onSelectTime={onSelectTime} onHover={setHover} scaleY={tlScale} />
-                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} height={chartH} />
+                  <Timeline
+                    capture={capture}
+                    view={effView}
+                    onView={setView}
+                    compact={compact}
+                    cursorT={cursorT}
+                    onSelectTime={onSelectTime}
+                    onHover={setHover}
+                    scaleY={tlScale}
+                    hoverT={hoverCur?.t ?? null}
+                    onHoverTime={onHoverTime}
+                    onCursorDrag={onCursorDrag}
+                    onStepCursor={onStepCursor}
+                    onClearCursor={onClearCursor}
+                  />
+                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} previewT={hoverCur?.t ?? null} height={chartH} />
                 </>
               ) : (
                 <div className="flex h-40 items-center justify-center text-xs text-muted-foreground">
