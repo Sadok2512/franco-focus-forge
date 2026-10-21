@@ -1,3 +1,7 @@
+## 1.71.2 (patch) — BC4-FRONT 2026-10-21 — Preserve Metrics v6 catalogue envelope (Agent BC1)
+
+- Preserve both `metrics` and `nodes` from `/projects/{id}/metrics`; the v6 sidebar now receives the complete hierarchy after concurrent API adapter changes.
+
 ## 1.71.1 (patch) — BC4-FRONT 2026-10-21 — Metrics selection render safety (Agent BC1)
 
 - Keep Metrics selection and URL synchronization outside React state updater callbacks, removing the runtime render-phase update warning exposed by the real TEST2 Playwright flow.
