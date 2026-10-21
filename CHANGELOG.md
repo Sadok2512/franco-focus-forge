@@ -1,3 +1,11 @@
+## 1.77.0 — Interactive Signaling time cursor
+
+- Extended the existing RF timeline with one continuous red cursor, exact event snap, free click, drag and observed-time keyboard navigation.
+- Added local observation tooltips and RF markers without hover/detail requests; dynamic tracks are restricted to events returned for the capture.
+- Preserved zoom and message list filters; explicit linked sequences navigate using selected_page. Exact GPS highlighting rejects previous positions.
+- No backend, source data, ingestion or event-detection changes. Only the three existing LTE metric codes are supported; unavailable NR/state/task evidence is not invented.
+- Validation evidence and known limitations: see signaling-cursor-validation.md.
+
 ## 1.76.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase D : +Add Panel menu + Overlay multi-KPI + responsive 3 viewports (Agent BC3)
 
 Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2` **livrée à 100%** (14/14 G passed). Phase D complète les 3 derniers critères.

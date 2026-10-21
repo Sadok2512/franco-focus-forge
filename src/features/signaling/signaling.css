@@ -11,3 +11,14 @@
 @media(max-width: 900px) { .signaling-workspace { height: 1800px; } }
 .signaling-separator[aria-orientation=vertical] { width: 9px; }
 .signaling-separator[aria-orientation=horizontal] { height: 9px; }
+
+.signaling-cursor-overlay { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 3; }
+.signaling-cursor-line { stroke: var(--signaling-cursor); stroke-width: 2px; }
+.signaling-cursor-preview { stroke: var(--signaling-cursor); stroke-width: 1px; opacity: .5; }
+.signaling-cursor-handle { position: absolute; top: 4px; height: 22px; z-index: 5; background: var(--signaling-cursor); color: var(--signaling-cursor-foreground); cursor: ew-resize; font-size: 10px; touch-action: none; }
+.signaling-cursor-handle:hover { background: var(--signaling-cursor); }
+.signaling-cursor-tooltip { position: absolute; top: 44px; z-index: 4; max-height: 290px; overflow: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 15%, transparent); font-size: 11px; }
+.signaling-rf-marker { fill: var(--card); stroke: currentColor; stroke-width: 2px; }
+.signaling-metric-0 { color: var(--primary); }
+.signaling-metric-1 { color: var(--sev-good); }
+.signaling-metric-2 { color: var(--op-orange); }
