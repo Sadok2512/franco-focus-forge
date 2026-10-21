@@ -154,7 +154,7 @@ export function MetricsCatalogSidebar({
     return (
       <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
         <div
-          className={`${kindClass}${starClass} ${isSelected ? "is-selected" : ""} ${disabled ? "is-disabled" : ""}`}
+          className={`${kindClass}${starClass} ${isSelected ? "is-selected" : ""} ${disabled ? "is-disabled opacity-45" : ""}`}
           title={node.reason ?? node.source ?? node.label}
         >
           {children.length > 0 ? (
