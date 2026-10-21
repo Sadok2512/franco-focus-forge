@@ -13,9 +13,7 @@ import {
 } from "./metrics-schemas";
 export type { ChronogramData, ChronogramEvents } from "./metrics-schemas";
 export const getMetrics = (p: string, signal?: AbortSignal) =>
-  kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricCatalogResponseSchema, signal).then(
-    (catalogue) => catalogue.metrics,
-  );
+  kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricCatalogResponseSchema, signal);
 /** 0.64.0 (F1) — agrégats d'une métrique NMF par groupe. */
 export const getMetricAggregate = (
   p: string,
