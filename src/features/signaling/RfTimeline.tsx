@@ -253,11 +253,7 @@ export function RfTimeline({
       const width = Math.max(3, end[0]! - start[0]!);
       const opacity =
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
-      const children: NonNullable<
-        ReturnType<NonNullable<CustomSeriesRenderItem>> extends { children?: infer K }
-          ? K
-          : never
-      > = [];
+      const children: Record<string, unknown>[] = [];
       if (isBand) {
         // UE state band: filled rounded rect with the state label inside.
         children.push({
