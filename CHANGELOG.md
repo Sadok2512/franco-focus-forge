@@ -1,3 +1,11 @@
+## 1.54.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 1 : sidebar repliable (Agent BC3)
+
+- `SignalingPage.tsx` : panneau « Filtres » devient **repliable** (`collapsible`, `collapsedSize=44px`) sur le `react-resizable-panels` déjà en place depuis 1.53.0. Nouveau bouton chevron dans l'en-tête de la sidebar (`Masquer les filtres` / `Afficher les filtres`) et rail compact 44 px avec icône `SlidersHorizontal` quand replié.
+- État local `sidebarCollapsed` **isolé** de la sélection message (P0 1.50.1) : jamais inclus dans un `queryKey`, jamais déclencheur de refetch. Les filtres de recherche (`technology`, `direction`, `protocols`, `procedure`, `search`, `size`) sont préservés à travers un cycle collapse → expand.
+- La largeur initiale (`defaultSize` / `maxSize`) et la mécanique de resize horizontal shippées en 1.53.0 ne changent pas. Minimum size baissé à 0 pendant le collapse pour autoriser le rail.
+- Validé Playwright (G1) sur TEST2 capture `41c13c9b4ce0` : collapse → rail présent, sidebar cachée, **0 requête d'ingestion déclenchée** ; expand → sidebar restaurée, filtre technology conservé, zéro erreur JS. Captures : `signaling-sidebar-collapsed.png` / `signaling-sidebar-expanded.png`.
+- Non-régression P0 (G12) : la mécanique de sélection message v1.50.1 reste inchangée (aucune touche sur les clés React Query, le `selectedRecord`, les refs ou les composants Timeline/Map/MessagesList).
+
 ## 1.53.0 (minor) — BC4 2026-10-20 — Signaling View : inspection redimensionnable (Agent BC2)
 
 - Panneaux filtres, timeline/carte et liste/décodeur redimensionnables, navigation clavier et disposition mobile ; scroll indépendant sans remonter les composants à la sélection.

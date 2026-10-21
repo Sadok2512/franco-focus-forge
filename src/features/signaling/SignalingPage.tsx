@@ -9,6 +9,8 @@ import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
+import type { PanelImperativeHandle } from "react-resizable-panels";
+import { ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { DecoderTree } from "./DecoderTree";
 import "./signaling.css";
 
@@ -303,6 +305,17 @@ export function SignalingPage({
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
   }, []);
+  // 1.54.0 (V3 LOT 1) — sidebar filtres repliable. État distinct de la
+  // sélection message (P0 1.50.1) : jamais inclus dans les clés React
+  // Query, jamais utilisé comme déclencheur de refetch.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const filtersPanelRef = useRef<PanelImperativeHandle>(null);
+  const toggleSidebar = () => {
+    const next = !sidebarCollapsed;
+    setSidebarCollapsed(next);
+    if (next) filtersPanelRef.current?.collapse();
+    else filtersPanelRef.current?.expand();
+  };
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -465,148 +478,186 @@ export function SignalingPage({
         <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-workspace">
           <Panel
             id="filters"
+            panelRef={filtersPanelRef}
             defaultSize={narrow ? "17%" : "16%"}
-            minSize={narrow ? 220 : 185}
+            minSize={sidebarCollapsed ? 0 : narrow ? 220 : 185}
             maxSize={narrow ? "30%" : "26%"}
+            collapsible
+            collapsedSize={44}
           >
-            <aside className="signaling-pane overflow-auto space-y-4 rounded-lg border bg-card p-3 text-sm">
-              <label className="block">
-                Technologie
-                <select
-                  aria-label="Technologie signalisation"
-                  className="mt-1 w-full rounded border bg-background p-2"
-                  value={technology}
-                  onChange={(e) => {
-                    setTechnology(e.target.value);
-                    resetPage();
-                  }}
+            {sidebarCollapsed ? (
+              <aside
+                className="signaling-pane flex h-full w-full flex-col items-center gap-2 rounded-lg border bg-card py-3"
+                data-testid="signaling-sidebar-rail"
+              >
+                <button
+                  type="button"
+                  className="kpi-icon"
+                  title="Afficher les filtres"
+                  aria-label="Afficher les filtres"
+                  aria-expanded="false"
+                  onClick={toggleSidebar}
                 >
-                  <option value="">LTE + NR / états non attribués</option>
-                  <option>LTE</option>
-                  <option>NR</option>
-                </select>
-              </label>
-              <fieldset className="space-y-2">
-                <legend className="mb-2 font-semibold">Couches</legend>
-                {layers.map((p, i) => (
-                  <label key={p} className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={protocols.includes(p)}
-                      onChange={(e) => {
-                        setProtocols((old) =>
-                          e.target.checked ? [...old, p] : old.filter((x) => x !== p),
-                        );
-                        resetPage();
-                      }}
-                    />
-                    <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
-                    {p}
-                    <span className="ml-auto font-mono text-xs">
-                      {shown(listing.data?.protocol_counts[p])}
-                    </span>
-                  </label>
-                ))}
-              </fieldset>
-              <label className="block">
-                Direction
-                <select
-                  aria-label="Direction"
-                  className="mt-1 w-full rounded border bg-background p-2"
-                  value={direction}
-                  onChange={(e) => {
-                    setDirection(e.target.value);
-                    resetPage();
-                  }}
-                >
-                  <option value="">Toutes</option>
-                  <option>UL</option>
-                  <option>DL</option>
-                  <option value="unknown">Non documentée</option>
-                </select>
-              </label>
-              <label className="block">
-                Capture
-                <select
-                  aria-label="Capture signalisation"
-                  className="mt-1 w-full rounded border bg-background p-2"
-                  value={capture ?? ""}
-                  onChange={(e) => chooseCapture(e.target.value)}
-                >
-                  {caps.data?.captures.map((c) => (
-                    <option key={c.capture_id} value={c.capture_id}>
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block">
-                Procédure
-                <select
-                  aria-label="Procédure"
-                  className="mt-1 w-full rounded border bg-background p-2"
-                  value={procedure}
-                  onChange={(e) => {
-                    setProcedure(e.target.value);
-                    resetPage();
-                  }}
-                >
-                  <option value="">
-                    Toutes{procedures.data ? ` (${procedures.data.total})` : ""}
-                  </option>
-                  {procedures.data &&
-                    Object.keys(procedures.data.types)
-                      .sort()
-                      .map((type) => (
-                        <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
-                          {procedures
-                            .data!.procedures.filter((p) => p.type === type)
-                            .map((p) => (
-                              <option key={p.id} value={p.id}>
-                                seq {p.seq_start}
-                                {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
-                                {p.outcome}
-                              </option>
-                            ))}
-                        </optgroup>
-                      ))}
-                </select>
-              </label>
-              <label className="block">
-                Recherche
-                <input
-                  aria-label="Rechercher un message"
-                  placeholder="Nom du message"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    resetPage();
-                  }}
-                  className="mt-1 w-full rounded border bg-background p-2"
-                />
-              </label>
-              <label className="block">
-                Taille de page
-                <select
-                  aria-label="Taille de page"
-                  value={size}
-                  onChange={(e) => {
-                    setSize(Number(e.target.value));
-                    resetPage();
-                  }}
-                  className="ml-2 rounded border bg-background p-1"
-                >
-                  {[50, 100, 250, 500].map((n) => (
-                    <option key={n}>{n}</option>
-                  ))}
-                </select>
-              </label>
-              {range && (
-                <button className="kpi-button" onClick={() => setRange(undefined)}>
-                  Effacer la brosse
+                  <ChevronRight size={16} />
                 </button>
-              )}
-            </aside>
+                <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
+              </aside>
+            ) : (
+              <aside
+                className="signaling-pane overflow-auto space-y-4 rounded-lg border bg-card p-3 text-sm"
+                data-testid="signaling-sidebar"
+              >
+                <div className="flex items-center justify-between">
+                  <h2 className="text-sm font-semibold">Filtres</h2>
+                  <button
+                    type="button"
+                    className="kpi-icon"
+                    title="Masquer les filtres"
+                    aria-label="Masquer les filtres"
+                    aria-expanded="true"
+                    onClick={toggleSidebar}
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                </div>
+                <label className="block">
+                  Technologie
+                  <select
+                    aria-label="Technologie signalisation"
+                    className="mt-1 w-full rounded border bg-background p-2"
+                    value={technology}
+                    onChange={(e) => {
+                      setTechnology(e.target.value);
+                      resetPage();
+                    }}
+                  >
+                    <option value="">LTE + NR / états non attribués</option>
+                    <option>LTE</option>
+                    <option>NR</option>
+                  </select>
+                </label>
+                <fieldset className="space-y-2">
+                  <legend className="mb-2 font-semibold">Couches</legend>
+                  {layers.map((p, i) => (
+                    <label key={p} className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={protocols.includes(p)}
+                        onChange={(e) => {
+                          setProtocols((old) =>
+                            e.target.checked ? [...old, p] : old.filter((x) => x !== p),
+                          );
+                          resetPage();
+                        }}
+                      />
+                      <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
+                      {p}
+                      <span className="ml-auto font-mono text-xs">
+                        {shown(listing.data?.protocol_counts[p])}
+                      </span>
+                    </label>
+                  ))}
+                </fieldset>
+                <label className="block">
+                  Direction
+                  <select
+                    aria-label="Direction"
+                    className="mt-1 w-full rounded border bg-background p-2"
+                    value={direction}
+                    onChange={(e) => {
+                      setDirection(e.target.value);
+                      resetPage();
+                    }}
+                  >
+                    <option value="">Toutes</option>
+                    <option>UL</option>
+                    <option>DL</option>
+                    <option value="unknown">Non documentée</option>
+                  </select>
+                </label>
+                <label className="block">
+                  Capture
+                  <select
+                    aria-label="Capture signalisation"
+                    className="mt-1 w-full rounded border bg-background p-2"
+                    value={capture ?? ""}
+                    onChange={(e) => chooseCapture(e.target.value)}
+                  >
+                    {caps.data?.captures.map((c) => (
+                      <option key={c.capture_id} value={c.capture_id}>
+                        {c.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block">
+                  Procédure
+                  <select
+                    aria-label="Procédure"
+                    className="mt-1 w-full rounded border bg-background p-2"
+                    value={procedure}
+                    onChange={(e) => {
+                      setProcedure(e.target.value);
+                      resetPage();
+                    }}
+                  >
+                    <option value="">
+                      Toutes{procedures.data ? ` (${procedures.data.total})` : ""}
+                    </option>
+                    {procedures.data &&
+                      Object.keys(procedures.data.types)
+                        .sort()
+                        .map((type) => (
+                          <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
+                            {procedures
+                              .data!.procedures.filter((p) => p.type === type)
+                              .map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  seq {p.seq_start}
+                                  {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
+                                  {p.outcome}
+                                </option>
+                              ))}
+                          </optgroup>
+                        ))}
+                  </select>
+                </label>
+                <label className="block">
+                  Recherche
+                  <input
+                    aria-label="Rechercher un message"
+                    placeholder="Nom du message"
+                    value={search}
+                    onChange={(e) => {
+                      setSearch(e.target.value);
+                      resetPage();
+                    }}
+                    className="mt-1 w-full rounded border bg-background p-2"
+                  />
+                </label>
+                <label className="block">
+                  Taille de page
+                  <select
+                    aria-label="Taille de page"
+                    value={size}
+                    onChange={(e) => {
+                      setSize(Number(e.target.value));
+                      resetPage();
+                    }}
+                    className="ml-2 rounded border bg-background p-1"
+                  >
+                    {[50, 100, 250, 500].map((n) => (
+                      <option key={n}>{n}</option>
+                    ))}
+                  </select>
+                </label>
+                {range && (
+                  <button className="kpi-button" onClick={() => setRange(undefined)}>
+                    Effacer la brosse
+                  </button>
+                )}
+              </aside>
+            )}
           </Panel>
           <Separator className="signaling-separator" aria-label="Largeur des filtres" />
           <Panel id="workspace" minSize="55%">
