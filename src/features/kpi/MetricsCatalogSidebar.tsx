@@ -61,7 +61,7 @@ export function MetricsCatalogSidebar({
           .includes(search.toLowerCase())
       )
         continue;
-      const tech = m.tech === "BOTH" ? translate("metrics.8096e435d7f1") : m.tech;
+      const tech = m.tech;
       if (!groups.has(tech)) groups.set(tech, new Map());
       const cats = groups.get(tech)!;
       const category = m.category ?? "session";
@@ -74,7 +74,7 @@ export function MetricsCatalogSidebar({
         tech,
         cats: [...cats].sort(([a], [b]) => ORDER.indexOf(a) - ORDER.indexOf(b)),
       }));
-  }, [translate, query.data, search]);
+  }, [query.data, search]);
   const check = (key: string, label: string, disabled = false, reason?: string | null) => (
     <label
       className={`kpi-tree-leaf ${disabled ? "opacity-45" : ""}`}
@@ -187,7 +187,8 @@ export function MetricsCatalogSidebar({
               aria-expanded={!!search || open.has(t.tech)}
               onClick={() => toggle(t.tech)}
             >
-              {open.has(t.tech) ? <ChevronDown size={14} /> : <ChevronRight size={14} />} {t.tech}
+              {open.has(t.tech) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}{" "}
+              {t.tech === "BOTH" ? translate("metrics.commonTech") : t.tech}
             </button>
             <ul>
               {(!!search || open.has(t.tech)) &&

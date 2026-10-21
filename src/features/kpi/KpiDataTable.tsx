@@ -41,7 +41,13 @@ const COLUMNS: Column[] = [
     optional: true,
   },
   { key: "dor", label: "DOR", optional: true },
-  { key: "cell", label: "Cellule", optional: true },
+  {
+    key: "cell",
+    get label() {
+      return i18n.t("kpi.cell");
+    },
+    optional: true,
+  },
   { key: "service", label: "Service", optional: true },
   {
     key: "env",

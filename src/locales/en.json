@@ -135,7 +135,8 @@
     "8df97de2b567": "known outcomes ·",
     "5ed4837057bd": "attempts",
     "23c32c5569dc": "Information ·",
-    "11d1fa9f3de9": "Decoder"
+    "11d1fa9f3de9": "Decoder",
+    "commonTech": "Shared LTE / NR"
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",
@@ -366,6 +367,9 @@
     "9c991aca7844": "Select a project to get started",
     "b70f018be8dd": "This page ({{v0}}) requires an active project. Open one from the project list.",
     "599118f4b530": "View my projects",
-    "apiSampling": " · API sampling"
+    "apiSampling": " · API sampling",
+    "cell": "Cell",
+    "nmfFile": "NMF file",
+    "timestamp": "Timestamp"
   }
 }

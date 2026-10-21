@@ -135,7 +135,8 @@
     "8df97de2b567": "issues connues ·",
     "5ed4837057bd": "tentatives",
     "23c32c5569dc": "Infos ·",
-    "11d1fa9f3de9": "Décodeur"
+    "11d1fa9f3de9": "Décodeur",
+    "commonTech": "Commun LTE / NR"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
@@ -366,6 +367,9 @@
     "9c991aca7844": "Sélectionne un projet pour commencer",
     "b70f018be8dd": "Cette page ({{v0}}) nécessite un projet actif. Ouvre-en un depuis la liste.",
     "599118f4b530": "Voir mes projets",
-    "apiSampling": " · échantillonnage API"
+    "apiSampling": " · échantillonnage API",
+    "cell": "Cellule",
+    "nmfFile": "Fichier NMF",
+    "timestamp": "Horodatage"
   }
 }

@@ -172,10 +172,10 @@ export function KpiRawDataTable({
   const columns = useMemo<Column[]>(() => {
     const base: Column[] = [
       { key: "time_s", label: "Time (s)", numeric: true },
-      { key: "timestamp", label: "Horodatage", optional: true },
+      { key: "timestamp", label: translate("kpi.timestamp"), optional: true },
       { key: "longitude", label: "Longitude", numeric: true, optional: true },
       { key: "latitude", label: "Latitude", numeric: true, optional: true },
-      { key: "nmf_file", label: "Fichier NMF", optional: true },
+      { key: "nmf_file", label: translate("kpi.nmfFile"), optional: true },
     ];
     const metricCols: Column[] = metrics.map((m) => ({
       key: m.code,
@@ -183,7 +183,7 @@ export function KpiRawDataTable({
       numeric: true,
     }));
     return [...base, ...metricCols];
-  }, [metrics]);
+  }, [metrics, translate]);
 
   const visibleColumns = columns.filter((c) => !hidden.has(c.key));
 

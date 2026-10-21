@@ -10,7 +10,7 @@ const files = readdirSync("src/features/kpi")
     "src/features/dict-v2/FilterSelect.tsx",
   ]);
 const french =
-  /[àâéèêëîïôùûüçœ]|\b(Réinitialiser|Paramètres|Aucun|Aucune|Valeur|Tous|Toutes|Regrouper|Appliquer|Ligne|Tableau|Histogramme|Chronogramme|Grouper|Fermer|indisponible)\b/;
+  /[àâéèêëîïôùûüçœ]|\b(Cellule|Horodatage|Fichier|Réinitialiser|Paramètres|Aucun|Aucune|Valeur|Tous|Toutes|Regrouper|Appliquer|Ligne|Tableau|Histogramme|Chronogramme|Grouper|Fermer|indisponible)\b/;
 const failures = [];
 for (const file of files) {
   const source = ts.createSourceFile(
