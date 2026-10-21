@@ -567,6 +567,7 @@ export function Timeline({
             aria-valuenow={Math.round(cursorT * 1000)}
             aria-valuetext={fmtSec(cursorT)}
             className="cursor-ew-resize outline-none"
+            onClick={(e) => e.stopPropagation()}
             onPointerDown={startDrag}
             onFocus={() => setFocusRing(true)}
             onBlur={() => setFocusRing(false)}
@@ -596,7 +597,7 @@ export function Timeline({
                     {fmtSec(cursorT)}
                   </text>
                   {/* Zone de préhension élargie pour le glisser */}
-                  <rect x={cx - 5} y={axisH - 7} width={10} height={totalH - axisH + 7} fill="transparent" />
+                  <rect x={cx - 8} y={0} width={16} height={axisH} fill="transparent" />
                 </>
               );
             })()}
