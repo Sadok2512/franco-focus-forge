@@ -1,3 +1,11 @@
+## 1.58.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 5 : toggle Carte global (Agent BC3)
+
+- Nouveau bouton **« Carte · ON/OFF »** dans l'en-tête de Signaling View (top-right, à côté du sous-titre). Icône `MapPin` quand actif, `MapPinOff` quand masqué.
+- Au clic OFF : le `<Panel id="map">` et son `<Separator>` sont intégralement démontés — spec §4 « Masquer complètement le panneau. Libérer toute sa hauteur. Remonter immédiatement le tableau et l'inspecteur. Ne pas laisser d'espace vide. » Le `react-resizable-panels` Group redistribue automatiquement l'espace au Timeline qui prend 100 % de la largeur du haut.
+- Spec §4 « La carte ne doit jamais couvrir la sidebar » : respecté (la carte vit déjà dans le workspace Panel à droite du sidebar `filters` via react-resizable-panels).
+- État `mapVisible` **session-local** `useState(true)`, **jamais inclus dans un queryKey** → `points.data` reste en cache, aucun refetch au toggle (synchronisation GPS conservée). P0 1.50.1 intact.
+- Click message : le trajet GPS et la position prouvée restent synchronisés quand la carte est ON (comportement 1.53.0 BC2 inchangé) ; quand OFF, les points restent calculés en mémoire pour affichage immédiat au ré-ON.
+
 ## 1.57.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 4 : Call Flow réel (Agent BC3)
 
 - Nouvel onglet **Call Flow** activé (`disabled` retiré). Pas de nouvel endpoint back — réutilise `GET /signaling?procedure=<id>` (filtre côté serveur sur `procedure_ids`, appartenance **strictement prouvée** — audité).

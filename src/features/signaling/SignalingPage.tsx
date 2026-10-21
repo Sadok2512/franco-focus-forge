@@ -16,6 +16,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Columns3,
+  MapPin,
+  MapPinOff,
   SlidersHorizontal,
 } from "lucide-react";
 import {
@@ -799,6 +801,9 @@ export function SignalingPage({
   // préservé entre deux sélections conformément à spec §7.
   type InspectorTab = "Payload" | "Hexadécimal" | "Paramètres" | "Call Flow" | "Détails";
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("Payload");
+  // 1.58.0 (V3 LOT 5) — Toggle Carte ON/OFF, session-local useState.
+  // Jamais inclus dans un queryKey (ne déclenche aucun refetch des points).
+  const [mapVisible, setMapVisible] = useState(true);
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -946,9 +951,22 @@ export function SignalingPage({
     <main className="p-3" data-testid="signaling-page">
       <header className="mb-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Signaling View</h1>
-        <span className="text-xs text-muted-foreground">
-          Capture unique · ordre seq · sources Nemo et RRC
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="kpi-button"
+            onClick={() => setMapVisible((v) => !v)}
+            aria-pressed={mapVisible}
+            data-testid="signaling-map-toggle"
+            title={mapVisible ? "Masquer la carte" : "Afficher la carte"}
+          >
+            {mapVisible ? <MapPin size={14} /> : <MapPinOff size={14} />}
+            Carte · {mapVisible ? "ON" : "OFF"}
+          </button>
+          <span className="text-xs text-muted-foreground">
+            Capture unique · ordre seq · sources Nemo et RRC
+          </span>
+        </div>
       </header>
       {(error || exportError) && (
         <p role="alert" className="mb-3 rounded border border-destructive p-3 text-sm">
@@ -1164,20 +1182,24 @@ export function SignalingPage({
                       )}
                     </section>
                   </Panel>
-                  <Separator
-                    className="signaling-separator"
-                    aria-label="Largeur timeline et carte"
-                  />
-                  <Panel id="map" minSize="25%">
-                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
-                      {points.data ? (
-                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
-                      ) : (
-                        <p role="status">Chargement des positions…</p>
-                      )}
-                    </section>
-                  </Panel>
+                  {mapVisible && (
+                    <>
+                      <Separator
+                        className="signaling-separator"
+                        aria-label="Largeur timeline et carte"
+                      />
+                      <Panel id="map" minSize="25%" data-testid="signaling-map-panel">
+                        <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
+                          <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
+                          {points.data ? (
+                            <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
+                          ) : (
+                            <p role="status">Chargement des positions…</p>
+                          )}
+                        </section>
+                      </Panel>
+                    </>
+                  )}
                 </Group>
               </Panel>
               <Separator
