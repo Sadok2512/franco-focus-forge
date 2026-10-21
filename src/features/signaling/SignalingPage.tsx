@@ -13,7 +13,8 @@ import { MessagesTable } from "./MessagesTable";
 import { RadioChart } from "./RadioChart";
 import { Sidebar, DEFAULT_SIDEBAR, type SidebarFilters } from "./Sidebar";
 import { SignalingMap } from "./SignalingMap";
-import { Timeline, type HoverState, type View } from "./Timeline";
+import { CONN_LABEL, Timeline, type HoverState, type View } from "./Timeline";
+import { callsAt, connectivityAt, eventsAt, rfReadings, snapTimes, stepTime, tasksAt } from "./cursor";
 import { fmtNum, fmtSec } from "./shared";
 
 export function SignalingPage() {
@@ -37,6 +38,8 @@ export function SignalingPage() {
   const [inspW, setInspW] = useState(340);
   const [view, setView] = useState<View | null>(null);
   const [cursorT, setCursorT] = useState<number | null>(null);
+  // Curseur de prévisualisation (survol) : temps + position écran pour l'infobulle.
+  const [hoverCur, setHoverCur] = useState<{ t: number; x: number; y: number } | null>(null);
   const [selIdx, setSelIdx] = useState<number | null>(null);
   const [selEventId, setSelEventId] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverState | null>(null);
