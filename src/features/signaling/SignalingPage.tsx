@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { GripHorizontal, Maximize2, Minimize2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import {
   getSignalingCapture,
@@ -19,6 +19,17 @@ import { fmtNum, fmtSec } from "./shared";
 export function SignalingPage() {
   const [captureId, setCaptureId] = useState<string | null>(null);
   const [compact, setCompact] = useState(false);
+  // Hauteur de la timeline (échelle), mémorisée entre les sessions.
+  const TL_SCALE_KEY = "bc4-signaling-tlscale";
+  const [tlScale, setTlScale] = useState(() => {
+    if (typeof window === "undefined") return 1;
+    const n = Number(window.localStorage.getItem(TL_SCALE_KEY));
+    if (Number.isFinite(n) && n >= 0.55 && n <= 2) return n;
+    return window.innerHeight < 820 ? 0.72 : 1;
+  });
+  useEffect(() => {
+    window.localStorage.setItem(TL_SCALE_KEY, String(tlScale));
+  }, [tlScale]);
   const [mapOn, setMapOn] = useState(true);
   const [pageFull, setPageFull] = useState(false);
   const [sideOpen, setSideOpen] = useState(true);

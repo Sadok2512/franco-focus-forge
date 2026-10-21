@@ -373,7 +373,7 @@ export function Timeline({
           </div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${VIEW_W} ${totalH}`} preserveAspectRatio="none" className="block w-full text-foreground" style={{ height: compact ? 280 : 430 }} role="img" aria-label="Timeline des événements, connectivité et mesures radio">
+      <svg viewBox={`0 0 ${VIEW_W} ${totalH}`} preserveAspectRatio="none" className="block w-full text-foreground" style={{ height: Math.round((compact ? 280 : 430) * scaleY) }} role="img" aria-label="Timeline des événements, connectivité et mesures radio">
         {/* Axe X unique en haut + grille verticale partagée par toutes les pistes */}
         {ticks.map((t) => {
           const x = scale(t);
