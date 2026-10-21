@@ -1,10 +1,23 @@
-## 1.64.1 (patch) — BC4-FRONT 2026-10-21 — English KPI and Metrics views (Agent BC1)
+## 1.66.1 (patch) — BC4-FRONT 2026-10-21 — English KPI and Metrics views (Agent BC1)
 
 - Complete the front-owned KPI/Metrics wording migration: catalogues, tabs, filters, chart settings, data tables, chronogram, scatter plots, map controls, exports and evidence panels use matching English/French resources.
 - Language switching updates labels and Intl number formatting while preserving selected metrics, capture, applied filters and pending edits. API query keys, formulas and source values are unchanged.
 - Translate the shared filter control without altering operator attribution or the distinction between all operators and an explicit empty selection.
 - Add scoped G19a and interpolation-aware G19b guards plus EN/FR state-preservation regressions. Existing French accessibility tests explicitly use French.
 - Backend-provided catalogue names, categories, reasons and payload wording remain unchanged pending the API language lot; no client-side substitution of backend text.
+
+## 1.66.0 (patch) — BC4-FRONT 2026-10-21 — Signaling : fix overlay carte vide (ellipse géante) + remount sur changement capture (Agent BC3)
+
+- **Fix 1 — overlay badge** : le `<div role=status>` « Aucun GPS précédent prouvé » héritait du selector CSS parent `[&>div]:h-full` (destiné à `KpiMapOSM`), ce qui lui donnait une **hauteur de 328 px**. Avec `rounded-full` ça produisait une ellipse grise de **301×328 px** masquant une bonne partie des tuiles OSM. Passage en `<span inline-block>` → le selector `[&>div]` ne cible plus l'overlay, badge rendu à sa taille naturelle (~20px).
+- **Fix 2 — remount KpiMapOSM** : `key={mapKey}` passé à `KpiMapOSM` pour forcer un remount à chaque changement de capture. Sans ça, le composant gardait le centre/zoom de la capture précédente (son `useEffect` d'init a `[]` en deps). Résultat : passage d'une capture avec GPS à une sans GPS laissait la map zoomée sur l'ancien site.
+- **Fix 3 — centre fallback** : passage de centroid France `[2.4, 46.6]` (zoom 5, visuellement une mer vide avec un peu de côte) à Paris `[2.35, 48.85]` (zoom 10, visuellement reconnaissable avec rues et quartiers).
+- Validé sur TEST2 captures : `723547b196b3` (46 markers → zoom Petite-Forêt) et `289784700e72`/`d2a0064faa9a` (0 markers → OSM Paris lisible + petit badge).
+
+## 1.65.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : afficher la carte même sans GPS prouvé (Agent BC3)
+
+- `SignalMap` : quand une capture n'a aucun point GPS prouvé (`data.markers.length === 0`), on affiche désormais la carte OSM centrée sur la France (`[2.4, 46.6]`, zoom 5) avec un **badge overlay discret** « Aucun GPS précédent prouvé dans cette capture » au lieu d'un bloc texte vide. Spec §4 « Si la position n'est pas disponible, afficher une indication discrète sans inventer de point » : respecté. Aucun marker fabriqué, aucun centre inventé par capture.
+- Résultat vérifié sur TEST2 captures : `723547b196b3` (46 markers → carte zoomée sur route Petite-Forêt), `289784700e72` et `d2a0064faa9a` (0 markers → OSM France centrée + badge).
+- La branche `indoor` (plan FLOORPLAN) reste séparée et conserve son message sans tuiles OSM (spec §4).
 
 ## 1.64.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : carte prédominante par défaut (Agent BC3)
 
