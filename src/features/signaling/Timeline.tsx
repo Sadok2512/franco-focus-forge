@@ -1,5 +1,5 @@
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 import type { SigCapture, SigEvent, SigMobilityEvent, SigTask } from "@/lib/api/signaling-schemas";
 import { clusterEvents, fmtSec, fmtTick, ticksFor } from "./shared";
 
@@ -15,7 +15,8 @@ export const SEV_COLOR: Record<string, string> = {
   event: "#9333EA",
 };
 const CONN_COLOR: Record<string, string> = { LTE: "#1769E0", "EN-DC": "#9333EA", "NR-SA": "#16A34A" };
-const CONN_LABEL: Record<string, string> = { LTE: "LTE CONNECTED", "EN-DC": "NSA (EN-DC)", "NR-SA": "NR SA" };
+export const CONN_LABEL: Record<string, string> = { LTE: "LTE CONNECTED", "EN-DC": "NSA (EN-DC)", "NR-SA": "NR SA" };
+const CURSOR_COLOR = "#EF4444";
 const MOB_COLOR: Record<string, string> = { ho: "#1769E0", success: "#16A34A", failure: "#DC2626", drop: "#DC2626" };
 const TASK_COLOR: Record<string, string> = { DL: "#1769E0", UL: "#16A34A" };
 const CALL_COLOR: Record<string, string> = { VoLTE: "#F97316", VoNR: "#9333EA" };
