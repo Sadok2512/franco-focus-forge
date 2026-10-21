@@ -227,6 +227,226 @@ function DetailsPanel({
   );
 }
 
+// 1.57.0 (V3 LOT 4) — Call Flow réel. Appartenance prouvée via
+// row.procedure_ids + /signaling?procedure=<id>. Aucune proximité
+// temporelle utilisée. Spec §11.5 : « Afficher les messages de sa
+// procédure lorsque l'appartenance est prouvée. Sinon, afficher une
+// fenêtre chronologique bornée autour du message, clairement identifiée
+// comme telle. » Ici j'affiche l'appartenance stricte ; la fenêtre
+// chronologique reste accessible via la liste principale et sera
+// ajoutée explicitement si demandé (pas d'invention).
+function CallFlowPanel({
+  projectId,
+  captureId,
+  selected,
+  procedures,
+  onSelect,
+  seq,
+}: {
+  projectId: string;
+  captureId: string | undefined;
+  selected:
+    | {
+        procedure_ids?: string[];
+        technology?: string | null;
+      }
+    | undefined;
+  procedures: {
+    id: string;
+    type: string;
+    technology: string | null;
+    duration_ms: number | null;
+    outcome: string;
+    cause: string | null;
+    seq_start: number;
+    seq_end: number | null;
+  }[];
+  onSelect: (seq: number) => void;
+  seq: number;
+}) {
+  const procedureId = selected?.procedure_ids?.[0] ?? null;
+  const procedure = procedures.find((p) => p.id === procedureId) ?? null;
+  const technology = selected?.technology ?? procedure?.technology ?? null;
+  const peerLabel = technology === "NR" ? "gNB" : technology === "LTE" ? "eNB" : "Réseau";
+
+  const callFlow = useQuery({
+    queryKey: ["signaling-callflow", projectId, captureId, procedureId],
+    enabled: !!captureId && !!procedureId,
+    queryFn: ({ signal }) =>
+      getSignaling(
+        projectId,
+        "rows",
+        { capture_id: captureId, procedure: procedureId!, size: 500 },
+        signal,
+      ),
+  });
+
+  if (!procedureId) {
+    return (
+      <div className="rounded bg-muted p-3 text-xs" data-testid="callflow-no-procedure">
+        <strong>Pas de procédure prouvée pour ce message.</strong>
+        <p className="mt-1 text-muted-foreground">
+          Spec §11.5 : seule l'appartenance prouvée via `procedure_ids` est acceptée. Pour explorer
+          la chronologie autour du message, utiliser la liste principale (brosse timeline, filtres).
+        </p>
+      </div>
+    );
+  }
+  if (callFlow.isPending) return <p role="status">Chargement du Call Flow…</p>;
+  if (callFlow.isError)
+    return (
+      <p role="alert">
+        Call Flow indisponible. <button onClick={() => void callFlow.refetch()}>Réessayer</button>
+      </p>
+    );
+  const rows = (callFlow.data?.rows ?? []).slice().sort((a, b) => a.seq - b.seq);
+  if (!rows.length)
+    return (
+      <p role="status" className="rounded bg-muted p-3 text-xs">
+        Aucun message prouvé pour cette procédure.
+      </p>
+    );
+
+  const outcomeBadge = (outcome: string) => {
+    const map: Record<string, { label: string; className: string }> = {
+      ok: { label: "Normal", className: "bg-emerald-100 text-emerald-800" },
+      fail: { label: "Échec", className: "bg-red-100 text-red-800" },
+      incomplete: { label: "Incomplet", className: "bg-amber-100 text-amber-800" },
+    };
+    const b = map[outcome] ?? { label: outcome, className: "bg-muted" };
+    return (
+      <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${b.className}`}>
+        {b.label}
+      </span>
+    );
+  };
+
+  return (
+    <div className="space-y-2 text-xs" data-testid="callflow-panel">
+      <header className="flex flex-wrap items-center gap-2 border-b pb-2">
+        <span className="font-semibold">{procedure?.type ?? "Procédure"}</span>
+        <span className="text-muted-foreground">
+          UE ↔ {peerLabel} · seq {procedure?.seq_start}
+          {procedure?.seq_end ? ` → ${procedure.seq_end}` : ""}
+        </span>
+        {procedure && outcomeBadge(procedure.outcome)}
+        {procedure?.duration_ms != null && (
+          <span className="text-muted-foreground">durée {procedure.duration_ms.toFixed(1)} ms</span>
+        )}
+        {procedure?.cause && (
+          <span className="text-red-600" title={procedure.cause}>
+            cause: {procedure.cause}
+          </span>
+        )}
+      </header>
+      <div className="grid gap-y-1 py-1" style={{ gridTemplateColumns: "60px 1fr 60px" }}>
+        <div className="pb-1 text-center font-semibold text-muted-foreground">UE</div>
+        <div></div>
+        <div className="pb-1 text-center font-semibold text-muted-foreground">{peerLabel}</div>
+        {rows.map((r, i) => {
+          const prev = i > 0 ? rows[i - 1] : null;
+          const dt =
+            prev && prev.t_rel_s != null && r.t_rel_s != null
+              ? (r.t_rel_s - prev.t_rel_s) * 1000
+              : null;
+          const isSelected = r.seq === seq;
+          return (
+            <CallFlowArrow
+              key={r.seq}
+              row={r}
+              peerLabel={peerLabel}
+              dtMs={dt}
+              selected={isSelected}
+              onSelect={onSelect}
+            />
+          );
+        })}
+      </div>
+      <footer className="border-t pt-2 text-[10px] text-muted-foreground">
+        Appartenance prouvée via `procedure_ids` servi par /signaling. Les délais Δt sont calculés
+        depuis `t_rel_s` back ; aucun délai inventé.
+      </footer>
+    </div>
+  );
+}
+
+function CallFlowArrow({
+  row,
+  peerLabel,
+  dtMs,
+  selected,
+  onSelect,
+}: {
+  row: {
+    seq: number;
+    t_rel_s: number | null;
+    direction: string | null;
+    layer?: string | undefined;
+    protocol?: string | undefined;
+    message_name: string;
+    size_bytes: number | null;
+  };
+  peerLabel: string;
+  dtMs: number | null;
+  selected: boolean;
+  onSelect: (seq: number) => void;
+}) {
+  const dir = row.direction;
+  const isUL = dir === "UL";
+  const isDL = dir === "DL";
+  const color = isUL
+    ? "text-emerald-600 dark:text-emerald-400"
+    : isDL
+      ? "text-blue-600 dark:text-blue-400"
+      : "text-muted-foreground";
+  // Arrow direction: UL = UE → peer (right), DL = peer → UE (left).
+  const arrow = isUL ? "→" : isDL ? "←" : "—";
+  const metaLine = (
+    <>
+      <span className={`font-mono text-[10px] ${color}`}>
+        {dir ?? "—"} #{row.seq}
+      </span>
+      {row.size_bytes != null && (
+        <span className="ml-1 text-[10px] text-muted-foreground">· {row.size_bytes} B</span>
+      )}
+      {row.protocol && (
+        <span className="ml-1 text-[10px] text-muted-foreground">· {row.protocol}</span>
+      )}
+    </>
+  );
+  return (
+    <>
+      <div
+        className={`col-span-3 cursor-pointer rounded p-1 ${selected ? "bg-primary/15" : "hover:bg-accent"}`}
+        onClick={() => onSelect(row.seq)}
+        data-testid={`callflow-arrow-${row.seq}`}
+      >
+        <div className="grid items-center" style={{ gridTemplateColumns: "60px 1fr 60px" }}>
+          <div className="text-center text-[10px]">{isUL ? "●" : ""}</div>
+          <div className="text-center">
+            <div className={`${color} font-mono text-sm`}>{arrow}</div>
+            <div className="truncate font-semibold">{row.message_name}</div>
+          </div>
+          <div className="text-center text-[10px]">{isDL ? "●" : ""}</div>
+        </div>
+        <div className="mt-0.5 text-center">
+          {metaLine}
+          {row.t_rel_s != null && (
+            <span className="ml-1 text-[10px] text-muted-foreground">
+              · t={row.t_rel_s.toFixed(3)}s
+            </span>
+          )}
+          {dtMs != null && (
+            <span className="ml-1 text-[10px] text-muted-foreground">
+              · Δt={dtMs.toFixed(1)} ms
+            </span>
+          )}
+        </div>
+      </div>
+    </>
+  );
+}
+
 type RowLike = {
   message_name: string;
   procedure_ids: string[];
@@ -1180,27 +1400,22 @@ export function SignalingPage({
                                 "Call Flow",
                                 "Détails",
                               ] as InspectorTab[]
-                            ).map((name) => {
-                              const disabled = name === "Call Flow";
-                              return (
-                                <button
-                                  role="tab"
-                                  aria-selected={inspectorTab === name}
-                                  key={name}
-                                  disabled={disabled}
-                                  title={disabled ? "Call Flow — disponible au LOT 4" : undefined}
-                                  className={`rounded px-2 py-1 ${
-                                    inspectorTab === name
-                                      ? "bg-primary text-primary-foreground"
-                                      : "bg-muted"
-                                  } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-                                  onClick={() => setInspectorTab(name)}
-                                  data-testid={`inspector-tab-${name.toLowerCase().replace(/[^a-z]/g, "")}`}
-                                >
-                                  {name}
-                                </button>
-                              );
-                            })}
+                            ).map((name) => (
+                              <button
+                                role="tab"
+                                aria-selected={inspectorTab === name}
+                                key={name}
+                                className={`rounded px-2 py-1 ${
+                                  inspectorTab === name
+                                    ? "bg-primary text-primary-foreground"
+                                    : "bg-muted"
+                                }`}
+                                onClick={() => setInspectorTab(name)}
+                                data-testid={`inspector-tab-${name.toLowerCase().replace(/[^a-z]/g, "")}`}
+                              >
+                                {name}
+                              </button>
+                            ))}
                           </div>
                           {details.isError ? (
                             <p role="alert" className="mt-2">
@@ -1287,14 +1502,14 @@ export function SignalingPage({
                                     </p>
                                   )
                                 ) : inspectorTab === "Call Flow" ? (
-                                  <p
-                                    role="status"
-                                    className="rounded bg-muted p-3"
-                                    data-testid="inspector-callflow-placeholder"
-                                  >
-                                    Call Flow — disponible au LOT 4 (/signaling/procedures +
-                                    /signaling?procedure=&lt;id&gt; déjà audités).
-                                  </p>
+                                  <CallFlowPanel
+                                    projectId={projectId}
+                                    captureId={capture}
+                                    selected={selected}
+                                    procedures={listing.data?.procedures ?? []}
+                                    onSelect={chooseSeq}
+                                    seq={seq}
+                                  />
                                 ) : (
                                   <DetailsPanel
                                     selected={selected}

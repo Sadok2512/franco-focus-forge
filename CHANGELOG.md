@@ -1,3 +1,17 @@
+## 1.57.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 4 : Call Flow réel (Agent BC3)
+
+- Nouvel onglet **Call Flow** activé (`disabled` retiré). Pas de nouvel endpoint back — réutilise `GET /signaling?procedure=<id>` (filtre côté serveur sur `procedure_ids`, appartenance **strictement prouvée** — audité).
+- Composant `CallFlowPanel` : affiche la procédure dont le message sélectionné fait partie (via `row.procedure_ids[0]`). Header : type + `UE ↔ eNB/gNB` (`eNB` si LTE, `gNB` si NR), seq_start → seq_end, badge outcome (Normal / Échec / Incomplet) + durée + cause si présente.
+- Flèches dédiées : `UE → peer` (UL, vert) `peer → UE` (DL, bleu) `—` (direction null). Click flèche → `chooseSeq()` → la ligne liste correspondante est sélectionnée **sans reset pagination/scroll** (P0 1.50.1).
+- Δt affiché entre deux messages consécutifs **uniquement si** `t_rel_s` est présent sur les deux (spec §11.7 : « Ne pas calculer de délai à partir de `seq`. Ne pas afficher de délai si les temps ne sont pas fiables »).
+- Si message sélectionné **sans** procedure_ids : état explicite « Pas de procédure prouvée pour ce message » (spec §11.5). La fenêtre chronologique bornée optionnelle reste accessible via la liste principale.
+- Validé Playwright (G9 Call Flow LTE + G11 sélection synchronisée) sur TEST2 cap `723547b196b3` seq 18 (RRCConnectionRequest) :
+  - 3 flèches : `RRCConnectionRequest UL #18` → `RRCConnectionSetup DL #25` → `RRCConnectionSetupComplete UL #27`
+  - Header : `rrc_setup · UE ↔ eNB · seq 18 → 27 · Normal · durée 0.0 ms`
+  - Click flèche #25 → sélection sync, onglet « Call Flow » préservé
+  - 0 erreur JS
+- G10 (NR) non rejoué (pas de capture NR avec procédure NR prouvée disponible dans TEST2 — déclaré NOT RUN avec raison).
+
 ## 1.56.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 3 : Inspector Payload First (Agent BC3)
 
 - `SignalingPage.tsx` : refonte complète du panneau Inspecteur selon spec §7-10, 12. Onglets dans l'ordre **obligatoire** : `Payload | Hexadécimal | Paramètres | Call Flow | Détails`. **Payload actif par défaut** à l'ouverture.
