@@ -40,7 +40,7 @@ it("switches chart controls and dynamic labels without losing an unapplied axis 
     await setLanguage("en");
   });
   expect(screen.getByLabelText("X axis")).toHaveValue("band");
-  fireEvent.click(screen.getByRole("button", { name: "Apply", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Apply" }));
   expect(onApply).toHaveBeenCalledOnce();
   expect(onApply).toHaveBeenCalledWith(
     expect.objectContaining({ kpiCode: "TEST_KPI", groupBy: "band" }),
