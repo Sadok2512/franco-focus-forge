@@ -12,7 +12,7 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import type { SigMessage, SigPayload } from "@/lib/api/signaling-schemas";
 import { fmtNum } from "./shared";
 import { PayloadTree } from "./Inspector";
@@ -90,6 +90,52 @@ export function MessagesTable({
   const pages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, pages);
   const slice = filtered.slice((safePage - 1) * pageSize, safePage * pageSize);
+
+  // Le nom du message suit toujours la couche : un seul ordre pour l'en-tête et les lignes.
+  const orderedCols = COLS.filter((c) => visible.has(c.key));
+  const nameAfter = (() => {
+    const l = orderedCols.findIndex((c) => c.key === "layer");
+    if (l >= 0) return l + 1;
+    return orderedCols.findIndex((c) => c.key === "dir") + 1;
+  })();
+
+  const renderCell = (key: ColKey, m: SigMessage) => {
+    switch (key) {
+      case "dir":
+        return (
+          <td className="px-2 py-1.5">
+            <span className={`flex items-center gap-1 font-medium ${m.dir === "UL" ? "text-[#15803D]" : "text-primary"}`}>
+              {m.dir === "UL" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+              {m.dir}
+            </span>
+          </td>
+        );
+      case "layer":
+        return (
+          <td className="px-2 py-1.5">
+            <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${LAYER_CLS[m.layer] ?? "bg-muted text-muted-foreground"}`}>{m.layer}</span>
+          </td>
+        );
+      case "procedure":
+        return <td className="truncate px-2 py-1.5">{m.procedure}</td>;
+      case "ecgi":
+        return (
+          <td className="num truncate px-2 py-1.5 font-mono">
+            {m.ecgi ?? "N/D"} / {m.pci ?? "N/D"}
+          </td>
+        );
+      case "earfcn":
+        return <td className="num px-2 py-1.5 font-mono">{m.earfcn ?? "N/D"}</td>;
+      case "rsrp":
+        return <td className={`num px-2 py-1.5 font-mono ${m.rsrp != null && m.rsrp < -100 ? "text-destructive" : ""}`}>{m.rsrp ?? "N/D"}</td>;
+      case "rsrq":
+        return <td className={`num px-2 py-1.5 font-mono ${m.rsrq != null && m.rsrq < -14 ? "text-destructive" : ""}`}>{m.rsrq ?? "N/D"}</td>;
+      case "sinr":
+        return <td className={`num px-2 py-1.5 font-mono ${m.sinr != null && m.sinr < 0 ? "text-destructive" : ""}`}>{m.sinr ?? "N/D"}</td>;
+      case "octets":
+        return <td className="num px-2 py-1.5 font-mono">{m.octets}</td>;
+    }
+  };
 
   // Clic timeline → la sélection reste visible : on bascule sur sa page.
   useEffect(() => {
@@ -249,7 +295,7 @@ export function MessagesTable({
         </div>
       )}
       <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full table-fixed text-[11px]">
+        <table className="w-full min-w-[1120px] table-fixed text-[11px]">
           <thead className="sticky top-0 z-10 bg-card">
             <tr className="border-b text-left text-muted-foreground">
               <th className="w-8 px-1 py-1.5" />
@@ -259,18 +305,21 @@ export function MessagesTable({
               <th className="w-20 cursor-pointer px-2 py-1.5" onClick={() => toggleSort("t")}>
                 <span className="flex items-center gap-1">Temps (s) {sortIcon("t")}</span>
               </th>
-              {COLS.filter((c) => visible.has(c.key)).map((c) =>
-                c.key === "dir" ? (
-                  <th key={c.key} className={`${c.w} px-2 py-1.5`}>{c.label}</th>
-                ) : c.key === "layer" ? (
-                  <th key={c.key} className={`${c.w} px-2 py-1.5`}>{c.label}</th>
-                ) : (
-                  <th key={c.key} className={`${c.w} px-2 py-1.5`}>{c.label}</th>
-                ),
+              {nameAfter === 0 && (
+                <th className="w-56 cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
+                  <span className="flex items-center gap-1">Message {sortIcon("name")}</span>
+                </th>
               )}
-              <th className="cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
-                <span className="flex items-center gap-1">Message {sortIcon("name")}</span>
-              </th>
+              {orderedCols.map((c, i) => (
+                <Fragment key={c.key}>
+                  <th className={`${c.w} px-2 py-1.5`}>{c.label}</th>
+                  {i + 1 === nameAfter && (
+                    <th className="w-56 cursor-pointer px-2 py-1.5" onClick={() => toggleSort("name")}>
+                      <span className="flex items-center gap-1">Message {sortIcon("name")}</span>
+                    </th>
+                  )}
+                </Fragment>
+              ))}
             </tr>
           </thead>
           <tbody>
@@ -302,31 +351,13 @@ export function MessagesTable({
                   </td>
                   <td className="num px-2 py-1.5 font-mono">{m.index}</td>
                   <td className="num px-2 py-1.5 font-mono">{m.t.toLocaleString("fr-FR", { minimumFractionDigits: 3, maximumFractionDigits: 3 })}</td>
-                  {visible.has("dir") && (
-                    <td className="px-2 py-1.5">
-                      <span className={`flex items-center gap-1 font-medium ${m.dir === "UL" ? "text-[#15803D]" : "text-primary"}`}>
-                        {m.dir === "UL" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-                        {m.dir}
-                      </span>
-                    </td>
-                  )}
-                  {visible.has("layer") && (
-                    <td className="px-2 py-1.5">
-                      <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${LAYER_CLS[m.layer] ?? "bg-muted text-muted-foreground"}`}>{m.layer}</span>
-                    </td>
-                  )}
-                  {visible.has("procedure") && <td className="truncate px-2 py-1.5">{m.procedure}</td>}
-                  {visible.has("ecgi") && (
-                    <td className="num truncate px-2 py-1.5 font-mono">
-                      {m.ecgi ?? "N/D"} / {m.pci ?? "N/D"}
-                    </td>
-                  )}
-                  {visible.has("earfcn") && <td className="num px-2 py-1.5 font-mono">{m.earfcn ?? "N/D"}</td>}
-                  {visible.has("rsrp") && <td className={`num px-2 py-1.5 font-mono ${m.rsrp != null && m.rsrp < -100 ? "text-destructive" : ""}`}>{m.rsrp ?? "N/D"}</td>}
-                  {visible.has("rsrq") && <td className={`num px-2 py-1.5 font-mono ${m.rsrq != null && m.rsrq < -14 ? "text-destructive" : ""}`}>{m.rsrq ?? "N/D"}</td>}
-                  {visible.has("sinr") && <td className={`num px-2 py-1.5 font-mono ${m.sinr != null && m.sinr < 0 ? "text-destructive" : ""}`}>{m.sinr ?? "N/D"}</td>}
-                  {visible.has("octets") && <td className="num px-2 py-1.5 font-mono">{m.octets}</td>}
-                  <td className="truncate px-2 py-1.5 font-medium">{m.name}</td>
+                  {nameAfter === 0 && <td className="truncate px-2 py-1.5 font-medium">{m.name}</td>}
+                  {orderedCols.map((c, i) => (
+                    <Fragment key={c.key}>
+                      {renderCell(c.key, m)}
+                      {i + 1 === nameAfter && <td className="truncate px-2 py-1.5 font-medium">{m.name}</td>}
+                    </Fragment>
+                  ))}
                 </tr>,
                 ...(isOpen
                   ? [

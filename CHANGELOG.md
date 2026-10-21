@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.1 (patch) — bc4-front 2026-10-21 — Signaling View : « Message » après « Couche »
+
+- Le nom du message s'affiche immédiatement après la colonne « Couche » dans le tableau des messages ; l'export CSV suit le même ordre.
+- La colonne « Message » reçoit une largeur propre : elle ne s'écrase plus sur « Procédure » et les noms de messages restent lisibles.
+- En-tête et lignes partagés en un seul ordre de colonnes : masquer « Couche » replace « Message » après « Sens » sans décaler les autres cellules.
+
 ## 1.10.0 (minor) — bc4-front 2026-10-21 — Signaling View : timeline RF & signalisation premium
 
 - Nouvelle page `/signaling` (mission BC4_SIGNALING_TIMELINE_LOVABLE_V1) : timeline à axe temporel unique partagé (connectivité LTE/NSA/SA, événements réseau nommés, tâches DL/UL Data, appels VoLTE/VoNR, mobilité, bloc mesures radio RSRP/RSRQ/SINR intégré).
