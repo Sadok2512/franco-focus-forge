@@ -1,0 +1,17 @@
+# PHASE F — Image dédiée Signaling v2 preview, pin 75061cc + adapter BC4.
+# NE REMPLACE PAS bc4-front-rf:1.71.2 : nouvelle image tag bc4-front-v2:1.77.1.
+# Même runtime que la stable (oven/bun:1 + bun run dev), seul le contenu src
+# diffère (branche feat/signaling-github-exact-ui).
+FROM oven/bun:1
+WORKDIR /app
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
+COPY . .
+ENV VITE_BC4_DATA=api
+ENV VITE_BC4_API_UPSTREAM=http://api:8000
+RUN bun run build
+LABEL org.opencontainers.image.revision="0282ea9"
+LABEL org.opencontainers.image.version="1.77.1"
+LABEL org.opencontainers.image.title="BC4 Front Signaling v2 preview"
+LABEL org.opencontainers.image.description="Coexistence /signaling + /signaling-v2 (GitHub exact UI pin 75061cc + BC4 adapter). Phase F."
+CMD ["bun", "run", "dev", "--host", "0.0.0.0", "--port", "5173"]

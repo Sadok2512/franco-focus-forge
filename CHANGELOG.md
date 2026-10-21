@@ -1,4 +1,28 @@
-## 1.77.1 (patch) — BC4-FRONT 2026-10-21 — Signaling v2 phase D (visual certification) — fix shortenCaptureName (Agent BC3)
+## 1.77.1 (patch) — BC4-FRONT 2026-10-21 — Signaling v2 phase D + E + F (certification + build) (Agent BC3)
+
+### Phase F (ajout 2026-10-21 soir) — Build image dédiée + smoke test
+
+- **`Dockerfile.v2`** (nouveau) : image dédiée `bc4-front-v2:1.77.1`, basée sur `oven/bun:1`, build identique à l'image stable (`bun run build`) avec labels OCI `revision=0282ea9` / `version=1.77.1` / description "Phase F". **NE REMPLACE PAS** `bc4-front-rf:1.71.2`.
+- Image bâtie : `420 MB` content / `2.09 GB` disk (identique en taille à la stable).
+- **Sidecar run** sur port host `5176` (prod reste sur `5174`) :
+  ```
+  docker run -d --name bc4-front-v2-smoke \
+    --network bc4_default -p 5176:5173 bc4-front-v2:1.77.1
+  ```
+- **Smoke test Playwright** `/home/devmat/BC4/metric-vs-time-audit/front/browser-phase-f-smoke.mjs` :
+  ```
+  :5176/signaling-v2             → MOCK : "Messages (1 897)" (fixture GH)
+  :5176/signaling-v2?mode=api    → API  : "Messages (2 681)" (BC4 Test_3)
+                                           captures short-named,
+                                           admin@bc4.local session carried
+  :5174/signaling (prod intact)  → BC2+BC3 route : "Signaling View" rendered
+  0 erreur console sur l'ensemble
+  ```
+- Screenshots : `phase-f-sidecar-mock.png`, `phase-f-sidecar-api.png`, `phase-f-prod-signaling-untouched.png`
+
+**Déploiement production** : NON exécuté par mandat. Le sidecar :5176 reste disponible pour inspection ; la bascule prod requiert une autorisation explicite + une procédure séparée (recreate `bc4-front-1` avec image `bc4-front-v2:1.77.1` OU exposer en parallèle sur un sous-domaine).
+
+
 
 Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1` phase D livrée. Branche `feat/signaling-github-exact-ui`.
 
