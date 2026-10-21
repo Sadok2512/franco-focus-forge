@@ -1,26 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useActiveProject } from "@/lib/activeProject";
-import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 import { SignalingPage } from "@/features/signaling/SignalingPage";
+
 export const Route = createFileRoute("/_app/signaling")({
-  validateSearch: (s: Record<string, unknown>) => ({
-    capture_id: typeof s["capture_id"] === "string" ? s["capture_id"] : undefined,
-    seq: Number.isInteger(Number(s["seq"])) && Number(s["seq"]) >= 0 ? Number(s["seq"]) : undefined,
+  head: () => ({
+    meta: [
+      { title: "Signaling View — BC4" },
+      {
+        name: "description",
+        content:
+          "Timeline RF et signalisation LTE/NR : connectivité, événements réseau, tâches data, appels VoLTE/VoNR, mobilité, mesures radio, carte GPS et payload décodé.",
+      },
+      { property: "og:title", content: "Signaling View — BC4" },
+      {
+        property: "og:description",
+        content: "Timeline RF et signalisation LTE/NR synchronisée avec la carte GPS et le tableau des messages.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
   }),
-  component: Page,
-  head: () => ({ meta: [{ title: "Signaling View — BC4" }] }),
+  component: SignalingPage,
 });
-function Page() {
-  const { activeProject } = useActiveProject();
-  const search = Route.useSearch();
-  return activeProject ? (
-    <SignalingPage
-      key={activeProject.id}
-      projectId={activeProject.id}
-      initialCapture={search.capture_id}
-      initialSeq={search.seq}
-    />
-  ) : (
-    <NoActiveProject scope="Signaling View" />
-  );
-}

@@ -3525,3 +3525,7 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 - Filtres géographie hiérarchique (Plaque > DR > Département > Site) et période : seul le département est filtrable ; période unique affichée.
 - Chargement/erreur de l'arbre partagés LTE/NR (un seul endpoint `dict/tree`) ; l'état vide est bien distinct par branche.
 - Plan indoor : aucune ressource validée → « Plan indoor indisponible ».
+## 1.72.0 (minor) — BC4 2026-10-21 — Signaling View upstream replacement
+
+- Replaced the Signaling View presentation with the verified GitHub implementation.
+- Kept BC4 project/capture API contracts through an adapter; pagination is loaded across all pages.

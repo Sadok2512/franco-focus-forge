@@ -1,179 +1,52 @@
+// Signaling View adapter: upstream capture UI translated to BC4 project API.
 import { z } from "zod";
-import { apiFetch } from "./http";
-const envelope = { project_id: z.string(), capture_id: z.string(), result_id: z.string() };
-const layerSlug = z.enum(["rrc_lte", "rrc_nr", "nas", "event", "mac"]);
-const line = z.object({
-  capture_id: z.string(),
-  seq: z.number(),
-  t_rel_s: z.number().nullable(),
-  protocol: z.string(),
-  layer: layerSlug.optional(),
-  technology: z.string().nullable(),
-  direction: z.string().nullable(),
-  message_name: z.string(),
-  ecgi: z.string().nullable(),
-  pci: z.number().nullable(),
-  size_bytes: z.number().nullable(),
-  procedure_id: z.string().nullable(),
-  procedure_ids: z.array(z.string()),
-  has_tree: z.boolean(),
-  source: z.string(),
-});
-const procedure = z.object({
-  id: z.string(),
-  type: z.string(),
-  technology: z.string().nullable(),
-  seq_start: z.number(),
-  seq_end: z.number().nullable(),
-  duration_ms: z.number().nullable(),
-  outcome: z.string(),
-  cause: z.string().nullable(),
-  boundary_seqs: z.array(z.number()),
-});
-const point = z.object({
-  seq: z.number(),
-  t_rel_s: z.number().nullable(),
-  lat: z.number().nullable(),
-  lng: z.number().nullable(),
-  protocol: z.string(),
-  layer: layerSlug.optional(),
-  gps_seq: z.number().nullable(),
-  seq_gap: z.number().nullable(),
-});
-export const signalingSchemas = {
-  captures: z.object({
-    project_id: z.string(),
-    captures: z.array(
-      z.object({ capture_id: z.string(), label: z.string(), env: z.string().nullable() }),
-    ),
-  }),
-  rows: z.object({
-    ...envelope,
-    rows: z.array(line),
-    total: z.number(),
-    page: z.number(),
-    size: z.number(),
-    pages: z.number(),
-    protocol_counts: z.record(z.number()),
-    layer_counts: z.record(z.number()).optional(),
-    procedures: z.array(procedure),
-    selected_page: z.number().nullable(),
-  }),
-  procedures: z.object({
-    ...envelope,
-    procedures: z.array(procedure),
-    total: z.number(),
-    types: z.record(z.number()),
-  }),
-  events: z.object({
-    ...envelope,
-    total: z.number(),
-    missing_time: z.number(),
-    rule_version: z.string().nullable(),
-    unavailable: z.record(z.string()),
-    events: z.array(
-      z.object({
-        id: z.string(),
-        seq: z.number(),
-        seq_end: z.number().nullable(),
-        t_rel_s: z.number().nullable(),
-        t_rel_end_s: z.number().nullable(),
-        kind: z.string(),
-        label: z.string(),
-        duration_ms: z.number().nullable(),
-        linked_seqs: z.array(z.number()),
-        attrs: z
-          .object({
-            track: z.string(),
-            technology: z.string(),
-            status: z.string(),
-            source: z.string(),
-            source_seqs: z.array(z.number()),
-            evidence_status: z.string(),
-            rule_id: z.string(),
-            rule_version: z.string(),
-            protocol: z.string().nullable(),
-          })
-          .passthrough(),
-      }),
-    ),
-  }),
-  timeline: z.object({
-    ...envelope,
-    buckets: z.array(z.object({ t_rel_s: z.number(), counts: z.record(z.number()) })),
-    bucket_s: z.number(),
-    total: z.number(),
-    missing_time: z.number(),
-  }),
-  points: z.object({
-    ...envelope,
-    points: z.array(point),
-    positioned_count: z.number(),
-    markers: z.array(point.extend({ counts: z.record(z.number()), seqs: z.array(z.number()) })),
-    indoor: z.boolean(),
-    floorplan_id: z.string().nullable(),
-    reason: z.string().nullable(),
-  }),
-  context: z.object({
-    ...envelope,
-    seq: z.number(),
-    radio: z.record(
-      z.object({
-        value: z.number().nullable(),
-        unit: z.string(),
-        source: z.string(),
-        seq: z.number().nullable(),
-        seq_gap: z.number().nullable(),
-        time_gap_s: z.number().nullable(),
-        temporal_relation: z.enum(["unavailable", "same_timestamp", "previous_timestamp"]),
-        reason: z.string().nullable().optional(),
-      }),
-    ),
-    ecgi: z.string().nullable(),
-    ecgi_seq_gap: z.number().nullable(),
-    enb_gnb_id: z.string().nullable(),
-    sector: z.string().nullable(),
-    identity_reason: z.string(),
-  }),
-  details: z.object({
-    ...envelope,
-    seq: z.number(),
-    tree: z.record(z.unknown()),
-    parameters: z.array(
-      z.object({
-        path: z.string(),
-        value: z.unknown(),
-        param_key: z.string().nullable(),
-        redacted_reason: z.string().nullable().optional(),
-      }),
-    ),
-    text: z.string(),
-    hex: z.string().nullable(),
-    hex_reason: z.string().nullable(),
-    tree_source: z.string(),
-    tree_route_gap: z.string(),
-  }),
-  export: z.object({ csv: z.string(), filename: z.string(), result_id: z.string() }),
-};
-export type SignalingRows = z.infer<typeof signalingSchemas.rows>;
-export type SignalingTimeline = z.infer<typeof signalingSchemas.timeline>;
-export type SignalingPoints = z.infer<typeof signalingSchemas.points>;
-export type SignalingLine = z.infer<typeof line>;
-export function getSignaling<K extends keyof typeof signalingSchemas>(
-  projectId: string,
-  kind: K,
-  params: Record<string, string | number | undefined>,
-  signal?: AbortSignal,
-): Promise<z.infer<(typeof signalingSchemas)[K]>> {
-  const query = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) if (v !== undefined) query.set(k, String(v));
-  const path = `/projects/${encodeURIComponent(projectId)}/signaling${kind === "rows" ? "" : "/" + kind}?${query}`;
-  return apiFetch(path, signalingSchemas[kind] as z.ZodTypeAny, { signal }) as Promise<
-    z.infer<(typeof signalingSchemas)[K]>
-  >;
+import { apiFetch, isApiMode } from "./http";
+import { SigCaptureMetaSchema, SigCaptureSchema, SigMessageSchema, SigPayloadSchema, type SigCapture, type SigCaptureMeta, type SigMessage, type SigPayload } from "./signaling-schemas";
+import { SIGNALING_CAPTURES, getMockCapture, getMockMessages, getMockPayload } from "@/mocks/signaling";
+
+let projectId: string | null = null;
+export function setSignalingProjectId(id: string | null) { projectId = id; }
+const enc = encodeURIComponent;
+const anySchema = z.unknown();
+const requireProject = () => { if (!projectId) throw new Error("Active project missing"); return projectId; };
+export async function getSignaling(project: string, kind: string, params: Record<string, string | number | undefined>, signal?: AbortSignal): Promise<any> {
+  const q = new URLSearchParams(); for (const [k, v] of Object.entries(params)) if (v !== undefined) q.set(k, String(v));
+  return apiFetch(`/projects/${enc(project)}/signaling${kind === "rows" ? "" : `/${kind}`}?${q}`, anySchema, { signal });
+}
+function toMeta(r: any): SigCaptureMeta { return SigCaptureMetaSchema.parse({ id: r.capture_id, name: r.label ?? r.capture_id, captured_at: "", tech: r.env ?? "LTE", message_count: 0, duration_s: 0 }); }
+
+export async function listSignalingCaptures(signal?: AbortSignal): Promise<SigCaptureMeta[]> {
+  if (!isApiMode() || !projectId) return SigCaptureMetaSchema.array().parse(SIGNALING_CAPTURES);
+  const raw = await apiFetch(`/projects/${enc(requireProject())}/signaling/captures`, anySchema, { signal }) as any;
+  return (raw.captures ?? []).map(toMeta);
 }
 
-export type RfEvents = z.infer<typeof signalingSchemas.events>;
-export type RfEvent = RfEvents["events"][number];
+export async function getSignalingCapture(id: string, signal?: AbortSignal): Promise<SigCapture> {
+  if (!isApiMode() || !projectId) return SigCaptureSchema.parse(getMockCapture(id));
+  const base = `/projects/${enc(requireProject())}/signaling`;
+  const [ev, tl, pts] = await Promise.all([
+    apiFetch(`${base}/events?capture_id=${enc(id)}&view=rf`, anySchema, { signal }),
+    apiFetch(`${base}/timeline?capture_id=${enc(id)}&bucket_s=1`, anySchema, { signal }),
+    apiFetch(`${base}/points?capture_id=${enc(id)}`, anySchema, { signal }),
+  ]) as any[];
+  const events = (ev.events ?? []).filter((e: any) => e.t_rel_s != null).map((e: any) => ({ id: e.id, t: e.t_rel_s, name: e.label, tech: e.attrs?.technology ?? null, severity: e.outcome === "fail" ? "error" : e.outcome === "ok" ? "success" : "event", message_index: e.seq, ecgi: null, pci: null }));
+  const duration = Math.max(0, ...events.map((e: any) => e.t), ...(tl.buckets ?? []).map((b: any) => b.t_rel_s));
+  const track = (pts.points ?? []).filter((p: any) => p.lat != null && p.lng != null).map((p: any) => ({ t: p.t_rel_s ?? 0, lat: p.lat, lng: p.lng }));
+  return SigCaptureSchema.parse({ id, name: id, captured_at: "", tech: "LTE", message_count: 0, duration_s: duration, connectivity: [], events, tasks: [], calls: [], mobility: [], measurements: [], track, events_gps: [] });
+}
 
-export type SignalingContext = z.infer<typeof signalingSchemas.context>;
+export async function getSignalingMessages(id: string, signal?: AbortSignal): Promise<SigMessage[]> {
+  if (!isApiMode() || !projectId) return SigMessageSchema.array().parse(getMockMessages(id));
+  const base = `/projects/${enc(requireProject())}/signaling?capture_id=${enc(id)}&size=500`;
+  const first = await apiFetch(`${base}&page=1`, anySchema, { signal }) as any;
+  const pages = Number(first.pages ?? 1);
+  const rest = pages > 1 ? await Promise.all(Array.from({ length: pages - 1 }, (_, i) => apiFetch(`${base}&page=${i + 2}`, anySchema, { signal }))) : [];
+  const rows = [first, ...rest].flatMap((r: any) => r.rows ?? []);
+  return rows.map((r: any) => SigMessageSchema.parse({ index: r.seq, t: r.t_rel_s ?? 0, dir: r.direction === "UL" ? "UL" : "DL", layer: r.protocol, name: r.message_name, procedure: r.procedure_id ?? "", ecgi: r.ecgi, pci: r.pci, earfcn: null, rsrp: null, rsrq: null, sinr: null, octets: r.size_bytes ?? 0 }));
+}
+
+export async function getSignalingPayload(id: string, index: number, signal?: AbortSignal): Promise<SigPayload> {
+  if (!isApiMode() || !projectId) return SigPayloadSchema.parse(getMockPayload(id, index));
+  const raw = await apiFetch(`/projects/${enc(requireProject())}/signaling/details?capture_id=${enc(id)}&seq=${index}`, anySchema, { signal }) as any;
+  return SigPayloadSchema.parse({ decoded: raw.tree ?? { key: "Unavailable" }, hex: raw.hex ?? "", params: (raw.parameters ?? []).map((p: any) => ({ key: p.path, value: String(p.value ?? ""), unit: null })), call_flow: [], details: { source: raw.tree_source ?? "" } });
+}

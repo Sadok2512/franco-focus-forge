@@ -277,6 +277,6 @@ export { getMetrics, getMetricCaptures, getMetricSeries, getCaptureEvents } from
 
 export { getDecodeStatus, startDeepDecode, getUnknownMetrics } from "./decode";
 
-export { getSignaling } from "./signaling";
+export { getSignaling, getSignalingCapture, getSignalingMessages, getSignalingPayload, listSignalingCaptures, setSignalingProjectId } from "./signaling";
 
 export { getMetricAnalysis } from "./metrics";
