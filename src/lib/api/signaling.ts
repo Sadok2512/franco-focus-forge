@@ -175,3 +175,5 @@ export function getSignaling<K extends keyof typeof signalingSchemas>(
 
 export type RfEvents = z.infer<typeof signalingSchemas.events>;
 export type RfEvent = RfEvents["events"][number];
+
+export type SignalingContext = z.infer<typeof signalingSchemas.context>;

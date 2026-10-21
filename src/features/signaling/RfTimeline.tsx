@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ECharts, EChartsOption, CustomSeriesRenderItem } from "echarts";
 import { getSignaling, getMetricSeries } from "@/lib/api/client";
-import type { RfEvent } from "@/lib/api/signaling";
+import type { RfEvent, SignalingContext } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 
 const tracks = ["lte", "nsa", "sa", "network", "dl", "ul", "volte", "vonr", "mobility"];
@@ -47,6 +47,8 @@ export function RfTimeline({
   const host = useRef<HTMLDivElement>(null),
     root = useRef<HTMLDivElement>(null);
   const chart = useRef<ECharts | undefined>(undefined);
+  const hovered = useRef<number | null>(null);
+  const contextErrors = useRef(new Set<number>());
   const callbacks = useRef({ onSelect, onRange });
   callbacks.current = { onSelect, onRange };
   const selection = useRef(selectedTime);
@@ -241,11 +243,7 @@ export function RfTimeline({
       tooltip: {
         trigger: "item",
         confine: true,
-        formatter: (
-          p: unknown,
-          ticket: string,
-          callback: (ticket: string, html: string) => void,
-        ) => {
+        formatter: (p: unknown) => {
           const d = (
             p as { data: { event?: RfEvent; value?: unknown[]; seq?: number; source?: string } }
           ).data;
@@ -256,31 +254,47 @@ export function RfTimeline({
               .filter((k) => e.attrs[k] != null)
               .map((k) => `${escape(k)}: ${escape(e.attrs[k])}`)
               .join("<br/>");
+            hovered.current = e.seq;
+            const key = ["signaling-context", projectId, captureId, e.seq];
+            const ctx = queryClient.getQueryData<SignalingContext>(key);
+            if (ctx) {
+              const f = (v: number | null) =>
+                v === null ? "—" : v.toLocaleString(i18n.language, { maximumFractionDigits: 2 });
+              const radioHtml = ["rsrp", "rsrq", "sinr"]
+                .map((k) => {
+                  const m = ctx.radio[k];
+                  return m
+                    ? `${escape(k.toUpperCase())}: ${escape(f(m.value))} ${escape(m.unit)}<br/><small>${escape(t(m.temporal_relation === "unavailable" ? "rfTimeline.contextUnavailable" : m.temporal_relation === "same_timestamp" ? "rfTimeline.sameTimestamp" : "rfTimeline.previous"))} · Δseq ${escape(m.seq_gap)} · Δt ${escape(m.time_gap_s)} s · ${escape(m.source)}</small>`
+                    : "";
+                })
+                .join("<br/>");
+              return header + "<br/>" + fields + "<br/>" + radioHtml;
+            }
+            if (contextErrors.current.has(e.seq))
+              return header + "<br/>" + escape(t("rfTimeline.contextUnavailable"));
+            const refresh = () => {
+              if (hovered.current === e.seq && host.current?.matches(":hover"))
+                c.dispatchAction({
+                  type: "showTip",
+                  seriesIndex: 0,
+                  dataIndex: (p as { dataIndex: number }).dataIndex,
+                });
+            };
             void queryClient
               .fetchQuery({
-                queryKey: ["signaling-context", projectId, captureId, e.seq],
+                queryKey: key,
                 queryFn: ({ signal }) =>
                   getSignaling(projectId, "context", { capture_id: captureId, seq: e.seq }, signal),
                 staleTime: 60000,
               })
-              .then((ctx) => {
-                const f = (v: number | null) =>
-                  v === null ? "—" : v.toLocaleString(i18n.language, { maximumFractionDigits: 2 });
-                const radioHtml = ["rsrp", "rsrq", "sinr"]
-                  .map((k) => {
-                    const m = ctx.radio[k];
-                    return m
-                      ? `${escape(k.toUpperCase())}: ${escape(f(m.value))} ${escape(m.unit)}<br/><small>${escape(t(m.temporal_relation === "same_timestamp" ? "rfTimeline.sameTimestamp" : "rfTimeline.previous"))} · Δseq ${escape(m.seq_gap)} · Δt ${escape(m.time_gap_s)} s · ${escape(m.source)}</small>`
-                      : "";
-                  })
-                  .join("<br/>");
-                callback(ticket, header + "<br/>" + fields + "<br/>" + radioHtml);
-              })
-              .catch(() =>
-                callback(ticket, header + "<br/>" + escape(t("rfTimeline.contextUnavailable"))),
-              );
+              .then(refresh)
+              .catch(() => {
+                contextErrors.current.add(e.seq);
+                refresh();
+              });
             return header + "<br/>" + fields;
           }
+          hovered.current = null;
           return `${escape(d.source)}<br/>${escape(d.value?.[0])} s · #${d.seq}<br/>${escape(d.value?.[1])}`;
         },
       },
