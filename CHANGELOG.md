@@ -1,3 +1,22 @@
+## 1.56.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 3 : Inspector Payload First (Agent BC3)
+
+- `SignalingPage.tsx` : refonte complète du panneau Inspecteur selon spec §7-10, 12. Onglets dans l'ordre **obligatoire** : `Payload | Hexadécimal | Paramètres | Call Flow | Détails`. **Payload actif par défaut** à l'ouverture.
+- **En-tête épuré** : uniquement nom du message + `#seq` (ex. `SecurityModeComplete #68`) + badge direction ↑UL / ↓DL / —. Les métadonnées (ECGI, PCI, GPS, radio) ne sont plus répétées au-dessus du payload.
+- **Onglet Payload** : réutilise directement `DecoderTree` (BC2 1.53.0) — arbre ASN.1 recherchable, repliable, copie du chemin. État explicite si décodage indisponible (lecture de `details.hex_reason`), jamais d'arbre fictif.
+- **Onglet Hexadécimal** : affiche `details.hex` ou le `hex_reason` back (ex. « Absence d'identité non certifiée : hexadécimal masqué. »). Jamais reconstruit depuis l'arbre.
+- **Onglet Paramètres** : nouvelle table HTML `Paramètre | Valeur | Chemin ASN.1` (spec §10). Le paramètre lien vers le dictionnaire via `/rrc?parameter=`. État explicite si aucun paramètre.
+- **Onglet Call Flow** : désactivé (`disabled`) avec tooltip « Disponible au LOT 4 ». Pas de call flow fictif (spec §11.4).
+- **Onglet Détails** : nouveau composant `DetailsPanel` qui regroupe toutes les métadonnées (seq, temps, direction, couche, ECGI, PCI, taille, eNB/gNB, secteur, GPS précédent, contexte radio RSRP/RSRQ/SINR/CQI/BLER/band/vitesse avec Δseq+Δt+source+temporal_relation, « Sources et limites »). Aucun nouveau fetch — réutilise `context.data`, `points.data`, `details.data` déjà chargés.
+- État onglet `useState<InspectorTab>` **session-local**, **jamais inclus dans un `queryKey`**, **préservé entre deux sélections** (spec §7 « conserver cet onglet si l'utilisateur a volontairement changé de vue »).
+- Suppression du bloc hérité qui dupliquait les métadonnées au-dessus du payload.
+- Validé Playwright (G6 + G7 + G8 + G12) sur TEST2 cap `723547b196b3` :
+  - Tab order = `['Payload','Hexadécimal','Paramètres','Call Flow','Détails']`, Payload actif ouvertures ✓
+  - Hex masqué avec raison explicite ✓
+  - Call Flow désactivé ✓
+  - Détails panel rendu ✓
+  - **Préservation onglet** : utilisateur bascule sur Détails → reclique autre ligne → onglet reste `Détails` ✓
+  - P0 1.50.1 : zéro erreur JS, sélection conservée.
+
 ## 1.55.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 2 : colonnes + flèches UL/DL (Agent BC3)
 
 - `SignalingPage.tsx` : bouton **« Colonnes (n/N) »** à côté de « Export CSV » avec `DropdownMenu` dédié. Checkbox par colonne, colonnes obligatoires (`#`, `Temps (s)`, `Message`) désactivées, bouton « Réinitialiser » restaure la vue par défaut. État de visibilité en `useState` **session-local**, jamais inclus dans un `queryKey`.

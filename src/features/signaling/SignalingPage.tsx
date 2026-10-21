@@ -84,6 +84,149 @@ function directionBadge(direction: string | null | undefined) {
   return <span className="text-muted-foreground">—</span>;
 }
 
+// 1.56.0 (V3 LOT 3) — « Détails » tab. Reprend tout ce qui était affiché
+// au-dessus du payload en 1.55.0 (ECGI, PCI, eNB/gNB, Secteur, GPS, radio
+// context + sources et limites). Zéro nouveau fetch — tout vient des
+// queries déjà faites par SignalingPage.
+type SelectedLike = {
+  protocol?: string | undefined;
+  direction?: string | null | undefined;
+  ecgi?: string | null | undefined;
+  pci?: number | null | undefined;
+  size_bytes?: number | null | undefined;
+  t_rel_s?: number | null | undefined;
+};
+type RadioVal = {
+  value: number | null;
+  unit: string;
+  source: string;
+  seq: number | null;
+  seq_gap: number | null;
+  time_gap_s?: number | null | undefined;
+  temporal_relation?: string | undefined;
+  reason?: string | null | undefined;
+};
+type ContextQuery = {
+  isPending: boolean;
+  isError: boolean;
+  data?:
+    | {
+        ecgi?: string | null;
+        enb_gnb_id?: string | null;
+        sector?: string | null;
+        identity_reason?: string;
+        radio?: Record<string, RadioVal>;
+      }
+    | undefined;
+  refetch: () => unknown;
+};
+function DetailsPanel({
+  selected,
+  seq,
+  context,
+  position,
+  pointsData,
+  detailsResultId,
+  treeSource,
+  treeRouteGap,
+}: {
+  selected: SelectedLike | undefined;
+  seq: number;
+  context: ContextQuery;
+  position?:
+    | { lat: number | null; lng: number | null; gps_seq: number | null; seq_gap: number | null }
+    | undefined;
+  pointsData: unknown;
+  detailsResultId?: string | undefined;
+  treeSource?: string | undefined;
+  treeRouteGap?: string | undefined;
+}) {
+  return (
+    <div className="space-y-3 text-xs" data-testid="inspector-details">
+      <dl className="grid grid-cols-2 gap-x-3 gap-y-1 sm:grid-cols-3">
+        {Object.entries({
+          seq,
+          Temps: `${timeShown(selected?.t_rel_s)} s`,
+          Direction: shown(selected?.direction),
+          Couche: shown(selected?.protocol),
+          ECGI: context.data?.ecgi ?? selected?.ecgi,
+          "PCI message": selected?.pci,
+          "Taille (octets)": selected?.size_bytes,
+          "eNB/gNB": context.data?.enb_gnb_id,
+          Secteur: context.data?.sector,
+          "GPS précédent":
+            position?.lat != null && position?.lng != null
+              ? `${position.lat}, ${position.lng}`
+              : null,
+        }).map(([k, v]) => (
+          <div key={k}>
+            <dt className="text-muted-foreground">{k}</dt>
+            <dd className="break-all font-mono">{shown(v)}</dd>
+          </div>
+        ))}
+      </dl>
+      {context.isPending && <p role="status">Chargement du contexte radio…</p>}
+      {context.isError && (
+        <p role="alert">
+          Contexte radio indisponible.{" "}
+          <button onClick={() => void context.refetch()}>Réessayer</button>
+        </p>
+      )}
+      {pointsData != null && (position?.lat == null || position?.lng == null) && (
+        <p role="status">Aucune position GPS prouvée pour ce message.</p>
+      )}
+      {position?.lat != null && position?.lng != null && (
+        <p className="text-muted-foreground">
+          GPS précédent · seq {shown(position.gps_seq)} · Δseq {shown(position.seq_gap)}. Position
+          exacte du message non prouvée ; repère pointillé sur la carte.
+        </p>
+      )}
+      <h3 className="border-t pt-2 font-semibold">Contexte radio précédent</h3>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2">
+        {Object.entries(context.data?.radio ?? {}).map(([name, v]) => (
+          <div key={name} title={v.reason ?? `${v.source}, seq ${shown(v.seq)}`}>
+            <span className="text-muted-foreground">
+              {name === "pci"
+                ? "PCI précédent"
+                : name === "band"
+                  ? "Bande"
+                  : name === "speed"
+                    ? "Vitesse"
+                    : name === "bler_mac"
+                      ? "BLER MAC"
+                      : name.toUpperCase()}
+            </span>
+            <div>
+              {radioShown(v.value, v.unit)} {v.unit}
+            </div>
+            <small>
+              Δseq : {shown(v.seq_gap)} · Δt : {timeShown(v.time_gap_s)}
+              {v.time_gap_s == null ? "" : " s"}
+            </small>
+            <div className="text-xs text-muted-foreground">
+              {v.temporal_relation === "same_timestamp"
+                ? "Précédente en séquence · même horodatage"
+                : v.seq == null
+                  ? "Aucune mesure précédente"
+                  : "Mesure précédente"}
+            </div>
+            <div className="truncate text-[10px] text-muted-foreground" title={v.source}>
+              Source : {v.source}
+            </div>
+          </div>
+        ))}
+      </div>
+      <details className="max-h-24 overflow-auto border-t pt-1 text-muted-foreground">
+        <summary>Sources et limites</summary>
+        <p>{treeSource}</p>
+        <p>{treeRouteGap}</p>
+        <p>{context.data?.identity_reason}</p>
+        <p>result_id : {detailsResultId}</p>
+      </details>
+    </div>
+  );
+}
+
 type RowLike = {
   message_name: string;
   procedure_ids: string[];
@@ -431,6 +574,11 @@ export function SignalingPage({
     });
   };
   const resetCols = () => setVisibleCols(new Set<ColKey>(DEFAULT_COLS));
+  // 1.56.0 (V3 LOT 3) — Inspector Payload First. Tab state séparé de la
+  // sélection (P0 1.50.1) et de toute clé React Query. Default = Payload,
+  // préservé entre deux sélections conformément à spec §7.
+  type InspectorTab = "Payload" | "Hexadécimal" | "Paramètres" | "Call Flow" | "Détails";
+  const [inspectorTab, setInspectorTab] = useState<InspectorTab>("Payload");
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
@@ -444,7 +592,6 @@ export function SignalingPage({
     [sort, setSort] = useState("seq"),
     [order, setOrder] = useState("asc");
   const [hover, setHover] = useState<string[]>([]),
-    [tab, setTab] = useState("Arborescence"),
     [exportError, setExportError] = useState("");
   const [selectedRecord, setSelectedRecord] = useState<Partial<SignalingLine>>();
   const selectionCapture = useRef<string | undefined>(undefined);
@@ -559,7 +706,6 @@ export function SignalingPage({
       },
     );
     setSeq(value);
-    setTab("Arborescence");
   };
   const error = [caps, listing, timeline, points].find((q) => q.isError)?.error;
   const exportCsv = async () => {
@@ -1002,140 +1148,78 @@ export function SignalingPage({
                   <Panel id="details" minSize={narrow ? 300 : "28%"}>
                     <section
                       className="signaling-pane flex flex-col rounded-lg border bg-card p-3 text-xs"
-                      aria-label="Détails du message"
+                      aria-label="Inspecteur de message"
                     >
-                      <h2 className="mb-1 shrink-0 break-words text-sm font-semibold">
-                        {selected?.message_name ?? "Sélectionnez un message"}
-                      </h2>
+                      <header className="mb-2 flex shrink-0 items-baseline justify-between gap-2">
+                        <h2 className="break-words text-sm font-semibold">
+                          {selected?.message_name ?? "Sélectionnez un message"}
+                          {seq !== undefined && (
+                            <span className="ml-2 font-mono text-xs text-muted-foreground">
+                              #{seq}
+                            </span>
+                          )}
+                        </h2>
+                        {seq !== undefined && (
+                          <span className="shrink-0 text-xs text-muted-foreground">
+                            {directionBadge(selected?.direction ?? null)}
+                          </span>
+                        )}
+                      </header>
                       {seq !== undefined && (
                         <>
-                          <div className="mb-2 flex shrink-0 flex-wrap gap-x-3 gap-y-1 text-muted-foreground">
-                            <span>{shown(selected?.protocol)}</span>
-                            <span>{shown(selected?.direction)}</span>
-                            <span>{timeShown(selected?.t_rel_s)} s</span>
-                            <span>seq {seq}</span>
-                          </div>
-                          <div
-                            className="min-h-0 max-h-[44%] shrink-0 overflow-auto pr-1"
-                            data-testid="radio-scroll"
-                          >
-                            <dl className="mb-2 grid grid-cols-3 gap-x-3 gap-y-1">
-                              {Object.entries({
-                                ECGI: context.data?.ecgi ?? selected?.ecgi,
-                                "PCI message": selected?.pci,
-                                "Taille (octets)": selected?.size_bytes,
-                                "eNB/gNB": context.data?.enb_gnb_id,
-                                Secteur: context.data?.sector,
-                                "GPS précédent":
-                                  position?.lat != null && position?.lng != null
-                                    ? `${position.lat}, ${position.lng}`
-                                    : null,
-                              }).map(([k, v]) => (
-                                <div key={k}>
-                                  <dt className="text-muted-foreground">{k}</dt>
-                                  <dd className="break-all font-mono">{shown(v)}</dd>
-                                </div>
-                              ))}
-                            </dl>
-                            {context.isPending && (
-                              <p role="status">Chargement du contexte radio…</p>
-                            )}
-                            {context.isError && (
-                              <p role="alert">
-                                Contexte radio indisponible.{" "}
-                                <button onClick={() => void context.refetch()}>
-                                  Réessayer le contexte
-                                </button>
-                              </p>
-                            )}
-                            {points.data && (position?.lat == null || position?.lng == null) && (
-                              <p role="status">Aucune position GPS prouvée pour ce message.</p>
-                            )}
-                            {position?.lat != null && position?.lng != null && (
-                              <p className="mb-2 text-muted-foreground">
-                                GPS précédent · seq {shown(position.gps_seq)} · Δseq{" "}
-                                {shown(position.seq_gap)}. Position exacte du message non prouvée ;
-                                repère pointillé sur la carte.
-                              </p>
-                            )}
-                            <h3 className="border-t pt-2 font-semibold">
-                              Contexte radio précédent
-                            </h3>
-                            <div className="my-2 grid grid-cols-2 gap-x-3 gap-y-2">
-                              {Object.entries(context.data?.radio ?? {}).map(([name, v]) => (
-                                <div
-                                  key={name}
-                                  title={v.reason ?? `${v.source}, seq ${shown(v.seq)}`}
-                                >
-                                  <span className="text-muted-foreground">
-                                    {name === "pci"
-                                      ? "PCI précédent"
-                                      : name === "band"
-                                        ? "Bande"
-                                        : name === "speed"
-                                          ? "Vitesse"
-                                          : name === "bler_mac"
-                                            ? "BLER MAC"
-                                            : name.toUpperCase()}
-                                  </span>
-                                  <div>
-                                    {radioShown(v.value, v.unit)} {v.unit}
-                                  </div>
-                                  <small>
-                                    Δseq : {shown(v.seq_gap)} · Δt : {timeShown(v.time_gap_s)}
-                                    {v.time_gap_s == null ? "" : " s"}
-                                  </small>
-                                  <div className="text-xs text-muted-foreground">
-                                    {v.temporal_relation === "same_timestamp"
-                                      ? "Précédente en séquence · même horodatage"
-                                      : v.seq == null
-                                        ? "Aucune mesure précédente"
-                                        : "Mesure précédente"}
-                                  </div>
-                                  <div
-                                    className="truncate text-[10px] text-muted-foreground"
-                                    title={v.source}
-                                  >
-                                    Source : {v.source}
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
                           <div
                             role="tablist"
-                            className="flex shrink-0 flex-wrap gap-1 border-t py-2"
+                            className="flex shrink-0 flex-wrap gap-1 border-b pb-2"
+                            data-testid="inspector-tabs"
                           >
-                            {["Arborescence", "Vue texte", "Hexadécimal", "Paramètres"].map(
-                              (name) => (
+                            {(
+                              [
+                                "Payload",
+                                "Hexadécimal",
+                                "Paramètres",
+                                "Call Flow",
+                                "Détails",
+                              ] as InspectorTab[]
+                            ).map((name) => {
+                              const disabled = name === "Call Flow";
+                              return (
                                 <button
                                   role="tab"
-                                  aria-selected={tab === name}
+                                  aria-selected={inspectorTab === name}
                                   key={name}
-                                  className={`rounded px-2 py-1 ${tab === name ? "bg-primary text-primary-foreground" : "bg-muted"}`}
-                                  onClick={() => setTab(name)}
+                                  disabled={disabled}
+                                  title={disabled ? "Call Flow — disponible au LOT 4" : undefined}
+                                  className={`rounded px-2 py-1 ${
+                                    inspectorTab === name
+                                      ? "bg-primary text-primary-foreground"
+                                      : "bg-muted"
+                                  } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
+                                  onClick={() => setInspectorTab(name)}
+                                  data-testid={`inspector-tab-${name.toLowerCase().replace(/[^a-z]/g, "")}`}
                                 >
                                   {name}
                                 </button>
-                              ),
-                            )}
+                              );
+                            })}
                           </div>
                           {details.isError ? (
-                            <p role="alert">
+                            <p role="alert" className="mt-2">
                               Erreur de récupération du décodage.{" "}
                               <button onClick={() => void details.refetch()}>
                                 Réessayer le décodage
                               </button>
                             </p>
                           ) : details.isPending ? (
-                            <p role="status">Chargement du décodage…</p>
+                            <p role="status" className="mt-2">
+                              Chargement du décodage…
+                            </p>
                           ) : (
                             details.data && (
                               <div
-                                className={`min-h-0 flex-1 break-words ${tab === "Arborescence" ? "overflow-hidden" : "overflow-auto"}`}
-                                data-testid="signaling-details"
+                                className="mt-2 min-h-0 flex-1 break-words overflow-auto"
+                                data-testid="inspector-content"
                               >
-                                {tab === "Arborescence" ? (
+                                {inspectorTab === "Payload" ? (
                                   details.data.parameters.length ? (
                                     <DecoderTree
                                       key={`${capture}:${seq}`}
@@ -1143,20 +1227,19 @@ export function SignalingPage({
                                     />
                                   ) : (
                                     <div>
-                                      <p>Décodage ASN.1 indisponible pour ce message</p>
+                                      <p>Payload ASN.1 non disponible pour ce message.</p>
                                       <p className="mt-1 text-muted-foreground">
                                         {details.data.hex_reason ??
                                           "Aucun paramètre décodé fourni par la source."}
                                       </p>
                                     </div>
                                   )
-                                ) : tab === "Vue texte" ? (
-                                  <pre className="whitespace-pre-wrap">
-                                    {details.data.text || "Aucun paramètre décodé disponible."}
-                                  </pre>
-                                ) : tab === "Hexadécimal" ? (
+                                ) : inspectorTab === "Hexadécimal" ? (
                                   details.data.hex ? (
-                                    <pre className="whitespace-pre-wrap break-all">
+                                    <pre
+                                      className="whitespace-pre-wrap break-all font-mono text-xs"
+                                      data-testid="inspector-hex"
+                                    >
                                       {details.data.hex}
                                     </pre>
                                   ) : (
@@ -1164,31 +1247,69 @@ export function SignalingPage({
                                       {details.data.hex_reason}
                                     </p>
                                   )
+                                ) : inspectorTab === "Paramètres" ? (
+                                  details.data.parameters.length ? (
+                                    <table
+                                      className="w-full text-xs"
+                                      aria-label="Paramètres décodés"
+                                      data-testid="inspector-params"
+                                    >
+                                      <thead className="sticky top-0 bg-muted">
+                                        <tr>
+                                          <th className="p-1 text-left">Paramètre</th>
+                                          <th className="p-1 text-left">Valeur</th>
+                                          <th className="p-1 text-left">Chemin ASN.1</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {details.data.parameters.map((p, i) => (
+                                          <tr key={`${p.path}:${i}`} className="border-b align-top">
+                                            <td className="p-1">
+                                              <a
+                                                href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
+                                                className="text-primary underline"
+                                              >
+                                                {p.param_key ?? p.path.split("/").slice(-1)[0]}
+                                              </a>
+                                            </td>
+                                            <td className="p-1 font-mono">{shown(p.value)}</td>
+                                            <td className="p-1 font-mono text-[10px] text-muted-foreground">
+                                              {p.path}
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  ) : (
+                                    <p role="status" className="rounded bg-muted p-3">
+                                      {details.data.hex_reason ??
+                                        "Aucun paramètre décodé fourni par la source."}
+                                    </p>
+                                  )
+                                ) : inspectorTab === "Call Flow" ? (
+                                  <p
+                                    role="status"
+                                    className="rounded bg-muted p-3"
+                                    data-testid="inspector-callflow-placeholder"
+                                  >
+                                    Call Flow — disponible au LOT 4 (/signaling/procedures +
+                                    /signaling?procedure=&lt;id&gt; déjà audités).
+                                  </p>
                                 ) : (
-                                  <ul>
-                                    {details.data.parameters.map((p, i) => (
-                                      <li key={`${p.path}:${i}`} className="border-b py-1">
-                                        <a
-                                          href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
-                                          className="text-primary underline"
-                                        >
-                                          {p.path}
-                                        </a>{" "}
-                                        = {shown(p.value)}
-                                      </li>
-                                    ))}
-                                  </ul>
+                                  <DetailsPanel
+                                    selected={selected}
+                                    seq={seq}
+                                    context={context}
+                                    position={position}
+                                    pointsData={points.data}
+                                    detailsResultId={details.data?.result_id}
+                                    treeSource={details.data?.tree_source}
+                                    treeRouteGap={details.data?.tree_route_gap}
+                                  />
                                 )}
                               </div>
                             )
                           )}
-                          <details className="mt-2 max-h-24 shrink-0 overflow-auto border-t pt-1 text-muted-foreground">
-                            <summary>Sources et limites</summary>
-                            <p>{details.data?.tree_source}</p>
-                            <p>{details.data?.tree_route_gap}</p>
-                            <p>{context.data?.identity_reason}</p>
-                            <p>result_id : {details.data?.result_id}</p>
-                          </details>
                         </>
                       )}
                     </section>
