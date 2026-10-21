@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "projects": "Projets",
+    "overview": "Vue d’ensemble",
+    "dictionary": "Dictionnaire RRC",
+    "kpi": "KPI Analytics",
+    "signaling": "Signaling View",
+    "rf": "RF Modules",
+    "assistant": "Assistant IA",
+    "main": "Navigation principale"
+  },
+  "common": {
+    "user": "Utilisateur",
+    "project": "Projet :",
+    "activeProject": "Projet actif : {{name}}",
+    "closeProject": "Fermer le projet actif",
+    "lightTheme": "Thème clair",
+    "darkTheme": "Thème sombre",
+    "tips": "Astuces",
+    "help": "Aide",
+    "radioEngineer": "Ingénieur Radio",
+    "settings": "Paramètres",
+    "logout": "Se déconnecter",
+    "language": "Langue",
+    "pending": "Module prévu en phase {{phase}}.",
+    "notFound": "Page introuvable",
+    "notFoundDescription": "La page recherchée n’existe pas ou a été déplacée.",
+    "home": "Accueil",
+    "loadError": "Cette page n’a pas pu être chargée",
+    "loadErrorDescription": "Une erreur est survenue. Réessayez ou revenez à l’accueil.",
+    "retry": "Réessayer",
+    "appDescription": "Plateforme de benchmark radio LTE/NR/EN-DC."
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.61.0",
+  "version": "1.62.0",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -60,6 +60,7 @@
     "date-fns": "^4.1.0",
     "echarts": "^6.1.0",
     "embla-carousel-react": "^8.6.0",
+    "i18next": "^26.5.3",
     "input-otp": "^1.4.2",
     "lucide-react": "^0.575.0",
     "maplibre-gl": "^6.14.0",
@@ -67,6 +68,7 @@
     "react-day-picker": "^9.14.0",
     "react-dom": "^19.2.0",
     "react-hook-form": "^7.71.2",
+    "react-i18next": "^17.1.0",
     "react-resizable-panels": "^4.6.5",
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",

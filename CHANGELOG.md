@@ -1,3 +1,11 @@
+## 1.62.0 (minor) — BC4-FRONT 2026-10-21 — i18n foundation and navigation (Agent BC1)
+
+- Add react-i18next with English by default and French available from the user menu. Persist the preference safely; set the document language accordingly.
+- Translate navigation, shell actions and root error states without changing analytical queries, filters or source data.
+- Add shared Intl number/date formatters, matching EN/FR resource guard and language preference tests.
+- Intermediate delivery: page content migration follows in patches. Backend-provided wording remains an API responsibility; see i18n audit boundary CSV.
+- Version 1.61.0 was already published by the Signaling lot; this new capability uses the next available minor, 1.62.0.
+
 ## 1.61.0 (minor) — BC4-FRONT 2026-10-21 — Signaling : toggle Timeline + badges couleur couches (Agent BC3)
 
 - **Toggle Timeline** symétrique au toggle Carte. Nouveau bouton « Timeline · ON/OFF » dans l'en-tête (icône `Activity`/`ActivitySquare`). Timeline Panel passé en `collapsible + collapsedSize=0 + panelRef`.

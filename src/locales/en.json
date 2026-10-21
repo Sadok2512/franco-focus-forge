@@ -1,0 +1,34 @@
+{
+  "nav": {
+    "projects": "Projects",
+    "overview": "Overview",
+    "dictionary": "RRC Dictionary",
+    "kpi": "KPI Analytics",
+    "signaling": "Signaling View",
+    "rf": "RF Modules",
+    "assistant": "AI Assistant",
+    "main": "Main navigation"
+  },
+  "common": {
+    "user": "User",
+    "project": "Project:",
+    "activeProject": "Active project: {{name}}",
+    "closeProject": "Close active project",
+    "lightTheme": "Light theme",
+    "darkTheme": "Dark theme",
+    "tips": "Tips",
+    "help": "Help",
+    "radioEngineer": "Radio Engineer",
+    "settings": "Settings",
+    "logout": "Sign out",
+    "language": "Language",
+    "pending": "Module planned for phase {{phase}}.",
+    "notFound": "Page not found",
+    "notFoundDescription": "The page you’re looking for doesn’t exist or has been moved.",
+    "home": "Go home",
+    "loadError": "This page didn’t load",
+    "loadErrorDescription": "Something went wrong. Try again or return to the home page.",
+    "retry": "Try again",
+    "appDescription": "LTE/NR/EN-DC radio benchmarking platform."
+  }
+}

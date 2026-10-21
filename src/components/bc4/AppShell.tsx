@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+import { setLanguage } from "@/lib/i18n";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -29,13 +31,13 @@ import { useActiveProject } from "@/lib/activeProject";
 import { APP_VERSION } from "@/lib/version";
 
 const NAV = [
-  { to: "/projects", label: "Projets" },
-  { to: "/overview", label: "Vue d'ensemble" },
-  { to: "/rrc", label: "Dictionnaire RRC" },
-  { to: "/kpi", label: "KPI Analytics" },
-  { to: "/signaling", label: "Signaling View" },
-  { to: "/rf", label: "RF Modules" },
-  { to: "/assistant", label: "Assistant IA" },
+  { to: "/projects", label: "nav.projects" },
+  { to: "/overview", label: "nav.overview" },
+  { to: "/rrc", label: "nav.dictionary" },
+  { to: "/kpi", label: "nav.kpi" },
+  { to: "/signaling", label: "nav.signaling" },
+  { to: "/rf", label: "nav.rf" },
+  { to: "/assistant", label: "nav.assistant" },
 ] as const;
 
 function useTheme() {
@@ -96,6 +98,7 @@ function HeaderVersion() {
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
+  const { t, i18n } = useTranslation();
   const [dark, toggleTheme] = useTheme();
   const { data: org } = useQuery({
     queryKey: ["settings", "organization"],
@@ -119,7 +122,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(UNAUTH_EVENT, onUnauth);
   }, [navigate]);
 
-  const name = session?.displayName ?? "Jean Dupont";
+  const name = session?.displayName ?? t("common.user");
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -143,10 +146,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           )}
         </Link>
-        <nav
-          aria-label="Navigation principale"
-          className="flex h-full items-center gap-1 overflow-x-auto"
-        >
+        <nav aria-label={t("nav.main")} className="flex h-full items-center gap-1 overflow-x-auto">
           {NAV.map((n) => {
             const active = path.startsWith(n.to);
             return (
@@ -156,7 +156,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 search={(s: FilterContext) => s}
                 className={`flex h-9 items-center gap-1 whitespace-nowrap rounded-md px-3.5 text-[13px] font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
               >
-                {n.label}
+                {t(n.label)}
                 {active && n.to === "/projects" && <ChevronDown className="h-3.5 w-3.5" />}
               </Link>
             );
@@ -165,17 +165,18 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="ml-auto flex items-center gap-1">
           {activeProject && (
             <div
-              aria-label={`Projet actif : ${activeProject.name}`}
+              aria-label={t("common.activeProject", { name: activeProject.name })}
               className="mr-2 inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 pl-3 pr-1 text-xs font-medium text-primary"
             >
               <span className="truncate">
-                <span className="text-muted-foreground">Projet :</span> {activeProject.name}
+                <span className="text-muted-foreground">{t("common.project")}</span>{" "}
+                {activeProject.name}
               </span>
               <button
                 type="button"
                 onClick={() => clearActiveProject()}
-                aria-label="Fermer le projet actif"
-                title="Fermer le projet actif"
+                aria-label={t("common.closeProject")}
+                title={t("common.closeProject")}
                 className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-primary hover:bg-primary/10"
               >
                 <X className="h-3.5 w-3.5" />
@@ -183,17 +184,20 @@ export function AppShell({ children }: { children: ReactNode }) {
             </div>
           )}
           <button
-            aria-label={dark ? "Thème clair" : "Thème sombre"}
+            aria-label={t(dark ? "common.lightTheme" : "common.darkTheme")}
             onClick={toggleTheme}
             className="rounded-full p-2 text-op-orange hover:bg-muted"
           >
             {dark ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
           </button>
-          <button aria-label="Astuces" className="rounded-full p-2 text-op-orange hover:bg-muted">
+          <button
+            aria-label={t("common.tips")}
+            className="rounded-full p-2 text-op-orange hover:bg-muted"
+          >
             <Lightbulb className="h-[18px] w-[18px]" />
           </button>
           <button
-            aria-label="Aide"
+            aria-label={t("common.help")}
             className="rounded-full p-2 text-muted-foreground hover:bg-muted"
           >
             <HelpCircle className="h-[18px] w-[18px]" />
@@ -210,7 +214,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
               <span className="hidden text-left leading-tight md:block">
                 <span className="block text-xs font-semibold">{name}</span>
-                <span className="block text-[11px] text-muted-foreground">Ingénieur Radio</span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {t("common.radioEngineer")}
+                </span>
               </span>
             </button>
             {menu && (
@@ -218,6 +224,22 @@ export function AppShell({ children }: { children: ReactNode }) {
                 role="menu"
                 className="absolute right-0 top-11 w-44 rounded-md border bg-popover p-1 shadow-lg"
               >
+                <label className="flex w-full items-center justify-between gap-2 rounded px-2 py-1.5 text-xs">
+                  {t("common.language")}
+                  <select
+                    aria-label={t("common.language")}
+                    value={i18n.resolvedLanguage ?? "en"}
+                    onChange={(event) => void setLanguage(event.target.value)}
+                    className="rounded border bg-popover px-1 py-0.5"
+                  >
+                    <option value="en" lang="en">
+                      English
+                    </option>
+                    <option value="fr" lang="fr">
+                      Français
+                    </option>
+                  </select>
+                </label>
                 <button
                   role="menuitem"
                   onClick={() => {
@@ -226,7 +248,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
                 >
-                  <Settings className="h-3.5 w-3.5" /> Paramètres
+                  <Settings className="h-3.5 w-3.5" /> {t("common.settings")}
                 </button>
 
                 <button
@@ -237,7 +259,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   }}
                   className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
                 >
-                  <LogOut className="h-3.5 w-3.5" /> Se déconnecter
+                  <LogOut className="h-3.5 w-3.5" /> {t("common.logout")}
                 </button>
               </div>
             )}
@@ -287,11 +309,12 @@ export function ModulePending({
   phase: string;
   icon?: ReactNode;
 }) {
+  const { t } = useTranslation();
   return (
     <div className="flex min-h-[60vh] flex-col items-center justify-center gap-2 text-center">
       <span className="text-muted-foreground">{icon}</span>
       <h1 className="text-lg font-semibold">{title}</h1>
-      <p className="max-w-md text-xs text-muted-foreground">Module prévu en phase {phase}.</p>
+      <p className="max-w-md text-xs text-muted-foreground">{t("common.pending", { phase })}</p>
     </div>
   );
 }
