@@ -81,6 +81,25 @@ export function RfTimeline({
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal, windowSeq),
     staleTime: 60000,
   });
+  // Zoom narrows the server's seq window only when the overview was sampled.
+  // Surrounding observed seqs bound the request; no measurement/time is inferred.
+  useEffect(() => {
+    const data = radio.data;
+    if (!data || !data.series.some((s) => s.sampling.factor > 1)) return;
+    if (zoom[0] === 0 && zoom[1] === 100) {
+      setWindowSeq(undefined);
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const points = data.series.flatMap((s) => s.points).sort((a, b) => a.seq - b.seq);
+      const lo = (data.duration_s * zoom[0]) / 100,
+        hi = (data.duration_s * zoom[1]) / 100;
+      const first = points.filter((p) => p.t_rel_s <= lo).at(-1) ?? points[0];
+      const last = points.find((p) => p.t_rel_s >= hi) ?? points.at(-1);
+      if (first && last) setWindowSeq({ from_seq: first.seq, to_seq: last.seq });
+    }, 250);
+    return () => window.clearTimeout(timer);
+  }, [zoom, radio.data]);
   const displayed = useMemo(
     () =>
       events.data?.events.filter(
