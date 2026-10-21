@@ -8,7 +8,10 @@ const LANGUAGE_PREFERENCE_VERSION = "bc4.language.english-default.v2";
 export function readLanguage(): "en" | "fr" {
   try {
     // Reset preferences from the initial rollout once, as requested.
-    if (typeof window !== "undefined" && !window.localStorage.getItem(LANGUAGE_PREFERENCE_VERSION)) {
+    if (
+      typeof window !== "undefined" &&
+      !window.localStorage.getItem(LANGUAGE_PREFERENCE_VERSION)
+    ) {
       window.localStorage.setItem(LANGUAGE_STORAGE_KEY, "en");
       window.localStorage.setItem(LANGUAGE_PREFERENCE_VERSION, "1");
       return "en";
