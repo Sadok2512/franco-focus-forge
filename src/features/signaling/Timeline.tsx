@@ -414,7 +414,25 @@ export function Timeline({
           </div>
         </div>
       </div>
-      <svg viewBox={`0 0 ${VIEW_W} ${totalH}`} preserveAspectRatio="none" className="block w-full text-foreground" style={{ height: Math.round((compact ? 280 : 430) * scaleY) }} role="img" aria-label="Timeline des événements, connectivité et mesures radio">
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${VIEW_W} ${totalH}`}
+        preserveAspectRatio="none"
+        className="block w-full text-foreground"
+        style={{ height: Math.round((compact ? 280 : 430) * scaleY) }}
+        role="img"
+        aria-label="Timeline des événements, connectivité et mesures radio"
+        onMouseMove={(e) => {
+          if (dragRef.current) return;
+          onHoverTime?.(timeFromClientX(e.clientX), e.clientX, e.clientY);
+        }}
+        onMouseLeave={() => onHoverTime?.(null, 0, 0)}
+        onClick={(e) => {
+          // Un marqueur interactif gère son propre clic (snap exact) — ne pas le doubler.
+          if ((e.target as Element).closest("g.cursor-pointer")) return;
+          onSelectTime(timeFromClientX(e.clientX), null);
+        }}
+      >
         {/* Axe X unique en haut + grille verticale partagée par toutes les pistes */}
         {ticks.map((t) => {
           const x = scale(t);
