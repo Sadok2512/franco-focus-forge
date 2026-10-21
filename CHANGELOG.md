@@ -1,3 +1,9 @@
+## 1.59.0 (minor) — BC4 2026-10-21 — Arbre Métriques v3 (Agent BC2)
+
+- Arbre existant enrichi : cellules ★ Total CA/PCell/SCell et événements ⚑ avec attributs depuis /metrics. Positions non documentées et hypothèses SCell grisées avec leur raison.
+- Espace multi-métriques : tableau par seconde et export API, chronogramme par cellule, histogrammes opérateur × cellule et causes, nuage apparié et carte des positions enregistrées.
+- Capture partagée, filtres appliqués et sélection URL conservés ; calculs et unités fournis par le backend, aucune interpolation ni donnée SCell inventée.
+
 ## 1.58.0 (minor) — BC4-FRONT 2026-10-21 — Signaling View V3 LOT 5 : toggle Carte global (Agent BC3)
 
 - Nouveau bouton **« Carte · ON/OFF »** dans l'en-tête de Signaling View (top-right, à côté du sous-titre). Icône `MapPin` quand actif, `MapPinOff` quand masqué.

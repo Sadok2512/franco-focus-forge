@@ -4,6 +4,7 @@ import { taskQuery } from "./task-analytics";
 import type { KpiQueryFilters } from "./project-kpi-schemas";
 import {
   MetricSchema,
+  MetricAnalysisSchema,
   MetricSeriesSchema,
   EventsSchema,
   MetricAggregateSchema,
@@ -53,5 +54,19 @@ export const getCaptureEvents = (
   kpiFetch(
     `/projects/${encodeURIComponent(p)}/captures/${encodeURIComponent(capture)}/events?types=task,ho,rlf,rrc&${new URLSearchParams(taskQuery(filters))}`,
     EventsSchema,
+    signal,
+  );
+
+export const getMetricAnalysis = (
+  p: string,
+  capture: string,
+  codes: string[],
+  filters: KpiQueryFilters,
+  options: { group_by: string; include_map: boolean; x?: string },
+  signal?: AbortSignal,
+) =>
+  kpiFetch(
+    `/projects/${encodeURIComponent(p)}/metrics/table?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), ...(options.x ? { x: options.x } : {}) })])}`,
+    MetricAnalysisSchema,
     signal,
   );

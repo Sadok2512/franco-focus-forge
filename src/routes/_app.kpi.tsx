@@ -24,6 +24,9 @@ export const Route = createFileRoute("/_app/kpi")({
           : undefined,
       ]),
     ),
+    metrics: Array.isArray(search["metrics"])
+      ? search["metrics"].filter((v): v is string => typeof v === "string")
+      : undefined,
     kpi: typeof search["kpi"] === "string" ? search["kpi"] : undefined,
     kpis: Array.isArray(search["kpis"])
       ? search["kpis"].filter((v): v is string => typeof v === "string")

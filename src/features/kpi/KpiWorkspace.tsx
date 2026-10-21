@@ -31,8 +31,9 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
+import { MetricsWorkspace } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
-import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
+
 import { getMetrics } from "@/lib/api/metrics";
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
@@ -230,9 +231,7 @@ function Workspace({
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
-  const [metricViews, setMetricViews] = useState<Record<string, MetricView>>({});
-  const setMetricView = (code: string, view: MetricView) =>
-    setMetricViews((prev) => ({ ...prev, [code]: view }));
+
   const [draft, setDraft] = useState(() => fromSearch(search));
   // URL is the applied shared state; edits stay local until Apply.
   const urlDraft = useMemo(() => fromSearch(search), [search]);
@@ -379,6 +378,7 @@ function Workspace({
                 className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("kpi")}
                 style={{
+                  color: "var(--foreground)",
                   padding: "6px 12px",
                   borderRadius: "4px 4px 0 0",
                   border: "none",
@@ -398,6 +398,7 @@ function Workspace({
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
+                  color: "var(--foreground)",
                   padding: "6px 12px",
                   borderRadius: "4px 4px 0 0",
                   border: "none",
@@ -427,7 +428,6 @@ function Workspace({
                 projectId={projectId}
                 selected={selectedMetrics}
                 onToggle={toggleMetric}
-                onVisualization={setMetricView}
                 searchRef={catalogSearch}
               />
             )}
@@ -595,28 +595,26 @@ function Workspace({
                   count={codes.length}
                 />
               ))}
-              {selectedMetrics.map((metricCode) => {
-                const m = (metricsCatalog.data ?? []).find((x) => x.code === metricCode);
-                if (!m) return null;
-                return (
-                  <MetricGraphCard
-                    key={`metric-${metricCode}`}
-                    projectId={projectId}
-                    code={m.code}
-                    label={m.label}
-                    unit={m.unit}
-                    tech={m.tech}
-                    category={m.category}
-                    eventCode={m.event_code}
-                    appliedFilters={applied}
-                    onRemove={() => toggleMetric(m.code)}
-                    view={metricViews[m.code]}
-                    onViewChange={(v) => setMetricView(m.code, v)}
-                  />
-                );
-              })}
+              {selectedMetrics.length > 0 && (
+                <MetricsWorkspace
+                  projectId={projectId}
+                  captureId={captureId}
+                  onCaptureChange={setCaptureId}
+                  selections={selectedMetrics}
+                  catalog={metricsCatalog.data ?? []}
+                  filters={applied}
+                  onClear={() => {
+                    setSelectedMetrics([]);
+                    void navigate({
+                      to: ".",
+                      search: (p: Record<string, unknown>) => ({ ...p, metrics: [] }),
+                      replace: true,
+                    } as never);
+                  }}
+                />
+              )}
             </div>
-            {!panels.length && (
+            {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
                 <h2>Choisissez vos métriques</h2>
