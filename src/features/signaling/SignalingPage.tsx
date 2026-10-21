@@ -110,6 +110,7 @@ export function SignalingPage() {
   };
 
   const effView = view ?? { start: 0, end: capture?.duration_s ?? 1 };
+  const chartH = Math.max(80, Math.round((compact ? 110 : 150) * tlScale));
 
   return (
     <div className="flex h-[calc(100vh-3.5rem)] min-h-0 flex-col">
@@ -200,8 +201,8 @@ export function SignalingPage() {
             <section className="panel relative shrink-0" aria-label="Timeline RF et signalisation">
               {capture ? (
                 <>
-                  <Timeline capture={capture} view={effView} onView={setView} compact={compact} cursorT={cursorT} onSelectTime={onSelectTime} onHover={setHover} />
-                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} height={compact ? 110 : 150} />
+                  <Timeline capture={capture} view={effView} onView={setView} compact={compact} cursorT={cursorT} onSelectTime={onSelectTime} onHover={setHover} scaleY={tlScale} />
+                  <RadioChart series={capture.measurements} view={effView} cursorT={cursorT} height={chartH} />
                 </>
               ) : (
                 <div className="flex h-40 items-center justify-center text-xs text-muted-foreground">
@@ -217,6 +218,29 @@ export function SignalingPage() {
                 </div>
               )}
             </section>
+            {/* Poignée de redimensionnement vertical de la timeline */}
+            <div
+              role="separator"
+              aria-orientation="horizontal"
+              aria-label="Redimensionner la timeline"
+              title="Glissez pour agrandir ou réduire la timeline — double-clic pour la taille par défaut"
+              className="-my-1 flex h-3 shrink-0 cursor-row-resize items-center justify-center rounded hover:bg-accent/50"
+              onDoubleClick={() => setTlScale(1)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startY = e.clientY;
+                const startS = tlScale;
+                const move = (ev: MouseEvent) => setTlScale(Math.min(2, Math.max(0.55, startS + (ev.clientY - startY) / 300)));
+                const up = () => {
+                  document.removeEventListener("mousemove", move);
+                  document.removeEventListener("mouseup", up);
+                };
+                document.addEventListener("mousemove", move);
+                document.addEventListener("mouseup", up);
+              }}
+            >
+              <GripHorizontal className="h-3 w-3 text-muted-foreground/50" />
+            </div>
             <MessagesTable
               messages={filteredMessages}
               total={(messagesQ.data ?? []).length}
