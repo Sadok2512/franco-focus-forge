@@ -1,3 +1,12 @@
+## 1.73.0 (minor) — BC4-FRONT 2026-10-21 — Metrics tree premium (spec v10) : ★ catégories + menu ⋯ Chart/Table/Map/Info/Copy id (Agent BC3)
+
+- `src/features/kpi/MetricsCatalogSidebar.tsx` : refactor conforme à `specs/metrics_catalogue_lte.html` v10. Les 7 catégories étoilées (**Serving radio ★ · MIMO per port ★ · Throughput per layer ★ · Link quality ★ · Allocation & MCS ★ · CSI ★ · UL power ★**) sont détectées par présence de `★` dans `node.label` (généré par le back, jamais codé en dur côté front) et surlignées via `.kpi-tree-starred` (fond ambre, icône `Star`). Les feuilles `n=0` restent visibles mais `disabled` + `opacity-45` (déjà porté par `node.selectable=false` côté back).
+- Nouveau **menu ⋯** (`MoreHorizontal`) par métrique et par feuille sélectionnable : `Chart` (graph), `Histogram`, `Table`, `Map` → `onVisualization(selection, view)` ; `Info` → dialog modal avec `source / event / column / metric_id / cell / unit / n / proof / reason` lu depuis `/metrics` ; `Copy id` → `navigator.clipboard.writeText(selection ?? metric_id ?? source)` avec feedback 1.5 s.
+- `src/features/kpi/KpiWorkspace.tsx` : ajoute `const [metricsView, setMetricsView] = useState<MetricsView>("table")` partagé entre le sidebar (⋯ → `visualizeMetric`) et `MetricsWorkspace` via props `view / onViewChange`. `visualizeMetric` ajoute d'abord la métrique à `selectedMetrics` si absente, puis bascule la vue.
+- `src/features/kpi/MetricsWorkspace.tsx` : vue devient optionnellement contrôlée (`view?` + `onViewChange?`), fallback sur l'état interne existant → aucun régression des utilisateurs non pilotés.
+- `src/features/kpi/workspace.css` : ajoute `.kpi-tree-root.kpi-tree-starred` / `.kpi-tree-family.kpi-tree-starred`.
+- i18n : 8 nouvelles clés (`metrics.catalogMenu / catalogChart / catalogTable / catalogMap / catalogInfo / catalogCopyId / catalogCopyIdOk / catalogStarred`) en EN + FR dans le même commit.
+
 ## 1.72.0 (minor) — BC4-FRONT 2026-10-21 — Signaling event ribbon + Zod α aligné back (Agent BC3)
 
 - **Nouveau composant `EventRibbon.tsx`** : ruban SVG 8 couloirs (`radio / connexion / mobilite / endc / ca / services / acces / contexte`) consomme `/signaling/events` back 0.71.0 (shape α). Chips par couloir avec compteurs, bascule « Échecs seulement » (passe `failures_only=true` au back), événements rendus en circles (mark/tri), ✕ (fail/x), barres (bar) selon `kind` + `outcome`. Clic événement → `onSelect(e)` → `chooseSeq(e.pivot_seq ?? e.seq)` → surlignes messages liés dans la liste principale et ouvre l'arbre ASN.1 sur le pivot.

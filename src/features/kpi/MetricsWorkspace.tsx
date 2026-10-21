@@ -9,7 +9,7 @@ import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
-type View = "table" | "graph" | "histogram" | "scatter" | "map";
+export type View = "table" | "graph" | "histogram" | "scatter" | "map";
 const LABELS: Record<View, string> = {
   get table() {
     return i18n.t("metrics.e86755d376aa");
@@ -148,6 +148,8 @@ export function MetricsWorkspace({
   catalog,
   filters,
   onClear,
+  view: externalView,
+  onViewChange,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -156,9 +158,16 @@ export function MetricsWorkspace({
   catalog: MetricInfo[];
   filters: KpiQueryFilters;
   onClear: () => void;
+  view?: View | undefined;
+  onViewChange?: ((v: View) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
-  const [view, setView] = useState<View>("table");
+  const [internalView, setInternalView] = useState<View>("table");
+  const view = externalView ?? internalView;
+  const setView = (v: View) => {
+    setInternalView(v);
+    onViewChange?.(v);
+  };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
   const [search, setSearch] = useState("");

@@ -1,17 +1,44 @@
+// 1.73.0 (BC3) — Metrics tree premium (spec v10 /specs/metrics_catalogue_lte.html) :
+// ★ catégories/métriques détectées par présence de ★ dans node.label (généré depuis
+// /metrics back, jamais codé en dur côté front), menu ⋯ par métrique (Chart /
+// Table / Map / Info / Copy id), feuilles n=0 greyées (déjà via node.selectable=false).
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Activity, ChevronDown, ChevronRight, Search } from "lucide-react";
+import {
+  Activity,
+  BarChart3,
+  ChartNoAxesCombined,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Info,
+  MapPin,
+  MoreHorizontal,
+  Search,
+  Star,
+  Table2,
+} from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { MetricView } from "./MetricGraphCard";
 
 const rootKey = "__root__";
+const STAR = "★";
 
 export function MetricsCatalogSidebar({
   projectId,
   selected,
   onToggle,
+  onVisualization,
   searchRef,
 }: {
   projectId: string;
@@ -23,6 +50,8 @@ export function MetricsCatalogSidebar({
   const { t, i18n } = useTranslation();
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const [copied, setCopied] = useState<string | null>(null);
+  const [info, setInfo] = useState<MetricCatalogNode | null>(null);
   const query = useQuery({
     queryKey: ["project-metrics", projectId],
     queryFn: ({ signal }) => getMetrics(projectId, signal),
@@ -89,6 +118,15 @@ export function MetricsCatalogSidebar({
     const permitted = remove ? candidates : candidates.slice(0, Math.max(0, 64 - selected.length));
     for (const value of permitted) onToggle(value);
   };
+  const copyToClipboard = async (text: string, id: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(id);
+      setTimeout(() => setCopied((v) => (v === id ? null : v)), 1500);
+    } catch {
+      // clipboard refused — leave feedback null
+    }
+  };
   const renderNode = (node: MetricCatalogNode, depth = 0): ReactNode => {
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
@@ -99,10 +137,22 @@ export function MetricsCatalogSidebar({
     const branchPartial =
       branchSelections.some((value) => selected.includes(value)) && !branchChecked;
     const disabled = node.node_type === "leaf" && !node.selectable;
+    const starred = node.label.includes(STAR);
+    const kindClass =
+      node.node_type === "category"
+        ? "kpi-tree-root"
+        : node.node_type === "leaf"
+          ? "kpi-tree-leaf"
+          : "kpi-tree-family";
+    const starClass = starred ? " kpi-tree-starred" : "";
+    const showMenu =
+      node.node_type === "metric" || (node.node_type === "leaf" && node.selectable);
+    const copyPayload =
+      node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
     return (
       <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
         <div
-          className={`${node.node_type === "category" ? "kpi-tree-root" : node.node_type === "leaf" ? "kpi-tree-leaf" : "kpi-tree-family"} ${disabled ? "opacity-45" : ""}`}
+          className={`${kindClass}${starClass} ${disabled ? "opacity-45" : ""}`}
           title={node.reason ?? node.source ?? node.label}
         >
           {children.length > 0 ? (
@@ -137,14 +187,69 @@ export function MetricsCatalogSidebar({
               }
             />
           )}
-          <span className="min-w-0 flex-1 truncate">{node.label}</span>
+          {starred && (
+            <Star
+              size={11}
+              className="shrink-0 fill-amber-400 text-amber-500"
+              aria-label={t("metrics.catalogStarred")}
+            />
+          )}
+          <span className="min-w-0 flex-1 truncate">{node.label.replace(STAR, "").trim()}</span>
           {node.source && (
             <small className="shrink-0 text-[9px] text-muted-foreground">{node.source}</small>
           )}
           {node.node_type === "leaf" && (
-            <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
+            <span
+              className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+              data-testid={`metric-leaf-count-${node.node_id}`}
+            >
               {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
             </span>
+          )}
+          {showMenu && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="kpi-icon kpi-leaf-menu shrink-0"
+                  aria-label={t("metrics.catalogMenu")}
+                  data-testid={`metric-menu-${node.node_id}`}
+                >
+                  <MoreHorizontal size={14} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="min-w-[160px]">
+                <DropdownMenuLabel className="truncate text-[11px]">
+                  {node.label.replace(STAR, "").trim()}
+                </DropdownMenuLabel>
+                {onVisualization && node.selectable && node.selection && (
+                  <>
+                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "graph")}>
+                      <ChartNoAxesCombined size={13} /> {t("metrics.catalogChart")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => onVisualization(node.selection!, "histogram")}
+                    >
+                      <BarChart3 size={13} /> {t("metrics.86eb05ab111d")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "table")}>
+                      <Table2 size={13} /> {t("metrics.catalogTable")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => onVisualization(node.selection!, "map")}>
+                      <MapPin size={13} /> {t("metrics.catalogMap")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
+                <DropdownMenuItem onSelect={() => setInfo(node)}>
+                  <Info size={13} /> {t("metrics.catalogInfo")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void copyToClipboard(copyPayload, node.node_id)}>
+                  <Copy size={13} />{" "}
+                  {copied === node.node_id ? t("metrics.catalogCopyIdOk") : t("metrics.catalogCopyId")}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
         </div>
         {children.length > 0 && expanded && (
@@ -201,6 +306,85 @@ export function MetricsCatalogSidebar({
       <ul className="kpi-tree space-y-1 p-2">
         {(byParent.get(rootKey) ?? []).map((node) => renderNode(node))}
       </ul>
+      {info && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={t("metrics.catalogInfo")}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setInfo(null)}
+        >
+          <div
+            className="max-h-[80vh] w-full max-w-md overflow-auto rounded-md border bg-background p-4 text-xs shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+            data-testid="metric-info-dialog"
+          >
+            <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold">
+              {info.label.includes(STAR) && (
+                <Star size={12} className="fill-amber-400 text-amber-500" />
+              )}
+              {info.label.replace(STAR, "").trim()}
+            </h3>
+            <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
+              {info.source && (
+                <>
+                  <dt className="text-muted-foreground">source</dt>
+                  <dd className="font-mono">{info.source}</dd>
+                </>
+              )}
+              {info.event && (
+                <>
+                  <dt className="text-muted-foreground">event</dt>
+                  <dd className="font-mono">{info.event}</dd>
+                </>
+              )}
+              {info.source_column && (
+                <>
+                  <dt className="text-muted-foreground">column</dt>
+                  <dd className="font-mono">{info.source_column}</dd>
+                </>
+              )}
+              {info.metric_id && (
+                <>
+                  <dt className="text-muted-foreground">metric_id</dt>
+                  <dd className="font-mono">{info.metric_id}</dd>
+                </>
+              )}
+              {info.cell && (
+                <>
+                  <dt className="text-muted-foreground">cell</dt>
+                  <dd className="font-mono">{info.cell}</dd>
+                </>
+              )}
+              {info.unit && (
+                <>
+                  <dt className="text-muted-foreground">unit</dt>
+                  <dd>{info.unit}</dd>
+                </>
+              )}
+              <dt className="text-muted-foreground">n</dt>
+              <dd className="tabular-nums">
+                {info.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
+              </dd>
+              <dt className="text-muted-foreground">proof</dt>
+              <dd>{info.proof}</dd>
+              {info.reason && (
+                <>
+                  <dt className="text-muted-foreground">reason</dt>
+                  <dd className="text-amber-700 dark:text-amber-400">{info.reason}</dd>
+                </>
+              )}
+            </dl>
+            <button
+              type="button"
+              className="mt-3 rounded border px-2 py-1 text-xs"
+              onClick={() => setInfo(null)}
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }

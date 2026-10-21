@@ -140,7 +140,15 @@
     "catalogExpand": "Développer",
     "catalogCollapse": "Réduire",
     "catalogExpandAll": "Tout développer",
-    "catalogCollapseAll": "Tout réduire"
+    "catalogCollapseAll": "Tout réduire",
+    "catalogMenu": "Menu métrique",
+    "catalogChart": "Graphique",
+    "catalogTable": "Tableau",
+    "catalogMap": "Carte",
+    "catalogInfo": "Info",
+    "catalogCopyId": "Copier l'id",
+    "catalogCopyIdOk": "Copié",
+    "catalogStarred": "Métrique favorite"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",

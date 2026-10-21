@@ -140,7 +140,15 @@
     "catalogExpand": "Expand",
     "catalogCollapse": "Collapse",
     "catalogExpandAll": "Expand all",
-    "catalogCollapseAll": "Collapse all"
+    "catalogCollapseAll": "Collapse all",
+    "catalogMenu": "Metric menu",
+    "catalogChart": "Chart",
+    "catalogTable": "Table",
+    "catalogMap": "Map",
+    "catalogInfo": "Info",
+    "catalogCopyId": "Copy id",
+    "catalogCopyIdOk": "Copied",
+    "catalogStarred": "Starred metric"
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",

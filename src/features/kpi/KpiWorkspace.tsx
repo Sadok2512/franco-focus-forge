@@ -33,8 +33,9 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
-import { MetricsWorkspace } from "./MetricsWorkspace";
+import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
+import type { MetricView } from "./MetricGraphCard";
 
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
@@ -216,6 +217,22 @@ function Workspace({
       search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
       replace: true,
     } as never);
+  };
+  // 1.73.0 (BC3) — vue partagée MetricsWorkspace, pilotée par le menu ⋯ du sidebar
+  // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
+  // mappe 1-pour-1 sur View (scatter en plus côté workspace, non exposé au sidebar).
+  const [metricsView, setMetricsView] = useState<MetricsView>("table");
+  const visualizeMetric = (code: string, view: MetricView) => {
+    if (!selectedMetrics.includes(code)) {
+      const next = [...selectedMetrics, code];
+      setSelectedMetrics(next);
+      void navigate({
+        to: ".",
+        search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
+        replace: true,
+      } as never);
+    }
+    setMetricsView(view);
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
@@ -417,6 +434,7 @@ function Workspace({
                 projectId={projectId}
                 selected={selectedMetrics}
                 onToggle={toggleMetric}
+                onVisualization={visualizeMetric}
                 searchRef={catalogSearch}
               />
             )}
@@ -602,6 +620,8 @@ function Workspace({
                   selections={selectedMetrics}
                   catalog={metricsCatalog.data?.metrics ?? []}
                   filters={applied}
+                  view={metricsView}
+                  onViewChange={setMetricsView}
                   onClear={() => {
                     setSelectedMetrics([]);
                     void navigate({

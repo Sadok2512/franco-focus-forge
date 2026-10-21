@@ -104,6 +104,16 @@
   color: #0759c7;
   border-left-color: #1769e0;
 }
+/* 1.73.0 (BC3) — Spec v10 : ★ catégories/métriques (Serving radio/MIMO/Throughput/
+   Link quality/Allocation/CSI/UL power) détectées par présence de ★ dans
+   node.label (généré par le back, jamais codé en dur côté front). */
+.kpi-tree-root.kpi-tree-starred {
+  background: linear-gradient(180deg, #fff7e6 0%, #fdefcc 100%);
+  color: #78350f;
+}
+.kpi-tree-family.kpi-tree-starred {
+  color: #92400e;
+}
 .kpi-status-dot {
   width: 5px;
   height: 5px;
