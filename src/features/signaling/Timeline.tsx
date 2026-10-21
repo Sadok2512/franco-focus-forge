@@ -1,6 +1,8 @@
 import { Maximize2, Minimize2, ZoomIn, ZoomOut } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import type { SigCapture, SigEvent, SigMobilityEvent, SigTask } from "@/lib/api/signaling-schemas";
+import { Button } from "@/components/ui/button";
+import { TIMELINE_WIDTH, TIMELINE_LABEL_WIDTH, TIMELINE_LANE_WIDTH, timeAtClientX } from "./time-scale";
 import { clusterEvents, fmtSec, fmtTick, ticksFor } from "./shared";
 
 export type View = { start: number; end: number };
@@ -21,9 +23,9 @@ const MOB_COLOR: Record<string, string> = { ho: "#1769E0", success: "#16A34A", f
 const TASK_COLOR: Record<string, string> = { DL: "#1769E0", UL: "#16A34A" };
 const CALL_COLOR: Record<string, string> = { VoLTE: "#F97316", VoNR: "#9333EA" };
 
-const LABEL_W = 132;
-const VIEW_W = 1000;
-const LANE_W = VIEW_W - LABEL_W;
+const LABEL_W = TIMELINE_LABEL_WIDTH;
+const VIEW_W = TIMELINE_WIDTH;
+const LANE_W = TIMELINE_LANE_WIDTH;
 
 const CELL_PATHS = ["M0 -8 V8", "M-7 -4 H7", "M-5 0 H5", "M-3 4 H3"];
 const EVENT_ICON_PATHS = ["M0 -6 L6 0 L0 6 L-6 0 Z", "M-6 0 A6 6 0 1 0 6 0 A6 6 0 1 0 -6 0", "M0 -7 L7 6 H-7 Z"];
@@ -82,7 +84,9 @@ export function Timeline({
   onCursorDrag,
   onStepCursor,
   onClearCursor,
+  selectedEventId = null,
 }: {
+  selectedEventId?: string | null;
   capture: SigCapture;
   view: View;
   onView: (v: View) => void;
@@ -113,9 +117,7 @@ export function Timeline({
   const timeFromClientX = (clientX: number) => {
     const rect = svgRef.current?.getBoundingClientRect();
     if (!rect || rect.width === 0) return view.start;
-    const px = ((clientX - rect.left) / rect.width) * VIEW_W;
-    const clamped = Math.min(VIEW_W, Math.max(LABEL_W, px));
-    return view.start + ((clamped - LABEL_W) / LANE_W) * span;
+    return timeAtClientX(clientX, rect.left, rect.width, view.start, view.end);
   };
   const startDrag = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -144,8 +146,8 @@ export function Timeline({
   const rows: { key: string; h: number }[] = [
     { key: "conn", h: Math.round((compact ? 24 : 34) * scaleY) },
     { key: "events", h: Math.round((compact ? 44 : 72) * scaleY) },
-    { key: "dl", h: Math.round((compact ? 22 : 32) * scaleY) },
-    { key: "ul", h: Math.round((compact ? 22 : 32) * scaleY) },
+    ...(capture.tasks.some((t) => t.dir === "DL") ? [{ key: "dl", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
+    ...(capture.tasks.some((t) => t.dir === "UL") ? [{ key: "ul", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
     ...(capture.calls.some((c) => c.kind === "VoLTE") ? [{ key: "volte", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
     ...(capture.calls.some((c) => c.kind === "VoNR") ? [{ key: "vonr", h: Math.round((compact ? 22 : 32) * scaleY) }] : []),
     ...(capture.mobility.length ? [{ key: "mob", h: Math.round((compact ? 30 : 52) * scaleY) }] : []),
@@ -230,7 +232,7 @@ export function Timeline({
           }
           onMouseLeave={() => onHover(null)}
         >
-          <rect x={x1} y={y} width={Math.max(w, 3)} height={h} rx={h / 2} fill={color} opacity={0.16} />
+          <rect x={x1} y={y} width={Math.max(w, 3)} height={h} rx={h / 2} fill={color} opacity={cursorT != null && cursorT >= task.start_s && cursorT <= task.end_s ? 0.5 : 0.16} />
           <rect x={x1} y={y} width={Math.max(w, 3)} height={h} rx={h / 2} fill="none" stroke={color} strokeOpacity={0.55} strokeWidth={1} />
           {w > 110 && (
             <text x={(x1 + x2) / 2} y={cy + 3} textAnchor="middle" fontSize={9} fontWeight={600} fill={color}>
@@ -238,7 +240,7 @@ export function Timeline({
             </text>
           )}
           <circle cx={x1} cy={cy} r={compact ? 4 : 7} fill={color} />
-          <circle cx={x2} cy={cy} r={compact ? 4 : 7} fill={color} />
+          <circle cx={x2} cy={cy} r={compact ? 4 : 7} fill={color} onClick={(e) => { e.stopPropagation(); onSelectTime(task.end_s, task.message_index); }} />
           {!compact && (
             <>
               <text x={sLbl.x} y={cy - 8} textAnchor={sLbl.anchor} fontSize={8} fill="#64748B">
@@ -313,8 +315,8 @@ export function Timeline({
                 {kind} Call ({(endS - startS).toLocaleString("fr-FR", { maximumFractionDigits: 1 })} s)
               </text>
             )}
-            <path d={EVENT_ICON_PATHS[0]} transform={`translate(${Math.max(LABEL_W, scale(call.attempt_s))} ${cy}) scale(0.8)`} fill={color} />
-            <circle cx={x2} cy={cy} r={compact ? 4 : 6} fill={call.state === "dropped" ? "#DC2626" : color} />
+            <path d={EVENT_ICON_PATHS[0]} transform={`translate(${Math.max(LABEL_W, scale(call.attempt_s))} ${cy}) scale(0.8)`} fill={color} onClick={(e) => { e.stopPropagation(); onSelectTime(call.attempt_s, call.message_index); }} />
+            <circle cx={x2} cy={cy} r={compact ? 4 : 6} fill={call.state === "dropped" ? "#DC2626" : color} onClick={(e) => { e.stopPropagation(); onSelectTime(endS, call.message_index); }} />
             {!compact && (
               <>
                 <text x={aLbl.x} y={cy - 8} textAnchor={aLbl.anchor} fontSize={8} fill="#64748B">
@@ -402,18 +404,18 @@ export function Timeline({
             ))}
           </div>
           <div className="flex items-center gap-0.5">
-            <button aria-label="Zoom avant" onClick={() => zoom(0.5)} className="rounded p-1 text-muted-foreground hover:bg-muted">
+            <Button variant="ghost" size="sm" aria-label="Zoom avant" onClick={() => zoom(0.5)} className="rounded p-1 text-muted-foreground hover:bg-muted">
               <ZoomIn className="h-3.5 w-3.5" />
-            </button>
-            <button aria-label="Zoom arrière" onClick={() => zoom(2)} className="rounded p-1 text-muted-foreground hover:bg-muted">
+            </Button>
+            <Button variant="ghost" size="sm" aria-label="Zoom arrière" onClick={() => zoom(2)} className="rounded p-1 text-muted-foreground hover:bg-muted">
               <ZoomOut className="h-3.5 w-3.5" />
-            </button>
-            <button aria-label="Réinitialiser le zoom" onClick={reset} className="rounded p-1 text-[10px] font-medium text-muted-foreground hover:bg-muted">
+            </Button>
+            <Button variant="ghost" size="sm" aria-label="Réinitialiser le zoom" onClick={reset} className="rounded p-1 text-[10px] font-medium text-muted-foreground hover:bg-muted">
               1:1
-            </button>
+            </Button>
           </div>
           {cursorT != null && !inView(cursorT) && (
-            <button
+            <Button variant="ghost" size="sm"
               onClick={() => {
                 const half = span / 2;
                 onView({ start: Math.max(0, cursorT - half), end: Math.min(capture.duration_s, cursorT + half) });
@@ -422,7 +424,7 @@ export function Timeline({
               style={{ color: CURSOR_COLOR, background: "rgba(239,68,68,0.1)" }}
             >
               Curseur {fmtSec(cursorT)} — hors vue, recentrer
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -499,7 +501,7 @@ export function Timeline({
               <g
                 key={g.items.map((i) => i.id).join("+")}
                 className="cursor-pointer"
-                onClick={() => onSelectTime(ev.t, ev.message_index)}
+                onClick={() => onView({ start: Math.max(0, ev.t - 2), end: Math.min(capture.duration_s, (g.items.at(-1)?.t ?? ev.t) + 2) })}
                 onMouseMove={(e) => onHover({ x: e.clientX, y: e.clientY, title: `${g.items.length} événements regroupés`, lines: g.items.slice(0, 5).map((i) => `${i.name} — ${fmtSec(i.t)}`) })}
                 onMouseLeave={() => onHover(null)}
               >
@@ -520,6 +522,7 @@ export function Timeline({
               onMouseMove={(e) => onHover({ x: e.clientX, y: e.clientY, ...eventTooltip(ev) })}
               onMouseLeave={() => onHover(null)}
             >
+              {selectedEventId === ev.id && <circle cx={x} cy={iconY} r={11} fill="none" stroke="var(--time-cursor)" strokeWidth={2} />}
               <line x1={x} y1={iconY + 6} x2={x} y2={evTop + evH} stroke={color} strokeWidth={1} strokeDasharray="3 3" opacity={0.55} />
               <path d={EVENT_ICON_PATHS[1]} transform={`translate(${x} ${iconY}) scale(0.9)`} fill="none" stroke={color} strokeWidth={1.6} />
               <path d="M-3 0 L-1 2 L3 -2" transform={`translate(${x} ${iconY})`} stroke={color} strokeWidth={1.4} fill="none" strokeLinecap="round" />
@@ -538,10 +541,10 @@ export function Timeline({
         })}
 
         {/* Tâches Data */}
-        {laneLabel("dl", "dl", TASK_COLOR["DL"]!, "DL Data", "Tâches Data")}
-        {renderTask("dl", "DL")}
-        {laneLabel("ul", "ul", TASK_COLOR["UL"]!, "UL Data")}
-        {renderTask("ul", "UL")}
+        {rows.some((r) => r.key === "dl") && laneLabel("dl", "dl", TASK_COLOR["DL"], "DL Data", "Tâches Data")}
+        {rows.some((r) => r.key === "dl") && renderTask("dl", "DL")}
+        {rows.some((r) => r.key === "ul") && laneLabel("ul", "ul", TASK_COLOR["UL"], "UL Data")}
+        {rows.some((r) => r.key === "ul") && renderTask("ul", "UL")}
 
         {/* Appels VoLTE / VoNR */}
         {rows.some((r) => r.key === "volte") && laneLabel("volte", "phone", CALL_COLOR["VoLTE"]!, "VoLTE", "Appels")}
@@ -552,13 +555,6 @@ export function Timeline({
         {/* Mobilité */}
         {rows.some((r) => r.key === "mob") && laneLabel("mob", "swap", "#1769E0", "Mobilité")}
         {rows.some((r) => r.key === "mob") && renderMobility()}
-
-        {/* Curseur de prévisualisation (survol) — fin, rouge, pointillé */}
-        {hoverT != null && inView(hoverT) && (cursorT == null || Math.abs(hoverT - cursorT) > span / 500) && (
-          <g pointerEvents="none">
-            <line x1={scale(hoverT)} y1={axisH} x2={scale(hoverT)} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />
-          </g>
-        )}
 
         {/* Curseur temporel partagé : rouge, 2 px, poignée glissable, étiquette flottante */}
         {cursorT != null && inView(cursorT) && (
@@ -593,7 +589,7 @@ export function Timeline({
               const lx = Math.min(Math.max(cx, LABEL_W + labelW / 2 + 2), VIEW_W - labelW / 2 - 2);
               return (
                 <>
-                  <line x1={cx} y1={axisH - 6} x2={cx} y2={totalH} stroke={CURSOR_COLOR} strokeWidth={2} />
+                  
                   <rect x={cx - 6} y={axisH - 7} width={12} height={8} rx={2} fill={CURSOR_COLOR} stroke={focusRing ? "#0F172A" : "none"} strokeWidth={1.2} />
                   <rect x={lx - labelW / 2} y={1} width={labelW} height={15} rx={4} fill={CURSOR_COLOR} />
                   <text x={lx} y={12} textAnchor="middle" fontSize={9} fontWeight={700} fill="#FFFFFF">

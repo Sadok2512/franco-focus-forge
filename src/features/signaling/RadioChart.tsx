@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import type { ECharts } from "echarts";
 import type { SigSeries } from "@/lib/api/signaling-schemas";
 import { prevPoint } from "./cursor";
+import { timeAtClientX } from "./time-scale";
 import type { View } from "./Timeline";
 
 // Couleurs de référence de la maquette : RSRP NR rouge, RSRP LTE bleu,
@@ -20,14 +21,16 @@ export function RadioChart({
   series,
   view,
   cursorT,
-  previewT = null,
+  onHoverTime,
+  onSelectTime,
   height = 150,
 }: {
   series: SigSeries[];
   view: View;
   cursorT: number | null;
   /** Curseur de prévisualisation (survol) — pointillé, jamais de sélection. */
-  previewT?: number | null;
+  onHoverTime: (t: number | null, x: number, y: number) => void;
+  onSelectTime: (t: number) => void;
   height?: number;
 }) {
   const el = useRef<HTMLDivElement>(null);
@@ -42,9 +45,10 @@ export function RadioChart({
       inst.current.setOption({
         textStyle: { fontFamily: "Inter", fontSize: 10 },
         animationDuration: 120,
-        grid: { left: "13.2%", right: 8, top: 6, bottom: 4 },
+        grid: { left: "13.2%", right: "0.8%", top: 6, bottom: 4 },
         legend: { show: false },
         tooltip: {
+          show: false,
           trigger: "axis",
           axisPointer: { type: "line", lineStyle: { color: "#0F172A", width: 1, type: "dashed" } },
           valueFormatter: (v: unknown) => (v == null ? "N/D" : String(v)),
@@ -97,20 +101,10 @@ export function RadioChart({
   useEffect(() => {
     inst.current?.setOption({
       series: series.map((s) => {
-        const lines: { xAxis: number; lineStyle?: object }[] = [];
-        if (cursorT != null) lines.push({ xAxis: cursorT * 1000 });
-        if (previewT != null && (cursorT == null || Math.abs(previewT - cursorT) > (view.end - view.start) / 500))
-          lines.push({ xAxis: previewT * 1000, lineStyle: { color: "#EF4444", width: 1, type: "dashed", opacity: 0.7 } });
+
         const rd = cursorT != null ? prevPoint(s, cursorT) : null;
         return {
           name: s.label,
-          markLine: {
-            silent: true,
-            symbol: "none",
-            label: { show: false },
-            lineStyle: { color: "#EF4444", width: 2 },
-            data: lines,
-          },
           markPoint:
             rd != null
               ? {
@@ -125,11 +119,11 @@ export function RadioChart({
         };
       }),
     });
-  }, [cursorT, previewT, view.start, view.end, series]);
+  }, [cursorT, view.start, view.end, series]);
 
   return (
     <div className="border-t">
-      <div className="flex items-center gap-3 px-3 py-1">
+      <div className="flex min-h-7 flex-wrap items-center gap-x-3 gap-y-0.5 px-3 py-1">
         <span className="text-[10px] font-semibold text-muted-foreground">Mesures radio</span>
         {series.map((s) => (
           <span key={s.key} className="flex items-center gap-1 text-[10px] text-muted-foreground">
@@ -138,7 +132,10 @@ export function RadioChart({
           </span>
         ))}
       </div>
-      <div ref={el} style={{ height }} role="img" aria-label="Mesures radio (RSRP, RSRQ, SINR)" />
+      <div ref={el} style={{ height }} role="img" aria-label="Mesures radio (RSRP, RSRQ, SINR)"
+        onMouseMove={(e) => { const rect = e.currentTarget.getBoundingClientRect(); onHoverTime(timeAtClientX(e.clientX, rect.left, rect.width, view.start, view.end), e.clientX, e.clientY); }}
+        onMouseLeave={() => onHoverTime(null, 0, 0)}
+        onClick={(e) => { const rect = e.currentTarget.getBoundingClientRect(); onSelectTime(timeAtClientX(e.clientX, rect.left, rect.width, view.start, view.end)); }} />
     </div>
   );
 }
