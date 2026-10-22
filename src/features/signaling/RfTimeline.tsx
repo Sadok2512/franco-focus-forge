@@ -180,11 +180,12 @@ export function RfTimeline({
           : "";
         return {
           ...state.event,
-          label: state.track === "RRC_STATE" && state.state === "IDLE"
-            ? t("signalingV2.idle")
-            : presentation?.status
-            ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
-            : label,
+          label:
+            state.track === "RRC_STATE" && state.state === "IDLE"
+              ? t("signalingV2.idle")
+              : presentation?.status
+                ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
+                : label,
           attrs: {
             ...state.event.attrs,
             track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
@@ -266,8 +267,7 @@ export function RfTimeline({
             current.current.cursorSeries,
             (code, time, value) => {
               const pixel = c.convertToPixel({ seriesId: code }, [time, value]) as
-                | number[]
-                | undefined;
+                number[] | undefined;
               return Array.isArray(pixel) ? [pixel[0] ?? NaN, pixel[1] ?? NaN] : null;
             },
             x,
@@ -293,8 +293,7 @@ export function RfTimeline({
         if (near) setNameTag(near);
         else if (p.data?.source)
           setNameTag({
-            name:
-              current.current.cursorSeries.find((s) => s.code === p.data!.source)?.label ?? "",
+            name: current.current.cursorSeries.find((s) => s.code === p.data!.source)?.label ?? "",
             code: p.data.source,
             x,
             y,
@@ -461,10 +460,10 @@ export function RfTimeline({
               fill: idleBadge
                 ? tokens.getPropertyValue("--sig-table-text").trim()
                 : stateTracksV2
-                ? getComputedStyle(document.documentElement)
-                    .getPropertyValue("--signaling-state-text")
-                    .trim()
-                : "#ffffff",
+                  ? getComputedStyle(document.documentElement)
+                      .getPropertyValue("--signaling-state-text")
+                      .trim()
+                  : "#ffffff",
               fontSize: 12,
               fontFamily: tokens.getPropertyValue("--font-sans").trim(),
               fontWeight: 600,
