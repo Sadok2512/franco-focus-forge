@@ -205,7 +205,8 @@ export function TimeCursor({
           const coords = chart.convertToPixel({ seriesId: s.code }, [
             s.point.t_rel_s,
             s.point.value,
-          ]) as number[];
+          ]) as number[] | undefined;
+          if (!Array.isArray(coords)) return null;
           const [cx, cy] = coords;
           return cx !== undefined &&
             cy !== undefined &&
