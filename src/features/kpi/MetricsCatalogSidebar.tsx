@@ -147,10 +147,26 @@ export function MetricsCatalogSidebar({
       node.node_type === "metric" || (node.node_type === "leaf" && node.selectable);
     const copyPayload =
       node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
+    // Alignement KPI UI : status dot déduit du proof + selectable (même CSS)
+    const statusClass =
+      node.selectable && node.n > 0
+        ? "status-available"
+        : node.proof === "open"
+          ? "status-pending"
+          : "status-unavailable";
+    const isSelected = node.selectable && selected.includes(node.selection ?? "");
+    const canToggle = node.selectable && node.selection
+      ? isSelected || selected.length < 64
+      : branchSelections.length > 0;
+    const handleRowClick = () => {
+      if (!canToggle) return;
+      if (node.selectable && node.selection) onToggle(node.selection);
+      else if (branchSelections.length > 0) toggleBranch(node);
+    };
     return (
       <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
         <div
-          className={`${kindClass}${starClass} ${disabled ? "opacity-45" : ""}`}
+          className={`${kindClass}${starClass} ${disabled ? "opacity-45" : ""} ${isSelected ? "is-selected" : ""}`}
           title={node.reason ?? node.source ?? node.label}
         >
           {children.length > 0 ? (
@@ -165,26 +181,6 @@ export function MetricsCatalogSidebar({
           ) : (
             <span className="w-[13px]" aria-hidden="true" />
           )}
-          {(node.selectable || branchSelections.length > 0) && (
-            <input
-              type="checkbox"
-              checked={node.selectable ? selected.includes(node.selection ?? "") : branchChecked}
-              ref={(element) => {
-                if (element) element.indeterminate = branchPartial;
-              }}
-              disabled={
-                disabled ||
-                (!branchPartial &&
-                  !branchChecked &&
-                  !selected.includes(node.selection ?? "") &&
-                  selected.length >= 64)
-              }
-              aria-label={t("metrics.46d8d72f28dd", { v0: node.label })}
-              onChange={() =>
-                node.selectable && node.selection ? onToggle(node.selection) : toggleBranch(node)
-              }
-            />
-          )}
           {starred && (
             <Star
               size={11}
@@ -192,7 +188,31 @@ export function MetricsCatalogSidebar({
               aria-label={t("metrics.catalogStarred")}
             />
           )}
-          <span className="min-w-0 flex-1 truncate">{node.label.replace(STAR, "").trim()}</span>
+          {/* Alignement KPI : status dot au lieu de checkbox, row-click toggle */}
+          {(node.selectable || branchSelections.length > 0) && (
+            <button
+              type="button"
+              className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
+              onClick={handleRowClick}
+              disabled={!canToggle}
+              aria-pressed={isSelected}
+              aria-label={t("metrics.46d8d72f28dd", { v0: node.label })}
+            >
+              <span
+                className={`kpi-status-dot ${statusClass}`}
+                title={node.proof}
+                aria-hidden="true"
+              />
+              <span className="min-w-0 flex-1 truncate">
+                {node.label.replace(STAR, "").trim()}
+              </span>
+            </button>
+          )}
+          {!(node.selectable || branchSelections.length > 0) && (
+            <span className="min-w-0 flex-1 truncate">
+              {node.label.replace(STAR, "").trim()}
+            </span>
+          )}
           {node.source && (
             <small className="shrink-0 text-[9px] text-muted-foreground">{node.source}</small>
           )}
