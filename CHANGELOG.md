@@ -1,3 +1,8 @@
+## 1.85.0 — Evidence messages section removed
+- The "Evidence messages" row under the Signaling timeline is gone: clicking an event no longer adds a strip with the interval, session and `#seq` buttons below the chart.
+- Selection feedback stays where it already was — the name chip on the timeline, the highlighted row in the messages table, the inspector, and the band tooltip that still carries the proven interval, session and proof sequences.
+- The Time Navigator remains attached directly beneath the tracks; no navigation control changed.
+
 ## 1.84.0 — Selected message row visible after a timeline click
 - The selected message row now carries a strong fill (light blue with dark text in light theme, royal blue with white text in dark theme), bold text and a continuous 2 px accent outline plus a 4 px left bar, so the row a timeline click selected is obvious at a glance.
 - The messages table now scrolls itself so the selected row is always inside the visible area below the sticky header (`reveal-row.ts`: pure `scrollDelta` math applied to the table's own scroll container — the page, the cursor and the queries never move).
