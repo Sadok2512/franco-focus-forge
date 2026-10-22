@@ -47,7 +47,6 @@ describe("workspace settings apply button", () => {
   it("applies the graph layout only on Apply", () => {
     const onLayoutChange = openDialog();
     // Radix tabs activate on focus, not on click.
-    fireEvent.focus(screen.getByRole("tab", { name: i18n.t("wss.graphs") }));
     fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.perRow", { n: 2 }) }));
     expect(onLayoutChange).not.toHaveBeenCalled();
     fireEvent.click(applyBtn());
