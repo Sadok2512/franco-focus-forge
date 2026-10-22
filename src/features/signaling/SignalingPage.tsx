@@ -1707,7 +1707,6 @@ export function SignalingPage({
                       {mapVisible && points.data ? (
                         <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
                       ) : (
-
                         <p role="status">Chargement des positions…</p>
                       )}
                     </section>
