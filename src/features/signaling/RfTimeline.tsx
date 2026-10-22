@@ -808,7 +808,7 @@ export function RfTimeline({
         )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
-          {stateTracksV2 && ["uestate", "rrcstate"].map(lane => {
+          {stateTracksV2 && (["uestate", "rrcstate"] as const).map(lane => {
             const index = lanes.indexOf(lane);
             const center = laneLayout.centers[index];
             return center === undefined ? null : <span key={lane} aria-hidden="true" className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground" style={{ top: 30 + center - 21 }}>
