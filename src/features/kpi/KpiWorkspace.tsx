@@ -69,7 +69,8 @@ import {
   updateTab,
 } from "./workspace-tabs";
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
-import { PanelGridContext, PanelShell } from "./PanelShell";
+import { PanelShell } from "./PanelShell";
+import { WorkspaceGrid } from "./WorkspaceGrid";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -182,7 +183,6 @@ function Workspace({
     return updateTab(initial, initial.activeTabId, { metricCodes: legacyMetrics });
   });
   const currentTab = pickActiveTab(tabsState);
-  const gridCols = currentTab.layout === "auto" ? 2 : Number(currentTab.layout);
   const codes = currentTab.codes;
   const active = currentTab.activeCode;
   const persistTabs = (next: WorkspaceTabsState) => {
@@ -670,15 +670,12 @@ function Workspace({
                 onDisable={() => setOverlay(tabsState.activeTabId, false)}
               />
             ) : null}
-            <div
-              className="kpi-graph-grid"
-              data-count={panels.length + selectedMetrics.length}
-              data-layout={currentTab.layout}
-              data-unified="true"
+            <WorkspaceGrid
+              count={panels.length + selectedMetrics.length + (metricsTablePane ? 1 : 0)}
+              layout={currentTab.layout}
               hidden={currentTab.overlay && panels.length >= 2}
             >
               <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                <PanelGridContext.Provider value={{ cols: gridCols }}>
                   {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
                     <PanelShell
                       key={entry.item.code}
@@ -767,9 +764,8 @@ function Workspace({
                       }}
                     />
                   )}
-                </PanelGridContext.Provider>
               </TableSettingsWorkspaceContext.Provider>
-            </div>
+            </WorkspaceGrid>
             {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />

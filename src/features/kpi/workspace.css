@@ -370,32 +370,19 @@
 .kpi-graph-grid {
   display: grid;
   align-items: start;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  gap: 16px;
 }
-.kpi-graph-grid[data-count="1"],
-.kpi-graph-grid[data-count="0"] {
-  grid-template-columns: minmax(0, 1fr);
+.kpi-workspace-grid-viewport {
+  width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  padding-block: 10px 6px;
+  flex: 1;
 }
-.kpi-graph-grid[data-count="3"] > :last-child {
-  grid-column: 1 / -1;
-}
-/* 1.75.0 (BC3) — Spec v2 G9 : layout control 1/2/3/auto.
-   `data-layout` écrase `data-count` (sauf si count=0). */
-.kpi-graph-grid[data-layout="1"] {
-  grid-template-columns: minmax(0, 1fr);
-}
-.kpi-graph-grid[data-layout="2"] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.kpi-graph-grid[data-layout="2"] > :last-child:nth-child(odd) {
-  grid-column: 1 / -1;
-}
-.kpi-graph-grid[data-layout="3"] {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-.kpi-graph-grid[data-layout="3"] > :last-child:nth-child(2) {
-  grid-column: 1 / -1;
+.kpi-workspace-grid-viewport[hidden] {
+  display: none;
 }
 /* 1.75.0 (BC3) — Spec v2 G4 : bottom tab bar fixée sous le workspace.
    NE PAS afficher au-dessus des graphiques — toujours au bas de .kpi-workspace. */
@@ -793,16 +780,7 @@
   text-align: center;
   font-size: 12px;
 }
-@container (max-width: 850px) {
-  .kpi-graph-grid[data-layout="4"] {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 @container (max-width: 560px) {
-  .kpi-graph-grid[data-layout="2"],
-  .kpi-graph-grid[data-layout="4"] {
-    grid-template-columns: minmax(0, 1fr);
-  }
   .kpi-card-header h3 {
     white-space: normal;
   }
@@ -993,11 +971,6 @@
   overflow: auto;
   margin-top: 8px;
 }
-@container (max-width: 560px) {
-  .kpi-graph-grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 @media (max-width: 800px) {
   .kpi-filter-actions {
     order: 0;
@@ -1103,13 +1076,6 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-}
-.kpi-analysis-table-only > .kpi-graph-grid {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
 }
 .kpi-metrics-table-title {
   flex: 1;
@@ -1243,41 +1209,6 @@
   min-width: 100px;
 }
 
-/* 1.83.0 — V3 §3 : Per row = plafond. Pas de colonnes vides.
-   Contracte à min(selections, per_row) via data-count + data-per-row. */
-.kpi-metrics-charts-grid {
-  display: grid;
-  gap: 10px;
-  padding: 10px;
-  grid-template-columns: minmax(0, 1fr);
-}
-/* data-per-row=2 : OK pour 2+ sélections */
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="2"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="3"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="4"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="5"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="6"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="7"],
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="8"] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-/* data-per-row=3 : OK pour 2 sélections (répartition sur 2 cols) et 3+ (3 cols) */
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="2"] {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="3"],
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="4"],
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="5"],
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="6"],
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="7"],
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="8"] {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-@media (max-width: 1024px) {
-  .kpi-metrics-charts-grid {
-    grid-template-columns: minmax(0, 1fr) !important;
-  }
-}
 
 /* V3 §4 : table largeur naturelle. Pas d'étirement à 100%. */
 .kpi-metrics-table-body table {
@@ -1351,8 +1282,13 @@
 
 /* Unified workspace panels: KPI + Metrics cards share one grid. */
 .kpi-unified-contents { display: contents; }
-.kpi-panel-shell { position: relative; min-width: 0; display: flex; flex-direction: column; border-radius: 10px; }
-.kpi-panel-shell > .kpi-graph-card, .kpi-panel-shell > article { flex: 1; min-height: 0; }
+.kpi-panel-shell { position: relative; min-width: 0; width: 100%; max-width: none; display: flex; flex-direction: column; border-radius: 10px; }
+.kpi-panel-shell > .kpi-graph-card, .kpi-panel-shell > article { flex: 1; min-height: 0; min-width: 0; width: 100%; max-width: none; }
+.kpi-graph-grid[data-columns="1"] { --kpi-panel-chart-height: 340px; }
+.kpi-graph-grid[data-columns="2"] { --kpi-panel-chart-height: 300px; }
+.kpi-graph-grid[data-columns="3"] { --kpi-panel-chart-height: 260px; }
+.kpi-panel-shell [data-testid="metric-card-echarts"],
+.kpi-panel-shell [data-testid="metric-card-chart"] { min-width: 0; width: 100%; }
 .kpi-panel-shell.is-drop { outline: 2px dashed var(--primary, #2563eb); outline-offset: 2px; }
 .kpi-panel-shell.is-collapsed { max-height: 46px; overflow: hidden; }
 .kpi-panel-tools { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 2px; padding: 1px 4px; border: 1px solid #dbe3ee; border-radius: 999px; background: #fff; opacity: 0; transition: opacity .15s; box-shadow: 0 1px 3px rgba(15,23,42,.08); }

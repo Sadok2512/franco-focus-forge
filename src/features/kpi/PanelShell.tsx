@@ -7,6 +7,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Columns2, Copy, GripVertical, Pencil } from "lucide-react";
+import { panelColumns } from "./workspace-grid";
 import {
   movePanel,
   panelOrder,
@@ -57,7 +58,7 @@ export function PanelShell({
       data-testid={`panel-${id}`}
       style={{
         order: panelOrder(s, id, natural),
-        gridColumn: span === "full" || span >= cols ? "1 / -1" : `span ${span}`,
+        gridColumn: `span ${panelColumns(span, cols)}`,
         height: !collapsed && height ? `${height}px` : undefined,
       }}
       onDragOver={(e) => {
