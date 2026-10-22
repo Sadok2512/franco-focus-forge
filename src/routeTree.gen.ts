@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as NameTagCheckRouteImport } from './routes/name-tag-check'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppKpiRouteImport } from './routes/_app.kpi'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
@@ -47,11 +46,6 @@ const AppRoute = AppRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NameTagCheckRoute = NameTagCheckRouteImport.update({
-  id: '/name-tag-check',
-  path: '/name-tag-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAssistantRoute = AppAssistantRouteImport.update({
@@ -165,7 +159,6 @@ const AppSettingsUsersRoute = AppSettingsUsersRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/name-tag-check': typeof NameTagCheckRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
@@ -191,7 +184,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
-  '/name-tag-check': typeof NameTagCheckRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
@@ -218,7 +210,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
-  '/name-tag-check': typeof NameTagCheckRoute
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/kpi': typeof AppKpiRoute
   '/_app/overview': typeof AppOverviewRoute
@@ -246,7 +237,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
-    | '/name-tag-check'
     | '/assistant'
     | '/kpi'
     | '/overview'
@@ -272,7 +262,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
-    | '/name-tag-check'
     | '/assistant'
     | '/kpi'
     | '/overview'
@@ -298,7 +287,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
-    | '/name-tag-check'
     | '/_app/assistant'
     | '/_app/kpi'
     | '/_app/overview'
@@ -326,7 +314,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
-  NameTagCheckRoute: typeof NameTagCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -350,13 +337,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/name-tag-check': {
-      id: '/name-tag-check'
-      path: '/name-tag-check'
-      fullPath: '/name-tag-check'
-      preLoaderRoute: typeof NameTagCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/assistant': {
@@ -583,7 +563,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
-  NameTagCheckRoute: NameTagCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
