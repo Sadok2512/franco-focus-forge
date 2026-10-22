@@ -56,9 +56,19 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
         return { ...type, channel: null, channelSource: "UNCLASSIFIED", conflict: null };
       if (channels.size > 1)
         // Rows of one type disagree on the decoded channel: keep it visible as unclassified.
-        return { ...type, channel: null, channelSource: "UNCLASSIFIED", conflict: [...channels].join("|") };
+        return {
+          ...type,
+          channel: null,
+          channelSource: "UNCLASSIFIED",
+          conflict: [...channels].join("|"),
+        };
       const c = classifyRrc(type.technology, type.name, [...channels][0]);
-      return { ...type, channel: c.logicalChannel, channelSource: c.classificationSource, conflict: c.conflict };
+      return {
+        ...type,
+        channel: c.logicalChannel,
+        channelSource: c.classificationSource,
+        conflict: c.conflict,
+      };
     })
     .sort((a, b) => a.protocol.localeCompare(b.protocol) || a.name.localeCompare(b.name));
 }

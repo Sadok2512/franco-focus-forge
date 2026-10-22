@@ -20,7 +20,11 @@ const LTE: Record<string, string[]> = {
   "BCCH-BCH": ["MasterInformationBlock"],
   "BCCH-DL-SCH": ["SystemInformation", "SystemInformationBlockType1"],
   PCCH: ["Paging"],
-  "UL-CCCH": ["RRCConnectionRequest", "RRCConnectionReestablishmentRequest", "RRCConnectionResumeRequest"],
+  "UL-CCCH": [
+    "RRCConnectionRequest",
+    "RRCConnectionReestablishmentRequest",
+    "RRCConnectionResumeRequest",
+  ],
   "DL-CCCH": [
     "RRCConnectionSetup",
     "RRCConnectionReject",
@@ -78,7 +82,12 @@ const NR: Record<string, string[]> = {
   "BCCH-BCH": ["MIB"],
   "BCCH-DL-SCH": ["SystemInformation", "SIB1"],
   PCCH: ["Paging"],
-  "UL-CCCH": ["RRCSetupRequest", "RRCResumeRequest", "RRCReestablishmentRequest", "RRCSystemInfoRequest"],
+  "UL-CCCH": [
+    "RRCSetupRequest",
+    "RRCResumeRequest",
+    "RRCReestablishmentRequest",
+    "RRCSystemInfoRequest",
+  ],
   "UL-CCCH1": ["RRCResumeRequest1"],
   "DL-CCCH": ["RRCReject", "RRCSetup"],
   "UL-DCCH": [
