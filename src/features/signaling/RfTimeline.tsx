@@ -736,7 +736,7 @@ export function RfTimeline({
       brush: {
         xAxisIndex: xAxes.map((_, i) => i),
         brushType: "lineX",
-        toolbox: ["lineX", "clear"],
+        toolbox: [],
       },
       tooltip: {
         show: false,

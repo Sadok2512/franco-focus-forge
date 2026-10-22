@@ -683,7 +683,7 @@ function Timeline({
             endValue: view.current.timeWindow[1],
           },
         ],
-        brush: { xAxisIndex: 0, brushType: "lineX", toolbox: ["lineX", "clear"] },
+        brush: { xAxisIndex: 0, brushType: "lineX", toolbox: [] },
         series: layers.map((name, i) => ({
           id: name,
           name,
