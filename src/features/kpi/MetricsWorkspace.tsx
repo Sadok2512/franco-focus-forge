@@ -9,6 +9,7 @@ import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -504,6 +505,14 @@ export function MetricsWorkspace({
       className="kpi-graph-card col-span-full kpi-metrics-table-premium"
       data-testid="metrics-v3-workspace"
     >
+      {pane === "charts" && captureId && parsedSelections.length > 0 && (
+        <MetricsEventsRibbon
+          projectId={projectId}
+          captureId={captureId}
+          filters={filters}
+          syncId={`metrics-charts-${captureId}`}
+        />
+      )}
       {pane === "charts" && captureId && (
         <section
           className="kpi-metrics-charts-grid"
@@ -542,6 +551,7 @@ export function MetricsWorkspace({
                 onViewChange={() => {
                   /* Mode exclusif Charts : la vue est verrouillée sur graph */
                 }}
+                syncId={captureId ? `metrics-charts-${captureId}` : undefined}
               />
             );
           })}

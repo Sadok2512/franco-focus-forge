@@ -1,3 +1,41 @@
+## 1.97.0 (minor) — BC4-FRONT 2026-10-22 — Phase 2 Charts : synchronized cursor + Events Ribbon (Agent BC3)
+
+Mission `(c) Phase 2 Charts` : hover d'une carte Metrics propage le curseur à toutes les autres cartes + un ruban d'events RRC/HO/RLF/Task s'ajoute au-dessus de la grille.
+
+### Synchronized cursor (Recharts `syncId`)
+
+- `src/features/kpi/MetricGraphCard.tsx:73-93` : prop `syncId?: string | undefined` ajoutée. Propagée à `MetricTimePlot` (plot sous-composant).
+- `MetricGraphCard.tsx:164` : `<MetricTimePlot ... syncId={syncId} />`.
+- `MetricTimePlot:441-452` : nouvelle prop `syncId?` passée au `<LineChart>` via spread conditionnel `{...(syncId ? { syncId } : {})}` (évite TS2375 avec `exactOptionalPropertyTypes:true`).
+- `MetricsWorkspace.tsx:547` : `syncId={captureId ? \`metrics-charts-${captureId}\` : undefined}` sur chaque carte. Même capture → même syncId → cursor synchronisé entre toutes les cartes du grid Charts.
+
+### Events Ribbon (`MetricsEventsRibbon.tsx`)
+
+- Nouveau composant au-dessus du grid Charts quand `pane === "charts" && captureId && selections > 0`.
+- Fetche `GET /projects/{p}/captures/{cap}/events?types=task,ho,rlf,rrc` via `getCaptureEvents` (déjà exposé en lib).
+- Rend un `<ScatterChart>` Recharts avec 4 types × une lane y chacun :
+  - `task` bleu (#2563eb), lane y=1
+  - `ho` rouge (#dc2626), lane y=2
+  - `rlf` orange (#ea580c), lane y=3
+  - `rrc` vert (#16a34a), lane y=4
+- Partage le même `syncId` que les cartes → hover d'un event déclenche le crosshair sur toutes les cartes au même t_rel_s.
+- Fallbacks explicites : `isPending` → "Loading events…" ; `isError` → "Events unavailable ({error.message})" ; markers vides → "No capture events". Jamais vide muet.
+
+### Layout 1/2/3 cols CSS matrix (`workspace.css`)
+
+- Ajout du block `.kpi-metrics-charts-grid` + `[data-per-row="1|2|3"]` + overrides `[data-count="1"|"2"]` qui préservent la grille même si la dernière carte ne remplit pas la rangée (`grid-template-columns: repeat(perRow, minmax(0, 1fr))`).
+- `.kpi-metrics-events-ribbon` : encadré blanc, padding compact, header "Events · N markers".
+
+### Non-régression
+
+- `tsc --noEmit` : 0 erreur.
+- `vitest run` : 276 passed | 2 skipped | 0 failed.
+
+### Non livré dans cette patch (hors scope Phase 2 Charts V2)
+
+- Click sur un event du ribbon ne positionne pas (encore) un curseur persistant sur les cartes (zoom + follow). Nécessaire = state partagé `selectedTime` en haut de MetricsWorkspace + prop sur chaque carte + render d'une `<ReferenceLine>` à ce temps. Lot V2.1 si demandé.
+- Click-click = zoom range : idem lot V2.1.
+
 ## 1.96.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.92→1.95 (toolbar cleanup) ↔ BC3 1.92.1 (Scanner banner workspace-level) (Agent BC3)
 
 Suite directe des 2 lots (Lovable workspace toolbar removals 1.92→1.95 + BC3 scanner UI 1.92.1).

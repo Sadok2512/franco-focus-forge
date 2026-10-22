@@ -1,0 +1,141 @@
+/** 1.97.0 (Phase 2 Charts) — Ribbon horizontal au-dessus de la grille de
+ * cartes Metrics. Affiche les markers RRC / HO / RLF / Task du capture
+ * actif comme icônes positionnées sur l'axe temporel (t_rel_s). Partage
+ * `syncId` Recharts avec les cartes → le curseur de hover se synchronise
+ * entre ribbon et toutes les cartes.
+ *
+ * Source back : `GET /projects/{p}/captures/{cap}/events?types=task,ho,rlf,rrc`.
+ * Jamais fabriqué : si l'endpoint ne retourne rien, le ribbon affiche un
+ * placeholder « No capture events ».
+ */
+import { useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
+import {
+  ResponsiveContainer,
+  Scatter,
+  ScatterChart,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { getCaptureEvents } from "@/lib/api/client";
+import { formatNumber } from "@/lib/i18n";
+import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
+
+const TYPE_COLORS: Record<string, string> = {
+  task: "#2563eb",
+  ho: "#dc2626",
+  rlf: "#ea580c",
+  rrc: "#16a34a",
+};
+
+export function MetricsEventsRibbon({
+  projectId,
+  captureId,
+  filters,
+  syncId,
+}: {
+  projectId: string;
+  captureId: string;
+  filters: KpiQueryFilters;
+  syncId?: string | undefined;
+}) {
+  const q = useQuery({
+    queryKey: ["capture-events", projectId, captureId, filters],
+    queryFn: ({ signal }) => getCaptureEvents(projectId, captureId, signal, filters),
+    enabled: !!captureId,
+  });
+  // Un group par type pour affecter une couleur et une "lane" y fixe.
+  const byType = useMemo(() => {
+    const buckets: Record<string, { t_rel_s: number; y: number; label: string; type: string }[]> = {
+      task: [],
+      ho: [],
+      rlf: [],
+      rrc: [],
+    };
+    const yByType: Record<string, number> = { task: 1, ho: 2, rlf: 3, rrc: 4 };
+    for (const m of q.data?.markers ?? []) {
+      const y = yByType[m.type] ?? 1;
+      (buckets[m.type] ??= []).push({ t_rel_s: m.t_rel_s, y, label: m.label, type: m.type });
+    }
+    return buckets;
+  }, [q.data]);
+  const totalMarkers = (q.data?.markers ?? []).length;
+  const header = `Events · ${totalMarkers} marker${totalMarkers === 1 ? "" : "s"}`;
+  if (q.isPending) {
+    return (
+      <div className="kpi-metrics-events-ribbon" data-testid="metrics-events-ribbon">
+        <small className="text-muted-foreground">Loading events…</small>
+      </div>
+    );
+  }
+  if (q.isError || totalMarkers === 0) {
+    return (
+      <div className="kpi-metrics-events-ribbon" data-testid="metrics-events-ribbon">
+        <small className="text-muted-foreground">
+          {q.isError ? `Events unavailable (${q.error.message})` : "No capture events"}
+        </small>
+      </div>
+    );
+  }
+  return (
+    <div
+      className="kpi-metrics-events-ribbon"
+      data-testid="metrics-events-ribbon"
+      data-markers={totalMarkers}
+    >
+      <small className="kpi-metrics-events-header text-muted-foreground">{header}</small>
+      <div style={{ height: 50 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart
+            margin={{ top: 4, right: 14, left: 4, bottom: 16 }}
+            {...(syncId ? { syncId } : {})}
+          >
+            <XAxis
+              type="number"
+              dataKey="t_rel_s"
+              domain={[0, "dataMax"]}
+              tickCount={6}
+              tick={{ fontSize: 9, fill: "#64748b" }}
+              tickFormatter={(v: number) =>
+                typeof v === "number"
+                  ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " s"
+                  : String(v)
+              }
+            />
+            <YAxis
+              type="number"
+              dataKey="y"
+              domain={[0.5, 4.5]}
+              hide
+            />
+            <Tooltip
+              cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
+              contentStyle={{ fontSize: 10, padding: "3px 6px" }}
+              formatter={(_v, _n, item: unknown) => {
+                const d = (item as { payload?: { label?: string; type?: string } })?.payload;
+                return [d?.label ?? "", d?.type?.toUpperCase() ?? ""];
+              }}
+              labelFormatter={(l: number) =>
+                typeof l === "number"
+                  ? `${formatNumber(l, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s`
+                  : String(l)
+              }
+            />
+            {Object.entries(byType).map(([type, pts]) =>
+              pts.length === 0 ? null : (
+                <Scatter
+                  key={type}
+                  data={pts}
+                  fill={TYPE_COLORS[type] ?? "#64748b"}
+                  shape="circle"
+                  isAnimationActive={false}
+                />
+              ),
+            )}
+          </ScatterChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
