@@ -704,6 +704,8 @@
     "opt_blue": "Blue technical"
   },
   "panel": {
+    "collapse_catalogue": "Collapse catalogue",
+    "expand_catalogue": "Expand catalogue",
     "move": "Drag to move",
     "rename": "Rename",
     "width": "Panel width",

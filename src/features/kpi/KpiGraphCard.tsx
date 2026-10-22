@@ -195,7 +195,7 @@ export function KpiPlot({
   return (
     <div
       className="kpi-plot"
-      style={{ height }}
+      style={{ height: height === 430 ? height : "var(--kpi-panel-chart-height, 235px)" }}
       ref={host}
       role="img"
       aria-label={`${mode === "graph" ? translate("kpi.1bbcd8f9d0c3") : translate("kpi.86eb05ab111d")} ${rows[0]?.metric ?? "KPI"} : ${rows.map((r) => `${r.label} ${formatValue(r.value)} ${r.unit ?? ""}`).join(" ; ")}`}
@@ -519,7 +519,8 @@ export function KpiGraphCard({
                     }}
                   >
                     <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
-                    <VisualizationItems excludeGraph
+                    <VisualizationItems
+                      excludeGraph
                       throughput={seriesAvailable}
                       seriesAvailable={seriesAvailable}
                       onChange={(visualization) => onConfig({ ...config, visualization })}

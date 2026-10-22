@@ -22,7 +22,17 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { BarChart3, Download, Plus, RefreshCw, X } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 import { getProjectKpi } from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
@@ -69,7 +79,8 @@ import {
   updateTab,
 } from "./workspace-tabs";
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
-import { PanelGridContext, PanelShell } from "./PanelShell";
+import { PanelShell } from "./PanelShell";
+import { WorkspaceGrid } from "./WorkspaceGrid";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -138,6 +149,8 @@ function Workspace({
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
+  const cataloguePanel = useRef<PanelImperativeHandle>(null);
+  const [catalogueCollapsed, setCatalogueCollapsed] = useState(false);
   // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
@@ -182,7 +195,6 @@ function Workspace({
     return updateTab(initial, initial.activeTabId, { metricCodes: legacyMetrics });
   });
   const currentTab = pickActiveTab(tabsState);
-  const gridCols = currentTab.layout === "auto" ? 2 : Number(currentTab.layout);
   const codes = currentTab.codes;
   const active = currentTab.activeCode;
   const persistTabs = (next: WorkspaceTabsState) => {
@@ -453,6 +465,10 @@ function Workspace({
           defaultSize="280px"
           minSize="230px"
           maxSize="460px"
+          panelRef={cataloguePanel}
+          collapsible
+          collapsedSize="0px"
+          onResize={() => setCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)}
           className="kpi-sidebar-panel"
         >
           <div className="kpi-sidebar-tabs">
@@ -542,6 +558,23 @@ function Workspace({
           <div
             className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
           >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="kpi-catalog-toggle"
+              title={translate(
+                catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue",
+              )}
+              aria-label={translate(
+                catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue",
+              )}
+              onClick={() => {
+                if (cataloguePanel.current?.isCollapsed()) cataloguePanel.current.expand();
+                else cataloguePanel.current?.collapse();
+              }}
+            >
+              {catalogueCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+            </Button>
             <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
               <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (
@@ -670,106 +703,104 @@ function Workspace({
                 onDisable={() => setOverlay(tabsState.activeTabId, false)}
               />
             ) : null}
-            <div
-              className="kpi-graph-grid"
-              data-count={panels.length + selectedMetrics.length}
-              data-layout={currentTab.layout}
-              data-unified="true"
+            <WorkspaceGrid
+              count={panels.length + selectedMetrics.length + (metricsTablePane ? 1 : 0)}
+              layout={currentTab.layout}
               hidden={currentTab.overlay && panels.length >= 2}
             >
               <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                <PanelGridContext.Provider value={{ cols: gridCols }}>
-                  {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
-                    <PanelShell
-                      key={entry.item.code}
-                      workspaceId={tabsState.activeTabId}
-                      id={`kpi:${entry.item.code}`}
-                      natural={natural}
-                      defaultTitle={entry.item.name}
-                    >
-                      {(panelTitle) => (
-                        <KpiGraphCard
-                          projectId={projectId}
-                          appliedFilters={applied}
-                          captureId={captureId}
-                          onCaptureChange={setCaptureId}
-                          entry={
-                            panelTitle === entry.item.name
-                              ? entry
-                              : { ...entry, item: { ...entry.item, name: panelTitle } }
-                          }
-                          query={query}
-                          blockedReason={
-                            dimensionsLoading
-                              ? translate("kpi.f58ddd1effba")
-                              : dimensionsError
-                                ? translate("kpi.a237d197caeb")
-                                : undefined
-                          }
-                          rows={graphRows}
-                          statistic={stat}
-                          config={configFor(entry.item.code)}
-                          groupOptions={(
-                            [
-                              "none",
-                              "operator",
-                              "band",
-                              "operator_band",
-                              ...(dimensions?.dor?.available ? ["dor"] : []),
-                            ] as KpiGroupBy[]
-                          ).filter(
-                            (g) =>
-                              g === "none" ||
-                              g === "dor" ||
-                              (g === "operator"
-                                ? dimensions?.operators?.available
-                                : g === "band"
-                                  ? dimensions?.bands?.available
-                                  : dimensions?.operators?.available &&
-                                    dimensions?.bands?.available),
-                          )}
-                          onConfig={(next) => updateConfig(entry.item.code, next)}
-                          onStatistic={(value) =>
-                            updateConfig(entry.item.code, {
-                              ...configFor(entry.item.code),
-                              statistic: value,
-                            })
-                          }
-                          active={effectiveActive === entry.item.code}
-                          onActivate={() => setActive(entry.item.code)}
-                          selectedRows={selectedRows}
-                          onSelectRow={toggleRow}
-                          onRemove={() => toggle(entry.item.code)}
-                          onMove={(direction) => move(entry.item.code, direction)}
-                          index={codes.indexOf(entry.item.code)}
-                          count={codes.length}
-                        />
-                      )}
-                    </PanelShell>
-                  ))}
-                  {selectedMetrics.length > 0 && (
-                    <MetricsWorkspace
-                      key={currentTab.id}
-                      projectId={projectId}
-                      captureId={captureId}
-                      onCaptureChange={setCaptureId}
-                      selections={selectedMetrics}
-                      catalog={metricsCatalog.data?.metrics ?? []}
-                      filters={applied}
-                      view={metricsView}
-                      onViewChange={setMetricsView}
-                      onTablePaneChange={setMetricsTablePane}
-                      workspaceId={tabsState.activeTabId}
-                      onColumnsChange={setTableColumns}
-                      paneRequest={metricsPaneRequest.n}
-                      onClear={() => {
-                        setSelectedMetrics([]);
-                      }}
-                    />
-                  )}
-                </PanelGridContext.Provider>
+                {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
+                  <PanelShell
+                    key={entry.item.code}
+                    workspaceId={tabsState.activeTabId}
+                    id={`kpi:${entry.item.code}`}
+                    natural={natural}
+                    defaultTitle={entry.item.name}
+                  >
+                    {(panelTitle) => (
+                      <KpiGraphCard
+                        projectId={projectId}
+                        appliedFilters={applied}
+                        captureId={captureId}
+                        onCaptureChange={setCaptureId}
+                        entry={
+                          panelTitle === entry.item.name
+                            ? entry
+                            : { ...entry, item: { ...entry.item, name: panelTitle } }
+                        }
+                        query={query}
+                        blockedReason={
+                          dimensionsLoading
+                            ? translate("kpi.f58ddd1effba")
+                            : dimensionsError
+                              ? translate("kpi.a237d197caeb")
+                              : undefined
+                        }
+                        rows={graphRows}
+                        statistic={stat}
+                        config={configFor(entry.item.code)}
+                        groupOptions={(
+                          [
+                            "none",
+                            "operator",
+                            "band",
+                            "operator_band",
+                            ...(dimensions?.dor?.available ? ["dor"] : []),
+                          ] as KpiGroupBy[]
+                        ).filter(
+                          (g) =>
+                            g === "none" ||
+                            g === "dor" ||
+                            (g === "operator"
+                              ? dimensions?.operators?.available
+                              : g === "band"
+                                ? dimensions?.bands?.available
+                                : dimensions?.operators?.available && dimensions?.bands?.available),
+                        )}
+                        onConfig={(next) => updateConfig(entry.item.code, next)}
+                        onStatistic={(value) =>
+                          updateConfig(entry.item.code, {
+                            ...configFor(entry.item.code),
+                            statistic: value,
+                          })
+                        }
+                        active={effectiveActive === entry.item.code}
+                        onActivate={() => setActive(entry.item.code)}
+                        selectedRows={selectedRows}
+                        onSelectRow={toggleRow}
+                        onRemove={() => toggle(entry.item.code)}
+                        onMove={(direction) => move(entry.item.code, direction)}
+                        index={codes.indexOf(entry.item.code)}
+                        count={codes.length}
+                      />
+                    )}
+                  </PanelShell>
+                ))}
+                {selectedMetrics.length > 0 && (
+                  <MetricsWorkspace
+                    key={currentTab.id}
+                    projectId={projectId}
+                    captureId={captureId}
+                    onCaptureChange={setCaptureId}
+                    selections={selectedMetrics}
+                    catalog={metricsCatalog.data?.metrics ?? []}
+                    filters={applied}
+                    view={metricsView}
+                    onViewChange={setMetricsView}
+                    onTablePaneChange={setMetricsTablePane}
+                    workspaceId={tabsState.activeTabId}
+                    onColumnsChange={setTableColumns}
+                    paneRequest={metricsPaneRequest.n}
+                    onClear={() => {
+                      setSelectedMetrics([]);
+                    }}
+                    onRemove={(code) =>
+                      setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
+                    }
+                  />
+                )}
               </TableSettingsWorkspaceContext.Provider>
-            </div>
+            </WorkspaceGrid>
             {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
