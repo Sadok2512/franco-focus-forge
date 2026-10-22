@@ -7,6 +7,7 @@ export type WorkspaceTab = {
   id: string;
   name: string;
   codes: string[];
+  metricCodes?: string[];
   activeCode: string | null;
   layout: WorkspaceLayout;
   // 1.76.0 (BC3) — Spec v2 G6 : overlay = tous les codes du tab rendus dans
@@ -26,6 +27,7 @@ export function defaultTab(codes: string[] = [], name = DEFAULT_NAME): Workspace
     id: uid(),
     name,
     codes,
+    metricCodes: [],
     activeCode: codes[0] ?? null,
     layout: "auto",
     overlay: false,
@@ -48,6 +50,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
       i: t.id,
       n: t.name,
       c: t.codes,
+       m: t.metricCodes,
       a: t.activeCode,
       l: t.layout,
       o: t.overlay ? 1 : 0,
@@ -87,13 +90,18 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
         id: r["i"] as string,
         name: r["n"] as string,
         codes,
+        ...(Array.isArray(r["m"])
+          ? { metricCodes: r["m"].filter((v): v is string => typeof v === "string") }
+          : {}),
         activeCode,
         layout,
         overlay,
       });
     }
     if (!tabs.length) return null;
-    const activeTabId = tabs.find((t) => t.id === obj.a)?.id ?? tabs[0]!.id;
+    const firstTab = tabs[0];
+    if (!firstTab) return null;
+    const activeTabId = tabs.find((t) => t.id === obj.a)?.id ?? firstTab.id;
     return { tabs, activeTabId };
   } catch {
     return null;
@@ -146,5 +154,16 @@ export function reorderTab(
 }
 
 export function activeTab(state: WorkspaceTabsState): WorkspaceTab {
-  return state.tabs.find((t) => t.id === state.activeTabId) ?? state.tabs[0]!;
+  return state.tabs.find((t) => t.id === state.activeTabId) ?? state.tabs[0] ?? defaultTab();
+}
+
+/** Import the former project-wide metric selection into the active legacy tab only. */
+export function migrateMetrics(state: WorkspaceTabsState, metrics: string[]): WorkspaceTabsState {
+  return {
+    ...state,
+    tabs: state.tabs.map((tab) => ({
+      ...tab,
+      metricCodes: tab.metricCodes ?? (tab.id === state.activeTabId ? [...metrics] : []),
+    })),
+  };
 }

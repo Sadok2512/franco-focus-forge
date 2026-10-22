@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- KPI and metric selections persist together per workspace tab; legacy URL metrics migrate only to the active tab, so new tabs are empty and switching restores each tab's panels.
 - Remember-me selects localStorage versus sessionStorage through the HTTP auth adapter and remembers only the username; never persist passwords or extend the VM-issued token expiry. Login redirects valid existing sessions to projects.
 - Network Events uses a frontend presentation allowlist in signaling/network-events.ts; other tracks, capture duration, source events and message queries remain independent of that allowlist.
 - UI reads data only through `src/lib/api/client.ts` (typed mock adapter, Zod schemas in `schemas.ts`); fixtures stay isolated in `fixtures.ts` so a real backend can replace them without touching components.
@@ -30,6 +31,7 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 - Signaling cursor uses one capture-time state in SignalingPage and a single ECharts pixel overlay across all RF grids; cursor motion is local so selection never becomes a list query key or triggers details requests.
 - Signaling starts its cursor at capture time zero without selecting a message; pixel overlays refresh on chart readiness and resize, and hover previews never replace the locked cursor.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
+- MetricsWorkspace reports its Table pane to the parent; hide KPI-only controls only in a metrics-only Table workspace, preserving controls for mixed/KPI and other views. Table titles use API metric and cell labels, never a hardcoded example.
 
 - Signaling visible time and TimeNavigator are shared by all timeline views in SignalingPage; both /signaling and /signaling-v2 use the UE/RRC State layout with the configurable 30 s initial window (user request to match the V6 mockup). Zoom changes are local and never message/map query keys.
 - Navigator edge resizing uses a pure boundary-clamping helper and capture-coordinate pointer deltas; it changes only the shared visible window, never cursor or message state.
@@ -43,3 +45,5 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 
 - Signaling message-type filtering uses a complete paginated rows population through client.ts, cached per capture for counts; transactional draft selection is isolated from timeline/map keys, and exact name+layer filtering, pagination and CSV share the same selected population. Reject incomplete/changing populations so capture counters cannot become page counts.
 - Signaling message filter hierarchy (Technology → Channel → Message) is built in message-filter.ts; RRC channels come from the decoded VM `channel` first, then the exact-match 3GPP TS 36.331/38.331 catalogue in rrc-channels.ts (controlled normalisation, no substring matching), else Unclassified; NAS/Nemo/MAC never get RRC channels and conflicts keep the source channel.
+- Workspace Table Settings live in `src/features/kpi/table-settings.ts` (per workspace tab, localStorage), reach every workspace table (Metrics pane, Metrics card tables, KPI data table) through `TableSettingsWorkspaceContext` + `tableSettingsProps`, and are opened from the ⚙ in the active bottom tab; they change presentation only (CSS vars, column order/visibility, sort/search) and never values, queries or exports. Edits stay in a dialog draft and reach the tables only when the user clicks "Appliquer", so closing the popup discards them.
+- WorkspaceGrid derives columns solely from the active tab layout and observed container width; Metrics wrappers use display:contents so PanelShell frames share the grid. Clamp spans to derived columns; never use nested metric grids or resize-driven query keys. Layout/title/order persist per tab.

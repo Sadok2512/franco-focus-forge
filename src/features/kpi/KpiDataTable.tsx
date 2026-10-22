@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useMemo, useState } from "react";
+import { usePanelTableSettings } from "./table-settings";
 import { ChevronLeft, ChevronRight, Columns3, Download, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -96,6 +97,7 @@ export function KpiDataTable({
   onSelect: (ids: Set<string>) => void;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
+  const tableProps = usePanelTableSettings();
   const [search, setSearch] = useState(""),
     [hidden, setHidden] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<{ key: keyof AnalyticRow; descending: boolean }>({
@@ -207,7 +209,7 @@ export function KpiDataTable({
           </button>
         </div>
       </header>
-      <div className="kpi-table-scroll">
+      <div className="kpi-table-scroll kpi-ts" {...tableProps}>
         <table>
           <thead>
             <tr>

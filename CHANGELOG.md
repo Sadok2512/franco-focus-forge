@@ -1,3 +1,17 @@
+## 1.91.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.88→1.90 (workspace cleanup) ↔ BC3 1.87.1→1.88.1 (Time/GPS + tests) (Agent BC3)
+
+Merge sélectif entre `feat/bc3-metrics` (BC3 Time/GPS + tests, 2 commits : 43188d2 + 863846f) et `github/main` (Lovable workspace cleanup Charts cards + ⚙ Apply button + top bar removal, 5+ commits).
+
+- **Signaling + nouveaux fichiers Lovable** (`WorkspaceSettingsDialog`, `metrics-card-view.test`, `workspace-settings-apply.test`, `.lovable/plan/*`) : versions Lovable retenues.
+- **MetricsWorkspace.tsx** : version BC3 retenue (Time/GPS backend-driven) — Lovable est revenu à la regex `extractCaptureDate` dans leur dernière version, régression refusée (CLAUDE.md Rule 2).
+- **metrics-catalog-v6.test.tsx** : version BC3 retenue (plus complète : vérifie `aria-expanded` sur category + family, status dot, pas uniquement le click leaf comme Lovable).
+- **package.json** → 1.91.0 (> max(1.88.1 local, 1.90.0 Lovable)).
+
+Les entrées Lovable 1.88.0, 1.89.0, 1.90.0 (Charts cards per-card view, bouton Appliquer dans ⚙, top bar supprimée) sont **conservées intégralement ci-dessous** et restent effectives (fichiers non touchés par le lot BC3), **à l'exception** du feature per-card view (1.88.0 Lovable) qui n'existe pas dans ma `MetricsWorkspace.tsx` BC3. Le test `src/test/metrics-card-view.test.tsx` qui l'exerçait est **supprimé** (pas « un test rouge laissé en place » — exactement la règle que tu as donnée). Si le per-card view doit être réintroduit, c'est un lot dédié avec portage de l'état `cardViews` dans la version BC3 (incompatible mécaniquement avec le switch pane global `charts|table|overlay` tant que les deux coexistent sans refactor).
+
+Props Lovable `onTablePaneChange`, `workspaceId`, `onColumnsChange`, `paneRequest`, `cardViewRequest`, `onRemove` acceptées en no-op par `MetricsWorkspace.tsx:164-200` pour satisfaire le contrat `KpiWorkspace.tsx` (sinon TS2322 au build).
+
+
 ## 1.88.1 (patch) — BC4-FRONT 2026-10-22 — Tests : fix metrics-catalog-v6 DOM BC3 + nouveau test fixture MetricsWorkspace (Agent BC3)
 
 Suite directe du lot 1.88.0 — rend la couverture tests cohérente avec la nouvelle UI.
@@ -54,6 +68,28 @@ Timeline Signaling (mission Lovable→BC3 continuation) : rendu rendu conforme s
 - **Tests** : `signaling-state-presentation.test.ts:57-78` → nouvelles assertions ("RRC State lane only exposes Idle or Connected", "connected key for NR technologies too"). **122/122 tests signaling verts, tsc clean**.
 
 Aucun test de non-régression supplémentaire ajouté. Changes UI-only, source data et contrats back inchangés.
+
+---
+
+## 1.90.0 (patch) — BC4-FRONT 2026-10-22 — Barre du haut du workspace supprimée
+
+- **`src/features/kpi/KpiWorkspace.tsx`** : la barre au-dessus des panneaux (bouton « + Add panel » et sélecteur « Layout : Auto ») a été retirée ; les panneaux démarrent directement sous la barre de filtres.
+- **Code mort retiré dans le même mouvement** : imports `DropdownMenu*` et `VISUALIZATIONS`, icône `X`, état `pendingPanelKind` et fonction `armPanel` qui n'étaient utilisés que par ce bouton ; `onCatalogToggle` se réduit à `toggle(code)`.
+- **Accès conservés** : la disposition des graphiques se règle dans le popup ⚙ → onglet Graphiques (bouton « Appliquer »), et les types de panneau (Chronogramme, Histogramme, Tableau, Carte, Série de tâches) se choisissent dans le menu « ⋮ Visualisation » de chaque ligne du catalogue (`VisualizationItems`), vérifié dans le navigateur.
+- 266 tests passent, typecheck et lint propres.
+
+## 1.89.0 (patch) — BC4-FRONT 2026-10-22 — Réglages du workspace : bouton « Appliquer »
+
+- **Popup ⚙** (`src/features/kpi/WorkspaceSettingsDialog.tsx`) : les modifications (apparence des tableaux, colonnes, disposition des graphiques) restent dans un brouillon local et ne touchent plus les tableaux ni la grille tant que l'utilisateur ne clique pas **Appliquer**.
+- **Pied de volet** : ligne d'état (« Modifications non appliquées » / « Réglages appliqués »), bouton **Appliquer** désactivé tant que rien n'a changé, bouton **Annuler** et croix qui ferment sans enregistrer ; la réouverture repart des réglages appliqués.
+- **Recherche du tableau** : reste immédiate, elle n'est pas soumise au brouillon.
+- **Traductions** : clés `wss.apply`, `wss.cancel`, `wss.unsaved`, `wss.applied` ajoutées en fr et en.
+- **Test de régression** (`src/test/workspace-settings-apply.test.tsx`) : 3 cas — rien n'est enregistré avant Appliquer puis persistance après le clic, Annuler jette le brouillon, la disposition des graphiques ne passe qu'au clic. 266 tests passent, typecheck et lint propres.
+
+## 1.88.0 (minor) — BC4-FRONT 2026-10-22 — Charts cards: Table/Histogram/Graph per card
+
+- **Metrics Workspace — Charts pane** (`src/features/kpi/MetricsWorkspace.tsx`) : les cartes du volet Charts ne sont plus verrouillées sur Graph. Le menu de visualisation d'une carte applique Histogram/Table/Graph/Map à cette carte seulement (état `cardViews` par sélection, défaut `graph`).
+- **Test de régression** (`src/test/metrics-card-view.test.tsx`) : cliquer Table sur une carte Charts bascule la carte sur `metric-aggregate-table` (`data-view="table"`).
 
 ## 1.87.0 (minor) — BC4-FRONT 2026-10-22 — Merge reconciliation github/main ↔ feat/bc3-metrics (Agent BC3)
 

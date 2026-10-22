@@ -7,22 +7,20 @@ import {
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  VISUALIZATIONS,
-  defaultConfig,
-  type ChartConfig,
-  type VisualizationType,
-} from "./visualization-model";
+import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { BarChart3, Download, Plus, RefreshCw, X } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 import { getProjectKpi } from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
@@ -34,6 +32,7 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
+import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import type { MetricView } from "./MetricGraphCard";
@@ -62,11 +61,14 @@ import {
   decodeTabs,
   encodeTabs,
   newTabsState,
+  migrateMetrics,
   removeTab,
   reorderTab,
   updateTab,
 } from "./workspace-tabs";
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
+import { PanelShell } from "./PanelShell";
+import { WorkspaceGrid } from "./WorkspaceGrid";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -135,21 +137,26 @@ function Workspace({
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
+  const cataloguePanel = useRef<PanelImperativeHandle>(null);
+  const [catalogueCollapsed, setCatalogueCollapsed] = useState(false);
   // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
   const tabsStorageKey = `bc4.kpi.tabs.${projectId}`;
+  const legacyMetrics = Array.isArray(search["metrics"])
+    ? search["metrics"].filter((v): v is string => typeof v === "string")
+    : [];
   const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() => {
     const raw = typeof search["tabs"] === "string" ? (search["tabs"] as string) : "";
     if (raw) {
       const decoded = decodeTabs(raw);
-      if (decoded) return decoded;
+      if (decoded) return migrateMetrics(decoded, legacyMetrics);
     }
     try {
       const stored = localStorage.getItem(tabsStorageKey);
       if (stored) {
         const decoded = decodeTabs(stored);
-        if (decoded) return decoded;
+        if (decoded) return migrateMetrics(decoded, legacyMetrics);
       }
     } catch {
       /* ignore */
@@ -172,7 +179,8 @@ function Workspace({
     const hasExplicitSelection =
       requested.length > 0 || Array.isArray(search["kpis"]) || typeof search["kpi"] === "string";
     const seedCodes = hasExplicitSelection ? valid : [];
-    return newTabsState(seedCodes);
+    const initial = newTabsState(seedCodes);
+    return updateTab(initial, initial.activeTabId, { metricCodes: legacyMetrics });
   });
   const currentTab = pickActiveTab(tabsState);
   const codes = currentTab.codes;
@@ -192,6 +200,7 @@ function Workspace({
         tabs: encoded,
         kpis: pickActiveTab(next).codes,
         kpi: pickActiveTab(next).codes[0],
+        metrics: pickActiveTab(next).metricCodes ?? [],
       }),
       replace: true,
     } as never);
@@ -264,36 +273,36 @@ function Workspace({
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
   const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics">("kpi");
   const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(() => {
-    const raw = Array.isArray(search["metrics"]) ? (search["metrics"] as unknown[]) : [];
-    return raw.filter((v): v is string => typeof v === "string");
-  });
+  const selectedMetrics = currentTab.metricCodes ?? [];
+  const setSelectedMetrics = (next: string[]) =>
+    persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricCodes: next }));
   const toggleMetric = (code: string) => {
     const next = selectedMetrics.includes(code)
       ? selectedMetrics.filter((candidate) => candidate !== code)
       : [...selectedMetrics, code];
     setSelectedMetrics(next);
-    void navigate({
-      to: ".",
-      search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
-      replace: true,
-    } as never);
   };
   // 1.73.0 (BC3) — vue partagée MetricsWorkspace, pilotée par le menu ⋯ du sidebar
   // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
   // mappe 1-pour-1 sur View (scatter en plus côté workspace, non exposé au sidebar).
   const [metricsView, setMetricsView] = useState<MetricsView>("table");
+  const [tableColumns, setTableColumns] = useState<{ code: string; label: string }[]>([]);
+  const [metricsTablePane, setMetricsTablePane] = useState(false);
+  const [metricsPaneRequest, setMetricsPaneRequest] = useState<{ pane: "table"; n: number }>({
+    pane: "table",
+    n: 0,
+  });
+  const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
+  const [cardViewRequest, setCardViewRequest] = useState<
+    { code: string; view: MetricView; n: number } | undefined
+  >();
   const visualizeMetric = (code: string, view: MetricView) => {
     if (!selectedMetrics.includes(code)) {
       const next = [...selectedMetrics, code];
       setSelectedMetrics(next);
-      void navigate({
-        to: ".",
-        search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
-        replace: true,
-      } as never);
     }
     setMetricsView(view);
+    setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
@@ -348,10 +357,9 @@ function Workspace({
     persistTabs(
       updateTab(tabsState, tabsState.activeTabId, {
         codes: nextCodes,
-        activeCode:
-          nextCodes.includes(currentTab.activeCode ?? "")
-            ? currentTab.activeCode
-            : (nextCodes[0] ?? null),
+        activeCode: nextCodes.includes(currentTab.activeCode ?? "")
+          ? currentTab.activeCode
+          : (nextCodes[0] ?? null),
       }),
     );
   };
@@ -405,22 +413,7 @@ function Workspace({
     catalogSearch.current?.focus();
     catalogSearch.current?.scrollIntoView({ block: "nearest" });
   };
-  // 1.76.0 (BC3) — Spec v2 G8 : +Add Panel pré-arme un mode (graph /
-  // histogram / table / map / task_series) ; le prochain clic KPI dans le
-  // catalogue l'ajoute avec ce mode via visualize(). Null = toggle par défaut.
-  const [pendingPanelKind, setPendingPanelKind] = useState<VisualizationType | null>(null);
-  const armPanel = (kind: VisualizationType) => {
-    setPendingPanelKind(kind);
-    addGraph();
-  };
-  const onCatalogToggle = (code: string) => {
-    if (pendingPanelKind) {
-      visualize(code, pendingPanelKind);
-      setPendingPanelKind(null);
-      return;
-    }
-    toggle(code);
-  };
+  const onCatalogToggle = (code: string) => toggle(code);
   const toggleRow = (id: string) =>
     setSelectedRows((prev) => {
       const next = new Set(prev);
@@ -449,9 +442,27 @@ function Workspace({
           defaultSize="280px"
           minSize="230px"
           maxSize="460px"
+          panelRef={cataloguePanel}
+          collapsible
+          collapsedSize="36px"
+          onResize={() => setCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)}
           className="kpi-sidebar-panel"
         >
-          <div className="kpi-sidebar-tabs">
+          {catalogueCollapsed && (
+            <div className="kpi-catalog-rail" data-testid="kpi-catalog-rail">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="kpi-catalog-toggle"
+                title={translate("panel.expand_catalogue")}
+                aria-label={translate("panel.expand_catalogue")}
+                onClick={() => cataloguePanel.current?.expand()}
+              >
+                <PanelLeftOpen size={15} />
+              </Button>
+            </div>
+          )}
+          <div className="kpi-sidebar-tabs" hidden={catalogueCollapsed}>
             <div
               className="kpi-sidebar-tabbar"
               role="tablist"
@@ -508,6 +519,17 @@ function Workspace({
               >
                 {translate("kpi.498227f2b5c6")}
               </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="kpi-catalog-toggle ml-auto self-center"
+                title={translate("panel.collapse_catalogue")}
+                aria-label={translate("panel.collapse_catalogue")}
+                data-testid="kpi-catalog-collapse"
+                onClick={() => cataloguePanel.current?.collapse()}
+              >
+                <PanelLeftClose size={15} />
+              </Button>
             </div>
             {activeCatalog === "kpi" ? (
               <KpiCatalogSidebar
@@ -535,152 +557,9 @@ function Workspace({
           aria-label={translate("kpi.9afd5ab37dac")}
         />
         <ResizablePanel id="kpi-analysis-panel" minSize="300px">
-          <div className="kpi-analysis-scroll">
-            <div className="kpi-analysis-toolbar">
-              <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
-                {codes.map((code, index) => (
-                  <div key={code} className={effectiveActive === code ? "is-active" : ""}>
-                    <button aria-pressed={effectiveActive === code} onClick={() => focus(code)}>
-                      <span>{index + 1}</span>
-                      {entries.find((e) => e.item.code === code)?.item.name ?? code}
-                    </button>
-                    <button
-                      aria-label={translate("kpi.1f4632ebd015", { v0: code })}
-                      onClick={() => toggle(code)}
-                    >
-                      <X size={13} />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  className="kpi-icon"
-                  aria-label={translate("kpi.1b7bfd15b343")}
-                  onClick={addGraph}
-                >
-                  <Plus size={16} />
-                </button>
-              </nav>
-              <section
-                className="kpi-workspace-controls"
-                aria-label={translate("kpi.2566f74ceb28")}
-              >
-                {/* 1.76.0 (BC3) — Spec v2 G8 : +Add Panel menu Graph/Histogram/
-                    Table/Map. Pré-arme un mode ; prochain clic KPI dans le
-                    catalogue l'ajoute avec ce mode via visualize(). */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`kpi-button ${pendingPanelKind ? "primary" : ""}`}
-                      aria-label="Add panel"
-                      data-testid="add-panel-button"
-                    >
-                      <Plus size={14} /> {pendingPanelKind ? `+ ${VISUALIZATIONS[pendingPanelKind]}…` : "Add panel"}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[180px]">
-                    <DropdownMenuItem onSelect={() => armPanel("graph")} data-testid="add-panel-graph">
-                      Graph
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("histogram")} data-testid="add-panel-histogram">
-                      Histogram
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("table")} data-testid="add-panel-table">
-                      Table
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("map")} data-testid="add-panel-map">
-                      Map
-                    </DropdownMenuItem>
-                    {pendingPanelKind && (
-                      <DropdownMenuItem onSelect={() => setPendingPanelKind(null)}>
-                        Cancel
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className="kpi-button"
-                      disabled={!effectiveActive}
-                      aria-label={translate("kpi.76e0bb111df3")}
-                    >
-                      {" "}
-                      {translate("kpi.6adf7bb9ea8d")}{" "}
-                      {effectiveActive
-                        ? VISUALIZATIONS[configFor(effectiveActive).visualization]
-                        : translate("kpi.6573afdf5cce")}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start">
-                    {/* 1.79.0 — Spec v2 §2 : mode exclusif WORKSPACE-level.
-                        onChange applique le mode à TOUS les KPI sélectionnés
-                        de l'onglet actif (pas seulement l'actif). */}
-                    <VisualizationItems excludeGraph
-                      throughput={
-                        !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
-                      }
-                      seriesAvailable={
-                        !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
-                      }
-                      onChange={(visualization) => {
-                        setConfigs((prev) => {
-                          const next = { ...prev };
-                          for (const code of codes) {
-                            const current = next[code] ?? defaultConfig(code, "none");
-                            next[code] = { ...current, visualization };
-                          }
-                          return next;
-                        });
-                        setSelectedRows(new Set());
-                      }}
-                    />
-                  </DropdownMenuContent>
-                </DropdownMenu>
-                <label className="kpi-select-label">
-                  {" "}
-                  {translate("kpi.38f09bd4a0a4")}{" "}
-                  <select
-                    aria-label={translate("kpi.38f09bd4a0a4")}
-                    disabled={
-                      !!effectiveActive &&
-                      configFor(effectiveActive).visualization === "task_series"
-                    }
-                    title={
-                      effectiveActive && configFor(effectiveActive).visualization === "task_series"
-                        ? translate("kpi.2403c2e13659")
-                        : undefined
-                    }
-                    value={effectiveActive ? configFor(effectiveActive).groupBy : "operator_band"}
-                    onChange={(e) => {
-                      if (effectiveActive)
-                        updateConfig(effectiveActive, {
-                          ...configFor(effectiveActive),
-                          groupBy: e.target.value as KpiGroupBy,
-                          xMetric: e.target.value as KpiGroupBy,
-                        });
-                      setSelectedRows(new Set());
-                    }}
-                  >
-                    <option value="none">{translate("kpi.f6306ab41d27")}</option>
-                    <option value="operator">{translate("kpi.16602c56b3e8")}</option>
-                    <option value="band">{translate("kpi.39c716cec99a")}</option>
-                    <option value="operator_band">{translate("kpi.1e186e6f36c5")}</option>
-                    {dimensions?.dor?.available && <option value="dor">DOR</option>}
-                  </select>
-                </label>
-                <button
-                  className="kpi-button"
-                  disabled={!rows.length}
-                  title={
-                    !rows.length ? translate("kpi.f63512f443a2") : translate("kpi.9d2e5183b79e")
-                  }
-                  onClick={() => exportRows(rows, "bc4-kpi-workspace")}
-                >
-                  <Download size={14} />
-                  Export
-                </button>
-              </section>
-            </div>
+          <div
+            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
+          >
             {limitMessage && (
               <p role="status" className="text-xs text-amber-700">
                 {limitMessage}
@@ -692,87 +571,105 @@ function Workspace({
                 onDisable={() => setOverlay(tabsState.activeTabId, false)}
               />
             ) : null}
-            <div
-              className="kpi-graph-grid"
-              data-count={panels.length}
-              data-layout={currentTab.layout}
+            <WorkspaceGrid
+              count={panels.length + selectedMetrics.length + (metricsTablePane ? 1 : 0)}
+              layout={currentTab.layout}
               hidden={currentTab.overlay && panels.length >= 2}
             >
-              {panels.map(({ entry, query, stat, rows: graphRows }) => (
-                <KpiGraphCard
-                  projectId={projectId}
-                  appliedFilters={applied}
-                  captureId={captureId}
-                  onCaptureChange={setCaptureId}
-                  key={entry.item.code}
-                  entry={entry}
-                  query={query}
-                  blockedReason={
-                    dimensionsLoading
-                      ? translate("kpi.f58ddd1effba")
-                      : dimensionsError
-                        ? translate("kpi.a237d197caeb")
-                        : undefined
-                  }
-                  rows={graphRows}
-                  statistic={stat}
-                  config={configFor(entry.item.code)}
-                  groupOptions={(
-                    [
-                      "none",
-                      "operator",
-                      "band",
-                      "operator_band",
-                      ...(dimensions?.dor?.available ? ["dor"] : []),
-                    ] as KpiGroupBy[]
-                  ).filter(
-                    (g) =>
-                      g === "none" ||
-                      g === "dor" ||
-                      (g === "operator"
-                        ? dimensions?.operators?.available
-                        : g === "band"
-                          ? dimensions?.bands?.available
-                          : dimensions?.operators?.available && dimensions?.bands?.available),
-                  )}
-                  onConfig={(next) => updateConfig(entry.item.code, next)}
-                  onStatistic={(value) =>
-                    updateConfig(entry.item.code, {
-                      ...configFor(entry.item.code),
-                      statistic: value,
-                    })
-                  }
-                  active={effectiveActive === entry.item.code}
-                  onActivate={() => setActive(entry.item.code)}
-                  selectedRows={selectedRows}
-                  onSelectRow={toggleRow}
-                  onRemove={() => toggle(entry.item.code)}
-                  onMove={(direction) => move(entry.item.code, direction)}
-                  index={codes.indexOf(entry.item.code)}
-                  count={codes.length}
-                />
-              ))}
-              {selectedMetrics.length > 0 && (
-                <MetricsWorkspace
-                  projectId={projectId}
-                  captureId={captureId}
-                  onCaptureChange={setCaptureId}
-                  selections={selectedMetrics}
-                  catalog={metricsCatalog.data?.metrics ?? []}
-                  filters={applied}
-                  view={metricsView}
-                  onViewChange={setMetricsView}
-                  onClear={() => {
-                    setSelectedMetrics([]);
-                    void navigate({
-                      to: ".",
-                      search: (p: Record<string, unknown>) => ({ ...p, metrics: [] }),
-                      replace: true,
-                    } as never);
-                  }}
-                />
-              )}
-            </div>
+              <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
+                {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
+                  <PanelShell
+                    key={entry.item.code}
+                    workspaceId={tabsState.activeTabId}
+                    id={`kpi:${entry.item.code}`}
+                    natural={natural}
+                    defaultTitle={entry.item.name}
+                  >
+                    {(panelTitle) => (
+                      <KpiGraphCard
+                        projectId={projectId}
+                        appliedFilters={applied}
+                        captureId={captureId}
+                        onCaptureChange={setCaptureId}
+                        entry={
+                          panelTitle === entry.item.name
+                            ? entry
+                            : { ...entry, item: { ...entry.item, name: panelTitle } }
+                        }
+                        query={query}
+                        blockedReason={
+                          dimensionsLoading
+                            ? translate("kpi.f58ddd1effba")
+                            : dimensionsError
+                              ? translate("kpi.a237d197caeb")
+                              : undefined
+                        }
+                        rows={graphRows}
+                        statistic={stat}
+                        config={configFor(entry.item.code)}
+                        groupOptions={(
+                          [
+                            "none",
+                            "operator",
+                            "band",
+                            "operator_band",
+                            ...(dimensions?.dor?.available ? ["dor"] : []),
+                          ] as KpiGroupBy[]
+                        ).filter(
+                          (g) =>
+                            g === "none" ||
+                            g === "dor" ||
+                            (g === "operator"
+                              ? dimensions?.operators?.available
+                              : g === "band"
+                                ? dimensions?.bands?.available
+                                : dimensions?.operators?.available && dimensions?.bands?.available),
+                        )}
+                        onConfig={(next) => updateConfig(entry.item.code, next)}
+                        onStatistic={(value) =>
+                          updateConfig(entry.item.code, {
+                            ...configFor(entry.item.code),
+                            statistic: value,
+                          })
+                        }
+                        active={effectiveActive === entry.item.code}
+                        onActivate={() => setActive(entry.item.code)}
+                        selectedRows={selectedRows}
+                        onSelectRow={toggleRow}
+                        onRemove={() => toggle(entry.item.code)}
+                        onMove={(direction) => move(entry.item.code, direction)}
+                        index={codes.indexOf(entry.item.code)}
+                        count={codes.length}
+                      />
+                    )}
+                  </PanelShell>
+                ))}
+                {selectedMetrics.length > 0 && (
+                  <MetricsWorkspace
+                    key={currentTab.id}
+                    projectId={projectId}
+                    captureId={captureId}
+                    onCaptureChange={setCaptureId}
+                    selections={selectedMetrics}
+                    catalog={metricsCatalog.data?.metrics ?? []}
+                    filters={applied}
+                    view={metricsView}
+                    onViewChange={setMetricsView}
+                    onTablePaneChange={setMetricsTablePane}
+                    workspaceId={tabsState.activeTabId}
+                    onColumnsChange={setTableColumns}
+                    paneRequest={metricsPaneRequest.n}
+                    cardViewRequest={cardViewRequest}
+                    onClear={() => {
+                      setSelectedMetrics([]);
+                    }}
+                    onRemove={(code: string) =>
+                      setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
+                    }
+                  />
+                )}
+              </TableSettingsWorkspaceContext.Provider>
+            </WorkspaceGrid>
             {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
@@ -825,7 +722,9 @@ function Workspace({
                   );
                 }
                 return (
-                  <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                  <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
+                    <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                  </TableSettingsWorkspaceContext.Provider>
                 );
               })()}
             </div>
@@ -833,6 +732,7 @@ function Workspace({
         </ResizablePanel>
       </ResizablePanelGroup>
       <WorkspaceTabsBar
+        columns={tableColumns}
         tabs={tabsState.tabs}
         activeTabId={tabsState.activeTabId}
         onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}

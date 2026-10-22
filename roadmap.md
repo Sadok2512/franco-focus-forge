@@ -1,4 +1,11 @@
+- [x] Remove the workspace top toolbar ("+ Add panel" and "Layout: Auto"): panels render straight under the filter bar; layout now only in the ⚙ popup (Graphiques + Appliquer), panel types still reachable from each catalogue row's ⋮ Visualisation menu. 266 tests pass, typecheck and lint clean; browser confirms 0 add-panel/layout controls, 6 panels in 3 columns and a working Table conversion.
+- [x] "Appliquer" button in the workspace settings popup: edits (table appearance, columns, graph layout) stay a draft and reach the tables only on click; Annuler/X discards, re-open restarts from applied settings, status line flags unapplied changes, table search stays immediate. 3 new tests, 266 pass, typecheck and lint clean.
+- [x] Simplify the Metrics Table panel: dynamic API parameter/cell title, Export CSV and Fullscreen only, no redundant toolbars or nested table margins; table fills available area. Other views and mixed KPI workspaces retain global controls. Two existing tests pass; browser fixture verifies title, CSV download, pagination and fullscreen without errors. Real VM rendering remains unverified without an authorized session.
+- [x] Charts cards respond to Table/Histogram/Graph selection (1.88.0).
 # BC4 roadmap
+- [x] Fix workspace grid layout: container-observed 1/2/3/Auto grid shared by KPI and Metrics, responsive charts, sidebar resize/collapse, independent views and per-tab restoration. 263 tests pass; fixture browser screenshots verify layouts, 1920/1440/1280, mixed Graph/Table, removal and no resize refetch. See workspace-grid-validation.md; no publication.
+- [ ] Workspace grid real-VM acceptance, Map mixture and zoom retention — authorized VM access is unavailable; fixture checks do not establish real-data acceptance.
+- [x] Fix new workspace inheriting metric graphs: selections now persist per tab; four tests pass for empty creation, prior selection preservation, reload and legacy migration; preview build OK. Live UI verification blocked by redirect to login, including the demo account.
 - [x] RRC State title back in its place (1.86.0): the top timeline band shows "RRC State" with the gray Idle badge in the left gutter, above UE State; the gutter row that only carried UE State was covering the chart's own label with an empty box. Verified in the browser (gutter labels `['UE State', 'RRC StateIdle']`, screenshot read back) — 251 tests pass, typecheck clean, build OK. Real VM capture readback still blocked below.
 - [x] Remove the "Evidence messages" section under the Signaling timeline (1.85.0): the row with the interval, session and `#seq` buttons no longer renders after an event click; the name chip, highlighted table row, inspector and band tooltip keep carrying the selection details, and the Time Navigator stays attached beneath the tracks. 250 tests pass, typecheck clean, build OK; browser check confirms 0 `rf-evidence` elements and no console errors. Real VM capture readback still blocked below.
 - [x] Hide the RRC State timeline title and fixed Idle legend; render compact Idle badges centered only inside validated RRC Idle intervals, preserving LTE bands and all capture data. Real VM verification remains blocked by authorized reader access.
@@ -43,3 +50,7 @@
 - [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
 - [x] Premium messages table & always-open payload inspector (V10)
 - [ ] Band, Cell name, NSA/SA mode in messages table — blocked: not supplied by the VM rows API
+- [x] Unified workspace step 1-2: mixed KPI/Metrics panels, rename, move, width/height, collapse, Add panel 7 types.
+- [ ] Sync Time across temporal panels (step 3).
+- [ ] Panel duplicate (needs per-panel ids instead of unique KPI codes).
+- [ ] Timeline/Events panel in KPI (no timeline renderer outside Signaling).

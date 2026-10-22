@@ -171,6 +171,17 @@ export function MetricsWorkspace({
   onClear,
   view: externalView,
   onViewChange,
+  // 1.91.0 — props Lovable introduites 1.89→1.90 (⚙ Apply + per-card view).
+  // Acceptées pour satisfaire le contrat KpiWorkspace mais no-op dans la
+  // version BC3 (le per-card view + Apply draft ne sont pas portés —
+  // conflits avec le Time/GPS lot). Si nécessaire plus tard, implémenter
+  // le state cardViews + onRemove dans un lot dédié.
+  onTablePaneChange: _onTablePaneChange,
+  workspaceId: _workspaceId,
+  onColumnsChange: _onColumnsChange,
+  paneRequest: _paneRequest,
+  cardViewRequest: _cardViewRequest,
+  onRemove: _onRemove,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -181,6 +192,12 @@ export function MetricsWorkspace({
   onClear: () => void;
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
+  onTablePaneChange?: unknown;
+  workspaceId?: string;
+  onColumnsChange?: unknown;
+  paneRequest?: number;
+  cardViewRequest?: unknown;
+  onRemove?: unknown;
 }) {
   const { t: translate } = useTranslation();
   const [internalView, setInternalView] = useState<View>("table");
