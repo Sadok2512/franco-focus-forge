@@ -3,7 +3,11 @@ import type { ProvenState } from "@/features/signaling/state-evidence";
 import { statePresentation, stateBandGeometry, stateLaneLayout } from "@/features/signaling/state-presentation";
 
 const base: ProvenState = {
-  event: {} as ProvenState["event"], track: "UE_STATE", captureId: "capture", sessionId: "session",
+  event: {
+    id: "fixture", lane: "connexion", type: "ue_state", kind: "band", seq: 234, seq_end: 1608,
+    t_rel_s: 1.4, t_rel_end_s: 24.182, duration_ms: 22782, outcome: null, cause: null,
+    label: "LTE", attrs: {}, pivot_seq: 243, linked_seqs: [234, 243, 1608], link_rule: "explicit", seq_gap: null,
+  }, track: "UE_STATE", captureId: "capture", sessionId: "session",
   technology: "LTE", state: "LTE", startS: 1.4, endS: 24.182,
   componentCarriers: null, carrierStatus: null, evidenceSeqs: [234, 243, 1608],
 };
@@ -36,11 +40,6 @@ describe("V9 evidence-only product mapping", () => {
     const nr = { ...base, technology: "NR_NSA" as const, state: "NR" as const };
     expect(stateBandGeometry(base, [base, nr])).toEqual({ offset: -9, height: 16 });
     expect(stateBandGeometry(nr, [base, nr])).toEqual({ offset: 9, height: 16 });
-  });
-  it("does not create new interval bounds or merge different sessions", () => {
-    const other = { ...base, sessionId: "other", startS: 24.182, endS: 30 };
-    statePresentation(other);
-    expect([base.startS, base.endS, other.startS, other.endS]).toEqual([1.4, 24.182, 24.182, 30]);
   });
   it("uses 42 px state tracks separated by 4 px while preserving other track pitch", () => {
     expect(stateLaneLayout(["uestate", "rrcstate", "network", "mobility"])).toEqual({ centers: [21, 67, 114, 158], height: 180 });

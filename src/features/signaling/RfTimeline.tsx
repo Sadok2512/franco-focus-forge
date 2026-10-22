@@ -573,7 +573,7 @@ export function RfTimeline({
                 : `rfTimeline.${k}`,
             ),
           ),
-          axisLabel: { color: tokens.getPropertyValue("--foreground").trim(), fontSize: 12, fontWeight: 600 },
+          axisLabel: { color: "#94a3b8", fontSize: 11 },
           axisTick: { show: false },
           axisLine: { show: false },
         },
