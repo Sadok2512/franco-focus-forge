@@ -13,6 +13,7 @@ import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
+import { PanelShell } from "./PanelShell";
 
 // 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
 // Reconstitue le timestamp UTC absolu depuis le label de capture
@@ -580,71 +581,13 @@ export function MetricsWorkspace({
     })
     .join(" · ");
   return (
-    <article
-      ref={panelRef}
-      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
-      data-pane={pane}
-      data-testid="metrics-v3-workspace"
-    >
-      {/* 1.83.0 — Spec V3 §1 : barre [Charts|Table|Overlay] + "N metrics"
-          supprimée. Remplacée par un <select View ▾> compact. Per row visible
-          uniquement en Charts. */}
-      <header className="kpi-metrics-table-toolbar">
-        {pane === "table" ? (
-          <h3 className="kpi-metrics-table-title" title={tableTitle}>
-            {tableTitle}
-          </h3>
-        ) : (
-          <>
-            <label className="kpi-select-label" title="View mode">
-              View
-              <select
-                value={pane}
-                onChange={(e) => setPane(e.target.value as MetricPane)}
-                data-testid="metrics-pane-select"
-              >
-                <option value="charts">Charts</option>
-                <option value="table">Table</option>
-                <option value="overlay">Overlay</option>
-              </select>
-            </label>
-            {pane === "charts" && (
-              <label className="kpi-select-label" title="Cards per row">
-                Per row
-                <select
-                  value={perRow}
-                  onChange={(e) => setPerRow(Number(e.target.value) as 1 | 2 | 3)}
-                  data-testid="metrics-per-row"
-                >
-                  <option value={1}>1</option>
-                  <option value={2}>2</option>
-                  <option value={3}>3</option>
-                </select>
-              </label>
-            )}
-          </>
-        )}
-        <Button
-          variant="outline"
-          size="sm"
-          disabled={!data}
-          onClick={exportCsv}
-          title={translate("metrics.a78f2051e6c9")}
-        >
-          <Download size={13} /> {translate("metrics.a78f2051e6c9")}
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          title={translate("metrics.b62d901f4a73")}
-          onClick={() => void panelRef.current?.requestFullscreen?.()}
-        >
-          <Maximize2 size={13} /> {translate("metrics.b62d901f4a73")}
-        </Button>
-      </header>
-      {pane === "charts" && captureId && (
+    <div className="kpi-unified-contents" data-testid="metrics-v3-workspace" data-pane={pane}>
+      {!captureId && (
+        <div className="kpi-graph-card col-span-full kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+      )}
+      {captureId && (
         <section
-          className="kpi-metrics-charts-grid"
+          className="kpi-metrics-charts-grid kpi-unified-contents"
           data-per-row={perRow}
           data-count={Math.min(parsedSelections.length, 8)}
           data-testid="metrics-charts-grid"
@@ -654,11 +597,18 @@ export function MetricsWorkspace({
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
             return (
-              <MetricGraphCard
+              <PanelShell
                 key={s.full}
+                workspaceId={workspaceId}
+                id={`metric:${s.full}`}
+                natural={100 + i}
+                defaultTitle={title}
+              >
+                {(panelTitle) => (
+              <MetricGraphCard
                 projectId={projectId}
                 code={s.full}
-                label={`${i + 1}. ${title}`}
+                label={`${i + 1}. ${panelTitle}`}
                 unit={info?.unit ?? ""}
                 tech={info?.tech ?? ""}
                 category={info?.category_label ?? null}
@@ -684,13 +634,33 @@ export function MetricsWorkspace({
                   })
                 }
               />
+                )}
+              </PanelShell>
             );
           })}
-          {parsedSelections.length === 0 && (
-            <p className="kpi-chart-state">No metric selected. Pick one from the catalogue.</p>
-          )}
         </section>
       )}
+      {pane !== "charts" && (
+        <PanelShell workspaceId={workspaceId} id="metrics:pane" natural={200} defaultTitle={tableTitle} fullRow>
+          {(panelTitle) => (
+    <article
+      ref={panelRef}
+      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      data-pane={pane}
+    >
+      <header className="kpi-metrics-table-toolbar">
+        <h3 className="kpi-metrics-table-title" title={panelTitle}>{panelTitle}</h3>
+        <Button variant="outline" size="sm" disabled={!data} onClick={exportCsv} title={translate("metrics.a78f2051e6c9")}>
+          <Download size={13} /> {translate("metrics.a78f2051e6c9")}
+        </Button>
+        <Button variant="outline" size="sm" title={translate("metrics.b62d901f4a73")}
+          onClick={() => void panelRef.current?.requestFullscreen?.()}>
+          <Maximize2 size={13} /> {translate("metrics.b62d901f4a73")}
+        </Button>
+        <Button variant="ghost" size="sm" title={translate("panel.remove")} aria-label={translate("panel.remove")} onClick={() => setPane("charts")}>
+          <X size={13} />
+        </Button>
+      </header>
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : query.isPending ? (
@@ -876,5 +846,9 @@ export function MetricsWorkspace({
         )
       )}
     </article>
+          )}
+        </PanelShell>
+      )}
+    </div>
   );
 }
