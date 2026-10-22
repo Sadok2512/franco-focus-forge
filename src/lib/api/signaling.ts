@@ -118,6 +118,9 @@ export const signalingSchemas = {
         linked_seqs: z.array(z.number()),
         link_rule: z.string(),
         seq_gap: z.number().nullable(),
+        // bc4-back ≥ 0.74.8 : identité de contexte/session au niveau racine.
+        context_id: z.union([z.string(), z.number()]).nullable().optional(),
+        session_id: z.string().nullable().optional(),
       }),
     ),
     total: z.number(),

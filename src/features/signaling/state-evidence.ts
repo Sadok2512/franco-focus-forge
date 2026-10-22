@@ -102,7 +102,8 @@ export const LTE_CONNECTED_RULE = "nemo_context_connected";
  */
 function lteConnectedContext(event: RfEvent, captureId: string): string | null {
   const a = event.attrs;
-  const context = a["context_id"];
+  // bc4-back ≥ 0.74.8 exposes context_id/session_id at event root; attrs kept as fallback.
+  const context = event.context_id ?? a["context_id"];
   const seqs = a.source_seqs;
   if (
     a.rule_id !== LTE_CONNECTED_RULE ||
@@ -114,12 +115,16 @@ function lteConnectedContext(event: RfEvent, captureId: string): string | null {
     !seqs ||
     seqs.length !== 3 ||
     event.seq_end === null ||
-    seqs[1] !== event.seq ||
+    // RRA starts the band (seq), RRD closes it (seq_end), RRC sits strictly between.
+    seqs[0] !== event.seq ||
     seqs[2] !== event.seq_end ||
     !(seqs[0]! < seqs[1]! && seqs[1]! < seqs[2]!)
   )
     return null;
-  return `${captureId}:${String(context)}`;
+  const composite = `context:${captureId}:${String(context)}`;
+  // A supplied session_id must agree with the composite (capture_id, context_id).
+  if (event.session_id != null && event.session_id !== composite) return null;
+  return composite;
 }
 
 export function provenStates(events: RfEvent[], captureId: string): ProvenState[] {
