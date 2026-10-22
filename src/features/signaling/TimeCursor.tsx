@@ -5,6 +5,7 @@ import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { X, ArrowRight, Crosshair } from "lucide-react";
 import { clampWindow } from "./time-window";
+import { provenStates, stateLabelKey } from "./state-evidence";
 import {
   activeIntervals,
   availableTimes,
@@ -19,8 +20,11 @@ function hasAxes(chart: ECharts | undefined, xIndex: number, yIndex?: number): c
   const option = chart.getOption();
   const xAxes = option?.["xAxis"];
   const yAxes = option?.["yAxis"];
-  return Array.isArray(xAxes) && xAxes[xIndex] !== undefined &&
-    (yIndex === undefined || (Array.isArray(yAxes) && yAxes[yIndex] !== undefined));
+  return (
+    Array.isArray(xAxes) &&
+    xAxes[xIndex] !== undefined &&
+    (yIndex === undefined || (Array.isArray(yAxes) && yAxes[yIndex] !== undefined))
+  );
 }
 export function TimeCursor({
   chart,
@@ -33,6 +37,8 @@ export function TimeCursor({
   duration,
   onTime,
   onMessage,
+  stateTracksV2 = false,
+  captureId,
 }: {
   chart: ECharts | undefined;
   host: React.RefObject<HTMLDivElement | null>;
@@ -44,6 +50,8 @@ export function TimeCursor({
   duration: number;
   onTime: (time: number | null) => void;
   onMessage: (event: RfEvent, seq: number) => void;
+  stateTracksV2?: boolean;
+  captureId?: string;
 }) {
   const { t, i18n } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
@@ -140,6 +148,10 @@ export function TimeCursor({
   const selectedX = selectedTime === null ? null : xAt(selectedTime);
   const event = hover === null ? events.find((e) => e.id === eventId) : undefined;
   const intervals = time === null ? [] : activeIntervals(events, time);
+  const states =
+    stateTracksV2 && time !== null && captureId
+      ? provenStates(events, captureId).filter((state) => state.startS <= time && time < state.endS)
+      : [];
   const readings =
     time === null
       ? []
@@ -182,7 +194,12 @@ export function TimeCursor({
           <line x1={x} x2={x} y1={26} y2={size.height - 38} className="signaling-cursor-preview" />
         )}
         {readings.map((s) => {
-          if (!hasAxes(chart, 1, 1) || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
+          if (
+            !hasAxes(chart, 1, 1) ||
+            !s.point ||
+            s.point.value === null ||
+            !visible(s.point.t_rel_s)
+          )
             return null;
           const coords = chart.convertToPixel({ xAxisIndex: 1, yAxisIndex: 1 }, [
             s.point.t_rel_s,
@@ -313,12 +330,45 @@ export function TimeCursor({
                 <p>{t("rfTimeline.noRF")}</p>
               )}
             </div>
-            {intervals.map((e) => (
-              <p key={e.id} className="mt-1">
-                {e.label} · {fmt(e.t_rel_s ?? time)} → {fmt(e.t_rel_end_s ?? time)} s ·{" "}
-                {e.attrs.status ?? "—"}
-              </p>
-            ))}
+            {stateTracksV2 &&
+              ["UE_STATE", "RRC_STATE"].map((track) => (
+                <div key={track} className="mt-2 border-t pt-1">
+                  <strong>
+                    {t(track === "UE_STATE" ? "signalingV2.ueState" : "signalingV2.rrcState")}
+                  </strong>
+                  {states.some((state) => state.track === track) ? (
+                    states
+                      .filter((state) => state.track === track)
+                      .map((state) => (
+                        <p key={state.event.id}>
+                          {state.technology} · {t(stateLabelKey(state))}
+                          {state.componentCarriers !== null && (
+                            <>
+                              {" "}
+                              · {state.componentCarriers} {t(`signalingV2.${state.carrierStatus}`)}
+                            </>
+                          )}
+                          <small className="block">
+                            {t("signalingV2.session")}: {state.sessionId} · #
+                            {state.evidenceSeqs.join(", #")}
+                          </small>
+                        </p>
+                      ))
+                  ) : (
+                    <p>{t("signalingV2.unknown")}</p>
+                  )}
+                </div>
+              ))}
+            {intervals
+              .filter(
+                (e) => !stateTracksV2 || !["ue_state", "rrc_state"].includes(e.attrs.track ?? ""),
+              )
+              .map((e) => (
+                <p key={e.id} className="mt-1">
+                  {e.label} · {fmt(e.t_rel_s ?? time)} → {fmt(e.t_rel_end_s ?? time)} s ·{" "}
+                  {e.attrs.status ?? "—"}
+                </p>
+              ))}
             {event && event.linked_seqs.length > 0 && (
               <div className="mt-2 border-t pt-1">
                 <p>{t("rfTimeline.messageCount", { count: event.linked_seqs.length })}</p>

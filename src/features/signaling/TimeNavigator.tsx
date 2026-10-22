@@ -2,13 +2,7 @@ import { useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { WindowSelector } from "./WindowSelector";
 import { clampWindow, type TimeWindow } from "./time-window";
 
 export function TimeNavigator({
@@ -61,25 +55,7 @@ export function TimeNavigator({
           () => onWindow(clampWindow(duration, window[0] + width, width)),
           window[1] >= duration,
         )}
-        <Select
-          value={[10, 30, 60, 120].includes(width) ? String(width) : "custom"}
-          onValueChange={(value) => changeSize(Number(value))}
-          disabled={duration <= 0}
-        >
-          <SelectTrigger className="h-7 w-24 text-xs" aria-label={t("timeNavigator.size")}>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {[10, 30, 60, 120].map((size) => (
-              <SelectItem key={size} value={String(size)}>
-                {size} s
-              </SelectItem>
-            ))}
-            <SelectItem value="custom" disabled>
-              {fmt(width)} s
-            </SelectItem>
-          </SelectContent>
-        </Select>
+        <WindowSelector duration={duration} window={window} onWindow={onWindow} />
         {action("zoomIn", ZoomIn, () => changeSize(Math.max(0.1, width / 2)))}
         {action("zoomOut", ZoomOut, () => changeSize(Math.min(duration, width * 2)))}
         {action("reset", RotateCcw, () => onWindow(clampWindow(duration, 0, 30)))}

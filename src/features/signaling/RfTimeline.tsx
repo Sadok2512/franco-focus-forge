@@ -11,11 +11,14 @@ import { isAllowedNetworkEvent } from "./network-events";
 import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
+import { WindowSelector } from "./WindowSelector";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
 const laneOrder = [
   "uestate",
+  "rrcstate",
   "network",
   "dl",
   "ul",
@@ -27,6 +30,8 @@ const laneOrder = [
 ] as const;
 type Lane = (typeof laneOrder)[number];
 const laneOf = (track: string | undefined): Lane => {
+  if (track?.toUpperCase() === "RRC_STATE") return "rrcstate";
+  if (track?.toUpperCase() === "UE_STATE") return "uestate";
   if (track === "lte" || track === "nsa" || track === "sa") return "uestate";
   if (
     track === "dl" ||
@@ -69,6 +74,7 @@ export function RfTimeline({
   allowedProtocols,
   timeWindow,
   onWindow,
+  stateTracksV2 = false,
 }: {
   projectId: string;
   captureId: string;
@@ -83,6 +89,7 @@ export function RfTimeline({
   allowedProtocols: string[];
   timeWindow?: TimeWindow;
   onWindow?: (window: TimeWindow) => void;
+  stateTracksV2?: boolean;
 }) {
   const { t, i18n } = useTranslation();
   const [layers, setLayers] = useState(protocols);
@@ -138,22 +145,42 @@ export function RfTimeline({
       ) ?? [],
     [events.data, layers, allowedProtocols],
   );
-  const displayed = useMemo(
-    () => eligibleEvents.filter((event) =>
-      laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event),
-    ),
-    [eligibleEvents],
+  const states = useMemo(
+    () => (stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : []),
+    [stateTracksV2, events.data, captureId],
   );
+  const displayed = useMemo(() => {
+    const source = eligibleEvents.filter(
+      (event) => laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event),
+    );
+    if (!stateTracksV2) return source;
+    const stateEvents = states
+      .filter(
+        (state) =>
+          !technology ||
+          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE"),
+      )
+      .map((state) => ({
+        ...state.event,
+        label: t(stateLabelKey(state)),
+        attrs: {
+          ...state.event.attrs,
+          track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
+        },
+      }));
+    return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
+  }, [eligibleEvents, stateTracksV2, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
   const lanes = useMemo(
     () =>
       laneOrder.filter(
         (lane) =>
           lane === "uestate" ||
+          (stateTracksV2 && lane === "rrcstate") ||
           lane === "network" ||
           displayed.some((event) => laneOf(event.attrs.track) === lane),
       ),
-    [displayed],
+    [displayed, stateTracksV2],
   );
   const duration =
     radio.data?.duration_s ??
@@ -271,6 +298,9 @@ export function RfTimeline({
     redrawCursor((revision) => revision + 1);
   }, [visibleWindow[0], visibleWindow[1], duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
+  const trackHeight = stateTracksV2 ? lanes.length * 34 : 216;
+  const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
+  const chartHeight = stateTracksV2 ? rfTop + 176 : 470;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -283,34 +313,76 @@ export function RfTimeline({
       const item = displayed[params.dataIndex];
       if (!item) return;
       const track = item.attrs.track ?? "";
-      const isBand = track === "lte" || track === "nsa" || track === "sa";
-      const color =
-        item.attrs.status === "FAILURE"
+      const isBand =
+        track === "lte" ||
+        track === "nsa" ||
+        track === "sa" ||
+        (stateTracksV2 && (track === "ue_state" || track === "rrc_state"));
+      const proof = states.find((state) => state.event.id === item.id);
+      const stateRole =
+        proof?.state === "IDLE"
+          ? "idle"
+          : proof?.state === "CONNECTED"
+            ? "connected"
+            : proof?.state === "LTE"
+              ? proof.componentCarriers === 4
+                ? "lte-ca"
+                : "lte"
+              : proof?.componentCarriers === 2
+                ? "nr-ca"
+                : "nr";
+      const stateColor = getComputedStyle(document.documentElement)
+        .getPropertyValue(`--signaling-state-${stateRole}`)
+        .trim();
+      const color = proof
+        ? stateColor
+        : item.attrs.status === "FAILURE"
           ? rfColors["failure"]!
           : isBand
             ? (rfColors[track] ?? rfColors["unknown"]!)
             : item.attrs.track === "network"
               ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
               : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
-      const width = Math.max(3, end[0]! - start[0]!);
+      const coordSys = params.coordSys as unknown as { x: number; width: number };
+      if (
+        stateTracksV2 &&
+        ((end[0] ?? 0) < coordSys.x || (start[0] ?? 0) > coordSys.x + coordSys.width)
+      )
+        return;
+      const left = stateTracksV2 ? Math.max(coordSys.x, start[0] ?? 0) : (start[0] ?? 0);
+      const right = stateTracksV2
+        ? Math.min(coordSys.x + coordSys.width, end[0] ?? left)
+        : (end[0] ?? left);
+      const width = Math.max(3, right - left);
       const opacity =
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
       const children: Record<string, unknown>[] = [];
       if (isBand) {
+        const y = (start[1] ?? 0) + (stateTracksV2 ? (proof?.technology === "LTE" ? -8 : 8) : 0);
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
-          shape: { x: start[0]!, y: start[1]! - 11, width, height: 22, r: 4 },
+          shape: {
+            x: left,
+            y: y - (stateTracksV2 ? 7 : 11),
+            width,
+            height: stateTracksV2 ? 14 : 22,
+            r: 4,
+          },
           style: { fill: color, opacity },
         });
         if (width > 70)
           children.push({
             type: "text",
             style: {
-              x: start[0]! + width / 2,
-              y: start[1]!,
+              x: left + width / 2,
+              y,
               text: item.label,
-              fill: "#ffffff",
+              fill: stateTracksV2
+                ? getComputedStyle(document.documentElement)
+                    .getPropertyValue("--signaling-state-text")
+                    .trim()
+                : "#ffffff",
               fontSize: 10,
               fontWeight: 600,
               align: "center",
@@ -425,11 +497,11 @@ export function RfTimeline({
       animation: false,
       backgroundColor: "transparent",
       grid: [
-        { top: 30, height: 216, left: 112, right: 24 },
-        { top: 292, height: 138, left: 112, right: 24 },
+        { top: 30, height: trackHeight, left: 112, right: 24 },
+        { top: rfTop, height: 138, left: 112, right: 24 },
       ],
       legend: {
-        top: 300,
+        top: rfTop + 8,
         left: 2,
         orient: "vertical",
         icon: "rect",
@@ -444,7 +516,13 @@ export function RfTimeline({
         {
           type: "category",
           inverse: true,
-          data: lanes.map((k) => t(`rfTimeline.${k}`)),
+          data: lanes.map((k) =>
+            t(
+              stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                : `rfTimeline.${k}`,
+            ),
+          ),
           axisLabel: { color: "#94a3b8", fontSize: 11 },
           axisTick: { show: false },
           axisLine: { show: false },
@@ -487,6 +565,9 @@ export function RfTimeline({
           ).data;
           if (d.event) {
             const e = d.event;
+            const proof = states.find((state) => state.event.id === e.id);
+            if (proof)
+              return `<b>${escape(e.label)}</b><br/>${fmtT(proof.startS)} → ${fmtT(proof.endS)} s<br/>${escape(t("signalingV2.duration"))}: ${fmtT(proof.endS - proof.startS)} s<br/>${escape(proof.technology)} · ${escape(t("signalingV2.session"))}: ${escape(proof.sessionId)}<br/>${proof.componentCarriers === null ? "" : `${proof.componentCarriers} ${escape(t(`signalingV2.${proof.carrierStatus}`))}<br/>`}${escape(t("signalingV2.proof"))}: ${escape(proof.evidenceSeqs.join(", "))}`;
             const header = `<b>${escape(e.label)}</b><br/>${escape(e.t_rel_s)} s · #${e.seq}<br/>${escape(e.attrs.technology)} · ${escape(e.attrs.status)}<br/>${escape(e.attrs.evidence_status)} · ${escape(e.attrs.source)}<br/>${escape((e.attrs.source_seqs ?? []).join(", "))}<br/>${e.duration_ms === null ? "" : escape(e.duration_ms) + " ms"}`;
             const fields = ["hoa_pci", "hoa_att_pci", "hoa_ch_number", "hoa_att_ch", "cause"]
               .filter((k) => e.attrs[k] != null)
@@ -498,6 +579,67 @@ export function RfTimeline({
         },
       },
       series: [
+        ...(stateTracksV2
+          ? [
+              {
+                id: "state-background",
+                type: "custom" as const,
+                silent: true,
+                z: 0,
+                renderItem: ((_params, api) => {
+                  const lane = Number(api.value(0));
+                  const point = api.coord([0, lane]);
+                  const area = _params.coordSys as unknown as { x: number; width: number };
+                  const muted = getComputedStyle(document.documentElement)
+                    .getPropertyValue("--muted")
+                    .trim();
+                  const text = getComputedStyle(document.documentElement)
+                    .getPropertyValue("--muted-foreground")
+                    .trim();
+                  return {
+                    type: "group",
+                    children: [
+                      {
+                        type: "rect",
+                        shape: {
+                          x: area.x,
+                          y: (point[1] ?? 0) - 16,
+                          width: area.width,
+                          height: 32,
+                        },
+                        style: { fill: muted },
+                      },
+                      ...[-8, 8]
+                        .filter(
+                          (offset) =>
+                            !states.some(
+                              (state) =>
+                                state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
+                                (state.technology === "LTE") === offset < 0 &&
+                                state.startS <= visibleWindow[0] &&
+                                state.endS > visibleWindow[0],
+                            ),
+                        )
+                        .map((offset) => ({
+                          type: "text",
+                          style: {
+                            x: area.x + 6,
+                            y: (point[1] ?? 0) + offset,
+                            text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
+                            fontSize: 9,
+                            verticalAlign: "middle",
+                            fill: text,
+                          },
+                        })),
+                    ],
+                  };
+                }) as CustomSeriesRenderItem,
+                data: [0, 1].map((lane) => [lane, 0]),
+                encode: { y: 0 },
+                clip: true,
+              },
+            ]
+          : []),
         {
           id: "events",
           type: "custom",
@@ -526,6 +668,10 @@ export function RfTimeline({
     i18n.language,
     showLabels,
     lanes,
+    stateTracksV2,
+    states,
+    trackHeight,
+    rfTop,
   ]);
   const zoomBy = (factor: number) => {
     const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
@@ -578,6 +724,9 @@ export function RfTimeline({
           </div>
         </details>
         <span className="ml-auto flex items-center gap-1">
+          {stateTracksV2 && (
+            <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -603,7 +752,7 @@ export function RfTimeline({
             aria-label={t("rfTimeline.reset")}
             title={t("rfTimeline.reset")}
             onClick={() => {
-              changeWindow(clampWindow(duration, 0, FULL_CAPTURE_S));
+              changeWindow(clampWindow(duration, 0, stateTracksV2 ? 30 : FULL_CAPTURE_S));
               setWindowSeq(undefined);
               callbacks.current.onRange(undefined);
             }}
@@ -633,7 +782,8 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      {!events.isPending &&
+      {!stateTracksV2 &&
+        !events.isPending &&
         !events.isError &&
         !displayed.some((e) => laneOf(e.attrs.track) === "uestate") && (
           <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
@@ -644,7 +794,7 @@ export function RfTimeline({
         <div className="relative" style={{ minWidth: 320 }}>
           <div
             ref={host}
-            style={{ height: 470, minWidth: 320 }}
+            style={{ height: chartHeight, minWidth: 320 }}
             data-testid="rf-chart"
             data-selected-time={selectedTime ?? undefined}
             data-zoom={zoom.join(",")}
@@ -660,9 +810,19 @@ export function RfTimeline({
             duration={duration}
             onTime={onTime}
             onMessage={onSelect}
+            stateTracksV2={stateTracksV2}
+            captureId={captureId}
           />
         </div>
       </div>
+      {stateTracksV2 && (
+        <p
+          className="shrink-0 text-[10px] text-muted-foreground"
+          data-testid="state-evidence-status"
+        >
+          {t("signalingV2.unavailable")}
+        </p>
+      )}
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}

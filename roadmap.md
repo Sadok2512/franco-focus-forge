@@ -1,5 +1,6 @@
 # BC4 roadmap
-- [ ] Signaling V2 — isolated presentation preserving stable /signaling, separate proven UE/RRC tracks, shared 30-second window and draggable navigator; audit evidence before enabling reconstruction.
+- [x] Signaling V2 — /signaling-v2 opt-in state lanes, shared 30-second window, 10/30/60/120/Fit and draggable navigator; 37 tests and isolated browser checks passed. Public VM audit and proof report: signaling-v2-validation.md. Stable behavior preserved; no deployment or reconstruction.
+- [ ] Signaling V2 real UE/RRC/CA proof and authenticated full-page validation — blocked by unavailable authorized VM capture payloads; unvalidated reconstruction remains disabled pending evidence and explicit approval.
 - [x] Limit Network Events timeline marks to RRC Request, RRC Release and SCG without changing source data or messages; 25 tests and isolated browser filtering/mobility/cursor checks passed. Real VM capture remains unverified without an authorized session.
 - [x] Restore time cursors at capture start without restoring the navigator; 21 targeted tests and isolated browser load/hover/click/drag/exact-event/keyboard/resize checks pass. Live VM verification still requires an authorized session.
 - [x] LOT A — Shared Signaling window and independent cursor with follow-message; the visible navigator bar was removed on request (1.79.1) and the timeline opens on the full capture. 20 window/cursor tests pass.

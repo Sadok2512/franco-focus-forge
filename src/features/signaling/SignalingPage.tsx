@@ -3,6 +3,9 @@ import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
 import { EventRibbon } from "./EventRibbon";
 import { followMessage, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
+import { TimeNavigator } from "./TimeNavigator";
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -849,10 +852,12 @@ export function SignalingPage({
   projectId,
   initialCapture,
   initialSeq,
+  stateTracksV2 = false,
 }: {
   projectId: string;
   initialCapture?: string | undefined;
   initialSeq?: number | undefined;
+  stateTracksV2?: boolean;
 }) {
   const { t } = useTranslation();
   const [compact, setCompact] = useState(false);
@@ -971,7 +976,7 @@ export function SignalingPage({
   const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(
     capture,
     captureDuration,
-    FULL_CAPTURE_S,
+    stateTracksV2 ? 30 : FULL_CAPTURE_S,
   );
   useEffect(() => {
     if (initialCapture) setCaptureContext(projectId, initialCapture);
@@ -1109,8 +1114,18 @@ export function SignalingPage({
   return (
     <main className="p-3" data-testid="signaling-page">
       <header className="mb-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Signaling View</h1>
+        <h1 className="text-lg font-semibold">
+          {stateTracksV2 ? t("signalingV2.title") : "Signaling View"}
+        </h1>
         <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <Link
+              to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+              search={(previous) => ({ ...previous, capture_id: capture, seq })}
+            >
+              {t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+            </Link>
+          </Button>
           <button
             type="button"
             className="kpi-button"
@@ -1425,6 +1440,7 @@ export function SignalingPage({
                           selectedEventId={cursor.selectedEventId}
                           timeWindow={timeWindow}
                           onWindow={setTimeWindow}
+                          stateTracksV2={stateTracksV2}
                           onTime={(time) => {
                             setCursor({
                               selectedTimeS: time,
@@ -1503,6 +1519,13 @@ export function SignalingPage({
                         <p role="status" className="p-10">
                           Chargement de la timeline…
                         </p>
+                      )}
+                      {stateTracksV2 && capture && (
+                        <TimeNavigator
+                          duration={captureDuration}
+                          window={timeWindow}
+                          onWindow={setTimeWindow}
+                        />
                       )}
                     </section>
                   </Panel>
