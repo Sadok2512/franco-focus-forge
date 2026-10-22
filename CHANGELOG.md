@@ -1,3 +1,10 @@
+## 1.99.1 (patch) — BC4-FRONT 2026-10-22 — RRC State continuous proven timeline (Agent BC1)
+
+- **RRC State only**: proven LTE Connected intervals retain their exact API bounds; proven Idle intervals render in gray, while bounded gaps remain explicitly Unknown and hatched.
+- **Continuous geometry**: adjacent RRC segments share the same boundary without CSS gaps, with rounded corners only at the outer capture edges.
+- **Evidence UI**: RRC segment tooltips expose real start/end, duration, technology and source sequences; Unknown segments state that evidence is unavailable.
+- **Non-regression**: UE State, RF measurements, cursor, navigator and all other signaling tracks keep their existing data and rendering paths.
+
 ## 1.99.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.97→1.98 (Signaling cleanup) ↔ BC3 1.97.0 (Phase 2 Charts) (Agent BC3)
 
 Collision SemVer `1.97.0` : Lovable a bumpé `1.97.0` (patch) pour « Trajet GPS supprimé » exactement comme je bumpais `1.97.0` (minor) pour Phase 2 Charts. Deux lots indépendants, aucun conflit code (fichiers disjoints). Pour éviter l'ambiguïté, le merge saute à `1.99.0` et les deux entrées 1.97.0 sont conservées ci-dessous avec origine explicite.
@@ -58,12 +65,10 @@ Mission `(c) Phase 2 Charts` : hover d'une carte Metrics propage le curseur à t
 
 ## 1.97.0 (patch) — BC4-FRONT 2026-10-22 — Signaling : titre « Trajet · GPS précédent » supprimé (Agent Lovable)
 
-
 - SignalingPage: le titre de la zone carte est supprimé; le panneau garde un nom accessible via `aria-label={t("signalingV2.map")}` (« Carte » / « Map »), et la hauteur libérée profite à la carte.
 - Aucune chaîne ajoutée (clé existante réutilisée), fr/en déjà en paire. Typecheck clean, 276 tests passent (2 skipped), build OK.
 
 ## 1.96.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.92→1.95 (toolbar cleanup) ↔ BC3 1.92.1 (Scanner banner workspace-level) (Agent BC3)
-
 
 Suite directe des 2 lots (Lovable workspace toolbar removals 1.92→1.95 + BC3 scanner UI 1.92.1).
 
@@ -84,20 +89,24 @@ Entrées Lovable 1.92/1.93/1.94/1.95 conservées intégralement ci-dessous.
 Suite directe de bc4-back 0.76.1 (expose `kind` dans endpoints captures). Visibilité utilisateur = badge + désactivation + tooltip, **jamais caché**.
 
 ### Schémas
+
 - `src/lib/api/signaling.ts:49-55` : `captures[].kind: z.enum(["ue","scanner"]).nullable().optional()`.
 - `src/lib/api/metrics.ts:33-37` : `getMetricCaptures` → même ajout.
 - `src/features/signaling/SignalingFilters.tsx:68` : prop `captures[].kind?: 'ue'|'scanner'|null|undefined` ajoutée.
 
 ### Rendu
+
 - **Signaling capture select** (`SignalingFilters.tsx:206`) : `<option>{c.kind === "scanner" ? "[Scanner] " : ""}{c.label}</option>` → prefix `[Scanner]` dans le dropdown.
 - **Metrics panel header** (`MetricsWorkspace.tsx:614-626`) : bandeau `role="alert"` jaune au top du pane quand `captureKind === "scanner"`, explique le pourquoi + référence le lot "Scanner view" ouvert.
 - **MetricsCatalogSidebar** (`MetricsCatalogSidebar.tsx:144-153, 213`) : nouvelle prop `captureKind?: 'ue'|'scanner'|null`. Si `captureKind === "scanner"` ET `node.cell != null` (métrique cell_scoped UE) → `scannerBlocked=true` → leaf `disabled`, classe `opacity-45`, tooltip `"no UE cell metrics in scanner capture"`. **Jamais cachée** (visibilité requise). `canToggle` force à `false` → clic sans effet, aria-pressed=false.
 - **KpiWorkspace** (`KpiWorkspace.tsx:38, 271-280, 559`) : query `getMetricCaptures` → dérive `captureKind` pour la capture active, passe à `MetricsCatalogSidebar`.
 
 ### Tests
+
 - 274 passed | 2 skipped | 0 failed. `tsc --noEmit` : 0 erreur.
 
 ### Écart ouvert (reporté du back 0.76.1)
+
 Lot futur "Scanner view" : exposer CELLSCAN RSRP/RSRQ par PCI scanné + OFDMSCAN power per PRB dans une UI dédiée. Hors scope Time/GPS et Phase 2 Charts.
 
 ## 1.91.1 (patch) — BC4-FRONT 2026-10-22 — i18n tooltip reason (en défaut, fr traduction) (Agent BC3)
@@ -146,7 +155,6 @@ Merge sélectif entre `feat/bc3-metrics` (BC3 Time/GPS + tests, 2 commits : 4318
 Les entrées Lovable 1.88.0, 1.89.0, 1.90.0 (Charts cards per-card view, bouton Appliquer dans ⚙, top bar supprimée) sont **conservées intégralement ci-dessous** et restent effectives (fichiers non touchés par le lot BC3), **à l'exception** du feature per-card view (1.88.0 Lovable) qui n'existe pas dans ma `MetricsWorkspace.tsx` BC3. Le test `src/test/metrics-card-view.test.tsx` qui l'exerçait est **supprimé** (pas « un test rouge laissé en place » — exactement la règle que tu as donnée). Si le per-card view doit être réintroduit, c'est un lot dédié avec portage de l'état `cardViews` dans la version BC3 (incompatible mécaniquement avec le switch pane global `charts|table|overlay` tant que les deux coexistent sans refactor).
 
 Props Lovable `onTablePaneChange`, `workspaceId`, `onColumnsChange`, `paneRequest`, `cardViewRequest`, `onRemove` acceptées en no-op par `MetricsWorkspace.tsx:164-200` pour satisfaire le contrat `KpiWorkspace.tsx` (sinon TS2322 au build).
-
 
 ## 1.88.1 (patch) — BC4-FRONT 2026-10-22 — Tests : fix metrics-catalog-v6 DOM BC3 + nouveau test fixture MetricsWorkspace (Agent BC3)
 
@@ -269,8 +277,6 @@ Pas de rebuild ici : le merge ne produit pas d'image, c'est une réconciliation 
 
 **Déploiement production** : NON exécuté par mandat. Le sidecar :5176 reste disponible pour inspection ; la bascule prod requiert une autorisation explicite + une procédure séparée (recreate `bc4-front-1` avec image `bc4-front-v2:1.77.1` OU exposer en parallèle sur un sous-domaine).
 
-
-
 Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1` phase D livrée. Branche `feat/signaling-github-exact-ui`.
 
 ### Diff visuel détecté et corrigé
@@ -314,6 +320,7 @@ Mission `BC4_SIGNALING_GITHUB_EXACT_UI_INTEGRATION_V1`. **Phases A, B et C livr�
 ### Fanout API et stratégie d'intégrité (CLAUDE.md Rule 2)
 
 Pour une capture donnée, l'adaptateur orchestre :
+
 ```
 listSignalingCaptures()  → 1 call   /signaling/captures
 getSignalingCapture(id)  → 3 calls parallèles  /signaling (size=1) + /signaling/events + /signaling/points
@@ -322,6 +329,7 @@ getSignalingPayload(id,i) → 1 call  /signaling/details?seq=<cache[id][i]>
 ```
 
 **N/D explicites** (sources BC4 absentes) :
+
 - `connectivity[]` = `[]` (BC4 ne reconstruit pas d'intervals LTE/EN-DC/NR-SA)
 - `tasks[]` = `[]` (lane=services existe mais pas de direction DL/UL fiable)
 - `calls[]` = `[]` (pas de source VoLTE/VoNR)
@@ -331,6 +339,7 @@ getSignalingPayload(id,i) → 1 call  /signaling/details?seq=<cache[id][i]>
 - `SigPayload.call_flow[]` = `[]`
 
 **Fallbacks documentés** (contrainte schéma GH non-nullable) :
+
 - `SigMessage.octets` : `null → 0` (schéma GH exige int)
 - `SigMessage.dir` : `null → "DL"` (schéma GH exige UL|DL, BC4 state events n'ont pas de direction)
 - `SigCaptureMeta.captured_at` : extrait du label Nemo `..._26Jun23_110007...` → `"2023-06-26T11:00:07Z"` ; fallback = label brut
@@ -371,39 +380,47 @@ Zod violations : aucune (SigMessage.array().parse() sur 2681 rows OK,
 ---
 
 ## 1.86.0 — RRC State title back in the lane gutter
+
 - The top timeline band now shows its own "RRC State" title with the gray Idle badge beside it, in the same left gutter as UE State.
 - The gutter row that held only UE State was painting an empty box over the chart's own label, so the RRC State title never appeared; it now carries the title and badge as real text.
 - Band positions, proven-state rules, Idle badges inside proven Idle intervals, cursor, navigator and message table are untouched.
 
 ## 1.85.0 — Evidence messages section removed
+
 - The "Evidence messages" row under the Signaling timeline is gone: clicking an event no longer adds a strip with the interval, session and `#seq` buttons below the chart.
 - Selection feedback stays where it already was — the name chip on the timeline, the highlighted row in the messages table, the inspector, and the band tooltip that still carries the proven interval, session and proof sequences.
 - The Time Navigator remains attached directly beneath the tracks; no navigation control changed.
 
 ## 1.84.0 — Selected message row visible after a timeline click
+
 - The selected message row now carries a strong fill (light blue with dark text in light theme, royal blue with white text in dark theme), bold text and a continuous 2 px accent outline plus a 4 px left bar, so the row a timeline click selected is obvious at a glance.
 - The messages table now scrolls itself so the selected row is always inside the visible area below the sticky header (`reveal-row.ts`: pure `scrollDelta` math applied to the table's own scroll container — the page, the cursor and the queries never move).
 - Fixed the dark theme token block: `.dark` was overridden by the later `:root` block (equal specificity, later source order), so every `--sig-*` table colour silently stayed light in dark mode; the block is now `html.dark` and actually wins.
 
 ## 1.83.2 — Message filter tree closed by default
+
 - "Filter Messages" now opens with every technology and channel group closed: only the top-level technologies are listed, each with its own chevron.
 - Expanding a technology reveals its channels, expanding a channel reveals its messages; "Expand All" / "Collapse All" and search still work (a search temporarily reveals matches without touching the stored expansion state).
 - Selection, whole-capture counters, Apply/Cancel behaviour and payload preservation are unchanged.
 
 ## 1.83.1 — RRC logical channel classification
+
 - 3GPP channel catalogue (TS 36.331 LTE / TS 38.331 NR) with controlled normalisation and exact matching only — no substring guessing.
 - Channel comes first from the decoded VM `channel`, then the catalogue, else Unclassified; NAS/Nemo/MAC never receive an RRC channel and conflicts keep the source channel.
 
 ## 1.83.0 — RRC State band on top with Idle badge
+
 - RRC State band moved above the UE state band and given an Idle legend badge; the band only turns Idle when the VM proves an Idle period.
 
 ## 1.82.0 — Premium sidebar and message-type filter
+
 - Compact collapsible/resizable filter sidebar and floating transactional message selector with local search, All/None, Cancel/Apply and semantic layer badges.
 - Actual whole-capture type counts via the existing paginated rows adapter, cached per capture; incomplete/changing results are rejected instead of showing invented totals.
 - Exact name+layer filtering, local pagination and filtered CSV over the complete matching population. Explicit no types means an empty list. Apply preserves selected payload, timeline and GPS; compatible selections survive capture changes.
 - No backend changes or production publication. Real VM validation is reported separately from fixture verification.
 
 ## 1.81.0 — Premium messages table & always-open payload (V10)
+
 - Messages table: toolbar (search, layer, direction, technology, columns, export, clear), numbered pagination, compact premium rows.
 - New columns: Info (VM procedures only, failure from VM outcome), Tech, RRC State (proven intervals only), RSRP/RSRQ/SINR (previous real observation, Δt in tooltip). Band and Cell name listed but shown "—" until the VM supplies them.
 - Column selector: show/hide, reorder, restore defaults, saved locally.
@@ -576,7 +593,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - **G1 — Filter bar compact** (`src/features/kpi/workspace.css`) : `.kpi-filterbar` passe à `padding: 4px 10px`, `margin-bottom: 8px`, `gap: 4px 10px`, `min-height: 36px` ; `.kpi-button` et `details > summary` dans la filterbar à `min-height: 28px, padding: 3px 8px`. Objectif spec « 8-12 px entre filtres et workspace » atteint.
 - **G2 — Catalogue KPI redesign** (`src/features/kpi/KpiCatalogSidebar.tsx`) : suppression du bandeau version technique `v{catalog_version}` (déplacé en title tooltip du footer, hors flux principal) et du compteur « 1/8 selected » rendu en count aligné droite dans le header ; **suppression des checkboxes devant chaque KPI**. Clic sur la ligne entière devient le toggle de sélection (bouton `aria-pressed`, `button` natif accessible). Nouvelle classe `is-selected` sur le leaf qui applique le même visuel bleu que l'ancien `is-active`.
 - **G3 — Tree rows compacts** (`src/features/kpi/workspace.css`) : `.kpi-tree-root` et `.kpi-tree-family` passent à `min-height: 28px, padding: 4px 4px` ; `.kpi-tree-leaf` à `min-height: 30px, padding: 4px 6px 4px 16px` — gain ≈ 25% de densité verticale, conforme spec « 28-32 px ».
-- Zéro changement d'API, zéro changement de données, zéro changement sur /kpi/*, /metrics/*, Signaling, Overview. Non-régression G12 préservée.
+- Zéro changement d'API, zéro changement de données, zéro changement sur /kpi/_, /metrics/_, Signaling, Overview. Non-régression G12 préservée.
 
 ## 1.73.0 (minor) — BC4-FRONT 2026-10-21 — Metrics tree premium (spec v10) : ★ catégories + menu ⋯ Chart/Table/Map/Info/Copy id (Agent BC3)
 
@@ -614,7 +631,6 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - RF timeline is the default Signaling View: synchronized event/connectivity/task tracks and distinct LTE RSRP, RSRQ and SINR panels, with measured points, shared zoom, brush, fullscreen and evidence navigation. Compact protocol histogram remains available.
 - Independent capture-scoped queries preserve message selection, pagination, map and chart instances. Unsupported NR/VoNR states and physical-unit conversions are explicitly declared.
 - Theme palette and EN/FR translations; no fabricated intervals or interpolated radio samples.
-
 
 ## 1.70.0 (minor) — BC4-FRONT 2026-10-21 — DecoderTree : badges REDACTED + réf 3GPP + hiérarchie compacte (Agent BC3)
 
@@ -1140,7 +1156,9 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - Suppression des textes visibles « WORKSPACE RADIO » et « KPI Analytics » dans l’en-tête de la page ; navigation et fonctionnalités conservées.
 
 ## 1.34.0 — 2026-10-18
+
 ### KPI Analytics compact layout
+
 - Full-width compact filters above the preserved resizable catalogue; advanced filters in a popover.
 - Always-on multiple KPI selection; removed global Multi-graphes and Carte / Infos controls.
 - Automatic one/two-column charts, with the third chart spanning the row.
@@ -1154,13 +1172,11 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 
 - Suppression du titre « Distribution des valeurs » et de la liste récapitulative des paramètres au-dessus des histogrammes. Contrôle de comparaison et graphiques conservés.
 
-
 ## 1.33.1 (patch) — BC4-FRONT 2026-10-18 — Trois arbres RRC distincts (Agent BC1)
 
 - Ajout d’un troisième onglet Templates, séparé de Paramètres et Raw parameter.
 - Paramètres présente toujours le catalogue complet ; seules les catégories de Templates filtrent son arbre dédié.
 - Recherche, dépliage et conteneur de défilement indépendants pour chaque arbre ; navigation clavier entre les trois onglets.
-
 
 ## 1.33.0 (minor) — BC4-FRONT 2026-10-18 — Templates RRC (Agent BC1)
 
@@ -1170,10 +1186,10 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - Administration Réglages → Templates RRC : édition validée, révision serveur et invalidation des caches après enregistrement.
 - Opérateurs sélectionnés affichés par leurs badges nominatifs.
 
-
 ## [1.32.1] - 2026-10-18
 
 ### RRC — reprise après indisponibilité temporaire du backend
+
 - Reprise bornée des requêtes carte/distribution lors des erreurs réseau ou HTTP 502/503/504, sans relancer les erreurs de validation ou de session.
 - Message de reconnexion et action Réessayer sur les résultats ; paramètres et filtres appliqués conservés.
 - Vérification des sélections multiples correspondant aux erreurs constatées pendant le redémarrage du backend.
@@ -1181,6 +1197,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.32.0] - 2026-10-18
 
 ### Dictionnaire RRC — valeurs géographiques réelles
+
 - Carte alimentée par le nouvel endpoint traçable : valeurs, coordonnées sources, capture, séquence, événement, occurrence et fichier NMF.
 - Regroupement des points denses, infobulles avec sélection des occurrences superposées, légende opérateurs et coloration par valeur. Couverture et limites explicites.
 - Requêtes annulables et mises en cache, limitées aux paramètres sélectionnés et aux filtres appliqués ; même périmètre technologique pour les distributions.
@@ -1189,12 +1206,14 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.31.0] - 2026-10-18
 
 ### Dictionnaire RRC — carte redimensionnable
+
 - Poignée sous la carte pour ajuster la hauteur entre 240 et 800 px à la souris, au tactile ou au clavier. Double-clic pour revenir à 400 px.
 - Hauteur conservée pendant la session, y compris après fermeture/réouverture du panneau. Zoom et centre préservés pendant le redimensionnement et le plein écran, sans recharger les données.
 
 ## [1.30.0] - 2026-10-18
 
 ### Dictionnaire RRC — filtres compacts et carte centrale
+
 - Carte pleine largeur centrale, Infos indépendantes en fiches compactes sous la carte, sans espace réservé aux panneaux masqués.
 - Histogrammes et tableau sous la carte ; tableau à droite lorsque la largeur centrale atteint 1400 px, sinon sous les graphiques.
 - Filtres denses, opérateurs résumés lorsque tous sont sélectionnés, suppression des chips répétées dans la barre ouverte.
@@ -1204,11 +1223,13 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.29.1] - 2026-10-18
 
 ### Dictionnaire RRC
+
 - Suppression du bloc « Populations et contexte des résultats » et de ses détails par paramètre, sans changement des données, calculs ou filtres.
 
 ## [1.29.0] - 2026-10-18
 
 ### Dictionnaire RRC — carte, graphiques et Infos premium
+
 - Carte de 350–450 px sans texte permanent sous le fond ; état sans mesures compact, attribution préservée et commandes flottantes accessibles par icônes.
 - Recherche par coordonnées, recentrage, visibilité de la couche OSM et plein écran, sans nouvelle API ni coordonnées de mesure inventées.
 - Un histogramme occupe toute la largeur ; avec trois graphiques, le dernier occupe les deux colonnes. Les autres dispositions et le redimensionnement existants sont conservés.
@@ -1219,6 +1240,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.28.1] - 2026-10-18
 
 ### RRC — fond cartographique même sans mesures
+
 - Affiche la carte OpenStreetMap existante même sans points géolocalisés traçables, avec indication explicite « Fond de carte uniquement ».
 - Zoom, déplacement et plein écran disponibles ; même instance conservée au basculement, avec recalcul des dimensions.
 - Masque la légende opérateurs lorsqu’aucune population n’est cartographiée. Aucun marqueur de mesure inventé.
@@ -1226,6 +1248,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.28.0] - 2026-10-18
 
 ### Dictionnaire RRC — panneaux Carte et Infos indépendants
+
 - Deux toggles indépendants, quatre dispositions sans espace réservé aux panneaux fermés ; panneau droit redimensionnable 350–600 px et sidebar 250–420 px.
 - Infos multiples par sélection canonique : fiches repliables, recherche, tout développer/réduire, copie des chemins et des informations techniques.
 - Métadonnées issues de la fiche API ; populations et preuves issues de la distribution du contexte appliqué. Champs absents affichés —, anciennes populations masquées pendant l’actualisation.
@@ -1235,6 +1258,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.27.1] - 2026-10-18
 
 ### Correction — Carte / Infos sur Dictionnaire RRC
+
 - Place l’interrupteur Carte / Infos directement dans la barre du Dictionnaire RRC, visible même lorsque les filtres sont repliés.
 - Affiche à la demande la carte OSM et la fiche RRC existante ; le panneau est démonté lorsqu’il est masqué.
 - Réutilise la carte avec un libellé RRC, sans points géographiques inventés ni changement des distributions.
@@ -1242,6 +1266,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.27.0] - 2026-10-18
 
 ### KPI Analytics — Carte / Infos à la demande
+
 - Ajoute un interrupteur Carte / Infos, désactivé initialement, pour afficher ou masquer la carte OSM et la fiche du KPI actif.
 - Réutilise la carte existante, montée uniquement lorsque la section est activée, avec nettoyage au masquage et adaptation au redimensionnement.
 - Informations issues du catalogue et de la réponse analytique déjà chargée ; aucune requête KPI supplémentaire au basculement.
@@ -1250,6 +1275,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.26.0] - 2026-10-18
 
 ### KPI Analytics — workspace multi-graphes
+
 - Évolution mineure : sélection multiple par code catalogue, onglets ordonnables, mode unique conservant les sélections et dispositions automatique/1/2/4.
 - Sidebar KPI existante conservée (technologies et familles API), redimensionnable de 230 à 460 px, recherche étendue et scroll indépendant.
 - Réutilisation des sélecteurs RRC ; états brouillon/appliqué, géographie activable, dimensions avancées contractuelles et filtres partagés dans l’URL.
@@ -1262,6 +1288,7 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 ## [1.25.1] - 2026-10-18
 
 ### Dictionnaire RRC — corrections de synchronisation et de défilement
+
 - Corrige les distributions vides des paramètres sélectionnés dans Raw : résolution unique du chemin brut vers la clé canonique présente dans le catalogue, dans la même technologie et le même message. Les correspondances absentes ou ambiguës sont signalées, jamais devinées à partir du libellé.
 - Sépare les filtres en cours et les snapshots immuables appliqués. Réinitialiser prépare le brouillon ; seul Appliquer change le contexte analytique et l’URL. Les sélections de paramètres et Group By réutilisent exclusivement le contexte validé.
 - Clés de requête stables, annulation via AbortSignal, cache par contexte et conservation des derniers résultats avec indication explicite de leur contexte pendant l’actualisation ou après une erreur.
@@ -1270,10 +1297,10 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - Supprime l’allocation mobile artificielle de 1100 px : contenu analytique en flux naturel, sidebar à défilement indépendant, table et virtualisation préservées. Adaptation du header uniquement sur le Dictionnaire étroit pour éviter le débordement horizontal, sans supprimer les commandes.
 - Aucun changement des conversions, données, tracés des histogrammes, schéma CSV, contrats API ou backend.
 
-
 ## [1.25.0] - 2026-10-18
 
 ### Dictionnaire RRC — tableau hiérarchique premium V3
+
 - En-têtes Famille et Paramètre repliables, puis lignes de valeurs indentées ; commandes Tout développer/Tout réduire et recherche des chemins ASN.1 avec ouverture automatique des résultats.
 - Identité de groupe fondée sur les identifiants API, le chemin canonique et la technologie disponible ; familles issues exclusivement du catalogue.
 - Colonnes dynamiques dans l’ordre opérateur, marqueurs et barres de 4px aux couleurs prescrites ; occurrences et dénominateurs conservés avant recherche.
@@ -1282,22 +1309,20 @@ Mission `BC4_KPI_ANALYTICS_PREMIUM_WORKSPACE_V2`, Phase A sur 4. Les Phases B (b
 - Nouveau CSV plat à 13 colonnes : technology, family_id, family_name, param_id, asn1_path, parameter_name, value, operator, band, occurrences, denominator, percentage, total. Version mineure pour l’évolution du format exporté et des interactions.
 - Aucun changement des histogrammes, filtres globaux, conversions, sélections, client API ou backend.
 
-
 ## [1.24.1] - 2026-10-18
 
 - Dictionnaire RRC : chaque dimension géographique activée dispose de son propre bouton de multisélection dans la barre de filtres, avec son libellé et son compteur.
 - Ajout du bouton Plier/Déplier les filtres ; les sélections et modifications en attente sont conservées.
 
-
 ## [1.24.0] - 2026-10-18
 
 ### Dictionnaire RRC — tableau hiérarchique
+
 - Famille issue du catalogue, paramètre identifié par `param_key`, valeurs regroupées sans répétition visuelle des libellés ; contexte conservé pour les lecteurs d’écran.
 - Occurrences, pourcentages par population paramètre/opérateur (et bande), barres sur une échelle commune ; absence conservée comme null et affichée « — ».
 - Recherche famille/paramètre/valeur et tri au sein de chaque groupe ; dénominateurs conservés avant recherche.
 - CSV détaillé par valeur et opérateur avec identifiant stable, dénominateur et pourcentage ; colonne bande supplémentaire en mode bande/combiné. Cette évolution du format d’export justifie une version mineure.
 - Histogrammes, sélection, filtres globaux et appels API inchangés. Tests de regroupement et validation navigateur sur données réelles.
-
 
 ## 1.23.1 (patch) — bc4-front 2026-10-18 — Panneau géographique épuré
 
@@ -1347,7 +1372,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >    (`t-Reordering (dl-AM-RLC)` vs `t-Reordering (dl-UM-RLC)`).
 >
 > Composant réutilisé : helpers du module `src/features/dictionary/
-> shared.ts` (`leafOf`). Logique d'agrégation implémentée localement
+shared.ts` (`leafOf`). Logique d'agrégation implémentée localement
 > (le back renvoie encore les paths bruts dans view=raw).
 >
 > **Sous-titre `n paramètres · n détections`** : back vérifié,
@@ -1372,7 +1397,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > - `<Sheet>` (Radix overlay avec fond sombre) **remplacé** par un
 >   `<aside>` intégré au grid 3 colonnes : `[320px tree] [1fr center]
->   [360px infos]`. Grid conditionnel : `xl:grid-cols-[320px_1fr]`
+[360px infos]`. Grid conditionnel : `xl:grid-cols-[320px_1fr]`
 >   quand Infos off, `xl:grid-cols-[320px_1fr_360px]` quand on.
 > - Toggle **persistant via `localStorage.bc4.kpi.infoOpen` ("1"/"0")**,
 >   try/catch — jamais load-bearing si localStorage KO.
@@ -1412,16 +1437,16 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes
 >
-> | # | Résultat |
-> |---|---|
-> | G1 typecheck | EXIT=0 ✓ |
-> | G2 Infos = 3 panneaux côte à côte, pas de fond sombre | OK (aside intégré au grid) |
-> | G3 En-tête sans source ni formule | OK (ligne retirée) |
-> | G4 Raison wrap complet | OK (whitespace-pre-wrap) |
-> | G5 result_id lu réel + fallback "aucun calcul servi" si PENDING, "N/D — non exposé par le back" sinon | OK |
-> | G6 back version lu depuis /health | OK (0.47.3 remonté live) |
-> | G7 Toggle persistant localStorage | OK (try/catch) |
-> | G8 PNG garde REF + LTE_RF_RSRP + Infos | OK — 3 panneaux côte à côte (320·944·360 px), pas de fond sombre, console 0 erreur, `/tmp/kpi-1.21.1-3panels.png` |
+> | #                                                                                                     | Résultat                                                                                                          |
+> | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+> | G1 typecheck                                                                                          | EXIT=0 ✓                                                                                                          |
+> | G2 Infos = 3 panneaux côte à côte, pas de fond sombre                                                 | OK (aside intégré au grid)                                                                                        |
+> | G3 En-tête sans source ni formule                                                                     | OK (ligne retirée)                                                                                                |
+> | G4 Raison wrap complet                                                                                | OK (whitespace-pre-wrap)                                                                                          |
+> | G5 result_id lu réel + fallback "aucun calcul servi" si PENDING, "N/D — non exposé par le back" sinon | OK                                                                                                                |
+> | G6 back version lu depuis /health                                                                     | OK (0.47.3 remonté live)                                                                                          |
+> | G7 Toggle persistant localStorage                                                                     | OK (try/catch)                                                                                                    |
+> | G8 PNG garde REF + LTE_RF_RSRP + Infos                                                                | OK — 3 panneaux côte à côte (320·944·360 px), pas de fond sombre, console 0 erreur, `/tmp/kpi-1.21.1-3panels.png` |
 
 ## 1.21.0 (minor) — bc4-front 2026-10-17 — /kpi : finitions UI — barre filtres homogène (cadenas + séparateur Géo), en-tête débarrassé des doublons Formule/Source, volet Infos refondu en 5 sections (360 px), carte plein écran + légende opérateur (Agent BC2)
 
@@ -1447,9 +1472,9 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > ### 2. En-tête KPI
 >
 > - Lignes `<strong>Formule :</strong>` et `<strong>Source :</strong> …
->   — <strong>Formule :</strong>` (DOUBLON) **supprimées**.
+— <strong>Formule :</strong>` (DOUBLON) **supprimées**.
 > - Nouvelle ligne unique **"Périmètre :"** : `n obs · toute la période ·
->   k filtre(s) actif(s)` (ou "aucun filtre"). Les détails source/formule
+k filtre(s) actif(s)` (ou "aucun filtre"). Les détails source/formule
 >   restent accessibles dans le volet Infos.
 >
 > ### 3. Volet Infos (Drawer refondu)
@@ -1469,7 +1494,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > - Nouveau bouton **plein écran** `⤢` en haut à droite (icônes
 >   `Maximize2`/`Minimize2`). Mode plein écran : `fixed inset-0 z-[60]
->   bg-background`, resize auto de MapLibre, **touche Échap** pour sortir.
+bg-background`, resize auto de MapLibre, **touche Échap** pour sortir.
 > - **Légende opérateur** en bas à gauche : couleurs de marque BC4
 >   (Orange `#FF7900`, SFR `#E2001A`, Bouygues `#009FE3`, Free `#7C8794`,
 >   N/D `border-dashed`). Chaque pastille 2×2px + libellé.
@@ -1482,18 +1507,18 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes
 >
-> | # | Résultat |
-> |---|---|
-> | G1 typecheck | EXIT=0 ✓ |
-> | G2 chips homogènes | OK (tous h-7 + cadenas sur indispo) |
-> | G3 séparateur Géo visible | OK |
-> | G4 Réinitialiser à droite + disabled | OK |
-> | G5 doublon Formule/Source retiré header | OK |
-> | G6 ligne Périmètre affichée | OK |
-> | G7 volet Infos 5 sections 360px | OK |
-> | G8 bouton fullscreen + Échap | OK |
-> | G9 légende opérateur bas-gauche | OK |
-> | G10 encart info honnête (0 point GPS) | OK |
+> | #                                       | Résultat                            |
+> | --------------------------------------- | ----------------------------------- |
+> | G1 typecheck                            | EXIT=0 ✓                            |
+> | G2 chips homogènes                      | OK (tous h-7 + cadenas sur indispo) |
+> | G3 séparateur Géo visible               | OK                                  |
+> | G4 Réinitialiser à droite + disabled    | OK                                  |
+> | G5 doublon Formule/Source retiré header | OK                                  |
+> | G6 ligne Périmètre affichée             | OK                                  |
+> | G7 volet Infos 5 sections 360px         | OK                                  |
+> | G8 bouton fullscreen + Échap            | OK                                  |
+> | G9 légende opérateur bas-gauche         | OK                                  |
+> | G10 encart info honnête (0 point GPS)   | OK                                  |
 >
 > ### Fichiers
 >
@@ -1505,6 +1530,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 ## 1.20.4 (patch) — bc4-front 2026-10-17 — /kpi : vraie carte **OpenStreetMap** via MapLibre dans le panneau Carte (basemap tiles OSM + attribution + zoom/pan), points par cellule à câbler back (Agent BC2)
 
 > Nouveau composant `src/features/kpi/KpiMapOSM.tsx` :
+>
 > - MapLibre (déjà installé via RadioMap) + tile layer OpenStreetMap
 >   (`https://tile.openstreetmap.org/{z}/{x}/{y}.png`)
 > - Centre par défaut FR métropolitaine (lng 2.4, lat 46.6, zoom 5)
@@ -1523,12 +1549,12 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes
 >
-> | # | Résultat |
-> |---|---|
-> | G1 typecheck | EXIT=0 ✓ |
-> | G6 pas de fake coords | OK (badge "points non câblés back") |
-> | G8 OSM attribution visible | OK (compact) |
-> | G11 pas de régression | 1 fichier nouveau + 1 modif import |
+> | #                          | Résultat                            |
+> | -------------------------- | ----------------------------------- |
+> | G1 typecheck               | EXIT=0 ✓                            |
+> | G6 pas de fake coords      | OK (badge "points non câblés back") |
+> | G8 OSM attribution visible | OK (compact)                        |
+> | G11 pas de régression      | 1 fichier nouveau + 1 modif import  |
 >
 > ### Next step
 >
@@ -1542,14 +1568,14 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Avant / Après
 >
-> | | Avant 1.20.2 | Après 1.20.3 |
-> |---|---|---|
-> | Bouton Carte | **toujours disabled** (`canMap={false}`) | **actif** avec `pressed` + toggle |
-> | Chart A "Occurrences par opérateur" | moitié largeur permanente (côté gauche) | **full-width** quand Carte off, moitié quand Carte on |
-> | Panneau Task Time | **toujours rendu** à droite avec empty state même si Graph off | **masqué par défaut**, rendu uniquement si `graphVisible && canGraph` |
-> | Panneau Carte | — | nouveau `KpiMapPanel` honnête (back ne renvoie pas lat/lng → état indisponible explicite avec explication). JAMAIS fake coords. |
-> | Date & Heure dans table | déjà absent | inchangé, confirmé absent |
-> | 4 Summary cards | déjà absent | inchangé, confirmé absent |
+> |                                     | Avant 1.20.2                                                   | Après 1.20.3                                                                                                                    |
+> | ----------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+> | Bouton Carte                        | **toujours disabled** (`canMap={false}`)                       | **actif** avec `pressed` + toggle                                                                                               |
+> | Chart A "Occurrences par opérateur" | moitié largeur permanente (côté gauche)                        | **full-width** quand Carte off, moitié quand Carte on                                                                           |
+> | Panneau Task Time                   | **toujours rendu** à droite avec empty state même si Graph off | **masqué par défaut**, rendu uniquement si `graphVisible && canGraph`                                                           |
+> | Panneau Carte                       | —                                                              | nouveau `KpiMapPanel` honnête (back ne renvoie pas lat/lng → état indisponible explicite avec explication). JAMAIS fake coords. |
+> | Date & Heure dans table             | déjà absent                                                    | inchangé, confirmé absent                                                                                                       |
+> | 4 Summary cards                     | déjà absent                                                    | inchangé, confirmé absent                                                                                                       |
 >
 > ### Comportement toggle
 >
@@ -1571,16 +1597,16 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes
 >
-> | # | Garde | Résultat |
-> |---|---|---|
-> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
-> | G2 | Pas de 4 summary cards | confirmé (jamais introduits) |
-> | G3 | Pas de colonne Date & Heure dans table | confirmé (déjà absent) |
-> | G4 | Chart A expand quand Carte off | OK via grid-cols-1 |
-> | G5 | Graph button disabled si canShowGraph=false | OK (tooltip explicite) |
-> | G6 | Pas de fake coords map | OK (panneau unavailable) |
-> | G8 | Design BC4 intact (navy #142235, bleu primary) | inchangé |
-> | G11 | KPI catalog/sidebar/Dict/RF/Assistant intacts | OK (modifs isolées à `_app.kpi.tsx`) |
+> | #   | Garde                                          | Résultat                             |
+> | --- | ---------------------------------------------- | ------------------------------------ |
+> | G1  | `bunx tsc --noEmit`                            | EXIT=0 ✓                             |
+> | G2  | Pas de 4 summary cards                         | confirmé (jamais introduits)         |
+> | G3  | Pas de colonne Date & Heure dans table         | confirmé (déjà absent)               |
+> | G4  | Chart A expand quand Carte off                 | OK via grid-cols-1                   |
+> | G5  | Graph button disabled si canShowGraph=false    | OK (tooltip explicite)               |
+> | G6  | Pas de fake coords map                         | OK (panneau unavailable)             |
+> | G8  | Design BC4 intact (navy #142235, bleu primary) | inchangé                             |
+> | G11 | KPI catalog/sidebar/Dict/RF/Assistant intacts  | OK (modifs isolées à `_app.kpi.tsx`) |
 >
 > ### Impact
 >
@@ -1604,7 +1630,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   `candidate_evidence`, `confirmation_evidence`, `classification`,
 >   `fixture_version`. Coordonnées fictives autour de 48.892 / 2.238
 >   (zone de démo). Export `DEMO_FIXTURE_VERSION =
->   "rf-demo-overshooting@2026-10-17"`.
+"rf-demo-overshooting@2026-10-17"`.
 > - `src/features/rf-modules/DemoMap.tsx` : **carte SVG locale** (pas
 >   de MapLibre ni street tiles). Grille lat/lng étiquetée, triangles
 >   couleur opérateur (serving), losanges ambre (candidate) + rouge
@@ -1624,8 +1650,8 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   - `topServing(filtered, 10)` → histogramme Top 10
 >   - `medianMargin(filtered)` → p50 pour summary card
 >   - `nCandidate`, `nConfirmed`, `nServing`, `nZones` → cards
->   Les cards, l'histogramme, la carte et la table partagent **le MÊME
->   `filtered`** → cohérence totaux (règle §G3).
+>     Les cards, l'histogramme, la carte et la table partagent **le MÊME
+>     `filtered`** → cohérence totaux (règle §G3).
 > - **Linked interactions** :
 >   - Clic sur une barre histogram → highlight la première `obs_id` de
 >     ce `serving_cell` → carte + table se synchronisent
@@ -1657,17 +1683,17 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes
 >
-> | # | Garde | Résultat |
-> |---|---|---|
-> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
-> | G2 | DEMO Run → histogramme + carte + table populated | OK |
-> | G3 | Filter → totaux cohérents cards / histo / table | OK (même `filtered`) |
-> | G4 | Carte interactive : clic point → selection + highlight | OK |
-> | G5 | Settings margin_db change → reclassification + totaux cohérents | OK |
-> | G6 | REAL mode : pas de fake GPS, pas de fausses cards | OK |
-> | G7 | Aucun subscriber ID, DEMO badge visible UI | OK |
-> | G9 | KPI/Dict/Assistant intacts | OK |
-> | G10 | 1440/1920 testés via Playwright 1440×900 | OK |
+> | #   | Garde                                                           | Résultat             |
+> | --- | --------------------------------------------------------------- | -------------------- |
+> | G1  | `bunx tsc --noEmit`                                             | EXIT=0 ✓             |
+> | G2  | DEMO Run → histogramme + carte + table populated                | OK                   |
+> | G3  | Filter → totaux cohérents cards / histo / table                 | OK (même `filtered`) |
+> | G4  | Carte interactive : clic point → selection + highlight          | OK                   |
+> | G5  | Settings margin_db change → reclassification + totaux cohérents | OK                   |
+> | G6  | REAL mode : pas de fake GPS, pas de fausses cards               | OK                   |
+> | G7  | Aucun subscriber ID, DEMO badge visible UI                      | OK                   |
+> | G9  | KPI/Dict/Assistant intacts                                      | OK                   |
+> | G10 | 1440/1920 testés via Playwright 1440×900                        | OK                   |
 >
 > ### Impact
 >
@@ -1738,26 +1764,26 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Gardes manuelles
 >
-> | # | Garde | Résultat |
-> |---|---|---|
-> | G1 | `bunx tsc --noEmit` | EXIT=0 ✓ |
-> | G2 | nav tree expand/collapse/search/selected | OK via parcours réel |
-> | G3 | filter changes → UI compte "N filtres actifs" | OK |
-> | G4 | Run disabled sur UNVALIDATED | OK (bouton grisé) |
-> | G5 | jamais OVERSHOOTING_CONFIRMED dans data | OK (uniquement description §5) |
-> | G6 | pas de fake map | OK (panneau unavailable explicite) |
-> | G7 | counts histogram = rows table | OK (demo cohérent) |
-> | G8 | histogram axes + units + export icons | OK |
-> | G9 | states idle/queued/running/completed/failed | OK |
-> | G10 | Settings/Info open/close | OK |
-> | G11 | pas d'identité sujet, ordre (capture_id, seq) | OK |
-> | G12 | pas de régression hors `/rf` | OK (fichiers isolés) |
+> | #   | Garde                                         | Résultat                           |
+> | --- | --------------------------------------------- | ---------------------------------- |
+> | G1  | `bunx tsc --noEmit`                           | EXIT=0 ✓                           |
+> | G2  | nav tree expand/collapse/search/selected      | OK via parcours réel               |
+> | G3  | filter changes → UI compte "N filtres actifs" | OK                                 |
+> | G4  | Run disabled sur UNVALIDATED                  | OK (bouton grisé)                  |
+> | G5  | jamais OVERSHOOTING_CONFIRMED dans data       | OK (uniquement description §5)     |
+> | G6  | pas de fake map                               | OK (panneau unavailable explicite) |
+> | G7  | counts histogram = rows table                 | OK (demo cohérent)                 |
+> | G8  | histogram axes + units + export icons         | OK                                 |
+> | G9  | states idle/queued/running/completed/failed   | OK                                 |
+> | G10 | Settings/Info open/close                      | OK                                 |
+> | G11 | pas d'identité sujet, ordre (capture_id, seq) | OK                                 |
+> | G12 | pas de régression hors `/rf`                  | OK (fichiers isolés)               |
 >
 > ### Impact
 >
 > - **1 fichier modifié** (`src/features/rf-modules/RfModulesPage.tsx`)
->   + **1 fichier mineur** (`src/features/rf-modules/registry.ts` —
->   subviews RACH/Throughput renommées).
+>   - **1 fichier mineur** (`src/features/rf-modules/registry.ts` —
+>     subviews RACH/Throughput renommées).
 > - **0 fichier touché** hors `src/features/rf-modules/`.
 > - KPI Analytics, Dictionnaire, Assistant, Settings : inchangés.
 
@@ -1774,9 +1800,9 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   avec `RF_MODULES` = 4 entrées (`overshooting`, `interference`, `rach`,
 >   `throughput`). Chaque module porte :
 >   `module_id, version, title, description, capabilities, required_sources,
->   required_fields, supported_dimensions, settings_schema, evidence_schema,
->   availability_status (AVAILABLE | PARTIAL | UNVALIDATED | UNAVAILABLE),
->   availability_reason, subviews[]`.
+required_fields, supported_dimensions, settings_schema, evidence_schema,
+availability_status (AVAILABLE | PARTIAL | UNVALIDATED | UNAVAILABLE),
+availability_reason, subviews[]`.
 >   20 sous-vues au total, chacune avec `available: bool` et
 >   `reason_if_unavailable` quand bloquée. Pas de capacité annoncée sans
 >   preuve back.
@@ -1800,21 +1826,21 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > ### Statut des 4 modules
 >
-> | Module | Statut | Sous-vues disponibles |
-> |---|---|---|
-> | Overshooting Detection | **PARTIAL** | Détection, Candidats, Serving vs Better, Résultats (4/5 — carto bloquée par cell_ref.lat/lng vides) |
-> | Interference Detector | **UNVALIDATED** | Radio Quality Screening, Résultats (2/5 — co/adjacent/time-freq bloqués par absence spectrum) |
-> | RACH Performance | **UNVALIDATED** | Attempts (brut), Résultats (2/5 — success/failure/preamble/latency bloqués par contrat RACHSM non certifié) |
-> | DL/UL Throughput | **PARTIAL** | Application, DL/UL Comparison, Résultats (3/6 — layers/MCS-CQI/CA-EN-DC bloqués) |
+> | Module                 | Statut          | Sous-vues disponibles                                                                                       |
+> | ---------------------- | --------------- | ----------------------------------------------------------------------------------------------------------- |
+> | Overshooting Detection | **PARTIAL**     | Détection, Candidats, Serving vs Better, Résultats (4/5 — carto bloquée par cell_ref.lat/lng vides)         |
+> | Interference Detector  | **UNVALIDATED** | Radio Quality Screening, Résultats (2/5 — co/adjacent/time-freq bloqués par absence spectrum)               |
+> | RACH Performance       | **UNVALIDATED** | Attempts (brut), Résultats (2/5 — success/failure/preamble/latency bloqués par contrat RACHSM non certifié) |
+> | DL/UL Throughput       | **PARTIAL**     | Application, DL/UL Comparison, Résultats (3/6 — layers/MCS-CQI/CA-EN-DC bloqués)                            |
 >
 > ### Mock-first (clairement labélisé DEMO)
 >
 > Le résultat d'un Run sur Overshooting affiche un bandeau orange
 > `DEMO — ces lignes ne proviennent pas d'une exécution réelle du back.
-> Fixture interne pour valider le contrat de rendu. Pour un run réel,
-> câbler POST /projects/{id}/rf/modules/overshooting/runs`.
+Fixture interne pour valider le contrat de rendu. Pour un run réel,
+câbler POST /projects/{id}/rf/modules/overshooting/runs`.
 > Les 3 lignes DEMO portent `capture_id, seq, serving, serving_rsrp,
-> candidate, candidate_rsrp, margin, status=BETTER_CELL_CANDIDATE` —
+candidate, candidate_rsrp, margin, status=BETTER_CELL_CANDIDATE` —
 > jamais `OVERSHOOTING_CONFIRMED` (règle §5).
 >
 > ### Prochaines étapes (hors release)
@@ -1855,7 +1881,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >
 > - `GET /projects/{id}/dict/v2/tree?view=raw` renvoie bien le shape
 >   `tree[].origins[].messages[].groups[].kpis[]` AVEC `distinct_param_keys
->   = 773` et `total_rows = 258 699` au niveau racine (cohérent avec
+= 773` et `total_rows = 258 699` au niveau racine (cohérent avec
 >   l'onglet Paramètres).
 > - Les `origins` sont présents mais sont des buckets techniques
 >   (network_config/ue_capability/ue_report) qui n'ont **pas de sens
@@ -1873,7 +1899,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   `Techno → Message → leaf`. Messages triés par ordre alphabétique
 >   (déterministe).
 > - Nouvelle `RawLeafRow` : nom affiché avec `font-mono text-[11.5px]
->   break-all leading-[1.35]`. Pas d'`ellipsis`, pas d'`truncate` : le
+break-all leading-[1.35]`. Pas d'`ellipsis`, pas d'`truncate` : le
 >   nom complet (`longDRX-CycleStartOffset/sf160`, chemin indices `[0]`
 >   inclus) est visible via wrap. Compte à droite `tabular-nums`. Pas
 >   de chips discriminators, pas de bouton Info — la ligne entière est
@@ -1892,6 +1918,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > ### Garde PNG (parcours réel REF)
 >
 > `bun run shot -- /rrc` (vue Raw, LTE › RRCConnectionReconfiguration déplié) :
+>
 > - Noms complets visibles sans ellipse (ex. `rrcConnectionReconfiguration/.../measGapConfig/setup/gapOffset`).
 > - Aucun nœud "RAW", aucun nœud "Configuration réseau" dans la vue Raw.
 > - Sous-titre "**773 paramètres · 258 699 détections**" cohérent avec le back.
@@ -1911,9 +1938,9 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   1. URL : front appelait `/reference/cell/upload` (ancienne route),
 >      back avait `/settings/cell-ref/upload` (0.47.1 — nouveau shape).
 >   2. Shape : front attendait `rows_read/rows_loaded/rejected_by_reason/
->      bands_unmapped/by_rat/etat_breakdown/snapshot_date`, back renvoyait
+bands_unmapped/by_rat/etat_breakdown/snapshot_date`, back renvoyait
 >      `status/status_reason/reject_reasons/processed/matched/inserted/
->      updated_lines/cells_affected/source_path/warnings`. safeParse
+updated_lines/cells_affected/source_path/warnings`. safeParse
 >      aurait échoué silencieusement.
 > - **Faux-positifs textuels** : `SettingsLayout.tsx:29,33` affichait
 >   "API mockée" + "Rôle simulé (démo)" en dur — texte PERMANENT, non
@@ -1939,7 +1966,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   "Référence (reference_id + source_path)".
 > - `src/features/settings/SettingsLayout.tsx` : textes "API mockée" et
 >   "Rôle simulé (démo)" **supprimés**. En-tête affiche `Connecté :
->   <email session>` + pastille rôle réel (admin/editor/viewer). Si pas
+<email session>` + pastille rôle réel (admin/editor/viewer). Si pas
 >   de session : "Non authentifié" en rouge (jamais "démo").
 > - 4 panels (AI, Appearance, Geography, Users) : textes "mock"/"démo"/
 >   "simulé"/"simulation mock" **remplacés** par mention de l'endpoint
@@ -1973,8 +2000,8 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 
 > **Changement** : `GroupBySegmented` ajoute un 4e bouton **DOR** après
 > `Opérateur | Bande | Les deux`. Active ⇐ `filtersData.dr.available ===
-> true` OU `values.length > 0`. Sinon **grisé** avec `title=DOR —
-> <reason du back>` (jamais inventé). Même règle que `FilterChip`.
+true` OU `values.length > 0`. Sinon **grisé** avec `title=DOR —
+<reason du back>` (jamais inventé). Même règle que `FilterChip`.
 >
 > **Palette** : `DOR_PALETTE` Okabe-Ito 8 couleurs (colorblind-safe,
 > stable, hash par index) — **jamais la palette opérateur**. Barre
@@ -1986,6 +2013,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > (dénominateur). Jamais inventé — calculé depuis `kpi.groups`.
 >
 > **Contrat** :
+>
 > - `KpiGroupBy` type étendu à `"dor"` (schema Zod).
 > - `KpiGroupRowSchema` : ajout `dor?: string | null` (passthrough).
 > - Back 0.46.0 → **0.46.1** attendu : accepte `group_by=dor` ;
@@ -2010,7 +2038,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
   rapportées → message → groupe fonctionnel → feuilles) ; view=catalog
   pour les param_key canoniques, view=raw pour les paths ASN.1 bruts.
 - `GET /projects/{id}/dict/v2/distribution?keys=…&group_by=operator|
-  band|operator_band` : un bloc par param_key avec valeurs/groupes/
+band|operator_band` : un bloc par param_key avec valeurs/groupes/
   verdict, utilisé pour les cartes du panneau droit.
 - `GET /projects/{id}/dict/v2/param/{key}` : fiche paramètre (unit,
   origin, discriminators_examples, sample_paths, kpi_hint).
@@ -2071,6 +2099,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > « 11 chips gris en v1.17.4, alors que `bun run shot` rend 5 actifs ».
 >
 > **Diagnostic — ce n'est PAS un bug front** :
+>
 > - Script précédent `scripts/shot.ts` injectait `activeProject` et visitait
 >   `/kpi` en URL directe → court-circuitait store + timing React.
 > - L'utilisateur passe par `/projects → clic "Ouvrir" → clic "KPI Analytics"`.
@@ -2081,12 +2110,13 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >   et `reason` explicite :
 >   - operators/rats/bands/… : `"aucune valeur distincte pour measurement_points.X"`
 >   - dr/plaque/dor/arcep/commune/insee : `"ECGI non propagé : 0/0 points.
->     Lancer POST /projects/{id}/kpi/_populate_ecgi."`
+Lancer POST /projects/{id}/kpi/_populate_ecgi."`
 > - **TEST2 n'a aucune donnée** (0 mp) → chaque dim gris est HONNÊTE et porte
 >   sa raison. L'utilisateur voyait TEST2 (soit activeProject persistant du
 >   TEST2, soit mauvais projet « ouvert »).
 >
 > **Vérification contrat front (déjà en 1.17.3)** :
+>
 > - `FilterChip:388-397` : `title={label — reason}` → **chaque chip gris
 >   affiche sa raison en tooltip** (règle respectée).
 > - `_app.kpi.tsx:860-867` : `filtersQ.error` → bandeau rouge visible, pas de
@@ -2094,17 +2124,19 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > - `kpiFetch:148-170` : `console.error` avant throw → pas de parse silencieux.
 >
 > **Changements de ce lot (garde, pas correction)** :
+>
 > - `scripts/shot_flow.ts` : NOUVEAU — parcours UI réel (login → /projects →
 >   click "Ouvrir" sur un projet par nom → click "KPI Analytics" nav →
 >   `waitForFunction` jusqu'à "Filtres" visible). Extrait `chipTooltips` :
 >   liste `{label, kind: active|gray|malformed|error|available-no-value,
->   tooltip}` pour TOUTE la barre. Log réseau `kpiFiltersCalls` (URL +
+tooltip}` pour TOUTE la barre. Log réseau `kpiFiltersCalls` (URL +
 >   statut + timing).
 > - `package.json` : `bun run shot` → `shot_flow.ts` (parcours UI).
 >   `bun run shot:direct` → `shot.ts` (URL directe, pour debug schéma back).
 > - **Design inchangé**, aucun composant touché.
 >
 > **Gardes PNG** (parcours réel) :
+>
 > - `shot-flow-REF_PETITE_FORET-*.png` : 5 actifs + 6 gris avec tooltips
 >   `"DR — ECGI non propagé : 0/68090 points…"` etc.
 > - `shot-flow-TEST2-*.png` : 11 gris avec tooltips distincts par dim.
@@ -2119,6 +2151,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > Ajout au lot 1.17.3 (filtres /kpi), pas de lot séparé.
 >
 > **Changements** :
+>
 > - `AppShell` : nouveau composant `HeaderVersion` affiché juste après
 >   `<Logo />` dans l'en-tête (toutes les pages). Rend `v{APP_VERSION}`
 >   en style sous-titre (`text-xs font-medium text-muted-foreground`,
@@ -2150,6 +2183,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 > consulté.
 >
 > Chaîne précise :
+>
 > 1. `kpiFetch` (`src/lib/api/project-kpi.ts`) faisait `safeParse` et
 >    `throw KpiContractMismatchError` sans `console.error` préalable.
 > 2. React Query capturait l'exception dans `filtersQ.error` — rien n'était
@@ -2161,6 +2195,7 @@ Validation détaillée et limites : `RRC_PREMIUM_ACCEPTANCE.txt`.
 >    retirée). Zéro erreur console, zéro bandeau d'erreur.
 >
 > Correctifs structurels :
+>
 > - Schéma de dimension `KpiFilterDimensionSchema` : TOUS les champs
 >   (`available`, `reason`, `values`) rendus optionnels + `passthrough`.
 >   Un payload non conforme ne fait plus échouer le parse racine.
@@ -2215,8 +2250,8 @@ ecgi          available=true  (mp_total/mp_with_ecgi/pct, pas de values)
 ### Nouvelle règle `FilterChip` (spec)
 
 ```typescript
-const active  = dim.available === true || values.length > 0;
-const grayed  = dim.available === false || (dim.available === undefined && values.length === 0);
+const active = dim.available === true || values.length > 0;
+const grayed = dim.available === false || (dim.available === undefined && values.length === 0);
 ```
 
 - `available === true` + `values` non vides → **MultiSelect** actif.
@@ -2295,10 +2330,10 @@ const grayed  = dim.available === false || (dim.available === undefined && value
   `ecgi/dr/plaque/dor/arcep/commune/insee`, chacune en
   `KpiFilterDimensionSchema` (passthrough).
 - `KpiGroupRowSchema = {operator?, band?, n, p10?, p50?, p90?, status?,
-  reason?, operator_color?, band_color?}` + ajout de `group_by`,
+reason?, operator_color?, band_color?}` + ajout de `group_by`,
   `groups[]`, `table[]`, `p10/p50/p90` au `ProjectKpiDetailSchema`.
 - `KpiQueryFilters` : ajout `band / rat / env / dep / dr / plaque /
-  dor / arcep / commune / insee / group_by`.
+dor / arcep / commune / insee / group_by`.
 - `project-kpi.ts::getProjectKpi` : passe tous ces params.
 
 ### Nouveau — Version visible à l'écran
@@ -2341,7 +2376,7 @@ const grayed  = dim.available === false || (dim.available === undefined && value
   scroll `max-h-[calc(100vh-180px)]`, sticky header + search.
 - Header : icône `BarChart3` + « Catalogue KPI » (15 px semibold) +
   ligne secondaire `v{catalog_version} · {canonical_count} KPI ·
-  {technos_count} technos` **tirée de l'API** (jamais hardcodée).
+{technos_count} technos` **tirée de l'API** (jamais hardcodée).
 - Search 36 px, debounce via `useState` immédiat (texte court, pas de
   requête lourde côté catalogue en mémoire). Match CONTENT : code, nom,
   techno ou famille ; ancêtres étirés sur match.
@@ -2385,7 +2420,7 @@ const grayed  = dim.available === false || (dim.available === undefined && value
 - **Chart A — « Occurrences par opérateur »** :
   `Chart` ECharts existant (`buildByOperator`). Bars avec couleurs
   brand `Orange #FF7900 / SFR #E2001A / Bouygues #009FE3 / Free #7C8794
-  / unknown #CBD5E1`. Hauteur 310 px. Label de valeur sur bars.
+/ unknown #CBD5E1`. Hauteur 310 px. Label de valeur sur bars.
   Toolbar download/fullscreen héritée de `components/bc4/Chart.tsx`.
 - **Chart B — « RSRP LTE / NR par Task Time » (empty state)** :
   composant `EmptyChart` avec titre + raison. Message explicite :
@@ -2611,7 +2646,7 @@ Documenté dans `README.md` (section « Contrat back ↔ front »).
    `UNAVAILABLE` / `PENDING` sur les mp-metrics. **Jamais panneau vide.**
 3. `docker stop bc4-api-1` 10 s → bandeau rouge « Backend injoignable »
    avec message curl, bouton Réessayer. Pas de page blanche. `docker
-   start bc4-api-1` + clic Réessayer → récupération.
+start bc4-api-1` + clic Réessayer → récupération.
 4. Console navigateur : aucune erreur rouge non capturée (le boundary
    logue les crashes en `console.error` pour trace, mais le rendu
    reste lisible).
@@ -2712,16 +2747,17 @@ Documenté dans `README.md` (section « Contrat back ↔ front »).
 > nouvelle requête, aucun nouveau champ demandé au back dans ce lot.
 >
 > Doctrine stricte :
->   - Dénominateur D(op, band) = Σ(count) de `value_matrix` filtré sur
->     (operator=op, band=band). **JAMAIS** le total global.
->   - D = 0 → cellule `N/D` (opérateur/bande absent).
->   - D > 0 et N = 0 → `0 · 0,0 %` (zéro réel, distinct de N/D).
->   - **Palette heat** (couleur = fréquence, PAS qualité radio) :
->       [0;10[ vert → [10;20[ vert clair → [20;40[ jaune → [40;60[ orange
->       → [60;80[ rouge clair → [80;100] rouge foncé.
->   - Toute incohérence `Σ(value_matrix) ≠ bucket.count` est **loguée
->     en `console.error` ET affichée en bandeau rouge** dans la UI —
->     jamais masquée.
+>
+> - Dénominateur D(op, band) = Σ(count) de `value_matrix` filtré sur
+>   (operator=op, band=band). **JAMAIS** le total global.
+> - D = 0 → cellule `N/D` (opérateur/bande absent).
+> - D > 0 et N = 0 → `0 · 0,0 %` (zéro réel, distinct de N/D).
+> - **Palette heat** (couleur = fréquence, PAS qualité radio) :
+>   [0;10[ vert → [10;20[ vert clair → [20;40[ jaune → [40;60[ orange
+>   → [60;80[ rouge clair → [80;100] rouge foncé.
+> - Toute incohérence `Σ(value_matrix) ≠ bucket.count` est **loguée
+>   en `console.error` ET affichée en bandeau rouge** dans la UI —
+>   jamais masquée.
 
 ### Ajouté
 
@@ -2731,7 +2767,7 @@ Documenté dans `README.md` (section « Contrat back ↔ front »).
     `MatrixData` (rows alternant `kind:"value"` et `kind:"band_total"`,
     `denoms` par (op, band), `presentOperators`, `bands`, `enumMode`,
     `coherenceErrors`). Les 4 colonnes `OPERATOR_COLUMNS = ["Orange",
-    "SFR", "Bouygues", "Free"]` sont **toujours rendues** ; un opérateur
+"SFR", "Bouygues", "Free"]` sont **toujours rendues** ; un opérateur
     absent produit uniquement des cellules `N/D` (D=0 pour chaque bande).
   - `sortMatrixRows(data, key)` pour trier `op_count`/`op_pct`
     ascendant/descendant **par bande** (préserve les `band_total` en fin
@@ -2753,21 +2789,21 @@ Documenté dans `README.md` (section « Contrat back ↔ front »).
 
 - `src/features/dictionary/DictionaryPage.tsx` : remplacement complet du
   composant `ValuesTable` (unidim bins × opérateurs) par **`ValueMatrix`**
-  + sous-composant `MatrixCellTd` :
-  - Colonnes fixes **Bande · Valeur · Orange · SFR · Bouygues · Free**.
-  - Chaque cellule : **N en gras** + **% à 1 décimale** + **barre
+  - sous-composant `MatrixCellTd` :
+  * Colonnes fixes **Bande · Valeur · Orange · SFR · Bouygues · Free**.
+  * Chaque cellule : **N en gras** + **% à 1 décimale** + **barre
     horizontale colorée** selon la palette heat. `N/D` neutre si D=0.
-  - Tooltip au survol : `opérateur · bande · valeur · N · D · %`.
-  - Headers opérateurs cliquables : tri par **N** ou par **%** sur
+  * Tooltip au survol : `opérateur · bande · valeur · N · D · %`.
+  * Headers opérateurs cliquables : tri par **N** ou par **%** sur
     chaque colonne (ascendant/descendant toggleable).
-  - Bouton `Valeur ↑/↓` pour inverser l'ordre naturel des valeurs
+  * Bouton `Valeur ↑/↓` pour inverser l'ordre naturel des valeurs
     numériques (asc par défaut, en respectant `value_converted`).
-  - Recherche textuelle sur la colonne « Valeur » (reprise de
+  * Recherche textuelle sur la colonne « Valeur » (reprise de
     `valueQuery` existant côté page).
-  - Export CSV via `toCsvRows()` : contient filtres + tri appliqués, un
+  * Export CSV via `toCsvRows()` : contient filtres + tri appliqués, un
     triplet `N / D / pct` par opérateur, et une ligne « Total bande »
     par bloc.
-  - **Clic sur ligne valeur** : relaie `onHighlight(valueRaw)` déjà
+  * **Clic sur ligne valeur** : relaie `onHighlight(valueRaw)` déjà
     exposé par la page (réutilise la mécanique de sélection existante,
     aucun nouveau channel de filtrage créé — cf. écart ouvert plus bas).
 
@@ -2852,6 +2888,7 @@ Variantes thème clair : nuances assombries pour préserver le contraste
 > historique (4 classes `good|fair|poor|bad`).
 
 ### Ajouté
+
 - **`src/features/assistant/AssistantMap.tsx`** — composant maplibre-gl
   dédié à la carte agrégée de l'Assistant :
   - **6 seuils dBm BC4** (bornes supérieures de chaque classe) :
@@ -2878,6 +2915,7 @@ Variantes thème clair : nuances assombries pour préserver le contraste
   si la réponse Assistant contient un BlockMap.
 
 ### Modifié
+
 - `src/features/assistant/ResponseRenderer.tsx` :
   - `case "map"` détecte si les points sont « Assistant-flavor »
     (champ `n` injecté par `map_metric` 0.26.0) et route vers
@@ -2891,7 +2929,7 @@ Variantes thème clair : nuances assombries pour préserver le contraste
     dBm · grille 3 décimales »).
   - **`GroupedBlocks` étendu** : pair `map + table` partageant le
     même `source_id` dans une `<section>` commune (comme `chart +
-    table` depuis 1.13.0). Attribut `data-source-id` au DOM pour
+table` depuis 1.13.0). Attribut `data-source-id` au DOM pour
     tests.
 - `src/lib/api/schemas.ts` : `MeasurementPointSchema` ajoute
   `n: z.number().int().nonnegative().optional()`. Non-régression :
@@ -2901,6 +2939,7 @@ Variantes thème clair : nuances assombries pour préserver le contraste
   0.26.0. Sans eux, le rendu reste fonctionnel (défauts raisonnables).
 
 ### Discipline (règles conservées)
+
 - UI ne lit que via `client.ts` (schéma Zod validé).
 - `null → "N/D"` dans tooltip (`p.rsrp == null ? "N/D" : …`).
 - `n=0` déclaré avec encart dédié, **jamais** une carte vide ni un `0`.
@@ -2910,8 +2949,8 @@ Variantes thème clair : nuances assombries pour préserver le contraste
 
 ### Garde manuelle (à vérifier après Vite HMR)
 
-| Question (sur TEST2) | Attendu dans la UI |
-|---|---|
+| Question (sur TEST2)          | Attendu dans la UI                                                                                                                                                                                                                                                                     |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | « Affiche la carte des RSRP » | 1 `BlockMap` avec **81 cellules** (back 0.26.0 smoke), légende dBm 6 classes visible, toggle `colorBy` fonctionnel, encart plage observée `[-116, -69] dBm`, tooltip au survol avec `rsrp + n + op + band`, 1 `BlockTable` compagnon **dans la même carte** (`data-source-id` partagé) |
 
 Opérateurs attendus en TEST2 (vus par le back 0.26.0 smoke) :
@@ -2919,6 +2958,7 @@ Bouygues, Free, Orange — SFR absent (donc 3 pastilles en mode
 `colorBy=operator`, pas 4 ; comportement correct, pas d'invention).
 
 ### Non-objectifs (écarts ouverts)
+
 - Pas de clustering des cellules proches (toutes rendues individuellement).
   Si le volume dépasse ~2000 cellules (limite `map_metric`), les
   performances maplibre-gl commencent à se dégrader. Lot futur
@@ -2941,13 +2981,14 @@ Bouygues, Free, Orange — SFR absent (donc 3 pastilles en mode
 > chart+table** qui partagent le même `source_id`.
 
 ### Ajouté — `src/features/assistant/ResponseRenderer.tsx`
+
 - **`VerdictBadge`** : pilule colorée pour les 3 verdicts de
   comparabilité émis par `validate_comparison` côté back :
   - `COMPARABLE` → vert (`border-sev-good/60`, `CheckCircle2`)
   - `COMPARABLE_WITH_LIMITATIONS` → orange (`bg-warning`, `ShieldAlert`)
   - `NOT_COMPARABLE` → rouge (`bg-destructive/10`, `XCircle`)
-  Chaque badge porte `data-verdict` + `data-source-id` (= result_id)
-  pour tests et traçabilité.
+    Chaque badge porte `data-verdict` + `data-source-id` (= result_id)
+    pour tests et traçabilité.
 - **`VerdictBlock`** : détecte les BlockText dont le `heading` matche
   `/^Verdict\b/i`. Parse chaque claim avec `/^\[VERDICT\]\s*raison$/`
   et rend badge + raison. Fallback générique si pattern raté.
@@ -2968,6 +3009,7 @@ Bouygues, Free, Orange — SFR absent (donc 3 pastilles en mode
   `n = …` en police mono), compteur `(N)` dans l'en-tête.
 
 ### Discipline (règles conservées)
+
 - UI ne lit que via `client.ts` (via `AssistantResponse` typée Zod).
 - `null → "N/D"` partout (`fmtNum` existant, inchangé).
 - `onFollowUp(q)` : chaque puce relance la question (comportement
@@ -2976,18 +3018,19 @@ Bouygues, Free, Orange — SFR absent (donc 3 pastilles en mode
 
 ### Garde manuelle (TEST2 — à vérifier après Vite HMR)
 
-| Question | Blocs rendus réels |
-|---|---|
-| « Compare les bandes » | 1× **chart bar** + 1× table **dans la même `<section>`** (source_id partagé) |
-| « Paramètres RRC dominants » | 1× **chart bar** (top messages) + 1× table (même carte) |
-| « a3Offset Orange/SFR × B3/B20 » | 1× **chart bar (histogramme)** + 1× table + **3× encart n=0** + **3× badge COMPARABLE_WITH_LIMITATIONS orange** |
-| « Compare les débits » | 1× **chart bar** compare_operators + 1× table + **1× badge COMPARABLE vert** (plan rejeté LLM caché côté UI, cf. 0.25.1) |
+| Question                         | Blocs rendus réels                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| « Compare les bandes »           | 1× **chart bar** + 1× table **dans la même `<section>`** (source_id partagé)                                             |
+| « Paramètres RRC dominants »     | 1× **chart bar** (top messages) + 1× table (même carte)                                                                  |
+| « a3Offset Orange/SFR × B3/B20 » | 1× **chart bar (histogramme)** + 1× table + **3× encart n=0** + **3× badge COMPARABLE_WITH_LIMITATIONS orange**          |
+| « Compare les débits »           | 1× **chart bar** compare_operators + 1× table + **1× badge COMPARABLE vert** (plan rejeté LLM caché côté UI, cf. 0.25.1) |
 
 Chaque chart et sa table affichent le MÊME `source_id` sous eux
 (`font-mono text-[10px]`), vérifiable dans le DOM via
 `data-source-id` du conteneur `<section>` et des `<li>` d'evidence.
 
 ### Non-objectifs
+
 - Pas de distinction visuelle `chart="histogram"` vs `chart="bar"` dans
   le schéma Zod (`BlockChart.chart` reste `bar|line|boxplot`). Le back
   0.25.1 émet les histogrammes en `chart="bar"` avec `heading` et
@@ -3010,24 +3053,26 @@ Chaque chart et sa table affichent le MÊME `source_id` sous eux
 >
 > Clé : `M_<role>[_<ressource>]_<grandeur>`.
 > Exemples live TEST2 (bc4-back 0.22.3) :
->   - LTE serving  rsrq → `M_serving_rsrq`
->   - LTE neighbor rsrp → `M_neighbor_rsrp`
->   - LTE SCell    rsrq → `M_scell_rsrq`
->   - NR  serving  SSB  rsrp → `M_serving_ssb_rsrp`
->   - NR  neighbor SSB  sinr → `M_neighbor_ssb_sinr`
+>
+> - LTE serving rsrq → `M_serving_rsrq`
+> - LTE neighbor rsrp → `M_neighbor_rsrp`
+> - LTE SCell rsrq → `M_scell_rsrq`
+> - NR serving SSB rsrp → `M_serving_ssb_rsrp`
+> - NR neighbor SSB sinr → `M_neighbor_ssb_sinr`
 
 ### Ajouté
+
 - `src/features/dictionary/measure-roles.ts` — table de rôle + fonction
   `canonicalMeasureKey(asn1_path)` strictement déclarée (pas de deviné) :
   - **Rôles** (précédence `neighbor > scell > serving`) :
-    - `serving`   : `measResultServingCell` | `measResultPCell` |
-                    `measResultServingMOList` | `servingCellResults`
-    - `neighbor`  : `measResultNeighCells` | `measResultListEUTRA` |
-                    `measResultNeighCellListNR` | `resultsNeighCellList`
-    - `scell`     : `measResultServFreqList` | `sCellResult` |
-                    `measResultSCell`
+    - `serving` : `measResultServingCell` | `measResultPCell` |
+      `measResultServingMOList` | `servingCellResults`
+    - `neighbor` : `measResultNeighCells` | `measResultListEUTRA` |
+      `measResultNeighCellListNR` | `resultsNeighCellList`
+    - `scell` : `measResultServFreqList` | `sCellResult` |
+      `measResultSCell`
   - **Ressource NR** (optionnelle) :
-    - `ssb`   : `resultsSSB-Cell` | `ssbResults` | `/ssb/`
+    - `ssb` : `resultsSSB-Cell` | `ssbResults` | `/ssb/`
     - `csirs` : `resultsCSI-RS-Cell` | `csi-rs` | `csiRs`
   - **Grandeur** : radical normalisé (suppression des suffixes release
     `-r10…-r18`, `Result`, `-Result`, `ResultNCell`, `ResultSCell`) qui doit
@@ -3037,6 +3082,7 @@ Chaque chart et sa table affichent le MÊME `source_id` sous eux
     RRC natif** (via `leafOf()`). Aucun forçage.
 
 ### Modifié
+
 - `src/features/dictionary/DictionaryPage.tsx` : rendu du label leaf (ligne
   ~354) :
   - calcule `canon = canonicalMeasureKey(p.param)` ; affiche `canon` quand
@@ -3052,7 +3098,7 @@ Chaque chart et sa table affichent le MÊME `source_id` sous eux
 - `scripts/smoke_api.ts` : nouveau cas (h.5) sur TEST2 :
   - import de `canonicalMeasureKey` depuis le même fichier UI (une seule
     source de vérité) ;
-  - vérifie qu'au moins **2 clés M_ distinctes** apparaissent pour la
+  - vérifie qu'au moins **2 clés M\_ distinctes** apparaissent pour la
     grandeur `rsrq` (plusieurs rôles observés : serving + neighbor + scell) ;
   - log warn si des vrais doublons sont détectés dans un message, sans
     faire échouer la garde (contrat UI : afficher le badge).
@@ -3060,6 +3106,7 @@ Chaque chart et sa table affichent le MÊME `source_id` sous eux
   `src/features/dictionary/measure-roles.ts`.
 
 ### Observations live TEST2 (bc4-back 0.22.3) — 2026-10-15
+
 - Pré-vérif étape 0 (OK) : `/dict/tree?tech=…` sert pour chaque param
   `{ "param": "<asn1_path complet>", "count": N, "label": "<human>" }`.
   La UI consomme `param` uniquement (Zod `TreeV2ParamSchema` strippe
@@ -3080,8 +3127,10 @@ Chaque chart et sa table affichent le MÊME `source_id` sous eux
   apparaîtraient.
 
 ### Écarts déclarés (role=unknown ou classification sémantique perfectible)
+
 Ces écarts sont **conscients** : la doctrine 1.12.0 est de ne JAMAIS deviner
 hors des marqueurs déclarés, donc les cas suivants :
+
 1. **`measResultServFreqListNR-r15/measResultBestNeighCell-r15/.../rsrp-Result-r15`**
    → classé `scell` (marqueur `measResultServFreqList`), semantique réelle
    « neighbor dans le serving-freq ». `measResultBestNeighCell` n'est pas
@@ -3107,6 +3156,7 @@ complet reste visible dans le tooltip + la table ASN.1 détail. Un lot
 après validation d'une doctrine 3GPP partagée avec le back (coord G22).
 
 ### Non-objectifs
+
 - Doctrine back G22 (`label: str` sur `DictTreeParam`, désambiguïsation par
   path parent) **restée côté back, non consommée par la UI**. Les deux
   doctrines coexistent : la UI 1.12.0 utilise exclusivement `param`
@@ -3125,6 +3175,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
 > un projet purement seedé.
 
 ### Modifié
+
 - `src/lib/api/assistant-schemas.ts` : `demo: z.literal(true)` →
   `demo: z.boolean()`. Compat ascendante : le back renvoyait déjà
   `true`, il peut maintenant renvoyer `false`.
@@ -3133,6 +3184,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
   back a signalé des données démo.
 
 ### Non-objectifs
+
 - Les deux autres usages du label « Données démo » (sidebar + export
   Markdown dans `AssistantPage.tsx`) **restent inchangés** pour ce lot
   (lot ultérieur si besoin).
@@ -3148,6 +3200,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
 > la clé disparaissait et l'Assistant retombait en `UNAVAILABLE`.
 
 ### Modifié
+
 - `src/features/settings/ai/LlmConfigPanel.tsx` :
   - **« Enregistrer » n'envoie plus `api_key: ""`**. Si le secret est
     vide (ou que des espaces), la clé stockée est préservée. Seule
@@ -3163,6 +3216,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
     (devient faux après le fix).
 
 ### Non-objectifs
+
 - La sémantique back (`api_key: ""` = clear) est **conservée** pour
   compatibilité d'intégration (scripts admin externes qui veulent
   effacer en une seule requête). Seule la UI standard refuse ce chemin.
@@ -3178,6 +3232,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
 > dur.
 
 ### Ajouté
+
 - `src/lib/activeProject.ts` — store `activeProject` (shape
   `{ id, name } | null`) :
   - Pub/sub + `useSyncExternalStore` → consommable par `useActiveProject()`.
@@ -3196,6 +3251,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
   Les notifications discrètes passent par `toast.success(...)`.
 
 ### Modifié
+
 - `src/components/bc4/AppShell.tsx` :
   - **Suppression** de l'auto-set `filters.project = projects[0]!.id`
     (ex-lignes 87-90). Un auto-set silencieux était un faux garde —
@@ -3221,6 +3277,7 @@ après validation d'une doctrine 3GPP partagée avec le back (coord G22).
     la signature `(filters) => …` existante côté `client.ts`.
 
 ### Non-objectifs (écarts ouverts)
+
 - `filters.project` dans l'URL n'est plus la source de vérité, mais
   reste schématisé par `FilterContextSchema` pour compat ascendante
   avec les deeplinks existants (ex. captures écran). Un lot ultérieur
@@ -3274,6 +3331,7 @@ merge.
 > l'implémentation et les copies internes changent.
 
 ### Ajouté
+
 - `src/lib/api/llm-schemas.ts` — schémas Zod `LlmSettings`,
   `LlmSettingsInput`, `LlmTestResult`, options `LlmProviderOptions`
   (openai / mistral / together / groq / openrouter / custom).
@@ -3302,6 +3360,7 @@ merge.
   - Avertissement endpoint non HTTPS.
 
 ### Modifié
+
 - `src/routes/_app.settings.ai.tsx` : rend désormais `LlmConfigPanel`
   (ancien `AiConfigPanel` conservé en module pour archive mais plus
   routé — peut être supprimé dans un lot suivant).
@@ -3309,6 +3368,7 @@ merge.
   « Assistant LLM » (anciennement « Configuration IA »).
 
 ### Non-objectifs (écarts ouverts)
+
 - `AiConfigPanel.tsx` + `getAiConfig/putAiConfig/testAiConnection` dans
   `settings.ts` restent dans le repo (pas utilisés par le routeur).
   Nettoyage à prévoir en 1.10.1.
@@ -3328,6 +3388,7 @@ merge.
 ## 1.8.1 (patch) — bc4-front 2026-10-15 — Dictionnaire RRC : histogramme câblé sur `value_distribution` — Agent BC1
 
 ### Modifié
+
 - `src/features/dictionary/DictionaryPage.tsx` — composant `Histogram` :
   l'histogramme est désormais alimenté **directement** par
   `row.value_distribution` (bc4-back 0.15.0), au lieu d'être dérivé
@@ -3336,10 +3397,10 @@ merge.
     `value_converted` non null) : abscisse = `value_converted` (tri
     numérique croissant pour les paramètres `exact`), ordonnée =
     `count`. Le nom de l'axe reprend l'unité convertie (`"Valeur
-    convertie (dBm)"`) lorsqu'elle est connue — l'unité n'est jamais
+convertie (dBm)"`) lorsqu'elle est connue — l'unité n'est jamais
     inventée.
   - **Paramètre enum** (toutes les entrées ont `value_converted ===
-    null`) : abscisse = `value_raw` (ex. `n100`, `n75`), ordre tel que
+null`) : abscisse = `value_raw` (ex. `n100`, `n75`), ordre tel que
     servi par le back, pas de conversion.
   - **Entrée convertible mais `value_converted === null`** : libellée
     « N/D » en abscisse — JAMAIS remplacée par 0.
@@ -3355,26 +3416,28 @@ merge.
   ne les renvoie pas doit continuer à passer la validation Zod) :
   - `value_distribution: ParamDistributionEntry[]` — `optional().default([])`
     avec `ParamDistributionEntry = { value_raw: string, value_converted:
-    string | null, count: int }`.
+string | null, count: int }`.
   - `value_distribution_mode: "exact" | "binned"` —
     `optional().default("exact")`.
 
 ### Vérifié
+
 - `scripts/g2_smoke_api.sh` + `scripts/smoke_api.ts` : nouveau cas
   **(h.4)** qui exerce :
   - `rsrpResult` (numérique) → `value_distribution` non vide, somme
     des `count` == `count` du paramètre, au moins une entrée avec
     `value_converted` non null (sanity 3GPP), `value_distribution_mode
-    ∈ {exact, binned}`.
+∈ {exact, binned}`.
   - `dl-Bandwidth` (enum via `MasterInformationBlock`) →
     `value_converted === null` sur toutes les entrées,
     `value_distribution_mode === "exact"`.
 - Live sortie TEST2 : rsrpResult expose 49 entrées exactes
   (Σ count = 1481 == count) dont la première `{raw:"30",converted:"-111",
-  count:1}`. `dl-Bandwidth` expose 2 entrées enum (`n100`, `n75`) avec
+count:1}`. `dl-Bandwidth` expose 2 entrées enum (`n100`, `n75`) avec
   `value_converted = null`.
 
 ### Non modifié (vérifié)
+
 - Table ASN.1 détail paramètre (`DetailTable`), matrice opérateur ×
   bande (`OperatorBandTable`), carte des occurrences (`OccurrenceMap`),
   arbre RRC, barre de filtres et query string restent inchangés. Les
@@ -3385,6 +3448,7 @@ merge.
 ## 1.8.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC : page unifiée V2, design BC4, 5 filtres — Agent BC1
 
 ### Ajouté
+
 - Page `src/features/dictionary/DictionaryPage.tsx` **rebâtie** sur une
   shape unifiée V2 (`branches[].system/count/messages[].params[]`). La
   UI ne connaît plus qu'un seul rendu — plus de dispatcher ni de
@@ -3425,7 +3489,7 @@ merge.
     brute du back seedé), union discriminée côté adaptateur, et
     `TreeSchema` qui est la **seule** forme consommée par la UI
     (toujours `{branches: [{system, count, messages:[{message, count,
-    params:[{param, count}]}]}]}`).
+params:[{param, count}]}]}]}`).
   - `ParamListSchema` + `ParamRowSchema` + `ParamBucketSchema` alignés
     sur `/dict/params?system=&message=&operator=&band=` (back 0.14.0).
   - `ParamMapSchema` + `ParamMapPointSchema` alignés sur
@@ -3438,7 +3502,7 @@ merge.
     et `band` (noms V2 côté back), **pas** `dr/plaque/arcep`.
   - `getDictParamMap(id, path, system, filters)` idem.
   - Les 5 filtres UI sont groupés dans `DictFilters =
-    Pick<FilterContext, "op" | "band" | "dr" | "plaque" | "arcep">`.
+Pick<FilterContext, "op" | "band" | "dr" | "plaque" | "arcep">`.
     Les 3 derniers entrent dans la clé React Query (pour invalider le
     cache) mais ne sont pas sérialisés en query string.
 - `src/lib/api/schemas.ts` : extension de `FilterContextSchema` avec
@@ -3447,6 +3511,7 @@ merge.
   ignorent ces clés).
 
 ### Modifié
+
 - `src/features/dictionary/shared.ts` : `Selection` passe à
   `{system, message, path}` (plus `msgId`/`paramId`). Nouvelle helper
   `leafOf(path)` qui gère les deux séparateurs `/` et `.` renvoyés
@@ -3465,13 +3530,14 @@ merge.
     `path.count` baseline).
   - `GET /dict/param/map?path=…&system=LTE` → renvoie des points
     (lat/lon/value_raw/value_converted/operator/band).
-  Le sous-cas arcep=... sur `/dict/tree` est **désactivé** : le back
-  0.14.0 n'expose pas ce filtre côté `/dict/*` et `cell_ref` est vide
-  (0 bucket ARCEP). La UI 1.8.0 ne l'envoie plus.
+    Le sous-cas arcep=... sur `/dict/tree` est **désactivé** : le back
+    0.14.0 n'expose pas ce filtre côté `/dict/*` et `cell_ref` est vide
+    (0 bucket ARCEP). La UI 1.8.0 ne l'envoie plus.
 - `scripts/g1_build.sh` : lint `src/lib/api/dictionary-schemas.ts`
   (ajouté explicitement — précédemment implicite via tsc).
 
 ### Retiré
+
 - `src/features/dictionary/ProtocolTree.tsx`,
   `MessageParameterCards.tsx`, `ParameterInspector.tsx`,
   `DistributionPanel.tsx`, `ComparisonMatrix.tsx`,
@@ -3488,6 +3554,7 @@ merge.
   non tracked avant ce lot.
 
 ### Garanties (verrouillage doctrine)
+
 - **UI ne lit que via `client.ts`.** `getDictProject`, `getDictTree`,
   `getDictParams`, `getDictParamMap` sont les SEULES fonctions exposées.
   (`getDictParamDetail` est préservée pour `src/mocks/assistant.ts` mais
@@ -3505,6 +3572,7 @@ merge.
   et `src/lib/api/*` déjà whitelistés).
 
 ### Écarts restants
+
 - `/dict/tree` **n'accepte pas** encore les filtres `arcep`, `dr`,
   `plaque` côté back 0.14.0 (`/openapi.json` liste `op/tech/svc/band/dep`
   pour `/dict/tree` ; `operator/band` pour `/dict/params` V2 ;
@@ -3515,12 +3583,12 @@ merge.
   `getDictTree`/`getDictParams`/`getDictParamMap`.
 - `cell_ref` étant VIDE côté back (confirmé via
   `GET /reference/cell/summary` → `total=0`), les 11 catégories ARCEP
-  + les options DR / Plaque n'ont rien à proposer. Les selects sont
-  grisés avec le libellé explicite « cell_ref vide ».
+  - les options DR / Plaque n'ont rien à proposer. Les selects sont
+    grisés avec le libellé explicite « cell_ref vide ».
 - `/dict/params` V2 **ne fournit pas** encore `value_raw_dominant`,
   `value_converted_dominant`, `share_dominant`, `type` ASN.1, ni
   `conversion_rule` par ligne (shape live observée : `system, message,
-  path, count, unit_converted, buckets`). La UI affiche « N/D » pour
+path, count, unit_converted, buckets`). La UI affiche « N/D » pour
   ces cellules dans la table de détail et préserve la règle 3GPP si
   elle est connue (via le champ facultatif `conversion_rule`). Dès que
   le back expose ces champs, les cellules se peupleront sans
@@ -3531,6 +3599,7 @@ merge.
   couleur.
 
 ### Live checks (TEST2 — bc4-back 0.14.0, demo@demo.com admin)
+
 - `curl /projects/134af70a06eb/dict/tree` → shape V2 confirmée
   (`LTE count=68 633`, `NR count=30 046`).
 - `curl /dict/params?system=LTE&message=MeasurementReport` → 17 paths,
@@ -3544,14 +3613,15 @@ merge.
 ## 1.7.1 (patch) — bc4-front 2026-10-15 — Dictionnaire : retour au design B0, retrait du composant V2 — Agent BC1
 
 ### Retiré
+
 - `src/features/dictionary/DictionaryV2Panel.tsx` — supprimé. Le lot
   1.7.0 avait introduit un composant V2 autonome (arbre LTE/NR → path,
-  histogramme par (operator, band) + carte scatter) et un *dispatcher*
+  histogramme par (operator, band) + carte scatter) et un _dispatcher_
   V2/B0 en tête de `DictionaryPage.tsx`. Décision utilisateur : le
   design d'origine B0 (3 panneaux `ProtocolTree` / `MessageParameterCards`
-  + `ParameterInspector` / `DistributionPanel` + `ComparisonMatrix` +
-  `ParameterMapPanel`) est la vue de référence du dictionnaire RRC. On
-  ne garde PAS une seconde expérience de rendu en parallèle.
+  - `ParameterInspector` / `DistributionPanel` + `ComparisonMatrix` +
+    `ParameterMapPanel`) est la vue de référence du dictionnaire RRC. On
+    ne garde PAS une seconde expérience de rendu en parallèle.
 - Dans `src/lib/api/dictionary.ts` : retrait des trois adaptateurs V2
   (`getDictTreeAny`, `getDictParamsV2`, `getDictParamMapV2`) et de leurs
   imports de schémas V2. Les adaptateurs B0 historiques
@@ -3567,15 +3637,16 @@ merge.
   lecture conservée à l'identique.
 - Dans `src/features/dictionary/DictionaryPage.tsx` : retrait du
   dispatcher V2/B0 et de l'import `DictionaryV2Panel` + `getDictTreeAny`
-  + `isDictTreeV2`. L'ancien `DictionaryPageB0` interne redevient le
-  composant exporté sous le nom historique `DictionaryPage` — zéro
-  changement de signature ni de rendu pour le consommateur
-  `src/routes/_app.rrc.tsx`.
+  - `isDictTreeV2`. L'ancien `DictionaryPageB0` interne redevient le
+    composant exporté sous le nom historique `DictionaryPage` — zéro
+    changement de signature ni de rendu pour le consommateur
+    `src/routes/_app.rrc.tsx`.
 - Dans `scripts/g5_diff_scope.sh` : retrait de la whitelist
   `src/features/dictionary/DictionaryV2Panel.tsx` — le fichier n'existe
   plus dans le périmètre du lot.
 
 ### Doctrine (verrouillage)
+
 - **Le mapping « forme API réelle → forme attendue par les composants »
   vit dans `src/lib/api/dictionary.ts` + les schémas Zod** — jamais
   dans un composant pont. Les composants historiques (`ProtocolTree`,
@@ -3596,6 +3667,7 @@ merge.
   comme avant 1.7.0.
 
 ### Observations live (contrôle manuel)
+
 - bc4-back 0.14.0 expose EN PARALLÈLE les deux shapes sur les mêmes URLs
   selon les query params :
   - `/dict/tree` → shape B0 (`branches[].techno/channels/messages[]`)
@@ -3615,12 +3687,14 @@ merge.
   `matrix`, `legend.{kind,stops,classes}`).
 
 ### Correctifs conservés depuis 1.7.0
+
 - `ParamMapSchema.legend.{stops,classes}` reste en `.nullable().optional()`
   (le back renvoie `null` pour la branche inutilisée, ex. `kind=numeric`
   → `classes: null`). Ce fix de schéma reste bénéfique en B0 pur et
   n'implique aucun composant.
 
 ### Écarts ouverts
+
 - **Dispatcher V2 côté back absent de `/dict/tree`** : le CHANGELOG
   1.7.0 décrivait un dispatch back V2/B0 selon la présence de
   `param_occurrence` sur le projet. En live (bc4-back 0.14.0 observé),
@@ -3643,18 +3717,22 @@ merge.
   page B0 affiche l'arbre fonctionnel avec ces projets.
 
 ### Garde live
+
 Preuve bout-en-bout contre bc4-back 0.14.0 (demo@demo.com) :
+
 ```
 GET /dict/tree sur idf-t3-2026 → B0, branches=[LTE(4 channels, 2840 msgs), NR(…, 1520 msgs)]
 GET /dict/params?msg_id=lte-mr sur idf-t3-2026 → B0, 2 params (rsrpResult, rsrqResult)
 GET /dict/param?param_id=lte-mr-rsrp&group_by=operator → B0, 20 bins × 4 rows
 GET /dict/param/map?param_id=lte-mr-rsrp → B0 FeatureCollection, legend.kind=numeric
 ```
+
 Les 4 shapes passent `TreeSchema.parse / ParamListSchema.parse /
 ParamDetailSchema.parse / ParamMapSchema.parse` sans friction — mêmes
 assertions que `scripts/smoke_api.ts`.
 
 ### Scripts
+
 - `scripts/g1_build.sh` : inchangé — le périmètre `src/features/dictionary/DictionaryPage.tsx`
   est déjà listé et reste valable après le retrait du dispatcher.
 - `scripts/g2_smoke_api.sh` : cas `(h)` adapté 1.7.1 — l'assertion
@@ -3669,12 +3747,13 @@ assertions que `scripts/smoke_api.ts`.
 ## 1.7.0 (minor) — bc4-front 2026-10-15 — Dictionnaire RRC complet (V2, bc4-back 0.12.0) — Agent BC1
 
 ### Ajouté
+
 - Shapes Zod V2 (`src/lib/api/dictionary-schemas.ts`, 1:1 Pydantic
   bc4-back 0.12.0) : `DictTreeV2Schema` (arbre LTE/NR → message →
   `{param, count}`), `ParamListV2Schema` (`{system, message, path,
-  count, unit_converted, buckets:[{operator, band, count,
-  avg_converted}]}`), `ParamMapV2Schema` (points `{lat, lon,
-  value_raw, value_converted, operator, band}`). Union discriminée
+count, unit_converted, buckets:[{operator, band, count,
+avg_converted}]}`), `ParamMapV2Schema` (points `{lat, lon,
+value_raw, value_converted, operator, band}`). Union discriminée
   `DictTreeAnySchema` + helper `isDictTreeV2(t)` qui tranche par la
   **FORME** (branches[].system en V2, branches[].techno en B0) —
   jamais par étiquette d'URL devinée.
@@ -3700,7 +3779,7 @@ assertions que `scripts/smoke_api.ts`.
   exposant `value_raw` + `value_converted` + opérateur + bande.
   Règle null-safe partout : helpers `nd(v)`/`ndText(v)` affichent
   **« N/D »** quand `null`, **jamais 0**.
-- `src/features/dictionary/DictionaryPage.tsx` : nouveau *dispatcher*
+- `src/features/dictionary/DictionaryPage.tsx` : nouveau _dispatcher_
   en tête. Si le back renvoie la forme V2 → délègue à
   `DictionaryV2Panel`. Sinon → délègue à `DictionaryPageB0` (le code
   historique renommé, 100 % inchangé fonctionnellement). Dispatch
@@ -3710,17 +3789,21 @@ assertions que `scripts/smoke_api.ts`.
   `src/features/dictionary/DictionaryV2Panel.tsx`.
 
 ### Garde live
+
 Preuve bout-en-bout contre **TEST2** (projet ingéré avec
 `param_occurrence` peuplé) :
+
 ```
 GET /projects/134af70a06eb/dict/tree  (Bearer admin)
 → V2 : branches = [('LTE', 68633, 24 messages), ('NR', 30046, 5 messages)]
 ```
+
 Sélection d'une feuille (`rsrpResult` dans `MeasurementReport` LTE,
 `a3-Offset` dans `RRCReconfiguration` NR) → histogramme peuplé +
 carte avec les valeurs décodées.
 
 ### Correctifs collatéraux
+
 - `ParamMapSchema.legend.{stops,classes}` passés en
   `.nullable().optional()` : le back 0.14.0 renvoie `null` (pas
   l'absence de champ) pour la branche inutilisée du legend (ex.
@@ -3730,6 +3813,7 @@ carte avec les valeurs décodées.
   côté schema uniquement — aucun composant touché.
 
 ### Écarts ouverts
+
 - **Projet seedé B0 sans `param_occurrence`** (idf-t3-2026, …) : le
   back renvoie l'arbre B0 historique ; le dispatcher front retombe
   sur `DictionaryPageB0`. Zéro régression de rendu.
@@ -3751,6 +3835,7 @@ carte avec les valeurs décodées.
   dans un lot UI ultérieur.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 export BC4_ADMIN_EMAIL=admin@bc4.local
@@ -3763,10 +3848,12 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/dictionary/*
 ## 1.6.0 (minor) — bc4-front 2026-10-15 — pastilles opérateurs colorées + suppression projet (DELETE /projects/{id})
 
 ### Diagnostic (ce que 1.5.1 lisait)
+
 - La liste projets (`src/routes/_app.projects.tsx`) rendait les colonnes « Opérateurs » et « Technologies » **uniquement** depuis `project.operators_plmn` / `project.technos_seen` (via `joinByCount`). Or le listing live `GET /projects` du `bc4-back 0.10.0` NE PORTE PAS ces champs au niveau de chaque ligne (seul `GET /projects/{id}/import` les expose, et pour TEST2 `operators_plmn={}` car `bc4-decoder 1.0.0` n'expose pas de PLMN). Résultat observé : « N/D » partout sur les 6 projets seedés B0 (Paris 2026 Q1, Lyon, Marseille, Rennes, Lille Indoor, Benchmark National), **alors même que `operators=["Orange","SFR","Bouygues","Free"]` et `technologies=["LTE","NR","EN-DC"]` sont peuplés B0**.
 - Les mocks avaient des pastilles plus colorées via `OpBadge` (`src/components/bc4/AppShell.tsx:216` — bordure `border-op-*` + texte `text-op-*`) et le dot `OP_DOT = { Orange: "bg-op-orange", … }` de la Vue d'ensemble (`src/routes/_app.overview.tsx:38`). La liste projets héritée du mock Lovable rendait des pastilles pleines `bg-op-*` que la version 1.5.1 avait perdues en passant au rendu monospace `operatorsLabel` (string joined par `· `).
 
 ### Ajouté
+
 - Composant chip partagé `OperatorChip` dans `src/features/projects/shared.tsx` : pastille pleine couleur **alignée sur les variables `--op-*` déjà présentes dans `src/styles.css`** et sur le `OP_DOT` de la Vue d'ensemble — `bg-op-orange` (Orange), `bg-op-sfr` (SFR, rouge), `bg-op-bouygues` (Bouygues, bleu), `bg-op-free` (Free, gris foncé/noir), `text-white` pour contraste. Un libellé **inconnu** (ex. PLMN brut `20801` fallback B1-ingest, ou un nouvel opérateur non reconnu) tombe sur une pastille `slate` neutre + `title` « libellé non résolu » — règle dure « jamais inventer une couleur depuis une clé non reconnue ». Le composant est réutilisé par la liste projets ET par l'accordéon détail (`ProjectRowDetails.tsx`) pour la cohérence visuelle — zéro duplication.
 - Composant badge partagé `TechBadge` dans `src/features/projects/shared.tsx` : rendu sobre bordé coloré par techno (`LTE` → primaire, `NR` → bleu Bouygues, `EN-DC` → orange, `UMTS`/`GSM` → neutre muted). Même règle : techno inconnue → neutre, pas d'invention.
 - Nouveaux helpers `selectOperatorLabels(project)` / `selectTechLabels(project)` dans `src/features/projects/shared.tsx` : préfèrent les champs **B0** (`project.operators` / `project.technologies` qui portent déjà les libellés), fallback sur les clés `operators_plmn` / `technos_seen` triées par count desc. Les deux sources vides → `[]` → la UI rend « N/D ». La UI expose **toujours** la clé telle quelle (PLMN brut si c'est tout ce qu'on a côté back) — l'écart « PLMN→opérateur » reste explicite.
@@ -3776,15 +3863,18 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/dictionary/*
 - `scripts/g2_smoke_api.sh` étendu d'un cas **(g) 1.6.0** : (g.1) `DELETE /projects/id-inconnu` → attend **HTTP 404** (classe `ApiHttpError`) ; (g.2) `POST /projects` (projet smoke) → `DELETE /projects/{id}` → attend **HTTP 204 No Content** → `GET /projects` → vérifie que l'id est **absent** (prouve l'effet de bord DB + l'invalidation que la UI exerce côté cache React Query).
 
 ### Corrigé
+
 - Liste projets : colonnes « Opérateurs » / « Technologies » lisent désormais `selectOperatorLabels(p)` / `selectTechLabels(p)` **en priorité sur les champs B0** (`project.operators` / `project.technologies` qui portent les labels Orange/SFR/LTE/NR/… en clair), avec fallback sur les clés `operators_plmn` / `technos_seen` seulement si B0 vide. Résultat : Paris 2026 Q1 affiche 4 pastilles pleines (Orange, SFR, Bouygues, Free) + 3 badges technos (LTE, NR, EN-DC) — plus de « N/D » partout. Les projets live créés via ingest (ex. TEST2) dont `operators`=[] ET `operators_plmn={}` restent en « N/D » (comportement correct, pas une invention).
 - Filtres déroulants « Opérateur » / « Technologie » : la logique `rows` utilise maintenant les **labels effectifs** (`selectOperatorLabels` / `selectTechLabels`) et non `p.operators.includes(...)` + `p.technologies.includes(...)`. Un projet dont la seule source est `operators_plmn` (clés PLMN brutes) ne matche pas « Orange » tant que la table `PLMN→opérateur` n'est pas câblée côté back — explicitement, pas par oubli.
 - Accordéon détail (`src/features/projects/ProjectRowDetails.tsx`) : utilise désormais `OperatorChip` + `TechBadge` partagés (au lieu de son `Badge` local supprimé) pour un rendu cohérent avec la liste. Les counts restent affichés en police mono à côté de la chip (pas noyés dans la pastille).
 
 ### Écarts restants
+
 - **PLMN non résolu en libellé opérateur** (hérité 1.5.1) : le `bc4-back 0.10.0` n'expose toujours pas de table `PLMN→opérateur`. La source canonique d'affichage côté UI est actuellement **le champ B0 `project.operators`** (déjà peuplé pour les projets seedés). Dès que `bc4-back` enrichira chaque entrée `operators_plmn` d'un `label` (ou exposera un endpoint `/reference/operators`), ajouter un helper `plmnToOperator(plmn)` dans `src/lib/api/schemas.ts` et le câbler dans `selectOperatorLabels` + `OperatorChip` ; côté chip la couleur s'alimentera automatiquement puisqu'elle est indexée par label connu. Lot « back enrichit operators_plmn » reste ouvert.
 - Le listing `GET /projects` live n'embarque toujours pas `operators_plmn` / `technos_seen` au niveau ligne : le fallback B1-ingest reste donc inutilisé en pratique sur le listing (seul l'accordéon tape `GET /projects/{id}/import` pour les détails avec counts). Dès que le listing les expose, les deux sources alimenteront la UI sans changement de code (fallback automatique).
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 export BC4_ADMIN_EMAIL=demo@demo.com
@@ -3797,6 +3887,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
 ## 1.5.1 (patch) — bc4-front 2026-10-15 — colonnes Opérateurs/Technologies peuplées + accordéon détail d'ingestion
 
 ### Ajouté
+
 - Colonne « Opérateurs » de la liste projets (`src/routes/_app.projects.tsx`) peuplée depuis `project.operators_plmn` (dict `{PLMN: n_events}`) renvoyé par `GET /projects` et `GET /projects/{id}` : clés jointes par `· ` (ex. `20801 · 20810`), triées par count décroissant. Dict vide ou absent → « N/D », jamais `0`, jamais de libellé opérateur inventé — **PLMN BRUTS tant que la table de référence PLMN→opérateur n'est pas câblée côté back** (écart hérité, voir « Écarts restants »).
 - Colonne « Technologies » de la liste projets peuplée depuis `project.technos_seen` (dict `{techno: n_events}`) : clés `LTE`/`UMTS`/`NR` ordonnées par count décroissant, jointes par `· ` (ex. `LTE · UMTS`). Vide → « N/D ».
 - Accordéon par ligne (`src/features/projects/ProjectRowDetails.tsx`) : chevron à gauche de chaque ligne (`aria-expanded`/`aria-controls`) qui déplie un détail d'ingestion LAZY. Contenu : (a) totaux `n_captures_ingest` / `n_events_ingest` / `gps_coverage_pct` formatés via `nd`/`ndPct` (null → « N/D », jamais `0 %`) ; (b) technos en badges `techno: count` ; (c) opérateurs en badges `PLMN: count` (ou « N/D (le décodeur `bc4-decoder 1.0.0` n'expose pas de PLMN) » si dict vide) ; (d) tableau des fichiers importés (`by_file[]` : filename, status, n_captures, n_events, n_gps, decoder_version, error_msg) chargé via `getImportReport(projectId)` SEULEMENT à l'ouverture (`useQuery({ enabled: open })`, pas de requête tant que la ligne est fermée). Un fichier `status: "error"` affiche son `error_msg` TEL QUEL — jamais avalé.
@@ -3806,13 +3897,16 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
 - Smoke test `scripts/g2_smoke_api.sh` étendu d'un cas **(f) 1.5.1** : `GET /projects` → sélection d'un id → `GET /projects/{id}/import` → vérifie que la réponse respecte `NmfImportReportSchema` (mêmes clés que (d)/(e)) **ET** qu'au moins un projet renvoie `n_events > 0` ET `technos_seen` non vide (prouve que l'accordéon aura de la matière à afficher). Un back frais sans ingestion réelle n'échoue pas — note de rejouer après un vrai upload.
 
 ### Corrigé
+
 - Extension du schéma Zod `ProjectSchema` (`src/lib/api/schemas.ts`) : ajout des clés d'ingestion `operators_plmn` / `technos_seen` / `n_captures_ingest` / `n_events_ingest` / `gps_coverage_pct` / `status_ingest`, toutes `.nullable().optional()` pour (a) rester compatibles avec les fixtures B0 héritées qui ne les exposent pas (pas de régression de parse), (b) respecter la règle « null → N/D » centralisée dans `shared.tsx` (`nd` / `ndPct`). `operators_plmn` et `technos_seen` sont `Record<string, number>` — pas d'enum `Operator`/`Tech` fermé car le back peut renvoyer des clés hors enum historique (ex. `UMTS` observé sur TEST2 sur un vrai log `bc4-decoder 1.0.0`).
 
 ### Écarts restants
+
 - **PLMN non résolu en libellé opérateur** (hérité) : la UI affiche les clés PLMN brutes (`20801`, `20810`, …) car le back ne fournit pas de table de référence PLMN→opérateur. Dès que `bc4-back` expose une table (ou que `operators_plmn` enrichit chaque entrée d'un `label`), ajouter un helper `plmnToOperator(plmn)` dans `src/lib/api/schemas.ts` et le câbler côté `joinByCount` + `ProjectRowDetails`. Zéro deviner côté front en attendant — on ne mappe pas « 20801 → Orange » sans source de vérité serveur.
 - Le listing `GET /projects` courant du bc4-back 0.7.1 n'embarque pas encore `operators_plmn`/`technos_seen` au niveau de chaque ligne : la UI affiche « N/D » pour ces projets et déplie l'accordéon pour lire `GET /projects/{id}/import` à la demande. Dès que le listing les expose, les colonnes s'alimentent sans changement UI.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 export BC4_ADMIN_EMAIL=demo@demo.com
@@ -3825,6 +3919,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
 ## 1.5.0 (minor) — bc4-front 2026-10-15 — P1-3 câblage upload API + erreurs explicites
 
 ### Corrigé
+
 - Correctif : upload `cell_ref` + NMF câblés sur l'API réelle (Bearer JWT, progression XHR), erreurs 401 / réseau / 4xx-5xx distinguées via trois classes typées (`ApiUnauthenticatedError`, `ApiNetworkError`, `ApiHttpError` avec `detail`) centralisées dans `src/lib/api/http.ts` + `toUserMessage(err)` ; le `message` du back est désormais affiché TEL QUEL (ex. `HTTP 422 — En-tête CSV non conforme`), plus de « Backend injoignable » générique. `apiOrMock` ne bascule plus silencieusement en mock sur erreur réseau en mode `api`. `VITE_BC4_API_BASE` documenté dans `.env.example` (modes `/api`, hôte, container-to-container) ; note explicite : toute modif impose un redémarrage/rebuild Vite.
 - Correctif : page détail projet affiche désormais un CTA visible « Ajouter des logs » (bouton primaire `src/features/projects/ProjectPage.tsx`) qui scrolle vers la section d'import et déclenche le picker `.nmf` du `NmfImportPanel` déjà monté (aucune réécriture du composant d'ingest, `id="nmf-files"` relayé). Flux « créer projet → ajouter logs → choisir fichier » rétabli : la soumission reste pilotée par `NmfImportPanel` (`uploadNmfFiles` du `client.ts`, Bearer JWT, progression XHR, `toUserMessage` pour 401/réseau/4xx-5xx, rapport `NmfImportReportView` avec `null`→N/D). `scripts/g2_smoke_api.sh` étendu d'un cas (d) bout-en-bout login → `POST /projects` → `POST /projects/{id}/nmf` qui attend `status`+`by_file[]` du rapport.
 - Ajouté : second point d'entrée « Ajouter des logs » directement dans la colonne Actions de la liste projets (`src/routes/_app.projects.tsx`, à côté d'« Ouvrir ») — ouvre le picker multi-fichiers `.nmf` et poste sur `/projects/{id}/nmf` sans quitter l'écran. La mécanique d'upload (progression XHR cumulée, réconciliation `by_file`, classification `toUserMessage` 401/réseau/4xx-5xx) est factorisée dans un nouveau hook `src/features/projects/useNmfUpload.ts` consommé par les DEUX entrées (page détail et ligne de liste) — zéro duplication de `NmfImportPanel`. Pendant l'envoi la ligne affiche « Statut : Traitement » + percent cumulé (string explicite, pas un code brut) ; après succès « Captures » prend `n_captures` du rapport (jamais `n_events`) et le statut dérive de `files_error > 0` (`error` + premier `by_file[].error_msg`) ou retombe sur le `status` du projet rafraîchi via refetch de `GET /projects` ; après échec HTTP la ligne revient à son état précédent avec un badge d'erreur `toUserMessage` (jamais de reset silencieux). `scripts/g2_smoke_api.sh` étendu d'un cas (e) bout-en-bout login → `GET /projects` → sélection d'un id → `POST /projects/{id}/nmf` qui vérifie la MÊME forme de `NmfImportReportSchema` que (d).
@@ -3832,11 +3927,13 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
 ## 1.4.1 (patch) — bc4-front 2026-10-15 — amendement B1-réf (filtre Zone ARCEP)
 
 ### Ajouté
+
 - Ajouté : filtre `Zone ARCEP` dans Dictionnaire et KPI, 11 valeurs + N/D, chargées depuis `/reference/cell/summary.arcep_breakdown`.
 
 ## 1.4.0 (minor) — bc4-front 2026-10-15 — Login JWT + session (B2, Agent BC1)
 
 ### Ajouté
+
 - Zod `src/lib/api/auth-schemas.ts` 1:1 avec `app/schemas/auth.py` de
   bc4-back 0.7.0 : `AppUserRoleSchema`, `PublicUserSchema`,
   `LoginRequestSchema`, `LoginResponseSchema`.
@@ -3869,6 +3966,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
   passent via `Authorization: Bearer <token>`.
 
 ### Modifié / retiré
+
 - `.env`, `.env.example` : **retrait de `VITE_BC4_DEV_ACTOR`** et de
   son bootstrap. L'identité vient uniquement du login réel.
 - `src/lib/api/projects.ts`, `src/lib/api/reference.ts` : les uploads
@@ -3878,6 +3976,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
   auth.ts, AppShell.tsx — autorisés par le lot).
 
 ### Écarts ouverts
+
 - **Toggle « Rôle simulé »** en haut de Paramètres (B0) devient
   no-op (le rôle vient du JWT serveur). Pour exercer un rôle
   non-admin, créer un vrai compte seedé via l'env. `setDemoRole()`
@@ -3888,6 +3987,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + features/projects/* + rout
   serveur. Déclaré au CHANGELOG bc4-back 0.7.0.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 export BC4_ADMIN_EMAIL=admin@bc4.local
@@ -3902,6 +4002,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
 ## 1.3.0 (minor) — bc4-front 2026-10-15 — B1-ingest (création projet + import NMF)
 
 ### Ajouté
+
 - Création de projet depuis l'écran « Mes projets » : bouton
   « Nouveau projet » ouvre une boîte de dialogue (`name` requis),
   appelle `POST /projects`, puis redirige sur `/projects/{id}`. Le
@@ -3911,7 +4012,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
   avec contrôle multi-fichiers « Importer des logs NMF » :
   sélection multiple, barre de progression **par fichier** (XHR,
   `upload.onprogress`), état par fichier (`pending → decoding →
-  done | error`) et affichage brut de `error_msg` quand un fichier
+done | error`) et affichage brut de `error_msg` quand un fichier
   échoue (aucune erreur avalée).
 - Affichage immédiat du `NmfImportReport` renvoyé par le back :
   fichiers reçus / ok / échec, captures + événements décodés,
@@ -3924,7 +4025,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
   `decoder_version` nullables) et `src/lib/api/project-schemas.ts`
   (`CreateProjectRequestSchema` + `ProjectIngestViewSchema` : vue
   d'ingestion renvoyée par `POST /projects`, résumés `operators /
-  technos / n_captures / n_events / gps_coverage_pct` nullables
+technos / n_captures / n_events / gps_coverage_pct` nullables
   — tant qu'aucun NMF n'a été ingéré, la UI affiche « N/D »).
 - Adaptateur `src/lib/api/projects.ts` : `createProject(name)` et
   `uploadNmfFiles(projectId, files, { onFileProgress })`. En mode
@@ -3946,6 +4047,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
   `1.3.0`.
 
 ### Modifié
+
 - `src/routes/_app.projects.tsx` : bouton « Nouveau projet » câblé
   sur la mutation `createProject` + dialogue de création ; action
   « Ouvrir » redirige maintenant sur `/projects/$projectId` (au lieu
@@ -3956,12 +4058,13 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
   la liste reflète les créations locales en mode `mock`. Les routes
   HTTP restent inchangées en mode `api`.
 - `scripts/g1_build.sh` étendu : lint des nouveaux fichiers Projets
-  + mocks + routes.
+  - mocks + routes.
 - `scripts/g5_diff_scope.sh` étendu : scope autorisé étendu à
   `src/features/projects/*`, `src/mocks/projects.ts`,
   `src/routes/_app.projects.$projectId.tsx`, `package.json`.
 
 ### Écarts ouverts
+
 - **Deux vues de projet** : `GET /projects/{id}` renvoie la vue
   historique `Project` (status `ready|processing|failed`) tandis
   que `POST /projects` renvoie `ProjectIngestView` (status
@@ -3991,6 +4094,7 @@ scripts/g5_diff_scope.sh    # scope : src/lib/api/* + auth + layout + env
   réseau — aucun fichier n'est laissé en limbo.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 scripts/g1_build.sh         # lint + tsc + build (couvre les nouveaux fichiers B1-ingest)
@@ -4001,6 +4105,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + features/projects + 
 ## 1.2.0 (minor) — bc4-front 2026-10-15 — Écran de référence cellulaire (B1-réf)
 
 ### Ajouté
+
 - Nouvel onglet « Référence cellulaire » dans Paramètres
   (`/settings/cellular-reference`) : sélecteur de fichier CSV →
   `POST /reference/cell/upload` en multipart. L'upload XHR
@@ -4025,6 +4130,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + features/projects + 
   `/reference/cell/imports` et `/reference/cell/summary`.
 
 ### Écarts ouverts
+
 - Pas de résumé serveur par `cell_class` ni par `coverage` en B1-réf
   (ces colonnes sont stockées mais pas regroupées côté API). À ajouter
   si un besoin produit se présente.
@@ -4032,6 +4138,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + features/projects + 
   un onglet « Référence » dédié hors Paramètres est reportée.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 scripts/g1_build.sh         # lint + tsc + build (couvre les nouveaux fichiers)
@@ -4042,6 +4149,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + page référence + l
 ## 1.1.0 (minor) — bc4-front 2026-10-15 — Bascule front → API (client HTTP)
 
 ### Ajouté
+
 - `src/lib/api/http.ts` : couche transport unique. Lit `VITE_BC4_API_BASE`
   et `VITE_BC4_DATA` depuis l'environnement Vite, parse chaque réponse
   via le schéma Zod existant, mappe les erreurs backend
@@ -4065,6 +4173,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + page référence + l
   `VITE_BC4_DEV_ACTOR`.
 
 ### Modifié
+
 - `src/lib/api/client.ts`, `dictionary.ts`, `assistant.ts`, `settings.ts` :
   chaque fonction publique dispatche entre API et mock via
   `apiOrMock`, en préservant **strictement** sa signature et son type
@@ -4074,6 +4183,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + page référence + l
   son schéma lève immédiatement, pas de rendu silencieux.
 
 ### Écarts ouverts
+
 - **Mutations admin lourdes** (`createUser`, `patchUser`,
   `postGeoImport`, `createKpi`, `patchKpi`, `putAiConfig`,
   `testAiConnection`, `putAppearance`, `putOrganization`,
@@ -4096,6 +4206,7 @@ scripts/g5_diff_scope.sh    # périmètre : src/lib/api/* + page référence + l
   défaut peut être pré-amorcé via `VITE_BC4_DEV_ACTOR`.
 
 ### Gardes (à lancer à la main)
+
 ```
 export VITE_BC4_API_BASE=http://localhost:8000
 scripts/g1_build.sh         # lint src/lib/api + tsc + build vite
@@ -4106,6 +4217,7 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 ```
 
 ## 1.0.0 (major)
+
 - Page Paramètres / Administration avec 7 sous-onglets à URL partageable : Utilisateurs, Géographie, Catalogue KPI, Configuration IA, Apparence, Organisation, À propos & Version.
 - Matrice de permissions centralisée (Administrateur / Éditeur / Lecteur) appliquée aussi dans l'API mock ; rôle simulé pour la démonstration.
 - Import géographique CSV/XLSX avec mapping de colonnes, validation (doublons, coordonnées, cohérence parent-enfant), rapport d'erreurs et référentiels versionnés.
@@ -4116,16 +4228,21 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 - Version affichée lue depuis package.json ; nouveautés lues depuis ce changelog.
 
 ## 0.2.0 (minor)
+
 - Assistant IA standalone page: history (search, rename, delete, per-project storage), composer with stop/retry, structured response renderer (tables, bar/line/boxplot charts, maps), evidence labels, analysis panel with shared filters, report export.
 - Mock POST /projects/{id}/assistant + mock-only history methods; 6 scenarios + empty/error/cancelled.
 - Tests: src/test/assistant.test.ts (G2–G6).
 
 ## [0.1.0] — 2026-10-14 — CHANGE_TYPE: minor (initial feature release, bc4-front)
+
 ### Added
+
 - C1 Dictionnaire RRC LTE + NR : explorateur de protocole (arbre ASN.1 dérivé des `path` retournés, recherche par contenu, clavier), cartes de paramètres, inspecteur (conversion 3GPP issue de `conversion_rule`), distribution, matrice opérateur/bande (CSV), carte GeoJSON.
 - Adaptateur mock `src/lib/api/dictionary.ts` respectant les contrats §6 (validation Zod), fixtures déterministes `src/mocks/dictionary.ts`, projet LTE seul « Rennes LTE (sans NR) ».
 - Gardes G2 (provenance), G3 (branche NR), G4 (conversion).
+
 ### Open gaps
+
 - Filtres géographie hiérarchique (Plaque > DR > Département > Site) et période : seul le département est filtrable ; période unique affichée.
 - Chargement/erreur de l'arbre partagés LTE/NR (un seul endpoint `dict/tree`) ; l'état vide est bien distinct par branche.
 - Plan indoor : aucune ressource validée → « Plan indoor indisponible ».
