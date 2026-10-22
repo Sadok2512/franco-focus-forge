@@ -144,6 +144,6 @@ describe("Metrics Charts pane card view", () => {
         document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view"),
       ).toBe("table");
     });
-    expect(screen.getByTestId("metric-aggregate-table")).toBeVisible();
+    expect(await screen.findByTestId("metric-aggregate-table")).toBeVisible();
   });
 });
