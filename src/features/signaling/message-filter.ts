@@ -1,4 +1,5 @@
 import type { SignalingLine } from "@/lib/api/signaling";
+import { CHANNEL_ORDER, classifyRrc, type ChannelSource } from "./rrc-channels";
 
 /** null means unrestricted; [] is an explicit empty selection. */
 export type MessageSelection = string[] | null;
@@ -9,8 +10,11 @@ export type MessageType = {
   protocol: string;
   count: number;
   technology: MessageTech;
-  /** Decoded channel supplied by the VM; null when absent or inconsistent (never guessed from the name). */
+  /** Decoded channel first, then the validated 3GPP catalogue; null = Unclassified. */
   channel: string | null;
+  channelSource?: ChannelSource;
+  /** Catalogue/decoded disagreement kept for reporting; the source channel is never overwritten. */
+  conflict?: string | null;
 };
 export const messageTypeKey = (row: Pick<SignalingLine, "protocol" | "message_name">) =>
   JSON.stringify([row.protocol, row.message_name]);
@@ -47,12 +51,33 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
       });
   }
   return [...groups.values()]
-    .map(({ channels, ...type }) => ({
-      ...type,
-      channel: channels.size === 1 ? ([...channels][0] ?? null) : null,
-    }))
+    .map(({ channels, ...type }): MessageType => {
+      if (type.technology !== "LTE" && type.technology !== "NR")
+        return { ...type, channel: null, channelSource: "UNCLASSIFIED", conflict: null };
+      if (channels.size > 1)
+        // Rows of one type disagree on the decoded channel: keep it visible as unclassified.
+        return {
+          ...type,
+          channel: null,
+          channelSource: "UNCLASSIFIED",
+          conflict: [...channels].join("|"),
+        };
+      const c = classifyRrc(type.technology, type.name, [...channels][0]);
+      return {
+        ...type,
+        channel: c.logicalChannel,
+        channelSource: c.classificationSource,
+        conflict: c.conflict,
+      };
+    })
     .sort((a, b) => a.protocol.localeCompare(b.protocol) || a.name.localeCompare(b.name));
 }
+
+const channelRank = (c: string | null) => {
+  if (c === null) return 1e9;
+  const i = CHANNEL_ORDER.indexOf(c);
+  return i < 0 ? 1e8 : i;
+};
 
 export const TECH_ORDER: MessageTech[] = ["LTE", "NR", "NAS", "NEMO", "MAC", "OTHER"];
 export type ChannelNode = {
@@ -77,7 +102,7 @@ export function buildMessageTree(types: MessageType[]): TechNode[] {
     const byChannel = new Map<string | null, MessageType[]>();
     for (const t of own) byChannel.set(t.channel, [...(byChannel.get(t.channel) ?? []), t]);
     const channels = [...byChannel.entries()]
-      .sort(([a], [b]) => (a === null ? 1 : b === null ? -1 : a.localeCompare(b)))
+      .sort(([a], [b]) => channelRank(a) - channelRank(b) || (a ?? "").localeCompare(b ?? ""))
       .map(([channel, list]) => ({
         id: `${technology}/${channel ?? ""}`,
         channel,
