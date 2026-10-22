@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { getSignaling, getMetricSeries } from "@/lib/api/client";
+import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/client";
 import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
@@ -71,6 +71,15 @@ import {
   type ColumnConfig,
   type MessageInfo,
 } from "./message-columns";
+import { SignalingFilters } from "./SignalingFilters";
+import {
+  filterMessageRows,
+  messageTypes,
+  messagePage,
+  messageRowsCsv,
+  reconcileMessageSelection,
+  type MessageSelection,
+} from "./message-filter";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
@@ -538,7 +547,8 @@ const INFO_ICONS = {
 } as const;
 function InfoBadge({ info }: { info: MessageInfo | null }) {
   if (!info) return <span className="text-muted-foreground">—</span>;
-  const Icon = info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
+  const Icon =
+    info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
   return (
     <span className={`sig-info sig-info-${info.role}`} title={`${info.label} · ${info.outcome}`}>
       <Icon size={12} aria-hidden="true" />
@@ -551,10 +561,17 @@ function InfoBadge({ info }: { info: MessageInfo | null }) {
 function DecodedValues({
   parameters,
 }: {
-  parameters: { path: string; value?: unknown; param_key: string | null; redacted_reason?: string | null | undefined }[];
+  parameters: {
+    path: string;
+    value?: unknown;
+    param_key: string | null;
+    redacted_reason?: string | null | undefined;
+  }[];
 }) {
   const rows = parameters
-    .filter((p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"))
+    .filter(
+      (p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"),
+    )
     .slice(0, 10);
   if (!rows.length) return null;
   return (
@@ -1046,12 +1063,55 @@ export function SignalingPage({
     () => ({ ...base, from_s: range?.[0], to_s: range?.[1] }),
     [base, range],
   );
-  const listing = useQuery({
+  const [messageSelection, setMessageSelection] = useState<MessageSelection>(null);
+  const [catalogRequested, setCatalogRequested] = useState(false);
+  const catalog = useQuery({
+    queryKey: ["signaling-message-types", projectId, capture],
+    enabled: !!capture && catalogRequested,
+    queryFn: ({ signal }) =>
+      getAllSignalingRows(projectId, { capture_id: capture, protocols: layers.join(",") }, signal),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const types = useMemo(() => messageTypes(catalog.data?.rows ?? []), [catalog.data]);
+  useEffect(() => {
+    if (catalog.data) setMessageSelection((old) => reconcileMessageSelection(old, types));
+  }, [catalog.data, types]);
+  const selectedPopulation = useQuery({
+    queryKey: ["signaling-message-population", projectId, filtered, sort, order],
+    enabled: !!capture && messageSelection !== null && messageSelection.length > 0,
+    queryFn: ({ signal }) => getAllSignalingRows(projectId, { ...filtered, sort, order }, signal),
+    staleTime: 60000,
+    retry: false,
+  });
+  const remoteListing = useQuery({
     queryKey: ["signaling", projectId, filtered, page, size, sort, order],
-    enabled: !!capture,
+    enabled: !!capture && messageSelection === null,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "rows", { ...filtered, page, size, sort, order }, signal),
   });
+  const selectedRows = useMemo(
+    () => filterMessageRows(selectedPopulation.data?.rows ?? [], messageSelection),
+    [selectedPopulation.data, messageSelection],
+  );
+  const listing =
+    messageSelection === null
+      ? remoteListing
+      : {
+          ...selectedPopulation,
+          data:
+            messageSelection.length === 0
+              ? {
+                  ...remoteListing.data,
+                  ...messagePage([], page, size),
+                  procedures: remoteListing.data?.procedures ?? [],
+                  protocol_counts: remoteListing.data?.protocol_counts ?? {},
+                }
+              : selectedPopulation.data
+                ? { ...selectedPopulation.data, ...messagePage(selectedRows, page, size) }
+                : undefined,
+          isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
+        };
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
     enabled: !!capture && compact,
@@ -1142,7 +1202,13 @@ export function SignalingPage({
     return { rsrp: byCode("cell_rsrp"), rsrq: byCode("cell_rsrq"), sinr: byCode("ci_rs_snr") };
   }, [captureRadio.data]);
   const filtersActive =
-    !!search || !!direction || !!technology || !!procedure || !!range || protocols.length !== layers.length;
+    messageSelection !== null ||
+    !!search ||
+    !!direction ||
+    !!technology ||
+    !!procedure ||
+    !!range ||
+    protocols.length !== layers.length;
   const inspectorTabs: InspectorTab[] = [
     "Payload",
     "Paramètres",
@@ -1151,7 +1217,8 @@ export function SignalingPage({
     ...(details.data?.hex ? (["Hexadécimal"] as InspectorTab[]) : []),
   ];
   useEffect(() => {
-    if (inspectorTab === "Hexadécimal" && details.data && !details.data.hex) setInspectorTab("Payload");
+    if (inspectorTab === "Hexadécimal" && details.data && !details.data.hex)
+      setInspectorTab("Payload");
   }, [inspectorTab, details.data]);
   const radioCell = (key: "rsrp" | "rsrq" | "sinr", t: number | null) => {
     const r = radioAt(radioSeries[key], t);
@@ -1251,7 +1318,13 @@ export function SignalingPage({
   const exportCsv = async () => {
     try {
       setExportError("");
-      const data = await getSignaling(projectId, "export", filtered);
+      const data =
+        messageSelection === null
+          ? await getSignaling(projectId, "export", filtered)
+          : {
+              csv: messageRowsCsv(selectedRows),
+              filename: `signaling-${capture ?? "capture"}-filtered.csv`,
+            };
       const url = URL.createObjectURL(new Blob([data.csv], { type: "text/csv;charset=utf-8" }));
       const a = document.createElement("a");
       a.href = url;
@@ -1314,9 +1387,9 @@ export function SignalingPage({
           <Panel
             id="filters"
             panelRef={filtersPanelRef}
-            defaultSize={narrow ? "17%" : "16%"}
-            minSize={sidebarCollapsed ? 0 : narrow ? 220 : 185}
-            maxSize={narrow ? "30%" : "26%"}
+            defaultSize={narrow ? "34%" : 300}
+            minSize={sidebarCollapsed ? 0 : narrow ? 280 : 280}
+            maxSize={narrow ? "50%" : 360}
             collapsible
             collapsedSize={44}
           >
@@ -1338,160 +1411,67 @@ export function SignalingPage({
                 <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
               </aside>
             ) : (
-              <aside
-                className="signaling-pane overflow-auto space-y-4 rounded-lg border bg-card p-3 text-sm"
-                data-testid="signaling-sidebar"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Filtres</h2>
-                  <button
-                    type="button"
-                    className="kpi-icon"
-                    title="Masquer les filtres"
-                    aria-label="Masquer les filtres"
-                    aria-expanded="true"
-                    onClick={toggleSidebar}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                </div>
-                <label className="block">
-                  Technologie
-                  <select
-                    aria-label="Technologie signalisation"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={technology}
-                    onChange={(e) => {
-                      setTechnology(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">LTE + NR / états non attribués</option>
-                    <option>LTE</option>
-                    <option>NR</option>
-                  </select>
-                </label>
-                <fieldset className="space-y-2">
-                  <legend className="mb-2 font-semibold">Couches</legend>
-                  {layers.map((p, i) => (
-                    <label key={p} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={protocols.includes(p)}
-                        onChange={(e) => {
-                          setProtocols((old) =>
-                            e.target.checked ? [...old, p] : old.filter((x) => x !== p),
-                          );
-                          resetPage();
-                        }}
-                      />
-                      <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
-                      {p}
-                      <span className="ml-auto font-mono text-xs">
-                        {shown(listing.data?.protocol_counts[p])}
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-                <label className="block">
-                  Direction
-                  <select
-                    aria-label="Direction"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={direction}
-                    onChange={(e) => {
-                      setDirection(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">Toutes</option>
-                    <option>UL</option>
-                    <option>DL</option>
-                    <option value="unknown">Non documentée</option>
-                  </select>
-                </label>
-                <label className="block">
-                  Capture
-                  <select
-                    aria-label="Capture signalisation"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={capture ?? ""}
-                    onChange={(e) => chooseCapture(e.target.value)}
-                  >
-                    {caps.data?.captures.map((c) => (
-                      <option key={c.capture_id} value={c.capture_id}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Procédure
-                  <select
-                    aria-label="Procédure"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={procedure}
-                    onChange={(e) => {
-                      setProcedure(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">
-                      Toutes{procedures.data ? ` (${procedures.data.total})` : ""}
-                    </option>
-                    {procedures.data &&
-                      Object.keys(procedures.data.types)
-                        .sort()
-                        .map((type) => (
-                          <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
-                            {procedures
-                              .data!.procedures.filter((p) => p.type === type)
-                              .map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  seq {p.seq_start}
-                                  {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
-                                  {p.outcome}
-                                </option>
-                              ))}
-                          </optgroup>
-                        ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Recherche
-                  <input
-                    aria-label="Rechercher un message"
-                    placeholder="Nom du message"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      resetPage();
-                    }}
-                    className="mt-1 w-full rounded border bg-background p-2"
-                  />
-                </label>
-                <label className="block">
-                  Taille de page
-                  <select
-                    aria-label="Taille de page"
-                    value={size}
-                    onChange={(e) => {
-                      setSize(Number(e.target.value));
-                      resetPage();
-                    }}
-                    className="ml-2 rounded border bg-background p-1"
-                  >
-                    {[50, 100, 250, 500].map((n) => (
-                      <option key={n}>{n}</option>
-                    ))}
-                  </select>
-                </label>
-                {range && (
-                  <button className="kpi-button" onClick={() => setRange(undefined)}>
-                    Effacer la brosse
-                  </button>
-                )}
-              </aside>
+              <SignalingFilters
+                layers={layers}
+                protocols={protocols}
+                technology={technology}
+                direction={direction}
+                search={search}
+                procedure={procedure}
+                capture={capture}
+                size={size}
+                captures={caps.data?.captures ?? []}
+                procedures={procedures.data?.procedures ?? []}
+                counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
+                total={listing.data?.total}
+                selection={messageSelection}
+                types={types}
+                catalogLoading={catalog.isPending}
+                catalogError={catalog.isError}
+                onRequestTypes={() => {
+                  setCatalogRequested(true);
+                  if (catalog.isError) void catalog.refetch();
+                }}
+                onApply={(value) => {
+                  setMessageSelection(value);
+                }}
+                onTechnology={(v) => {
+                  setTechnology(v);
+                  resetPage();
+                }}
+                onProtocols={(v) => {
+                  setProtocols(v);
+                  resetPage();
+                }}
+                onDirection={(v) => {
+                  setDirection(v);
+                  resetPage();
+                }}
+                onCapture={chooseCapture}
+                onProcedure={(v) => {
+                  setProcedure(v);
+                  resetPage();
+                }}
+                onSearch={(v) => {
+                  setSearch(v);
+                  resetPage();
+                }}
+                onSize={(v) => {
+                  setSize(v);
+                  setPage(1);
+                }}
+                onCollapse={toggleSidebar}
+                onReset={() => {
+                  setTechnology("");
+                  setProtocols(layers);
+                  setDirection("");
+                  setSearch("");
+                  setProcedure("");
+                  setRange(undefined);
+                  setMessageSelection(null);
+                  setPage(1);
+                }}
+              />
             )}
           </Panel>
           <Separator className="signaling-separator" aria-label="Largeur des filtres" />
@@ -1693,7 +1673,10 @@ export function SignalingPage({
                       <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
                         <h2 className="sig-count mr-1" data-testid="signaling-total">
                           {listing.data
-                            ? t("sigTable.count", { count: listing.data.total, n: fmtInt(listing.data.total) })
+                            ? t("sigTable.count", {
+                                count: listing.data.total,
+                                n: fmtInt(listing.data.total),
+                              })
                             : t("sigTable.countPending")}
                         </h2>
                         <label className="sig-search">
@@ -1713,7 +1696,13 @@ export function SignalingPage({
                           className="sig-select"
                           aria-label={t("sigTable.layer")}
                           data-testid="sig-filter-layer"
-                          value={protocols.length === layers.length ? "" : protocols.length === 1 ? protocols[0] : "__custom"}
+                          value={
+                            protocols.length === layers.length
+                              ? ""
+                              : protocols.length === 1
+                                ? protocols[0]
+                                : "__custom"
+                          }
                           onChange={(e) => {
                             setProtocols(e.target.value ? [e.target.value] : layers);
                             resetPage();
@@ -1805,7 +1794,9 @@ export function SignalingPage({
                                       type="button"
                                       className="sig-move"
                                       disabled={i === 0}
-                                      aria-label={t("sigTable.moveUp", { col: t(`sigTable.col.${c}`) })}
+                                      aria-label={t("sigTable.moveUp", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
                                     >
                                       <ChevronUp size={12} />
@@ -1814,7 +1805,9 @@ export function SignalingPage({
                                       type="button"
                                       className="sig-move"
                                       disabled={i === colConfig.order.length - 1}
-                                      aria-label={t("sigTable.moveDown", { col: t(`sigTable.col.${c}`) })}
+                                      aria-label={t("sigTable.moveDown", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
                                     >
                                       <ChevronDown size={12} />
@@ -1847,6 +1840,7 @@ export function SignalingPage({
                             data-testid="sig-clear-filters"
                             disabled={!filtersActive}
                             onClick={() => {
+                              setMessageSelection(null);
                               setSearch("");
                               setProtocols(layers);
                               setDirection("");
@@ -1874,8 +1868,16 @@ export function SignalingPage({
                                     key={c}
                                     data-col={c}
                                     className={def.numeric ? "num" : undefined}
-                                    title={def.available ? undefined : t("sigTable.notSuppliedHint")}
-                                    aria-sort={active ? (order === "asc" ? "ascending" : "descending") : undefined}
+                                    title={
+                                      def.available ? undefined : t("sigTable.notSuppliedHint")
+                                    }
+                                    aria-sort={
+                                      active
+                                        ? order === "asc"
+                                          ? "ascending"
+                                          : "descending"
+                                        : undefined
+                                    }
                                   >
                                     {def.sortKey ? (
                                       <button
@@ -1896,7 +1898,11 @@ export function SignalingPage({
                                             <ArrowDown size={11} aria-hidden="true" />
                                           )
                                         ) : (
-                                          <ArrowUpDown size={11} aria-hidden="true" className="opacity-40" />
+                                          <ArrowUpDown
+                                            size={11}
+                                            aria-hidden="true"
+                                            className="opacity-40"
+                                          />
                                         )}
                                       </button>
                                     ) : (
@@ -1927,7 +1933,11 @@ export function SignalingPage({
                                     <td
                                       key={c}
                                       data-col={c}
-                                      className={COLUMNS.find((d) => d.key === c)!.numeric ? "num" : undefined}
+                                      className={
+                                        COLUMNS.find((d) => d.key === c)!.numeric
+                                          ? "num"
+                                          : undefined
+                                      }
                                     >
                                       {renderCell(c, r)}
                                     </td>
@@ -1938,13 +1948,19 @@ export function SignalingPage({
                           </tbody>
                         </table>
                         {listing.data && listing.data.rows.length === 0 && (
-                          <p role="status" className="p-6 text-center text-xs text-muted-foreground">
+                          <p
+                            role="status"
+                            className="p-6 text-center text-xs text-muted-foreground"
+                          >
                             {t("sigTable.empty")}
                           </p>
                         )}
                       </div>
                       <footer className="sig-footer flex shrink-0 flex-wrap items-center gap-3 border-t px-3 py-2">
-                        <nav className="flex items-center gap-1" aria-label={t("sigTable.pagination")}>
+                        <nav
+                          className="flex items-center gap-1"
+                          aria-label={t("sigTable.pagination")}
+                        >
                           <button
                             type="button"
                             className="sig-page"
@@ -1955,22 +1971,23 @@ export function SignalingPage({
                             <ChevronLeft size={14} />
                           </button>
                           {listing.data &&
-                            pageItems(listing.data.page, Math.max(1, listing.data.pages)).map((p, i) =>
-                              p === "…" ? (
-                                <span key={`gap-${i}`} className="px-1 text-muted-foreground">
-                                  …
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  key={p}
-                                  className="sig-page"
-                                  aria-current={p === listing.data!.page ? "page" : undefined}
-                                  onClick={() => setPage(p)}
-                                >
-                                  {p}
-                                </button>
-                              ),
+                            pageItems(listing.data.page, Math.max(1, listing.data.pages)).map(
+                              (p, i) =>
+                                p === "…" ? (
+                                  <span key={`gap-${i}`} className="px-1 text-muted-foreground">
+                                    …
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    key={p}
+                                    className="sig-page"
+                                    aria-current={p === listing.data!.page ? "page" : undefined}
+                                    onClick={() => setPage(p)}
+                                  >
+                                    {p}
+                                  </button>
+                                ),
                             )}
                           <button
                             type="button"
@@ -2005,7 +2022,10 @@ export function SignalingPage({
                             ? t("sigTable.showing", {
                                 from: fmtInt((listing.data.page - 1) * listing.data.size + 1),
                                 to: fmtInt(
-                                  Math.min(listing.data.total, listing.data.page * listing.data.size),
+                                  Math.min(
+                                    listing.data.total,
+                                    listing.data.page * listing.data.size,
+                                  ),
                                 ),
                                 total: fmtInt(listing.data.total),
                               })
@@ -2042,14 +2062,19 @@ export function SignalingPage({
                           )}
                         </h2>
                         {seq !== undefined && (
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid="inspector-meta">
+                          <div
+                            className="mt-2 flex flex-wrap items-center gap-1.5"
+                            data-testid="inspector-meta"
+                          >
                             <span className="sig-chip">
                               <Clock size={12} aria-hidden="true" />
                               {timeShown(selected?.t_rel_s)} s
                             </span>
                             {layerBadge(selected?.protocol)}
                             {directionBadge(selected?.direction ?? null)}
-                            {selected?.technology && <span className="sig-chip">{selected.technology}</span>}
+                            {selected?.technology && (
+                              <span className="sig-chip">{selected.technology}</span>
+                            )}
                             {(() => {
                               const s = rrcStateAt(selected?.t_rel_s, provenRrc);
                               return s ? (
@@ -2058,10 +2083,15 @@ export function SignalingPage({
                                 </span>
                               ) : null;
                             })()}
-                            {selected?.pci != null && <span className="sig-chip">PCI {selected.pci}</span>}
+                            {selected?.pci != null && (
+                              <span className="sig-chip">PCI {selected.pci}</span>
+                            )}
                           </div>
                         )}
                       </header>
+                      {messageSelection !== null && seq !== undefined && !selectedRows.some((row) => row.seq === seq) && !listing.isFetching && (
+                        <p className="sig-selection-note" role="status">{t("sigFilters.selectedOutside", { seq })}</p>
+                      )}
                       {seq === undefined ? (
                         <p role="status" className="p-4 text-muted-foreground">
                           {t("sigTable.selectHint")}
@@ -2149,7 +2179,10 @@ export function SignalingPage({
                                         </thead>
                                         <tbody>
                                           {details.data.parameters.map((p, i) => (
-                                            <tr key={`${p.path}:${i}`} className="border-b align-top">
+                                            <tr
+                                              key={`${p.path}:${i}`}
+                                              className="border-b align-top"
+                                            >
                                               <td className="p-1">
                                                 <a
                                                   href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}

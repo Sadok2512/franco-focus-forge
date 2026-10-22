@@ -121,6 +121,12 @@
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --sig-layer-lte: oklch(0.55 0.19 258);
+  --sig-layer-nr: oklch(0.56 0.2 300);
+  --sig-layer-nas: oklch(0.55 0.14 153);
+  --sig-layer-nemo: oklch(0.65 0.17 55);
+  --sig-layer-mac: oklch(0.62 0.2 350);
+  --sig-filter-shadow: 0 8px 28px color-mix(in oklch, var(--foreground) 15%, transparent);
   --signaling-icon-info: #1769E0;
   --signaling-icon-success: #16A34A;
   --signaling-icon-warning: #F97316;

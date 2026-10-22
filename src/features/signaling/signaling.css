@@ -82,3 +82,59 @@
 .sig-decoded td { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--sig-asn-value); word-break: break-all; }
 .decoder-field { color: var(--sig-asn-field); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 .decoder-value { color: var(--sig-asn-value); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Capture message filtering: sidebar remains fixed, Radix portals the popup. */
+.sig-filters { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--foreground); overflow:hidden; }
+.sig-filters-header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 12px 10px; border-bottom:1px solid var(--border); }
+.sig-filters-header h2 { flex:1; font-size:16px; letter-spacing:0; }
+.sig-filters-header p { flex-basis:100%; color:var(--muted-foreground); font-size:11px; }
+.sig-filters-header button { padding:0 4px; height:28px; }
+.sig-filter-icon { display:grid; place-items:center; color:var(--primary); }
+.sig-filters-sections { min-height:0; overflow:auto; flex:1; padding:0 12px 10px; }
+.sig-filter-section { padding:8px 0 11px; border-bottom:1px solid var(--border); }
+.sig-filter-section:last-child { border:0; }
+.sig-filter-heading { width:100%; height:30px; justify-content:flex-start; padding:0; font-size:12px; font-weight:600; }
+.sig-filter-heading>svg:first-child { color:var(--primary); }
+.sig-filter-heading>svg:last-child { margin-left:auto; width:12px; color:var(--muted-foreground); }
+.sig-filter-control { margin-top:6px; }
+.sig-filter-control select { width:100%; height:34px; border:1px solid var(--input); border-radius:6px; background:var(--background); padding:0 9px; font-size:12px; }
+.sig-filter-control .sig-search { width:100%; min-width:0; height:34px; }
+.sig-filter-subtitle { font-size:11px; color:var(--muted-foreground); margin-bottom:7px; }
+.sig-filter-layers { display:grid; gap:8px; }
+.sig-filter-layers label { display:flex; align-items:center; gap:7px; font-size:11px; }
+.sig-filter-layers .sig-occurrence { margin-left:auto; }
+.sig-filter-layers .sig-layer-badge { min-width:50px; padding:2px 4px; font-size:9px; }
+.sig-filter-directions, .sig-filter-sizes { display:flex; gap:4px; }
+.sig-filter-directions button { flex:1; padding:0 8px; height:30px; }
+.sig-filter-sizes button { flex:1; min-width:0; height:29px; padding:0 4px; font-size:11px; }
+.sig-message-trigger { width:100%; height:35px; justify-content:flex-start; padding:0 9px; }
+.sig-message-trigger span { flex:1; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+.sig-message-trigger svg:last-child { width:12px; }
+.sig-message-popover { width:380px; max-width:calc(100vw - 24px); padding:0; display:flex; flex-direction:column; max-height:min(620px, var(--radix-popover-content-available-height)); border-radius:8px; background:var(--popover); box-shadow:var(--sig-filter-shadow); overflow:hidden; }
+.sig-message-header { display:flex; gap:10px; align-items:center; padding:14px 14px 10px; }
+.sig-message-header h3 { font-size:15px; font-weight:600; letter-spacing:0; }
+.sig-message-header p { font-size:11px; color:var(--muted-foreground); margin-top:2px; }
+.sig-message-header button { width:24px; height:24px; flex-shrink:0; }
+.sig-message-actions { display:flex; gap:6px; padding:0 14px 10px; }
+.sig-message-actions .sig-search { min-width:0; flex:1; height:32px; }
+.sig-message-actions button { padding:0 9px; }
+.sig-message-scope { padding:0 14px 8px; font-size:10px; color:var(--muted-foreground); }
+.sig-message-options { flex:1; min-height:70px; max-height:380px; overflow:auto; overscroll-behavior:contain; padding:0 8px 8px; }
+.sig-message-option { display:grid; grid-template-columns:16px 59px minmax(0,1fr) auto; gap:7px; align-items:center; min-height:36px; padding:7px 5px; cursor:pointer; border-radius:4px; }
+.sig-message-option:hover { background:var(--muted); }
+.sig-message-name { font-size:11px; overflow-wrap:anywhere; }
+.sig-occurrence { font-size:10px; font-variant-numeric:tabular-nums; color:var(--muted-foreground); }
+.sig-layer-badge { display:inline-block; text-align:center; border-radius:4px; padding:2px 5px; font-size:10px; font-weight:500; background:var(--muted); color:var(--muted-foreground); white-space:nowrap; --badge:var(--muted-foreground); }
+.sig-layer-lte { --badge:var(--sig-layer-lte); }
+.sig-layer-nr { --badge:var(--sig-layer-nr); }
+.sig-layer-nas { --badge:var(--sig-layer-nas); }
+.sig-layer-nemo { --badge:var(--sig-layer-nemo); }
+.sig-layer-mac { --badge:var(--sig-layer-mac); }
+.sig-layer-badge { color:color-mix(in oklab,var(--badge) 75%,var(--foreground)); background:color-mix(in oklab,var(--badge) 13%,var(--card)); }
+.sig-message-footer { display:flex; gap:7px; align-items:center; border-top:1px solid var(--border); padding:11px 14px; background:var(--background); }
+.sig-message-footer>span { flex:1; font-size:10px; color:var(--muted-foreground); }
+.sig-selection-note { padding:6px 12px; font-size:11px; color:var(--muted-foreground); background:var(--muted); border-top:1px solid var(--border); }
+@media(max-width:900px) {
+  [data-radix-popper-content-wrapper]:has(.sig-message-popover) { position:fixed !important; transform:none !important; left:12px !important; top:70px !important; width:calc(100vw - 24px); }
+  .sig-message-popover { width:calc(100vw - 24px); max-height:calc(100dvh - 94px); }
+}
