@@ -1,3 +1,17 @@
+## 1.88.1 (patch) — BC4-FRONT 2026-10-22 — Tests : fix metrics-catalog-v6 DOM BC3 + nouveau test fixture MetricsWorkspace (Agent BC3)
+
+Suite directe du lot 1.88.0 — rend la couverture tests cohérente avec la nouvelle UI.
+
+- **`src/test/metrics-catalog-v6.test.tsx`** réécrit (était KO depuis le merge 068271b) : adapté au DOM BC3 (`kpi-tree-root` category, `kpi-tree-family` RSRP, feuille = `button[aria-pressed]` avec `aria-label="Select <label>"`, status dot `kpi-status-dot`, pas de checkbox, pas de bouton "Expand"). Même intention que le test Lovable d'origine : ouvre le tree, vérifie que les feuilles P4 restent visibles mais désactivées (`opacity-45`), déclenche `onToggle("cell_rsrp@0")` au clic sur la feuille.
+- **`src/test/metrics-workspace-time-gps.test.tsx`** (nouveau, option (c) de la revue utilisateur) : remplace la boucle Playwright flaky (double-expand catalogue + click leaf + switch Table). Monte `MetricsWorkspace` sur la **réponse live figée** de `/metrics/analysis` pour `44621571bccc` (TEST2, light, no GPS — 951 rows capturées en direct via `curl` sur `0.75.0`). Vérifie que la table rend bien :
+  - en-têtes `Time local` + `Time UTC` + `Latitude` + `Longitude`,
+  - sous-titres `2026-06-23 · UTC+2h`,
+  - 1re ligne : `10:33:20.980` (local) et `08:33:20.980` (UTC),
+  - cellules GPS null avec tooltip humanisé "Pas de GPS dans la capture" (reason `no_gps_in_capture`).
+- Fixture persistée : `src/test/fixtures/metrics-analysis-44621571bccc.json` (512 KB, 951 rows, snapshot direct du back). Si le contrat API change, le test cassera franchement — c'est l'intention.
+
+**Résultat** : `260 passed | 2 skipped (262)`, 0 failed. Fin de la dette tests laissée par le merge Lovable.
+
 ## 1.88.0 (minor) — BC4-FRONT 2026-10-22 — Metrics table : Time local/UTC + Lat/Lon GPS backend-driven (Agent BC3)
 
 Mission `[BC3] [bc4-back + franco-focus-forge] — GO lot Time/GPS (fixes 1→10)`, section Front (C1).
