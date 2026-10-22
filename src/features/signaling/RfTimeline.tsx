@@ -176,7 +176,9 @@ export function RfTimeline({
           : "";
         return {
           ...state.event,
-          label: presentation?.status
+          label: state.track === "RRC_STATE" && state.state === "IDLE"
+            ? t("signalingV2.idle")
+            : presentation?.status
             ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
             : label,
           attrs: {
@@ -432,26 +434,31 @@ export function RfTimeline({
       if (isBand) {
         const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
         const y = (start[1] ?? 0) + geometry.offset;
+        const idleBadge = proof?.track === "RRC_STATE" && proof.state === "IDLE";
+        const bandWidth = idleBadge ? Math.min(width, 48) : width;
+        const bandLeft = left + (width - bandWidth) / 2;
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
           shape: {
-            x: left,
-            y: y - geometry.height / 2,
-            width,
-            height: geometry.height,
+            x: bandLeft,
+            y: y - (idleBadge ? 18 : geometry.height) / 2,
+            width: bandWidth,
+            height: idleBadge ? 18 : geometry.height,
             r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (width > Math.max(70, item.label.length * 7 + 16))
+        if (idleBadge ? bandWidth >= 40 : width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
               x: left + width / 2,
               y,
               text: item.label,
-              fill: stateTracksV2
+              fill: idleBadge
+                ? tokens.getPropertyValue("--sig-table-text").trim()
+                : stateTracksV2
                 ? getComputedStyle(document.documentElement)
                     .getPropertyValue("--signaling-state-text")
                     .trim()
@@ -649,7 +656,7 @@ export function RfTimeline({
           type: "category",
           inverse: true,
           data: lanes.map((k) =>
-            t(
+            stateTracksV2 && k === "rrcstate" ? "" : t(
               stateTracksV2 && (k === "uestate" || k === "rrcstate")
                 ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
                 : `rfTimeline.${k}`,
@@ -899,12 +906,7 @@ export function RfTimeline({
                   className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground"
                   style={{ top: 30 + center - 21 }}
                 >
-                  {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
-                  {lane === "rrcstate" && (
-                    <span className="sig-state-idle ml-1 rounded border border-border px-1 text-[10px] font-medium leading-4">
-                      {t("signalingV2.idle")}
-                    </span>
-                  )}
+                  {lane === "uestate" ? t("signalingV2.ueState") : null}
                 </span>
               );
             })}
