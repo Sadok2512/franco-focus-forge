@@ -3,7 +3,7 @@
 // graph and the click was silently ignored).
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import type { MetricInfo } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
@@ -126,6 +126,11 @@ function mount() {
 }
 
 describe("Metrics Charts pane card view", () => {
+  beforeEach(() => {
+    // 1.91.0 — cardViews persiste en sessionStorage ; isoler chaque test.
+    window.sessionStorage.clear();
+  });
+
   it("switches a Charts card to the table when Table is clicked", async () => {
     mount();
     await screen.findByTestId("metrics-v3-workspace");
@@ -133,13 +138,53 @@ describe("Metrics Charts pane card view", () => {
     expect(card).not.toBeNull();
     expect(card?.getAttribute("data-view")).toBe("graph");
     fireEvent.keyDown(screen.getByTestId("workspace-panel-menu"), { key: "Enter" });
-    const item = await screen.findByRole("menuitem", { name: /table/i });
-    fireEvent.click(item);
+    fireEvent.click(screen.getByTestId("metric-view-table"));
     await waitFor(() => {
       expect(
         document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view"),
       ).toBe("table");
     });
     expect(await screen.findByTestId("metric-aggregate-table")).toBeVisible();
+  });
+
+  // 1.91.0 — ⋮ → Tableau dans le catalogue Metrics ouvre le grand tableau
+  // (paneRequest) ; la carte reste en graphique.
+  it("opens the metrics table pane from the sidebar Table request and keeps the card graph", async () => {
+    // 1.91.0 — ⋮ → Tableau du catalogue incrémente paneRequest après montage
+    // (KpiWorkspace part de n=0) ; on reproduit ce bump via rerender.
+    const view = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsWorkspace
+          projectId="TEST2"
+          captureId="cap1"
+          onCaptureChange={vi.fn()}
+          selections={["ci_rs_snr@0"]}
+          catalog={[metric]}
+          filters={{}}
+          onClear={vi.fn()}
+          paneRequest={0}
+        />
+      </QueryClientProvider>,
+    );
+    await screen.findByTestId("metrics-v3-workspace");
+    view.rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsWorkspace
+          projectId="TEST2"
+          captureId="cap1"
+          onCaptureChange={vi.fn()}
+          selections={["ci_rs_snr@0"]}
+          catalog={[metric]}
+          filters={{}}
+          onClear={vi.fn()}
+          paneRequest={1}
+        />
+      </QueryClientProvider>,
+    );
+    const pane = await screen.findByTestId("metrics-table-styled");
+    expect(pane).toBeVisible();
+    expect(document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view")).toBe(
+      "graph",
+    );
   });
 });

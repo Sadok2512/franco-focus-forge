@@ -1,3 +1,9 @@
+## 1.91.0 (patch) — BC4-FRONT 2026-10-22 — ⋮ Tableau ouvre le grand tableau des métriques
+
+- **`src/features/kpi/KpiWorkspace.tsx`** : dans le catalogue Metrics, le menu « ⋮ → Tableau » d'une métrique ouvre maintenant le grand tableau des métriques (avec les colonnes de paramètres) via `metricsPaneRequest`, au lieu de transformer la carte en petit tableau d'agrégat par opérateur ; la carte reste en graphique.
+- Histogramme / Graphique / Carte dans le même menu gardent leur comportement précédent (vue de la carte).
+- Test ajouté : `src/test/metrics-card-view.test.tsx` (paneRequest ouvre le tableau, la carte reste en graphique).
+
 ## 1.90.0 (patch) — BC4-FRONT 2026-10-22 — Barre du haut du workspace supprimée
 
 - **`src/features/kpi/KpiWorkspace.tsx`** : la barre au-dessus des panneaux (bouton « + Add panel » et sélecteur « Layout : Auto ») a été retirée ; les panneaux démarrent directement sous la barre de filtres.
