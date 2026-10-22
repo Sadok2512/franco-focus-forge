@@ -582,6 +582,23 @@ function Workspace({
                 {limitMessage}
               </p>
             )}
+            {/* 1.92.0 — bandeau Scanner visible dès que la capture active est
+                un scanner, même sans métrique sélectionnée. Jamais caché. */}
+            {activeCatalog === "metrics" && captureKind === "scanner" && (
+              <div
+                role="alert"
+                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                data-testid="scanner-capture-banner"
+              >
+                <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA,
+                throughput per layer) not available in scanner mode — Ibflex-Scanner
+                captures only expose <code>SCANCONFIG / STARTSCAN / CELLSCAN /
+                OFDMSCAN</code> events. UE cell leaves in the catalogue are
+                disabled with tooltip "no UE cell metrics in scanner capture"
+                (never hidden). Future "Scanner view" lot open — see CHANGELOG
+                back 0.76.1.
+              </div>
+            )}
             {currentTab.overlay && panels.length >= 2 ? (
               <KpiOverlayCard
                 panels={panels.map((p) => ({ entry: p.entry, rows: p.rows }))}
