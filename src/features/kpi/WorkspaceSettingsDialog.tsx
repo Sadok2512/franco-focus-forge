@@ -1,6 +1,7 @@
 // Workspace Settings popup (⚙ next to the tab name): Graphs + Tables tabs.
 // Settings are per workspace tab and only change presentation.
-import { useState, type ReactNode } from "react";
+// Edits stay in a local draft: nothing reaches the tables until "Apply" is clicked.
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -13,6 +14,8 @@ import {
   PALETTES,
   STYLE_PRESETS,
   contrastRatio,
+  loadTableSettings,
+  saveTableSettings,
   useTableSettings,
   type TableColors,
   type TableSettings,
@@ -95,6 +98,9 @@ const COLOR_KEYS: (keyof TableColors)[] = [
   "selected",
 ];
 
+/** Search text is typed in the table itself and must never be gated by Apply. */
+const sig = (s: TableSettings) => JSON.stringify({ ...s, search: "" });
+
 export function WorkspaceSettingsDialog({
   open,
   onOpenChange,
@@ -111,16 +117,26 @@ export function WorkspaceSettingsDialog({
   columns: { code: string; label: string }[];
 }) {
   const { t } = useTranslation();
-  const [s, update] = useTableSettings(workspaceId);
+  const [saved] = useTableSettings(workspaceId);
+  const [draft, setDraft] = useState<TableSettings>(() => loadTableSettings(workspaceId));
+  const [draftLayout, setDraftLayout] = useState<WorkspaceLayout>(layout);
   const [colSearch, setColSearch] = useState("");
   const [drag, setDrag] = useState<string | null>(null);
-  const set =
-    <K extends keyof TableSettings>(k: K) =>
-    (v: TableSettings[K]) =>
-      update({ [k]: v } as Partial<TableSettings>);
+  const layoutRef = useRef(layout);
+  layoutRef.current = layout;
+
+  // Re-open always starts from what is currently applied.
+  useEffect(() => {
+    if (!open) return;
+    setDraft(loadTableSettings(workspaceId));
+    setDraftLayout(layoutRef.current);
+  }, [open, workspaceId]);
+
+  const patch = <K extends keyof TableSettings>(k: K) => (v: TableSettings[K]) =>
+    setDraft((d) => ({ ...d, [k]: v }));
   const order = [...columns].sort((a, b) => {
-    const ia = s.order.indexOf(a.code),
-      ib = s.order.indexOf(b.code);
+    const ia = draft.order.indexOf(a.code),
+      ib = draft.order.indexOf(b.code);
     return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
   });
   const move = (from: string, to: string) => {
@@ -129,9 +145,14 @@ export function WorkspaceSettingsDialog({
       ti = codes.indexOf(to);
     if (fi < 0 || ti < 0) return;
     codes.splice(ti, 0, codes.splice(fi, 1)[0]!);
-    update({ order: codes });
+    setDraft((d) => ({ ...d, order: codes }));
   };
-  const lowContrast = contrastRatio(s.colors.headerBg, s.colors.headerText) < 4.5;
+  const lowContrast = contrastRatio(draft.colors.headerBg, draft.colors.headerText) < 4.5;
+  const dirty = draftLayout !== layout || sig(draft) !== sig(saved);
+  const apply = () => {
+    saveTableSettings(workspaceId, { ...draft, search: loadTableSettings(workspaceId).search });
+    if (draftLayout !== layout) onLayoutChange(draftLayout);
+  };
   const T = (k: string) => t(k);
 
   return (
@@ -152,11 +173,11 @@ export function WorkspaceSettingsDialog({
           <TabsContent value="graphs" className="space-y-2">
             <h4 className="text-xs font-semibold">{t("wss.graphLayout")}</h4>
             <LayoutThumbs
-              value={layout === "auto" ? 0 : Number(layout)}
-              onChange={(n) => onLayoutChange(String(n) as WorkspaceLayout)}
+              value={draftLayout === "auto" ? 0 : Number(draftLayout)}
+              onChange={(n) => setDraftLayout(String(n) as WorkspaceLayout)}
               label={(n) => t("wss.perRow", { n })}
             />
-            <Button variant="outline" size="sm" onClick={() => onLayoutChange("auto")}>
+            <Button variant="outline" size="sm" onClick={() => setDraftLayout("auto")}>
               {t("wss.opt_auto")}
             </Button>
           </TabsContent>
@@ -165,42 +186,45 @@ export function WorkspaceSettingsDialog({
             <section>
               <h4 className="mb-1 text-xs font-semibold">{t("wss.layout")}</h4>
               <LayoutThumbs
-                value={s.perRow}
-                onChange={set("perRow")}
+                value={draft.perRow}
+                onChange={patch("perRow")}
                 label={(n) => t("wss.tablesPerRow", { n })}
               />
               <Row label={t("wss.autoFit")}>
-                <Switch checked={s.autoFitWidth} onCheckedChange={set("autoFitWidth")} />
+                <Switch checked={draft.autoFitWidth} onCheckedChange={patch("autoFitWidth")} />
               </Row>
               <Row label={t("wss.equalHeights")}>
-                <Switch checked={s.equalHeights} onCheckedChange={set("equalHeights")} />
+                <Switch checked={draft.equalHeights} onCheckedChange={patch("equalHeights")} />
               </Row>
               <Row label={t("wss.spacing")}>
                 <Seg
                   t={T}
-                  value={s.spacing}
+                  value={draft.spacing}
                   options={["compact", "normal", "wide"]}
-                  onChange={set("spacing")}
+                  onChange={patch("spacing")}
                 />
               </Row>
               <Row label={t("wss.height")}>
                 <Seg
                   t={T}
-                  value={s.height}
+                  value={draft.height}
                   options={["auto", "fixed", "custom"]}
-                  onChange={set("height")}
+                  onChange={patch("height")}
                 />
               </Row>
-              {s.height === "custom" && (
+              {draft.height === "custom" && (
                 <Row label={t("wss.customHeight")}>
                   <input
                     type="number"
                     min={200}
                     max={2000}
                     step={20}
-                    value={s.customHeight}
+                    value={draft.customHeight}
                     onChange={(e) =>
-                      update({ customHeight: Math.max(200, Number(e.target.value) || 480) })
+                      setDraft((d) => ({
+                        ...d,
+                        customHeight: Math.max(200, Number(e.target.value) || 480),
+                      }))
                     }
                     className="w-20 rounded border border-border bg-background px-1 text-xs"
                   />
@@ -209,13 +233,13 @@ export function WorkspaceSettingsDialog({
               <Row label={t("wss.hScroll")}>
                 <Seg
                   t={T}
-                  value={s.hScroll}
+                  value={draft.hScroll}
                   options={["auto", "always", "off"]}
-                  onChange={set("hScroll")}
+                  onChange={patch("hScroll")}
                 />
               </Row>
               <Row label={t("wss.resize")}>
-                <Switch checked={s.resizable} onCheckedChange={set("resizable")} />
+                <Switch checked={draft.resizable} onCheckedChange={patch("resizable")} />
               </Row>
             </section>
 
@@ -226,9 +250,9 @@ export function WorkspaceSettingsDialog({
                   <button
                     key={st}
                     type="button"
-                    aria-pressed={s.style === st}
-                    onClick={() => update({ style: st, ...STYLE_PRESETS[st] })}
-                    className={`rounded-md border p-2 text-left text-[11px] ${s.style === st ? "border-primary ring-1 ring-primary" : "border-border"}`}
+                    aria-pressed={draft.style === st}
+                    onClick={() => setDraft((d) => ({ ...d, style: st, ...STYLE_PRESETS[st] }))}
+                    className={`rounded-md border p-2 text-left text-[11px] ${draft.style === st ? "border-primary ring-1 ring-primary" : "border-border"}`}
                   >
                     <strong className="block">{t(`wss.opt_${st}`)}</strong>
                     <span className="text-muted-foreground">{t(`wss.styleDesc_${st}`)}</span>
@@ -244,16 +268,16 @@ export function WorkspaceSettingsDialog({
                   <Button
                     key={p}
                     size="sm"
-                    variant={s.palette === p ? "default" : "outline"}
-                    onClick={() => update({ palette: p, colors: PALETTES[p] })}
+                    variant={draft.palette === p ? "default" : "outline"}
+                    onClick={() => setDraft((d) => ({ ...d, palette: p, colors: PALETTES[p] }))}
                   >
                     {t(`wss.opt_${p}`)}
                   </Button>
                 ))}
                 <Button
                   size="sm"
-                  variant={s.palette === "custom" ? "default" : "outline"}
-                  onClick={() => update({ palette: "custom" })}
+                  variant={draft.palette === "custom" ? "default" : "outline"}
+                  onClick={() => setDraft((d) => ({ ...d, palette: "custom" }))}
                 >
                   {t("wss.opt_custom")}
                 </Button>
@@ -263,10 +287,14 @@ export function WorkspaceSettingsDialog({
                   <Row key={k} label={t(`wss.color_${k}`)}>
                     <input
                       type="color"
-                      value={s.colors[k]}
+                      value={draft.colors[k]}
                       aria-label={t(`wss.color_${k}`)}
                       onChange={(e) =>
-                        update({ palette: "custom", colors: { ...s.colors, [k]: e.target.value } })
+                        setDraft((d) => ({
+                          ...d,
+                          palette: "custom",
+                          colors: { ...d.colors, [k]: e.target.value },
+                        }))
                       }
                     />
                   </Row>
@@ -282,77 +310,80 @@ export function WorkspaceSettingsDialog({
               <Row label={t("wss.fontSize")}>
                 <Seg
                   t={T}
-                  value={s.fontSize}
+                  value={draft.fontSize}
                   options={["small", "medium", "large"]}
-                  onChange={set("fontSize")}
+                  onChange={patch("fontSize")}
                 />
               </Row>
               <Row label={t("wss.rowHeight")}>
                 <Seg
                   t={T}
-                  value={s.rowHeight}
+                  value={draft.rowHeight}
                   options={["compact", "normal", "comfortable"]}
-                  onChange={set("rowHeight")}
+                  onChange={patch("rowHeight")}
                 />
               </Row>
               <Row label={t("wss.headerHeight")}>
                 <Seg
                   t={T}
-                  value={s.headerHeight}
+                  value={draft.headerHeight}
                   options={["compact", "normal", "large"]}
-                  onChange={set("headerHeight")}
+                  onChange={patch("headerHeight")}
                 />
               </Row>
               <Row label={t("wss.cellPadding")}>
                 <Seg
                   t={T}
-                  value={s.cellPadding}
+                  value={draft.cellPadding}
                   options={["small", "medium", "large"]}
-                  onChange={set("cellPadding")}
+                  onChange={patch("cellPadding")}
                 />
               </Row>
               <Row label={t("wss.borders")}>
                 <Seg
                   t={T}
-                  value={s.borders}
+                  value={draft.borders}
                   options={["none", "horizontal", "grid"]}
-                  onChange={set("borders")}
+                  onChange={patch("borders")}
                 />
               </Row>
               <Row label={t("wss.zebra")}>
-                <Switch checked={s.zebra} onCheckedChange={set("zebra")} />
+                <Switch checked={draft.zebra} onCheckedChange={patch("zebra")} />
               </Row>
               <Row label={t("wss.stickyHeader")}>
-                <Switch checked={s.stickyHeader} onCheckedChange={set("stickyHeader")} />
+                <Switch checked={draft.stickyHeader} onCheckedChange={patch("stickyHeader")} />
               </Row>
               <Row label={t("wss.stickyFirst")}>
-                <Switch checked={s.stickyFirstColumn} onCheckedChange={set("stickyFirstColumn")} />
+                <Switch
+                  checked={draft.stickyFirstColumn}
+                  onCheckedChange={patch("stickyFirstColumn")}
+                />
               </Row>
               <Row label={t("wss.wrap")}>
-                <Switch checked={s.wrap} onCheckedChange={set("wrap")} />
+                <Switch checked={draft.wrap} onCheckedChange={patch("wrap")} />
               </Row>
               <Row label={t("wss.cellAlign")}>
                 <Seg
                   t={T}
-                  value={s.cellAlign}
+                  value={draft.cellAlign}
                   options={["left", "center", "right"]}
-                  onChange={set("cellAlign")}
+                  onChange={patch("cellAlign")}
                 />
               </Row>
               <Row label={t("wss.numberAlign")}>
                 <Seg
                   t={T}
-                  value={s.numberAlign}
+                  value={draft.numberAlign}
                   options={["right", "center"]}
-                  onChange={set("numberAlign")}
+                  onChange={patch("numberAlign")}
                 />
               </Row>
               <Row label={t("wss.radius")}>
                 <Seg
                   t={T}
-                  value={s.radius}
+                  value={draft.radius}
                   options={["square", "rounded"]}
-                  onChange={set("radius")}
+                  onChange={patch("radius")}
                 />
               </Row>
             </section>
@@ -366,7 +397,7 @@ export function WorkspaceSettingsDialog({
                 className="mb-1 w-full rounded border border-border bg-background px-2 py-1 text-xs"
               />
               <Row label={t("wss.showUnits")}>
-                <Switch checked={s.showUnits} onCheckedChange={set("showUnits")} />
+                <Switch checked={draft.showUnits} onCheckedChange={patch("showUnits")} />
               </Row>
               {columns.length === 0 && (
                 <p className="text-[11px] text-muted-foreground">{t("wss.noColumns")}</p>
@@ -375,8 +406,8 @@ export function WorkspaceSettingsDialog({
                 {order
                   .filter((c) => c.label.toLowerCase().includes(colSearch.toLowerCase()))
                   .map((c) => {
-                    const hidden = s.hidden.includes(c.code);
-                    const sort = s.sort?.col === c.code ? s.sort.dir : null;
+                    const hidden = draft.hidden.includes(c.code);
+                    const sort = draft.sort?.col === c.code ? draft.sort.dir : null;
                     return (
                       <li
                         key={c.code}
@@ -400,7 +431,10 @@ export function WorkspaceSettingsDialog({
                           title={t("wss.sortAsc")}
                           aria-label={t("wss.sortAsc")}
                           onClick={() =>
-                            update({ sort: sort === "asc" ? null : { col: c.code, dir: "asc" } })
+                            setDraft((d) => ({
+                              ...d,
+                              sort: sort === "asc" ? null : { col: c.code, dir: "asc" },
+                            }))
                           }
                           className={sort === "asc" ? "text-primary" : "text-muted-foreground"}
                         >
@@ -411,7 +445,10 @@ export function WorkspaceSettingsDialog({
                           title={t("wss.sortDesc")}
                           aria-label={t("wss.sortDesc")}
                           onClick={() =>
-                            update({ sort: sort === "desc" ? null : { col: c.code, dir: "desc" } })
+                            setDraft((d) => ({
+                              ...d,
+                              sort: sort === "desc" ? null : { col: c.code, dir: "desc" },
+                            }))
                           }
                           className={sort === "desc" ? "text-primary" : "text-muted-foreground"}
                         >
@@ -422,11 +459,12 @@ export function WorkspaceSettingsDialog({
                           title={t(hidden ? "wss.show" : "wss.hide")}
                           aria-label={t(hidden ? "wss.show" : "wss.hide")}
                           onClick={() =>
-                            update({
+                            setDraft((d) => ({
+                              ...d,
                               hidden: hidden
-                                ? s.hidden.filter((h) => h !== c.code)
-                                : [...s.hidden, c.code],
-                            })
+                                ? d.hidden.filter((h) => h !== c.code)
+                                : [...d.hidden, c.code],
+                            }))
                           }
                         >
                           {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
@@ -437,11 +475,32 @@ export function WorkspaceSettingsDialog({
               </ul>
             </section>
 
-            <Button variant="outline" size="sm" onClick={() => update(DEFAULT_TABLE_SETTINGS)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDraft({ ...DEFAULT_TABLE_SETTINGS })}
+            >
               <RotateCcw size={12} /> {t("wss.reset")}
             </Button>
           </TabsContent>
         </Tabs>
+
+        <div className="sticky bottom-0 -mb-6 flex items-center justify-between gap-2 border-t border-border bg-background px-1 pt-3 pb-1">
+          <span
+            data-testid="workspace-settings-status"
+            className={`text-[11px] ${dirty ? "text-amber-600" : "text-muted-foreground"}`}
+          >
+            {t(dirty ? "wss.unsaved" : "wss.applied")}
+          </span>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+              {t("wss.cancel")}
+            </Button>
+            <Button size="sm" onClick={apply} disabled={!dirty} data-testid="workspace-settings-apply">
+              {t("wss.apply")}
+            </Button>
+          </div>
+        </div>
       </DialogContent>
     </Dialog>
   );
