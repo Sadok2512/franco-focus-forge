@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as MsgTableCheckRouteImport } from './routes/msg-table-check'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppKpiRouteImport } from './routes/_app.kpi'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
@@ -46,6 +47,11 @@ const AppRoute = AppRouteImport.update({
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MsgTableCheckRoute = MsgTableCheckRouteImport.update({
+  id: '/msg-table-check',
+  path: '/msg-table-check',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppAssistantRoute = AppAssistantRouteImport.update({
@@ -159,6 +165,7 @@ const AppSettingsUsersRoute = AppSettingsUsersRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/msg-table-check': typeof MsgTableCheckRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
@@ -184,6 +191,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/msg-table-check': typeof MsgTableCheckRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
   '/overview': typeof AppOverviewRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
+  '/msg-table-check': typeof MsgTableCheckRoute
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/kpi': typeof AppKpiRoute
   '/_app/overview': typeof AppOverviewRoute
@@ -237,6 +246,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/login'
+    | '/msg-table-check'
     | '/assistant'
     | '/kpi'
     | '/overview'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/login'
+    | '/msg-table-check'
     | '/assistant'
     | '/kpi'
     | '/overview'
@@ -287,6 +298,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_app'
     | '/login'
+    | '/msg-table-check'
     | '/_app/assistant'
     | '/_app/kpi'
     | '/_app/overview'
@@ -314,6 +326,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
+  MsgTableCheckRoute: typeof MsgTableCheckRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -337,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/msg-table-check': {
+      id: '/msg-table-check'
+      path: '/msg-table-check'
+      fullPath: '/msg-table-check'
+      preLoaderRoute: typeof MsgTableCheckRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app/assistant': {
@@ -563,6 +583,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
+  MsgTableCheckRoute: MsgTableCheckRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
