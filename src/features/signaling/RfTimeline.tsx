@@ -343,7 +343,7 @@ export function RfTimeline({
             : item.attrs.track === "network"
               ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
               : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
-      const coordSys = params.coordSys as { x: number; width: number };
+      const coordSys = params.coordSys as unknown as { x: number; width: number };
       if (
         stateTracksV2 &&
         ((end[0] ?? 0) < coordSys.x || (start[0] ?? 0) > coordSys.x + coordSys.width)
@@ -589,7 +589,7 @@ export function RfTimeline({
                 renderItem: ((_params, api) => {
                   const lane = Number(api.value(0));
                   const point = api.coord([0, lane]);
-                  const area = _params.coordSys as { x: number; width: number };
+                  const area = _params.coordSys as unknown as { x: number; width: number };
                   const muted = getComputedStyle(document.documentElement)
                     .getPropertyValue("--muted")
                     .trim();
