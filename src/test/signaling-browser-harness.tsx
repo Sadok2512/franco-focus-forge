@@ -4,17 +4,16 @@ import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RfTimeline } from "@/features/signaling/RfTimeline";
 import { EventRibbon } from "@/features/signaling/EventRibbon";
-import { TimeNavigator } from "@/features/signaling/TimeNavigator";
-import { useTimeWindow } from "@/features/signaling/time-window";
+import { FULL_CAPTURE_S, useTimeWindow } from "@/features/signaling/time-window";
 import "@/features/signaling/signaling.css";
-export function mountCursorHarness() {
+export function mountCursorHarness(client?: QueryClient) {
   const host = document.createElement("div");
   host.id = "cursor-test-host";
   host.style.cssText =
     "position:fixed;inset:0;background:var(--background);padding:24px;z-index:99999";
   document.body.append(host);
   function Harness() {
-    const { window, setWindow } = useTimeWindow("cursor-test", 300);
+    const { window, setWindow } = useTimeWindow("cursor-test", 300, FULL_CAPTURE_S);
     const [state, setState] = useState<{ time: number | null; id: string | null }>({
       time: null,
       id: null,
@@ -44,7 +43,6 @@ export function mountCursorHarness() {
           timeWindow={window}
           onWindow={setWindow}
         />
-        <TimeNavigator duration={300} window={window} onWindow={setWindow} />
         <div style={{ height: 220 }}>
           <EventRibbon
             projectId="cursor-test"
@@ -61,7 +59,7 @@ export function mountCursorHarness() {
   }
   createRoot(host).render(
     <QueryClientProvider
-      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      client={client ?? new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
       <Harness />
     </QueryClientProvider>,
