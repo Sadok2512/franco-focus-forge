@@ -731,11 +731,7 @@ export function RfTimeline({
             title={t("rfTimeline.showCursor")}
             aria-label={t("rfTimeline.showCursor")}
             data-testid="show-time-cursor"
-            onClick={() => onTime(
-              selectedTime !== null && selectedTime >= visibleWindow[0] && selectedTime <= visibleWindow[1]
-                ? selectedTime
-                : (visibleWindow[0] + visibleWindow[1]) / 2,
-            )}
+            onClick={() => onTime((visibleWindow[0] + visibleWindow[1]) / 2)}
           >
             <Crosshair />
           </Button>
