@@ -8,13 +8,6 @@ import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  VISUALIZATIONS,
   defaultConfig,
   type ChartConfig,
   type VisualizationType,
@@ -421,22 +414,7 @@ function Workspace({
     catalogSearch.current?.focus();
     catalogSearch.current?.scrollIntoView({ block: "nearest" });
   };
-  // 1.76.0 (BC3) — Spec v2 G8 : +Add Panel pré-arme un mode (graph /
-  // histogram / table / map / task_series) ; le prochain clic KPI dans le
-  // catalogue l'ajoute avec ce mode via visualize(). Null = toggle par défaut.
-  const [pendingPanelKind, setPendingPanelKind] = useState<VisualizationType | null>(null);
-  const armPanel = (kind: VisualizationType) => {
-    setPendingPanelKind(kind);
-    addGraph();
-  };
-  const onCatalogToggle = (code: string) => {
-    if (pendingPanelKind) {
-      visualize(code, pendingPanelKind);
-      setPendingPanelKind(null);
-      return;
-    }
-    toggle(code);
-  };
+  const onCatalogToggle = (code: string) => toggle(code);
   const toggleRow = (id: string) =>
     setSelectedRows((prev) => {
       const next = new Set(prev);
