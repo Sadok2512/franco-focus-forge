@@ -157,7 +157,10 @@ export function RfTimeline({
     const source = eligibleEvents.filter(
       (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
     );
-    if (!stateTracksV2) return source;
+    // Clean RF display: UE/RRC State tracks are hidden from the timeline (data untouched).
+    return source.filter(
+      (event) => stateTrack(event) === null && !["uestate", "rrcstate"].includes(laneFor(event)),
+    );
     const stateEvents = states
       .filter(
         (state) =>
@@ -179,8 +182,6 @@ export function RfTimeline({
     () =>
       laneOrder.filter(
         (lane) =>
-          lane === "uestate" ||
-          (stateTracksV2 && lane === "rrcstate") ||
           lane === "network" ||
           displayed.some((event) => laneFor(event) === lane),
       ),
@@ -304,7 +305,7 @@ export function RfTimeline({
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   const trackHeight = stateTracksV2 ? lanes.length * 44 : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
-  const chartHeight = stateTracksV2 ? rfTop + 3 * 60 + 16 : 470;
+  const chartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -622,6 +623,7 @@ export function RfTimeline({
       ],
       brush: { xAxisIndex: xAxes.map((_, i) => i), brushType: "lineX", toolbox: ["lineX", "clear"] },
       tooltip: {
+        show: false,
         trigger: "item",
         confine: true,
         formatter: (p: unknown) => {
@@ -644,7 +646,7 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(stateTracksV2
+        ...(false
           ? [
               {
                 id: "state-background",
@@ -857,7 +859,7 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      {!stateTracksV2 &&
+      {false &&
         !events.isPending &&
         !events.isError &&
         !displayed.some((e) => laneFor(e) === "uestate") && (
@@ -890,7 +892,7 @@ export function RfTimeline({
           />
         </div>
       </div>
-      {stateTracksV2 && (
+      {false && (
         <p
           className="shrink-0 text-[10px] text-muted-foreground"
           data-testid="state-evidence-status"

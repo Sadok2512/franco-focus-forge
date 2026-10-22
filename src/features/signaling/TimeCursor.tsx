@@ -289,121 +289,22 @@ export function TimeCursor({
           {t("rfTimeline.outside")}
         </Button>
       )}
-      {time !== null &&
-        x !== null &&
-        Number.isFinite(x) &&
-        visible(time) &&
-        (!dismissed || hover !== null) && (
-          <div
-            className="signaling-cursor-tooltip"
-            style={{ left: panelX, width: panelWidth }}
-            data-testid="time-cursor-tooltip"
-          >
-            <header className="flex items-center justify-between gap-2">
-              <strong className="font-mono">t = {fmt(time)} s</strong>
-              {hover === null && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5"
-                  aria-label={t("common.clear")}
-                  onClick={() => setDismissed(true)}
-                >
-                  <X />
-                </Button>
-              )}
-            </header>
-            {event && (
-              <div className="mt-1">
-                <strong>{event.label}</strong>
-                <p>
-                  {event.attrs.technology ?? "—"} · {event.attrs.status ?? event.outcome ?? "—"}
-                </p>
-                <small>
-                  {event.attrs.evidence_status ?? "—"} · {event.link_rule}
-                </small>
-              </div>
-            )}
-            <div className="mt-2 space-y-1">
-              {readings
-                .filter((s) => s.point?.value !== null && s.point?.value !== undefined)
-                .map((s) => (
-                  <div key={s.code}>
-                    <span className={`signaling-metric-${s.index}`}>
-                      {s.label}:{" "}
-                      {s.point?.value?.toLocaleString(i18n.language, { maximumFractionDigits: 2 })}{" "}
-                      {s.unit}
-                    </span>
-                    <small className="block text-muted-foreground">
-                      {t(s.point?.t_rel_s === time ? "rfTimeline.exact" : "rfTimeline.previous")} ·
-                      Δt {fmt(time - (s.point?.t_rel_s ?? time))} s · #{s.point?.seq}
-                    </small>
-                  </div>
-                ))}
-              {!readings.some((s) => s.point?.value !== null && s.point?.value !== undefined) && (
-                <p>{t("rfTimeline.noRF")}</p>
-              )}
-            </div>
-            {stateTracksV2 &&
-              ["UE_STATE", "RRC_STATE"].map((track) => (
-                <div key={track} className="mt-2 border-t pt-1">
-                  <strong>
-                    {t(track === "UE_STATE" ? "signalingV2.ueState" : "signalingV2.rrcState")}
-                  </strong>
-                  {states.some((state) => state.track === track) ? (
-                    states
-                      .filter((state) => state.track === track)
-                      .map((state) => (
-                        <p key={state.event.id}>
-                          {state.technology} · {t(stateLabelKey(state))}
-                          {state.componentCarriers !== null && (
-                            <>
-                              {" "}
-                              · {state.componentCarriers} {t(`signalingV2.${state.carrierStatus}`)}
-                            </>
-                          )}
-                          <small className="block">
-                            {t("signalingV2.session")}: {state.sessionId} · #
-                            {state.evidenceSeqs.join(", #")}
-                          </small>
-                        </p>
-                      ))
-                  ) : (
-                    <p>{t("signalingV2.unknown")}</p>
-                  )}
-                </div>
-              ))}
-            {intervals
-              .filter(
-                (e) => !stateTracksV2 || !["ue_state", "rrc_state"].includes(e.attrs.track ?? ""),
-              )
-              .map((e) => (
-                <p key={e.id} className="mt-1">
-                  {e.label} · {fmt(e.t_rel_s ?? time)} → {fmt(e.t_rel_end_s ?? time)} s ·{" "}
-                  {e.attrs.status ?? "—"}
-                </p>
-              ))}
-            {event && event.linked_seqs.length > 0 && (
-              <div className="mt-2 border-t pt-1">
-                <p>{t("rfTimeline.messageCount", { count: event.linked_seqs.length })}</p>
-                <div className="flex flex-wrap gap-1">
-                  {event.linked_seqs.map((seq) => (
-                    <Button
-                      key={seq}
-                      variant="link"
-                      size="sm"
-                      className="h-6 px-1"
-                      onClick={() => onMessage(event, seq)}
-                    >
-                      #{seq}
-                      <ArrowRight />
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+      <div className="signaling-rf-readout" data-testid="rf-readout">
+        {series.map((s, index) => {
+          const point = time === null ? null : previousObservation(s.points, time);
+          const value = point?.value ?? null;
+          const dt = point && time !== null ? time - point.t_rel_s : 0;
+          return (
+            <span key={s.code} className={`signaling-metric-${index}`} data-testid={`rf-readout-${s.code}`}>
+              {s.label}:{" "}
+              {value === null
+                ? t("rfTimeline.na")
+                : `${value.toLocaleString(i18n.language, { maximumFractionDigits: 1 })} ${s.unit}`}
+              {value !== null && dt > 0 && <small> · Δt {fmt(dt)} s</small>}
+            </span>
+          );
+        })}
+      </div>
     </>
   );
 }
