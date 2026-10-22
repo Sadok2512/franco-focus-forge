@@ -83,11 +83,11 @@ describe("Metrics catalogue v6 tree", () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByText("Serving radio")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /Expand Serving radio/i }));
-    fireEvent.click(screen.getByRole("button", { name: /Expand RSRP/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Serving radio/i }));
+    fireEvent.click(screen.getByRole("button", { name: /RSRP — RSRP \[CELLMEAS #9\]|RSRP$/i }));
     expect(screen.getByText("RSRP — PSCell")).toBeVisible();
     expect(screen.getByTitle("P4 proof pending")).toHaveClass("opacity-45");
-    fireEvent.click(screen.getByRole("checkbox", { name: /RSRP — PCell/i }));
+    fireEvent.click(screen.getByRole("button", { name: /Select RSRP — PCell/i }));
     expect(onToggle).toHaveBeenCalledWith("cell_rsrp@0");
   });
 });
