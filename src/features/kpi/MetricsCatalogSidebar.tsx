@@ -215,7 +215,7 @@ export function MetricsCatalogSidebar({
               title={node.proof}
               aria-hidden="true"
             />
-            <span className="min-w-0">
+            <span className="min-w-0 flex-1">
               <span className="block truncate">{label}</span>
               {search && (
                 <span className="text-[10px] text-muted-foreground">
@@ -224,6 +224,14 @@ export function MetricsCatalogSidebar({
               )}
             </span>
           </button>
+          {/* 1.79.1 — nombre d'observations (node.n) à droite du label,
+              aligné sur le pattern KPI tree-root "LTE 84 · 26 AVAIL" */}
+          <span
+            className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+            data-testid={`metric-leaf-count-${node.node_id}`}
+          >
+            {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
+          </span>
           {showMenu && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
