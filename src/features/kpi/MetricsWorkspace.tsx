@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
-import { Download, Maximize2 } from "lucide-react";
+import { Download, Maximize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
