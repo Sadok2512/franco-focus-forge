@@ -1703,8 +1703,8 @@ export function SignalingPage({
                     defaultSize={40}
                     data-testid="signaling-map-panel"
                   >
-                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
+                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
+
                       {mapVisible && points.data ? (
                         <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
                       ) : (
