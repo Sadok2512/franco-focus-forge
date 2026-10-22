@@ -14,6 +14,7 @@ import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
+import { eventTrack } from "./event-track";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -46,6 +47,7 @@ const laneOf = (track: string | undefined): Lane => {
     return track;
   return "network";
 };
+const laneFor = (event: Pick<RfEvent, "attrs" | "lane">): Lane => laneOf(eventTrack(event));
 const codes = ["cell_rsrp", "cell_rsrq", "ci_rs_snr"];
 const protocols = ["RRC LTE", "RRC NR", "NAS", "Nemo", "MAC-RACH", "Procedures"];
 const severityLegend = [
