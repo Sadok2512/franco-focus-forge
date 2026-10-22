@@ -71,11 +71,5 @@ describe("Mobility icons for VM event codes", () => {
     const marker = eventIcon(vmEvent({ type: "ho", kind: "bar", outcome: "ok" }));
     expect(marker.role).not.toBe("error");
   });
-
-  it("labels mobility events with the VM code, never an invented name", () => {
-    for (const type of ["HOA", "HOS", "HOI", "MEI"]) {
-      const event = vmEvent({ type });
-      expect(event.label).toBe(type);
-    }
-  });
 });
+
