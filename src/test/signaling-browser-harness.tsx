@@ -46,9 +46,15 @@ export function mountCursorHarness() {
         />
         <TimeNavigator duration={300} window={window} onWindow={setWindow} />
         <div style={{ height: 220 }}>
-          <EventRibbon projectId="cursor-test" captureId="cursor-test" duration={300}
-            timeWindow={window} selectedTime={state.time} onTime={(time) => setState({ time, id: null })}
-            onSelect={(event) => setState({ time: event.t_rel_s, id: event.id })} />
+          <EventRibbon
+            projectId="cursor-test"
+            captureId="cursor-test"
+            duration={300}
+            timeWindow={window}
+            selectedTime={state.time}
+            onTime={(time) => setState({ time, id: null })}
+            onSelect={(event) => setState({ time: event.t_rel_s, id: event.id })}
+          />
         </div>
       </div>
     );
