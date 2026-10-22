@@ -10,6 +10,14 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard } from "./MetricGraphCard";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
+import {
+  isClockAvailable,
+  readTimeAxisMode,
+  timeAxisLabel,
+  writeTimeAxisMode,
+  type TimeAxisMeta,
+  type TimeAxisMode,
+} from "./time-axis";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -436,6 +444,27 @@ export function MetricsWorkspace({
   // sur captures scanner. Jamais caché (visibilité utilisateur requise).
   const captureKind = captureQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
   const isScannerCapture = captureKind === "scanner";
+  // 1.99.1 (lot C axe X temps) — mode d'affichage sélectionné + meta temporelle
+  // partagée. La meta vient de /metrics/analysis (data) car /metrics/series
+  // n'est pas query ici (fait par chaque MetricGraphCard séparément) mais
+  // identique au back pour la même capture (join nmf_capture + nmf_file).
+  const [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
+  const timeMeta: TimeAxisMeta | undefined = data
+    ? {
+        nmf_start_at: data.nmf_start_at ?? null,
+        origin_ts: data.origin_ts,
+        utc_offset_min: data.utc_offset_min ?? null,
+        capture_date: data.capture_date ?? null,
+      }
+    : undefined;
+  const clockOk = isClockAvailable(timeMeta);
+  // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
+  // pas de meta #START/#UT (null). Jamais une heure inventée.
+  const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+  const setTimeAxisMode = (m: TimeAxisMode) => {
+    setTimeAxisModeRaw(m);
+    writeTimeAxisMode(m);
+  };
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
@@ -505,12 +534,59 @@ export function MetricsWorkspace({
       className="kpi-graph-card col-span-full kpi-metrics-table-premium"
       data-testid="metrics-v3-workspace"
     >
+      {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
+          Capture time (s). Mémorisé en localStorage (try/catch dans time-axis.ts).
+          Capture sans #START/#UT (meta null) : désactivé + tooltip + repli auto
+          sur Capture time (jamais une heure inventée). */}
+      {pane === "charts" && captureId && parsedSelections.length > 0 && (
+        <div
+          className="kpi-metrics-time-axis-switch"
+          role="radiogroup"
+          aria-label="Time axis mode"
+          data-testid="metrics-time-axis-switch"
+        >
+          <small className="text-muted-foreground">
+            Axis: <strong>{timeAxisLabel(effectiveTimeAxisMode, timeMeta)}</strong>
+          </small>
+          <div className="kpi-metrics-time-axis-options">
+            {(
+              [
+                { v: "clock-local", label: "Clock (local)" },
+                { v: "clock-utc", label: "Clock (UTC)" },
+                { v: "capture", label: "Capture time (s)" },
+              ] as { v: TimeAxisMode; label: string }[]
+            ).map(({ v, label }) => {
+              const disabled = (v === "clock-local" || v === "clock-utc") && !clockOk;
+              const title = disabled
+                ? "Clock unavailable: capture header missing #START or #UT"
+                : label;
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={effectiveTimeAxisMode === v}
+                  disabled={disabled}
+                  title={title}
+                  className={`kpi-button ${effectiveTimeAxisMode === v ? "primary" : ""}`}
+                  onClick={() => setTimeAxisMode(v)}
+                  data-testid={`metrics-time-axis-${v}`}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
       {pane === "charts" && captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
           captureId={captureId}
           filters={filters}
           syncId={`metrics-charts-${captureId}`}
+          timeAxisMode={effectiveTimeAxisMode}
+          timeMeta={timeMeta}
         />
       )}
       {pane === "charts" && captureId && (
@@ -552,6 +628,7 @@ export function MetricsWorkspace({
                   /* Mode exclusif Charts : la vue est verrouillée sur graph */
                 }}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
+                timeAxisMode={effectiveTimeAxisMode}
               />
             );
           })}

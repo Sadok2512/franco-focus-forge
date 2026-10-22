@@ -10,10 +10,10 @@ COPY . .
 ENV VITE_BC4_DATA=api
 ENV VITE_BC4_API_UPSTREAM=http://api:8000
 RUN bun run build
-LABEL org.opencontainers.image.revision="c1e2269"
-LABEL org.opencontainers.image.version="1.97.0"
-LABEL org.opencontainers.image.title="BC4 Front — Phase 2 Charts (synchronized cursor + Events Ribbon)"
-LABEL org.opencontainers.image.description="MetricGraphCard syncId Recharts (cursor synchronisé entre cartes du grid) + MetricsEventsRibbon au-dessus du grid (task/ho/rlf/rrc markers). CSS matrix 1/2/3 cols."
+LABEL org.opencontainers.image.revision="HEAD"
+LABEL org.opencontainers.image.version="1.99.1"
+LABEL org.opencontainers.image.title="BC4 Front — Time axis switcher Clock(local|UTC)/Capture + Phase 2 Charts + Scanner badge"
+LABEL org.opencontainers.image.description="Axe X Metrics Charts : Clock (local) HH:MM:SS par défaut, bascule UTC / Capture time persistée. Compute identique back (modulo 86400). Fallback si #START/#UT absent."
 RUN chmod +x /app/docker-warmup.sh
 # Warm-up en arrière-plan + vite dev au premier plan.
 # Le warm-up attend que vite réponde avant de taper les routes.

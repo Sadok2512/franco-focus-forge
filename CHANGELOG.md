@@ -1,3 +1,34 @@
+## 1.99.2 (patch) — BC4-FRONT 2026-10-22 — Axe X temps : Clock (local|UTC) + Capture time + switcher (Agent BC3)
+
+Lot (C) : l'axe X des cartes Metrics affichait `t_rel_s` (0 s / 200 s / …), peu lisible. Par défaut maintenant **Clock (local)** `HH:MM:SS` — identique à la colonne `Time local` de la Table (même origine `nmf_start_at + origin_ts + t_rel_s`, même modulo 86400). Bascule 3-way utilisateur, mémorisée en localStorage.
+
+### Compute temporel centralisé (`time-axis.ts`)
+
+- Nouveau module `src/features/kpi/time-axis.ts` (147 LOC) : helpers purs `formatTick`, `tooltipTriple`, `isClockAvailable`, `timeAxisLabel`, `readTimeAxisMode`, `writeTimeAxisMode`.
+- Même math que back `metrics_v3.py:341-343` : parse `origin_ts` (HH:MM:SS.mmm) en secondes-du-jour, ajoute `t_rel_s`, modulo 86400, formate HH:MM:SS. UTC = Local − `utc_offset_min · 60`.
+- **Jamais inventer une date** : wrap modulo 86400 identique au back. Jamais inventer une heure : si `nmf_start_at` ou `utc_offset_min` null → `isClockAvailable=false` → repli automatique sur Capture time (et bascule Clock désactivée côté UI avec tooltip "Clock unavailable…").
+- Tests `src/test/time-axis.test.ts` : 8 cas (clock local/UTC, capture, fallback, modulo 24h, tooltip triple local/utc/capture).
+
+### Toolbar switcher (`MetricsWorkspace.tsx`)
+
+- 3 boutons `role="radio"` : Clock (local) · Clock (UTC) · Capture time (s). `aria-checked` reflète le mode.
+- Préférence persistée `localStorage` sous `bc3.metrics.timeAxisMode` (try/catch, repli silencieux).
+- Label d'axe explicite à droite du switcher : « Local time · 2026-06-11 · UTC+2h », « UTC time · 2026-06-11 · UTC », ou « Capture time (s) · origin: capture start ».
+- Capture sans #START/#UT (meta null) : les 2 options Clock sont `disabled` + tooltip « Clock unavailable: capture header missing #START or #UT » ; le mode effectif retombe automatiquement sur Capture time.
+
+### Propagation aux cartes + ribbon
+
+- `MetricGraphCard` + `MetricTimePlot` + `MetricsEventsRibbon` reçoivent `timeAxisMode` + (pour le ribbon) `timeMeta`. Chaque composant appelle `formatTimeTick` sur le `tickFormatter` du XAxis.
+- `syncId` Recharts intact : le curseur partagé entre cartes + ribbon reste synchronisé quelle que soit l'unité d'axe.
+- Tooltip de chaque point : « Local HH:MM:SS.mmm · UTC HH:MM:SS.mmm · t_rel_s s » (3 valeurs toujours visibles pour la traçabilité).
+
+### Compatibilité
+
+- `/metrics/series` back 0.76.3 expose `nmf_start_at` + `capture_date` + `utc_offset_min` (fallback back ≤ 0.76.2 → les 3 champs null → mode "capture" forcé).
+- `MetricSeriesSchema` front : 3 champs ajoutés `nullable().optional()`.
+
+Full suite : 282 passed | 2 skipped | 0 failed. tsc clean.
+
 ## 1.99.1 (patch) — BC4-FRONT 2026-10-22 — RRC State continuous proven timeline (Agent BC1)
 
 - **RRC State only**: proven LTE Connected intervals retain their exact API bounds; proven Idle intervals render in gray, while bounded gaps remain explicitly Unknown and hatched.

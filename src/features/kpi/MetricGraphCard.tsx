@@ -25,6 +25,12 @@ import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { operatorColor } from "./workspace-model";
+import {
+  formatTick as formatTimeTick,
+  tooltipTriple,
+  type TimeAxisMeta,
+  type TimeAxisMode,
+} from "./time-axis";
 
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *
@@ -77,6 +83,10 @@ export function MetricGraphCard({
   // le même syncId voient leur Tooltip/cursor déclenchés simultanément au
   // survol de n'importe laquelle. Non-breaking : undefined = pas de sync.
   syncId,
+  // 1.99.1 (lot C axe X temps) — mode d'affichage de l'axe temps + meta pour
+  // le compute (nmf_start_at + origin_ts + utc_offset_min). Undefined =
+  // "capture" (comportement 1.97.0).
+  timeAxisMode,
 }: {
   projectId: string;
   code: string;
@@ -91,6 +101,7 @@ export function MetricGraphCard({
   onViewChange?: ((view: MetricView) => void) | undefined;
   onOpenTable?: (() => void) | undefined;
   syncId?: string | undefined;
+  timeAxisMode?: TimeAxisMode | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -161,7 +172,7 @@ export function MetricGraphCard({
           appliedFilters={appliedFilters}
         />
       ) : view === "graph" ? (
-        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} />
+        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} timeAxisMode={timeAxisMode} />
       ) : view === "table" ? (
         <MetricAggregateTable
           projectId={projectId}
@@ -444,12 +455,14 @@ function MetricTimePlot({
   label,
   unit,
   syncId,
+  timeAxisMode,
 }: {
   projectId: string;
   code: string;
   label: string;
   unit: string;
   syncId?: string | undefined;
+  timeAxisMode?: TimeAxisMode | undefined;
 }) {
   const { t: translate } = useTranslation();
   const captures = useQuery({
@@ -468,8 +481,17 @@ function MetricTimePlot({
     if (!s) return [];
     return (s.points ?? [])
       .filter((p) => typeof p.value === "number")
-      .map((p) => ({ t_rel_s: p.t_rel_s, value: p.value as number }));
+      .map((p) => ({ t_rel_s: p.t_rel_s, value: p.value as number, seq: p.seq }));
   }, [series.data]);
+  const timeMeta: TimeAxisMeta | undefined = series.data
+    ? {
+        nmf_start_at: series.data.nmf_start_at ?? null,
+        origin_ts: series.data.origin_ts,
+        utc_offset_min: series.data.utc_offset_min ?? null,
+        capture_date: series.data.capture_date ?? null,
+      }
+    : undefined;
+  const mode: TimeAxisMode = timeAxisMode ?? "capture";
 
   if (!captureId) {
     if (captures.isPending)
@@ -530,9 +552,7 @@ function MetricTimePlot({
             tickCount={6}
             tick={{ fontSize: 10, fill: "#64748b" }}
             tickFormatter={(v: number) =>
-              typeof v === "number"
-                ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " s"
-                : String(v)
+              typeof v === "number" ? formatTimeTick(v, mode, timeMeta) : String(v)
             }
           />
           <YAxis width={54} domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} />
@@ -540,11 +560,17 @@ function MetricTimePlot({
             cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
             contentStyle={{ fontSize: 11, padding: "4px 8px" }}
             formatter={(value: number) => [`${value}${unit ? " " + unit : ""}`, label]}
-            labelFormatter={(l: number) =>
-              typeof l === "number"
-                ? `${formatNumber(l, { minimumFractionDigits: 3, maximumFractionDigits: 3 })} s`
-                : String(l)
-            }
+            labelFormatter={(l: number) => {
+              if (typeof l !== "number") return String(l);
+              const trip = tooltipTriple(l, timeMeta);
+              // 1.99.1 — tooltip montre les 3 valeurs + seq (si disponible).
+              const parts = [
+                trip.local ? `Local ${trip.local}` : null,
+                trip.utc ? `UTC ${trip.utc}` : null,
+                `${trip.capture}`,
+              ].filter(Boolean) as string[];
+              return parts.join(" · ");
+            }}
           />
           <Line
             type="linear"

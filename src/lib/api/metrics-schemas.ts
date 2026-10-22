@@ -107,6 +107,12 @@ export const MetricSeriesSchema = z.object({
   origin_seq: z.number(),
   origin_ts: z.string(),
   duration_s: z.number(),
+  // 1.99.1 (lot C axe X temps) — back 0.76.3 : meta temporelle du fichier.
+  // Null si capture non enrichie (#START ou #UT absent) → front repli sur
+  // Capture time (s).
+  nmf_start_at: z.string().nullable().optional(),
+  capture_date: z.string().nullable().optional(),
+  utc_offset_min: z.number().int().nullable().optional(),
   time_policy: z.string(),
   csv: z.string(),
   series: z.array(

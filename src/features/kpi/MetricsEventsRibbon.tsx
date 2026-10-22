@@ -19,8 +19,13 @@ import {
   YAxis,
 } from "recharts";
 import { getCaptureEvents } from "@/lib/api/client";
-import { formatNumber } from "@/lib/i18n";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
+import {
+  formatTick as formatTimeTick,
+  tooltipTriple,
+  type TimeAxisMeta,
+  type TimeAxisMode,
+} from "./time-axis";
 
 const TYPE_COLORS: Record<string, string> = {
   task: "#2563eb",
@@ -34,11 +39,15 @@ export function MetricsEventsRibbon({
   captureId,
   filters,
   syncId,
+  timeAxisMode,
+  timeMeta,
 }: {
   projectId: string;
   captureId: string;
   filters: KpiQueryFilters;
   syncId?: string | undefined;
+  timeAxisMode?: TimeAxisMode | undefined;
+  timeMeta?: TimeAxisMeta | undefined;
 }) {
   const q = useQuery({
     queryKey: ["capture-events", projectId, captureId, filters],
@@ -98,9 +107,7 @@ export function MetricsEventsRibbon({
               tickCount={6}
               tick={{ fontSize: 9, fill: "#64748b" }}
               tickFormatter={(v: number) =>
-                typeof v === "number"
-                  ? formatNumber(v, { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + " s"
-                  : String(v)
+                typeof v === "number" ? formatTimeTick(v, timeAxisMode ?? "capture", timeMeta) : String(v)
               }
             />
             <YAxis
@@ -116,11 +123,13 @@ export function MetricsEventsRibbon({
                 const d = (item as { payload?: { label?: string; type?: string } })?.payload;
                 return [d?.label ?? "", d?.type?.toUpperCase() ?? ""];
               }}
-              labelFormatter={(l: number) =>
-                typeof l === "number"
-                  ? `${formatNumber(l, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} s`
-                  : String(l)
-              }
+              labelFormatter={(l: number) => {
+                if (typeof l !== "number") return String(l);
+                const trip = tooltipTriple(l, timeMeta);
+                return [trip.local && `Local ${trip.local}`, trip.utc && `UTC ${trip.utc}`, trip.capture]
+                  .filter(Boolean)
+                  .join(" · ");
+              }}
             />
             {Object.entries(byType).map(([type, pts]) =>
               pts.length === 0 ? null : (

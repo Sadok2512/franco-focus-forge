@@ -1303,3 +1303,19 @@
 .kpi-metrics-charts-grid[data-per-row="2"][data-count="1"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .kpi-metrics-charts-grid[data-per-row="3"][data-count="1"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .kpi-metrics-charts-grid[data-per-row="3"][data-count="2"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+
+/* 1.99.1 (lot C axe X temps) — Switcher Clock/UTC/Capture. */
+.kpi-metrics-time-axis-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 6px 0;
+  padding: 3px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+.kpi-metrics-time-axis-options { display: flex; gap: 4px; }
+.kpi-metrics-time-axis-options button { font-size: 10px; padding: 3px 8px; }
+.kpi-metrics-time-axis-options button[disabled] { opacity: 0.45; cursor: not-allowed; }
