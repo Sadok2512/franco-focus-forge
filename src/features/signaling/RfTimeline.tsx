@@ -157,10 +157,6 @@ export function RfTimeline({
     const source = eligibleEvents.filter(
       (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
     );
-    // Clean RF display: UE/RRC State tracks are hidden from the timeline (data untouched).
-    return source.filter(
-      (event) => stateTrack(event) === null && !["uestate", "rrcstate"].includes(laneFor(event)),
-    );
     const stateEvents = states
       .filter(
         (state) =>
@@ -176,13 +172,14 @@ export function RfTimeline({
         },
       }));
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
-  }, [eligibleEvents, stateTracksV2, states, technology, t]);
+  }, [eligibleEvents, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
   const lanes = useMemo(
     () =>
       laneOrder.filter(
         (lane) =>
           lane === "network" ||
+          (stateTracksV2 && (lane === "uestate" || lane === "rrcstate")) ||
           displayed.some((event) => laneFor(event) === lane),
       ),
     [displayed, stateTracksV2],
