@@ -5,7 +5,7 @@ import { RfTimeline } from "@/features/signaling/RfTimeline";
 import type { RfEvent } from "@/lib/api/signaling";
 import "@/features/signaling/signaling.css";
 
-export const Route = createFileRoute("/__name-tag-check")({
+export const Route = createFileRoute("/name-tag-check")({
   ssr: false,
   component: Page,
   head: () => ({ meta: [{ title: "Name chip check — BC4" }] }),
