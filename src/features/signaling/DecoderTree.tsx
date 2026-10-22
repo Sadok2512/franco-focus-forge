@@ -68,19 +68,26 @@ const TS_REFS: Record<string, string> = {
 // Last path segment is the leaf IE name used as TS ref key.
 const refFor = (name: string): string | null => TS_REFS[name] ?? null;
 
+/** Containers above this count are expanded progressively (first levels only). */
+export const FULL_EXPAND_LIMIT = 400;
+export const PROGRESSIVE_DEPTH = 4;
+/**
+ * V10 — ASN.1 opens expanded. Small trees open fully; large trees open their
+ * first PROGRESSIVE_DEPTH levels so thousands of nodes never block the browser.
+ */
+export function initialCollapsed(parameters: { path: string }[]): Set<string> {
+  const containers = new Set<string>();
+  for (const p of parameters) {
+    const parts = p.path.split("/");
+    for (let i = 1; i < parts.length; i++) containers.add(parts.slice(0, i).join("/"));
+  }
+  if (containers.size <= FULL_EXPAND_LIMIT) return new Set();
+  return new Set([...containers].filter((path) => path.split("/").length >= PROGRESSIVE_DEPTH));
+}
+
 export function DecoderTree({ parameters }: { parameters: Parameter[] }) {
   const [search, setSearch] = useState("");
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => {
-    // 1.68.0 — Par défaut : collapse tous les conteneurs sauf la racine.
-    // UX : les 150+ IE d'un ATTACH_REQUEST noient l'utilisateur si tout ouvert.
-    const paths = new Set<string>();
-    for (const p of parameters) {
-      const parts = p.path.split("/");
-      // Collapse every intermediate container EXCEPT the root (depth 1).
-      for (let i = 2; i < parts.length; i++) paths.add(parts.slice(0, i).join("/"));
-    }
-    return paths;
-  });
+  const [collapsed, setCollapsed] = useState<Set<string>>(() => initialCollapsed(parameters));
   const [notice, setNotice] = useState("");
 
   const root = useMemo(() => {
