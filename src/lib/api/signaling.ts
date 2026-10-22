@@ -11,6 +11,8 @@ const line = z.object({
   technology: z.string().nullable(),
   direction: z.string().nullable(),
   message_name: z.string(),
+  /** Decoded logical channel (e.g. "DL-DCCH"); only used when the VM supplies it. */
+  channel: z.string().nullable().optional(),
   ecgi: z.string().nullable(),
   pci: z.number().nullable(),
   size_bytes: z.number().nullable(),

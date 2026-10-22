@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown, MailCheck, Search, X } from "lucide-react";
+import { ChevronDown, ChevronRight, MailCheck, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
-  searchMessageTypes,
+  buildMessageTree,
+  checkState,
+  searchMessageTree,
   setVisibleTypes,
+  treeTypes,
   type MessageSelection,
+  type MessageTech,
   type MessageType,
 } from "./message-filter";
 
@@ -17,6 +21,14 @@ const badgeKinds: Record<string, string> = {
   NAS: "nas",
   "Événements Nemo": "nemo",
   "MAC-RACH": "mac",
+};
+const techKinds: Record<MessageTech, string | null> = {
+  LTE: "lte",
+  NR: "nr",
+  NAS: "nas",
+  NEMO: "nemo",
+  MAC: "mac",
+  OTHER: null,
 };
 export function MessageLayerBadge({ protocol }: { protocol: string }) {
   const { t } = useTranslation();
@@ -49,9 +61,27 @@ export function MessageFilterPopover({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<MessageSelection>(selection);
-  const visible = useMemo(() => searchMessageTypes(types, query), [types, query]);
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const techLabel = (tech: MessageTech) => t(`sigFilters.tech.${tech}`);
+  const tree = useMemo(() => buildMessageTree(types), [types]);
+  const visibleTree = useMemo(
+    () => searchMessageTree(tree, query, techLabel),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tree, query],
+  );
+  const visible = useMemo(() => treeTypes(visibleTree), [visibleTree]);
   const chosen = draft ?? types.map((type) => type.key);
   const chosenSet = useMemo(() => new Set(chosen), [chosen]);
+  const searching = query.trim() !== "";
+  const isOpen = (id: string) => searching || !collapsed.has(id);
+  const toggle = (id: string) =>
+    setCollapsed((c) => {
+      const n = new Set(c);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+  const groupIds = tree.flatMap((tech) => [tech.id, ...tech.channels.map((c) => c.id)]);
   const changeOpen = (next: boolean) => {
     if (next) {
       setDraft(selection);
@@ -60,6 +90,20 @@ export function MessageFilterPopover({
     }
     setOpen(next);
   };
+  const set = (list: MessageType[], checked: boolean | "indeterminate") =>
+    setDraft(setVisibleTypes(chosen, list, checked === true));
+  const Chevron = ({ id }: { id: string }) => (
+    <button
+      type="button"
+      className="sig-tree-chevron"
+      aria-label={t(isOpen(id) ? "sigFilters.collapseGroup" : "sigFilters.expandGroup")}
+      aria-expanded={isOpen(id)}
+      onClick={() => toggle(id)}
+      disabled={searching}
+    >
+      {isOpen(id) ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+    </button>
+  );
   return (
     <Popover open={open} onOpenChange={changeOpen}>
       <PopoverTrigger asChild>
@@ -115,25 +159,43 @@ export function MessageFilterPopover({
               onChange={(e) => setQuery(e.target.value)}
             />
           </label>
+        </div>
+        <div className="sig-message-toolbar">
           <Button
             variant="outline"
             size="sm"
             disabled={loading || error}
-            onClick={() => setDraft(setVisibleTypes(chosen, visible, true))}
+            onClick={() => set(visible, true)}
           >
-            {t("sigFilters.all")}
+            {t(searching ? "sigFilters.selectVisible" : "sigFilters.all")}
           </Button>
           <Button
             variant="outline"
             size="sm"
             disabled={loading || error}
-            onClick={() => setDraft(setVisibleTypes(chosen, visible, false))}
+            onClick={() => set(visible, false)}
           >
-            {t("sigFilters.none")}
+            {t(searching ? "sigFilters.clearVisible" : "sigFilters.none")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={searching}
+            onClick={() => setCollapsed(new Set())}
+          >
+            {t("sigFilters.expandAll")}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={searching}
+            onClick={() => setCollapsed(new Set(groupIds))}
+          >
+            {t("sigFilters.collapseAll")}
           </Button>
         </div>
         <p className="sig-message-scope">{t("sigFilters.scope")}</p>
-        <div className="sig-message-options" data-testid="message-filter-options">
+        <div className="sig-message-options" data-testid="message-filter-options" role="tree">
           {loading ? (
             <p role="status" className="p-4">
               {t("sigFilters.loading")}
@@ -145,32 +207,83 @@ export function MessageFilterPopover({
                 {t("common.retry")}
               </Button>
             </div>
-          ) : visible.length === 0 ? (
+          ) : visibleTree.length === 0 ? (
             <p role="status" className="p-4">
               {t("sigFilters.noTypes")}
             </p>
           ) : (
-            visible.map((type) => (
-              <label key={type.key} className="sig-message-option">
-                <Checkbox
-                  aria-label={type.name + " · " + type.protocol}
-                  checked={chosenSet.has(type.key)}
-                  onCheckedChange={(checked) =>
-                    setDraft(setVisibleTypes(chosen, [type], checked === true))
-                  }
-                />
-                <MessageLayerBadge protocol={type.protocol} />
-                <span className="sig-message-name" title={type.name}>
-                  {type.name}
-                </span>
-                <span
-                  className="sig-occurrence"
-                  title={t("sigFilters.occurrences", { count: type.count })}
-                >
-                  {type.count.toLocaleString()}
-                </span>
-              </label>
-            ))
+            visibleTree.map((tech) => {
+              const techTypes = tech.channels.flatMap((c) => c.types);
+              const kind = techKinds[tech.technology];
+              return (
+                <div key={tech.id} role="treeitem" aria-expanded={isOpen(tech.id)}>
+                  <div
+                    className="sig-tree-row sig-tree-tech"
+                    data-testid={`tree-tech-${tech.technology}`}
+                  >
+                    <Chevron id={tech.id} />
+                    <Checkbox
+                      aria-label={techLabel(tech.technology)}
+                      checked={checkState(techTypes, chosenSet)}
+                      onCheckedChange={(c) => set(techTypes, c)}
+                    />
+                    <span className={`sig-layer-badge ${kind ? `sig-layer-${kind}` : ""}`}>
+                      {techLabel(tech.technology)}
+                    </span>
+                    <span className="sig-occurrence">{tech.count.toLocaleString()}</span>
+                  </div>
+                  {isOpen(tech.id) &&
+                    tech.channels.map((ch) => {
+                      const chLabel = ch.channel ?? t("sigFilters.unclassified");
+                      return (
+                        <div key={ch.id} role="group">
+                          <div
+                            className="sig-tree-row sig-tree-channel"
+                            data-testid={`tree-channel-${ch.id}`}
+                          >
+                            <Chevron id={ch.id} />
+                            <Checkbox
+                              aria-label={`${techLabel(tech.technology)} · ${chLabel}`}
+                              checked={checkState(ch.types, chosenSet)}
+                              onCheckedChange={(c) => set(ch.types, c)}
+                            />
+                            <span
+                              className={
+                                ch.channel
+                                  ? "sig-tree-channel-name"
+                                  : "sig-tree-channel-name text-muted-foreground italic"
+                              }
+                              title={ch.channel ? undefined : t("sigFilters.unclassifiedHint")}
+                            >
+                              {chLabel}
+                            </span>
+                            <span className="sig-occurrence">{ch.count.toLocaleString()}</span>
+                          </div>
+                          {isOpen(ch.id) &&
+                            ch.types.map((type) => (
+                              <label key={type.key} className="sig-tree-row sig-tree-message">
+                                <Checkbox
+                                  aria-label={type.name + " · " + type.protocol}
+                                  checked={chosenSet.has(type.key)}
+                                  onCheckedChange={(c) => set([type], c)}
+                                />
+                                <span className="sig-message-name" title={type.name}>
+                                  {type.name}
+                                </span>
+                                <span
+                                  className="sig-occurrence"
+                                  title={t("sigFilters.occurrences", { count: type.count })}
+                                >
+                                  {type.count.toLocaleString()}
+                                </span>
+                              </label>
+                            ))}
+                        </div>
+                      );
+                    })}
+                </div>
+              );
+            })
           )}
         </div>
         <footer className="sig-message-footer">

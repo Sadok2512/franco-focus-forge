@@ -138,3 +138,15 @@
   [data-radix-popper-content-wrapper]:has(.sig-message-popover) { position:fixed !important; transform:none !important; left:12px !important; top:70px !important; width:calc(100vw - 24px); }
   .sig-message-popover { width:calc(100vw - 24px); max-height:calc(100dvh - 94px); }
 }
+.sig-message-popover { width:460px; max-height:min(75vh, var(--radix-popover-content-available-height)); }
+.sig-message-toolbar { display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 8px; }
+.sig-message-toolbar button { height:26px; font-size:11px; }
+.sig-tree-row { display:grid; grid-template-columns:18px 16px minmax(0,1fr) auto; gap:6px; align-items:center; min-height:28px; padding:3px 5px; border-radius:4px; }
+.sig-tree-row:hover { background:var(--muted); }
+.sig-tree-tech { font-weight:600; font-size:12px; }
+.sig-tree-tech .sig-layer-badge { justify-self:start; }
+.sig-tree-channel { padding-left:21px; font-size:11px; font-weight:500; }
+.sig-tree-message { grid-template-columns:16px minmax(0,1fr) auto; padding-left:61px; cursor:pointer; }
+.sig-tree-chevron { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; color:var(--muted-foreground); }
+.sig-tree-chevron:disabled { opacity:.4; }
+.sig-tree-channel-name { overflow-wrap:anywhere; }
