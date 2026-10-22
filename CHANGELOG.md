@@ -1,3 +1,9 @@
+## 1.82.0 — Premium sidebar and message-type filter
+- Compact collapsible/resizable filter sidebar and floating transactional message selector with local search, All/None, Cancel/Apply and semantic layer badges.
+- Actual whole-capture type counts via the existing paginated rows adapter, cached per capture; incomplete/changing results are rejected instead of showing invented totals.
+- Exact name+layer filtering, local pagination and filtered CSV over the complete matching population. Explicit no types means an empty list. Apply preserves selected payload, timeline and GPS; compatible selections survive capture changes.
+- No backend changes or production publication. Real VM validation is reported separately from fixture verification.
+
 ## 1.81.0 — Premium messages table & always-open payload (V10)
 - Messages table: toolbar (search, layer, direction, technology, columns, export, clear), numbered pagination, compact premium rows.
 - New columns: Info (VM procedures only, failure from VM outcome), Tech, RRC State (proven intervals only), RSRP/RSRQ/SINR (previous real observation, Δt in tooltip). Band and Cell name listed but shown "—" until the VM supplies them.
