@@ -439,6 +439,7 @@
     }
   },
   "rfTimeline": {
+    "na": "N/A",
     "showCursor": "Show time cursor",
     "cursor": "Time cursor",
     "outside": "Outside view · recenter",

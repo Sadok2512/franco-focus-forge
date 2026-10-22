@@ -298,7 +298,7 @@ export function TimeCursor({
             <span key={s.code} className={`signaling-metric-${index}`} data-testid={`rf-readout-${s.code}`}>
               {s.label}:{" "}
               {value === null
-                ? t("common.na")
+                ? t("rfTimeline.na")
                 : `${value.toLocaleString(i18n.language, { maximumFractionDigits: 1 })} ${s.unit}`}
               {value !== null && dt > 0 && <small> · Δt {fmt(dt)} s</small>}
             </span>
