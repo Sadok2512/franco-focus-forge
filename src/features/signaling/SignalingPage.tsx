@@ -1495,7 +1495,7 @@ export function SignalingPage({
                           Chargement de la timeline…
                         </p>
                       )}
-                      {capture && (
+                      {capture && timelineView !== "rf" && (
                         <TimeNavigator
                           duration={captureDuration}
                           window={timeWindow}
