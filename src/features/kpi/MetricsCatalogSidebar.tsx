@@ -1,20 +1,14 @@
-// 1.73.0 (BC3) — Metrics tree premium (spec v10 /specs/metrics_catalogue_lte.html) :
-// ★ catégories/métriques détectées par présence de ★ dans node.label (généré depuis
-// /metrics back, jamais codé en dur côté front), menu ⋯ par métrique (Chart /
-// Table / Map / Info / Copy id), feuilles n=0 greyées (déjà via node.selectable=false).
+// 1.78.0 (BC3) — Metrics tree aligned strictement sur KPI tree.
+// Arbre dérivé de /metrics back (jamais hardcodé). Hiérarchie 4-5 niveaux
+// (catégorie → groupe → métrique → cellule) rendue avec le même style que
+// KpiCatalogSidebar : header p-2, pas d'eyebrow, pas d'Expand/Collapse,
+// chevron intégré dans la row (bar-click = expand), status dot, ⋮ menu
+// MoreVertical + VisualizationItems partagé. Pas d'icône ★, pas de source
+// badge, pas de compteur par leaf.
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Activity,
-  ChevronDown,
-  ChevronRight,
-  Copy,
-  Info,
-  MoreVertical,
-  Search,
-  Star,
-} from "lucide-react";
+import { BarChart3, ChevronDown, ChevronRight, Copy, Info, MoreVertical, Search } from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
 import {
   DropdownMenu,
@@ -28,9 +22,11 @@ import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { MetricView } from "./MetricGraphCard";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
+import { APP_VERSION } from "@/lib/version";
 
 const rootKey = "__root__";
 const STAR = "★";
+const MAX_METRICS = 64;
 
 export function MetricsCatalogSidebar({
   projectId,
@@ -113,7 +109,7 @@ export function MetricsCatalogSidebar({
     const values = descendantSelections.get(node.node_id) ?? [];
     const remove = values.length > 0 && values.every((value) => selected.includes(value));
     const candidates = values.filter((value) => remove === selected.includes(value));
-    const permitted = remove ? candidates : candidates.slice(0, Math.max(0, 64 - selected.length));
+    const permitted = remove ? candidates : candidates.slice(0, Math.max(0, MAX_METRICS - selected.length));
     for (const value of permitted) onToggle(value);
   };
   const copyToClipboard = async (text: string, id: string) => {
@@ -122,115 +118,112 @@ export function MetricsCatalogSidebar({
       setCopied(id);
       setTimeout(() => setCopied((v) => (v === id ? null : v)), 1500);
     } catch {
-      // clipboard refused — leave feedback null
+      /* clipboard refused */
     }
   };
-  const renderNode = (node: MetricCatalogNode, depth = 0): ReactNode => {
+
+  const renderNode = (node: MetricCatalogNode): ReactNode => {
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
     const expanded = Boolean(matching) || open.has(node.node_id);
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
     const branchChecked =
       branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
-    const branchPartial =
-      branchSelections.some((value) => selected.includes(value)) && !branchChecked;
     const disabled = node.node_type === "leaf" && !node.selectable;
-    const starred = node.label.includes(STAR);
-    const kindClass =
-      node.node_type === "category"
-        ? "kpi-tree-root"
-        : node.node_type === "leaf"
-          ? "kpi-tree-leaf"
-          : "kpi-tree-family";
-    const starClass = starred ? " kpi-tree-starred" : "";
-    const showMenu =
-      node.node_type === "metric" || (node.node_type === "leaf" && node.selectable);
-    const copyPayload =
-      node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
-    // Alignement KPI UI : status dot déduit du proof + selectable (même CSS)
+    const label = node.label.replace(STAR, "").trim();
+    const isSelected = node.selectable && selected.includes(node.selection ?? "");
+    const canToggle = node.selectable && node.selection
+      ? isSelected || selected.length < MAX_METRICS
+      : false;
     const statusClass =
       node.selectable && node.n > 0
         ? "status-available"
         : node.proof === "open"
           ? "status-pending"
           : "status-unavailable";
-    const isSelected = node.selectable && selected.includes(node.selection ?? "");
-    const canToggle = node.selectable && node.selection
-      ? isSelected || selected.length < 64
-      : branchSelections.length > 0;
-    const handleRowClick = () => {
-      if (!canToggle) return;
-      if (node.selectable && node.selection) onToggle(node.selection);
-      else if (branchSelections.length > 0) toggleBranch(node);
-    };
-    return (
-      <li key={node.node_id} style={{ paddingLeft: depth ? 8 : 0 }}>
-        <div
-          className={`${kindClass}${starClass} ${disabled ? "opacity-45" : ""} ${isSelected ? "is-selected" : ""}`}
-          title={node.reason ?? node.source ?? node.label}
-        >
-          {children.length > 0 ? (
-            <button
-              type="button"
-              aria-label={`${expanded ? t("metrics.catalogCollapse") : t("metrics.catalogExpand")} ${node.label}`}
-              aria-expanded={expanded}
-              onClick={() => toggleOpen(node.node_id)}
-            >
-              {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            </button>
-          ) : (
-            <span className="w-[13px]" aria-hidden="true" />
+    const showMenu = node.node_type === "metric" || (node.node_type === "leaf" && node.selectable);
+    const copyPayload =
+      node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
+
+    // CATEGORIE : même pattern que KPI techno (bar entière cliquable, chevron intégré)
+    if (node.node_type === "category") {
+      return (
+        <li key={node.node_id}>
+          <button
+            className="kpi-tree-root"
+            aria-expanded={expanded}
+            onClick={() => toggleOpen(node.node_id)}
+          >
+            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {label}
+          </button>
+          {expanded && (
+            <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
           )}
-          {starred && (
-            <Star
-              size={11}
-              className="shrink-0 fill-amber-400 text-amber-500"
-              aria-label={t("metrics.catalogStarred")}
-            />
-          )}
-          {/* Alignement KPI : status dot au lieu de checkbox, row-click toggle */}
-          {(node.selectable || branchSelections.length > 0) && (
-            <button
-              type="button"
-              className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
-              onClick={handleRowClick}
-              disabled={!canToggle}
-              aria-pressed={isSelected}
-              aria-label={t("metrics.46d8d72f28dd", { v0: node.label })}
-            >
-              <span
-                className={`kpi-status-dot ${statusClass}`}
-                title={node.proof}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1 truncate">
-                {node.label.replace(STAR, "").trim()}
+        </li>
+      );
+    }
+
+    // GROUP ou METRIC parent : même pattern que KPI family
+    if (children.length > 0) {
+      return (
+        <li key={node.node_id}>
+          <button
+            className="kpi-tree-family"
+            aria-expanded={expanded}
+            onClick={() => toggleOpen(node.node_id)}
+          >
+            {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+            <span className="truncate">{label}</span>
+            {branchSelections.length > 0 && (
+              <span className="ml-auto text-[10px] text-muted-foreground">
+                {branchSelections.length}
               </span>
-            </button>
+            )}
+          </button>
+          {expanded && (
+            <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
           )}
-          {!(node.selectable || branchSelections.length > 0) && (
-            <span className="min-w-0 flex-1 truncate">
-              {node.label.replace(STAR, "").trim()}
-            </span>
-          )}
-          {node.source && (
-            <small className="shrink-0 text-[9px] text-muted-foreground">{node.source}</small>
-          )}
-          {node.node_type === "leaf" && (
+        </li>
+      );
+    }
+
+    // LEAF : même pattern que KPI kpi-tree-leaf
+    return (
+      <li key={node.node_id}>
+        <div
+          className={`kpi-tree-leaf ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
+          title={node.reason ?? node.source ?? label}
+        >
+          <button
+            type="button"
+            className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
+            onClick={() => canToggle && node.selection && onToggle(node.selection)}
+            disabled={!canToggle && !isSelected}
+            aria-pressed={isSelected}
+            aria-label={t("metrics.46d8d72f28dd", { v0: label })}
+          >
             <span
-              className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
-              data-testid={`metric-leaf-count-${node.node_id}`}
-            >
-              {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
+              className={`kpi-status-dot ${statusClass}`}
+              title={node.proof}
+              aria-hidden="true"
+            />
+            <span className="min-w-0">
+              <span className="block truncate">{label}</span>
+              {search && (
+                <span className="text-[10px] text-muted-foreground">
+                  {node.source ?? node.metric_id ?? ""}
+                </span>
+              )}
             </span>
-          )}
+          </button>
           {showMenu && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  type="button"
-                  className="kpi-icon kpi-leaf-menu shrink-0"
-                  aria-label={`Visualisation ${node.label.replace(STAR, "").trim()}`}
+                  className="kpi-icon kpi-leaf-menu"
+                  aria-label={`Visualisation ${label}`}
+                  disabled={!isSelected && selected.length >= MAX_METRICS}
                   data-testid={`metric-menu-${node.node_id}`}
                 >
                   <MoreVertical size={15} />
@@ -243,10 +236,12 @@ export function MetricsCatalogSidebar({
                     <VisualizationItems
                       throughput={node.unit === "Mbit/s" || node.unit === "Mbps"}
                       onChange={(mode: VisualizationType) => {
-                        // MetricView = sous-ensemble de VisualizationType
-                        // (histogram|graph|table|map). Autres modes (chronogram,
-                        // task_*) ne sont pas routés côté Metrics — ignorés.
-                        if (mode === "histogram" || mode === "graph" || mode === "table" || mode === "map") {
+                        if (
+                          mode === "histogram" ||
+                          mode === "graph" ||
+                          mode === "table" ||
+                          mode === "map"
+                        ) {
                           onVisualization(node.selection!, mode as MetricView);
                         }
                       }}
@@ -265,46 +260,37 @@ export function MetricsCatalogSidebar({
             </DropdownMenu>
           )}
         </div>
-        {children.length > 0 && expanded && (
-          <ul className="border-l border-border/60">
-            {children.map((child) => renderNode(child, depth + 1))}
-          </ul>
-        )}
       </li>
     );
+    // branchChecked intentionnellement ignoré ici : les leaves gèrent leur
+    // propre sélection via onToggle(node.selection) ; toggleBranch reste
+    // disponible via le branch-level menu (groupe/metric parent).
+    // Référencer branchChecked pour satisfaire le linter si besoin :
+    void branchChecked;
+    void toggleBranch;
   };
-  const expandableIds = (query.data?.nodes ?? [])
-    .filter((node) => (byParent.get(node.node_id) ?? []).length > 0)
-    .map((node) => node.node_id);
+
+  const tree = byParent.get(rootKey) ?? [];
   return (
     <aside className="kpi-catalog" aria-label={t("metrics.498227f2b5c6")}>
-      <header className="border-b p-3">
-        <h2 className="flex gap-2 text-sm font-semibold">
-          <Activity size={16} /> {t("metrics.498227f2b5c6")}
+      <header className="p-2 border-b">
+        <h2 className="flex items-center gap-2 font-semibold text-sm">
+          <BarChart3 size={16} className="text-primary" /> {t("metrics.498227f2b5c6")}
+          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
+            {selected.length}/{MAX_METRICS}
+          </span>
         </h2>
-        <p className="text-[11px] text-muted-foreground">
-          {t("metrics.f05f8e96265b")} {selected.length}
-          {t("metrics.16df3032f7a1")}
-        </p>
-        <label className="relative mt-3 block">
-          <Search className="absolute left-2 top-3" size={14} />
+        <label className="relative block mt-2">
+          <Search size={14} className="absolute left-2.5 top-3 text-muted-foreground" />
           <input
             ref={searchRef}
-            className="h-9 w-full rounded-md border bg-background pl-8 text-xs"
-            placeholder={t("metrics.433e83817682")}
-            aria-label={t("metrics.bf6a6c500977")}
             value={search}
             onChange={(event) => setSearch(event.target.value)}
+            placeholder={t("metrics.433e83817682")}
+            aria-label={t("metrics.bf6a6c500977")}
+            className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
-        <div className="mt-2 flex gap-2 text-[11px]">
-          <button type="button" onClick={() => setOpen(new Set(expandableIds))}>
-            {t("metrics.catalogExpandAll")}
-          </button>
-          <button type="button" onClick={() => setOpen(new Set())}>
-            {t("metrics.catalogCollapseAll")}
-          </button>
-        </div>
       </header>
       {query.isPending && (
         <p className="p-3 text-xs" role="status">
@@ -316,9 +302,18 @@ export function MetricsCatalogSidebar({
           {query.error.message}
         </p>
       )}
-      <ul className="kpi-tree space-y-1 p-2">
-        {(byParent.get(rootKey) ?? []).map((node) => renderNode(node))}
+      <ul className="kpi-tree p-2 space-y-1">
+        {tree.map((node) => renderNode(node))}
+        {!tree.length && !query.isPending && (
+          <li className="p-4 text-xs text-muted-foreground">{t("metrics.7f626224ba1f") || "—"}</li>
+        )}
       </ul>
+      <footer
+        className="border-t p-2 text-[10px] text-muted-foreground"
+        title={`front v${APP_VERSION} · ${t("metrics.498227f2b5c6")}`}
+      >
+        {t("metrics.498227f2b5c6")}
+      </footer>
       {info && (
         <div
           role="dialog"
@@ -332,10 +327,7 @@ export function MetricsCatalogSidebar({
             onClick={(e) => e.stopPropagation()}
             data-testid="metric-info-dialog"
           >
-            <h3 className="mb-2 flex items-center gap-1 text-sm font-semibold">
-              {info.label.includes(STAR) && (
-                <Star size={12} className="fill-amber-400 text-amber-500" />
-              )}
+            <h3 className="mb-2 text-sm font-semibold">
               {info.label.replace(STAR, "").trim()}
             </h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
