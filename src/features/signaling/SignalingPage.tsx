@@ -1119,7 +1119,10 @@ export function SignalingPage({
         </h1>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
-            <Link to={stateTracksV2 ? "/signaling" : "/signaling-v2"} search={(previous) => ({ ...previous, capture_id: capture, seq })}>
+            <Link
+              to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+              search={(previous) => ({ ...previous, capture_id: capture, seq })}
+            >
               {t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
             </Link>
           </Button>
