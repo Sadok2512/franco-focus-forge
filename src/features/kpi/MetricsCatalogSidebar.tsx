@@ -27,6 +27,13 @@ import { APP_VERSION } from "@/lib/version";
 const rootKey = "__root__";
 const STAR = "★";
 const MAX_METRICS = 64;
+// 1.78.1 — strip des badges source `[PHRATE #1]`, `[CI #2]`, `[CELLMEAS #5]`...
+// bakés dans node.label par le back (le back garde la source pour sa logique
+// de binding via SOURCE_RE ; côté UI on affiche le nom nu).
+const SOURCE_BADGE_RE = /\s*\[[A-Z][A-Z0-9]*\s+#\d+\]\s*/g;
+function cleanLabel(raw: string): string {
+  return raw.replace(STAR, "").replace(SOURCE_BADGE_RE, "").trim();
+}
 
 export function MetricsCatalogSidebar({
   projectId,
@@ -130,7 +137,7 @@ export function MetricsCatalogSidebar({
     const branchChecked =
       branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
     const disabled = node.node_type === "leaf" && !node.selectable;
-    const label = node.label.replace(STAR, "").trim();
+    const label = cleanLabel(node.label);
     const isSelected = node.selectable && selected.includes(node.selection ?? "");
     const canToggle = node.selectable && node.selection
       ? isSelected || selected.length < MAX_METRICS
@@ -328,7 +335,7 @@ export function MetricsCatalogSidebar({
             data-testid="metric-info-dialog"
           >
             <h3 className="mb-2 text-sm font-semibold">
-              {info.label.replace(STAR, "").trim()}
+              {cleanLabel(info.label)}
             </h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               {info.source && (
