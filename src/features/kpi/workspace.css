@@ -1185,26 +1185,82 @@
   min-width: 100px;
 }
 
-/* 1.82.0 — Metrics Native Charts V2 Phase 1
-   Grille de MetricGraphCard, 1|2|3 par ligne, responsive. */
+/* 1.83.0 — V3 §3 : Per row = plafond. Pas de colonnes vides.
+   Contracte à min(selections, per_row) via data-count + data-per-row. */
 .kpi-metrics-charts-grid {
   display: grid;
   gap: 10px;
   padding: 10px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-.kpi-metrics-charts-grid[data-per-row="1"] {
   grid-template-columns: minmax(0, 1fr);
 }
-.kpi-metrics-charts-grid[data-per-row="2"] {
+/* data-per-row=2 : OK pour 2+ sélections */
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="2"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="3"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="4"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="5"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="6"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="7"],
+.kpi-metrics-charts-grid[data-per-row="2"][data-count="8"] {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
-.kpi-metrics-charts-grid[data-per-row="3"] {
+/* data-per-row=3 : OK pour 2 sélections (répartition sur 2 cols) et 3+ (3 cols) */
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="3"],
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="4"],
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="5"],
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="6"],
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="7"],
+.kpi-metrics-charts-grid[data-per-row="3"][data-count="8"] {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 @media (max-width: 1024px) {
-  .kpi-metrics-charts-grid[data-per-row="2"],
-  .kpi-metrics-charts-grid[data-per-row="3"] {
-    grid-template-columns: minmax(0, 1fr);
+  .kpi-metrics-charts-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
   }
+}
+
+/* V3 §4 : table largeur naturelle. Pas d'étirement à 100%. */
+.kpi-metrics-table-body table {
+  width: auto !important;
+  min-width: 650px;
+}
+.kpi-metrics-table-body .col-time {
+  width: 200px;
+  min-width: 190px;
+  max-width: 220px;
+}
+.kpi-metrics-table-body .col-geo {
+  width: 130px;
+  min-width: 120px;
+  max-width: 140px;
+}
+.kpi-metrics-table-body thead th:not(.col-time):not(.col-geo) {
+  min-width: 150px;
+  max-width: 200px;
+}
+
+/* V3 §8 : pagination */
+.kpi-metrics-table-pager {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-top: 1px solid #e6ecf3;
+  background: #fafbfd;
+  font-size: 11px;
+  color: #5b6673;
+}
+.kpi-metrics-table-pager select {
+  border: 1px solid #dce5ef;
+  border-radius: 5px;
+  padding: 2px 6px;
+  background: var(--card, #fff);
+  font-size: 11px;
+}
+.kpi-metrics-table-pager .pager-nav {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
 }

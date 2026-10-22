@@ -438,11 +438,11 @@ export function MetricsWorkspace({
   const captureDate = extractCaptureDate(captureLabel);
   const originTs = data?.origin_ts ?? null;
 
-  // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1
-  // Nouveau mode "charts" = grille de MetricGraphCard, un par métrique.
-  // Table = mode table premium (Phase 1 1.81.0).
-  // Overlay = chronogramme multi-axes existant (view=graph interne).
+  // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
+  // V3 §8 : pagination Table 25/50/100 (défaut 25)
+  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
+  const [page, setPage] = useState(1);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
     try {
       const stored = localStorage.getItem("bc3.metrics.pane");
@@ -497,27 +497,22 @@ export function MetricsWorkspace({
   }, [catalog]);
   return (
     <article className="kpi-graph-card col-span-full kpi-metrics-table-premium" data-testid="metrics-v3-workspace">
-      {/* Toolbar compacte : View (Charts|Table|Overlay) | compteur |
-          Per row 1|2|3 (Charts only) | Columns/Filters (future) | Export | Fullscreen */}
+      {/* 1.83.0 — Spec V3 §1 : barre [Charts|Table|Overlay] + "N metrics"
+          supprimée. Remplacée par un <select View ▾> compact. Per row visible
+          uniquement en Charts. */}
       <header className="kpi-metrics-table-toolbar">
-        <div className="kpi-view-modes" role="tablist" aria-label="Metrics view mode">
-          {(["charts", "table", "overlay"] as MetricPane[]).map((p) => (
-            <button
-              key={p}
-              role="tab"
-              aria-pressed={pane === p}
-              aria-selected={pane === p}
-              className="kpi-button"
-              onClick={() => setPane(p)}
-              data-testid={`metrics-pane-${p}`}
-            >
-              {p === "charts" ? "Charts" : p === "table" ? "Table" : "Overlay"}
-            </button>
-          ))}
-        </div>
-        <span className="kpi-metrics-table-counter">
-          {selections.length} metric{selections.length > 1 ? "s" : ""}
-        </span>
+        <label className="kpi-select-label" title="View mode">
+          View
+          <select
+            value={pane}
+            onChange={(e) => setPane(e.target.value as MetricPane)}
+            data-testid="metrics-pane-select"
+          >
+            <option value="charts">Charts</option>
+            <option value="table">Table</option>
+            <option value="overlay">Overlay</option>
+          </select>
+        </label>
         {pane === "charts" && (
           <label className="kpi-select-label" title="Cards per row">
             Per row
@@ -532,19 +527,25 @@ export function MetricsWorkspace({
             </select>
           </label>
         )}
-        <button className="kpi-button" title="Columns (phase 3)" disabled>
-          <Columns3 size={13} /> Columns
-        </button>
-        <button className="kpi-button" title="Filters (phase 3)" disabled>
-          <Filter size={13} /> Filters
-        </button>
+        {pane === "table" && (
+          <>
+            <button className="kpi-button" title="Columns (phase 3)" disabled>
+              <Columns3 size={13} /> Columns
+            </button>
+            <button className="kpi-button" title="Filters (phase 3)" disabled>
+              <Filter size={13} /> Filters
+            </button>
+          </>
+        )}
         <button className="kpi-button" disabled={!data} onClick={exportCsv} title="Export CSV">
           <Download size={13} /> Export CSV
         </button>
         <button
           className="kpi-button"
           title="Fullscreen"
-          onClick={() => document.querySelector(".kpi-metrics-table-premium")?.requestFullscreen?.()}
+          onClick={() =>
+            document.querySelector(".kpi-metrics-table-premium")?.requestFullscreen?.()
+          }
         >
           <Maximize2 size={13} /> Fullscreen
         </button>
@@ -553,6 +554,7 @@ export function MetricsWorkspace({
         <section
           className="kpi-metrics-charts-grid"
           data-per-row={perRow}
+          data-count={Math.min(parsedSelections.length, 8)}
           data-testid="metrics-charts-grid"
         >
           {parsedSelections.map((s, i) => {
@@ -656,7 +658,9 @@ export function MetricsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows.map((r) => (
+                      {data.rows
+                        .slice((page - 1) * pageSize, page * pageSize)
+                        .map((r) => (
                         <tr key={r.second} data-second={r.second}>
                           <td
                             className="col-time font-mono text-[11px]"
@@ -687,6 +691,43 @@ export function MetricsWorkspace({
                       ))}
                     </tbody>
                   </table>
+                </div>
+                {/* V3 §8 : pagination 25/50/100 + "Showing X-Y of N rows" */}
+                <div className="kpi-metrics-table-pager" data-testid="metrics-table-pager">
+                  <label>
+                    Rows per page
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value) as 25 | 50 | 100);
+                        setPage(1);
+                      }}
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <span>
+                    Showing {Math.min((page - 1) * pageSize + 1, data.rows.length)}–
+                    {Math.min(page * pageSize, data.rows.length)} of {data.rows.length} rows
+                  </span>
+                  <span className="pager-nav">
+                    <button
+                      className="kpi-button"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      Prev
+                    </button>
+                    <button
+                      className="kpi-button"
+                      disabled={page * pageSize >= data.rows.length}
+                      onClick={() => setPage((p) => p + 1)}
+                    >
+                      Next
+                    </button>
+                  </span>
                 </div>
               </div>
             ) : view === "map" ? (
