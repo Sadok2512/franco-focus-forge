@@ -2,8 +2,7 @@ import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
 import { EventRibbon } from "./EventRibbon";
-import { TimeNavigator } from "./TimeNavigator";
-import { followMessage, useTimeWindow, type TimeWindow } from "./time-window";
+import { followMessage, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -966,7 +965,11 @@ export function SignalingPage({
     staleTime: 60000,
   });
   const captureDuration = captureRadio.data?.duration_s ?? 0;
-  const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(capture, captureDuration);
+  const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(
+    capture,
+    captureDuration,
+    FULL_CAPTURE_S,
+  );
   useEffect(() => {
     if (initialCapture) setCaptureContext(projectId, initialCapture);
   }, [projectId, initialCapture]);
@@ -1498,11 +1501,6 @@ export function SignalingPage({
                           Chargement de la timeline…
                         </p>
                       )}
-                      <TimeNavigator
-                        duration={captureDuration}
-                        window={timeWindow}
-                        onWindow={setTimeWindow}
-                      />
                     </section>
                   </Panel>
                   <Separator

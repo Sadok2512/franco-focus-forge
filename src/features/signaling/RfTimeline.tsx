@@ -7,8 +7,7 @@ import type { RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
-import { clampWindow, useTimeWindow, type TimeWindow } from "./time-window";
-import { TimeNavigator } from "./TimeNavigator";
+import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 
@@ -152,7 +151,7 @@ export function RfTimeline({
   const duration =
     radio.data?.duration_s ??
     Math.max(0, ...displayed.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
-  const localWindow = useTimeWindow(captureId, duration);
+  const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
   const visibleWindow = timeWindow ?? localWindow.window;
   const changeWindow = onWindow ?? localWindow.setWindow;
   const zoom: [number, number] =
@@ -597,7 +596,7 @@ export function RfTimeline({
             aria-label={t("rfTimeline.reset")}
             title={t("rfTimeline.reset")}
             onClick={() => {
-              changeWindow(clampWindow(duration, 0, 30));
+              changeWindow(clampWindow(duration, 0, FULL_CAPTURE_S));
               setWindowSeq(undefined);
               callbacks.current.onRange(undefined);
             }}
@@ -657,9 +656,6 @@ export function RfTimeline({
           />
         </div>
       </div>
-      {!onWindow && (
-        <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
-      )}
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}

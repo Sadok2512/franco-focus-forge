@@ -1,3 +1,9 @@
+## 1.79.1 — Signaling timeline pager removed
+
+- The "Navigation temporelle" bar (previous/next, 10/30/60/120-second presets, zoom/reset/full-capture buttons and the draggable strip) is no longer rendered under the Signaling timeline, on request.
+- The timeline now opens on the whole capture in every view (RF, Ruban, Histogram); in RF view the header zoom in/out buttons and mouse-wheel zoom (Ctrl + wheel) still narrow and widen the visible range, and the reset button returns to the full capture.
+- Shared visible-time state, cursor placement, follow-selected-message and message/map filters are unchanged.
+
 ## 1.79.0 — Signaling time navigator (LOT A) and UE audit (LOT B)
 
 - Default 0–30-second window, clamped to capture duration; shared RF/events/ribbon/histogram range with draggable overview, presets, previous/next, zoom/reset/full capture.

@@ -1,5 +1,5 @@
 # BC4 roadmap
-- [x] LOT A — Shared 30-second Signaling window, draggable navigator, independent cursor and follow-message; 26 tests and isolated browser window/cursor/ribbon checks passed.
+- [x] LOT A — Shared Signaling window and independent cursor with follow-message; the visible navigator bar was removed on request (1.79.1) and the timeline opens on the full capture. 20 window/cursor tests pass.
 - [x] LOT B — Public VM OpenAPI audit recorded in signaling-ue-state-audit.md; session correlation remains unverified. Stop before reconstruction pending evidence and explicit approval.
 - [x] Match Metrics presentation to KPI: compact catalog, selected rows, chart header and visualization controls; 12 regression tests and isolated browser chart/table/info/remove checks passed. Live VM readback unavailable without a session.
 - [x] Interactive Signaling cursor implementation and isolated tests: continuous axis, hover/click/drag/keyboard, local RF tooltips and proven links; no backend changes.
