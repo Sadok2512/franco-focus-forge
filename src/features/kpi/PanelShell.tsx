@@ -2,7 +2,9 @@
 // rename (double-click the title), duplicate when supported. Wraps the
 // existing KPI/Metrics cards so their header, Chart Settings, export and
 // fullscreen stay the single source of truth.
-import { useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+
+export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Columns2, Copy, GripVertical, Pencil } from "lucide-react";
 import { movePanel, panelOrder, presentPanels, usePanelLayout, type PanelSpan } from "./panel-layout";
@@ -19,6 +21,7 @@ export function PanelShell({
   children: (title: string) => ReactNode;
 }) {
   const { t } = useTranslation();
+  const { cols } = useContext(PanelGridContext);
   const [s, update] = usePanelLayout(workspaceId);
   const [editing, setEditing] = useState(false);
   const [over, setOver] = useState(false);
@@ -39,7 +42,7 @@ export function PanelShell({
       data-testid={`panel-${id}`}
       style={{
         order: panelOrder(s, id, natural),
-        gridColumn: span === "full" ? "1 / -1" : `span ${span}`,
+        gridColumn: span === "full" || span >= cols ? "1 / -1" : `span ${span}`,
         height: !collapsed && height ? `${height}px` : undefined,
       }}
       onDragOver={(e) => { if (e.dataTransfer.types.includes("application/x-bc4-panel")) { e.preventDefault(); setOver(true); } }}

@@ -204,6 +204,7 @@ export function MetricsWorkspace({
   onTablePaneChange,
   workspaceId = "default",
   onColumnsChange,
+  paneRequest = 0,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -217,6 +218,7 @@ export function MetricsWorkspace({
   onTablePaneChange?: ((table: boolean) => void) | undefined;
   workspaceId?: string | undefined;
   onColumnsChange?: ((cols: { code: string; label: string }[]) => void) | undefined;
+  paneRequest?: number | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [ts, updateTs] = useTableSettings(workspaceId);
@@ -492,6 +494,14 @@ export function MetricsWorkspace({
   useEffect(() => {
     onTablePaneChange?.(pane === "table");
   }, [pane, onTablePaneChange]);
+  const lastPaneRequest = useRef(paneRequest);
+  useEffect(() => {
+    if (lastPaneRequest.current === paneRequest) return;
+    lastPaneRequest.current = paneRequest;
+    setPaneRaw("table");
+    setView("table");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paneRequest]);
   const previousExternalView = useRef(externalView);
   useEffect(() => {
     if (previousExternalView.current === externalView) return;
