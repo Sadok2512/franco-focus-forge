@@ -1,4 +1,5 @@
 # BC4 roadmap
+- [x] Restore the UE State and RRC State lanes removed by the overlap fix; proven bands render on both signaling pages, Unknown shading stays honest (label suppressed only while a proven band of that technology is in view); 67 tests pass and the browser fixture shows both bands; real VM capture still unverified (rejected reader credentials).
 - [x] Add V7 Lucide icons to network events, tasks and mobility without changing the Network Events allowlist, source data or other panels; mobility events arriving with only the canonical `mobilite` lane now reach the Mobility lane with distinct glyphs and select exactly (browser fixture); real VM validation remains blocked by rejected stored credentials; no publication.
 - [x] Accept VM 0.74.10 RF pivot serialization for separately proven UE LTE and RRC Connected intervals; 60 tests pass and browser fixture shows both bands and cursor evidence at 15 s. No source reconstruction or publication.
 - [ ] Verify VM 0.74.10 real capture rendering — health confirms 0.74.10, but stored reader credentials return 401; authenticated capture/message/payload/GPS checks require updated secure access.
