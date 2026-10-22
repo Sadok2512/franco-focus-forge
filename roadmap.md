@@ -1,4 +1,5 @@
 # BC4 roadmap
+- [x] Stable Signaling cursor visibility — added crosshair activation control; fixture Playwright at 1973×1204 verifies clear/reactivate at 150 s, unchanged full-capture zoom and resize. 26 targeted tests and harness build pass; authenticated VM rendering remains blocked by rejected reader credentials.
 - [x] Time Cursor V3 — V2 blue navigator edge handles, independent cursor/window, 51 targeted tests and fixture Playwright 0–30/120–150/133.452 s validation; version 1.80.1, no publication. See signaling-cursor-v3-validation.md.
 - [ ] Time Cursor V3 authenticated capture, payload/list/GPS and visual approval — blocked because the VM rejects the securely stored reader credentials; fullscreen/live split-panel checks also await this session.
 - [x] Signaling V2 — /signaling-v2 opt-in state lanes, shared 30-second window, 10/30/60/120/Fit and draggable navigator; 37 tests and isolated browser checks passed. Public VM audit and proof report: signaling-v2-validation.md. Stable behavior preserved; no deployment or reconstruction.
