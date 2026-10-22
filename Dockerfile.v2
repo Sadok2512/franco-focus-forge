@@ -1,6 +1,6 @@
-# 1.80.4 — Image avec warm-up Vite au démarrage (élimine le cold-start
+# 1.81.0 — Image avec warm-up Vite au démarrage (élimine le cold-start
 # "Loading KPI catalogue…" vu par l'utilisateur après recréation du container).
-# NE REMPLACE PAS bc4-front-rf:1.71.2 : tag bc4-front-v2:1.80.4.
+# NE REMPLACE PAS bc4-front-rf:1.71.2 : tag bc4-front-v2:1.81.0.
 FROM oven/bun:1
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
@@ -11,7 +11,7 @@ ENV VITE_BC4_DATA=api
 ENV VITE_BC4_API_UPSTREAM=http://api:8000
 RUN bun run build
 LABEL org.opencontainers.image.revision="e0b45cc"
-LABEL org.opencontainers.image.version="1.80.4"
+LABEL org.opencontainers.image.version="1.81.0"
 LABEL org.opencontainers.image.title="BC4 Front Signaling v2 + warm-up"
 LABEL org.opencontainers.image.description="Coexistence /signaling + /signaling-v2 (GitHub exact UI pin 75061cc + BC4 adapter) + warm-up Vite au boot."
 RUN chmod +x /app/docker-warmup.sh

@@ -1085,3 +1085,102 @@
   font-size: 12px;
   flex-wrap: wrap;
 }
+
+/* 1.81.0 — Metrics Table Premium Phase 1 ---------------------------------
+   Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 : fond blanc/gris très clair,
+   bleu BC4 (#1769e0) accents, bordures fines, en-têtes bleutés, typographie
+   compacte, alignement rigoureux. Adaptive widths selon #columns. */
+.kpi-metrics-table-premium {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  overflow: hidden;
+}
+.kpi-metrics-table-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid #e6ecf3;
+  background: #f7f9fc;
+  font-size: 11px;
+}
+.kpi-metrics-table-counter {
+  font-weight: 600;
+  color: #0759c7;
+  margin-right: auto;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-metrics-table-toolbar .kpi-button {
+  padding: 3px 8px;
+  min-height: 26px;
+  font-size: 11px;
+}
+.kpi-metrics-table-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.kpi-metrics-table-body .kpi-table-scroll {
+  overflow: auto;
+  max-height: 600px;
+}
+.kpi-metrics-table-body table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11.5px;
+}
+.kpi-metrics-table-body thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, #f0f6ff 0%, #e8f1ff 100%);
+  color: #0f3a7e;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  text-align: left;
+  padding: 6px 8px;
+  border-bottom: 1px solid #cfd8e3;
+  white-space: nowrap;
+}
+.kpi-metrics-table-body thead th small {
+  font-weight: 400;
+  color: #5b6673;
+  text-transform: lowercase;
+  letter-spacing: 0;
+  margin-top: 1px;
+  font-size: 9.5px;
+}
+.kpi-metrics-table-body thead th.numeric {
+  text-align: right;
+}
+.kpi-metrics-table-body tbody td {
+  padding: 3px 8px;
+  border-bottom: 1px solid #f0f3f7;
+  white-space: nowrap;
+  min-height: 24px;
+  line-height: 1.4;
+}
+.kpi-metrics-table-body tbody td.numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-metrics-table-body tbody tr:hover td {
+  background: #eff5ff;
+}
+.kpi-metrics-table-body tbody tr:nth-child(2n) td {
+  background: #fafbfd;
+}
+.kpi-metrics-table-body tbody tr:nth-child(2n):hover td {
+  background: #eff5ff;
+}
+.kpi-metrics-table-body .col-time {
+  width: 180px;
+  min-width: 180px;
+}
+.kpi-metrics-table-body .col-geo {
+  width: 100px;
+  min-width: 100px;
+}

@@ -4,10 +4,46 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
+import { Columns3, Download, Filter, Maximize2 } from "lucide-react";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+
+// 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
+// Reconstitue le timestamp UTC absolu depuis le label de capture
+// (ex. "M1_FREE_DL-7Go_Max-10_W30_26Jun23_103320.4.nmf" → 2023-06-26)
+// + l'origin_ts du back (ex. "10:33:20.980") + t_rel_s de chaque row.
+function extractCaptureDate(label: string | undefined): string | null {
+  if (!label) return null;
+  const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_/);
+  if (!m) return null;
+  const months: Record<string, string> = {
+    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
+    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+  };
+  const [, d, monAbbr, yy] = m;
+  const mon = months[monAbbr!] ?? "01";
+  return `20${yy}-${mon}-${d}`;
+}
+function formatUtc(date: string | null, t_rel_s: number, originTs: string | null): string {
+  if (!date || !originTs) return "—";
+  // originTs = "HH:MM:SS.mmm" → add t_rel_s seconds
+  const parts = originTs.split(":");
+  if (parts.length !== 3) return "—";
+  const h = parseInt(parts[0]!, 10);
+  const m = parseInt(parts[1]!, 10);
+  const [sStr, msStr = "0"] = parts[2]!.split(".");
+  const s = parseInt(sStr!, 10);
+  const ms = parseInt(msStr.padEnd(3, "0").slice(0, 3), 10);
+  const baseMs = ((h * 3600 + m * 60 + s) * 1000) + ms;
+  const totalMs = baseMs + Math.round(t_rel_s * 1000);
+  const H = String(Math.floor(totalMs / 3_600_000) % 24).padStart(2, "0");
+  const M = String(Math.floor(totalMs / 60_000) % 60).padStart(2, "0");
+  const S = String(Math.floor(totalMs / 1000) % 60).padStart(2, "0");
+  const Ms = String(totalMs % 1000).padStart(3, "0");
+  return `${date}T${H}:${M}:${S}.${Ms}Z`;
+}
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
 const LABELS: Record<View, string> = {
@@ -385,110 +421,45 @@ export function MetricsWorkspace({
     a.click();
     URL.revokeObjectURL(url);
   };
+  // 1.81.0 — Spec Premium Adaptive Metrics Table Phase 1 :
+  // - Supprimé : titre "Metrics - cells and events", sous-titre Light/Deep,
+  //   Capture select, View select, Reset btn, Export CSV dupliqué, Search time.
+  //   Services backend conservés (captureQuery, data, exportCsv restent côté
+  //   JS). Si plusieurs captures : sélecteur discret dans toolbar via menu
+  //   Columns (Phase 2+). Pour l'instant, prend la 1re capture dispo si
+  //   captureId null.
+  useEffect(() => {
+    if (!captureId && captureQuery.data?.[0]) {
+      onCaptureChange(captureQuery.data[0].capture_id);
+    }
+  }, [captureId, captureQuery.data, onCaptureChange]);
+  const captureLabel = captureQuery.data?.find((c) => c.capture_id === captureId)?.label;
+  const captureDate = extractCaptureDate(captureLabel);
+  const originTs = data?.origin_ts ?? null;
   return (
-    <article className="kpi-graph-card col-span-full" data-testid="metrics-v3-workspace">
-      <header className="kpi-card-header">
-        <div>
-          <h3>{translate("metrics.ba86c69725e4")}</h3>
-          <p>
-            {data
-              ? `${data.decode_level === "deep" ? "Deep" : "Light"} ${data.decoder_version}`
-              : translate("metrics.8d75f000495f")}
-          </p>
-        </div>
-        <button className="kpi-button" onClick={onClear}>
-          {" "}
-          {translate("metrics.5b35e0e35591")}{" "}
+    <article className="kpi-graph-card col-span-full kpi-metrics-table-premium" data-testid="metrics-v3-workspace">
+      {/* Toolbar compacte : Columns | Filters | Export CSV | Fullscreen + compteur */}
+      <header className="kpi-metrics-table-toolbar">
+        <span className="kpi-metrics-table-counter">
+          {data?.columns.length ?? 0} metric{(data?.columns.length ?? 0) > 1 ? "s" : ""}
+        </span>
+        <button className="kpi-button" title="Columns (phase 2)" disabled>
+          <Columns3 size={13} /> Columns
+        </button>
+        <button className="kpi-button" title="Filters (phase 2)" disabled>
+          <Filter size={13} /> Filters
+        </button>
+        <button className="kpi-button" disabled={!data} onClick={exportCsv} title="Export CSV">
+          <Download size={13} /> Export CSV
+        </button>
+        <button
+          className="kpi-button"
+          title="Fullscreen (phase 3)"
+          onClick={() => document.querySelector(".kpi-metrics-table-premium")?.requestFullscreen?.()}
+        >
+          <Maximize2 size={13} /> Fullscreen
         </button>
       </header>
-      <div className="flex flex-wrap gap-2 items-center p-3 border-b">
-        <label className="text-xs">
-          Capture{" "}
-          <select
-            aria-label={translate("metrics.bd26d0b73036")}
-            className="kpi-select"
-            value={captureId ?? ""}
-            onChange={(e) => onCaptureChange(e.target.value)}
-          >
-            <option value="">{translate("metrics.afe552c801ae")}</option>
-            {captureId && !captureQuery.data?.some((c) => c.capture_id === captureId) && (
-              <option value={captureId}>{captureId}</option>
-            )}
-            {captureQuery.data?.map((c) => (
-              <option key={c.capture_id} value={c.capture_id}>
-                {c.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="text-xs">
-          {" "}
-          {translate("metrics.b111a2a2185c")}{" "}
-          <select
-            className="kpi-select"
-            aria-label={translate("metrics.015e85219fb0")}
-            value={view}
-            onChange={(e) => setView(e.target.value as View)}
-          >
-            {Object.entries(LABELS).map(([k, v]) => (
-              <option key={k} value={k}>
-                {v}
-              </option>
-            ))}
-          </select>
-        </label>
-        {view === "histogram" && (
-          <label className="text-xs">
-            {" "}
-            {translate("metrics.560b1e430bba")}{" "}
-            <select
-              className="kpi-select"
-              aria-label={translate("metrics.b7a9555413fc")}
-              value={groupBy}
-              onChange={(e) => setGroupBy(e.target.value)}
-            >
-              <option value="none">Population</option>
-              <option value="operator">{translate("metrics.3ec1ead23ec6")}</option>
-              <option value="band">{translate("metrics.a78d899fbf01")}</option>
-              <option value="operator_band">{translate("metrics.d070df0886e1")}</option>
-            </select>
-          </label>
-        )}
-        {view === "scatter" && (
-          <label className="text-xs">
-            X{" "}
-            <select
-              className="kpi-select"
-              aria-label={translate("metrics.7c804dfaa372")}
-              value={x}
-              onChange={(e) => setX(e.target.value)}
-            >
-              <option value="">{translate("metrics.bec8087f7b17")}</option>
-              {catalog
-                .filter((m) => m.available && m.kind === "numeric" && !m.alias_of)
-                .flatMap((m) =>
-                  m.cell_scoped
-                    ? m.cell_options
-                        .filter((c) => c.available)
-                        .map((c) => (
-                          <option key={`${m.code}@${c.cell}`} value={`${m.code}@${c.cell}`}>
-                            {m.label} · {c.label}
-                          </option>
-                        ))
-                    : [
-                        <option key={m.code} value={m.code}>
-                          {m.label}
-                        </option>,
-                      ],
-                )}
-            </select>
-          </label>
-        )}
-        <button className="kpi-button ml-auto" disabled={!data} onClick={exportCsv}>
-          {" "}
-          {translate("metrics.b84f9613287b")}{" "}
-        </button>
-      </div>
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : query.isPending ? (
@@ -525,51 +496,61 @@ export function MetricsWorkspace({
               </div>
             )}
             {view === "table" ? (
-              <div className="kpi-data-table">
-                <input
-                  className="m-2 border rounded px-2 bg-background text-xs"
-                  placeholder={translate("metrics.59623fc4cc6e")}
-                  aria-label={translate("metrics.5da2cea99150")}
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-                <div className="kpi-table-scroll" style={{ maxHeight: 420 }}>
+              <div className="kpi-data-table kpi-metrics-table-body">
+                <div className="kpi-table-scroll">
                   <table>
                     <thead>
                       <tr>
-                        <th>t capture (s)</th>
+                        <th className="col-time">
+                          Time (UTC)
+                          <small className="block">yyyy-mm-ddThh:mm:ss.sssZ</small>
+                        </th>
+                        <th className="col-geo numeric">
+                          Latitude
+                          <small className="block">°</small>
+                        </th>
+                        <th className="col-geo numeric">
+                          Longitude
+                          <small className="block">°</small>
+                        </th>
                         {data.columns.map((c) => (
-                          <th key={c.code} title={c.code}>
+                          <th key={c.code} title={c.code} className="numeric">
                             {c.label}
-                            <small className="block">{c.unit}</small>
+                            <small className="block">{c.unit || "—"}</small>
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows
-                        .filter((r) => !search || JSON.stringify(r).includes(search))
-                        .map((r) => (
-                          <tr key={r.second} data-second={r.second}>
-                            <td title={`seq ${r.seq_first}–${r.seq_last}`}>
-                              {fmt(r.t_rel_s)}
-                              <small className="block text-muted-foreground">{r.time_label}</small>
-                            </td>
-                            {data.columns.map((c) => (
-                              <td
-                                className="numeric"
-                                key={c.code}
-                                title={`n = ${r.counts[c.code] ?? "—"}`}
-                              >
-                                {c.kind === "event"
-                                  ? r.values[c.code] === 1
-                                    ? "1"
-                                    : ""
+                      {data.rows.map((r) => (
+                        <tr key={r.second} data-second={r.second}>
+                          <td
+                            className="col-time font-mono text-[11px]"
+                            title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
+                          >
+                            {formatUtc(captureDate, r.t_rel_s, originTs)}
+                          </td>
+                          {/* Phase 2 : join /signaling/points pour peupler lat/lng.
+                              Pour l'instant, "—" explicite (pas de 0 fabriqué). */}
+                          <td className="col-geo numeric text-muted-foreground">—</td>
+                          <td className="col-geo numeric text-muted-foreground">—</td>
+                          {data.columns.map((c) => (
+                            <td
+                              className="numeric"
+                              key={c.code}
+                              title={`n = ${r.counts[c.code] ?? "—"}`}
+                            >
+                              {c.kind === "event"
+                                ? r.values[c.code] === 1
+                                  ? "1"
+                                  : ""
+                                : r.values[c.code] == null
+                                  ? "—"
                                   : fmt(r.values[c.code])}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
