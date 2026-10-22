@@ -283,6 +283,7 @@ function Workspace({
   // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
   // mappe 1-pour-1 sur View (scatter en plus côté workspace, non exposé au sidebar).
   const [metricsView, setMetricsView] = useState<MetricsView>("table");
+  const [tableColumns, setTableColumns] = useState<{ code: string; label: string }[]>([]);
   const [metricsTablePane, setMetricsTablePane] = useState(false);
   const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
   const visualizeMetric = (code: string, view: MetricView) => {
@@ -765,6 +766,8 @@ function Workspace({
                   view={metricsView}
                   onViewChange={setMetricsView}
                   onTablePaneChange={setMetricsTablePane}
+                  workspaceId={tabsState.activeTabId}
+                  onColumnsChange={setTableColumns}
                   onClear={() => {
                     setSelectedMetrics([]);
                     void navigate({
@@ -836,6 +839,7 @@ function Workspace({
         </ResizablePanel>
       </ResizablePanelGroup>
       <WorkspaceTabsBar
+        columns={tableColumns}
         tabs={tabsState.tabs}
         activeTabId={tabsState.activeTabId}
         onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}
