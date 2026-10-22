@@ -468,56 +468,29 @@ export function KpiGraphCard({
           </p>
         </div>
         <div className="flex gap-0.5 shrink-0">
-          <button
-            className="kpi-icon"
-            title={translate("kpi.f8786dbaf46f")}
-            aria-label={`Infos ${entry.item.name}`}
-            onClick={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
-          >
-            <Info size={15} />
-          </button>
-          <button
-            className="kpi-icon"
-            title={translate("kpi.503e014294cc")}
-            aria-label={translate("kpi.9fca71a31208", { v0: entry.item.name })}
-            disabled={!taskView && !rows.length}
-            onClick={() =>
-              taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
-            }
-          >
-            <Download size={15} />
-          </button>
-          <button
-            className="kpi-icon"
-            title={translate("kpi.dee312b0129c")}
-            aria-label={translate("kpi.165b4b5c8a8d", { v0: entry.item.name })}
-            onClick={() => setFull(true)}
-          >
-            <Maximize2 size={15} />
-          </button>
           <Popover open={settings} onOpenChange={setSettings}>
             <PopoverAnchor asChild>
               <span className="inline-flex">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      ref={menuButton}
-                      className="kpi-icon"
-                      aria-label={`Actions ${entry.item.name}`}
+                <WorkspacePanelMenu
+                  label={`Actions ${entry.item.name}`}
+                  triggerRef={menuButton}
+                  onCloseAutoFocus={(event) => {
+                    if (settingsRequested.current) {
+                      event.preventDefault();
+                      settingsRequested.current = false;
+                      requestAnimationFrame(() => setSettings(true));
+                    }
+                  }}
+                >
+                    <DropdownMenuItem
+                      onSelect={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
                     >
-                      <MoreVertical size={16} />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    onCloseAutoFocus={(event) => {
-                      if (settingsRequested.current) {
-                        event.preventDefault();
-                        settingsRequested.current = false;
-                        requestAnimationFrame(() => setSettings(true));
-                      }
-                    }}
-                  >
+                      <Info size={14} /> {translate("panel.info")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setFull(true)}>
+                      <Maximize2 size={14} /> {translate("panel.fullscreen")}
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
                     <VisualizationItems
                       excludeGraph
