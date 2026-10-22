@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import { Download, Maximize2, X } from "lucide-react";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { Button } from "@/components/ui/button";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
@@ -659,32 +661,20 @@ export function MetricsWorkspace({
                 <h3 className="kpi-metrics-table-title" title={panelTitle}>
                   {panelTitle}
                 </h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={!data}
-                  onClick={exportCsv}
-                  title={translate("metrics.a78f2051e6c9")}
-                >
-                  <Download size={13} /> {translate("metrics.a78f2051e6c9")}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  title={translate("metrics.b62d901f4a73")}
-                  onClick={() => void panelRef.current?.requestFullscreen?.()}
-                >
-                  <Maximize2 size={13} /> {translate("metrics.b62d901f4a73")}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  title={translate("panel.remove")}
-                  aria-label={translate("panel.remove")}
-                  onClick={() => setPane("charts")}
-                >
-                  <X size={13} />
-                </Button>
+                <WorkspacePanelMenu label={translate("panel.actions")}>
+                  <DropdownMenuItem disabled={!data} onSelect={exportCsv}>
+                    <Download size={14} /> {translate("panel.export_csv")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onSelect={() => void panelRef.current?.requestFullscreen?.()}
+                  >
+                    <Maximize2 size={14} /> {translate("panel.fullscreen")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={() => setPane("charts")}>
+                    <X size={14} /> {translate("panel.remove")}
+                  </DropdownMenuItem>
+                </WorkspacePanelMenu>
               </header>
               {!captureId ? (
                 <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
