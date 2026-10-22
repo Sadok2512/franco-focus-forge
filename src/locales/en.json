@@ -723,6 +723,11 @@
     "add_kpi": "Add KPI",
     "add_series": "Add Task Time Series",
     "add_timeline": "Add Timeline",
-    "timeline_unavailable": "available in Signaling only"
+    "timeline_unavailable": "available in Signaling only",
+    "actions": "Panel actions",
+    "visualization": "Visualization",
+    "export_csv": "Export CSV",
+    "fullscreen": "Fullscreen",
+    "info": "Information"
   }
 }
