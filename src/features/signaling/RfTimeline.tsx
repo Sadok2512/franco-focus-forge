@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
 import { WindowSelector } from "./WindowSelector";
+import { eventIcon, iconImage } from "./event-icons";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -298,7 +299,7 @@ export function RfTimeline({
     redrawCursor((revision) => revision + 1);
   }, [visibleWindow[0], visibleWindow[1], duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
-  const trackHeight = stateTracksV2 ? lanes.length * 34 : 216;
+  const trackHeight = stateTracksV2 ? lanes.length * 44 : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
   const chartHeight = stateTracksV2 ? rfTop + 3 * 60 + 16 : 470;
   useEffect(() => {
@@ -306,6 +307,9 @@ export function RfTimeline({
     if (!c) return;
     const fmtT = (v: number) =>
       v.toLocaleString(i18n.language, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+    const tokens = getComputedStyle(document.documentElement);
+    const iconForeground = tokens.getPropertyValue("--signaling-icon-foreground").trim();
+    const labelColor = tokens.getPropertyValue("--muted-foreground").trim();
     const renderItem: CustomSeriesRenderItem = (params, api) => {
       const lane = Number(api.value(0)),
         start = api.coord([api.value(1), lane]),
@@ -313,6 +317,8 @@ export function RfTimeline({
       const item = displayed[params.dataIndex];
       if (!item) return;
       const track = item.attrs.track ?? "";
+      const marker = eventIcon(item);
+      const markerColor = tokens.getPropertyValue(`--signaling-icon-${marker.role}`).trim();
       const isBand =
         track === "lte" ||
         track === "nsa" ||
@@ -390,12 +396,23 @@ export function RfTimeline({
             },
           } as never);
       } else if (item.t_rel_end_s !== null && item.t_rel_end_s > (item.t_rel_s ?? 0)) {
-        // Task bar with Start / End captions when there is room.
+        // Task icons remain part of the same event group and share its hit target.
         children.push({
           type: "rect",
           shape: { x: start[0]!, y: start[1]! - 7, width, height: 14, r: 7 },
           style: { fill: color, opacity },
         });
+        if (width > 28) {
+          children.push({
+            type: "image",
+            style: { image: iconImage(marker.icon, iconForeground), x: left + 4, y: (start[1] ?? 0) - 6, width: 12, height: 12 },
+          });
+          children.push({
+            type: "circle",
+            shape: { cx: right - 3, cy: start[1] ?? 0, r: 3 },
+            style: { fill: iconForeground, stroke: color, lineWidth: 1 },
+          });
+        }
         if (width > 90)
           children.push({
             type: "text",
@@ -436,20 +453,37 @@ export function RfTimeline({
           } as never);
         }
       } else {
-        // Point event: icon dot, with label + timestamp when zoomed in.
+        // Lucide icon badge with a stem anchored at the exact capture timestamp.
+        const x = start[0] ?? 0;
+        const y = start[1] ?? 0;
+        children.push({
+          type: "line",
+          shape: { x1: x, y1: y - 2, x2: x, y2: y + 10 },
+          style: { stroke: markerColor, lineWidth: 1.5, opacity },
+        });
         children.push({
           type: "circle",
-          shape: { cx: start[0]!, cy: start[1]!, r: 6 },
-          style: { fill: color, stroke: "#ffffff", lineWidth: 1.5, opacity },
+          shape: { cx: x, cy: y - 7, r: 10 },
+          style: { fill: markerColor, stroke: iconForeground, lineWidth: 1.5, opacity },
         });
-        if (showLabels)
+        children.push({
+          type: "image",
+          style: { image: iconImage(marker.icon, iconForeground), x: x - 7, y: y - 14, width: 14, height: 14 },
+        });
+        children.push({
+          type: "circle",
+          shape: { cx: x, cy: y + 10, r: 2 },
+          style: { fill: markerColor, opacity },
+        });
+        const nearby = displayed.some((other) => other.id !== item.id && laneOf(other.attrs.track) === laneOf(track) && other.t_rel_s !== null && Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90);
+        if (showLabels && !nearby)
           children.push({
             type: "text",
             style: {
               x: start[0]!,
-              y: start[1]! + 12,
+              y: y + 13,
               text: `${item.label}\n${fmtT(item.t_rel_s ?? 0)} s`,
-              fill: "#475569",
+              fill: labelColor,
               fontSize: 8,
               align: "center",
               verticalAlign: "top",
