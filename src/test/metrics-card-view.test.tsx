@@ -3,10 +3,22 @@
 // graph and the click was silently ignored).
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import type { MetricInfo } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
+
+beforeAll(() => {
+  // jsdom has no ResizeObserver; recharts' ResponsiveContainer needs it.
+  vi.stubGlobal(
+    "ResizeObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+});
 
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: vi.fn().mockResolvedValue({
