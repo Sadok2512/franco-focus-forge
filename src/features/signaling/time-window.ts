@@ -24,6 +24,18 @@ export function followMessage(
   const width = window[1] - window[0];
   return clampWindow(duration, time - width / 2, width);
 }
+export function resizeWindow(
+  window: TimeWindow,
+  edge: "start" | "end",
+  time: number,
+  duration: number,
+): TimeWindow {
+  if (!Number.isFinite(time) || duration <= 0) return window;
+  const minimum = Math.min(0.1, duration);
+  return edge === "start"
+    ? [Math.max(0, Math.min(time, window[1] - minimum)), window[1]]
+    : [window[0], Math.min(duration, Math.max(time, window[0] + minimum))];
+}
 export function useTimeWindow(
   captureId: string | undefined,
   duration: number,

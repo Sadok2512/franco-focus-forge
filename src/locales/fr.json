@@ -418,6 +418,8 @@
     "next": "Fenêtre suivante",
     "size": "Taille de fenêtre",
     "window": "Fenêtre temporelle visible",
+    "start": "Redimensionner le début de la fenêtre",
+    "end": "Redimensionner la fin de la fenêtre",
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "reset": "Retour à 0–30 s",

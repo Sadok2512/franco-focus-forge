@@ -8,7 +8,7 @@ import { FULL_CAPTURE_S, followMessage, useTimeWindow } from "@/features/signali
 import { TimeNavigator } from "@/features/signaling/TimeNavigator";
 import { Button } from "@/components/ui/button";
 import "@/features/signaling/signaling.css";
-export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) {
+export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false, duration = 300) {
   const host = document.createElement("div");
   host.id = "cursor-test-host";
   host.style.cssText =
@@ -17,7 +17,7 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) 
   function Harness() {
     const { window, setWindow } = useTimeWindow(
       "cursor-test",
-      300,
+      duration,
       stateTracksV2 ? 30 : FULL_CAPTURE_S,
     );
     const [state, setState] = useState<{ time: number | null; id: string | null }>({
@@ -31,7 +31,7 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) 
           <Button
             onClick={() => {
               setState({ time: 245.318, id: "scg" });
-              setWindow(followMessage(window, 245.318, 300));
+              setWindow(followMessage(window, 245.318, duration));
             }}
           >
             Select fixture message #1012
@@ -60,12 +60,12 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) 
           onWindow={setWindow}
           stateTracksV2={stateTracksV2}
         />
-        {stateTracksV2 && <TimeNavigator duration={300} window={window} onWindow={setWindow} />}
+        {stateTracksV2 && <TimeNavigator duration={duration} window={window} onWindow={setWindow} />}
         <div style={{ height: 220 }}>
           <EventRibbon
             projectId="cursor-test"
             captureId="cursor-test"
-            duration={300}
+            duration={duration}
             timeWindow={window}
             selectedTime={state.time}
             onTime={(time) => setState({ time, id: null })}

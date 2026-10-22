@@ -1,3 +1,9 @@
+## 1.80.1 — Signaling V3 cursor and navigator integrity
+
+- Existing V2 30-second navigator gains independent pointer and keyboard resize handles with bounded capture-time edges and blue semantic styling; presets, move, zoom, reset and Fit remain available.
+- Cursor handle pointer events no longer propagate to the chart; proven state validation is cached independently of cursor motion. Shared cursor time and visible window remain separate, with no movement-driven requests.
+- Stable /signaling, source evidence, message filters, payload and GPS behavior remain unchanged. No production deployment.
+
 ## 1.80.0 — Isolated Signaling V2 state tracks and navigator
 
 - Added /signaling-v2 with a shared 30-second initial window, 10/30/60/120/Fit controls and a draggable full-capture overview. Stable /signaling retains its full-capture default and no navigator.

@@ -120,6 +120,7 @@
   --signaling-state-connected: #16A36B;
   --signaling-state-text: #FFFFFF;
   --signaling-cursor: #EF4444;
+  --signaling-navigator: #2563EB;
   --signaling-cursor-foreground: #FFFFFF;
   color-scheme: light;
   --radius: 0.5rem;

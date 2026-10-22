@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Scan } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WindowSelector } from "./WindowSelector";
-import { clampWindow, type TimeWindow } from "./time-window";
+import { clampWindow, resizeWindow, type TimeWindow } from "./time-window";
 
 export function TimeNavigator({
   duration,
@@ -15,7 +15,12 @@ export function TimeNavigator({
   onWindow: (window: TimeWindow) => void;
 }) {
   const { t, i18n } = useTranslation();
-  const drag = useRef<{ x: number; start: number; width: number } | null>(null);
+  const drag = useRef<{
+    x: number;
+    window: TimeWindow;
+    pixels: number;
+    edge?: "start" | "end";
+  } | null>(null);
   const width = window[1] - window[0];
   const fmt = (time: number) =>
     time.toLocaleString(i18n.language, { minimumFractionDigits: 3, maximumFractionDigits: 3 });
@@ -72,20 +77,26 @@ export function TimeNavigator({
             event.target === event.currentTarget
               ? clampWindow(duration, time - width / 2, width)[0]
               : window[0];
-          drag.current = { x: event.clientX, start, width: rect.width };
+          const handle = (event.target as HTMLElement).closest<HTMLElement>("[data-edge]");
+          const edge = handle?.dataset["edge"];
+          drag.current = {
+            x: event.clientX,
+            window: clampWindow(duration, start, width),
+            pixels: rect.width,
+            ...(edge === "start" || edge === "end" ? { edge } : {}),
+          };
           event.currentTarget.setPointerCapture(event.pointerId);
           onWindow(clampWindow(duration, start, width));
         }}
         onPointerMove={(event) => {
           const current = drag.current;
-          if (current)
-            onWindow(
-              clampWindow(
-                duration,
-                current.start + ((event.clientX - current.x) / current.width) * duration,
-                width,
-              ),
-            );
+          if (!current || current.pixels <= 0) return;
+          const delta = ((event.clientX - current.x) / current.pixels) * duration;
+          onWindow(current.edge
+            ? resizeWindow(current.window, current.edge,
+                current.window[current.edge === "start" ? 0 : 1] + delta, duration)
+            : clampWindow(duration, current.window[0] + delta,
+                current.window[1] - current.window[0]));
         }}
         onPointerUp={() => {
           drag.current = null;
@@ -95,7 +106,7 @@ export function TimeNavigator({
         }}
       >
         <div
-          className="absolute inset-y-0 min-w-1 cursor-ew-resize rounded border border-primary bg-primary/20 focus-visible:outline focus-visible:outline-ring"
+          className="signaling-navigator-window absolute inset-y-0 min-w-1 cursor-ew-resize rounded border focus-visible:outline focus-visible:outline-ring"
           role="slider"
           tabIndex={0}
           aria-label={t("timeNavigator.window")}
@@ -119,7 +130,26 @@ export function TimeNavigator({
               );
             }
           }}
-        />
+        >
+          {(["start", "end"] as const).map((edge) => (
+            <Button
+              key={edge}
+              variant="ghost"
+              size="icon"
+              data-edge={edge}
+              data-testid={`time-navigator-${edge}`}
+              aria-label={t(`timeNavigator.${edge}`)}
+              className={`signaling-navigator-edge absolute inset-y-0 h-full w-2 min-w-0 cursor-ew-resize p-0 ${edge === "start" ? "left-0" : "right-0"}`}
+              onKeyDown={(event) => {
+                if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+                event.preventDefault();
+                event.stopPropagation();
+                onWindow(resizeWindow(window, edge,
+                  window[edge === "start" ? 0 : 1] + (event.key === "ArrowLeft" ? -0.1 : 0.1), duration));
+              }}
+            />
+          ))}
+        </div>
       </div>
       <div className="mt-1 flex justify-between gap-2 font-mono text-[10px] text-muted-foreground">
         <span>0 s</span>

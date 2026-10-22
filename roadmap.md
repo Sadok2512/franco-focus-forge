@@ -1,4 +1,6 @@
 # BC4 roadmap
+- [x] Time Cursor V3 — V2 blue navigator edge handles, independent cursor/window, 51 targeted tests and fixture Playwright 0–30/120–150/133.452 s validation; version 1.80.1, no publication. See signaling-cursor-v3-validation.md.
+- [ ] Time Cursor V3 authenticated capture, payload/list/GPS and visual approval — blocked because the VM rejects the securely stored reader credentials; fullscreen/live split-panel checks also await this session.
 - [x] Signaling V2 — /signaling-v2 opt-in state lanes, shared 30-second window, 10/30/60/120/Fit and draggable navigator; 37 tests and isolated browser checks passed. Public VM audit and proof report: signaling-v2-validation.md. Stable behavior preserved; no deployment or reconstruction.
 - [ ] Signaling V2 real UE/RRC/CA proof and authenticated full-page validation — blocked by unavailable authorized VM capture payloads; unvalidated reconstruction remains disabled pending evidence and explicit approval.
 - [x] Limit Network Events timeline marks to RRC Request, RRC Release and SCG without changing source data or messages; 25 tests and isolated browser filtering/mobility/cursor checks passed. Real VM capture remains unverified without an authorized session.
