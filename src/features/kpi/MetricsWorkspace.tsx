@@ -584,10 +584,13 @@ export function MetricsWorkspace({
                     );
                   }
                 }}
-                view="graph"
-                onViewChange={() => {
-                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
-                }}
+                view={cardViews[s.full] ?? "graph"}
+                onViewChange={(v) =>
+                  setCardViews((m) => {
+                    if (m[s.full] === v) return m;
+                    return { ...m, [s.full]: v };
+                  })
+                }
               />
             );
           })}
