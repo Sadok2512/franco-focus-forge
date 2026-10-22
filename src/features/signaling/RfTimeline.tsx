@@ -656,13 +656,31 @@ export function RfTimeline({
           type: "category",
           inverse: true,
           data: lanes.map((k) =>
-            stateTracksV2 && k === "rrcstate" ? "" : t(
-              stateTracksV2 && (k === "uestate" || k === "rrcstate")
-                ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
-                : `rfTimeline.${k}`,
-            ),
+            stateTracksV2 && k === "rrcstate"
+              ? rrcStateLaneLabel(t("signalingV2.rrcState"), t("signalingV2.idle"))
+              : t(
+                  stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                    ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                    : `rfTimeline.${k}`,
+                ),
           ),
-          axisLabel: { color: "#94a3b8", fontSize: 11 },
+          axisLabel: {
+            color: "#94a3b8",
+            fontSize: 11,
+            rich: {
+              title: { color: "#94a3b8", fontSize: 11, fontWeight: 600 },
+              idle: {
+                color: "#64748B",
+                backgroundColor: "rgba(148, 163, 184, 0.22)",
+                borderColor: "rgba(148, 163, 184, 0.5)",
+                borderWidth: 1,
+                borderRadius: 8,
+                padding: [2, 7, 2, 7],
+                fontSize: 10,
+                fontWeight: 600,
+              },
+            },
+          },
           axisTick: { show: false },
           axisLine: { show: false },
         },
