@@ -573,6 +573,16 @@ function Workspace({
               />
             )}
           </div>
+        </ResizablePanel>
+        <ResizableHandle
+          withHandle
+          className="kpi-resize-handle"
+          aria-label={translate("kpi.9afd5ab37dac")}
+        />
+        <ResizablePanel id="kpi-analysis-panel" minSize="300px">
+          <div
+            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
+          >
             {limitMessage && (
               <p role="status" className="text-xs text-amber-700">
                 {limitMessage}
