@@ -126,7 +126,10 @@ export function RfTimeline({
   const localWindow = useTimeWindow(captureId, duration);
   const visibleWindow = timeWindow ?? localWindow.window;
   const changeWindow = onWindow ?? localWindow.setWindow;
-  const zoom: [number, number] = duration > 0 ? [visibleWindow[0] / duration * 100, visibleWindow[1] / duration * 100] : [0, 100];
+  const zoom: [number, number] =
+    duration > 0
+      ? [(visibleWindow[0] / duration) * 100, (visibleWindow[1] / duration) * 100]
+      : [0, 100];
   const windowCallbacks = useRef({ changeWindow, duration });
   windowCallbacks.current = { changeWindow, duration };
   const cursorSeries = useMemo(
@@ -174,7 +177,7 @@ export function RfTimeline({
         const z = option.dataZoom[0];
         if (z) {
           const { changeWindow, duration } = windowCallbacks.current;
-          changeWindow([duration * z.start / 100, duration * z.end / 100]);
+          changeWindow([(duration * z.start) / 100, (duration * z.end) / 100]);
         }
       });
       c.on("brushEnd", (ev: unknown) => {
@@ -226,7 +229,10 @@ export function RfTimeline({
   useEffect(() => {
     const c = chart.current;
     if (!c || !duration || !c.getOption()?.["xAxis"]) return;
-    c.dispatchAction({ type: "dataZoom", startValue: visibleWindow[0], endValue: visibleWindow[1] }, { silent: true });
+    c.dispatchAction(
+      { type: "dataZoom", startValue: visibleWindow[0], endValue: visibleWindow[1] },
+      { silent: true },
+    );
   }, [visibleWindow[0], visibleWindow[1], duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   useEffect(() => {
@@ -418,8 +424,22 @@ export function RfTimeline({
         },
       ],
       dataZoom: [
-        { type: "inside", xAxisIndex: [0, 1], filterMode: "none", zoomOnMouseWheel: "ctrl", startValue: visibleWindow[0], endValue: visibleWindow[1] },
-        { type: "slider", show: false, xAxisIndex: [0, 1], filterMode: "none", startValue: visibleWindow[0], endValue: visibleWindow[1] },
+        {
+          type: "inside",
+          xAxisIndex: [0, 1],
+          filterMode: "none",
+          zoomOnMouseWheel: "ctrl",
+          startValue: visibleWindow[0],
+          endValue: visibleWindow[1],
+        },
+        {
+          type: "slider",
+          show: false,
+          xAxisIndex: [0, 1],
+          filterMode: "none",
+          startValue: visibleWindow[0],
+          endValue: visibleWindow[1],
+        },
       ],
       brush: { xAxisIndex: [0, 1], brushType: "lineX", toolbox: ["lineX", "clear"] },
       tooltip: {
@@ -481,10 +501,7 @@ export function RfTimeline({
         <span className="flex items-center gap-2" aria-hidden="true">
           {severityLegend.map((s) => (
             <span key={s.key} className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <span
-                className="inline-block h-2 w-2 rounded-full"
-                style={{ background: s.color }}
-              />
+              <span className="inline-block h-2 w-2 rounded-full" style={{ background: s.color }} />
               {t(`rfTimeline.legend.${s.key}`)}
             </span>
           ))}
@@ -609,7 +626,9 @@ export function RfTimeline({
           />
         </div>
       </div>
-      {!onWindow && <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />}
+      {!onWindow && (
+        <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
+      )}
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}

@@ -112,12 +112,21 @@ export function EventRibbon({
   const TOP = 32;
   const activeLanes = LANES.filter((lane) => events.some((event) => event.lane === lane.key));
   const H = TOP + activeLanes.length * LANE_H + 10;
-  const X = (time: number) => L_LABEL + ((time - timeWindow[0]) / Math.max(0.001, timeWindow[1] - timeWindow[0])) * (W - L_LABEL - R_PAD);
+  const X = (time: number) =>
+    L_LABEL +
+    ((time - timeWindow[0]) / Math.max(0.001, timeWindow[1] - timeWindow[0])) *
+      (W - L_LABEL - R_PAD);
   const atPointer = (element: SVGSVGElement, clientX: number) => {
     const rect = element.getBoundingClientRect();
     const px = ((clientX - rect.left) / rect.width) * W;
     if (px < L_LABEL || px > W - R_PAD) return null;
-    return Math.max(timeWindow[0], Math.min(timeWindow[1], timeWindow[0] + (px - L_LABEL) / (W - L_LABEL - R_PAD) * (timeWindow[1] - timeWindow[0])));
+    return Math.max(
+      timeWindow[0],
+      Math.min(
+        timeWindow[1],
+        timeWindow[0] + ((px - L_LABEL) / (W - L_LABEL - R_PAD)) * (timeWindow[1] - timeWindow[0]),
+      ),
+    );
   };
 
   const counts =
@@ -155,7 +164,8 @@ export function EventRibbon({
               aria-pressed={on}
               data-testid={`ribbon-chip-${l.key}`}
             >
-              {t(`timeNavigator.lanes.${l.key}`)} <span className="font-mono text-[10px] opacity-70">{n}</span>
+              {t(`timeNavigator.lanes.${l.key}`)}{" "}
+              <span className="font-mono text-[10px] opacity-70">{n}</span>
             </Button>
           );
         })}
@@ -195,14 +205,30 @@ export function EventRibbon({
             if (drag.current && time !== null) onTime(time);
             else setPreview(time);
           }}
-          onPointerUp={() => { drag.current = false; setPreview(null); }}
-          onPointerCancel={() => { drag.current = false; }}
-          onPointerLeave={() => { if (!drag.current) setPreview(null); }}
+          onPointerUp={() => {
+            drag.current = false;
+            setPreview(null);
+          }}
+          onPointerCancel={() => {
+            drag.current = false;
+          }}
+          onPointerLeave={() => {
+            if (!drag.current) setPreview(null);
+          }}
           onKeyDown={(ev) => {
-            if (ev.key === "Escape") { onTime(null); setPreview(null); }
+            if (ev.key === "Escape") {
+              onTime(null);
+              setPreview(null);
+            }
             if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
               ev.preventDefault();
-              const times = [...new Set(events.flatMap((e) => [e.t_rel_s, e.t_rel_end_s]).filter((v): v is number => v !== null))].sort((a, b) => a - b);
+              const times = [
+                ...new Set(
+                  events
+                    .flatMap((e) => [e.t_rel_s, e.t_rel_end_s])
+                    .filter((v): v is number => v !== null),
+                ),
+              ].sort((a, b) => a - b);
               onTime(stepTime(times, selectedTime, ev.key === "ArrowLeft" ? -1 : 1));
             }
           }}
@@ -247,7 +273,12 @@ export function EventRibbon({
           })}
           {/* Events */}
           {events.map((e) => {
-            if (e.t_rel_s === null || e.t_rel_s > timeWindow[1] || (e.t_rel_end_s ?? e.t_rel_s) < timeWindow[0]) return null;
+            if (
+              e.t_rel_s === null ||
+              e.t_rel_s > timeWindow[1] ||
+              (e.t_rel_end_s ?? e.t_rel_s) < timeWindow[0]
+            )
+              return null;
             const laneIdx = activeLanes.findIndex((l) => l.key === e.lane);
             if (laneIdx < 0) return null;
             const y = TOP + laneIdx * LANE_H + LANE_H / 2;
@@ -263,7 +294,10 @@ export function EventRibbon({
               className: "cursor-pointer",
               onClick: (ev: { stopPropagation(): void }) => {
                 ev.stopPropagation();
-                if (e.t_rel_s !== null) { setPreview(null); onTime(e.t_rel_s); }
+                if (e.t_rel_s !== null) {
+                  setPreview(null);
+                  onTime(e.t_rel_s);
+                }
                 onSelect(e);
               },
               "data-event": true,
