@@ -30,10 +30,7 @@ export function useTimeWindow(
   defaultWidth = DEFAULT_WINDOW_S,
 ) {
   const [request, setRequest] = useState({ start: 0, width: defaultWidth });
-  useEffect(
-    () => setRequest({ start: 0, width: defaultWidth }),
-    [captureId, defaultWidth],
-  );
+  useEffect(() => setRequest({ start: 0, width: defaultWidth }), [captureId, defaultWidth]);
   const window = clampWindow(duration, request.start, request.width);
   const setWindow = useCallback((next: TimeWindow) => {
     setRequest({ start: next[0], width: next[1] - next[0] });
