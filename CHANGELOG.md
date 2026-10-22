@@ -1,4 +1,12 @@
+## 1.98.0 (minor) — BC4-FRONT 2026-10-22 — Signaling : barre des messages compactée (compteur, recherche, actions en icônes) (Agent Lovable)
+
+- SignalingPage: dans la barre du tableau des messages, les actions « Colonnes (12/17) », « Export CSV » et « Effacer les filtres » deviennent des boutons icônes seuls (`sig-tool-icon`) — leur nom reste porté par `aria-label`/`title`, et celui de Colonnes conserve le compte « visibles/total ». La recherche devient un champ compact et élastique (130 px mini, 220 px maxi, contre 200–260 px avant) et l'en-tête est resserré (`gap-1.5 px-2.5 py-1.5`).
+- signaling.css: `.sig-count` passe en `flex: 0 0 auto` (jamais compressé, jamais coupé), `.sig-search` compact, nouvelle classe `.sig-tool-icon` (32 px, centré).
+- Aucune chaîne ajoutée : `sigTable.columns`, `sigTable.export`, `sigTable.clear` (fr/en en paire) sont réutilisées comme noms accessibles. Typecheck clean, 276 tests passent (2 skipped), build OK.
+- Navigateur (données de démonstration, session demo) : compteur « 2,043 messages » lu en premier, jamais coupé, menu Colonnes ouvert avec ses 17 lignes, bouton porteur de `aria-label="Columns (12/17)"`, trois actions rendues sans libellé texte, aucune erreur de page.
+
 ## 1.97.0 (patch) — BC4-FRONT 2026-10-22 — Signaling : titre « Trajet · GPS précédent » supprimé (Agent Lovable)
+
 
 - SignalingPage: le titre de la zone carte est supprimé; le panneau garde un nom accessible via `aria-label={t("signalingV2.map")}` (« Carte » / « Map »), et la hauteur libérée profite à la carte.
 - Aucune chaîne ajoutée (clé existante réutilisée), fr/en déjà en paire. Typecheck clean, 276 tests passent (2 skipped), build OK.
