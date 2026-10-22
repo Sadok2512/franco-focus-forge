@@ -134,3 +134,40 @@ describe("Signaling V2 evidence gates", () => {
     expect(followMessage([0, 30], 245.318, 632.851)).toEqual([230.318, 260.318]);
   });
 });
+
+describe("LTE Connected via (capture_id, context_id)", () => {
+  const base = {
+    id: "ctx",
+    seq: 84,
+    seq_end: 95,
+    t_rel_s: 0.001,
+    t_rel_end_s: 1.5,
+    attrs: {
+      track: "lte",
+      technology: "LTE",
+      capture_id: "cap",
+      context_id: "7",
+      source_seqs: [72, 84, 95],
+      evidence_status: "PROVEN",
+      rule_id: "nemo_context_connected",
+      rule_version: "1.0.0",
+    },
+  } as unknown as Parameters<typeof provenState>[0];
+  const withAttrs = (x: Record<string, unknown>) =>
+    ({ ...base, attrs: { ...base.attrs, ...x } }) as typeof base;
+  it("accepts the full RRA -> RRC -> RRD chain with composite id", () => {
+    expect(provenState(base, "cap")?.sessionId).toBe("cap:7");
+  });
+  it("rejects PARTIAL evidence", () => {
+    expect(provenState(withAttrs({ evidence_status: "PARTIAL" }), "cap")).toBeNull();
+  });
+  it("rejects another rule", () => {
+    expect(provenState(withAttrs({ rule_id: "other" }), "cap")).toBeNull();
+  });
+  it("rejects incomplete chain", () => {
+    expect(provenState(withAttrs({ source_seqs: [84, 95] }), "cap")).toBeNull();
+  });
+  it("rejects missing capture_id", () => {
+    expect(provenState(withAttrs({ capture_id: undefined }), "cap")).toBeNull();
+  });
+});
