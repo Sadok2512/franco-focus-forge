@@ -374,6 +374,7 @@
     "0966c76fb9af": "Nuage (vs radio)",
     "16d2f405b392": "Mesures non appariables pour cette combinaison d’axes : l’API fournit des agrégats, sans observations appariées ni Task Time.",
     "f0153ab1a288": "Aucune observation géolocalisée disponible pour ce KPI dans la réponse API. Les agrégats ne permettent pas de positionner des mesures.",
+    "9c4f0a2b6d17": "Catalogue des axes non exposé par l’API",
     "5dcc75c368f9": "KPI agrégés",
     "03d088bb06c0": "Plaque",
     "5fcd67575ab2": "Zone ARCEP",

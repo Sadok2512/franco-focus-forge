@@ -27,19 +27,17 @@ export function VisualizationItems({
         .filter((mode) => mode !== "task_scatter" || throughput)
         .map((mode) => {
           const Icon = icons[mode];
+          // Task Time needs a series; the scatter plot needs an axis catalogue
+          // the API does not expose — both stay visible but disabled and explained.
+          const disabled = mode === "task_series" ? !seriesAvailable : mode === "task_scatter";
+          const title = disabled
+            ? mode === "task_series"
+              ? translate("kpi.20b75fa9e2fc")
+              : translate("kpi.9c4f0a2b6d17")
+            : undefined;
           return (
-            <span
-              key={mode}
-              title={
-                mode === "task_series" && !seriesAvailable
-                  ? translate("kpi.20b75fa9e2fc")
-                  : undefined
-              }
-            >
-              <DropdownMenuItem
-                disabled={mode === "task_series" && !seriesAvailable}
-                onSelect={() => onChange(mode)}
-              >
+            <span key={mode} title={title}>
+              <DropdownMenuItem disabled={disabled} onSelect={() => onChange(mode)}>
                 <Icon size={14} />
                 {VISUALIZATIONS[mode]}
               </DropdownMenuItem>

@@ -61,7 +61,8 @@ export function MessageFilterPopover({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [draft, setDraft] = useState<MessageSelection>(selection);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  // Tree starts closed: nothing is expanded until the user opens a group.
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const techLabel = (tech: MessageTech) => t(`sigFilters.tech.${tech}`);
   const tree = useMemo(() => buildMessageTree(types), [types]);
   const visibleTree = useMemo(
@@ -73,9 +74,9 @@ export function MessageFilterPopover({
   const chosen = draft ?? types.map((type) => type.key);
   const chosenSet = useMemo(() => new Set(chosen), [chosen]);
   const searching = query.trim() !== "";
-  const isOpen = (id: string) => searching || !collapsed.has(id);
+  const isOpen = (id: string) => searching || expanded.has(id);
   const toggle = (id: string) =>
-    setCollapsed((c) => {
+    setExpanded((c) => {
       const n = new Set(c);
       if (n.has(id)) n.delete(id);
       else n.add(id);
@@ -86,6 +87,7 @@ export function MessageFilterPopover({
     if (next) {
       setDraft(selection);
       setQuery("");
+      setExpanded(new Set());
       onRequest();
     }
     setOpen(next);
@@ -96,6 +98,7 @@ export function MessageFilterPopover({
     <button
       type="button"
       className="sig-tree-chevron"
+      data-testid={`tree-chevron-${id}`}
       aria-label={t(isOpen(id) ? "sigFilters.collapseGroup" : "sigFilters.expandGroup")}
       aria-expanded={isOpen(id)}
       onClick={() => toggle(id)}
@@ -181,7 +184,7 @@ export function MessageFilterPopover({
             variant="ghost"
             size="sm"
             disabled={searching}
-            onClick={() => setCollapsed(new Set())}
+            onClick={() => setExpanded(new Set(groupIds))}
           >
             {t("sigFilters.expandAll")}
           </Button>
@@ -189,7 +192,7 @@ export function MessageFilterPopover({
             variant="ghost"
             size="sm"
             disabled={searching}
-            onClick={() => setCollapsed(new Set(groupIds))}
+            onClick={() => setExpanded(new Set())}
           >
             {t("sigFilters.collapseAll")}
           </Button>

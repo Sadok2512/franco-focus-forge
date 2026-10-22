@@ -1,3 +1,15 @@
+## 1.83.2 — Message filter tree closed by default
+- "Filter Messages" now opens with every technology and channel group closed: only the top-level technologies are listed, each with its own chevron.
+- Expanding a technology reveals its channels, expanding a channel reveals its messages; "Expand All" / "Collapse All" and search still work (a search temporarily reveals matches without touching the stored expansion state).
+- Selection, whole-capture counters, Apply/Cancel behaviour and payload preservation are unchanged.
+
+## 1.83.1 — RRC logical channel classification
+- 3GPP channel catalogue (TS 36.331 LTE / TS 38.331 NR) with controlled normalisation and exact matching only — no substring guessing.
+- Channel comes first from the decoded VM `channel`, then the catalogue, else Unclassified; NAS/Nemo/MAC never receive an RRC channel and conflicts keep the source channel.
+
+## 1.83.0 — RRC State band on top with Idle badge
+- RRC State band moved above the UE state band and given an Idle legend badge; the band only turns Idle when the VM proves an Idle period.
+
 ## 1.82.0 — Premium sidebar and message-type filter
 - Compact collapsible/resizable filter sidebar and floating transactional message selector with local search, All/None, Cancel/Apply and semantic layer badges.
 - Actual whole-capture type counts via the existing paginated rows adapter, cached per capture; incomplete/changing results are rejected instead of showing invented totals.
