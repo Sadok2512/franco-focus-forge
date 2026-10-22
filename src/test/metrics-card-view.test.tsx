@@ -142,4 +142,29 @@ describe("Metrics Charts pane card view", () => {
     });
     expect(await screen.findByTestId("metric-aggregate-table")).toBeVisible();
   });
+
+  // 1.91.0 — ⋮ → Tableau dans le catalogue Metrics ouvre le grand tableau
+  // (paneRequest) ; la carte reste en graphique.
+  it("opens the metrics table pane from the sidebar Table request and keeps the card graph", async () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsWorkspace
+          projectId="TEST2"
+          captureId="cap1"
+          onCaptureChange={vi.fn()}
+          selections={["ci_rs_snr@0"]}
+          catalog={[metric]}
+          filters={{}}
+          onClear={vi.fn()}
+          paneRequest={1}
+        />
+      </QueryClientProvider>,
+    );
+    await screen.findByTestId("metrics-v3-workspace");
+    const pane = await screen.findByTestId("metrics-table-styled");
+    expect(pane).toBeVisible();
+    expect(document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view")).toBe(
+      "graph",
+    );
+  });
 });
