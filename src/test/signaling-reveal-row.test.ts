@@ -47,7 +47,7 @@ describe("revealRow — défile le conteneur, pas la page", () => {
   it("amène sous l'en-tête la ligne masquée par celui-ci", () => {
     const { container } = setup(110);
     expect(revealRow(container, 42)).toBe(true);
-    //可见 zone visible = 134 → 500 ; la ligne (36 px) est sous l'en-tête.
+    // Zone visible = 134 → 500 ; la ligne (36 px) est sous l'en-tête.
     expect(container.scrollTop).toBe(110 - 134);
   });
 
