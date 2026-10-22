@@ -195,7 +195,7 @@ export function MetricsWorkspace({
   workspaceId?: string;
   onColumnsChange?: unknown;
   paneRequest?: number;
-  cardViewRequest?: unknown;
+  cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: unknown;
 }) {
   const { t: translate } = useTranslation();

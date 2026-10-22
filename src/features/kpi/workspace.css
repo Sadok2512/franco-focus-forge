@@ -1118,12 +1118,6 @@
   flex-shrink: 0;
   flex-wrap: wrap;
 }
-.kpi-metrics-table-counter {
-  font-weight: 600;
-  color: #0759c7;
-  margin-right: auto;
-  font-variant-numeric: tabular-nums;
-}
 .kpi-metrics-table-body {
   flex: 1;
   min-height: 0;
