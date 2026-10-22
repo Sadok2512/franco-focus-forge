@@ -574,7 +574,6 @@ export function MetricsWorkspace({
     "--t-radius": ts.radius === "rounded" ? "8px" : "0px",
     "--t-align": ts.cellAlign,
     "--t-num-align": ts.numberAlign,
-    maxWidth: ts.autoFitWidth ? undefined : `${100 / ts.perRow}%`,
     height:
       ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
     resize: ts.resizable ? "vertical" : undefined,
@@ -650,6 +649,7 @@ export function MetricsWorkspace({
           natural={200}
           defaultTitle={tableTitle}
           fullRow
+          perRow={ts.perRow}
         >
           {(panelTitle) => (
             <article

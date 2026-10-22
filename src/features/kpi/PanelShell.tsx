@@ -22,6 +22,7 @@ export function PanelShell({
   natural,
   defaultTitle,
   fullRow,
+  perRow,
   onDuplicate,
   children,
 }: {
@@ -30,6 +31,7 @@ export function PanelShell({
   natural: number;
   defaultTitle: string;
   fullRow?: boolean;
+  perRow?: 1 | 2 | 3;
   onDuplicate?: (() => void) | undefined;
   children: (title: string) => ReactNode;
 }) {
@@ -45,7 +47,12 @@ export function PanelShell({
     };
   }, [id]);
   const title = s.titles[id] || defaultTitle;
-  const span: PanelSpan | "full" = s.span[id] ?? (fullRow ? "full" : 1);
+  // Table settings "N tables per row" overrides the saved span for table panels.
+  const span: PanelSpan | "full" = perRow
+    ? perRow === 1
+      ? "full"
+      : (Math.max(1, Math.floor(cols / perRow)) as PanelSpan)
+    : (s.span[id] ?? (fullRow ? "full" : 1));
   const collapsed = !!s.collapsed[id];
   const height = s.height[id];
   const nextSpan = (): PanelSpan =>
