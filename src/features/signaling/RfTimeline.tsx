@@ -721,7 +721,7 @@ export function RfTimeline({
         ...metricSeries,
       ],
     };
-    c.setOption(options);
+    c.setOption(options, { replaceMerge: ["series", "grid", "xAxis", "yAxis"] });
   }, [
     ready,
     displayed,
