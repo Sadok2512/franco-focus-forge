@@ -98,6 +98,7 @@ export function MessageFilterPopover({
     <button
       type="button"
       className="sig-tree-chevron"
+      data-testid={`tree-chevron-${id}`}
       aria-label={t(isOpen(id) ? "sigFilters.collapseGroup" : "sigFilters.expandGroup")}
       aria-expanded={isOpen(id)}
       onClick={() => toggle(id)}
