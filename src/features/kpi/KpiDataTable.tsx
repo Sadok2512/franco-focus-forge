@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useMemo, useState } from "react";
+import { usePanelTableSettings } from "./table-settings";
 import { ChevronLeft, ChevronRight, Columns3, Download, Search } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
