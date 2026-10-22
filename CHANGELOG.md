@@ -1,3 +1,11 @@
+## 1.89.0 (patch) — BC4-FRONT 2026-10-22 — Réglages du workspace : bouton « Appliquer »
+
+- **Popup ⚙** (`src/features/kpi/WorkspaceSettingsDialog.tsx`) : les modifications (apparence des tableaux, colonnes, disposition des graphiques) restent dans un brouillon local et ne touchent plus les tableaux ni la grille tant que l'utilisateur ne clique pas **Appliquer**.
+- **Pied de volet** : ligne d'état (« Modifications non appliquées » / « Réglages appliqués »), bouton **Appliquer** désactivé tant que rien n'a changé, bouton **Annuler** et croix qui ferment sans enregistrer ; la réouverture repart des réglages appliqués.
+- **Recherche du tableau** : reste immédiate, elle n'est pas soumise au brouillon.
+- **Traductions** : clés `wss.apply`, `wss.cancel`, `wss.unsaved`, `wss.applied` ajoutées en fr et en.
+- **Test de régression** (`src/test/workspace-settings-apply.test.tsx`) : 3 cas — rien n'est enregistré avant Appliquer puis persistance après le clic, Annuler jette le brouillon, la disposition des graphiques ne passe qu'au clic. 266 tests passent, typecheck et lint propres.
+
 ## 1.88.0 (minor) — BC4-FRONT 2026-10-22 — Charts cards: Table/Histogram/Graph per card
 
 - **Metrics Workspace — Charts pane** (`src/features/kpi/MetricsWorkspace.tsx`) : les cartes du volet Charts ne sont plus verrouillées sur Graph. Le menu de visualisation d'une carte applique Histogram/Table/Graph/Map à cette carte seulement (état `cardViews` par sélection, défaut `graph`).
