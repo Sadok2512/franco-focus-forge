@@ -56,3 +56,8 @@ export function stateLaneLayout(lanes: string[]) {
   });
   return { centers, height: top };
 }
+
+/** RRC State lane label: visible title plus a permanent gray Idle badge (user request). */
+export function rrcStateLaneLabel(title: string, idle: string) {
+  return `{title|${title}} {idle|${idle}}`;
+}
