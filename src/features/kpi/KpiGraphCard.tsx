@@ -38,12 +38,11 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import type { ProjectKpiDetail } from "@/lib/api/project-kpi-schemas";
 import {
   type AnalyticRow,
