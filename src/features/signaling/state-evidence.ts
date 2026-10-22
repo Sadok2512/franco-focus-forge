@@ -33,31 +33,57 @@ export function provenState(event: RfEvent, captureId: string): ProvenState | nu
   const state = typeof a["state"] === "string" ? a["state"].toUpperCase() : "";
   const seqs = a.source_seqs;
   if (
-    !track || !captureId || a.evidence_status !== "PROVEN" ||
-    typeof session !== "string" || !session.trim() ||
+    !track ||
+    !captureId ||
+    a.evidence_status !== "PROVEN" ||
+    typeof session !== "string" ||
+    !session.trim() ||
     (a["capture_id"] !== undefined && a["capture_id"] !== captureId) ||
     !["LTE", "NR_NSA", "NR_SA"].includes(technology ?? "") ||
-    start === null || end === null || !Number.isFinite(start) || !Number.isFinite(end) ||
-    start < 0 || end <= start || event.seq_end === null ||
-    !seqs || !seqs.every((seq) => Number.isInteger(seq) && seq >= 0) ||
-    !seqs.includes(event.seq) || !seqs.includes(event.seq_end) || event.seq === event.seq_end ||
-    !a.rule_id || !a.rule_version ||
+    start === null ||
+    end === null ||
+    !Number.isFinite(start) ||
+    !Number.isFinite(end) ||
+    start < 0 ||
+    end <= start ||
+    event.seq_end === null ||
+    !seqs ||
+    !seqs.every((seq) => Number.isInteger(seq) && seq >= 0) ||
+    !seqs.includes(event.seq) ||
+    !seqs.includes(event.seq_end) ||
+    event.seq === event.seq_end ||
+    !a.rule_id ||
+    !a.rule_version ||
     !(track === "RRC_STATE" ? ["IDLE", "CONNECTED"] : ["IDLE", "LTE", "NR"]).includes(state) ||
-    (track === "UE_STATE" && ((state === "LTE" && technology !== "LTE") ||
-      (state === "NR" && technology === "LTE")))
-  ) return null;
+    (track === "UE_STATE" &&
+      ((state === "LTE" && technology !== "LTE") || (state === "NR" && technology === "LTE")))
+  )
+    return null;
   if (technology !== "LTE" && technology !== "NR_NSA" && technology !== "NR_SA") return null;
   if (state !== "IDLE" && state !== "CONNECTED" && state !== "LTE" && state !== "NR") return null;
   const count = a["component_carriers"];
   const status = a["carrier_status"];
-  const validCarriers = typeof count === "number" && Number.isInteger(count) && count > 0 &&
+  const validCarriers =
+    typeof count === "number" &&
+    Number.isInteger(count) &&
+    count > 0 &&
     (status === "CONFIGURED" || status === "ACTIVATED" || status === "USED") &&
-    a["carrier_definition"] === "COMPONENT_CARRIERS" && a["ca_evidence_status"] === "PROVEN";
+    a["carrier_definition"] === "COMPONENT_CARRIERS" &&
+    a["ca_evidence_status"] === "PROVEN";
   return {
-    event, track, captureId, sessionId: session, technology, state,
-    startS: start, endS: end,
+    event,
+    track,
+    captureId,
+    sessionId: session,
+    technology,
+    state,
+    startS: start,
+    endS: end,
     componentCarriers: validCarriers ? count : null,
-    carrierStatus: validCarriers && (status === "CONFIGURED" || status === "ACTIVATED" || status === "USED") ? status : null,
+    carrierStatus:
+      validCarriers && (status === "CONFIGURED" || status === "ACTIVATED" || status === "USED")
+        ? status
+        : null,
     evidenceSeqs: [...new Set(seqs)],
   };
 }
@@ -69,12 +95,18 @@ export function provenStates(events: RfEvent[], captureId: string): ProvenState[
   });
   // Ambiguous overlapping sessions/contradictory states cannot occupy one asserted band.
   // LTE and NR remain independent: EN-DC coexistence is not a conflict.
-  return states.filter((state) => !states.some((other) =>
-    other !== state && other.track === state.track &&
-    (other.technology === "LTE") === (state.technology === "LTE") &&
-    other.startS < state.endS && state.startS < other.endS &&
-    (other.sessionId !== state.sessionId || other.state !== state.state),
-  ));
+  return states.filter(
+    (state) =>
+      !states.some(
+        (other) =>
+          other !== state &&
+          other.track === state.track &&
+          (other.technology === "LTE") === (state.technology === "LTE") &&
+          other.startS < state.endS &&
+          state.startS < other.endS &&
+          (other.sessionId !== state.sessionId || other.state !== state.state),
+      ),
+  );
 }
 
 export function stateLabelKey(state: ProvenState): string {

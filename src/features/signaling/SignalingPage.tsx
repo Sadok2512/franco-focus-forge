@@ -1114,7 +1114,9 @@ export function SignalingPage({
   return (
     <main className="p-3" data-testid="signaling-page">
       <header className="mb-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">{stateTracksV2 ? t("signalingV2.title") : "Signaling View"}</h1>
+        <h1 className="text-lg font-semibold">
+          {stateTracksV2 ? t("signalingV2.title") : "Signaling View"}
+        </h1>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline" size="sm">
             <Link to={stateTracksV2 ? "/signaling" : "/signaling-v2"}>
@@ -1516,7 +1518,11 @@ export function SignalingPage({
                         </p>
                       )}
                       {stateTracksV2 && capture && (
-                        <TimeNavigator duration={captureDuration} window={timeWindow} onWindow={setTimeWindow} />
+                        <TimeNavigator
+                          duration={captureDuration}
+                          window={timeWindow}
+                          onWindow={setTimeWindow}
+                        />
                       )}
                     </section>
                   </Panel>

@@ -15,7 +15,11 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) 
     "position:fixed;inset:0;background:var(--background);padding:24px;z-index:99999";
   document.body.append(host);
   function Harness() {
-    const { window, setWindow } = useTimeWindow("cursor-test", 300, stateTracksV2 ? 30 : FULL_CAPTURE_S);
+    const { window, setWindow } = useTimeWindow(
+      "cursor-test",
+      300,
+      stateTracksV2 ? 30 : FULL_CAPTURE_S,
+    );
     const [state, setState] = useState<{ time: number | null; id: string | null }>({
       time: 0,
       id: null,
@@ -23,10 +27,16 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false) 
     return (
       <div style={{ height: 650 }}>
         <h1>TEST FIXTURE — not a real capture</h1>
-        {stateTracksV2 && <Button onClick={() => {
-          setState({ time: 245.318, id: "scg" });
-          setWindow(followMessage(window, 245.318, 300));
-        }}>Select fixture message #1012</Button>}
+        {stateTracksV2 && (
+          <Button
+            onClick={() => {
+              setState({ time: 245.318, id: "scg" });
+              setWindow(followMessage(window, 245.318, 300));
+            }}
+          >
+            Select fixture message #1012
+          </Button>
+        )}
         <RfTimeline
           projectId="cursor-test"
           captureId="cursor-test"

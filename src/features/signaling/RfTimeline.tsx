@@ -145,16 +145,29 @@ export function RfTimeline({
       ) ?? [],
     [events.data, layers, allowedProtocols],
   );
-  const states = useMemo(() => stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : [],
-    [stateTracksV2, events.data, captureId]);
+  const states = useMemo(
+    () => (stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : []),
+    [stateTracksV2, events.data, captureId],
+  );
   const displayed = useMemo(() => {
-    const source = eligibleEvents.filter((event) =>
-      laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event));
+    const source = eligibleEvents.filter(
+      (event) => laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event),
+    );
     if (!stateTracksV2) return source;
-    const stateEvents = states.filter((state) => !technology ||
-      (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE"))
-      .map((state) => ({ ...state.event, label: t(stateLabelKey(state)),
-        attrs: { ...state.event.attrs, track: state.track === "UE_STATE" ? "ue_state" : "rrc_state" } }));
+    const stateEvents = states
+      .filter(
+        (state) =>
+          !technology ||
+          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE"),
+      )
+      .map((state) => ({
+        ...state.event,
+        label: t(stateLabelKey(state)),
+        attrs: {
+          ...state.event.attrs,
+          track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
+        },
+      }));
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
   }, [eligibleEvents, stateTracksV2, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
@@ -300,15 +313,30 @@ export function RfTimeline({
       const item = displayed[params.dataIndex];
       if (!item) return;
       const track = item.attrs.track ?? "";
-      const isBand = track === "lte" || track === "nsa" || track === "sa" ||
+      const isBand =
+        track === "lte" ||
+        track === "nsa" ||
+        track === "sa" ||
         (stateTracksV2 && (track === "ue_state" || track === "rrc_state"));
       const proof = states.find((state) => state.event.id === item.id);
-      const stateRole = proof?.state === "IDLE" ? "idle" : proof?.state === "CONNECTED" ? "connected" :
-        proof?.state === "LTE" ? (proof.componentCarriers === 4 ? "lte-ca" : "lte") :
-        proof?.componentCarriers === 2 ? "nr-ca" : "nr";
-      const stateColor = getComputedStyle(document.documentElement).getPropertyValue(`--signaling-state-${stateRole}`).trim();
-      const color = proof ? stateColor :
-        item.attrs.status === "FAILURE"
+      const stateRole =
+        proof?.state === "IDLE"
+          ? "idle"
+          : proof?.state === "CONNECTED"
+            ? "connected"
+            : proof?.state === "LTE"
+              ? proof.componentCarriers === 4
+                ? "lte-ca"
+                : "lte"
+              : proof?.componentCarriers === 2
+                ? "nr-ca"
+                : "nr";
+      const stateColor = getComputedStyle(document.documentElement)
+        .getPropertyValue(`--signaling-state-${stateRole}`)
+        .trim();
+      const color = proof
+        ? stateColor
+        : item.attrs.status === "FAILURE"
           ? rfColors["failure"]!
           : isBand
             ? (rfColors[track] ?? rfColors["unknown"]!)
@@ -316,9 +344,15 @@ export function RfTimeline({
               ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
               : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
       const coordSys = params.coordSys as { x: number; width: number };
-      if (stateTracksV2 && ((end[0] ?? 0) < coordSys.x || (start[0] ?? 0) > coordSys.x + coordSys.width)) return;
-      const left = stateTracksV2 ? Math.max(coordSys.x, start[0] ?? 0) : start[0] ?? 0;
-      const right = stateTracksV2 ? Math.min(coordSys.x + coordSys.width, end[0] ?? left) : end[0] ?? left;
+      if (
+        stateTracksV2 &&
+        ((end[0] ?? 0) < coordSys.x || (start[0] ?? 0) > coordSys.x + coordSys.width)
+      )
+        return;
+      const left = stateTracksV2 ? Math.max(coordSys.x, start[0] ?? 0) : (start[0] ?? 0);
+      const right = stateTracksV2
+        ? Math.min(coordSys.x + coordSys.width, end[0] ?? left)
+        : (end[0] ?? left);
       const width = Math.max(3, right - left);
       const opacity =
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
@@ -328,7 +362,13 @@ export function RfTimeline({
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
-          shape: { x: left, y: y - (stateTracksV2 ? 7 : 11), width, height: stateTracksV2 ? 14 : 22, r: 4 },
+          shape: {
+            x: left,
+            y: y - (stateTracksV2 ? 7 : 11),
+            width,
+            height: stateTracksV2 ? 14 : 22,
+            r: 4,
+          },
           style: { fill: color, opacity },
         });
         if (width > 70)
@@ -338,7 +378,11 @@ export function RfTimeline({
               x: left + width / 2,
               y,
               text: item.label,
-              fill: stateTracksV2 ? getComputedStyle(document.documentElement).getPropertyValue("--signaling-state-text").trim() : "#ffffff",
+              fill: stateTracksV2
+                ? getComputedStyle(document.documentElement)
+                    .getPropertyValue("--signaling-state-text")
+                    .trim()
+                : "#ffffff",
               fontSize: 10,
               fontWeight: 600,
               align: "center",
@@ -472,8 +516,13 @@ export function RfTimeline({
         {
           type: "category",
           inverse: true,
-          data: lanes.map((k) => t(stateTracksV2 && (k === "uestate" || k === "rrcstate") ?
-            `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}` : `rfTimeline.${k}`)),
+          data: lanes.map((k) =>
+            t(
+              stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                : `rfTimeline.${k}`,
+            ),
+          ),
           axisLabel: { color: "#94a3b8", fontSize: 11 },
           axisTick: { show: false },
           axisLine: { show: false },
@@ -517,7 +566,8 @@ export function RfTimeline({
           if (d.event) {
             const e = d.event;
             const proof = states.find((state) => state.event.id === e.id);
-            if (proof) return `<b>${escape(e.label)}</b><br/>${fmtT(proof.startS)} → ${fmtT(proof.endS)} s<br/>${escape(t("signalingV2.duration"))}: ${fmtT(proof.endS - proof.startS)} s<br/>${escape(proof.technology)} · ${escape(t("signalingV2.session"))}: ${escape(proof.sessionId)}<br/>${proof.componentCarriers === null ? "" : `${proof.componentCarriers} ${escape(t(`signalingV2.${proof.carrierStatus}`))}<br/>`}${escape(t("signalingV2.proof"))}: ${escape(proof.evidenceSeqs.join(", "))}`;
+            if (proof)
+              return `<b>${escape(e.label)}</b><br/>${fmtT(proof.startS)} → ${fmtT(proof.endS)} s<br/>${escape(t("signalingV2.duration"))}: ${fmtT(proof.endS - proof.startS)} s<br/>${escape(proof.technology)} · ${escape(t("signalingV2.session"))}: ${escape(proof.sessionId)}<br/>${proof.componentCarriers === null ? "" : `${proof.componentCarriers} ${escape(t(`signalingV2.${proof.carrierStatus}`))}<br/>`}${escape(t("signalingV2.proof"))}: ${escape(proof.evidenceSeqs.join(", "))}`;
             const header = `<b>${escape(e.label)}</b><br/>${escape(e.t_rel_s)} s · #${e.seq}<br/>${escape(e.attrs.technology)} · ${escape(e.attrs.status)}<br/>${escape(e.attrs.evidence_status)} · ${escape(e.attrs.source)}<br/>${escape((e.attrs.source_seqs ?? []).join(", "))}<br/>${e.duration_ms === null ? "" : escape(e.duration_ms) + " ms"}`;
             const fields = ["hoa_pci", "hoa_att_pci", "hoa_ch_number", "hoa_att_ch", "cause"]
               .filter((k) => e.attrs[k] != null)
@@ -529,22 +579,56 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(stateTracksV2 ? [{
-          id: "state-background", type: "custom" as const, silent: true, z: 0,
-          renderItem: ((_params, api) => {
-            const lane = Number(api.value(0));
-            const point = api.coord([0, lane]);
-            const area = _params.coordSys as { x: number; width: number };
-            const muted = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim();
-            const text = getComputedStyle(document.documentElement).getPropertyValue("--muted-foreground").trim();
-            return { type: "group", children: [
-              { type: "rect", shape: { x: area.x, y: (point[1] ?? 0) - 16, width: area.width, height: 32 }, style: { fill: muted } },
-              ...[-8, 8].map((offset) => ({ type: "text", style: { x: area.x + 6, y: (point[1] ?? 0) + offset,
-                text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`, fontSize: 9, verticalAlign: "middle", fill: text } })),
-            ] };
-          }) as CustomSeriesRenderItem,
-          data: [0, 1].map((lane) => [lane, 0]), encode: { y: 0 }, clip: true,
-        }] : []),
+        ...(stateTracksV2
+          ? [
+              {
+                id: "state-background",
+                type: "custom" as const,
+                silent: true,
+                z: 0,
+                renderItem: ((_params, api) => {
+                  const lane = Number(api.value(0));
+                  const point = api.coord([0, lane]);
+                  const area = _params.coordSys as { x: number; width: number };
+                  const muted = getComputedStyle(document.documentElement)
+                    .getPropertyValue("--muted")
+                    .trim();
+                  const text = getComputedStyle(document.documentElement)
+                    .getPropertyValue("--muted-foreground")
+                    .trim();
+                  return {
+                    type: "group",
+                    children: [
+                      {
+                        type: "rect",
+                        shape: {
+                          x: area.x,
+                          y: (point[1] ?? 0) - 16,
+                          width: area.width,
+                          height: 32,
+                        },
+                        style: { fill: muted },
+                      },
+                      ...[-8, 8].map((offset) => ({
+                        type: "text",
+                        style: {
+                          x: area.x + 6,
+                          y: (point[1] ?? 0) + offset,
+                          text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
+                          fontSize: 9,
+                          verticalAlign: "middle",
+                          fill: text,
+                        },
+                      })),
+                    ],
+                  };
+                }) as CustomSeriesRenderItem,
+                data: [0, 1].map((lane) => [lane, 0]),
+                encode: { y: 0 },
+                clip: true,
+              },
+            ]
+          : []),
         {
           id: "events",
           type: "custom",
@@ -629,7 +713,9 @@ export function RfTimeline({
           </div>
         </details>
         <span className="ml-auto flex items-center gap-1">
-          {stateTracksV2 && <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />}
+          {stateTracksV2 && (
+            <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -685,7 +771,8 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      {!stateTracksV2 && !events.isPending &&
+      {!stateTracksV2 &&
+        !events.isPending &&
         !events.isError &&
         !displayed.some((e) => laneOf(e.attrs.track) === "uestate") && (
           <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
@@ -717,9 +804,14 @@ export function RfTimeline({
           />
         </div>
       </div>
-      {stateTracksV2 && <p className="shrink-0 text-[10px] text-muted-foreground" data-testid="state-evidence-status">
-        {t("signalingV2.unavailable")}
-      </p>}
+      {stateTracksV2 && (
+        <p
+          className="shrink-0 text-[10px] text-muted-foreground"
+          data-testid="state-evidence-status"
+        >
+          {t("signalingV2.unavailable")}
+        </p>
+      )}
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}
