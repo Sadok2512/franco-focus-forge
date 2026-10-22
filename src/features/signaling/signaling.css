@@ -1,4 +1,4 @@
-.signaling-workspace { height: calc(100dvh - 130px); min-height: 650px; }
+.signaling-workspace { height: calc(100dvh - 120px); min-height: 650px; }
 .signaling-pane { height: 100%; min-height: 0; min-width: 0; }
 .signaling-separator { flex: 0 0 9px; position: relative; border-radius: 4px; outline-offset: -2px; }
 .signaling-separator:hover, .signaling-separator:focus-visible { background: color-mix(in srgb, var(--primary) 18%, transparent); }
