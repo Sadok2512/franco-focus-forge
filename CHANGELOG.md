@@ -1,3 +1,10 @@
+## 1.80.3 — Evidence-only V9 UE/RRC presentation
+
+- Wider UE and RRC segments, centered labels with width-aware suppression, V9 semantic palette; unknown areas stay uncolored without permanent Unknown labels.
+- UE labels use validated carrier counts with CONFIGURED/ACTIVATED/USED qualifiers. LTE RRC displays LTE; advanced LTE requires proven activated/used CA. NR technology alone does not establish ENDC or SA; bands and combined modes remain unavailable without a validated contract.
+- Exact bounds, session and evidence remain accessible on selection. No inferred gaps, session merging, invented band counts or backend changes. Navigator stays attached; other tracks and investigation queries are preserved.
+- Visual checks use clearly identified fixtures, not authenticated live VM captures. No production publication.
+
 ## 1.80.1 — Signaling V3 cursor and navigator integrity
 
 - Existing V2 30-second navigator gains independent pointer and keyboard resize handles with bounded capture-time edges and blue semantic styling; presets, move, zoom, reset and Fit remain available.

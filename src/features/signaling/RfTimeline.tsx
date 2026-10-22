@@ -11,7 +11,8 @@ import { isAllowedNetworkEvent } from "./network-events";
 import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
-import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
+import { provenStates, stateTrack } from "./state-evidence";
+import { statePresentation, stateBandGeometry, stateLaneLayout } from "./state-presentation";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
@@ -145,8 +146,8 @@ export function RfTimeline({
             (e.attrs.protocol === "Procedures" ||
               allowedProtocols.includes(
                 e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
-              ))) &&
-          e.t_rel_s !== null,
+              )) &&
+            e.t_rel_s !== null),
       ) ?? [],
     [events.data, layers, allowedProtocols],
   );
@@ -161,17 +162,26 @@ export function RfTimeline({
     const stateEvents = states
       .filter(
         (state) =>
-          !technology ||
-          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE"),
+          statePresentation(state) !== null &&
+          (!technology ||
+            (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
       )
-      .map((state) => ({
-        ...state.event,
-        label: t(stateLabelKey(state)),
-        attrs: {
-          ...state.event.attrs,
-          track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
-        },
-      }));
+      .map((state) => {
+        const presentation = statePresentation(state);
+        const label = presentation
+          ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined })
+          : "";
+        return {
+          ...state.event,
+          label: presentation?.status
+            ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
+            : label,
+          attrs: {
+            ...state.event.attrs,
+            track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
+          },
+        };
+      });
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
   }, [eligibleEvents, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
@@ -290,7 +300,7 @@ export function RfTimeline({
         },
       ],
     });
-  }, [selectedTime, selectedEventId, displayed, ready]);
+  }, [selectedTime, selectedEventId, displayed, ready, lanes]);
   useEffect(() => {
     const c = chart.current;
     if (!c || !duration || !c.getOption()?.["xAxis"]) return;
@@ -299,9 +309,10 @@ export function RfTimeline({
       { silent: true },
     );
     redrawCursor((revision) => revision + 1);
-  }, [visibleWindow[0], visibleWindow[1], duration, ready]);
+  }, [visibleWindow, duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
-  const trackHeight = stateTracksV2 ? lanes.length * 44 : 216;
+  const laneLayout = useMemo(() => stateLaneLayout(lanes), [lanes]);
+  const trackHeight = stateTracksV2 ? laneLayout.height : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
   const chartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
   useEffect(() => {
@@ -316,6 +327,12 @@ export function RfTimeline({
       const lane = Number(api.value(0)),
         start = api.coord([api.value(1), lane]),
         end = api.coord([api.value(2), lane]);
+      if (stateTracksV2) {
+        const center = laneLayout.centers[lane];
+        if (center === undefined) return;
+        start[1] = 30 + center;
+        end[1] = 30 + center;
+      }
       const item = displayed[params.dataIndex];
       if (!item) return;
       const track = eventTrack(item);
@@ -327,18 +344,7 @@ export function RfTimeline({
         track === "sa" ||
         (stateTracksV2 && (track === "ue_state" || track === "rrc_state"));
       const proof = states.find((state) => state.event.id === item.id);
-      const stateRole =
-        proof?.state === "IDLE"
-          ? "idle"
-          : proof?.state === "CONNECTED"
-            ? "connected"
-            : proof?.state === "LTE"
-              ? proof.componentCarriers === 4
-                ? "lte-ca"
-                : "lte"
-              : proof?.componentCarriers === 2
-                ? "nr-ca"
-                : "nr";
+      const stateRole = proof ? statePresentation(proof)?.role : undefined;
       const stateColor = getComputedStyle(document.documentElement)
         .getPropertyValue(`--signaling-state-${stateRole}`)
         .trim();
@@ -366,20 +372,21 @@ export function RfTimeline({
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
       const children: Record<string, unknown>[] = [];
       if (isBand) {
-        const y = (start[1] ?? 0) + (stateTracksV2 ? (proof?.technology === "LTE" ? -8 : 8) : 0);
+        const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
+        const y = (start[1] ?? 0) + geometry.offset;
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
           shape: {
             x: left,
-            y: y - (stateTracksV2 ? 7 : 11),
+            y: y - geometry.height / 2,
             width,
-            height: stateTracksV2 ? 14 : 22,
-            r: 4,
+            height: geometry.height,
+            r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (width > 70)
+        if (width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
@@ -391,7 +398,8 @@ export function RfTimeline({
                     .getPropertyValue("--signaling-state-text")
                     .trim()
                 : "#ffffff",
-              fontSize: 10,
+              fontSize: 12,
+              fontFamily: tokens.getPropertyValue("--font-sans").trim(),
               fontWeight: 600,
               align: "center",
               verticalAlign: "middle",
@@ -407,7 +415,13 @@ export function RfTimeline({
         if (width > 28) {
           children.push({
             type: "image",
-            style: { image: iconImage(marker.icon, iconForeground), x: left + 4, y: (start[1] ?? 0) - 6, width: 12, height: 12 },
+            style: {
+              image: iconImage(marker.icon, iconForeground),
+              x: left + 4,
+              y: (start[1] ?? 0) - 6,
+              width: 12,
+              height: 12,
+            },
           });
           children.push({
             type: "circle",
@@ -470,14 +484,26 @@ export function RfTimeline({
         });
         children.push({
           type: "image",
-          style: { image: iconImage(marker.icon, iconForeground), x: x - 7, y: y - 14, width: 14, height: 14 },
+          style: {
+            image: iconImage(marker.icon, iconForeground),
+            x: x - 7,
+            y: y - 14,
+            width: 14,
+            height: 14,
+          },
         });
         children.push({
           type: "circle",
           shape: { cx: x, cy: y + 10, r: 2 },
           style: { fill: markerColor, opacity },
         });
-        const nearby = displayed.some((other) => other.id !== item.id && laneFor(other) === laneFor(item) && other.t_rel_s !== null && Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90);
+        const nearby = displayed.some(
+          (other) =>
+            other.id !== item.id &&
+            laneFor(other) === laneFor(item) &&
+            other.t_rel_s !== null &&
+            Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90,
+        );
         if (showLabels && !nearby)
           children.push({
             type: "text",
@@ -619,7 +645,11 @@ export function RfTimeline({
           endValue: visibleWindow[1],
         },
       ],
-      brush: { xAxisIndex: xAxes.map((_, i) => i), brushType: "lineX", toolbox: ["lineX", "clear"] },
+      brush: {
+        xAxisIndex: xAxes.map((_, i) => i),
+        brushType: "lineX",
+        toolbox: ["lineX", "clear"],
+      },
       tooltip: {
         show: false,
         trigger: "item",
@@ -644,79 +674,6 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(stateTracksV2
-          ? [
-              {
-                id: "state-background",
-                type: "custom" as const,
-                silent: true,
-                z: 0,
-                renderItem: ((_params, api) => {
-                  const lane = Number(api.value(0));
-                  const point = api.coord([0, lane]);
-                  const area = _params.coordSys as unknown as { x: number; width: number };
-                  const muted = getComputedStyle(document.documentElement)
-                    .getPropertyValue("--muted")
-                    .trim();
-                  const text = getComputedStyle(document.documentElement)
-                    .getPropertyValue("--muted-foreground")
-                    .trim();
-                  return {
-                    type: "group",
-                    children: [
-                      {
-                        type: "rect",
-                        shape: {
-                          x: area.x,
-                          y: (point[1] ?? 0) - 16,
-                          width: area.width,
-                          height: 32,
-                        },
-                        style: { fill: muted },
-                      },
-                  ...[-8, 8]
-                        .filter((offset) => {
-                          const trackName =
-                            lane === lanes.indexOf("uestate") ? "UE_STATE" : "RRC_STATE";
-                          const rowStates = states.filter(
-                            (state) =>
-                              state.track === trackName &&
-                              (state.technology === "LTE") === offset < 0,
-                          );
-                          // Honest shading: label the row Unknown only while no proven
-                          // band covers the window start or sits inside the view.
-                          const coversStart = rowStates.some(
-                            (state) =>
-                              state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
-                          );
-                          const inView = rowStates.some(
-                            (state) =>
-                              state.startS < visibleWindow[1] && state.endS > visibleWindow[0],
-                          );
-                          return !coversStart && !inView;
-                        })
-                        .map((offset) => ({
-                          type: "text",
-                          style: {
-                            x: area.x + 6,
-                            y: (point[1] ?? 0) + offset,
-                            text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
-                            fontSize: 9,
-                            verticalAlign: "middle",
-                            fill: text,
-                          },
-                        })),
-                    ],
-                  };
-                }) as CustomSeriesRenderItem,
-                data: [lanes.indexOf("uestate"), lanes.indexOf("rrcstate")]
-                  .filter((lane) => lane >= 0)
-                  .map((lane) => [lane, 0]),
-                encode: { y: 0 },
-                clip: true,
-              },
-            ]
-          : []),
         {
           id: "events",
           type: "custom",
@@ -749,6 +706,8 @@ export function RfTimeline({
     states,
     trackHeight,
     rfTop,
+    laneLayout,
+    visibleWindow,
   ]);
   const zoomBy = (factor: number) => {
     const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
@@ -869,16 +828,23 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      {false &&
-        !events.isPending &&
-        !events.isError &&
-        !displayed.some((e) => laneFor(e) === "uestate") && (
-          <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
-            {t("rfTimeline.ueStateEmpty")}
-          </p>
-        )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
+          {stateTracksV2 &&
+            (["uestate", "rrcstate"] as const).map((lane) => {
+              const index = lanes.indexOf(lane);
+              const center = laneLayout.centers[index];
+              return center === undefined ? null : (
+                <span
+                  key={lane}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground"
+                  style={{ top: 30 + center - 21 }}
+                >
+                  {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
+                </span>
+              );
+            })}
           <div
             ref={host}
             style={{ height: chartHeight, minWidth: 320 }}
@@ -901,30 +867,37 @@ export function RfTimeline({
             captureId={captureId}
           />
         </div>
-      {false && (
-        <p
-          className="shrink-0 text-[10px] text-muted-foreground"
-          data-testid="state-evidence-status"
-        >
-          {t("signalingV2.unavailable")}
-        </p>
-      )}
-      {linked && (
-        <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
-          {t("rfTimeline.evidence")}:{" "}
-          {linked.linked_seqs.map((s) => (
-            <Button
-              variant="outline"
-              size="sm"
-              key={s}
-              className="kpi-button"
-              onClick={() => onSelect(linked, s)}
-            >
-              #{s}
-            </Button>
-          ))}
-        </div>
-      )}
+        {linked && (
+          <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
+            {states
+              .filter((state) => state.event.id === linked.id)
+              .map((state) => (
+                <span key={state.event.id} className="basis-full text-muted-foreground">
+                  {linked.label} ·{" "}
+                  {t("signalingV2.interval", {
+                    start: state.startS.toFixed(3),
+                    end: state.endS.toFixed(3),
+                  })}{" "}
+                  · {t("signalingV2.session")}: {state.sessionId}
+                  {state.carrierStatus
+                    ? ` · ${state.componentCarriers} ${t(`signalingV2.${state.carrierStatus}`)}`
+                    : ""}
+                </span>
+              ))}
+            {t("rfTimeline.evidence")}:{" "}
+            {linked.linked_seqs.map((s) => (
+              <Button
+                variant="outline"
+                size="sm"
+                key={s}
+                className="kpi-button"
+                onClick={() => onSelect(linked, s)}
+              >
+                #{s}
+              </Button>
+            ))}
+          </div>
+        )}
         <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
       </div>
     </div>
