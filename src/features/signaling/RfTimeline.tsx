@@ -864,7 +864,6 @@ export function RfTimeline({
                   style={{ top: 30 + center - 21 }}
                 >
                   {title.title}
-                  {title.badge && <span className="sig-lane-idle">{title.badge}</span>}
                 </span>
               );
             })}
