@@ -283,6 +283,8 @@ function Workspace({
   // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
   // mappe 1-pour-1 sur View (scatter en plus côté workspace, non exposé au sidebar).
   const [metricsView, setMetricsView] = useState<MetricsView>("table");
+  const [metricsTablePane, setMetricsTablePane] = useState(false);
+  const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
   const visualizeMetric = (code: string, view: MetricView) => {
     if (!selectedMetrics.includes(code)) {
       const next = [...selectedMetrics, code];
@@ -535,8 +537,8 @@ function Workspace({
           aria-label={translate("kpi.9afd5ab37dac")}
         />
         <ResizablePanel id="kpi-analysis-panel" minSize="300px">
-          <div className="kpi-analysis-scroll">
-            <div className="kpi-analysis-toolbar">
+          <div className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}>
+            <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
               <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (
                   <div key={code} className={effectiveActive === code ? "is-active" : ""}>
@@ -762,6 +764,7 @@ function Workspace({
                   filters={applied}
                   view={metricsView}
                   onViewChange={setMetricsView}
+                  onTablePaneChange={setMetricsTablePane}
                   onClear={() => {
                     setSelectedMetrics([]);
                     void navigate({

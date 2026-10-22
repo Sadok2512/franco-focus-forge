@@ -43,6 +43,8 @@
     "selectionSummary": "{{count}} sélectionné(s) · {{total}} options"
   },
   "metrics": {
+    "a78f2051e6c9": "Export CSV",
+    "b62d901f4a73": "Plein écran",
     "captureLabel": "Capture",
     "actions": "Actions des métriques",
     "showInfo": "Informations et preuves",

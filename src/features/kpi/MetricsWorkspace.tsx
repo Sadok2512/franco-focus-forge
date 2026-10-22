@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
-import { Columns3, Download, Filter, Maximize2 } from "lucide-react";
+import { Download, Maximize2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -197,6 +198,7 @@ export function MetricsWorkspace({
   onClear,
   view: externalView,
   onViewChange,
+  onTablePaneChange,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -207,6 +209,7 @@ export function MetricsWorkspace({
   onClear: () => void;
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
+  onTablePaneChange?: ((table: boolean) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [internalView, setInternalView] = useState<View>("table");
@@ -477,6 +480,16 @@ export function MetricsWorkspace({
   // 1.88.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
   // peut basculer une carte sur histogram/table/map sans toucher les autres).
   const [cardViews, setCardViews] = useState<Record<string, MetricView>>({});
+  const panelRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    onTablePaneChange?.(pane === "table");
+  }, [pane, onTablePaneChange]);
+  const previousExternalView = useRef(externalView);
+  useEffect(() => {
+    if (previousExternalView.current === externalView) return;
+    previousExternalView.current = externalView;
+    if (externalView) setPaneRaw(externalView === "table" ? "table" : "overlay");
+  }, [externalView]);
   const [perRow, setPerRowRaw] = useState<1 | 2 | 3>(() => {
     try {
       const n = Number(localStorage.getItem("bc3.metrics.perRow"));
@@ -508,15 +521,28 @@ export function MetricsWorkspace({
     for (const info of catalog) m.set(info.code, info);
     return m;
   }, [catalog]);
+  const tableTitle = parsedSelections.map((selection) => {
+    const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
+    const column = data?.columns.find((c) => c.code === selection.full || c.code === selection.code);
+    const label = info?.label ?? column?.label ?? selection.code;
+    const cellLabel = info?.cell_options?.find((c) => c.cell === selection.cell)?.label;
+    return cellLabel ? `${label} · ${cellLabel}` : label;
+  }).join(" · ");
   return (
     <article
+      ref={panelRef}
       className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      data-pane={pane}
       data-testid="metrics-v3-workspace"
     >
       {/* 1.83.0 — Spec V3 §1 : barre [Charts|Table|Overlay] + "N metrics"
           supprimée. Remplacée par un <select View ▾> compact. Per row visible
           uniquement en Charts. */}
       <header className="kpi-metrics-table-toolbar">
+        {pane === "table" ? (
+          <h3 className="kpi-metrics-table-title" title={tableTitle}>{tableTitle}</h3>
+        ) : (
+          <>
         <label className="kpi-select-label" title="View mode">
           View
           <select
@@ -543,28 +569,15 @@ export function MetricsWorkspace({
             </select>
           </label>
         )}
-        {pane === "table" && (
-          <>
-            <button className="kpi-button" title="Columns (phase 3)" disabled>
-              <Columns3 size={13} /> Columns
-            </button>
-            <button className="kpi-button" title="Filters (phase 3)" disabled>
-              <Filter size={13} /> Filters
-            </button>
           </>
         )}
-        <button className="kpi-button" disabled={!data} onClick={exportCsv} title="Export CSV">
-          <Download size={13} /> Export CSV
-        </button>
-        <button
-          className="kpi-button"
-          title="Fullscreen"
-          onClick={() =>
-            document.querySelector(".kpi-metrics-table-premium")?.requestFullscreen?.()
-          }
-        >
-          <Maximize2 size={13} /> Fullscreen
-        </button>
+        <Button variant="outline" size="sm" disabled={!data} onClick={exportCsv} title={translate("metrics.a78f2051e6c9")}>
+          <Download size={13} /> {translate("metrics.a78f2051e6c9")}
+        </Button>
+        <Button variant="outline" size="sm" title={translate("metrics.b62d901f4a73")}
+          onClick={() => void panelRef.current?.requestFullscreen?.()}>
+          <Maximize2 size={13} /> {translate("metrics.b62d901f4a73")}
+        </Button>
       </header>
       {pane === "charts" && captureId && (
         <section

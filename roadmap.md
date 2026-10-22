@@ -1,3 +1,4 @@
+- [x] Simplify the Metrics Table panel: dynamic API parameter/cell title, Export CSV and Fullscreen only, no redundant toolbars or nested table margins; table fills available area. Other views and mixed KPI workspaces retain global controls. Two existing tests pass; browser fixture verifies title, CSV download, pagination and fullscreen without errors. Real VM rendering remains unverified without an authorized session.
 - [x] Charts cards respond to Table/Histogram/Graph selection (1.88.0).
 # BC4 roadmap
 - [x] RRC State title back in its place (1.86.0): the top timeline band shows "RRC State" with the gray Idle badge in the left gutter, above UE State; the gutter row that only carried UE State was covering the chart's own label with an empty box. Verified in the browser (gutter labels `['UE State', 'RRC StateIdle']`, screenshot read back) — 251 tests pass, typecheck clean, build OK. Real VM capture readback still blocked below.
