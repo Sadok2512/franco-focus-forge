@@ -3,7 +3,7 @@
 // graph and the click was silently ignored).
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import { beforeAll, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import type { MetricInfo } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
@@ -126,6 +126,11 @@ function mount() {
 }
 
 describe("Metrics Charts pane card view", () => {
+  beforeEach(() => {
+    // 1.91.0 — cardViews persiste en sessionStorage ; isoler chaque test.
+    window.sessionStorage.clear();
+  });
+
   it("switches a Charts card to the table when Table is clicked", async () => {
     mount();
     await screen.findByTestId("metrics-v3-workspace");
