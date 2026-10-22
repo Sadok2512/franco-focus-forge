@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 import { Search } from "lucide-react";
 import { arrangeRows, orderedColumns, textFor, useTableSettings } from "./table-settings";
 import i18n from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
@@ -553,7 +553,7 @@ export function MetricsWorkspace({
     maxWidth: ts.autoFitWidth ? undefined : `${100 / ts.perRow}%`,
     height: ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
     resize: ts.resizable ? "vertical" : undefined,
-  } as React.CSSProperties;
+  } as CSSProperties;
   const tableTitle = parsedSelections.map((selection) => {
     const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
     const column = data?.columns.find((c) => c.code === selection.full || c.code === selection.code);
