@@ -1,10 +1,11 @@
 import { act, render, screen } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ECharts } from "echarts";
 import { TimeCursor } from "@/features/signaling/TimeCursor";
 
 describe("Signaling cursor chart readiness", () => {
+  afterEach(() => vi.unstubAllGlobals());
   it("resolves capture time zero after axes become ready without mouse movement", () => {
     vi.stubGlobal(
       "ResizeObserver",
@@ -18,6 +19,7 @@ describe("Signaling cursor chart readiness", () => {
     let ready = false;
     let finished: (() => void) | undefined;
     const chart = {
+      isDisposed: vi.fn(() => false),
       on: vi.fn((name: string, callback: () => void) => {
         if (name === "finished") finished = callback;
       }),
@@ -50,5 +52,43 @@ describe("Signaling cursor chart readiness", () => {
     result.unmount();
     expect(chart.off).toHaveBeenCalledWith("finished", finished);
     vi.unstubAllGlobals();
+  });
+
+  it("does not convert RF observations before the RF axes exist or after disposal", () => {
+    vi.stubGlobal("ResizeObserver", class { observe() {} disconnect() {} });
+    const host = createRef<HTMLDivElement>();
+    host.current = document.createElement("div");
+    let disposed = false;
+    let option: Record<string, unknown> = {};
+    const convertToPixel = vi.fn((finder: { xAxisIndex: number }) => {
+      if (!option["xAxis"] || disposed)
+        throw new TypeError("Cannot read properties of undefined (reading 'queryComponents')");
+      return finder.xAxisIndex === 1 ? [150, 320] : 150;
+    });
+    const chart = {
+      isDisposed: () => disposed,
+      getOption: () => option,
+      convertToPixel,
+      on: vi.fn(), off: vi.fn(),
+    } as unknown as ECharts;
+    const props = {
+      chart, host, selectedTime: 20, eventId: null, events: [],
+      series: [{ code: "cell_rsrp", label: "RSRP", unit: "dBm", points: [{ seq: 1, t_rel_s: 10, value: -90 }] }],
+      zoom: [0, 100] as [number, number], duration: 300,
+      onTime: vi.fn(), onMessage: vi.fn(),
+    };
+    const result = render(<TimeCursor {...props} />);
+    expect(convertToPixel).not.toHaveBeenCalled();
+    option = { xAxis: [{}], yAxis: [{}] };
+    result.rerender(<TimeCursor {...props} />);
+    expect(convertToPixel.mock.calls.every(([finder]) => finder.xAxisIndex === 0)).toBe(true);
+    option = { xAxis: [{}, {}], yAxis: [{}, {}] };
+    result.rerender(<TimeCursor {...props} />);
+    expect(convertToPixel).toHaveBeenCalledWith({ xAxisIndex: 1, yAxisIndex: 1 }, [10, -90]);
+    disposed = true;
+    convertToPixel.mockClear();
+    result.rerender(<TimeCursor {...props} />);
+    expect(convertToPixel).not.toHaveBeenCalled();
+    result.unmount();
   });
 });

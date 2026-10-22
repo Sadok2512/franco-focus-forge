@@ -14,6 +14,14 @@ import {
 } from "./cursor";
 
 export type CursorSeries = { code: string; label: string; unit: string; points: Observation[] };
+function hasAxes(chart: ECharts | undefined, xIndex: number, yIndex?: number): chart is ECharts {
+  if (!chart || chart.isDisposed()) return false;
+  const option = chart.getOption();
+  const xAxes = option?.["xAxis"];
+  const yAxes = option?.["yAxis"];
+  return Array.isArray(xAxes) && xAxes[xIndex] !== undefined &&
+    (yIndex === undefined || (Array.isArray(yAxes) && yAxes[yIndex] !== undefined));
+}
 export function TimeCursor({
   chart,
   host,
@@ -57,7 +65,7 @@ export function TimeCursor({
   useEffect(() => setDismissed(false), [selectedTime, eventId]);
   useEffect(() => {
     const element = host.current;
-    if (!element || !chart) return;
+    if (!element || !chart || chart.isDisposed()) return;
     // ECharts initializes its axes after the overlay mounts. Redraw when pixels
     // become available, and after resize/zoom, not only after pointer movement.
     const updateGeometry = () => {
@@ -69,6 +77,7 @@ export function TimeCursor({
     const observer = new ResizeObserver(updateGeometry);
     observer.observe(element);
     const timeAt = (event: PointerEvent) => {
+      if (!hasAxes(chart, 0)) return null;
       const rect = element.getBoundingClientRect();
       const x = event.clientX - rect.left;
       if (x < 112 || x > rect.width - 24) return null;
@@ -85,6 +94,7 @@ export function TimeCursor({
       });
     };
     const down = (event: PointerEvent) => {
+      if (!hasAxes(chart, 0)) return;
       // Chart markers own exact snapping; background clicks stay in free mode.
       const hit = chart.getZr().handler.findHover(event.offsetX, event.offsetY).target;
       if (hit) return;
@@ -110,7 +120,7 @@ export function TimeCursor({
     window.addEventListener("pointerup", up);
     return () => {
       observer.disconnect();
-      chart.off("finished", updateGeometry);
+      if (!chart.isDisposed()) chart.off("finished", updateGeometry);
       element.removeEventListener("pointermove", move);
       element.removeEventListener("pointerdown", down);
       element.removeEventListener("pointerleave", leave);
@@ -122,7 +132,7 @@ export function TimeCursor({
   const visible = (time: number) =>
     time >= (duration * zoom[0]) / 100 && time <= (duration * zoom[1]) / 100;
   const xAt = (time: number) => {
-    if (!chart?.getOption()?.["xAxis"]) return NaN;
+    if (!hasAxes(chart, 0)) return NaN;
     return chart.convertToPixel({ xAxisIndex: 0 }, time) as number;
   };
   const time = hover ?? selectedTime;
@@ -172,7 +182,7 @@ export function TimeCursor({
           <line x1={x} x2={x} y1={26} y2={size.height - 38} className="signaling-cursor-preview" />
         )}
         {readings.map((s) => {
-          if (!chart || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
+          if (!hasAxes(chart, 1, 1) || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
             return null;
           const coords = chart.convertToPixel({ xAxisIndex: 1, yAxisIndex: 1 }, [
             s.point.t_rel_s,
@@ -234,9 +244,10 @@ export function TimeCursor({
           size="sm"
           className="absolute right-2 top-2"
           onClick={() => {
+            if (!hasAxes(chart, 0)) return;
             const width = (duration * (zoom[1] - zoom[0])) / 100;
             const range = clampWindow(duration, selectedTime - width / 2, width);
-            chart?.dispatchAction({
+            chart.dispatchAction({
               type: "dataZoom",
               startValue: range[0],
               endValue: range[1],
