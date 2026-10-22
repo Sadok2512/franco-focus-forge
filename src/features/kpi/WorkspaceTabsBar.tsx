@@ -165,9 +165,7 @@ export function WorkspaceTabsBar({
             <span className="text-[10px] text-muted-foreground">Layout</span>
             <select
               value={activeTab.layout}
-              onChange={(e) =>
-                onLayoutChange(activeTab.id, e.target.value as WorkspaceLayout)
-              }
+              onChange={(e) => onLayoutChange(activeTab.id, e.target.value as WorkspaceLayout)}
               aria-label="Panel layout"
             >
               <option value="auto">Auto</option>

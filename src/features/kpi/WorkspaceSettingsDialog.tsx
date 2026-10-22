@@ -9,8 +9,13 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import type { WorkspaceLayout } from "./workspace-tabs";
 import {
-  DEFAULT_TABLE_SETTINGS, PALETTES, STYLE_PRESETS, contrastRatio, useTableSettings,
-  type TableColors, type TableSettings,
+  DEFAULT_TABLE_SETTINGS,
+  PALETTES,
+  STYLE_PRESETS,
+  contrastRatio,
+  useTableSettings,
+  type TableColors,
+  type TableSettings,
 } from "./table-settings";
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
@@ -22,12 +27,26 @@ function Row({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
-function Seg<T extends string>({ value, options, onChange, t }: { value: T; options: T[]; onChange: (v: T) => void; t: (k: string) => string }) {
+function Seg<T extends string>({
+  value,
+  options,
+  onChange,
+  t,
+}: {
+  value: T;
+  options: T[];
+  onChange: (v: T) => void;
+  t: (k: string) => string;
+}) {
   return (
     <div className="inline-flex overflow-hidden rounded-md border border-border">
       {options.map((o) => (
-        <button key={o} type="button" onClick={() => onChange(o)}
-          className={`px-2 py-0.5 text-[11px] ${value === o ? "bg-primary text-primary-foreground" : "bg-background text-foreground hover:bg-muted"}`}>
+        <button
+          key={o}
+          type="button"
+          onClick={() => onChange(o)}
+          className={`px-2 py-0.5 text-[11px] ${value === o ? "bg-primary text-primary-foreground" : "bg-background text-foreground hover:bg-muted"}`}
+        >
           {t(`wss.opt_${o}`)}
         </button>
       ))}
@@ -35,14 +54,29 @@ function Seg<T extends string>({ value, options, onChange, t }: { value: T; opti
   );
 }
 
-function LayoutThumbs({ value, onChange, label }: { value: number; onChange: (n: 1 | 2 | 3) => void; label: (n: number) => string }) {
+function LayoutThumbs({
+  value,
+  onChange,
+  label,
+}: {
+  value: number;
+  onChange: (n: 1 | 2 | 3) => void;
+  label: (n: number) => string;
+}) {
   return (
     <div className="grid grid-cols-3 gap-2">
       {([1, 2, 3] as const).map((n) => (
-        <button key={n} type="button" onClick={() => onChange(n)} aria-pressed={value === n}
-          className={`rounded-md border p-2 text-[11px] ${value === n ? "border-primary ring-1 ring-primary" : "border-border"}`}>
+        <button
+          key={n}
+          type="button"
+          onClick={() => onChange(n)}
+          aria-pressed={value === n}
+          className={`rounded-md border p-2 text-[11px] ${value === n ? "border-primary ring-1 ring-primary" : "border-border"}`}
+        >
           <div className="mb-1 grid h-8 gap-1" style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}>
-            {Array.from({ length: n }, (_, i) => <div key={i} className="rounded-sm bg-muted" />)}
+            {Array.from({ length: n }, (_, i) => (
+              <div key={i} className="rounded-sm bg-muted" />
+            ))}
           </div>
           {label(n)}
         </button>
@@ -51,10 +85,23 @@ function LayoutThumbs({ value, onChange, label }: { value: number; onChange: (n:
   );
 }
 
-const COLOR_KEYS: (keyof TableColors)[] = ["background", "headerBg", "headerText", "rowBg", "altRow", "border", "selected"];
+const COLOR_KEYS: (keyof TableColors)[] = [
+  "background",
+  "headerBg",
+  "headerText",
+  "rowBg",
+  "altRow",
+  "border",
+  "selected",
+];
 
 export function WorkspaceSettingsDialog({
-  open, onOpenChange, workspaceId, layout, onLayoutChange, columns,
+  open,
+  onOpenChange,
+  workspaceId,
+  layout,
+  onLayoutChange,
+  columns,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
@@ -67,14 +114,19 @@ export function WorkspaceSettingsDialog({
   const [s, update] = useTableSettings(workspaceId);
   const [colSearch, setColSearch] = useState("");
   const [drag, setDrag] = useState<string | null>(null);
-  const set = <K extends keyof TableSettings>(k: K) => (v: TableSettings[K]) => update({ [k]: v } as Partial<TableSettings>);
+  const set =
+    <K extends keyof TableSettings>(k: K) =>
+    (v: TableSettings[K]) =>
+      update({ [k]: v } as Partial<TableSettings>);
   const order = [...columns].sort((a, b) => {
-    const ia = s.order.indexOf(a.code), ib = s.order.indexOf(b.code);
+    const ia = s.order.indexOf(a.code),
+      ib = s.order.indexOf(b.code);
     return (ia < 0 ? 1e9 : ia) - (ib < 0 ? 1e9 : ib);
   });
   const move = (from: string, to: string) => {
     const codes = order.map((c) => c.code);
-    const fi = codes.indexOf(from), ti = codes.indexOf(to);
+    const fi = codes.indexOf(from),
+      ti = codes.indexOf(to);
     if (fi < 0 || ti < 0) return;
     codes.splice(ti, 0, codes.splice(fi, 1)[0]!);
     update({ order: codes });
@@ -84,8 +136,13 @@ export function WorkspaceSettingsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[85vh] max-w-xl overflow-y-auto" data-testid="workspace-settings-dialog">
-        <DialogHeader><DialogTitle>{t("wss.title")}</DialogTitle></DialogHeader>
+      <DialogContent
+        className="max-h-[85vh] max-w-xl overflow-y-auto"
+        data-testid="workspace-settings-dialog"
+      >
+        <DialogHeader>
+          <DialogTitle>{t("wss.title")}</DialogTitle>
+        </DialogHeader>
         <Tabs defaultValue="tables">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="graphs">{t("wss.graphs")}</TabsTrigger>
@@ -94,36 +151,85 @@ export function WorkspaceSettingsDialog({
 
           <TabsContent value="graphs" className="space-y-2">
             <h4 className="text-xs font-semibold">{t("wss.graphLayout")}</h4>
-            <LayoutThumbs value={layout === "auto" ? 0 : Number(layout)} onChange={(n) => onLayoutChange(String(n) as WorkspaceLayout)} label={(n) => t("wss.perRow", { n })} />
-            <Button variant="outline" size="sm" onClick={() => onLayoutChange("auto")}>{t("wss.opt_auto")}</Button>
+            <LayoutThumbs
+              value={layout === "auto" ? 0 : Number(layout)}
+              onChange={(n) => onLayoutChange(String(n) as WorkspaceLayout)}
+              label={(n) => t("wss.perRow", { n })}
+            />
+            <Button variant="outline" size="sm" onClick={() => onLayoutChange("auto")}>
+              {t("wss.opt_auto")}
+            </Button>
           </TabsContent>
 
           <TabsContent value="tables" className="space-y-4">
             <section>
               <h4 className="mb-1 text-xs font-semibold">{t("wss.layout")}</h4>
-              <LayoutThumbs value={s.perRow} onChange={set("perRow")} label={(n) => t("wss.tablesPerRow", { n })} />
-              <Row label={t("wss.autoFit")}><Switch checked={s.autoFitWidth} onCheckedChange={set("autoFitWidth")} /></Row>
-              <Row label={t("wss.equalHeights")}><Switch checked={s.equalHeights} onCheckedChange={set("equalHeights")} /></Row>
-              <Row label={t("wss.spacing")}><Seg t={T} value={s.spacing} options={["compact", "normal", "wide"]} onChange={set("spacing")} /></Row>
-              <Row label={t("wss.height")}><Seg t={T} value={s.height} options={["auto", "fixed", "custom"]} onChange={set("height")} /></Row>
+              <LayoutThumbs
+                value={s.perRow}
+                onChange={set("perRow")}
+                label={(n) => t("wss.tablesPerRow", { n })}
+              />
+              <Row label={t("wss.autoFit")}>
+                <Switch checked={s.autoFitWidth} onCheckedChange={set("autoFitWidth")} />
+              </Row>
+              <Row label={t("wss.equalHeights")}>
+                <Switch checked={s.equalHeights} onCheckedChange={set("equalHeights")} />
+              </Row>
+              <Row label={t("wss.spacing")}>
+                <Seg
+                  t={T}
+                  value={s.spacing}
+                  options={["compact", "normal", "wide"]}
+                  onChange={set("spacing")}
+                />
+              </Row>
+              <Row label={t("wss.height")}>
+                <Seg
+                  t={T}
+                  value={s.height}
+                  options={["auto", "fixed", "custom"]}
+                  onChange={set("height")}
+                />
+              </Row>
               {s.height === "custom" && (
                 <Row label={t("wss.customHeight")}>
-                  <input type="number" min={200} max={2000} step={20} value={s.customHeight}
-                    onChange={(e) => update({ customHeight: Math.max(200, Number(e.target.value) || 480) })}
-                    className="w-20 rounded border border-border bg-background px-1 text-xs" />
+                  <input
+                    type="number"
+                    min={200}
+                    max={2000}
+                    step={20}
+                    value={s.customHeight}
+                    onChange={(e) =>
+                      update({ customHeight: Math.max(200, Number(e.target.value) || 480) })
+                    }
+                    className="w-20 rounded border border-border bg-background px-1 text-xs"
+                  />
                 </Row>
               )}
-              <Row label={t("wss.hScroll")}><Seg t={T} value={s.hScroll} options={["auto", "always", "off"]} onChange={set("hScroll")} /></Row>
-              <Row label={t("wss.resize")}><Switch checked={s.resizable} onCheckedChange={set("resizable")} /></Row>
+              <Row label={t("wss.hScroll")}>
+                <Seg
+                  t={T}
+                  value={s.hScroll}
+                  options={["auto", "always", "off"]}
+                  onChange={set("hScroll")}
+                />
+              </Row>
+              <Row label={t("wss.resize")}>
+                <Switch checked={s.resizable} onCheckedChange={set("resizable")} />
+              </Row>
             </section>
 
             <section>
               <h4 className="mb-1 text-xs font-semibold">{t("wss.style")}</h4>
               <div className="grid grid-cols-3 gap-2">
                 {(["clean", "professional", "compact"] as const).map((st) => (
-                  <button key={st} type="button" aria-pressed={s.style === st}
+                  <button
+                    key={st}
+                    type="button"
+                    aria-pressed={s.style === st}
                     onClick={() => update({ style: st, ...STYLE_PRESETS[st] })}
-                    className={`rounded-md border p-2 text-left text-[11px] ${s.style === st ? "border-primary ring-1 ring-primary" : "border-border"}`}>
+                    className={`rounded-md border p-2 text-left text-[11px] ${s.style === st ? "border-primary ring-1 ring-primary" : "border-border"}`}
+                  >
                     <strong className="block">{t(`wss.opt_${st}`)}</strong>
                     <span className="text-muted-foreground">{t(`wss.styleDesc_${st}`)}</span>
                   </button>
@@ -135,63 +241,199 @@ export function WorkspaceSettingsDialog({
               <h4 className="mb-1 text-xs font-semibold">{t("wss.colors")}</h4>
               <div className="mb-2 flex flex-wrap gap-1">
                 {(["white", "lightgray", "dark", "blue"] as const).map((p) => (
-                  <Button key={p} size="sm" variant={s.palette === p ? "default" : "outline"}
-                    onClick={() => update({ palette: p, colors: PALETTES[p] })}>{t(`wss.opt_${p}`)}</Button>
+                  <Button
+                    key={p}
+                    size="sm"
+                    variant={s.palette === p ? "default" : "outline"}
+                    onClick={() => update({ palette: p, colors: PALETTES[p] })}
+                  >
+                    {t(`wss.opt_${p}`)}
+                  </Button>
                 ))}
-                <Button size="sm" variant={s.palette === "custom" ? "default" : "outline"} onClick={() => update({ palette: "custom" })}>{t("wss.opt_custom")}</Button>
+                <Button
+                  size="sm"
+                  variant={s.palette === "custom" ? "default" : "outline"}
+                  onClick={() => update({ palette: "custom" })}
+                >
+                  {t("wss.opt_custom")}
+                </Button>
               </div>
               <div className="grid grid-cols-2 gap-x-4">
                 {COLOR_KEYS.map((k) => (
                   <Row key={k} label={t(`wss.color_${k}`)}>
-                    <input type="color" value={s.colors[k]} aria-label={t(`wss.color_${k}`)}
-                      onChange={(e) => update({ palette: "custom", colors: { ...s.colors, [k]: e.target.value } })} />
+                    <input
+                      type="color"
+                      value={s.colors[k]}
+                      aria-label={t(`wss.color_${k}`)}
+                      onChange={(e) =>
+                        update({ palette: "custom", colors: { ...s.colors, [k]: e.target.value } })
+                      }
+                    />
                   </Row>
                 ))}
               </div>
-              {lowContrast && <p className="text-[11px] text-destructive">{t("wss.lowContrast")}</p>}
+              {lowContrast && (
+                <p className="text-[11px] text-destructive">{t("wss.lowContrast")}</p>
+              )}
             </section>
 
             <section>
               <h4 className="mb-1 text-xs font-semibold">{t("wss.appearance")}</h4>
-              <Row label={t("wss.fontSize")}><Seg t={T} value={s.fontSize} options={["small", "medium", "large"]} onChange={set("fontSize")} /></Row>
-              <Row label={t("wss.rowHeight")}><Seg t={T} value={s.rowHeight} options={["compact", "normal", "comfortable"]} onChange={set("rowHeight")} /></Row>
-              <Row label={t("wss.headerHeight")}><Seg t={T} value={s.headerHeight} options={["compact", "normal", "large"]} onChange={set("headerHeight")} /></Row>
-              <Row label={t("wss.cellPadding")}><Seg t={T} value={s.cellPadding} options={["small", "medium", "large"]} onChange={set("cellPadding")} /></Row>
-              <Row label={t("wss.borders")}><Seg t={T} value={s.borders} options={["none", "horizontal", "grid"]} onChange={set("borders")} /></Row>
-              <Row label={t("wss.zebra")}><Switch checked={s.zebra} onCheckedChange={set("zebra")} /></Row>
-              <Row label={t("wss.stickyHeader")}><Switch checked={s.stickyHeader} onCheckedChange={set("stickyHeader")} /></Row>
-              <Row label={t("wss.stickyFirst")}><Switch checked={s.stickyFirstColumn} onCheckedChange={set("stickyFirstColumn")} /></Row>
-              <Row label={t("wss.wrap")}><Switch checked={s.wrap} onCheckedChange={set("wrap")} /></Row>
-              <Row label={t("wss.cellAlign")}><Seg t={T} value={s.cellAlign} options={["left", "center", "right"]} onChange={set("cellAlign")} /></Row>
-              <Row label={t("wss.numberAlign")}><Seg t={T} value={s.numberAlign} options={["right", "center"]} onChange={set("numberAlign")} /></Row>
-              <Row label={t("wss.radius")}><Seg t={T} value={s.radius} options={["square", "rounded"]} onChange={set("radius")} /></Row>
+              <Row label={t("wss.fontSize")}>
+                <Seg
+                  t={T}
+                  value={s.fontSize}
+                  options={["small", "medium", "large"]}
+                  onChange={set("fontSize")}
+                />
+              </Row>
+              <Row label={t("wss.rowHeight")}>
+                <Seg
+                  t={T}
+                  value={s.rowHeight}
+                  options={["compact", "normal", "comfortable"]}
+                  onChange={set("rowHeight")}
+                />
+              </Row>
+              <Row label={t("wss.headerHeight")}>
+                <Seg
+                  t={T}
+                  value={s.headerHeight}
+                  options={["compact", "normal", "large"]}
+                  onChange={set("headerHeight")}
+                />
+              </Row>
+              <Row label={t("wss.cellPadding")}>
+                <Seg
+                  t={T}
+                  value={s.cellPadding}
+                  options={["small", "medium", "large"]}
+                  onChange={set("cellPadding")}
+                />
+              </Row>
+              <Row label={t("wss.borders")}>
+                <Seg
+                  t={T}
+                  value={s.borders}
+                  options={["none", "horizontal", "grid"]}
+                  onChange={set("borders")}
+                />
+              </Row>
+              <Row label={t("wss.zebra")}>
+                <Switch checked={s.zebra} onCheckedChange={set("zebra")} />
+              </Row>
+              <Row label={t("wss.stickyHeader")}>
+                <Switch checked={s.stickyHeader} onCheckedChange={set("stickyHeader")} />
+              </Row>
+              <Row label={t("wss.stickyFirst")}>
+                <Switch checked={s.stickyFirstColumn} onCheckedChange={set("stickyFirstColumn")} />
+              </Row>
+              <Row label={t("wss.wrap")}>
+                <Switch checked={s.wrap} onCheckedChange={set("wrap")} />
+              </Row>
+              <Row label={t("wss.cellAlign")}>
+                <Seg
+                  t={T}
+                  value={s.cellAlign}
+                  options={["left", "center", "right"]}
+                  onChange={set("cellAlign")}
+                />
+              </Row>
+              <Row label={t("wss.numberAlign")}>
+                <Seg
+                  t={T}
+                  value={s.numberAlign}
+                  options={["right", "center"]}
+                  onChange={set("numberAlign")}
+                />
+              </Row>
+              <Row label={t("wss.radius")}>
+                <Seg
+                  t={T}
+                  value={s.radius}
+                  options={["square", "rounded"]}
+                  onChange={set("radius")}
+                />
+              </Row>
             </section>
 
             <section>
               <h4 className="mb-1 text-xs font-semibold">{t("wss.columns")}</h4>
-              <input value={colSearch} onChange={(e) => setColSearch(e.target.value)} placeholder={t("wss.columnSearch")}
-                className="mb-1 w-full rounded border border-border bg-background px-2 py-1 text-xs" />
-              <Row label={t("wss.showUnits")}><Switch checked={s.showUnits} onCheckedChange={set("showUnits")} /></Row>
-              {columns.length === 0 && <p className="text-[11px] text-muted-foreground">{t("wss.noColumns")}</p>}
+              <input
+                value={colSearch}
+                onChange={(e) => setColSearch(e.target.value)}
+                placeholder={t("wss.columnSearch")}
+                className="mb-1 w-full rounded border border-border bg-background px-2 py-1 text-xs"
+              />
+              <Row label={t("wss.showUnits")}>
+                <Switch checked={s.showUnits} onCheckedChange={set("showUnits")} />
+              </Row>
+              {columns.length === 0 && (
+                <p className="text-[11px] text-muted-foreground">{t("wss.noColumns")}</p>
+              )}
               <ul className="space-y-0.5">
-                {order.filter((c) => c.label.toLowerCase().includes(colSearch.toLowerCase())).map((c) => {
-                  const hidden = s.hidden.includes(c.code);
-                  const sort = s.sort?.col === c.code ? s.sort.dir : null;
-                  return (
-                    <li key={c.code} draggable onDragStart={() => setDrag(c.code)} onDragOver={(e) => e.preventDefault()}
-                      onDrop={() => { if (drag) move(drag, c.code); setDrag(null); }}
-                      className="flex items-center gap-1 rounded border border-border px-1 py-0.5 text-xs">
-                      <GripVertical size={12} className="cursor-grab text-muted-foreground" />
-                      <span className={`flex-1 truncate ${hidden ? "text-muted-foreground line-through" : ""}`}>{c.label}</span>
-                      <button type="button" title={t("wss.sortAsc")} aria-label={t("wss.sortAsc")} onClick={() => update({ sort: sort === "asc" ? null : { col: c.code, dir: "asc" } })} className={sort === "asc" ? "text-primary" : "text-muted-foreground"}><ArrowUp size={12} /></button>
-                      <button type="button" title={t("wss.sortDesc")} aria-label={t("wss.sortDesc")} onClick={() => update({ sort: sort === "desc" ? null : { col: c.code, dir: "desc" } })} className={sort === "desc" ? "text-primary" : "text-muted-foreground"}><ArrowDown size={12} /></button>
-                      <button type="button" title={t(hidden ? "wss.show" : "wss.hide")} aria-label={t(hidden ? "wss.show" : "wss.hide")}
-                        onClick={() => update({ hidden: hidden ? s.hidden.filter((h) => h !== c.code) : [...s.hidden, c.code] })}>
-                        {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
-                      </button>
-                    </li>
-                  );
-                })}
+                {order
+                  .filter((c) => c.label.toLowerCase().includes(colSearch.toLowerCase()))
+                  .map((c) => {
+                    const hidden = s.hidden.includes(c.code);
+                    const sort = s.sort?.col === c.code ? s.sort.dir : null;
+                    return (
+                      <li
+                        key={c.code}
+                        draggable
+                        onDragStart={() => setDrag(c.code)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => {
+                          if (drag) move(drag, c.code);
+                          setDrag(null);
+                        }}
+                        className="flex items-center gap-1 rounded border border-border px-1 py-0.5 text-xs"
+                      >
+                        <GripVertical size={12} className="cursor-grab text-muted-foreground" />
+                        <span
+                          className={`flex-1 truncate ${hidden ? "text-muted-foreground line-through" : ""}`}
+                        >
+                          {c.label}
+                        </span>
+                        <button
+                          type="button"
+                          title={t("wss.sortAsc")}
+                          aria-label={t("wss.sortAsc")}
+                          onClick={() =>
+                            update({ sort: sort === "asc" ? null : { col: c.code, dir: "asc" } })
+                          }
+                          className={sort === "asc" ? "text-primary" : "text-muted-foreground"}
+                        >
+                          <ArrowUp size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          title={t("wss.sortDesc")}
+                          aria-label={t("wss.sortDesc")}
+                          onClick={() =>
+                            update({ sort: sort === "desc" ? null : { col: c.code, dir: "desc" } })
+                          }
+                          className={sort === "desc" ? "text-primary" : "text-muted-foreground"}
+                        >
+                          <ArrowDown size={12} />
+                        </button>
+                        <button
+                          type="button"
+                          title={t(hidden ? "wss.show" : "wss.hide")}
+                          aria-label={t(hidden ? "wss.show" : "wss.hide")}
+                          onClick={() =>
+                            update({
+                              hidden: hidden
+                                ? s.hidden.filter((h) => h !== c.code)
+                                : [...s.hidden, c.code],
+                            })
+                          }
+                        >
+                          {hidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                        </button>
+                      </li>
+                    );
+                  })}
               </ul>
             </section>
 

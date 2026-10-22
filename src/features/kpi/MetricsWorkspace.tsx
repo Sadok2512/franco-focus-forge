@@ -535,32 +535,50 @@ export function MetricsWorkspace({
   }, [columnKey]);
   const visibleCols = data ? orderedColumns(data.columns, ts) : [];
   const shownRows = data
-    ? arrangeRows(data.rows, ts, ts.search.trim()
-        ? (r) => visibleCols.some((c) => r.values[c.code] != null && fmt(r.values[c.code]).includes(ts.search.trim()))
-        : undefined)
+    ? arrangeRows(
+        data.rows,
+        ts,
+        ts.search.trim()
+          ? (r) =>
+              visibleCols.some(
+                (c) => r.values[c.code] != null && fmt(r.values[c.code]).includes(ts.search.trim()),
+              )
+          : undefined,
+      )
     : [];
   const tableStyle = {
-    "--t-bg": ts.colors.background, "--t-head-bg": ts.colors.headerBg, "--t-head-fg": ts.colors.headerText,
-    "--t-row": ts.colors.rowBg, "--t-alt": ts.zebra ? ts.colors.altRow : ts.colors.rowBg, "--t-border": ts.colors.border,
-    "--t-sel": ts.colors.selected, "--t-fg": textFor(ts.colors.rowBg),
+    "--t-bg": ts.colors.background,
+    "--t-head-bg": ts.colors.headerBg,
+    "--t-head-fg": ts.colors.headerText,
+    "--t-row": ts.colors.rowBg,
+    "--t-alt": ts.zebra ? ts.colors.altRow : ts.colors.rowBg,
+    "--t-border": ts.colors.border,
+    "--t-sel": ts.colors.selected,
+    "--t-fg": textFor(ts.colors.rowBg),
     "--t-font": { small: "11px", medium: "12px", large: "14px" }[ts.fontSize],
     "--t-row-h": { compact: "22px", normal: "28px", comfortable: "36px" }[ts.rowHeight],
     "--t-head-h": { compact: "26px", normal: "34px", large: "44px" }[ts.headerHeight],
     "--t-pad": { small: "2px 6px", medium: "4px 10px", large: "8px 14px" }[ts.cellPadding],
     "--t-gap": { compact: "0px", normal: "6px", wide: "14px" }[ts.spacing],
     "--t-radius": ts.radius === "rounded" ? "8px" : "0px",
-    "--t-align": ts.cellAlign, "--t-num-align": ts.numberAlign,
+    "--t-align": ts.cellAlign,
+    "--t-num-align": ts.numberAlign,
     maxWidth: ts.autoFitWidth ? undefined : `${100 / ts.perRow}%`,
-    height: ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
+    height:
+      ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
     resize: ts.resizable ? "vertical" : undefined,
   } as CSSProperties;
-  const tableTitle = parsedSelections.map((selection) => {
-    const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
-    const column = data?.columns.find((c) => c.code === selection.full || c.code === selection.code);
-    const label = info?.label ?? column?.label ?? selection.code;
-    const cellLabel = info?.cell_options?.find((c) => c.cell === selection.cell)?.label;
-    return cellLabel ? `${label} · ${cellLabel}` : label;
-  }).join(" · ");
+  const tableTitle = parsedSelections
+    .map((selection) => {
+      const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
+      const column = data?.columns.find(
+        (c) => c.code === selection.full || c.code === selection.code,
+      );
+      const label = info?.label ?? column?.label ?? selection.code;
+      const cellLabel = info?.cell_options?.find((c) => c.cell === selection.cell)?.label;
+      return cellLabel ? `${label} · ${cellLabel}` : label;
+    })
+    .join(" · ");
   return (
     <article
       ref={panelRef}
@@ -573,42 +591,54 @@ export function MetricsWorkspace({
           uniquement en Charts. */}
       <header className="kpi-metrics-table-toolbar">
         {pane === "table" ? (
-          <h3 className="kpi-metrics-table-title" title={tableTitle}>{tableTitle}</h3>
+          <h3 className="kpi-metrics-table-title" title={tableTitle}>
+            {tableTitle}
+          </h3>
         ) : (
           <>
-        <label className="kpi-select-label" title="View mode">
-          View
-          <select
-            value={pane}
-            onChange={(e) => setPane(e.target.value as MetricPane)}
-            data-testid="metrics-pane-select"
-          >
-            <option value="charts">Charts</option>
-            <option value="table">Table</option>
-            <option value="overlay">Overlay</option>
-          </select>
-        </label>
-        {pane === "charts" && (
-          <label className="kpi-select-label" title="Cards per row">
-            Per row
-            <select
-              value={perRow}
-              onChange={(e) => setPerRow(Number(e.target.value) as 1 | 2 | 3)}
-              data-testid="metrics-per-row"
-            >
-              <option value={1}>1</option>
-              <option value={2}>2</option>
-              <option value={3}>3</option>
-            </select>
-          </label>
-        )}
+            <label className="kpi-select-label" title="View mode">
+              View
+              <select
+                value={pane}
+                onChange={(e) => setPane(e.target.value as MetricPane)}
+                data-testid="metrics-pane-select"
+              >
+                <option value="charts">Charts</option>
+                <option value="table">Table</option>
+                <option value="overlay">Overlay</option>
+              </select>
+            </label>
+            {pane === "charts" && (
+              <label className="kpi-select-label" title="Cards per row">
+                Per row
+                <select
+                  value={perRow}
+                  onChange={(e) => setPerRow(Number(e.target.value) as 1 | 2 | 3)}
+                  data-testid="metrics-per-row"
+                >
+                  <option value={1}>1</option>
+                  <option value={2}>2</option>
+                  <option value={3}>3</option>
+                </select>
+              </label>
+            )}
           </>
         )}
-        <Button variant="outline" size="sm" disabled={!data} onClick={exportCsv} title={translate("metrics.a78f2051e6c9")}>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={!data}
+          onClick={exportCsv}
+          title={translate("metrics.a78f2051e6c9")}
+        >
           <Download size={13} /> {translate("metrics.a78f2051e6c9")}
         </Button>
-        <Button variant="outline" size="sm" title={translate("metrics.b62d901f4a73")}
-          onClick={() => void panelRef.current?.requestFullscreen?.()}>
+        <Button
+          variant="outline"
+          size="sm"
+          title={translate("metrics.b62d901f4a73")}
+          onClick={() => void panelRef.current?.requestFullscreen?.()}
+        >
           <Maximize2 size={13} /> {translate("metrics.b62d901f4a73")}
         </Button>
       </header>
@@ -711,7 +741,10 @@ export function MetricsWorkspace({
                   <Search size={12} />
                   <input
                     value={ts.search}
-                    onChange={(e) => { updateTs({ search: e.target.value }); setPage(1); }}
+                    onChange={(e) => {
+                      updateTs({ search: e.target.value });
+                      setPage(1);
+                    }}
                     placeholder={translate("wss.searchData")}
                     aria-label={translate("wss.searchData")}
                   />
