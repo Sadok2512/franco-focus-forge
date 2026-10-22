@@ -1,36 +1,84 @@
 import { describe, it, expect } from "vitest";
 import type { ProvenState } from "@/features/signaling/state-evidence";
-import { statePresentation, stateBandGeometry, stateLaneLayout } from "@/features/signaling/state-presentation";
+import {
+  statePresentation,
+  stateBandGeometry,
+  stateLaneLayout,
+} from "@/features/signaling/state-presentation";
 
 const base: ProvenState = {
   event: {
-    id: "fixture", lane: "connexion", type: "ue_state", kind: "band", seq: 234, seq_end: 1608,
-    t_rel_s: 1.4, t_rel_end_s: 24.182, duration_ms: 22782, outcome: null, cause: null,
-    label: "LTE", attrs: {}, pivot_seq: 243, linked_seqs: [234, 243, 1608], link_rule: "explicit", seq_gap: null,
-  }, track: "UE_STATE", captureId: "capture", sessionId: "session",
-  technology: "LTE", state: "LTE", startS: 1.4, endS: 24.182,
-  componentCarriers: null, carrierStatus: null, evidenceSeqs: [234, 243, 1608],
+    id: "fixture",
+    lane: "connexion",
+    type: "ue_state",
+    kind: "band",
+    seq: 234,
+    seq_end: 1608,
+    t_rel_s: 1.4,
+    t_rel_end_s: 24.182,
+    duration_ms: 22782,
+    outcome: null,
+    cause: null,
+    label: "LTE",
+    attrs: {},
+    pivot_seq: 243,
+    linked_seqs: [234, 243, 1608],
+    link_rule: "explicit",
+    seq_gap: null,
+  },
+  track: "UE_STATE",
+  captureId: "capture",
+  sessionId: "session",
+  technology: "LTE",
+  state: "LTE",
+  startS: 1.4,
+  endS: 24.182,
+  componentCarriers: null,
+  carrierStatus: null,
+  evidenceSeqs: [234, 243, 1608],
 };
 describe("V9 evidence-only product mapping", () => {
   it("never fabricates a carrier count when absent", () => {
     expect(statePresentation(base)?.count).toBeNull();
   });
   it("uses actual counts instead of hardcoded 2CC", () => {
-    expect(statePresentation({ ...base, componentCarriers: 3, carrierStatus: "USED" })?.count).toBe(3);
+    expect(statePresentation({ ...base, componentCarriers: 3, carrierStatus: "USED" })?.count).toBe(
+      3,
+    );
   });
   it("preserves configured versus activated versus used evidence", () => {
     for (const status of ["CONFIGURED", "ACTIVATED", "USED"] as const)
-      expect(statePresentation({ ...base, componentCarriers: 2, carrierStatus: status })?.status).toBe(status);
+      expect(
+        statePresentation({ ...base, componentCarriers: 2, carrierStatus: status })?.status,
+      ).toBe(status);
   });
   it("configured SCells alone do not assert active advanced LTE mode", () => {
-    expect(statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", componentCarriers: 2, carrierStatus: "CONFIGURED" })?.key).toBe("lte");
+    expect(
+      statePresentation({
+        ...base,
+        track: "RRC_STATE",
+        state: "CONNECTED",
+        componentCarriers: 2,
+        carrierStatus: "CONFIGURED",
+      })?.key,
+    ).toBe("lte");
   });
   it("activated CA establishes the advanced LTE product mode", () => {
-    expect(statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", componentCarriers: 2, carrierStatus: "ACTIVATED" })?.key).toBe("lteAdvanced");
+    expect(
+      statePresentation({
+        ...base,
+        track: "RRC_STATE",
+        state: "CONNECTED",
+        componentCarriers: 2,
+        carrierStatus: "ACTIVATED",
+      })?.key,
+    ).toBe("lteAdvanced");
   });
   it("NR technology alone does not assert ENDC or SA", () => {
     for (const technology of ["NR_NSA", "NR_SA"] as const)
-      expect(statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", technology })).toBeNull();
+      expect(
+        statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", technology }),
+      ).toBeNull();
   });
   it("does not convert absent intervals into Idle", () => {
     expect(statePresentation(base)?.key).toBe("lte");
@@ -42,6 +90,9 @@ describe("V9 evidence-only product mapping", () => {
     expect(stateBandGeometry(nr, [base, nr])).toEqual({ offset: 9, height: 16 });
   });
   it("uses 42 px state tracks separated by 4 px while preserving other track pitch", () => {
-    expect(stateLaneLayout(["uestate", "rrcstate", "network", "mobility"])).toEqual({ centers: [21, 67, 114, 158], height: 180 });
+    expect(stateLaneLayout(["uestate", "rrcstate", "network", "mobility"])).toEqual({
+      centers: [21, 67, 114, 158],
+      height: 180,
+    });
   });
 });

@@ -146,8 +146,8 @@ export function RfTimeline({
             (e.attrs.protocol === "Procedures" ||
               allowedProtocols.includes(
                 e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
-              ))) &&
-          e.t_rel_s !== null,
+              )) &&
+            e.t_rel_s !== null),
       ) ?? [],
     [events.data, layers, allowedProtocols],
   );
@@ -162,20 +162,26 @@ export function RfTimeline({
     const stateEvents = states
       .filter(
         (state) =>
-          statePresentation(state) !== null && (!technology ||
-          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
+          statePresentation(state) !== null &&
+          (!technology ||
+            (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
       )
       .map((state) => {
         const presentation = statePresentation(state);
-        const label = presentation ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined }) : "";
-        return ({
-        ...state.event,
-        label: presentation?.status ? `${label} · ${t(`signalingV2.${presentation.status}`)}` : label,
-        attrs: {
-          ...state.event.attrs,
-          track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
-        },
-      }); });
+        const label = presentation
+          ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined })
+          : "";
+        return {
+          ...state.event,
+          label: presentation?.status
+            ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
+            : label,
+          attrs: {
+            ...state.event.attrs,
+            track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
+          },
+        };
+      });
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
   }, [eligibleEvents, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
@@ -409,7 +415,13 @@ export function RfTimeline({
         if (width > 28) {
           children.push({
             type: "image",
-            style: { image: iconImage(marker.icon, iconForeground), x: left + 4, y: (start[1] ?? 0) - 6, width: 12, height: 12 },
+            style: {
+              image: iconImage(marker.icon, iconForeground),
+              x: left + 4,
+              y: (start[1] ?? 0) - 6,
+              width: 12,
+              height: 12,
+            },
           });
           children.push({
             type: "circle",
@@ -472,14 +484,26 @@ export function RfTimeline({
         });
         children.push({
           type: "image",
-          style: { image: iconImage(marker.icon, iconForeground), x: x - 7, y: y - 14, width: 14, height: 14 },
+          style: {
+            image: iconImage(marker.icon, iconForeground),
+            x: x - 7,
+            y: y - 14,
+            width: 14,
+            height: 14,
+          },
         });
         children.push({
           type: "circle",
           shape: { cx: x, cy: y + 10, r: 2 },
           style: { fill: markerColor, opacity },
         });
-        const nearby = displayed.some((other) => other.id !== item.id && laneFor(other) === laneFor(item) && other.t_rel_s !== null && Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90);
+        const nearby = displayed.some(
+          (other) =>
+            other.id !== item.id &&
+            laneFor(other) === laneFor(item) &&
+            other.t_rel_s !== null &&
+            Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90,
+        );
         if (showLabels && !nearby)
           children.push({
             type: "text",
@@ -621,7 +645,11 @@ export function RfTimeline({
           endValue: visibleWindow[1],
         },
       ],
-      brush: { xAxisIndex: xAxes.map((_, i) => i), brushType: "lineX", toolbox: ["lineX", "clear"] },
+      brush: {
+        xAxisIndex: xAxes.map((_, i) => i),
+        brushType: "lineX",
+        toolbox: ["lineX", "clear"],
+      },
       tooltip: {
         show: false,
         trigger: "item",
@@ -808,13 +836,21 @@ export function RfTimeline({
         )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
-          {stateTracksV2 && (["uestate", "rrcstate"] as const).map(lane => {
-            const index = lanes.indexOf(lane);
-            const center = laneLayout.centers[index];
-            return center === undefined ? null : <span key={lane} aria-hidden="true" className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground" style={{ top: 30 + center - 21 }}>
-              {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
-            </span>;
-          })}
+          {stateTracksV2 &&
+            (["uestate", "rrcstate"] as const).map((lane) => {
+              const index = lanes.indexOf(lane);
+              const center = laneLayout.centers[index];
+              return center === undefined ? null : (
+                <span
+                  key={lane}
+                  aria-hidden="true"
+                  className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground"
+                  style={{ top: 30 + center - 21 }}
+                >
+                  {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
+                </span>
+              );
+            })}
           <div
             ref={host}
             style={{ height: chartHeight, minWidth: 320 }}
@@ -837,34 +873,45 @@ export function RfTimeline({
             captureId={captureId}
           />
         </div>
-      {false && (
-        <p
-          className="shrink-0 text-[10px] text-muted-foreground"
-          data-testid="state-evidence-status"
-        >
-          {t("signalingV2.unavailable")}
-        </p>
-      )}
-      {linked && (
-        <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
-          {states.filter(state => state.event.id === linked.id).map(state => <span key={state.event.id} className="basis-full text-muted-foreground">
-            {linked.label} · {t("signalingV2.interval", { start: state.startS.toFixed(3), end: state.endS.toFixed(3) })} · {t("signalingV2.session")}: {state.sessionId}
-            {state.carrierStatus ? ` · ${state.componentCarriers} ${t(`signalingV2.${state.carrierStatus}`)}` : ""}
-          </span>)}
-          {t("rfTimeline.evidence")}:{" "}
-          {linked.linked_seqs.map((s) => (
-            <Button
-              variant="outline"
-              size="sm"
-              key={s}
-              className="kpi-button"
-              onClick={() => onSelect(linked, s)}
-            >
-              #{s}
-            </Button>
-          ))}
-        </div>
-      )}
+        {false && (
+          <p
+            className="shrink-0 text-[10px] text-muted-foreground"
+            data-testid="state-evidence-status"
+          >
+            {t("signalingV2.unavailable")}
+          </p>
+        )}
+        {linked && (
+          <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
+            {states
+              .filter((state) => state.event.id === linked.id)
+              .map((state) => (
+                <span key={state.event.id} className="basis-full text-muted-foreground">
+                  {linked.label} ·{" "}
+                  {t("signalingV2.interval", {
+                    start: state.startS.toFixed(3),
+                    end: state.endS.toFixed(3),
+                  })}{" "}
+                  · {t("signalingV2.session")}: {state.sessionId}
+                  {state.carrierStatus
+                    ? ` · ${state.componentCarriers} ${t(`signalingV2.${state.carrierStatus}`)}`
+                    : ""}
+                </span>
+              ))}
+            {t("rfTimeline.evidence")}:{" "}
+            {linked.linked_seqs.map((s) => (
+              <Button
+                variant="outline"
+                size="sm"
+                key={s}
+                className="kpi-button"
+                onClick={() => onSelect(linked, s)}
+              >
+                #{s}
+              </Button>
+            ))}
+          </div>
+        )}
         <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
       </div>
     </div>
