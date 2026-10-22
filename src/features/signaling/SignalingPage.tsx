@@ -1110,6 +1110,110 @@ export function SignalingPage({
     setTimeWindow(followMessage(timeWindow, selected.t_rel_s, captureDuration));
   }, [seq, selected?.t_rel_s, captureDuration, setTimeWindow]);
   const position = points.data?.points.find((p) => p.seq === seq);
+  // Same key and params as RfTimeline: one cached request feeds both the
+  // timeline bands and the RRC State column (no extra API call).
+  const stateEvents = useQuery({
+    queryKey: ["signaling-rf", projectId, capture, technology, direction, search],
+    enabled: !!capture,
+    queryFn: ({ signal }) =>
+      getSignaling(
+        projectId,
+        "events",
+        {
+          capture_id: capture,
+          view: "rf",
+          technology: technology || undefined,
+          direction: direction || undefined,
+          q: search || undefined,
+        },
+        signal,
+      ),
+    staleTime: 60000,
+  });
+  const provenRrc = useMemo(
+    () => (capture ? provenStates(stateEvents.data?.events ?? [], capture) : []),
+    [stateEvents.data, capture],
+  );
+  const radioSeries = useMemo(() => {
+    const byCode = (code: string) =>
+      [...(captureRadio.data?.series.find((s) => s.code === code)?.points ?? [])].sort(
+        (a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq,
+      );
+    return { rsrp: byCode("cell_rsrp"), rsrq: byCode("cell_rsrq"), sinr: byCode("ci_rs_snr") };
+  }, [captureRadio.data]);
+  const filtersActive =
+    !!search || !!direction || !!technology || !!procedure || !!range || protocols.length !== layers.length;
+  const inspectorTabs: InspectorTab[] = [
+    "Payload",
+    "Paramètres",
+    "Call Flow",
+    "Détails",
+    ...(details.data?.hex ? (["Hexadécimal"] as InspectorTab[]) : []),
+  ];
+  useEffect(() => {
+    if (inspectorTab === "Hexadécimal" && details.data && !details.data.hex) setInspectorTab("Payload");
+  }, [inspectorTab, details.data]);
+  const radioCell = (key: "rsrp" | "rsrq" | "sinr", t: number | null) => {
+    const r = radioAt(radioSeries[key], t);
+    if (!r) return <span className="text-muted-foreground">—</span>;
+    const exact = r.dtS === 0;
+    return (
+      <span
+        className={exact ? undefined : "sig-radio-prev"}
+        title={
+          exact
+            ? `Mesure #${r.seq} au même instant (${r.t.toFixed(3)} s)`
+            : `Mesure précédente #${r.seq} à ${r.t.toFixed(3)} s · Δt ${r.dtS.toFixed(3)} s · non instantanée`
+        }
+      >
+        {fmtRadio(r.value)}
+      </span>
+    );
+  };
+  const renderCell = (c: ColKey, r: SignalingLine) => {
+    switch (c) {
+      case "seq":
+        return r.seq;
+      case "t_rel_s":
+        return timeShown(r.t_rel_s);
+      case "layer":
+        return layerBadge(r.protocol);
+      case "direction":
+        return directionBadge(r.direction);
+      case "message_name":
+        return messageCell(r, listing.data?.procedures ?? []);
+      case "info":
+        return <InfoBadge info={messageInfo(r, listing.data?.procedures ?? [])} />;
+      case "technology":
+        return r.technology ? <span className="sig-chip">{r.technology}</span> : "—";
+      case "rrc_state": {
+        const s = rrcStateAt(r.t_rel_s, provenRrc);
+        return s ? (
+          <span className={`sig-state sig-state-${s.state.toLowerCase()}`} title={s.sessionId}>
+            {t(`sigTable.rrc.${s.state}`)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground" title={t("sigTable.rrcUnproven")}>
+            —
+          </span>
+        );
+      }
+      case "rsrp":
+      case "rsrq":
+      case "sinr":
+        return radioCell(c, r.t_rel_s);
+      case "size_bytes":
+        return shown(r.size_bytes);
+      case "ecgi":
+        return shown(r.ecgi);
+      case "pci":
+        return shown(r.pci);
+      case "source":
+        return shown(r.source);
+      default:
+        return <span className="text-muted-foreground">—</span>;
+    }
+  };
   const resetPage = () => {
     setPage(1);
     setSeq(undefined);
