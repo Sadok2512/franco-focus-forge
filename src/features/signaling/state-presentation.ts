@@ -10,13 +10,11 @@ export function statePresentation(state: ProvenState) {
       status: null,
     };
   const ca = state.componentCarriers !== null && state.componentCarriers > 1;
+  // RRC State lane: Idle (gray) or Connected (blue) only — no LTE/NR/CC labels.
   if (state.track === "RRC_STATE") {
-    // NR technology alone is not proof of ENDC success or an SA context.
-    if (state.technology !== "LTE") return null;
-    const activeCa = ca && (state.carrierStatus === "ACTIVATED" || state.carrierStatus === "USED");
     return {
-      key: activeCa ? "lteAdvanced" : "lte",
-      role: activeCa ? "lte-ca" : "lte",
+      key: "connected",
+      role: "connected",
       count: null,
       status: null,
     };

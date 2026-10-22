@@ -433,31 +433,39 @@ export function RfTimeline({
       const opacity =
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
       const children: Record<string, unknown>[] = [];
+      // UE State during Idle: leave the lane visually empty (no badge, no label).
+      if (isBand && proof?.track === "UE_STATE" && proof.state === "IDLE") return;
       if (isBand) {
         const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
         const y = (start[1] ?? 0) + geometry.offset;
-        const idleBadge = proof?.track === "RRC_STATE" && proof.state === "IDLE";
-        const bandWidth = idleBadge ? Math.min(width, 48) : width;
+        // RRC State lane renders as a compact pill badge for both Idle and Connected.
+        const rrcBadge = proof?.track === "RRC_STATE";
+        const idleBadge = rrcBadge && proof.state === "IDLE";
+        const rrcText = rrcBadge
+          ? proof.state === "IDLE"
+            ? t("signalingV2.idle")
+            : t("signalingV2.connected")
+          : item.label;
+        const bandWidth = rrcBadge ? Math.min(width, proof.state === "IDLE" ? 48 : 92) : width;
         const bandLeft = left + (width - bandWidth) / 2;
-        // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
           shape: {
             x: bandLeft,
-            y: y - (idleBadge ? 18 : geometry.height) / 2,
+            y: y - (rrcBadge ? 18 : geometry.height) / 2,
             width: bandWidth,
-            height: idleBadge ? 18 : geometry.height,
+            height: rrcBadge ? 18 : geometry.height,
             r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (idleBadge ? bandWidth >= 40 : width > Math.max(70, item.label.length * 7 + 16))
+        if (rrcBadge ? bandWidth >= 40 : width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
               x: left + width / 2,
               y,
-              text: item.label,
+              text: rrcText,
               fill: idleBadge
                 ? tokens.getPropertyValue("--sig-table-text").trim()
                 : stateTracksV2
@@ -510,28 +518,29 @@ export function RfTimeline({
             },
           } as never);
         if (showLabels && width > 40) {
+          // Start / End render below the bar (user spec), aligned on the exact extremities.
           children.push({
             type: "text",
             style: {
               x: start[0]!,
-              y: start[1]! - 12,
+              y: start[1]! + 12,
               text: `Start\n${fmtT(item.t_rel_s ?? 0)} s`,
               fill: "#475569",
               fontSize: 8,
               align: "left",
-              verticalAlign: "bottom",
+              verticalAlign: "top",
             },
           } as never);
           children.push({
             type: "text",
             style: {
               x: end[0]!,
-              y: start[1]! - 12,
+              y: start[1]! + 12,
               text: `End\n${fmtT(item.t_rel_end_s)} s`,
               fill: "#475569",
               fontSize: 8,
               align: "right",
-              verticalAlign: "bottom",
+              verticalAlign: "top",
             },
           } as never);
         }
@@ -577,7 +586,7 @@ export function RfTimeline({
             style: {
               x: start[0]!,
               y: y + 13,
-              text: `${item.label}\n${fmtT(item.t_rel_s ?? 0)} s`,
+              text: item.label,
               fill: labelColor,
               fontSize: 8,
               align: "center",

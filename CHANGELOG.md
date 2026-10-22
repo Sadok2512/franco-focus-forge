@@ -1,3 +1,17 @@
+## 1.87.1 (patch) — BC4-FRONT 2026-10-22 — Signaling timeline RRC/UE/Events/DataTask corrections (Agent BC3)
+
+Timeline Signaling (mission Lovable→BC3 continuation) : rendu rendu conforme spec utilisateur, aucun changement d'architecture ni de données.
+
+- **RRC State lane** : `state-presentation.ts:12-23` → RRC_STATE non-IDLE renvoie désormais `{ key: "connected", role: "connected" }` quelle que soit la techno/CA. Plus de badges LTE/NR/1CC/2CC/3CC/4CC sur la ligne RRC — seulement Idle (gris) ou Connected (bleu).
+- **UE State lane pendant Idle** : `RfTimeline.tsx:435-485` → early-return si `proof.track === "UE_STATE" && proof.state === "IDLE"` ; la zone UE est laissée vide (fond normal), aucun badge ni texte "Idle".
+- **Network Events** : `RfTimeline.tsx:574-586` → suppression du timestamp affiché sous l'icône (`text: item.label` seul). Les tooltips conservent les timestamps.
+- **Data Task Time** : `RfTimeline.tsx:512-537` → Start sous l'extrémité gauche, End sous l'extrémité droite (y=start[1]+12, verticalAlign="top") ; durée de la barre strictement issue de `t_rel_s`/`t_rel_end_s`.
+- **Rename "DL Data" → "Data Task Time"** : `locales/en.json:464`, `locales/fr.json:464` (fr: "Durée des tâches").
+- **Token CSS** : `styles.css:147` `--signaling-state-connected: #16A36B` (vert) → `#2563EB` (bleu), cohérent avec `--signaling-state-lte-ca`.
+- **Tests** : `signaling-state-presentation.test.ts:57-78` → nouvelles assertions ("RRC State lane only exposes Idle or Connected", "connected key for NR technologies too"). **122/122 tests signaling verts, tsc clean**.
+
+Aucun test de non-régression supplémentaire ajouté. Changes UI-only, source data et contrats back inchangés.
+
 ## 1.87.0 (minor) — BC4-FRONT 2026-10-22 — Merge reconciliation github/main ↔ feat/bc3-metrics (Agent BC3)
 
 Merge sélectif entre `feat/bc3-metrics` (BC3 KPI/Metrics workspace, 22 commits) et `github/main` (Lovable Signaling updates, 257 commits).
