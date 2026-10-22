@@ -6,10 +6,13 @@ import { TimeCursor } from "@/features/signaling/TimeCursor";
 
 describe("Signaling cursor chart readiness", () => {
   it("resolves capture time zero after axes become ready without mouse movement", () => {
-    vi.stubGlobal("ResizeObserver", class {
-      observe() {}
-      disconnect() {}
-    });
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+      },
+    );
     const host = createRef<HTMLDivElement>();
     host.current = document.createElement("div");
     let ready = false;
@@ -19,14 +22,28 @@ describe("Signaling cursor chart readiness", () => {
         if (name === "finished") finished = callback;
       }),
       off: vi.fn(),
-      convertToPixel: vi.fn((_axis: unknown, time: number) => ready ? 112 + time : NaN),
+      convertToPixel: vi.fn((_axis: unknown, time: number) => (ready ? 112 + time : NaN)),
     } as unknown as ECharts;
     const onTime = vi.fn();
-    const result = render(<TimeCursor chart={chart} host={host} selectedTime={0}
-      eventId={null} events={[]} series={[]} zoom={[0, 100]} duration={300}
-      onTime={onTime} onMessage={vi.fn()} />);
+    const result = render(
+      <TimeCursor
+        chart={chart}
+        host={host}
+        selectedTime={0}
+        eventId={null}
+        events={[]}
+        series={[]}
+        zoom={[0, 100]}
+        duration={300}
+        onTime={onTime}
+        onMessage={vi.fn()}
+      />,
+    );
     expect(screen.queryByRole("slider")).toBeNull();
-    act(() => { ready = true; finished?.(); });
+    act(() => {
+      ready = true;
+      finished?.();
+    });
     expect(screen.getByRole("slider").getAttribute("aria-valuenow")).toBe("0");
     expect(onTime).not.toHaveBeenCalled();
     result.unmount();
