@@ -183,7 +183,7 @@ export function MessageFilterPopover({
             variant="ghost"
             size="sm"
             disabled={searching}
-            onClick={() => setCollapsed(new Set())}
+            onClick={() => setExpanded(new Set(groupIds))}
           >
             {t("sigFilters.expandAll")}
           </Button>
@@ -191,7 +191,7 @@ export function MessageFilterPopover({
             variant="ghost"
             size="sm"
             disabled={searching}
-            onClick={() => setCollapsed(new Set(groupIds))}
+            onClick={() => setExpanded(new Set())}
           >
             {t("sigFilters.collapseAll")}
           </Button>
