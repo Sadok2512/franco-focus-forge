@@ -14,6 +14,8 @@ export const Route = createFileRoute("/")({
         content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs.",
       },
       { property: "og:title", content: "BC4 — Benchmark radio LTE/NR" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         property: "og:description",
         content: "Plateforme de benchmark radio LTE, NR et EN-DC multi-opérateurs.",

@@ -14,12 +14,11 @@ import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
-const lanes = ["uestate", "network", "dl", "ul", "vonr", "mobility"] as const;
-type Lane = (typeof lanes)[number];
+const laneOrder = ["uestate", "network", "dl", "ul", "volte", "vonr", "ping", "sms", "mobility"] as const;
+type Lane = (typeof laneOrder)[number];
 const laneOf = (track: string | undefined): Lane => {
   if (track === "lte" || track === "nsa" || track === "sa") return "uestate";
-  if (track === "volte") return "vonr";
-  if (track === "dl" || track === "ul" || track === "mobility") return track;
+  if (track === "dl" || track === "ul" || track === "volte" || track === "vonr" || track === "ping" || track === "sms" || track === "mobility") return track;
   return "network";
 };
 const codes = ["cell_rsrp", "cell_rsrq", "ci_rs_snr"];
@@ -71,6 +70,7 @@ export function RfTimeline({
   const [measures, setMeasures] = useState(codes);
   const [linked, setLinked] = useState<RfEvent>();
   const [ready, setReady] = useState(0);
+  const [, redrawCursor] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
 
   const host = useRef<HTMLDivElement>(null),
@@ -120,6 +120,7 @@ export function RfTimeline({
     [events.data, layers, allowedProtocols],
   );
   const series = (detailed.data ?? radio.data)?.series;
+  const lanes = useMemo(() => laneOrder.filter((lane) => lane === "uestate" || lane === "network" || displayed.some((event) => laneOf(event.attrs.track) === lane)), [displayed]);
   const duration =
     radio.data?.duration_s ??
     Math.max(0, ...displayed.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
@@ -233,6 +234,7 @@ export function RfTimeline({
       { type: "dataZoom", startValue: visibleWindow[0], endValue: visibleWindow[1] },
       { silent: true },
     );
+    redrawCursor((revision) => revision + 1);
   }, [visibleWindow[0], visibleWindow[1], duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   useEffect(() => {
@@ -489,6 +491,7 @@ export function RfTimeline({
     captureId,
     i18n.language,
     showLabels,
+    lanes,
   ]);
   const zoomBy = (factor: number) => {
     const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
