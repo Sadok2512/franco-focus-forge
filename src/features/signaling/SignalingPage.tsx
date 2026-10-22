@@ -2,13 +2,15 @@ import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
 import { EventRibbon } from "./EventRibbon";
+import { TimeNavigator } from "./TimeNavigator";
+import { followMessage, useTimeWindow, type TimeWindow } from "./time-window";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { getSignaling } from "@/lib/api/client";
+import { getSignaling, getMetricSeries } from "@/lib/api/client";
 import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
@@ -541,13 +543,25 @@ function Timeline({
   data,
   onRange,
   selectedTime,
+  timeWindow,
+  duration,
 }: {
+  timeWindow: TimeWindow;
+  duration: number;
   data: SignalingTimeline;
   selectedTime: number | null;
   onRange: (range: [number, number] | undefined) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<ECharts | undefined>(undefined);
+  const view = useRef({ timeWindow, duration });
+  view.current = { timeWindow, duration };
+  useEffect(() => {
+    instance.current?.dispatchAction(
+      { type: "dataZoom", startValue: timeWindow[0], endValue: timeWindow[1] },
+      { silent: true },
+    );
+  }, [timeWindow[0], timeWindow[1]]);
   const time = useRef(selectedTime);
   time.current = selectedTime;
   const drawCursor = useCallback(() => {
@@ -585,13 +599,22 @@ function Timeline({
         grid: { left: 48, right: 20, top: 40, bottom: 42 },
         xAxis: {
           min: 0,
+          max: view.current.duration,
           type: "value",
           name: "Temps capture (s)",
           nameLocation: "middle",
           nameGap: 26,
         },
         yAxis: { type: "value", name: "Messages" },
-        dataZoom: [{ type: "inside", xAxisIndex: 0, zoomOnMouseWheel: "ctrl" }],
+        dataZoom: [
+          {
+            type: "inside",
+            xAxisIndex: 0,
+            disabled: true,
+            startValue: view.current.timeWindow[0],
+            endValue: view.current.timeWindow[1],
+          },
+        ],
         brush: { xAxisIndex: 0, brushType: "lineX", toolbox: ["lineX", "clear"] },
         series: layers.map((name, i) => ({
           id: name,
@@ -749,7 +772,13 @@ function SignalMap({
     let marker: import("maplibre-gl").Marker | undefined;
     let cancelled = false;
     const point = data.points.find((p) => p.seq === selectedSeq);
-    if (point?.lat !== null && point?.lat !== undefined && point.lng !== null && point.seq_gap === 0 && point.gps_seq === point.seq) {
+    if (
+      point?.lat !== null &&
+      point?.lat !== undefined &&
+      point.lng !== null &&
+      point.seq_gap === 0 &&
+      point.gps_seq === point.seq
+    ) {
       void import("maplibre-gl").then((ml) => {
         if (cancelled) return;
         const el = document.createElement("div");
@@ -927,6 +956,17 @@ export function SignalingPage({
     sharedCapture && caps.data?.captures.some((c) => c.capture_id === sharedCapture)
       ? sharedCapture
       : caps.data?.captures[0]?.capture_id;
+  const captureRadio = useQuery({
+    queryKey: ["signaling-rf-radio", projectId, capture],
+    enabled: !!capture,
+    queryFn: ({ signal }) => {
+      if (!capture) throw new Error("Capture unavailable");
+      return getMetricSeries(projectId, capture, ["cell_rsrp", "cell_rsrq", "ci_rs_snr"], signal);
+    },
+    staleTime: 60000,
+  });
+  const captureDuration = captureRadio.data?.duration_s ?? 0;
+  const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(capture, captureDuration);
   useEffect(() => {
     if (initialCapture) setCaptureContext(projectId, initialCapture);
   }, [projectId, initialCapture]);
@@ -1006,6 +1046,11 @@ export function SignalingPage({
     }
     selectionCapture.current = capture;
   }, [capture]);
+  // Message identity/time changes may follow; cursor previews and window drags never do.
+  useEffect(() => {
+    if (seq === undefined || selected?.t_rel_s == null || captureDuration <= 0) return;
+    setTimeWindow(followMessage(timeWindow, selected.t_rel_s, captureDuration));
+  }, [seq, selected?.t_rel_s, captureDuration, setTimeWindow]);
   const position = points.data?.points.find((p) => p.seq === seq);
   const resetPage = () => {
     setPage(1);
@@ -1032,7 +1077,12 @@ export function SignalingPage({
       },
     );
     setSeq(value);
-    setCursor({ selectedTimeS: row?.t_rel_s ?? point?.t_rel_s ?? null, hoveredTimeS: null, selectedEventId: null, selectedMessageSeq: value });
+    setCursor({
+      selectedTimeS: row?.t_rel_s ?? point?.t_rel_s ?? null,
+      hoveredTimeS: null,
+      selectedEventId: null,
+      selectedMessageSeq: value,
+    });
     setLinkedMessages([]);
   };
   const error = [caps, listing, timeline, points].find((q) => q.isError)?.error;
@@ -1326,6 +1376,16 @@ export function SignalingPage({
                           projectId={projectId}
                           captureId={capture}
                           selectedSeq={seq}
+                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
+                          onTime={(time) =>
+                            setCursor((current) => ({
+                              ...current,
+                              selectedTimeS: time,
+                              selectedEventId: null,
+                            }))
+                          }
+                          duration={captureDuration}
+                          timeWindow={timeWindow}
                           onSelect={(e) => {
                             // Spec signaling_timeline §interactions : clic →
                             // sélectionne pivot_seq (ou le seq lui-même si pas
@@ -1335,6 +1395,12 @@ export function SignalingPage({
                             // selected pour le highlight et ouvre /details.
                             const target = e.pivot_seq ?? e.seq;
                             chooseSeq(target);
+                            setCursor({
+                              selectedTimeS: e.t_rel_s,
+                              hoveredTimeS: null,
+                              selectedEventId: e.id,
+                              selectedMessageSeq: target,
+                            });
                             setSelectedRecord({
                               capture_id: capture,
                               seq: target,
@@ -1351,10 +1417,20 @@ export function SignalingPage({
                           captureId={capture}
                           selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
                           selectedEventId={cursor.selectedEventId}
+                          timeWindow={timeWindow}
+                          onWindow={setTimeWindow}
                           onTime={(time) => {
-                            setCursor({ selectedTimeS: time, hoveredTimeS: null, selectedEventId: null, selectedMessageSeq: time === null ? null : seq ?? null });
+                            setCursor({
+                              selectedTimeS: time,
+                              hoveredTimeS: null,
+                              selectedEventId: null,
+                              selectedMessageSeq: time === null ? null : (seq ?? null),
+                            });
                             setLinkedMessages([]);
-                            if (time === null) { setSeq(undefined); setSelectedRecord(undefined); }
+                            if (time === null) {
+                              setSeq(undefined);
+                              setSelectedRecord(undefined);
+                            }
                           }}
                           technology={technology}
                           direction={direction}
@@ -1367,23 +1443,50 @@ export function SignalingPage({
                           onSelect={(e, sourceSeq) => {
                             const target = sourceSeq ?? eventMessage(e);
                             setLinkedMessages(e.linked_seqs);
-                            setCursor({ selectedTimeS: e.t_rel_s, hoveredTimeS: null, selectedEventId: e.id, selectedMessageSeq: target });
+                            setCursor({
+                              selectedTimeS: e.t_rel_s,
+                              hoveredTimeS: null,
+                              selectedEventId: e.id,
+                              selectedMessageSeq: target,
+                            });
                             if (target === null || !capture) return;
-                            const row = listing.data?.rows.find(r => r.seq === target);
+                            const row = listing.data?.rows.find((r) => r.seq === target);
                             setSeq(target);
-                            setSelectedRecord(row ?? { capture_id: capture, seq: target, t_rel_s: e.t_rel_s,
-                              message_name: typeof e.attrs['source_message'] === 'string' ? e.attrs['source_message'] : e.label,
-                              protocol: e.attrs.protocol ?? '' });
-                            if (!row) void getSignaling(projectId, 'rows', { ...filtered, seq: target, page, size, sort, order }).then(data => {
-                              const selectedRow = data.rows.find(r => r.seq === target);
-                              if (selectedRow) setSelectedRecord(selectedRow);
-                              if (data.selected_page !== null && data.selected_page !== page) setPage(data.selected_page);
-                            }).catch(() => undefined);
+                            setSelectedRecord(
+                              row ?? {
+                                capture_id: capture,
+                                seq: target,
+                                t_rel_s: e.t_rel_s,
+                                message_name:
+                                  typeof e.attrs["source_message"] === "string"
+                                    ? e.attrs["source_message"]
+                                    : e.label,
+                                protocol: e.attrs.protocol ?? "",
+                              },
+                            );
+                            if (!row)
+                              void getSignaling(projectId, "rows", {
+                                ...filtered,
+                                seq: target,
+                                page,
+                                size,
+                                sort,
+                                order,
+                              })
+                                .then((data) => {
+                                  const selectedRow = data.rows.find((r) => r.seq === target);
+                                  if (selectedRow) setSelectedRecord(selectedRow);
+                                  if (data.selected_page !== null && data.selected_page !== page)
+                                    setPage(data.selected_page);
+                                })
+                                .catch(() => undefined);
                           }}
                         />
                       ) : timeline.data ? (
                         <Timeline
                           data={timeline.data}
+                          timeWindow={timeWindow}
+                          duration={captureDuration}
                           selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
                           onRange={(r) => {
                             setRange(r);
@@ -1395,6 +1498,11 @@ export function SignalingPage({
                           Chargement de la timeline…
                         </p>
                       )}
+                      <TimeNavigator
+                        duration={captureDuration}
+                        window={timeWindow}
+                        onWindow={setTimeWindow}
+                      />
                     </section>
                   </Panel>
                   <Separator
@@ -1531,7 +1639,7 @@ export function SignalingPage({
                                 onMouseEnter={() => setHover(r.procedure_ids)}
                                 onMouseLeave={() => setHover([])}
                                 onClick={() => chooseSeq(r.seq)}
-                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : (linkedMessages.includes(r.seq) || r.procedure_ids.some((id) => hover.includes(id))) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
+                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : linkedMessages.includes(r.seq) || r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
                               >
                                 {(Object.keys(COL_LABELS) as ColKey[])
                                   .filter((c) => visibleCols.has(c))

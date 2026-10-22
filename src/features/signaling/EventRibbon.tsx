@@ -3,7 +3,11 @@
 // Spec /home/devmat/BC4/specs/signaling_timeline.html.
 // Clic événement → onSelect(event) : parent surlignes messages liés dans la
 // liste et ouvre l'arbre ASN.1 sur pivot_seq. Pas de ts, uniquement t_rel_s.
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { stepTime } from "./cursor";
+import type { TimeWindow } from "./time-window";
 import { useQuery } from "@tanstack/react-query";
 import { getSignaling } from "@/lib/api/client";
 
@@ -51,19 +55,29 @@ export function EventRibbon({
   projectId,
   captureId,
   selectedSeq,
+  selectedTime,
+  onTime,
+  duration,
+  timeWindow,
   onSelect,
 }: {
   projectId: string;
   captureId: string;
   selectedSeq?: number | undefined;
+  selectedTime: number | null;
+  onTime: (time: number | null) => void;
+  duration: number;
+  timeWindow: TimeWindow;
   onSelect: (event: EventRow) => void;
 }) {
+  const { t } = useTranslation();
+  const drag = useRef(false);
+  const [preview, setPreview] = useState<number | null>(null);
   const [failuresOnly, setFailuresOnly] = useState(false);
   const [enabledLanes, setEnabledLanes] = useState<Set<Lane>>(
     () => new Set(LANES.map((l) => l.key)),
   );
-  // Curseur temporel rouge : état local au ruban, jamais une clé de requête.
-  const [cursorT, setCursorT] = useState<number | null>(null);
+  const cursorT = preview ?? selectedTime;
 
   const q = useQuery({
     queryKey: ["signaling-events", projectId, captureId, failuresOnly],
@@ -85,11 +99,10 @@ export function EventRibbon({
       return next;
     });
 
-  const { events, maxT } = useMemo(() => {
+  const events = useMemo(() => {
     const d = q.data as { events?: EventRow[] } | undefined;
     const all = (d?.events ?? []).filter((e) => enabledLanes.has(e.lane));
-    const maxT = all.reduce((acc, e) => Math.max(acc, e.t_rel_end_s ?? e.t_rel_s ?? 0), 0);
-    return { events: all, maxT: Math.max(maxT, 1) };
+    return all.filter((e) => e.t_rel_s !== null);
   }, [q.data, enabledLanes]);
 
   const W = 1000;
@@ -97,8 +110,24 @@ export function EventRibbon({
   const R_PAD = 20;
   const LANE_H = 28;
   const TOP = 32;
-  const H = TOP + LANES.length * LANE_H + 10;
-  const X = (t: number) => L_LABEL + (t / maxT) * (W - L_LABEL - R_PAD);
+  const activeLanes = LANES.filter((lane) => events.some((event) => event.lane === lane.key));
+  const H = TOP + activeLanes.length * LANE_H + 10;
+  const X = (time: number) =>
+    L_LABEL +
+    ((time - timeWindow[0]) / Math.max(0.001, timeWindow[1] - timeWindow[0])) *
+      (W - L_LABEL - R_PAD);
+  const atPointer = (element: SVGSVGElement, clientX: number) => {
+    const rect = element.getBoundingClientRect();
+    const px = ((clientX - rect.left) / rect.width) * W;
+    if (px < L_LABEL || px > W - R_PAD) return null;
+    return Math.max(
+      timeWindow[0],
+      Math.min(
+        timeWindow[1],
+        timeWindow[0] + ((px - L_LABEL) / (W - L_LABEL - R_PAD)) * (timeWindow[1] - timeWindow[0]),
+      ),
+    );
+  };
 
   const counts =
     (q.data as { counts_by_lane?: Record<string, number> } | undefined)?.counts_by_lane ?? {};
@@ -106,12 +135,12 @@ export function EventRibbon({
   if (q.isPending)
     return (
       <p role="status" className="p-6 text-xs text-muted-foreground">
-        Chargement du ruban événements…
+        {t("rfTimeline.loading")}
       </p>
     );
   if (q.isError)
     return (
-      <p role="alert" className="p-3 text-xs text-red-600">
+      <p role="alert" className="p-3 text-xs text-destructive">
         /signaling/events indisponible : {String((q.error as Error).message)}
       </p>
     );
@@ -123,7 +152,7 @@ export function EventRibbon({
           const on = enabledLanes.has(l.key);
           const n = counts[l.key] ?? 0;
           return (
-            <button
+            <Button
               key={l.key}
               type="button"
               className={`rounded-full border px-2 py-0.5 ${
@@ -135,11 +164,12 @@ export function EventRibbon({
               aria-pressed={on}
               data-testid={`ribbon-chip-${l.key}`}
             >
-              {l.label} <span className="font-mono text-[10px] opacity-70">{n}</span>
-            </button>
+              {t(`timeNavigator.lanes.${l.key}`)}{" "}
+              <span className="font-mono text-[10px] opacity-70">{n}</span>
+            </Button>
           );
         })}
-        <button
+        <Button
           type="button"
           className={`ml-auto rounded-full border px-2 py-0.5 ${
             failuresOnly
@@ -150,8 +180,8 @@ export function EventRibbon({
           aria-pressed={failuresOnly}
           data-testid="ribbon-failures-only"
         >
-          Échecs seulement
-        </button>
+          {t("timeNavigator.failures")}
+        </Button>
       </div>
       <div className="min-h-0 flex-1 overflow-auto">
         <svg
@@ -159,21 +189,53 @@ export function EventRibbon({
           className="w-full"
           preserveAspectRatio="none"
           style={{ minHeight: H, maxHeight: H * 1.4 }}
-          aria-label="Ruban des événements de signalisation"
+          aria-label={t("timeNavigator.ribbon")}
           tabIndex={0}
-          onClick={(ev) => {
-            const rect = ev.currentTarget.getBoundingClientRect();
-            const px = ((ev.clientX - rect.left) / rect.width) * W;
-            const t = ((px - L_LABEL) / (W - L_LABEL - R_PAD)) * maxT;
-            setCursorT(Math.max(0, Math.min(maxT, t)));
+          onPointerDown={(ev) => {
+            if ((ev.target as Element).closest("[data-event]")) return;
+            const time = atPointer(ev.currentTarget, ev.clientX);
+            if (time === null) return;
+            drag.current = true;
+            ev.currentTarget.setPointerCapture(ev.pointerId);
+            setPreview(null);
+            onTime(time);
+          }}
+          onPointerMove={(ev) => {
+            const time = atPointer(ev.currentTarget, ev.clientX);
+            if (drag.current && time !== null) onTime(time);
+            else setPreview(time);
+          }}
+          onPointerUp={() => {
+            drag.current = false;
+            setPreview(null);
+          }}
+          onPointerCancel={() => {
+            drag.current = false;
+          }}
+          onPointerLeave={() => {
+            if (!drag.current) setPreview(null);
           }}
           onKeyDown={(ev) => {
-            if (ev.key === "Escape") setCursorT(null);
+            if (ev.key === "Escape") {
+              onTime(null);
+              setPreview(null);
+            }
+            if (ev.key === "ArrowLeft" || ev.key === "ArrowRight") {
+              ev.preventDefault();
+              const times = [
+                ...new Set(
+                  events
+                    .flatMap((e) => [e.t_rel_s, e.t_rel_end_s])
+                    .filter((v): v is number => v !== null),
+                ),
+              ].sort((a, b) => a - b);
+              onTime(stepTime(times, selectedTime, ev.key === "ArrowLeft" ? -1 : 1));
+            }
           }}
         >
           {/* Axis labels at top */}
           {Array.from({ length: 11 }, (_, i) => {
-            const t = (i / 10) * maxT;
+            const t = timeWindow[0] + (i / 10) * (timeWindow[1] - timeWindow[0]);
             return (
               <g key={i}>
                 <line
@@ -191,7 +253,7 @@ export function EventRibbon({
             );
           })}
           {/* Lane strips */}
-          {LANES.map((l, i) => {
+          {activeLanes.map((l, i) => {
             const y = TOP + i * LANE_H;
             return (
               <g key={l.key}>
@@ -204,21 +266,27 @@ export function EventRibbon({
                   fillOpacity={0.03}
                 />
                 <text x={6} y={y + LANE_H / 2 + 3} fontSize={10} fontWeight={600} fill="#334155">
-                  {l.label}
+                  {t(`timeNavigator.lanes.${l.key}`)}
                 </text>
               </g>
             );
           })}
           {/* Events */}
           {events.map((e) => {
-            const laneIdx = LANES.findIndex((l) => l.key === e.lane);
+            if (
+              e.t_rel_s === null ||
+              e.t_rel_s > timeWindow[1] ||
+              (e.t_rel_end_s ?? e.t_rel_s) < timeWindow[0]
+            )
+              return null;
+            const laneIdx = activeLanes.findIndex((l) => l.key === e.lane);
             if (laneIdx < 0) return null;
             const y = TOP + laneIdx * LANE_H + LANE_H / 2;
             const t0 = e.t_rel_s ?? 0;
             const t1 = e.t_rel_end_s ?? t0;
-            const x0 = X(t0);
-            const x1 = X(t1);
-            const laneColor = LANES[laneIdx]!.color;
+            const x0 = X(Math.max(timeWindow[0], t0));
+            const x1 = X(Math.min(timeWindow[1], t1));
+            const laneColor = activeLanes[laneIdx]?.color ?? "var(--muted-foreground)";
             const col = e.outcome ? (OUTCOME_COLORS[e.outcome] ?? laneColor) : laneColor;
             const selected =
               selectedSeq != null && (e.seq === selectedSeq || e.linked_seqs.includes(selectedSeq));
@@ -226,9 +294,13 @@ export function EventRibbon({
               className: "cursor-pointer",
               onClick: (ev: { stopPropagation(): void }) => {
                 ev.stopPropagation();
-                if (e.t_rel_s !== null) setCursorT(e.t_rel_s);
+                if (e.t_rel_s !== null) {
+                  setPreview(null);
+                  onTime(e.t_rel_s);
+                }
                 onSelect(e);
               },
+              "data-event": true,
               "data-testid": `ribbon-event-${e.id}`,
             };
             if (e.kind === "bar" || t1 > t0) {
@@ -300,14 +372,14 @@ export function EventRibbon({
             );
           })}
           {/* Curseur temporel rouge (clic pour placer, Échap pour effacer) */}
-          {cursorT !== null && (
+          {cursorT !== null && cursorT >= timeWindow[0] && cursorT <= timeWindow[1] && (
             <g data-testid="ribbon-cursor" pointerEvents="none">
               <line
                 x1={X(cursorT)}
                 y1={TOP - 6}
                 x2={X(cursorT)}
                 y2={H - 6}
-                stroke="#EF4444"
+                className={preview === null ? "signaling-cursor-line" : "signaling-cursor-preview"}
                 strokeWidth={2}
               />
               <text
@@ -315,7 +387,7 @@ export function EventRibbon({
                 y={TOP - 18}
                 fontSize={9}
                 fontWeight={700}
-                fill="#EF4444"
+                fill="var(--signaling-cursor)"
                 textAnchor="middle"
               >
                 {cursorT.toFixed(3)}s
@@ -325,8 +397,7 @@ export function EventRibbon({
         </svg>
       </div>
       <footer className="text-[10px] text-muted-foreground">
-        {events.length} événements rendus · appartenance via `linked_seqs` (règles
-        d'app/signaling/links.py)
+        {t("timeNavigator.eventCount", { count: events.length })}
       </footer>
     </div>
   );

@@ -5,6 +5,10 @@ export const Route = createFileRoute("/_app/rf")({
   head: () => ({
     meta: [
       { title: "RF Modules — BC4" },
+      { property: "og:title", content: "RF Modules — BC4" },
+      { property: "og:description", content: "Analyse radio modulaire LTE et NR dans BC4." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       {
         name: "description",
         content:

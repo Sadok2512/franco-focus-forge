@@ -4,6 +4,7 @@ import type { RfEvent } from "@/lib/api/signaling";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { X, ArrowRight, Crosshair } from "lucide-react";
+import { clampWindow } from "./time-window";
 import {
   activeIntervals,
   availableTimes,
@@ -162,10 +163,10 @@ export function TimeCursor({
         {readings.map((s) => {
           if (!chart || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
             return null;
-          const coords = chart.convertToPixel(
-            { xAxisIndex: 1, yAxisIndex: 1 },
-            [s.point.t_rel_s, s.point.value],
-          ) as number[];
+          const coords = chart.convertToPixel({ xAxisIndex: 1, yAxisIndex: 1 }, [
+            s.point.t_rel_s,
+            s.point.value,
+          ]) as number[];
           const [cx, cy] = coords;
           return cx !== undefined &&
             cy !== undefined &&
@@ -222,12 +223,12 @@ export function TimeCursor({
           size="sm"
           className="absolute right-2 top-2"
           onClick={() => {
-            const half = Math.max(0.5, (zoom[1] - zoom[0]) / 2);
-            const center = duration ? (selectedTime / duration) * 100 : 0;
+            const width = (duration * (zoom[1] - zoom[0])) / 100;
+            const range = clampWindow(duration, selectedTime - width / 2, width);
             chart?.dispatchAction({
               type: "dataZoom",
-              start: Math.max(0, center - half),
-              end: Math.min(100, center + half),
+              startValue: range[0],
+              endValue: range[1],
             });
           }}
         >

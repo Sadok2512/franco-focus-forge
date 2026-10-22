@@ -1,3 +1,9 @@
+## 1.79.0 — Signaling time navigator (LOT A) and UE audit (LOT B)
+
+- Default 0–30-second window, clamped to capture duration; shared RF/events/ribbon/histogram range with draggable overview, presets, previous/next, zoom/reset/full capture.
+- Independent local cursor and follow selected message without message/map filters; navigator dragging does not request detailed windows.
+- UE reconstruction is intentionally gated on explicit approval and validated session-aware source evidence.
+
 ## 1.78.1 — Ribbon time cursor & empty UE-state note
 
 - Event ribbon (Ruban view) gains the red time cursor: click anywhere on the ribbon to place it at the exact capture time, clicking an event snaps the cursor to its proven timestamp, Escape clears it. Cursor state stays local — never a query key.
