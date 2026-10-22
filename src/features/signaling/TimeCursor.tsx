@@ -163,10 +163,10 @@ export function TimeCursor({
         {readings.map((s) => {
           if (!chart || !s.point || s.point.value === null || !visible(s.point.t_rel_s))
             return null;
-          const coords = chart.convertToPixel(
-            { xAxisIndex: 1, yAxisIndex: 1 },
-            [s.point.t_rel_s, s.point.value],
-          ) as number[];
+          const coords = chart.convertToPixel({ xAxisIndex: 1, yAxisIndex: 1 }, [
+            s.point.t_rel_s,
+            s.point.value,
+          ]) as number[];
           const [cx, cy] = coords;
           return cx !== undefined &&
             cy !== undefined &&
@@ -223,7 +223,7 @@ export function TimeCursor({
           size="sm"
           className="absolute right-2 top-2"
           onClick={() => {
-            const width = duration * (zoom[1] - zoom[0]) / 100;
+            const width = (duration * (zoom[1] - zoom[0])) / 100;
             const range = clampWindow(duration, selectedTime - width / 2, width);
             chart?.dispatchAction({
               type: "dataZoom",

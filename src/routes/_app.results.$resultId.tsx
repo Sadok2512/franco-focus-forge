@@ -4,14 +4,16 @@ import { getAnalyticsResult } from "@/lib/api/client";
 import { getSession, toUserMessage } from "@/lib/api/http";
 export const Route = createFileRoute("/_app/results/$resultId")({
   component: ResultPage,
-  head: () => ({ meta: [
-    { title: "Résultat analytique — BC4" },
-    { name: "description", content: "Détails du résultat analytique BC4." },
-    { property: "og:title", content: "Résultat analytique — BC4" },
-    { property: "og:description", content: "Détails du résultat analytique BC4." },
-    { property: "og:type", content: "website" },
-    { name: "twitter:card", content: "summary" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Résultat analytique — BC4" },
+      { name: "description", content: "Détails du résultat analytique BC4." },
+      { property: "og:title", content: "Résultat analytique — BC4" },
+      { property: "og:description", content: "Détails du résultat analytique BC4." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 function ResultPage() {
   const { resultId } = Route.useParams();
