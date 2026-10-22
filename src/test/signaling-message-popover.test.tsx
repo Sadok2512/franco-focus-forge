@@ -9,7 +9,23 @@ const types = [
   { key: "paging", name: "Paging", protocol: "RRC LTE", count: 24, technology: "LTE" as const, channel: "PCCH" },
   { key: "request", name: "RRCConnectionRequest", protocol: "RRC LTE", count: 11, technology: "LTE" as const, channel: "UL-CCCH" },
 ];
+
+const openAndExpand = (...channelIds: string[]) => {
+  fireEvent.click(screen.getByTestId("message-filter-trigger"));
+  fireEvent.click(screen.getByTestId("tree-chevron-LTE"));
+  for (const id of channelIds) fireEvent.click(screen.getByTestId(`tree-chevron-LTE/${id}`));
+};
+
 describe("transactional popup", () => {
+  it("opens with every group closed: only technologies are listed", () => {
+    render(<MessageFilterPopover types={types} selection={null} onApply={() => {}} onRequest={() => {}} loading={false} error={false} />);
+    fireEvent.click(screen.getByTestId("message-filter-trigger"));
+    expect(screen.getByTestId("tree-tech-LTE")).toBeInTheDocument();
+    expect(screen.getByTestId("tree-chevron-LTE")).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByRole("checkbox", { name: "Paging · RRC LTE" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("tree-channel-LTE/PCCH")).not.toBeInTheDocument();
+  });
+
   it("Cancel leaves the applied selection untouched; Apply persists across reopen", async () => {
     const apply = vi.fn();
     function Harness() {
@@ -29,11 +45,11 @@ describe("transactional popup", () => {
       );
     }
     render(<Harness />);
-    fireEvent.click(screen.getByTestId("message-filter-trigger"));
+    openAndExpand("PCCH");
     fireEvent.click(screen.getByRole("checkbox", { name: "Paging · RRC LTE" }));
     expect(apply).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    fireEvent.click(screen.getByTestId("message-filter-trigger"));
+    openAndExpand("PCCH");
     expect(screen.getByRole("checkbox", { name: "Paging · RRC LTE" })).toHaveAttribute(
       "aria-checked",
       "true",
@@ -41,7 +57,7 @@ describe("transactional popup", () => {
     fireEvent.click(screen.getByRole("checkbox", { name: "Paging · RRC LTE" }));
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(apply).toHaveBeenCalledWith(["request"]);
-    fireEvent.click(screen.getByTestId("message-filter-trigger"));
+    openAndExpand("PCCH");
     await waitFor(() =>
       expect(screen.getByRole("checkbox", { name: "Paging · RRC LTE" })).toHaveAttribute(
         "aria-checked",
