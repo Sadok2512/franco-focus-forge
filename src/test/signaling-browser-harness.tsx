@@ -60,7 +60,7 @@ export function mountCursorHarness(client?: QueryClient, stateTracksV2 = false, 
           onWindow={setWindow}
           stateTracksV2={stateTracksV2}
         />
-        {stateTracksV2 && <TimeNavigator duration={duration} window={window} onWindow={setWindow} />}
+        <TimeNavigator duration={duration} window={window} onWindow={setWindow} />
         <div style={{ height: 220 }}>
           <EventRibbon
             projectId="cursor-test"

@@ -1,4 +1,5 @@
 # BC4 roadmap
+- [x] Add the requested Time Navigator below stable Signaling, reusing the shared draggable/resizable window and preserving full-capture opening, messages and GPS. 20 tests pass; browser fixture verifies full capture, reset to 30 s, keyboard and drag with unchanged width. Real VM capture remains unverified.
 - [x] Stable Signaling cursor visibility — added crosshair activation control; fixture Playwright at 1973×1204 verifies clear/reactivate at 150 s, unchanged full-capture zoom and resize. 26 targeted tests and harness build pass; authenticated VM rendering remains blocked by rejected reader credentials.
 - [x] Time Cursor V3 — V2 blue navigator edge handles, independent cursor/window, 51 targeted tests and fixture Playwright 0–30/120–150/133.452 s validation; version 1.80.1, no publication. See signaling-cursor-v3-validation.md.
 - [ ] Time Cursor V3 authenticated capture, payload/list/GPS and visual approval — blocked because the VM rejects the securely stored reader credentials; fullscreen/live split-panel checks also await this session.
