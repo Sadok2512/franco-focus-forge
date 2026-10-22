@@ -1434,7 +1434,6 @@ export function SignalingPage({
                 }}
                 onApply={(value) => {
                   setMessageSelection(value);
-                  setPage(1);
                 }}
                 onTechnology={(v) => {
                   setTechnology(v);
@@ -2090,6 +2089,9 @@ export function SignalingPage({
                           </div>
                         )}
                       </header>
+                      {messageSelection !== null && seq !== undefined && !selectedRows.some((row) => row.seq === seq) && !listing.isFetching && (
+                        <p className="sig-selection-note" role="status">{t("sigFilters.selectedOutside", { seq })}</p>
+                      )}
                       {seq === undefined ? (
                         <p role="status" className="p-4 text-muted-foreground">
                           {t("sigTable.selectHint")}
