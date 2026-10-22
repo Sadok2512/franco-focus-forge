@@ -1,3 +1,32 @@
+## 1.88.0 (minor) — BC4-FRONT 2026-10-22 — Metrics table : Time local/UTC + Lat/Lon GPS backend-driven (Agent BC3)
+
+Mission `[BC3] [bc4-back + franco-focus-forge] — GO lot Time/GPS (fixes 1→10)`, section Front (C1).
+
+### Schémas Zod
+
+- `src/lib/api/metrics-schemas.ts:159-200` : `MetricAnalysisSchema` gagne 3 champs top-level optionnels (`nmf_start_at`, `capture_date`, `utc_offset_min`) + 7 champs par ligne (`time_local`, `time_utc`, `lat`, `lon`, `gps_source`, `gps_age_s`, `reason`). Nullable + optional → rétro-compatible avec les backends < 0.75.0.
+
+### MetricsWorkspace
+
+- `MetricsWorkspace.tsx:14-30` : **suppression** de `extractCaptureDate(label)` et `formatUtc(date, t_rel, originTs)`. **Plus aucune date devinée depuis le nom de capture** (CLAUDE.md Rule 2 — jamais un chiffre sans sa source).
+- `MetricsWorkspace.tsx:421-423` : `captureDate = data?.capture_date ?? null`. Seule la valeur back fait foi.
+- `MetricsWorkspace.tsx:618-690` (table rendering) :
+  - 4 colonnes GPS/temporelles au lieu de 3 : `Time local` + `Time UTC` + `Latitude` + `Longitude` (ancien schéma avait un seul `Time (UTC)` reconstruit).
+  - Sous-titres d'en-tête : `capture_date` + offset UTC verbalisé (`UTC+2h` si `utc_offset_min=120`).
+  - Cellules null (lat, lon, time_utc) : classe `text-muted-foreground opacity-60` + tooltip `reason` humanisé (`REASON_LABELS`) ou "—". **Plus aucun `<td>—</td>` codé en dur** (CLAUDE.md Rule 2).
+  - `fmtLatLng(v)` → 6 décimales, format mono-space.
+  - Tooltip GPS : `gps_source='previous_fix' + gps_age_s` → "previous fix · Δt N.N s" ; `exact` → "exact fix" ; null → `reason` humanisé.
+
+### CSV
+
+- `data.csv` est désormais généré **côté back** avec les colonnes exactes `time_local, time_utc, lat, lon, gps_source, gps_age_s, reason` entre `seq_last` et les métriques (voir CHANGELOG back 0.75.0). Le front passe `data.csv` tel quel au `Blob` (`MetricsWorkspace.tsx:418`), **inchangé**.
+
+### Non-régression
+
+- `tsc --noEmit` : 0 erreur (vérifié sur working tree complet).
+- Tests signaling (122/122) + state-presentation (10/10) : verts (non-régression du commit 1.87.1).
+- Pré-existant non-corrigé : `src/test/metrics-catalog-v6.test.tsx` (1 test KO depuis le merge 068271b — DOM BC3 "chevron + status dot" ≠ Lovable "Expand button + checkbox"). Hors-scope lot Time/GPS.
+
 ## 1.87.1 (patch) — BC4-FRONT 2026-10-22 — Signaling timeline RRC/UE/Events/DataTask corrections (Agent BC3)
 
 Timeline Signaling (mission Lovable→BC3 continuation) : rendu rendu conforme spec utilisateur, aucun changement d'architecture ni de données.

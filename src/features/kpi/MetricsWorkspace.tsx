@@ -11,39 +11,23 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard } from "./MetricGraphCard";
 
-// 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
-// Reconstitue le timestamp UTC absolu depuis le label de capture
-// (ex. "M1_FREE_DL-7Go_Max-10_W30_26Jun23_103320.4.nmf" → 2023-06-26)
-// + l'origin_ts du back (ex. "10:33:20.980") + t_rel_s de chaque row.
-function extractCaptureDate(label: string | undefined): string | null {
-  if (!label) return null;
-  const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_/);
-  if (!m) return null;
-  const months: Record<string, string> = {
-    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
-  };
-  const [, d, monAbbr, yy] = m;
-  const mon = months[monAbbr!] ?? "01";
-  return `20${yy}-${mon}-${d}`;
+// 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
+// `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
+// + `capture_date` (YYYY-MM-DD) au niveau top. Aucune date devinée depuis
+// le nom de capture : si `capture_date` ou `time_*` est null, cellule
+// grisée avec tooltip indiquant la raison (`reason` ou champ absent).
+const REASON_LABELS: Record<string, string> = {
+  no_gps_in_capture: "Pas de GPS dans la capture",
+  light_decode_no_gps: "Décode Light — GPS non projeté (nécessite deep decode)",
+  no_fix_before_seq: "Aucun fix GPS avant cette séquence",
+  no_utc_offset_header: "Entête `#UT` absent — offset UTC inconnu",
+};
+function reasonLabel(reason: string | null | undefined): string | undefined {
+  if (!reason) return undefined;
+  return REASON_LABELS[reason] ?? reason;
 }
-function formatUtc(date: string | null, t_rel_s: number, originTs: string | null): string {
-  if (!date || !originTs) return "—";
-  // originTs = "HH:MM:SS.mmm" → add t_rel_s seconds
-  const parts = originTs.split(":");
-  if (parts.length !== 3) return "—";
-  const h = parseInt(parts[0]!, 10);
-  const m = parseInt(parts[1]!, 10);
-  const [sStr, msStr = "0"] = parts[2]!.split(".");
-  const s = parseInt(sStr!, 10);
-  const ms = parseInt(msStr.padEnd(3, "0").slice(0, 3), 10);
-  const baseMs = ((h * 3600 + m * 60 + s) * 1000) + ms;
-  const totalMs = baseMs + Math.round(t_rel_s * 1000);
-  const H = String(Math.floor(totalMs / 3_600_000) % 24).padStart(2, "0");
-  const M = String(Math.floor(totalMs / 60_000) % 60).padStart(2, "0");
-  const S = String(Math.floor(totalMs / 1000) % 60).padStart(2, "0");
-  const Ms = String(totalMs % 1000).padStart(3, "0");
-  return `${date}T${H}:${M}:${S}.${Ms}Z`;
+function fmtLatLng(v: number | null | undefined): string {
+  return v == null ? "" : v.toFixed(6);
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
@@ -434,9 +418,9 @@ export function MetricsWorkspace({
       onCaptureChange(captureQuery.data[0].capture_id);
     }
   }, [captureId, captureQuery.data, onCaptureChange]);
-  const captureLabel = captureQuery.data?.find((c) => c.capture_id === captureId)?.label;
-  const captureDate = extractCaptureDate(captureLabel);
-  const originTs = data?.origin_ts ?? null;
+  // 1.88.0 — date absolue vient uniquement du back (`data.capture_date`).
+  // Plus de regex sur le nom de capture.
+  const captureDate = data?.capture_date ?? null;
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
@@ -638,8 +622,15 @@ export function MetricsWorkspace({
                     <thead>
                       <tr>
                         <th className="col-time">
-                          Time (UTC)
-                          <small className="block">yyyy-mm-ddThh:mm:ss.sssZ</small>
+                          Time local
+                          <small className="block">{captureDate ?? "—"} · hh:mm:ss.sss</small>
+                        </th>
+                        <th className="col-time">
+                          Time UTC
+                          <small className="block">
+                            {captureDate ?? "—"}
+                            {data.utc_offset_min != null ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h` : " · offset —"}
+                          </small>
                         </th>
                         <th className="col-geo numeric">
                           Latitude
@@ -660,18 +651,37 @@ export function MetricsWorkspace({
                     <tbody>
                       {data.rows
                         .slice((page - 1) * pageSize, page * pageSize)
-                        .map((r) => (
+                        .map((r) => {
+                        const rowReason = reasonLabel(r.reason);
+                        const utcMissing = r.time_utc == null;
+                        const utcTooltip = utcMissing && rowReason ? rowReason : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
+                        const gpsTooltip = r.lat == null ? (rowReason ?? "—") : (r.gps_source === "previous_fix" && r.gps_age_s != null ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s` : "exact fix");
+                        return (
                         <tr key={r.second} data-second={r.second}>
                           <td
                             className="col-time font-mono text-[11px]"
                             title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
                           >
-                            {formatUtc(captureDate, r.t_rel_s, originTs)}
+                            {r.time_local ?? r.time_label}
                           </td>
-                          {/* Phase 2 : join /signaling/points pour peupler lat/lng.
-                              Pour l'instant, "—" explicite (pas de 0 fabriqué). */}
-                          <td className="col-geo numeric text-muted-foreground">—</td>
-                          <td className="col-geo numeric text-muted-foreground">—</td>
+                          <td
+                            className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
+                            title={utcTooltip}
+                          >
+                            {r.time_utc ?? "—"}
+                          </td>
+                          <td
+                            className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
+                            title={gpsTooltip}
+                          >
+                            {r.lat == null ? "—" : fmtLatLng(r.lat)}
+                          </td>
+                          <td
+                            className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
+                            title={gpsTooltip}
+                          >
+                            {r.lon == null ? "—" : fmtLatLng(r.lon)}
+                          </td>
                           {data.columns.map((c) => (
                             <td
                               className="numeric"
@@ -688,7 +698,8 @@ export function MetricsWorkspace({
                             </td>
                           ))}
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
