@@ -736,8 +736,11 @@ export function RfTimeline({
       brush: {
         xAxisIndex: xAxes.map((_, i) => i),
         brushType: "lineX",
-        toolbox: ["lineX", "clear"],
+        toolbox: [],
       },
+      // ECharts crée une toolbox interne pour le brush : la masquer explicitement
+      // (les icônes « sélection horizontale » et « Effacer la sélection »).
+      toolbox: { show: false },
       tooltip: {
         show: false,
         trigger: "item",
