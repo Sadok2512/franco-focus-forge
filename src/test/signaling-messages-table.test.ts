@@ -68,35 +68,3 @@ it("ASN.1 tree opens fully when small and progressively when huge", () => {
   expect(c.has("r/x1")).toBe(false);
   expect(c.has("r/x1/y/z")).toBe(true);
 });
-
-import { rfAlert, procedureVisual, DEFAULT_VISIBLE, visibleColumns } from "@/features/signaling/message-columns";
-describe("V11 RF colour thresholds (raw values, red only below)", () => {
-  it.each([
-    ["rsrp", -95.1, false], ["rsrp", -110, false], ["rsrp", -110.1, true], ["rsrp", -115, true],
-    ["rsrq", -14.2, false], ["rsrq", -16, false], ["rsrq", -16.1, true],
-    ["sinr", 18.5, false], ["sinr", 0, false], ["sinr", -0.1, true], ["sinr", -8.9, true],
-  ] as const)("%s %d → red=%s", (m, v, red) => expect(rfAlert(m, v)).toBe(red));
-  it("missing values are never red", () => {
-    expect(rfAlert("rsrp", null)).toBe(false);
-    expect(rfAlert("sinr", undefined)).toBe(false);
-  });
-});
-describe("V11 default columns and procedure icons", () => {
-  it("shows the twelve reference columns in order", () => {
-    expect(visibleColumns(defaultColumns())).toEqual([
-      "seq", "t_rel_s", "layer", "direction", "message_name", "info", "rrc_state",
-      "rsrp", "rsrq", "sinr", "size_bytes", "action",
-    ]);
-    expect(DEFAULT_VISIBLE).toHaveLength(12);
-  });
-  it("RRC Release is a red phone-off, never a drop/failure icon", () => {
-    expect(procedureVisual("RRC Release", "ok")).toEqual({ icon: "phone-off", tone: "red" });
-    expect(procedureVisual("rrc_reconfiguration", "ok").icon).toBe("settings");
-    expect(procedureVisual("SCG Addition", "ok")).toEqual({ icon: "radio-tower", tone: "purple" });
-    expect(procedureVisual("Inter-RAT HO", "ok").icon).toBe("route");
-    expect(procedureVisual("Inter HO", "ok").icon).toBe("repeat");
-    expect(procedureVisual("Intra HO", "ok").icon).toBe("arrow-left-right");
-    expect(procedureVisual("HO Failure", "fail").icon).toBe("circle-x");
-    expect(procedureVisual("RLF", "fail").icon).toBe("alert-triangle");
-  });
-});

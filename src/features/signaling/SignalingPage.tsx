@@ -34,17 +34,12 @@ import {
   CircleCheck,
   CircleX,
   Clock,
+  Columns3,
   Download,
-  ChevronsLeft,
-  ChevronsRight,
-  ExternalLink,
-  Mail,
-  PhoneOff,
-  Repeat,
-  RotateCcw,
-  Route,
-  Settings,
-  TriangleAlert,
+  FilterX,
+  Gauge,
+  LogIn,
+  LogOut,
   MapPin,
   MapPinOff,
   RadioTower,
@@ -62,7 +57,6 @@ import { DecoderTree } from "./DecoderTree";
 import { provenStates } from "./state-evidence";
 import {
   COLUMNS,
-  CENTERED_COLS,
   COLUMNS_STORAGE_KEY,
   MANDATORY_COLS,
   defaultColumns,
@@ -70,9 +64,6 @@ import {
   moveColumn,
   pageItems,
   parseColumns,
-  procedureVisual,
-  rfAlert,
-  type ProcIcon,
   radioAt,
   rrcStateAt,
   toggleColumn,
@@ -103,17 +94,36 @@ const shown = (value: unknown) => (value === null || value === undefined ? "—"
 // les slugs servis par le back (layer) et sur les étiquettes françaises
 // (protocol) pour compat avec les lignes anciennes.
 const LAYER_BADGE: Record<string, { label: string; className: string }> = {
-  "RRC LTE": { label: "RRC LTE", className: "msg-layer-lte" },
-  "RRC NR": { label: "RRC NR", className: "msg-layer-nr" },
-  NAS: { label: "NAS", className: "msg-layer-nas" },
-  "Événements Nemo": { label: "Nemo", className: "msg-layer-nemo" },
-  "MAC-RACH": { label: "MAC-RACH", className: "msg-layer-mac" },
+  "RRC LTE": {
+    label: "RRC LTE",
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200",
+  },
+  "RRC NR": {
+    label: "RRC NR",
+    className: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200",
+  },
+  NAS: {
+    label: "NAS",
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
+  },
+  "Événements Nemo": {
+    label: "Nemo",
+    className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200",
+  },
+  "MAC-RACH": {
+    label: "MAC-RACH",
+    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200",
+  },
 };
 function layerBadge(protocol: string | null | undefined) {
   if (!protocol) return <span className="text-muted-foreground">—</span>;
   const b = LAYER_BADGE[protocol];
   if (!b) return <span>{protocol}</span>;
-  return <span className={`msg-layer ${b.className}`}>{b.label}</span>;
+  return (
+    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${b.className}`}>
+      {b.label}
+    </span>
+  );
 }
 
 // 1.55.0 — Directional badge. Spec §5 : UL = ↑ vert, DL = ↓ bleu, inconnu = —.
@@ -122,15 +132,15 @@ function layerBadge(protocol: string | null | undefined) {
 function directionBadge(direction: string | null | undefined) {
   if (direction === "UL")
     return (
-      <span className="msg-dir msg-dir-ul">
-        <ArrowUp size={16} aria-hidden="true" />
+      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+        <ArrowUp size={12} aria-hidden="true" />
         UL
       </span>
     );
   if (direction === "DL")
     return (
-      <span className="msg-dir msg-dir-dl">
-        <ArrowDown size={16} aria-hidden="true" />
+      <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
+        <ArrowDown size={12} aria-hidden="true" />
         DL
       </span>
     );
@@ -528,27 +538,21 @@ function messageCell(row: RowLike, procedures: ProcLike[]) {
 const fmtInt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 const fmtRadio = (n: number) => (n < 0 ? `−${Math.abs(n).toFixed(1)}` : n.toFixed(1));
 
-const PROC_ICONS: Record<ProcIcon, typeof Activity> = {
-  "radio-tower": RadioTower,
-  settings: Settings,
-  "arrow-left-right": ArrowLeftRight,
-  repeat: Repeat,
-  route: Route,
-  "circle-check": CircleCheck,
-  "circle-x": CircleX,
-  "phone-off": PhoneOff,
-  "alert-triangle": TriangleAlert,
-  activity: Activity,
-};
+const INFO_ICONS = {
+  setup: LogIn,
+  release: LogOut,
+  scg: RadioTower,
+  handover: ArrowLeftRight,
+  measurement: Gauge,
+  other: Activity,
+} as const;
 function InfoBadge({ info }: { info: MessageInfo | null }) {
-  if (!info) return <span className="msg-muted">—</span>;
-  const v = procedureVisual(info.label, info.outcome);
-  const Icon = PROC_ICONS[v.icon];
+  if (!info) return <span className="text-muted-foreground">—</span>;
+  const Icon =
+    info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
   return (
-    <span className="msg-proc" title={`${info.label} · ${info.outcome}`} data-tone={v.tone}>
-      <span className={`msg-proc-icon msg-tone-${v.tone}`}>
-        <Icon size={14} aria-hidden="true" />
-      </span>
+    <span className={`sig-info sig-info-${info.role}`} title={`${info.label} · ${info.outcome}`}>
+      <Icon size={12} aria-hidden="true" />
       <span className="truncate">{info.label}</span>
     </span>
   );
@@ -1228,13 +1232,11 @@ export function SignalingPage({
   }, [inspectorTab, details.data]);
   const radioCell = (key: "rsrp" | "rsrq" | "sinr", t: number | null) => {
     const r = radioAt(radioSeries[key], t);
-    if (!r) return <span className="msg-muted">—</span>;
+    if (!r) return <span className="text-muted-foreground">—</span>;
     const exact = r.dtS === 0;
-    const alert = rfAlert(key, r.value);
     return (
       <span
-        className={`msg-rf${alert ? " msg-rf-alert" : ""}${exact ? "" : " sig-radio-prev"}`}
-        data-rf-alert={alert}
+        className={exact ? undefined : "sig-radio-prev"}
         title={
           exact
             ? `Mesure #${r.seq} au même instant (${r.t.toFixed(3)} s)`
@@ -1250,8 +1252,7 @@ export function SignalingPage({
       case "seq":
         return r.seq;
       case "t_rel_s":
-        // Only the capture-relative time is supplied; no absolute clock is invented.
-        return <span className="msg-time">{timeShown(r.t_rel_s)}</span>;
+        return timeShown(r.t_rel_s);
       case "layer":
         return layerBadge(r.protocol);
       case "direction":
@@ -1286,24 +1287,6 @@ export function SignalingPage({
         return shown(r.pci);
       case "source":
         return shown(r.source);
-      case "action":
-        return (
-          <button
-            type="button"
-            className="msg-action"
-            aria-label={t("sigTable.open", { seq: r.seq })}
-            data-testid={`sig-open-${r.seq}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              chooseSeq(r.seq);
-              document
-                .querySelector<HTMLElement>("[data-testid=signaling-inspector]")
-                ?.scrollIntoView({ block: "nearest" });
-            }}
-          >
-            <ExternalLink size={15} aria-hidden="true" />
-          </button>
-        );
       default:
         return <span className="text-muted-foreground">—</span>;
     }
@@ -1694,148 +1677,192 @@ export function SignalingPage({
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
                   <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
                     <section
-                      className="sig-messages signaling-pane flex flex-col overflow-hidden"
+                      className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
                       aria-label={t("sigTable.title")}
                     >
-                      <header className="msg-header shrink-0">
-                        <div className="msg-header-row">
-                          <span className="msg-header-icon" aria-hidden="true">
-                            <Mail size={30} strokeWidth={2} />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <h2 className="msg-title" data-testid="signaling-total">
-                              {listing.data
-                                ? t("sigTable.headTitle", { n: fmtInt(listing.data.total) })
-                                : t("sigTable.countPending")}
-                            </h2>
-                            <p className="msg-subtitle">{t("sigTable.subtitle")}</p>
-                          </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  type="button"
-                                  className="msg-tool"
-                                  aria-label={t("sigTable.columns")}
-                                  data-testid="signaling-columns-trigger"
-                                >
-                                  <Settings size={15} aria-hidden="true" />
-                                  {t("sigTable.columns")} ({shownCols.length})
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="w-72">
-                                <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
-                                {colConfig.order.map((c, i) => {
-                                  const mandatory = MANDATORY_COLS.includes(c);
-                                  const def = COLUMNS.find((d) => d.key === c)!;
-                                  return (
-                                    <div
-                                      key={c}
-                                      className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
+                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+                        <h2 className="sig-count mr-1" data-testid="signaling-total">
+                          {listing.data
+                            ? t("sigTable.count", {
+                                count: listing.data.total,
+                                n: fmtInt(listing.data.total),
+                              })
+                            : t("sigTable.countPending")}
+                        </h2>
+                        <label className="sig-search">
+                          <Search size={14} aria-hidden="true" />
+                          <input
+                            aria-label={t("sigTable.search")}
+                            placeholder={t("sigTable.searchPlaceholder")}
+                            title={t("sigTable.searchScope")}
+                            value={search}
+                            onChange={(e) => {
+                              setSearch(e.target.value);
+                              resetPage();
+                            }}
+                          />
+                        </label>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.layer")}
+                          data-testid="sig-filter-layer"
+                          value={
+                            protocols.length === layers.length
+                              ? ""
+                              : protocols.length === 1
+                                ? protocols[0]
+                                : "__custom"
+                          }
+                          onChange={(e) => {
+                            setProtocols(e.target.value ? [e.target.value] : layers);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allLayers")}</option>
+                          {protocols.length > 1 && protocols.length < layers.length && (
+                            <option value="__custom" disabled>
+                              {t("sigTable.customLayers", { n: protocols.length })}
+                            </option>
+                          )}
+                          {layers.map((l) => (
+                            <option key={l} value={l}>
+                              {LAYER_BADGE[l]?.label ?? l}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.direction")}
+                          value={direction}
+                          onChange={(e) => {
+                            setDirection(e.target.value);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allDirections")}</option>
+                          <option value="UL">UL</option>
+                          <option value="DL">DL</option>
+                          <option value="unknown">{t("sigTable.undocumented")}</option>
+                        </select>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.technology")}
+                          value={technology}
+                          onChange={(e) => {
+                            setTechnology(e.target.value);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allTechnologies")}</option>
+                          <option value="LTE">LTE</option>
+                          <option value="NR">NR</option>
+                        </select>
+                        <div className="ml-auto flex items-center gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="sig-tool"
+                                aria-label={t("sigTable.columns")}
+                                data-testid="signaling-columns-trigger"
+                              >
+                                <Columns3 size={14} aria-hidden="true" />
+                                {t("sigTable.columns")} ({shownCols.length}/{COLUMNS.length})
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-72">
+                              <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
+                              {colConfig.order.map((c, i) => {
+                                const mandatory = MANDATORY_COLS.includes(c);
+                                const def = COLUMNS.find((d) => d.key === c)!;
+                                return (
+                                  <div
+                                    key={c}
+                                    className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
+                                  >
+                                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={colConfig.visible.includes(c)}
+                                        disabled={mandatory}
+                                        onChange={() => setColConfig((old) => toggleColumn(old, c))}
+                                        data-testid={`signaling-column-${c}`}
+                                      />
+                                      <span className="truncate">{t(`sigTable.col.${c}`)}</span>
+                                      {!def.available && (
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                          {t("sigTable.notSupplied")}
+                                        </span>
+                                      )}
+                                      {mandatory && (
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                          {t("sigTable.required")}
+                                        </span>
+                                      )}
+                                    </label>
+                                    <button
+                                      type="button"
+                                      className="sig-move"
+                                      disabled={i === 0}
+                                      aria-label={t("sigTable.moveUp", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
+                                      onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
                                     >
-                                      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
-                                        <input
-                                          type="checkbox"
-                                          checked={colConfig.visible.includes(c)}
-                                          disabled={mandatory}
-                                          onChange={() =>
-                                            setColConfig((old) => toggleColumn(old, c))
-                                          }
-                                          data-testid={`signaling-column-${c}`}
-                                        />
-                                        <span className="truncate">{t(`sigTable.col.${c}`)}</span>
-                                        {!def.available && (
-                                          <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                                            {t("sigTable.notSupplied")}
-                                          </span>
-                                        )}
-                                        {mandatory && (
-                                          <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                                            {t("sigTable.required")}
-                                          </span>
-                                        )}
-                                      </label>
-                                      <button
-                                        type="button"
-                                        className="sig-move"
-                                        disabled={i === 0}
-                                        aria-label={t("sigTable.moveUp", {
-                                          col: t(`sigTable.col.${c}`),
-                                        })}
-                                        onClick={() =>
-                                          setColConfig((old) => moveColumn(old, c, -1))
-                                        }
-                                      >
-                                        <ChevronUp size={12} />
-                                      </button>
-                                      <button
-                                        type="button"
-                                        className="sig-move"
-                                        disabled={i === colConfig.order.length - 1}
-                                        aria-label={t("sigTable.moveDown", {
-                                          col: t(`sigTable.col.${c}`),
-                                        })}
-                                        onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
-                                      >
-                                        <ChevronDown size={12} />
-                                      </button>
-                                    </div>
-                                  );
-                                })}
-                                <DropdownMenuSeparator />
-                                <button
-                                  type="button"
-                                  onClick={() => setColConfig(defaultColumns())}
-                                  className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
-                                >
-                                  {t("sigTable.resetColumns")}
-                                </button>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                            <button
-                              type="button"
-                              className="msg-tool"
-                              disabled={!listing.data}
-                              onClick={() => void exportCsv()}
-                            >
-                              <Download size={15} aria-hidden="true" />
-                              {t("sigTable.export")}
-                            </button>
-                            <button
-                              type="button"
-                              className="msg-tool"
-                              data-testid="sig-clear-filters"
-                              disabled={!filtersActive}
-                              onClick={() => {
-                                setMessageSelection(null);
-                                setSearch("");
-                                setProtocols(layers);
-                                setDirection("");
-                                setTechnology("");
-                                setProcedure("");
-                                setRange(undefined);
-                                resetPage();
-                              }}
-                            >
-                              <RotateCcw size={15} aria-hidden="true" />
-                              {t("sigTable.reset")}
-                            </button>
-                          </div>
-                        </div>
-                        <div className="msg-search-row">
-                          <label className="msg-search">
-                            <Search size={17} aria-hidden="true" />
-                            <input
-                              aria-label={t("sigTable.search")}
-                              placeholder={t("sigTable.searchPlaceholder")}
-                              title={t("sigTable.searchScope")}
-                              value={search}
-                              onChange={(e) => {
-                                setSearch(e.target.value);
-                                resetPage();
-                              }}
-                            />
-                          </label>
+                                      <ChevronUp size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="sig-move"
+                                      disabled={i === colConfig.order.length - 1}
+                                      aria-label={t("sigTable.moveDown", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
+                                      onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
+                                    >
+                                      <ChevronDown size={12} />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                              <DropdownMenuSeparator />
+                              <button
+                                type="button"
+                                onClick={() => setColConfig(defaultColumns())}
+                                className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
+                              >
+                                {t("sigTable.resetColumns")}
+                              </button>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <button
+                            type="button"
+                            className="sig-tool"
+                            disabled={!listing.data}
+                            onClick={() => void exportCsv()}
+                          >
+                            <Download size={14} aria-hidden="true" />
+                            {t("sigTable.export")}
+                          </button>
+                          <button
+                            type="button"
+                            className="sig-tool"
+                            data-testid="sig-clear-filters"
+                            disabled={!filtersActive}
+                            onClick={() => {
+                              setMessageSelection(null);
+                              setSearch("");
+                              setProtocols(layers);
+                              setDirection("");
+                              setTechnology("");
+                              setProcedure("");
+                              setRange(undefined);
+                              resetPage();
+                            }}
+                          >
+                            <FilterX size={14} aria-hidden="true" />
+                            {t("sigTable.clear")}
+                          </button>
                         </div>
                       </header>
                       <div
@@ -1848,13 +1875,13 @@ export function SignalingPage({
                             <tr>
                               {shownCols.map((c) => {
                                 const def = COLUMNS.find((d) => d.key === c)!;
-                                const label = c === "action" ? "" : t(`sigTable.col.${c}`);
+                                const label = t(`sigTable.col.${c}`);
                                 const active = def.sortKey && sort === def.sortKey;
                                 return (
                                   <th
                                     key={c}
                                     data-col={c}
-                                    className={CENTERED_COLS.includes(c) ? "center" : undefined}
+                                    className={def.numeric ? "num" : undefined}
                                     title={
                                       def.available ? undefined : t("sigTable.notSuppliedHint")
                                     }
@@ -1920,7 +1947,11 @@ export function SignalingPage({
                                     <td
                                       key={c}
                                       data-col={c}
-                                      className={CENTERED_COLS.includes(c) ? "center" : undefined}
+                                      className={
+                                        COLUMNS.find((d) => d.key === c)!.numeric
+                                          ? "num"
+                                          : undefined
+                                      }
                                     >
                                       {renderCell(c, r)}
                                     </td>
@@ -1939,49 +1970,11 @@ export function SignalingPage({
                           </p>
                         )}
                       </div>
-                      <footer className="msg-footer shrink-0">
-                        <select
-                          className="msg-rows"
-                          aria-label={t("sigTable.rowsPerPage")}
-                          value={size}
-                          onChange={(e) => {
-                            setSize(Number(e.target.value));
-                            resetPage();
-                          }}
+                      <footer className="sig-footer flex shrink-0 flex-wrap items-center gap-3 border-t px-3 py-2">
+                        <nav
+                          className="flex items-center gap-1"
+                          aria-label={t("sigTable.pagination")}
                         >
-                          {[50, 100, 200, 500, 1000].map((n) => (
-                            <option key={n} value={n}>
-                              {t("sigTable.rows", { n })}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="msg-range">
-                          {listing.data && listing.data.total > 0
-                            ? t("sigTable.showing", {
-                                from: fmtInt((listing.data.page - 1) * listing.data.size + 1),
-                                to: fmtInt(
-                                  (listing.data.page - 1) * listing.data.size +
-                                    listing.data.rows.length,
-                                ),
-                                total: fmtInt(listing.data.total),
-                              })
-                            : ""}
-                        </span>
-                        {listing.isFetching && (
-                          <span role="status" className="msg-muted">
-                            {t("sigTable.loading")}
-                          </span>
-                        )}
-                        <nav className="msg-pages" aria-label={t("sigTable.pagination")}>
-                          <button
-                            type="button"
-                            className="sig-page"
-                            aria-label={t("sigTable.first")}
-                            disabled={!listing.data || listing.data.page <= 1}
-                            onClick={() => setPage(1)}
-                          >
-                            <ChevronsLeft size={15} />
-                          </button>
                           <button
                             type="button"
                             className="sig-page"
@@ -1989,13 +1982,13 @@ export function SignalingPage({
                             disabled={!listing.data || listing.data.page <= 1}
                             onClick={() => setPage((listing.data?.page ?? 1) - 1)}
                           >
-                            <ChevronLeft size={15} />
+                            <ChevronLeft size={14} />
                           </button>
                           {listing.data &&
                             pageItems(listing.data.page, Math.max(1, listing.data.pages)).map(
                               (p, i) =>
                                 p === "…" ? (
-                                  <span key={`gap-${i}`} className="msg-gap">
+                                  <span key={`gap-${i}`} className="px-1 text-muted-foreground">
                                     …
                                   </span>
                                 ) : (
@@ -2017,18 +2010,46 @@ export function SignalingPage({
                             disabled={!listing.data || listing.data.page >= listing.data.pages}
                             onClick={() => setPage((listing.data?.page ?? 1) + 1)}
                           >
-                            <ChevronRight size={15} />
-                          </button>
-                          <button
-                            type="button"
-                            className="sig-page"
-                            aria-label={t("sigTable.last")}
-                            disabled={!listing.data || listing.data.page >= listing.data.pages}
-                            onClick={() => setPage(listing.data?.pages ?? 1)}
-                          >
-                            <ChevronsRight size={15} />
+                            <ChevronRight size={14} />
                           </button>
                         </nav>
+                        <label className="flex items-center gap-2">
+                          {t("sigTable.rowsPerPage")}
+                          <select
+                            className="sig-select"
+                            aria-label={t("sigTable.rowsPerPage")}
+                            value={size}
+                            onChange={(e) => {
+                              setSize(Number(e.target.value));
+                              resetPage();
+                            }}
+                          >
+                            {[25, 50, 100, 250, 500].map((n) => (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <span className="text-muted-foreground">
+                          {listing.data && listing.data.total > 0
+                            ? t("sigTable.showing", {
+                                from: fmtInt((listing.data.page - 1) * listing.data.size + 1),
+                                to: fmtInt(
+                                  Math.min(
+                                    listing.data.total,
+                                    listing.data.page * listing.data.size,
+                                  ),
+                                ),
+                                total: fmtInt(listing.data.total),
+                              })
+                            : ""}
+                        </span>
+                        {listing.isFetching && (
+                          <span role="status" className="ml-auto text-muted-foreground">
+                            {t("sigTable.loading")}
+                          </span>
+                        )}
                       </footer>
                     </section>
                   </Panel>

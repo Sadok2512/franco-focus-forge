@@ -508,7 +508,7 @@
     "count_other": "{{n}} messages",
     "countPending": "Messages",
     "search": "Rechercher des messages",
-    "searchPlaceholder": "Rechercher message, procédure, cellule, ...",
+    "searchPlaceholder": "Rechercher des messages…",
     "searchScope": "Recherche côté serveur sur toute la capture, selon les capacités de la VM",
     "layer": "Filtre couche",
     "allLayers": "Toutes les couches",
@@ -548,7 +548,7 @@
       "layer": "Couche",
       "direction": "Sens",
       "message_name": "Message",
-      "info": "Info / Procédure",
+      "info": "Info",
       "band": "Bande",
       "technology": "Techno",
       "rrc_state": "État RRC",
@@ -559,16 +559,8 @@
       "size_bytes": "Octets",
       "ecgi": "ECGI",
       "pci": "PCI",
-      "source": "Source",
-      "action": "Action"
-    },
-    "headTitle": "Messages ({{n}})",
-    "subtitle": "Messages de signalisation de la capture sélectionnée",
-    "reset": "Réinitialiser",
-    "open": "Ouvrir le message n°{{seq}} dans l’inspecteur",
-    "rows": "{{n}} lignes",
-    "first": "Première page",
-    "last": "Dernière page"
+      "source": "Source"
+    }
   },
   "sigFilters": {
     "title": "Filtres",

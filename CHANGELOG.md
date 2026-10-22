@@ -1,6 +1,3 @@
-## 1.85.0
-- Signaling messages table V11: header Messages (n) + subtitle, Columns (n)/Export CSV/Reset, search on its own row, 12 reference columns with Action, exact layer/RRC badges, procedure icons, RF values black with red only below −110 dBm / −16 dB / 0 dB, footer with rows/range/first-last pagination.
-
 ## 1.84.0 — Selected message row visible after a timeline click
 - The selected message row now carries a strong fill (light blue with dark text in light theme, royal blue with white text in dark theme), bold text and a continuous 2 px accent outline plus a 4 px left bar, so the row a timeline click selected is obvious at a glance.
 - The messages table now scrolls itself so the selected row is always inside the visible area below the sticky header (`reveal-row.ts`: pure `scrollDelta` math applied to the table's own scroll container — the page, the cursor and the queries never move).
