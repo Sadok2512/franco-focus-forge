@@ -8,19 +8,18 @@ import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import "@/lib/i18n";
 
-const { fixture } = vi.hoisted(() => {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fx = require("./fixtures/metrics-analysis-44621571bccc.json");
-  return { fixture: fx };
+vi.mock("@/lib/api/client", async () => {
+  const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
+  return {
+    getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
+    getMetricCaptures: vi
+      .fn()
+      .mockResolvedValue([
+        { capture_id: "44621571bccc", label: "M1_FREE_DL-7Go_Max-10_W30_26Jun23_103320.4.nmf" },
+      ]),
+    getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
+  };
 });
-
-vi.mock("@/lib/api/client", () => ({
-  getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
-  getMetricCaptures: vi.fn().mockResolvedValue([
-    { capture_id: "44621571bccc", label: "M1_FREE_DL-7Go_Max-10_W30_26Jun23_103320.4.nmf" },
-  ]),
-  getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
-}));
 
 vi.mock("maplibre-gl", () => ({
   Map: vi.fn(),
