@@ -389,6 +389,30 @@
   "nmfFile": "Fichier NMF",
   "timestamp": "Horodatage"
  },
+ "timeNavigator": {
+  "title": "Navigateur temporel",
+  "previous": "Fenêtre précédente",
+  "next": "Fenêtre suivante",
+  "size": "Taille de fenêtre",
+  "window": "Fenêtre temporelle visible",
+  "zoomIn": "Zoom avant",
+  "zoomOut": "Zoom arrière",
+  "reset": "Retour à 0–30 s",
+  "full": "Toute la capture",
+  "failures": "Échecs seulement",
+  "ribbon": "Ruban des événements de signalisation",
+  "eventCount": "{{count}} événements observés",
+  "lanes": {
+    "radio": "Radio",
+    "connexion": "Connexion",
+    "mobilite": "Mobilité",
+    "endc": "5G / EN-DC",
+    "ca": "CA",
+    "services": "Services",
+    "acces": "Accès / échecs",
+    "contexte": "Contexte"
+  }
+},
  "rfTimeline": {
   "cursor": "Curseur temporel",
   "outside": "Hors vue · recentrer",

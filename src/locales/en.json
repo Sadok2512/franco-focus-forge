@@ -389,6 +389,30 @@
   "nmfFile": "NMF file",
   "timestamp": "Timestamp"
  },
+ "timeNavigator": {
+  "title": "Time Navigator",
+  "previous": "Previous window",
+  "next": "Next window",
+  "size": "Window size",
+  "window": "Visible time window",
+  "zoomIn": "Zoom in",
+  "zoomOut": "Zoom out",
+  "reset": "Reset to 0–30 s",
+  "full": "Full capture",
+  "failures": "Failures only",
+  "ribbon": "Signaling event ribbon",
+  "eventCount": "{{count}} observed events",
+  "lanes": {
+    "radio": "Radio",
+    "connexion": "Connection",
+    "mobilite": "Mobility",
+    "endc": "5G / EN-DC",
+    "ca": "CA",
+    "services": "Services",
+    "acces": "Access / failures",
+    "contexte": "Context"
+  }
+},
  "rfTimeline": {
   "cursor": "Time cursor",
   "outside": "Outside view · recenter",

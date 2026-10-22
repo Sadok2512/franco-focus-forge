@@ -7,6 +7,8 @@ import type { RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
+import { clampWindow, useTimeWindow, type TimeWindow } from "./time-window";
+import { TimeNavigator } from "./TimeNavigator";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
 
@@ -47,6 +49,8 @@ export function RfTimeline({
   direction,
   search,
   allowedProtocols,
+  timeWindow,
+  onWindow,
 }: {
   projectId: string;
   captureId: string;
@@ -59,6 +63,8 @@ export function RfTimeline({
   direction: string;
   search: string;
   allowedProtocols: string[];
+  timeWindow?: TimeWindow;
+  onWindow?: (window: TimeWindow) => void;
 }) {
   const { t, i18n } = useTranslation();
   const [layers, setLayers] = useState(protocols);
@@ -66,7 +72,7 @@ export function RfTimeline({
   const [linked, setLinked] = useState<RfEvent>();
   const [ready, setReady] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
-  const [zoom, setZoom] = useState<[number, number]>([0, 100]);
+
   const host = useRef<HTMLDivElement>(null),
     root = useRef<HTMLDivElement>(null);
   const chart = useRef<ECharts | undefined>(undefined);
@@ -100,25 +106,6 @@ export function RfTimeline({
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal, windowSeq),
     staleTime: 60000,
   });
-  // Zoom narrows the server's seq window only when the overview was sampled.
-  // Surrounding observed seqs bound the request; no measurement/time is inferred.
-  useEffect(() => {
-    const data = radio.data;
-    if (!data || !data.series.some((s) => s.sampling.factor > 1)) return;
-    if (zoom[0] === 0 && zoom[1] === 100) {
-      setWindowSeq(undefined);
-      return;
-    }
-    const timer = window.setTimeout(() => {
-      const points = data.series.flatMap((s) => s.points).sort((a, b) => a.seq - b.seq);
-      const lo = (data.duration_s * zoom[0]) / 100,
-        hi = (data.duration_s * zoom[1]) / 100;
-      const first = points.filter((p) => p.t_rel_s <= lo).at(-1) ?? points[0];
-      const last = points.find((p) => p.t_rel_s >= hi) ?? points.at(-1);
-      if (first && last) setWindowSeq({ from_seq: first.seq, to_seq: last.seq });
-    }, 250);
-    return () => window.clearTimeout(timer);
-  }, [zoom, radio.data]);
   const displayed = useMemo(
     () =>
       events.data?.events.filter(
@@ -136,6 +123,12 @@ export function RfTimeline({
   const duration =
     radio.data?.duration_s ??
     Math.max(0, ...displayed.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
+  const localWindow = useTimeWindow(captureId, duration);
+  const visibleWindow = timeWindow ?? localWindow.window;
+  const changeWindow = onWindow ?? localWindow.setWindow;
+  const zoom: [number, number] = duration > 0 ? [visibleWindow[0] / duration * 100, visibleWindow[1] / duration * 100] : [0, 100];
+  const windowCallbacks = useRef({ changeWindow, duration });
+  windowCallbacks.current = { changeWindow, duration };
   const cursorSeries = useMemo(
     () =>
       codes.map((code) => ({
@@ -157,7 +150,6 @@ export function RfTimeline({
   current.current = { displayed, series, duration };
   useEffect(() => {
     setWindowSeq(undefined);
-    setZoom([0, 100]);
     setLinked(undefined);
   }, [captureId]);
   useEffect(() => {
@@ -180,7 +172,10 @@ export function RfTimeline({
       c.on("datazoom", () => {
         const option = c.getOption() as { dataZoom: { start: number; end: number }[] };
         const z = option.dataZoom[0];
-        if (z) setZoom([z.start, z.end]);
+        if (z) {
+          const { changeWindow, duration } = windowCallbacks.current;
+          changeWindow([duration * z.start / 100, duration * z.end / 100]);
+        }
       });
       c.on("brushEnd", (ev: unknown) => {
         const r = (ev as { areas?: { coordRange: number[] }[] }).areas?.[0]?.coordRange;
@@ -228,7 +223,12 @@ export function RfTimeline({
       ],
     });
   }, [selectedTime, selectedEventId, displayed, ready]);
-  const showLabels = zoom[1] - zoom[0] <= 30;
+  useEffect(() => {
+    const c = chart.current;
+    if (!c || !duration || !c.getOption()?.["xAxis"]) return;
+    c.dispatchAction({ type: "dataZoom", startValue: visibleWindow[0], endValue: visibleWindow[1] }, { silent: true });
+  }, [visibleWindow[0], visibleWindow[1], duration, ready]);
+  const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -366,6 +366,7 @@ export function RfTimeline({
       xAxisIndex: 1,
       yAxisIndex: 1,
       showSymbol: false,
+      connectNulls: false,
       lineStyle: { width: 1.6, color: rfColors[code]! },
       itemStyle: { color: rfColors[code]! },
       z: 2 + i,
@@ -417,8 +418,8 @@ export function RfTimeline({
         },
       ],
       dataZoom: [
-        { type: "inside", xAxisIndex: [0, 1], filterMode: "none", zoomOnMouseWheel: "ctrl" },
-        { type: "slider", xAxisIndex: [0, 1], filterMode: "none", bottom: 0, height: 18 },
+        { type: "inside", xAxisIndex: [0, 1], filterMode: "none", zoomOnMouseWheel: "ctrl", startValue: visibleWindow[0], endValue: visibleWindow[1] },
+        { type: "slider", show: false, xAxisIndex: [0, 1], filterMode: "none", startValue: visibleWindow[0], endValue: visibleWindow[1] },
       ],
       brush: { xAxisIndex: [0, 1], brushType: "lineX", toolbox: ["lineX", "clear"] },
       tooltip: {
@@ -470,13 +471,8 @@ export function RfTimeline({
     showLabels,
   ]);
   const zoomBy = (factor: number) => {
-    const center = (zoom[0] + zoom[1]) / 2,
-      half = ((zoom[1] - zoom[0]) * factor) / 2;
-    chart.current?.dispatchAction({
-      type: "dataZoom",
-      start: Math.max(0, center - half),
-      end: Math.min(100, center + half),
-    });
+    const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
+    changeWindow(clampWindow(duration, (visibleWindow[0] + visibleWindow[1] - width) / 2, width));
   };
   return (
     <div ref={root} className="flex min-h-0 flex-1 flex-col bg-card" data-testid="rf-timeline">
@@ -553,7 +549,7 @@ export function RfTimeline({
             aria-label={t("rfTimeline.reset")}
             title={t("rfTimeline.reset")}
             onClick={() => {
-              chart.current?.dispatchAction({ type: "dataZoom", start: 0, end: 100 });
+              changeWindow(clampWindow(duration, 0, 30));
               setWindowSeq(undefined);
               callbacks.current.onRange(undefined);
             }}
@@ -613,6 +609,7 @@ export function RfTimeline({
           />
         </div>
       </div>
+      {!onWindow && <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />}
       {linked && (
         <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}
