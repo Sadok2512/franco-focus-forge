@@ -1724,7 +1724,7 @@ export function SignalingPage({
                       className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
                       aria-label={t("sigTable.title")}
                     >
-                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b px-2.5 py-1.5">
                         <h2 className="sig-count mr-1" data-testid="signaling-total">
                           {listing.data
                             ? t("sigTable.count", {
@@ -1806,12 +1806,13 @@ export function SignalingPage({
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className="sig-tool"
-                                aria-label={t("sigTable.columns")}
+                                className="sig-tool sig-tool-icon"
+                                aria-label={`${t("sigTable.columns")} (${shownCols.length}/${COLUMNS.length})`}
+                                title={`${t("sigTable.columns")} (${shownCols.length}/${COLUMNS.length})`}
                                 data-testid="signaling-columns-trigger"
                               >
                                 <Columns3 size={14} aria-hidden="true" />
-                                {t("sigTable.columns")} ({shownCols.length}/{COLUMNS.length})
+
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-72">
@@ -1881,16 +1882,21 @@ export function SignalingPage({
                           </DropdownMenu>
                           <button
                             type="button"
-                            className="sig-tool"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t("sigTable.export")}
+                            title={t("sigTable.export")}
                             disabled={!listing.data}
                             onClick={() => void exportCsv()}
                           >
                             <Download size={14} aria-hidden="true" />
-                            {t("sigTable.export")}
+
                           </button>
                           <button
                             type="button"
-                            className="sig-tool"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t("sigTable.clear")}
+                            title={t("sigTable.clear")}
+
                             data-testid="sig-clear-filters"
                             disabled={!filtersActive}
                             onClick={() => {
@@ -1905,7 +1911,7 @@ export function SignalingPage({
                             }}
                           >
                             <FilterX size={14} aria-hidden="true" />
-                            {t("sigTable.clear")}
+
                           </button>
                         </div>
                       </header>

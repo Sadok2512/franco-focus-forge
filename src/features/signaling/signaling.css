@@ -33,12 +33,15 @@
 
 /* V10 premium messages table + inspector */
 .sig-messages, .sig-inspector { color: var(--sig-table-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-.sig-count { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
-.sig-search { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 200px; flex: 0 1 260px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); color: var(--sig-table-muted); }
+.sig-count { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
+.sig-search { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 130px; max-width: 220px; flex: 1 1 150px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); color: var(--sig-table-muted); }
+
 .sig-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 12px; color: var(--sig-table-text); }
 .sig-search:focus-within { border-color: var(--sig-accent); }
 .sig-select { height: 32px; padding: 0 8px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; color: var(--sig-table-text); }
 .sig-tool { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.sig-tool-icon { width: 32px; padding: 0; gap: 0; justify-content: center; }
+
 .sig-tool:hover:not(:disabled) { background: var(--sig-table-header); }
 .sig-tool:disabled { opacity: .5; cursor: not-allowed; }
 .sig-move { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; color: var(--sig-table-muted); }
