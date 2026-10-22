@@ -577,8 +577,11 @@ export function MetricsWorkspace({
               </div>
             )}
             <details className="p-3 border-t text-xs">
-              <summary>
-                {translate("metrics.23c32c5569dc")} {data.result_id}
+              <summary title={`result_id: ${data.result_id}`}>
+                {translate("metrics.23c32c5569dc")}{" "}
+                <span className="text-muted-foreground font-mono text-[10px]">
+                  #{String(data.result_id).slice(0, 8)}
+                </span>
               </summary>
               <p>{data.aggregation}</p>
               <p>{data.time_policy}</p>
