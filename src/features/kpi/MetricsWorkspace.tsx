@@ -9,7 +9,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 
 // 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
 // Reconstitue le timestamp UTC absolu depuis le label de capture
@@ -20,8 +20,18 @@ function extractCaptureDate(label: string | undefined): string | null {
   const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_/);
   if (!m) return null;
   const months: Record<string, string> = {
-    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12",
   };
   const [, d, monAbbr, yy] = m;
   const mon = months[monAbbr!] ?? "01";
@@ -37,7 +47,7 @@ function formatUtc(date: string | null, t_rel_s: number, originTs: string | null
   const [sStr, msStr = "0"] = parts[2]!.split(".");
   const s = parseInt(sStr!, 10);
   const ms = parseInt(msStr.padEnd(3, "0").slice(0, 3), 10);
-  const baseMs = ((h * 3600 + m * 60 + s) * 1000) + ms;
+  const baseMs = (h * 3600 + m * 60 + s) * 1000 + ms;
   const totalMs = baseMs + Math.round(t_rel_s * 1000);
   const H = String(Math.floor(totalMs / 3_600_000) % 24).padStart(2, "0");
   const M = String(Math.floor(totalMs / 60_000) % 60).padStart(2, "0");
@@ -464,6 +474,9 @@ export function MetricsWorkspace({
     if (p === "table") setView("table");
     else if (p === "overlay") setView("graph");
   };
+  // 1.88.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
+  // peut basculer une carte sur histogram/table/map sans toucher les autres).
+  const [cardViews, setCardViews] = useState<Record<string, MetricView>>({});
   const [perRow, setPerRowRaw] = useState<1 | 2 | 3>(() => {
     try {
       const n = Number(localStorage.getItem("bc3.metrics.perRow"));
@@ -496,7 +509,10 @@ export function MetricsWorkspace({
     return m;
   }, [catalog]);
   return (
-    <article className="kpi-graph-card col-span-full kpi-metrics-table-premium" data-testid="metrics-v3-workspace">
+    <article
+      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      data-testid="metrics-v3-workspace"
+    >
       {/* 1.83.0 — Spec V3 §1 : barre [Charts|Table|Overlay] + "N metrics"
           supprimée. Remplacée par un <select View ▾> compact. Per row visible
           uniquement en Charts. */}
@@ -584,10 +600,13 @@ export function MetricsWorkspace({
                     );
                   }
                 }}
-                view="graph"
-                onViewChange={() => {
-                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
-                }}
+                view={cardViews[s.full] ?? "graph"}
+                onViewChange={(v) =>
+                  setCardViews((m) => {
+                    if (m[s.full] === v) return m;
+                    return { ...m, [s.full]: v };
+                  })
+                }
               />
             );
           })}
@@ -620,8 +639,7 @@ export function MetricsWorkspace({
                 className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
                 data-testid="metrics-empty-banner"
               >
-                <strong>Aucune donnée pour cette sélection.</strong>
-                {" "}
+                <strong>Aucune donnée pour cette sélection.</strong>{" "}
                 {data.connected_reason
                   ? `Raison : ${data.connected_reason}.`
                   : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
@@ -658,9 +676,7 @@ export function MetricsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows
-                        .slice((page - 1) * pageSize, page * pageSize)
-                        .map((r) => (
+                      {data.rows.slice((page - 1) * pageSize, page * pageSize).map((r) => (
                         <tr key={r.second} data-second={r.second}>
                           <td
                             className="col-time font-mono text-[11px]"
