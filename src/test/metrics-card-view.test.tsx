@@ -133,8 +133,7 @@ describe("Metrics Charts pane card view", () => {
     expect(card).not.toBeNull();
     expect(card?.getAttribute("data-view")).toBe("graph");
     fireEvent.keyDown(screen.getByTestId("workspace-panel-menu"), { key: "Enter" });
-    const item = await screen.findByRole("menuitem", { name: /table/i });
-    fireEvent.click(item);
+    fireEvent.click(screen.getByTestId("metric-view-table"));
     await waitFor(() => {
       expect(
         document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view"),
@@ -146,7 +145,24 @@ describe("Metrics Charts pane card view", () => {
   // 1.91.0 — ⋮ → Tableau dans le catalogue Metrics ouvre le grand tableau
   // (paneRequest) ; la carte reste en graphique.
   it("opens the metrics table pane from the sidebar Table request and keeps the card graph", async () => {
-    render(
+    // 1.91.0 — ⋮ → Tableau du catalogue incrémente paneRequest après montage
+    // (KpiWorkspace part de n=0) ; on reproduit ce bump via rerender.
+    const view = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsWorkspace
+          projectId="TEST2"
+          captureId="cap1"
+          onCaptureChange={vi.fn()}
+          selections={["ci_rs_snr@0"]}
+          catalog={[metric]}
+          filters={{}}
+          onClear={vi.fn()}
+          paneRequest={0}
+        />
+      </QueryClientProvider>,
+    );
+    await screen.findByTestId("metrics-v3-workspace");
+    view.rerender(
       <QueryClientProvider client={new QueryClient()}>
         <MetricsWorkspace
           projectId="TEST2"
@@ -160,7 +176,6 @@ describe("Metrics Charts pane card view", () => {
         />
       </QueryClientProvider>,
     );
-    await screen.findByTestId("metrics-v3-workspace");
     const pane = await screen.findByTestId("metrics-table-styled");
     expect(pane).toBeVisible();
     expect(document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view")).toBe(
