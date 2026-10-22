@@ -38,7 +38,6 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import {
-  DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
@@ -571,8 +570,7 @@ export function KpiGraphCard({
                     <DropdownMenuItem onSelect={onRemove}>
                       <X size={14} /> {translate("kpi.bc0501383465")}{" "}
                     </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                </WorkspacePanelMenu>
               </span>
             </PopoverAnchor>
             <PopoverContent
