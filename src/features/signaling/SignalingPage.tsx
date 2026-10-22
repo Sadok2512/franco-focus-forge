@@ -68,6 +68,7 @@ import {
   rrcStateAt,
   toggleColumn,
   visibleColumns,
+  knownOrder,
   type ColKey,
   type ColumnConfig,
   type MessageInfo,
@@ -1772,7 +1773,7 @@ export function SignalingPage({
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-72">
                               <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
-                              {colConfig.order.map((c, i) => {
+                              {knownOrder(colConfig).map((c, i) => {
                                 const mandatory = MANDATORY_COLS.includes(c);
                                 const def = COLUMNS.find((d) => d.key === c)!;
                                 return (
