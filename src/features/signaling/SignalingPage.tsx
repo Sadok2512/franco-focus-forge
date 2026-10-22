@@ -36,7 +36,9 @@ import {
   Clock,
   Columns3,
   Download,
+  Eye,
   FilterX,
+
   Gauge,
   LogIn,
   LogOut,
@@ -1422,9 +1424,49 @@ export function SignalingPage({
                   <ChevronRight size={16} />
                 </button>
                 <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="kpi-icon"
+                  aria-label={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                  title={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                >
+                  <Link
+                    to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+                    search={(previous) => ({ ...previous, capture_id: capture, seq })}
+                  >
+                    <Eye size={16} />
+                  </Link>
+                </Button>
+                <button
+                  type="button"
+                  className="kpi-icon"
+                  onClick={toggleTimeline}
+                  aria-pressed={timelineVisible}
+                  aria-label={t("signalingV2.timeline")}
+                  data-testid="signaling-timeline-toggle"
+                  title={timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")}
+                >
+                  {timelineVisible ? <Activity size={16} /> : <ActivitySquare size={16} />}
+                </button>
+                <button
+                  type="button"
+                  className="kpi-icon"
+                  onClick={toggleMap}
+                  aria-pressed={mapVisible}
+                  aria-label={t("signalingV2.map")}
+                  data-testid="signaling-map-toggle"
+                  title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
+                >
+                  {mapVisible ? <MapPin size={16} /> : <MapPinOff size={16} />}
+                </button>
+
               </aside>
             ) : (
               <SignalingFilters
+                viewControls={viewControls}
+
                 layers={layers}
                 protocols={protocols}
                 technology={technology}
