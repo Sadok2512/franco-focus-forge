@@ -46,9 +46,7 @@ vi.mock("@/lib/api/client", () => ({
     gaps: [],
     csv: "",
   }),
-  getMetricCaptures: vi
-    .fn()
-    .mockResolvedValue([{ capture_id: "cap1", label: "Capture 1" }]),
+  getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "cap1", label: "Capture 1" }]),
 }));
 
 vi.mock("@/lib/api/metrics", () => ({
@@ -65,9 +63,7 @@ vi.mock("@/lib/api/metrics", () => ({
     p90: null,
     groups: [{ operator: "OP1", band: null, n: 1, p10: 1, p50: 2, p90: 3 }],
   }),
-  getMetricCaptures: vi
-    .fn()
-    .mockResolvedValue([{ capture_id: "cap1", label: "Capture 1" }]),
+  getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "cap1", label: "Capture 1" }]),
   getMetricSeries: vi.fn().mockResolvedValue({
     decoder_version: "1",
     series: [
