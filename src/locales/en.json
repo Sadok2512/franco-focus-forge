@@ -702,5 +702,25 @@
     "opt_lightgray": "Light gray",
     "opt_dark": "Dark",
     "opt_blue": "Blue technical"
+  },
+  "panel": {
+    "move": "Drag to move",
+    "rename": "Rename",
+    "width": "Panel width",
+    "duplicate": "Duplicate",
+    "collapse": "Collapse",
+    "expand": "Expand",
+    "resize": "Drag to resize height",
+    "remove": "Close panel",
+    "layout": "Layout",
+    "add_chronogram": "Add Chronogram",
+    "add_histogram": "Add Histogram",
+    "add_table": "Add Table",
+    "add_metrics_table": "Add Metrics table",
+    "add_map": "Add Map",
+    "add_kpi": "Add KPI",
+    "add_series": "Add Task Time Series",
+    "add_timeline": "Add Timeline",
+    "timeline_unavailable": "available in Signaling only"
   }
 }

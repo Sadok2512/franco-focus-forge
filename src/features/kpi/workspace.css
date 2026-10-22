@@ -1348,3 +1348,19 @@
 .kpi-ts[data-style="professional"] thead th { font-weight: 700; }
 .kpi-ts[data-style="compact"] { letter-spacing: -0.01em; }
 @media (max-width: 900px) { .kpi-metrics-table-body.kpi-ts { max-width: none !important; } }
+
+/* Unified workspace panels: KPI + Metrics cards share one grid. */
+.kpi-unified-contents { display: contents; }
+.kpi-panel-shell { position: relative; min-width: 0; display: flex; flex-direction: column; border-radius: 10px; }
+.kpi-panel-shell > .kpi-graph-card, .kpi-panel-shell > article { flex: 1; min-height: 0; }
+.kpi-panel-shell.is-drop { outline: 2px dashed var(--primary, #2563eb); outline-offset: 2px; }
+.kpi-panel-shell.is-collapsed { max-height: 46px; overflow: hidden; }
+.kpi-panel-tools { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 2px; padding: 1px 4px; border: 1px solid #dbe3ee; border-radius: 999px; background: #fff; opacity: 0; transition: opacity .15s; box-shadow: 0 1px 3px rgba(15,23,42,.08); }
+.kpi-panel-shell:hover .kpi-panel-tools, .kpi-panel-tools:focus-within { opacity: 1; }
+.kpi-panel-tools button, .kpi-panel-grip { display: inline-flex; align-items: center; gap: 1px; padding: 2px 4px; color: #475569; border-radius: 6px; }
+.kpi-panel-tools button:hover { background: #eef2f7; }
+.kpi-panel-tools small { font-size: 9px; }
+.kpi-panel-grip { cursor: grab; }
+.kpi-panel-rename { position: absolute; top: 8px; left: 36px; right: 120px; z-index: 6; padding: 3px 6px; font-size: 13px; font-weight: 600; border: 1px solid #2563eb; border-radius: 6px; background: #fff; }
+.kpi-panel-resize { position: absolute; left: 30%; right: 30%; bottom: -4px; height: 8px; cursor: ns-resize; border-radius: 4px; }
+.kpi-panel-resize:hover { background: #cbd5e1; }

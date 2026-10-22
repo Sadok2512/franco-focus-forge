@@ -287,7 +287,10 @@ function Workspace({
   const [metricsView, setMetricsView] = useState<MetricsView>("table");
   const [tableColumns, setTableColumns] = useState<{ code: string; label: string }[]>([]);
   const [metricsTablePane, setMetricsTablePane] = useState(false);
-  const [metricsPaneRequest, setMetricsPaneRequest] = useState<{ pane: "table"; n: number }>({ pane: "table", n: 0 });
+  const [metricsPaneRequest, setMetricsPaneRequest] = useState<{ pane: "table"; n: number }>({
+    pane: "table",
+    n: 0,
+  });
   const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
   const visualizeMetric = (code: string, view: MetricView) => {
     if (!selectedMetrics.includes(code)) {
@@ -354,10 +357,9 @@ function Workspace({
     persistTabs(
       updateTab(tabsState, tabsState.activeTabId, {
         codes: nextCodes,
-        activeCode:
-          nextCodes.includes(currentTab.activeCode ?? "")
-            ? currentTab.activeCode
-            : (nextCodes[0] ?? null),
+        activeCode: nextCodes.includes(currentTab.activeCode ?? "")
+          ? currentTab.activeCode
+          : (nextCodes[0] ?? null),
       }),
     );
   };
@@ -541,7 +543,9 @@ function Workspace({
           aria-label={translate("kpi.9afd5ab37dac")}
         />
         <ResizablePanel id="kpi-analysis-panel" minSize="300px">
-          <div className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}>
+          <div
+            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
+          >
             <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
               <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (
@@ -575,7 +579,13 @@ function Workspace({
                     catalogue l'ajoute avec ce mode via visualize(). */}
                 <label className="kpi-select-label" title={translate("panel.layout")}>
                   {translate("panel.layout")}
-                  <select value={currentTab.layout} onChange={(e) => setLayout(tabsState.activeTabId, e.target.value as WorkspaceLayout)} data-testid="toolbar-layout">
+                  <select
+                    value={currentTab.layout}
+                    onChange={(e) =>
+                      setLayout(tabsState.activeTabId, e.target.value as WorkspaceLayout)
+                    }
+                    data-testid="toolbar-layout"
+                  >
                     <option value="auto">{translate("wss.opt_auto")}</option>
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -589,20 +599,59 @@ function Workspace({
                       aria-label="Add panel"
                       data-testid="add-panel-button"
                     >
-                      <Plus size={14} /> {pendingPanelKind ? `+ ${VISUALIZATIONS[pendingPanelKind]}…` : "Add panel"}
+                      <Plus size={14} />{" "}
+                      {pendingPanelKind ? `+ ${VISUALIZATIONS[pendingPanelKind]}…` : "Add panel"}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start" className="min-w-[180px]">
-                    <DropdownMenuItem onSelect={() => armPanel("chronogram")} data-testid="add-panel-chronogram">{translate("panel.add_chronogram")}</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("histogram")} data-testid="add-panel-histogram">{translate("panel.add_histogram")}</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("table")} data-testid="add-panel-table">{translate("panel.add_table")}</DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => armPanel("chronogram")}
+                      data-testid="add-panel-chronogram"
+                    >
+                      {translate("panel.add_chronogram")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => armPanel("histogram")}
+                      data-testid="add-panel-histogram"
+                    >
+                      {translate("panel.add_histogram")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => armPanel("table")}
+                      data-testid="add-panel-table"
+                    >
+                      {translate("panel.add_table")}
+                    </DropdownMenuItem>
                     {selectedMetrics.length > 0 && (
-                      <DropdownMenuItem onSelect={() => setMetricsPaneRequest((n) => ({ pane: "table", n: n.n + 1 }))} data-testid="add-panel-metrics-table">{translate("panel.add_metrics_table")}</DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() =>
+                          setMetricsPaneRequest((n) => ({ pane: "table", n: n.n + 1 }))
+                        }
+                        data-testid="add-panel-metrics-table"
+                      >
+                        {translate("panel.add_metrics_table")}
+                      </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onSelect={() => armPanel("map")} data-testid="add-panel-map">{translate("panel.add_map")}</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("graph")} data-testid="add-panel-graph">{translate("panel.add_kpi")}</DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => armPanel("task_series")} data-testid="add-panel-series">{translate("panel.add_series")}</DropdownMenuItem>
-                    <DropdownMenuItem disabled title={translate("panel.timeline_unavailable")} data-testid="add-panel-timeline">
+                    <DropdownMenuItem onSelect={() => armPanel("map")} data-testid="add-panel-map">
+                      {translate("panel.add_map")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => armPanel("graph")}
+                      data-testid="add-panel-graph"
+                    >
+                      {translate("panel.add_kpi")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onSelect={() => armPanel("task_series")}
+                      data-testid="add-panel-series"
+                    >
+                      {translate("panel.add_series")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      disabled
+                      title={translate("panel.timeline_unavailable")}
+                      data-testid="add-panel-timeline"
+                    >
                       {translate("panel.add_timeline")} — {translate("panel.timeline_unavailable")}
                     </DropdownMenuItem>
                     {pendingPanelKind && (
@@ -633,93 +682,97 @@ function Workspace({
               hidden={currentTab.overlay && panels.length >= 2}
             >
               <PanelGridContext.Provider value={{ cols: gridCols }}>
-              {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
-                <PanelShell
-                  key={entry.item.code}
-                  workspaceId={tabsState.activeTabId}
-                  id={`kpi:${entry.item.code}`}
-                  natural={natural}
-                  defaultTitle={entry.item.name}
-                >
-                  {(panelTitle) => (
-                <KpiGraphCard
-                  projectId={projectId}
-                  appliedFilters={applied}
-                  captureId={captureId}
-                  onCaptureChange={setCaptureId}
-                  entry={panelTitle === entry.item.name ? entry : { ...entry, item: { ...entry.item, name: panelTitle } }}
-                  query={query}
-                  blockedReason={
-                    dimensionsLoading
-                      ? translate("kpi.f58ddd1effba")
-                      : dimensionsError
-                        ? translate("kpi.a237d197caeb")
-                        : undefined
-                  }
-                  rows={graphRows}
-                  statistic={stat}
-                  config={configFor(entry.item.code)}
-                  groupOptions={(
-                    [
-                      "none",
-                      "operator",
-                      "band",
-                      "operator_band",
-                      ...(dimensions?.dor?.available ? ["dor"] : []),
-                    ] as KpiGroupBy[]
-                  ).filter(
-                    (g) =>
-                      g === "none" ||
-                      g === "dor" ||
-                      (g === "operator"
-                        ? dimensions?.operators?.available
-                        : g === "band"
-                          ? dimensions?.bands?.available
-                          : dimensions?.operators?.available && dimensions?.bands?.available),
-                  )}
-                  onConfig={(next) => updateConfig(entry.item.code, next)}
-                  onStatistic={(value) =>
-                    updateConfig(entry.item.code, {
-                      ...configFor(entry.item.code),
-                      statistic: value,
-                    })
-                  }
-                  active={effectiveActive === entry.item.code}
-                  onActivate={() => setActive(entry.item.code)}
-                  selectedRows={selectedRows}
-                  onSelectRow={toggleRow}
-                  onRemove={() => toggle(entry.item.code)}
-                  onMove={(direction) => move(entry.item.code, direction)}
-                  index={codes.indexOf(entry.item.code)}
-                  count={codes.length}
-                />
-                  )}
-                </PanelShell>
-              ))}
-              {selectedMetrics.length > 0 && (
-                <MetricsWorkspace
-                  projectId={projectId}
-                  captureId={captureId}
-                  onCaptureChange={setCaptureId}
-                  selections={selectedMetrics}
-                  catalog={metricsCatalog.data?.metrics ?? []}
-                  filters={applied}
-                  view={metricsView}
-                  onViewChange={setMetricsView}
-                  onTablePaneChange={setMetricsTablePane}
-                  workspaceId={tabsState.activeTabId}
-                  onColumnsChange={setTableColumns}
-                  paneRequest={metricsPaneRequest.n}
-                  onClear={() => {
-                    setSelectedMetrics([]);
-                    void navigate({
-                      to: ".",
-                      search: (p: Record<string, unknown>) => ({ ...p, metrics: [] }),
-                      replace: true,
-                    } as never);
-                  }}
-                />
-              )}
+                {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
+                  <PanelShell
+                    key={entry.item.code}
+                    workspaceId={tabsState.activeTabId}
+                    id={`kpi:${entry.item.code}`}
+                    natural={natural}
+                    defaultTitle={entry.item.name}
+                  >
+                    {(panelTitle) => (
+                      <KpiGraphCard
+                        projectId={projectId}
+                        appliedFilters={applied}
+                        captureId={captureId}
+                        onCaptureChange={setCaptureId}
+                        entry={
+                          panelTitle === entry.item.name
+                            ? entry
+                            : { ...entry, item: { ...entry.item, name: panelTitle } }
+                        }
+                        query={query}
+                        blockedReason={
+                          dimensionsLoading
+                            ? translate("kpi.f58ddd1effba")
+                            : dimensionsError
+                              ? translate("kpi.a237d197caeb")
+                              : undefined
+                        }
+                        rows={graphRows}
+                        statistic={stat}
+                        config={configFor(entry.item.code)}
+                        groupOptions={(
+                          [
+                            "none",
+                            "operator",
+                            "band",
+                            "operator_band",
+                            ...(dimensions?.dor?.available ? ["dor"] : []),
+                          ] as KpiGroupBy[]
+                        ).filter(
+                          (g) =>
+                            g === "none" ||
+                            g === "dor" ||
+                            (g === "operator"
+                              ? dimensions?.operators?.available
+                              : g === "band"
+                                ? dimensions?.bands?.available
+                                : dimensions?.operators?.available && dimensions?.bands?.available),
+                        )}
+                        onConfig={(next) => updateConfig(entry.item.code, next)}
+                        onStatistic={(value) =>
+                          updateConfig(entry.item.code, {
+                            ...configFor(entry.item.code),
+                            statistic: value,
+                          })
+                        }
+                        active={effectiveActive === entry.item.code}
+                        onActivate={() => setActive(entry.item.code)}
+                        selectedRows={selectedRows}
+                        onSelectRow={toggleRow}
+                        onRemove={() => toggle(entry.item.code)}
+                        onMove={(direction) => move(entry.item.code, direction)}
+                        index={codes.indexOf(entry.item.code)}
+                        count={codes.length}
+                      />
+                    )}
+                  </PanelShell>
+                ))}
+                {selectedMetrics.length > 0 && (
+                  <MetricsWorkspace
+                    projectId={projectId}
+                    captureId={captureId}
+                    onCaptureChange={setCaptureId}
+                    selections={selectedMetrics}
+                    catalog={metricsCatalog.data?.metrics ?? []}
+                    filters={applied}
+                    view={metricsView}
+                    onViewChange={setMetricsView}
+                    onTablePaneChange={setMetricsTablePane}
+                    workspaceId={tabsState.activeTabId}
+                    onColumnsChange={setTableColumns}
+                    paneRequest={metricsPaneRequest.n}
+                    onClear={() => {
+                      setSelectedMetrics([]);
+                      void navigate({
+                        to: ".",
+                        search: (p: Record<string, unknown>) => ({ ...p, metrics: [] }),
+                        replace: true,
+                      } as never);
+                    }}
+                  />
+                )}
               </PanelGridContext.Provider>
             </div>
             {!panels.length && !selectedMetrics.length && (
