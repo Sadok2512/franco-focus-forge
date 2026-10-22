@@ -116,7 +116,7 @@ function lteConnectedContext(event: RfEvent, captureId: string): string | null {
     event.seq_end === null ||
     seqs[1] !== event.seq ||
     seqs[2] !== event.seq_end ||
-    !(seqs[0] < seqs[1] && seqs[1] < seqs[2])
+    !(seqs[0]! < seqs[1]! && seqs[1]! < seqs[2]!)
   )
     return null;
   return `${captureId}:${String(context)}`;
