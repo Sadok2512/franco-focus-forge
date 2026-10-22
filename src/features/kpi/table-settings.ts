@@ -1,6 +1,6 @@
 // Workspace Table Settings — presentation only, persisted per workspace tab.
 // Never alters values, calculations, filters or semantic alert colors.
-import { useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, type CSSProperties } from "react";
 
 export type TableStyle = "clean" | "professional" | "compact";
 export type Size3 = "small" | "medium" | "large";
@@ -236,4 +236,44 @@ export function orderedColumns<C extends { code: string }>(
     return i < 0 ? Number.MAX_SAFE_INTEGER : i;
   };
   return cols.filter((c) => !s.hidden.includes(c.code)).sort((a, b) => idx(a) - idx(b));
+}
+
+/** Active workspace id for tables rendered inside panels (KPI/Metrics cards). */
+export const TableSettingsWorkspaceContext = createContext<string>("default");
+
+/** Presentation-only CSS vars + data attrs shared by every workspace table. */
+export function tableSettingsProps(ts: TableSettings) {
+  const style = {
+    "--t-bg": ts.colors.background,
+    "--t-head-bg": ts.colors.headerBg,
+    "--t-head-fg": ts.colors.headerText,
+    "--t-row": ts.colors.rowBg,
+    "--t-alt": ts.zebra ? ts.colors.altRow : ts.colors.rowBg,
+    "--t-border": ts.colors.border,
+    "--t-sel": ts.colors.selected,
+    "--t-fg": textFor(ts.colors.rowBg),
+    "--t-font": { small: "11px", medium: "12px", large: "14px" }[ts.fontSize],
+    "--t-row-h": { compact: "22px", normal: "28px", comfortable: "36px" }[ts.rowHeight],
+    "--t-head-h": { compact: "26px", normal: "34px", large: "44px" }[ts.headerHeight],
+    "--t-pad": { small: "2px 6px", medium: "4px 10px", large: "8px 14px" }[ts.cellPadding],
+    "--t-gap": { compact: "0px", normal: "6px", wide: "14px" }[ts.spacing],
+    "--t-radius": ts.radius === "rounded" ? "8px" : "0px",
+    "--t-align": ts.cellAlign,
+    "--t-num-align": ts.numberAlign,
+  } as CSSProperties;
+  return {
+    style,
+    "data-style": ts.style,
+    "data-borders": ts.borders,
+    "data-sticky-head": String(ts.stickyHeader),
+    "data-sticky-first": String(ts.stickyFirstColumn),
+    "data-wrap": String(ts.wrap),
+  };
+}
+
+/** Settings of the workspace tab hosting the current panel. */
+export function usePanelTableSettings() {
+  const ws = useContext(TableSettingsWorkspaceContext);
+  const [ts] = useTableSettings(ws);
+  return tableSettingsProps(ts);
 }
