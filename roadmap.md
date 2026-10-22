@@ -1,5 +1,5 @@
 # BC4 roadmap
-- [ ] Add V7 Lucide icons to network events, tasks and mobility without changing the Network Events allowlist, source data or other panels; verify chart rendering and selection.
+- [x] Add V7 Lucide icons to network events, tasks and mobility without changing the Network Events allowlist, source data or other panels; 32 regression tests pass, browser fixture confirms distinct icons and exact event selection. Real VM validation remains blocked by rejected stored credentials; no publication.
 - [x] Accept VM 0.74.10 RF pivot serialization for separately proven UE LTE and RRC Connected intervals; 60 tests pass and browser fixture shows both bands and cursor evidence at 15 s. No source reconstruction or publication.
 - [ ] Verify VM 0.74.10 real capture rendering — health confirms 0.74.10, but stored reader credentials return 401; authenticated capture/message/payload/GPS checks require updated secure access.
 - [x] Remove the Signaling timeline heading "Timeline of events, UE state, tasks and RF metrics" and the Ruban / RF / Histogram view switch; the timeline now opens directly on the RF view. Browser fixture confirms bands, red cursor and blue navigator still render; version 1.80.2.
