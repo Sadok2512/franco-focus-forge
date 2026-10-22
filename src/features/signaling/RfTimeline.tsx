@@ -855,67 +855,6 @@ export function RfTimeline({
             ))}
           </div>
         </details>
-        <span className="ml-auto flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            title={t("rfTimeline.showCursor")}
-            aria-label={t("rfTimeline.showCursor")}
-            data-testid="show-time-cursor"
-            onClick={() => onTime((visibleWindow[0] + visibleWindow[1]) / 2)}
-          >
-            <Crosshair />
-          </Button>
-          {stateTracksV2 && (
-            <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            onClick={() => zoomBy(0.5)}
-            aria-label={t("rfTimeline.zoomIn")}
-          >
-            <ZoomIn />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            onClick={() => zoomBy(2)}
-            aria-label={t("rfTimeline.zoomOut")}
-          >
-            <ZoomOut />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            aria-label={t("rfTimeline.reset")}
-            title={t("rfTimeline.reset")}
-            onClick={() => {
-              changeWindow(clampWindow(duration, 0, stateTracksV2 ? 30 : FULL_CAPTURE_S));
-              setWindowSeq(undefined);
-              callbacks.current.onRange(undefined);
-            }}
-          >
-            <RotateCcw />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            aria-label={t("rfTimeline.fullscreen")}
-            title={t("rfTimeline.fullscreen")}
-            onClick={() => {
-              if (document.fullscreenElement) void document.exitFullscreen();
-              else void root.current?.requestFullscreen();
-            }}
-          >
-            <Maximize />
-          </Button>
-        </span>
       </div>
       {(events.isPending || radio.isPending) && <p role="status">{t("rfTimeline.loading")}</p>}
       {[events, radio, detailed]
