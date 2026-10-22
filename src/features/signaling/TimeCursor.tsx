@@ -121,7 +121,10 @@ export function TimeCursor({
   }, [chart, host, duration]);
   const visible = (time: number) =>
     time >= (duration * zoom[0]) / 100 && time <= (duration * zoom[1]) / 100;
-  const xAt = (time: number) => chart?.convertToPixel({ xAxisIndex: 0 }, time) as number;
+  const xAt = (time: number) => {
+    if (!chart?.getOption()?.["xAxis"]) return NaN;
+    return chart.convertToPixel({ xAxisIndex: 0 }, time) as number;
+  };
   const time = hover ?? selectedTime;
   const x = time === null ? null : xAt(time);
   const selectedX = selectedTime === null ? null : xAt(selectedTime);

@@ -22,6 +22,7 @@ describe("Signaling cursor chart readiness", () => {
         if (name === "finished") finished = callback;
       }),
       off: vi.fn(),
+      getOption: vi.fn(() => ready ? { xAxis: [{}] } : {}),
       convertToPixel: vi.fn((_axis: unknown, time: number) => (ready ? 112 + time : NaN)),
     } as unknown as ECharts;
     const onTime = vi.fn();
