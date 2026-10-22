@@ -123,8 +123,8 @@ describe("Signaling click shows the name only", () => {
 
   it("shows just the event name at the click, without time, seq or evidence", async () => {
     renderTimeline();
-    await waitFor(() => expect(handlers.click).toBeInstanceOf(Function));
-    act(() => handlers.click!({ data: { event }, event: { offsetX: 200, offsetY: 60 } }));
+    await waitFor(() => expect(handlers["click"]).toBeInstanceOf(Function));
+    act(() => handlers["click"]!({ data: { event }, event: { offsetX: 200, offsetY: 60 } }));
     const tag = screen.getByTestId("rf-name-tag");
     expect(tag.textContent).toBe("DL Data Bearer 1");
     expect(tag.textContent).not.toContain(" s");
@@ -133,19 +133,19 @@ describe("Signaling click shows the name only", () => {
 
   it("names the RF measurement under the cursor and clears when the click misses", async () => {
     renderTimeline();
-    await waitFor(() => expect(zrHandlers.click).toBeInstanceOf(Function));
-    act(() => zrHandlers.click!({ offsetX: 152, offsetY: 51 }));
+    await waitFor(() => expect(zrHandlers["click"]).toBeInstanceOf(Function));
+    act(() => zrHandlers["click"]!({ offsetX: 152, offsetY: 51 }));
     const tag = screen.getByTestId("rf-name-tag");
     expect(tag.textContent).toMatch(/rsrp/i);
     expect(tag.textContent).not.toBe("DL Data Bearer 1");
-    act(() => zrHandlers.click!({ offsetX: 152, offsetY: 120 }));
+    act(() => zrHandlers["click"]!({ offsetX: 152, offsetY: 120 }));
     expect(screen.queryByTestId("rf-name-tag")).toBeNull();
   });
 
   it("hides the name on Escape", async () => {
     renderTimeline();
-    await waitFor(() => expect(handlers.click).toBeInstanceOf(Function));
-    act(() => handlers.click!({ data: { event }, event: { offsetX: 200, offsetY: 60 } }));
+    await waitFor(() => expect(handlers["click"]).toBeInstanceOf(Function));
+    act(() => handlers["click"]!({ data: { event }, event: { offsetX: 200, offsetY: 60 } }));
     expect(screen.getByTestId("rf-name-tag")).toBeTruthy();
     act(() => fireEvent.keyDown(window, { key: "Escape" }));
     expect(screen.queryByTestId("rf-name-tag")).toBeNull();
