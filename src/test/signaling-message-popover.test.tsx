@@ -6,8 +6,22 @@ import type { MessageSelection } from "@/features/signaling/message-filter";
 import "@/lib/i18n";
 
 const types = [
-  { key: "paging", name: "Paging", protocol: "RRC LTE", count: 24, technology: "LTE" as const, channel: "PCCH" },
-  { key: "request", name: "RRCConnectionRequest", protocol: "RRC LTE", count: 11, technology: "LTE" as const, channel: "UL-CCCH" },
+  {
+    key: "paging",
+    name: "Paging",
+    protocol: "RRC LTE",
+    count: 24,
+    technology: "LTE" as const,
+    channel: "PCCH",
+  },
+  {
+    key: "request",
+    name: "RRCConnectionRequest",
+    protocol: "RRC LTE",
+    count: 11,
+    technology: "LTE" as const,
+    channel: "UL-CCCH",
+  },
 ];
 
 const openAndExpand = (...channelIds: string[]) => {
@@ -18,7 +32,16 @@ const openAndExpand = (...channelIds: string[]) => {
 
 describe("transactional popup", () => {
   it("opens with every group closed: only technologies are listed", () => {
-    render(<MessageFilterPopover types={types} selection={null} onApply={() => {}} onRequest={() => {}} loading={false} error={false} />);
+    render(
+      <MessageFilterPopover
+        types={types}
+        selection={null}
+        onApply={() => {}}
+        onRequest={() => {}}
+        loading={false}
+        error={false}
+      />,
+    );
     fireEvent.click(screen.getByTestId("message-filter-trigger"));
     expect(screen.getByTestId("tree-tech-LTE")).toBeInTheDocument();
     expect(screen.getByTestId("tree-chevron-LTE")).toHaveAttribute("aria-expanded", "false");

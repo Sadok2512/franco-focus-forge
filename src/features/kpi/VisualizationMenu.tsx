@@ -37,10 +37,7 @@ export function VisualizationItems({
             : undefined;
           return (
             <span key={mode} title={title}>
-              <DropdownMenuItem
-                disabled={disabled}
-                onSelect={() => onChange(mode)}
-              >
+              <DropdownMenuItem disabled={disabled} onSelect={() => onChange(mode)}>
                 <Icon size={14} />
                 {VISUALIZATIONS[mode]}
               </DropdownMenuItem>
