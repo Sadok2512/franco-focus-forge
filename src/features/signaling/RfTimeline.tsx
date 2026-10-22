@@ -300,7 +300,7 @@ export function RfTimeline({
         },
       ],
     });
-  }, [selectedTime, selectedEventId, displayed, ready]);
+  }, [selectedTime, selectedEventId, displayed, ready, lanes]);
   useEffect(() => {
     const c = chart.current;
     if (!c || !duration || !c.getOption()?.["xAxis"]) return;
@@ -309,9 +309,9 @@ export function RfTimeline({
       { silent: true },
     );
     redrawCursor((revision) => revision + 1);
-  }, [visibleWindow[0], visibleWindow[1], duration, ready]);
+  }, [visibleWindow, duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
-  const laneLayout = stateLaneLayout(lanes);
+  const laneLayout = useMemo(() => stateLaneLayout(lanes), [lanes]);
   const trackHeight = stateTracksV2 ? laneLayout.height : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
   const chartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
@@ -706,6 +706,8 @@ export function RfTimeline({
     states,
     trackHeight,
     rfTop,
+    laneLayout,
+    visibleWindow,
   ]);
   const zoomBy = (factor: number) => {
     const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
@@ -826,14 +828,6 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      {false &&
-        !events.isPending &&
-        !events.isError &&
-        !displayed.some((e) => laneFor(e) === "uestate") && (
-          <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
-            {t("rfTimeline.ueStateEmpty")}
-          </p>
-        )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
           {stateTracksV2 &&
@@ -873,14 +867,6 @@ export function RfTimeline({
             captureId={captureId}
           />
         </div>
-        {false && (
-          <p
-            className="shrink-0 text-[10px] text-muted-foreground"
-            data-testid="state-evidence-status"
-          >
-            {t("signalingV2.unavailable")}
-          </p>
-        )}
         {linked && (
           <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
             {states
