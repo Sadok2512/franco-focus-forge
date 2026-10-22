@@ -1,3 +1,13 @@
+## 1.87.0 (minor) — BC4-FRONT 2026-10-22 — Merge reconciliation github/main ↔ feat/bc3-metrics (Agent BC3)
+
+Merge sélectif entre `feat/bc3-metrics` (BC3 KPI/Metrics workspace, 22 commits) et `github/main` (Lovable Signaling updates, 257 commits).
+
+- **Signaling** (`src/features/signaling/*`, `src/routes/_app.signaling-v2.tsx`, `src/features/signaling/signaling.css`, tests `src/test/signaling-*`) : versions **Lovable** retenues (RRC State lane, V9 UE/RRC evidence, time cursor + navigator, filter message popover, 3GPP RRC channel catalogue, premium messages table, …).
+- **KPI / Metrics** (`src/features/kpi/*`) : versions **BC3** retenues (parité tree catalogue, Charts|Table|Overlay switcher, pagination 25/50/100, natural column widths, status dots, `MoreVertical` ⋮ menu partagé).
+- **`CHANGELOG.md`** : les deux séries d'entrées sont conservées intégralement (BC3 1.77.0 → 1.77.1 phase D+E+F, Lovable 1.77.0 → 1.86.0). Le numéro `1.87.0` du merge > max(BC3 1.77.1, Lovable 1.86.0).
+
+Pas de rebuild ici : le merge ne produit pas d'image, c'est une réconciliation de code à destination de `main` pour que Lovable voie les commits BC3.
+
 ## 1.77.1 (patch) — BC4-FRONT 2026-10-21 — Signaling v2 phase D + E + F (certification + build) (Agent BC3)
 
 ### Phase F (ajout 2026-10-21 soir) — Build image dédiée + smoke test
@@ -120,6 +130,112 @@ Zod violations : aucune (SigMessage.array().parse() sur 2681 rows OK,
 - Prod `bc4-front-rf:1.71.2` : non reconstruite
 - Branche `feat/signaling-github-exact-ui` isolée de `main`
 - `tsc --noEmit` : clean
+
+---
+
+## 1.86.0 — RRC State title back in the lane gutter
+- The top timeline band now shows its own "RRC State" title with the gray Idle badge beside it, in the same left gutter as UE State.
+- The gutter row that held only UE State was painting an empty box over the chart's own label, so the RRC State title never appeared; it now carries the title and badge as real text.
+- Band positions, proven-state rules, Idle badges inside proven Idle intervals, cursor, navigator and message table are untouched.
+
+## 1.85.0 — Evidence messages section removed
+- The "Evidence messages" row under the Signaling timeline is gone: clicking an event no longer adds a strip with the interval, session and `#seq` buttons below the chart.
+- Selection feedback stays where it already was — the name chip on the timeline, the highlighted row in the messages table, the inspector, and the band tooltip that still carries the proven interval, session and proof sequences.
+- The Time Navigator remains attached directly beneath the tracks; no navigation control changed.
+
+## 1.84.0 — Selected message row visible after a timeline click
+- The selected message row now carries a strong fill (light blue with dark text in light theme, royal blue with white text in dark theme), bold text and a continuous 2 px accent outline plus a 4 px left bar, so the row a timeline click selected is obvious at a glance.
+- The messages table now scrolls itself so the selected row is always inside the visible area below the sticky header (`reveal-row.ts`: pure `scrollDelta` math applied to the table's own scroll container — the page, the cursor and the queries never move).
+- Fixed the dark theme token block: `.dark` was overridden by the later `:root` block (equal specificity, later source order), so every `--sig-*` table colour silently stayed light in dark mode; the block is now `html.dark` and actually wins.
+
+## 1.83.2 — Message filter tree closed by default
+- "Filter Messages" now opens with every technology and channel group closed: only the top-level technologies are listed, each with its own chevron.
+- Expanding a technology reveals its channels, expanding a channel reveals its messages; "Expand All" / "Collapse All" and search still work (a search temporarily reveals matches without touching the stored expansion state).
+- Selection, whole-capture counters, Apply/Cancel behaviour and payload preservation are unchanged.
+
+## 1.83.1 — RRC logical channel classification
+- 3GPP channel catalogue (TS 36.331 LTE / TS 38.331 NR) with controlled normalisation and exact matching only — no substring guessing.
+- Channel comes first from the decoded VM `channel`, then the catalogue, else Unclassified; NAS/Nemo/MAC never receive an RRC channel and conflicts keep the source channel.
+
+## 1.83.0 — RRC State band on top with Idle badge
+- RRC State band moved above the UE state band and given an Idle legend badge; the band only turns Idle when the VM proves an Idle period.
+
+## 1.82.0 — Premium sidebar and message-type filter
+- Compact collapsible/resizable filter sidebar and floating transactional message selector with local search, All/None, Cancel/Apply and semantic layer badges.
+- Actual whole-capture type counts via the existing paginated rows adapter, cached per capture; incomplete/changing results are rejected instead of showing invented totals.
+- Exact name+layer filtering, local pagination and filtered CSV over the complete matching population. Explicit no types means an empty list. Apply preserves selected payload, timeline and GPS; compatible selections survive capture changes.
+- No backend changes or production publication. Real VM validation is reported separately from fixture verification.
+
+## 1.81.0 — Premium messages table & always-open payload (V10)
+- Messages table: toolbar (search, layer, direction, technology, columns, export, clear), numbered pagination, compact premium rows.
+- New columns: Info (VM procedures only, failure from VM outcome), Tech, RRC State (proven intervals only), RSRP/RSRQ/SINR (previous real observation, Δt in tooltip). Band and Cell name listed but shown "—" until the VM supplies them.
+- Column selector: show/hide, reorder, restore defaults, saved locally.
+- Inspector always visible at 30 % (min 360 px); Payload tab first with ASN.1 expanded (progressive above 400 containers) and a Decoded values summary; Hex tab only when the VM supplies hex.
+
+## 1.80.4 — Click names the item
+
+- Clicking a timeline event or an RF measurement shows one small chip containing the name only; clicking blank space, panning, zooming or pressing Escape hides it again.
+- Measurement clicks resolve the nearest plotted point within 14 px, so a click on a curve names that measurement; no time, session, sequence or evidence text is added to the chip.
+- Event selection, message table, red cursor, Time Navigator and the evidence row behave exactly as before. No backend changes. Visual checks use fixtures, not authenticated VM captures. No production publication.
+
+## 1.80.3 — Evidence-only V9 UE/RRC presentation
+
+- Wider UE and RRC segments, centered labels with width-aware suppression, V9 semantic palette; unknown areas stay uncolored without permanent Unknown labels.
+- UE labels use validated carrier counts with CONFIGURED/ACTIVATED/USED qualifiers. LTE RRC displays LTE; advanced LTE requires proven activated/used CA. NR technology alone does not establish ENDC or SA; bands and combined modes remain unavailable without a validated contract.
+- Exact bounds, session and evidence remain accessible on selection. No inferred gaps, session merging, invented band counts or backend changes. Navigator stays attached; other tracks and investigation queries are preserved.
+- Visual checks use clearly identified fixtures, not authenticated live VM captures. No production publication.
+
+## 1.80.1 — Signaling V3 cursor and navigator integrity
+
+- Existing V2 30-second navigator gains independent pointer and keyboard resize handles with bounded capture-time edges and blue semantic styling; presets, move, zoom, reset and Fit remain available.
+- Cursor handle pointer events no longer propagate to the chart; proven state validation is cached independently of cursor motion. Shared cursor time and visible window remain separate, with no movement-driven requests.
+- Stable /signaling, source evidence, message filters, payload and GPS behavior remain unchanged. No production deployment.
+
+## 1.80.0 — Isolated Signaling V2 state tracks and navigator
+
+- Added /signaling-v2 with a shared 30-second initial window, 10/30/60/120/Fit controls and a draggable full-capture overview. Stable /signaling retains its full-capture default and no navigator.
+- Added independent compact UE/RRC lanes, technology sublines for LTE/NR coexistence and explicit Unknown backgrounds. Existing messages, inspector, map and query filters are reused.
+- Supplied state intervals require proven start/end sequences, session identity, technology and versioned evidence rules. Carrier-count labels require separately proven CONFIGURED/ACTIVATED/USED component carriers; measured frequencies never become CA proof.
+- No state reconstruction, VM contract modification or production deployment. Real capture/session/CA verification remains blocked without authorized VM data.
+
+## 1.79.1 — Signaling timeline pager removed
+
+- The "Navigation temporelle" bar (previous/next, 10/30/60/120-second presets, zoom/reset/full-capture buttons and the draggable strip) is no longer rendered under the Signaling timeline, on request.
+- The timeline now opens on the whole capture in every view (RF, Ruban, Histogram); in RF view the header zoom in/out buttons and mouse-wheel zoom (Ctrl + wheel) still narrow and widen the visible range, and the reset button returns to the full capture.
+- Shared visible-time state, cursor placement, follow-selected-message and message/map filters are unchanged.
+
+## 1.79.0 — Signaling time navigator (LOT A) and UE audit (LOT B)
+
+- Default 0–30-second window, clamped to capture duration; shared RF/events/ribbon/histogram range with draggable overview, presets, previous/next, zoom/reset/full capture.
+- Independent local cursor and follow selected message without message/map filters; navigator dragging does not request detailed windows.
+- UE reconstruction is intentionally gated on explicit approval and validated session-aware source evidence.
+
+## 1.78.1 — Ribbon time cursor & empty UE-state note
+
+- Event ribbon (Ruban view) gains the red time cursor: click anywhere on the ribbon to place it at the exact capture time, clicking an event snaps the cursor to its proven timestamp, Escape clears it. Cursor state stays local — never a query key.
+- RF timeline shows an explicit note when the source provides no connectivity periods (track lte/nsa/sa) for the capture, instead of a silently empty UE State lane; UE state is never inferred.
+
+## 1.78.0 — Signaling timeline redesign
+
+- RF timeline restyled to the reference layout: title + severity legend (Info/Success/Warning/Error/Event), fixed lanes (UE State, Network events, DL Data, UL Data, VoNR, Mobility), and one combined RF Metrics grid.
+- Connectivity events (LTE/NSA/SA) render as filled UE-state bands with the state label inside; task intervals render as rounded bars with Start/End captions when zoomed; point events render as icon dots with label + timestamp when the zoom span is ≤ 30 %.
+- The three radio series (LTE RSRP/RSRQ/SINR) render as lines on a single shared axis with a vertical legend on the left; no NR series is synthesized.
+- Time cursor RF markers now read the combined RF grid; zoom controls moved to the right of the toolbar.
+
+## 1.77.1 — Catalogue tab labels
+
+- Sidebar tabs now read "KPI catalogue" / "Metrics catalogue" (fr: "Catalogue KPI" / "Catalogue Métriques") instead of the bare "KPI" / "Metrics" + count.
+- Selected counts moved to each tab's tooltip and accessible name; no data, query or layout change.
+
+## 1.77.0 — Interactive Signaling time cursor
+
+- Extended the existing RF timeline with one continuous red cursor, exact event snap, free click, drag and observed-time keyboard navigation.
+- Added local observation tooltips and RF markers without hover/detail requests; dynamic tracks are restricted to events returned for the capture.
+- Preserved zoom and message list filters; explicit linked sequences navigate using selected_page. Exact GPS highlighting rejects previous positions.
+- No backend, source data, ingestion or event-detection changes. Only the three existing LTE metric codes are supported; unavailable NR/state/task evidence is not invented.
+- Validation evidence and known limitations: see signaling-cursor-validation.md.
+
+---
 
 ## 1.76.0 (minor) — BC4-FRONT 2026-10-21 — KPI Analytics premium workspace v2 — Phase D : +Add Panel menu + Overlay multi-KPI + responsive 3 viewports (Agent BC3)
 

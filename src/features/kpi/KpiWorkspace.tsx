@@ -467,6 +467,8 @@ function Workspace({
               <button
                 role="tab"
                 aria-selected={activeCatalog === "kpi"}
+                title={`${translate("kpi.3ad34a87a145")} · ${codes.length}`}
+                aria-label={`${translate("kpi.3ad34a87a145")} · ${codes.length}`}
                 className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("kpi")}
                 style={{
@@ -482,11 +484,13 @@ function Workspace({
                   fontWeight: activeCatalog === "kpi" ? 600 : 400,
                 }}
               >
-                KPI <span className="text-[10px] text-muted-foreground">{codes.length}</span>
+                {translate("kpi.3ad34a87a145")}
               </button>
               <button
                 role="tab"
                 aria-selected={activeCatalog === "metrics"}
+                title={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
+                aria-label={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
@@ -502,9 +506,7 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {" "}
-                {translate("kpi.358dd0007b59")}{" "}
-                <span className="text-[10px] text-muted-foreground">{selectedMetrics.length}</span>
+                {translate("kpi.498227f2b5c6")}
               </button>
             </div>
             {activeCatalog === "kpi" ? (

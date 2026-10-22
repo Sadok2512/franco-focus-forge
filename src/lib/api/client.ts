@@ -280,3 +280,5 @@ export { getDecodeStatus, startDeepDecode, getUnknownMetrics } from "./decode";
 export { getSignaling } from "./signaling";
 
 export { getMetricAnalysis } from "./metrics";
+
+export { getAllSignalingRows } from "./signaling-message-types";

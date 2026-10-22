@@ -35,8 +35,8 @@ const ROLE_FR_TO_ZOD: Record<AppUserRole, Role> = {
  *  credentials viennent de l'env serveur (BC4_ADMIN_*). */
 export const DEMO_USER = { id: "admin@bc4.local", password: "" };
 
-export async function login(email: string, password: string): Promise<Session> {
-  const s = await httpLogin(email, password);
+export async function login(email: string, password: string, remember = true): Promise<Session> {
+  const s = await httpLogin(email, password, remember);
   const role: Role = ROLE_FR_TO_ZOD[s.user.role];
   return {
     user: s.user.email,

@@ -1,0 +1,257 @@
+import { describe, expect, it } from "vitest";
+import type { RfEvent } from "@/lib/api/signaling";
+import { provenState, provenStates, stateLabelKey } from "@/features/signaling/state-evidence";
+import { WINDOW_PRESETS } from "@/features/signaling/WindowSelector";
+import {
+  clampWindow,
+  DEFAULT_WINDOW_S,
+  FULL_CAPTURE_S,
+  followMessage,
+} from "@/features/signaling/time-window";
+
+const event: RfEvent = {
+  id: "lte",
+  lane: "connexion",
+  type: "ue_state",
+  kind: "band",
+  seq: 12,
+  seq_end: 19,
+  t_rel_s: 120,
+  t_rel_end_s: 160,
+  duration_ms: 40000,
+  outcome: "ok",
+  cause: null,
+  label: "LTE",
+  attrs: {
+    track: "ue_state",
+    state: "LTE",
+    technology: "LTE",
+    session_id: "ue-1",
+    evidence_status: "PROVEN",
+    source_seqs: [12, 19],
+    rule_id: "validated",
+    rule_version: "1",
+  },
+  pivot_seq: 12,
+  linked_seqs: [12, 19],
+  link_rule: "explicit",
+  seq_gap: 0,
+};
+describe("Signaling V2 evidence gates", () => {
+  it("G1 accepts only proven supplied bounds", () => {
+    expect(provenState(event, "capture")?.startS).toBe(120);
+    expect(provenState({ ...event, t_rel_end_s: null }, "capture")).toBeNull();
+    expect(
+      provenState({ ...event, attrs: { ...event.attrs, evidence_status: "PARTIAL" } }, "capture"),
+    ).toBeNull();
+  });
+  it("G2 preserves independent RRC Connected and Idle from explicit states", () => {
+    for (const state of ["CONNECTED", "IDLE"])
+      expect(
+        provenState({ ...event, attrs: { ...event.attrs, track: "RRC_STATE", state } }, "capture")
+          ?.state,
+      ).toBe(state);
+    expect(
+      provenState({ ...event, attrs: { ...event.attrs, state: undefined } }, "capture"),
+    ).toBeNull();
+  });
+  it("G3 LTE 4C requires proven count, status and explicit definition", () => {
+    const attrs = {
+      ...event.attrs,
+      component_carriers: 4,
+      carrier_status: "CONFIGURED",
+      carrier_definition: "COMPONENT_CARRIERS",
+      ca_evidence_status: "PROVEN",
+    };
+    expect(provenState({ ...event, attrs }, "capture")?.componentCarriers).toBe(4);
+    expect(
+      provenState({ ...event, attrs: { ...attrs, ca_evidence_status: undefined } }, "capture")
+        ?.componentCarriers,
+    ).toBeNull();
+    expect(
+      provenState(
+        { ...event, attrs: { ...attrs, carrier_definition: "MEASURED_FREQUENCIES" } },
+        "capture",
+      )?.componentCarriers,
+    ).toBeNull();
+  });
+  it("G3 NR 2C requires explicit activated carrier proof", () => {
+    const state = provenState(
+      {
+        ...event,
+        attrs: {
+          ...event.attrs,
+          state: "NR",
+          technology: "NR_NSA",
+          component_carriers: 2,
+          carrier_status: "ACTIVATED",
+          carrier_definition: "COMPONENT_CARRIERS",
+          ca_evidence_status: "PROVEN",
+        },
+      },
+      "capture",
+    );
+    expect(state?.componentCarriers).toBe(2);
+    if (!state) throw new Error("Missing proven NR fixture");
+    expect(stateLabelKey(state)).toBe("signalingV2.nr2");
+  });
+  it("G4 permits simultaneous LTE and NR NSA without replacement", () => {
+    const nr = { ...event, id: "nr", attrs: { ...event.attrs, state: "NR", technology: "NR_NSA" } };
+    expect(provenStates([event, nr], "capture").map((s) => s.technology)).toEqual([
+      "LTE",
+      "NR_NSA",
+    ]);
+  });
+  it("G5 never fuses distinct overlapping sessions", () => {
+    expect(
+      provenStates(
+        [event, { ...event, id: "other", attrs: { ...event.attrs, session_id: "ue-2" } }],
+        "capture",
+      ),
+    ).toEqual([]);
+    expect(
+      provenState({ ...event, attrs: { ...event.attrs, session_id: undefined } }, "capture"),
+    ).toBeNull();
+  });
+  it("requires explicit start and end evidence sequences", () => {
+    expect(
+      provenState({ ...event, attrs: { ...event.attrs, source_seqs: [12] } }, "capture"),
+    ).toBeNull();
+    expect(
+      provenState({ ...event, attrs: { ...event.attrs, capture_id: "other" } }, "capture"),
+    ).toBeNull();
+  });
+  it("G6 uses 30 seconds in V2 without changing stable full capture", () => {
+    expect(DEFAULT_WINDOW_S).toBe(30);
+    expect(clampWindow(632.851, 0)).toEqual([0, 30]);
+    expect(clampWindow(632.851, 0, FULL_CAPTURE_S)).toEqual([0, 632.851]);
+  });
+  it("G7 offers 10/30/60/120 and Fit", () => {
+    expect([...WINDOW_PRESETS]).toEqual([10, 30, 60, 120]);
+    expect(clampWindow(632.851, 0, FULL_CAPTURE_S)).toEqual([0, 632.851]);
+  });
+  it("G11 follows 245.318 without changing chosen width", () => {
+    expect(followMessage([0, 30], 245.318, 632.851)).toEqual([230.318, 260.318]);
+  });
+});
+
+describe("LTE Connected via (capture_id, context_id)", () => {
+  // Raw event returned by bc4-back 0.74.8 for capture 047e3f34e0af.
+  const base = {
+    id: "proc:5804c84d5646c23099c3a54f",
+    lane: "connexion",
+    type: "rrc_connection",
+    kind: "band",
+    seq: 234,
+    seq_end: 1608,
+    t_rel_s: 1.4,
+    t_rel_end_s: 24.182,
+    duration_ms: 22782.0,
+    outcome: "ok",
+    cause: null,
+    label: "rrc_connection",
+    attrs: {
+      technology: "LTE",
+      capture_id: "047e3f34e0af",
+      track: "UE_STATE",
+      rule_id: "nemo_context_connected",
+      rule_version: "1.0.0",
+      evidence_status: "PROVEN",
+      source_seqs: [234, 243, 1608],
+      time_evidence_status: "PROVEN",
+    },
+    pivot_seq: 234,
+    linked_seqs: [234, 243, 1608],
+    link_rule: "nemo_context_connected",
+    seq_gap: 1374,
+    context_id: 54,
+    session_id: "context:047e3f34e0af:54",
+  } as RfEvent;
+  const cap = "047e3f34e0af";
+  const withAttrs = (x: Record<string, unknown>) =>
+    ({ ...base, attrs: { ...base.attrs, ...x } }) as RfEvent;
+  it("accepts the real VM period 1.400 s -> 24.182 s as LTE", () => {
+    const s = provenState(base, cap);
+    expect(s?.sessionId).toBe("context:047e3f34e0af:54");
+    expect(s?.state).toBe("LTE");
+    expect(s?.startS).toBe(1.4);
+    expect(s?.endS).toBe(24.182);
+    expect(s?.componentCarriers).toBeNull();
+  });
+  it("rejects PARTIAL evidence", () => {
+    expect(provenState(withAttrs({ evidence_status: "PARTIAL" }), cap)).toBeNull();
+  });
+  it("rejects another rule", () => {
+    expect(provenState(withAttrs({ rule_id: "other" }), cap)).toBeNull();
+  });
+  it("rejects incomplete chain", () => {
+    expect(provenState(withAttrs({ source_seqs: [234, 1608] }), cap)).toBeNull();
+  });
+  it("rejects missing capture_id", () => {
+    expect(provenState(withAttrs({ capture_id: undefined }), cap)).toBeNull();
+  });
+  it("rejects another capture", () => {
+    expect(provenState(base, "other")).toBeNull();
+  });
+  it("rejects missing context_id", () => {
+    expect(provenState({ ...base, context_id: null }, cap)).toBeNull();
+  });
+  it("rejects a session_id that contradicts (capture_id, context_id)", () => {
+    expect(provenState({ ...base, session_id: "context:047e3f34e0af:99" }, cap)).toBeNull();
+  });
+  it("rejects a zero-duration marker", () => {
+    expect(provenState({ ...base, t_rel_end_s: 1.4 }, cap)).toBeNull();
+  });
+});
+
+describe("VM 0.74.10 RF state contract", () => {
+  const cap = "047e3f34e0af";
+  const ue: RfEvent = {
+    id: "connected:234", lane: "connexion", type: "LTE Connected", kind: "band",
+    seq: 243, seq_end: 1608, t_rel_s: 1.4, t_rel_end_s: 24.182,
+    duration_ms: 22782, outcome: null, cause: "rrd.rrc_rel_cause=1", label: "LTE Connected",
+    attrs: {
+      track: "UE_STATE", technology: "LTE", status: "UNKNOWN",
+      source: "nmf_event_pair + nmf_event_deep", source_seqs: [234, 243, 1608],
+      evidence_status: "PROVEN", rule_id: "nemo_context_connected", rule_version: "1.0.0",
+      time_evidence_status: "PROVEN", protocol: "Procedures", source_message: "RRC",
+      capture_id: cap, cause: "rrd.rrc_rel_cause=1", state: "LTE",
+    },
+    pivot_seq: 243, linked_seqs: [234, 243, 1608], link_rule: "nemo_context_connected",
+    seq_gap: 0, context_id: 54, session_id: "context:047e3f34e0af:54",
+  };
+  const rrc: RfEvent = {
+    ...ue, id: "rrc-state:234", type: "RRC Connected", label: "RRC Connected",
+    attrs: { ...ue.attrs, track: "RRC_STATE", state: "CONNECTED" },
+  };
+  it("accepts UE LTE with RRC pivot 243 and proven bounds 1.4–24.182", () => {
+    expect(provenState(ue, cap)).toMatchObject({
+      track: "UE_STATE", state: "LTE", startS: 1.4, endS: 24.182,
+      sessionId: "context:047e3f34e0af:54", evidenceSeqs: [234, 243, 1608],
+      componentCarriers: null,
+    });
+  });
+  it("accepts the independent RRC CONNECTED band with identical proven bounds", () => {
+    expect(provenStates([ue, rrc], cap).map(({ track, state, startS, endS }) =>
+      ({ track, state, startS, endS }))).toEqual([
+      { track: "UE_STATE", state: "LTE", startS: 1.4, endS: 24.182 },
+      { track: "RRC_STATE", state: "CONNECTED", startS: 1.4, endS: 24.182 },
+    ]);
+  });
+  it("rejects a pivot outside the complete source sequence", () => {
+    expect(provenState({ ...ue, seq: 999 }, cap)).toBeNull();
+  });
+  it("keeps PARTIAL RRC periods unknown", () => {
+    expect(provenState({ ...rrc, attrs: { ...rrc.attrs, evidence_status: "PARTIAL" } }, cap)).toBeNull();
+  });
+  it("does not reinterpret Idle as Connected using the LTE context exception", () => {
+    expect(provenState({ ...rrc, attrs: { ...rrc.attrs, state: "IDLE" } }, cap)).toBeNull();
+  });
+  it("rejects reversed RRA RRC source ordering", () => {
+    expect(provenState({ ...ue, attrs: { ...ue.attrs, source_seqs: [243, 234, 1608] } }, cap)).toBeNull();
+  });
+  it("cannot bypass a mismatched composite session via attrs", () => {
+    expect(provenState({ ...rrc, session_id: "context:other:54",
+      attrs: { ...rrc.attrs, session_id: "context:047e3f34e0af:54" } }, cap)).toBeNull();
+  });
+});
