@@ -432,6 +432,8 @@
     "dl": "DL Data",
     "ul": "UL Data",
     "volte": "VoLTE",
+    "ping": "Ping",
+    "sms": "SMS",
     "vonr": "VoNR · unproven",
     "mobility": "Mobility",
     "cell_rsrp": "LTE RSRP",

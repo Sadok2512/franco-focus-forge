@@ -3,6 +3,9 @@ import { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RfTimeline } from "@/features/signaling/RfTimeline";
+import { EventRibbon } from "@/features/signaling/EventRibbon";
+import { TimeNavigator } from "@/features/signaling/TimeNavigator";
+import { useTimeWindow } from "@/features/signaling/time-window";
 import "@/features/signaling/signaling.css";
 export function mountCursorHarness() {
   const host = document.createElement("div");
@@ -11,6 +14,7 @@ export function mountCursorHarness() {
     "position:fixed;inset:0;background:var(--background);padding:24px;z-index:99999";
   document.body.append(host);
   function Harness() {
+    const { window, setWindow } = useTimeWindow("cursor-test", 300);
     const [state, setState] = useState<{ time: number | null; id: string | null }>({
       time: null,
       id: null,
@@ -37,7 +41,15 @@ export function mountCursorHarness() {
           direction=""
           search=""
           allowedProtocols={["RRC LTE", "RRC NR", "NAS"]}
+          timeWindow={window}
+          onWindow={setWindow}
         />
+        <TimeNavigator duration={300} window={window} onWindow={setWindow} />
+        <div style={{ height: 220 }}>
+          <EventRibbon projectId="cursor-test" captureId="cursor-test" duration={300}
+            timeWindow={window} selectedTime={state.time} onTime={(time) => setState({ time, id: null })}
+            onSelect={(event) => setState({ time: event.t_rel_s, id: event.id })} />
+        </div>
       </div>
     );
   }
