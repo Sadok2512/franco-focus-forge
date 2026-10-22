@@ -1,3 +1,9 @@
+## 1.81.0 — Premium messages table & always-open payload (V10)
+- Messages table: toolbar (search, layer, direction, technology, columns, export, clear), numbered pagination, compact premium rows.
+- New columns: Info (VM procedures only, failure from VM outcome), Tech, RRC State (proven intervals only), RSRP/RSRQ/SINR (previous real observation, Δt in tooltip). Band and Cell name listed but shown "—" until the VM supplies them.
+- Column selector: show/hide, reorder, restore defaults, saved locally.
+- Inspector always visible at 30 % (min 360 px); Payload tab first with ASN.1 expanded (progressive above 400 containers) and a Decoded values summary; Hex tab only when the VM supplies hex.
+
 ## 1.80.4 — Click names the item
 
 - Clicking a timeline event or an RF measurement shows one small chip containing the name only; clicking blank space, panning, zooming or pressing Escape hides it again.
