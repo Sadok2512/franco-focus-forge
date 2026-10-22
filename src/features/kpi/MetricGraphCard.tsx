@@ -72,6 +72,7 @@ export function MetricGraphCard({
   onRemove,
   view: viewProp,
   onViewChange,
+  onOpenTable,
 }: {
   projectId: string;
   code: string;
@@ -84,6 +85,7 @@ export function MetricGraphCard({
   onRemove: () => void;
   view?: MetricView | undefined;
   onViewChange?: ((view: MetricView) => void) | undefined;
+  onOpenTable?: (() => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -129,6 +131,11 @@ export function MetricGraphCard({
                   </DropdownMenuItem>
                 );
               })}
+            {onOpenTable && (
+              <DropdownMenuItem data-testid="metric-open-table" onSelect={onOpenTable}>
+                <Table2 size={14} /> {translate("panel.open_metrics_table")}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
               <Maximize2 size={14} /> {translate("panel.fullscreen")}
