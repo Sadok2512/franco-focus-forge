@@ -507,8 +507,8 @@ function Workspace({
               <button
                 role="tab"
                 aria-selected={activeCatalog === "metrics"}
-                title={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
-                aria-label={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
+                title={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
+                aria-label={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
@@ -524,7 +524,7 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("kpi.498227f2b5c6")}
+                {translate("metrics.498227f2b5c6")}
               </button>
               <Button
                 variant="ghost"
