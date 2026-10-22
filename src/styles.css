@@ -56,7 +56,7 @@
 }
 
 /* ---- thème sombre (bascule) ---- */
-.dark {
+html.dark {
   --sig-table-header: #1E293B;
   --sig-table-border: #334155;
   --sig-table-text: #E2E8F0;
