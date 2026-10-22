@@ -474,7 +474,7 @@ export function MetricsWorkspace({
     if (p === "table") setView("table");
     else if (p === "overlay") setView("graph");
   };
-  // 1.87.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
+  // 1.88.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
   // peut basculer une carte sur histogram/table/map sans toucher les autres).
   const [cardViews, setCardViews] = useState<Record<string, MetricView>>({});
   const [perRow, setPerRowRaw] = useState<1 | 2 | 3>(() => {

@@ -1,4 +1,4 @@
-// 1.87.0 — Charts pane cards: clicking Table in a card's visualisation menu
+// 1.88.0 — Charts pane cards: clicking Table in a card's visualisation menu
 // must switch that card to the table (regression: the view was locked to
 // graph and the click was silently ignored).
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
