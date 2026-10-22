@@ -130,10 +130,11 @@
 .sig-layer-nas { --badge:var(--sig-layer-nas); }
 .sig-layer-nemo { --badge:var(--sig-layer-nemo); }
 .sig-layer-mac { --badge:var(--sig-layer-mac); }
-.sig-layer-badge { color:color-mix(in oklch,var(--badge) 75%,var(--foreground)); background:color-mix(in oklch,var(--badge) 13%,var(--card)); }
+.sig-layer-badge { color:color-mix(in oklab,var(--badge) 75%,var(--foreground)); background:color-mix(in oklab,var(--badge) 13%,var(--card)); }
 .sig-message-footer { display:flex; gap:7px; align-items:center; border-top:1px solid var(--border); padding:11px 14px; background:var(--background); }
 .sig-message-footer>span { flex:1; font-size:10px; color:var(--muted-foreground); }
 .sig-selection-note { padding:6px 12px; font-size:11px; color:var(--muted-foreground); background:var(--muted); border-top:1px solid var(--border); }
 @media(max-width:900px) {
-  .sig-message-popover { position:fixed; left:12px; top:70px; width:calc(100vw - 24px); max-height:calc(100dvh - 94px); }
+  [data-radix-popper-content-wrapper]:has(.sig-message-popover) { position:fixed !important; transform:none !important; left:12px !important; top:70px !important; width:calc(100vw - 24px); }
+  .sig-message-popover { width:calc(100vw - 24px); max-height:calc(100dvh - 94px); }
 }
