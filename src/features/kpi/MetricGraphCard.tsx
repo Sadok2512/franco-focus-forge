@@ -14,14 +14,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, ChartNoAxesCombined, MapPin, Table2, X } from "lucide-react";
+import { BarChart3, ChartNoAxesCombined, MapPin, Maximize2, Table2, X } from "lucide-react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -93,9 +92,10 @@ export function MetricGraphCard({
     setLocalView(v);
     onViewChange?.(v);
   };
-  const ActiveIcon = METRIC_VIEW_ICONS[view];
+  const cardRef = useRef<HTMLElement>(null);
   return (
     <article
+      ref={cardRef}
       id={`metric-graph-${code}`}
       className="kpi-graph-card"
       data-metric-code={code}
@@ -111,38 +111,33 @@ export function MetricGraphCard({
           </p>
         </div>
         <div className="flex gap-0.5 shrink-0 items-center">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className="kpi-button"
-                aria-label={`Visualisation ${label}`}
-                data-testid="metric-view-trigger"
-              >
-                <ActiveIcon size={13} />
-                {METRIC_VIEW_LABELS[view]}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start">
-              <DropdownMenuLabel>{translate("metrics.af3aaf87ff99")}</DropdownMenuLabel>
-              {(Object.keys(METRIC_VIEW_LABELS) as MetricView[]).map((mode) => {
+          <WorkspacePanelMenu label={`Actions ${label}`}>
+            <DropdownMenuLabel>{translate("panel.visualization")}</DropdownMenuLabel>
+            {(Object.keys(METRIC_VIEW_LABELS) as MetricView[])
+              .filter((mode) => mode !== "map")
+              .map((mode) => {
                 const Icon = METRIC_VIEW_ICONS[mode];
                 return (
-                  <DropdownMenuItem key={mode} onSelect={() => setView(mode)}>
+                  <DropdownMenuItem
+                    key={mode}
+                    data-testid={`metric-view-${mode}`}
+                    onSelect={() => setView(mode)}
+                  >
                     <Icon size={14} />
                     {METRIC_VIEW_LABELS[mode]}
+                    {mode === view ? " ✓" : ""}
                   </DropdownMenuItem>
                 );
               })}
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <button
-            className="kpi-icon"
-            title={translate("metrics.68144408eb29")}
-            aria-label={`Retirer ${label}`}
-            onClick={onRemove}
-          >
-            <X size={15} />
-          </button>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
+              <Maximize2 size={14} /> {translate("panel.fullscreen")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={onRemove}>
+              <X size={14} /> {translate("panel.remove")}
+            </DropdownMenuItem>
+          </WorkspacePanelMenu>
         </div>
       </header>
       {view === "histogram" ? (

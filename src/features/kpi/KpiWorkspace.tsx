@@ -467,11 +467,25 @@ function Workspace({
           maxSize="460px"
           panelRef={cataloguePanel}
           collapsible
-          collapsedSize="0px"
+          collapsedSize="36px"
           onResize={() => setCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)}
           className="kpi-sidebar-panel"
         >
-          <div className="kpi-sidebar-tabs">
+          {catalogueCollapsed && (
+            <div className="kpi-catalog-rail" data-testid="kpi-catalog-rail">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="kpi-catalog-toggle"
+                title={translate("panel.expand_catalogue")}
+                aria-label={translate("panel.expand_catalogue")}
+                onClick={() => cataloguePanel.current?.expand()}
+              >
+                <PanelLeftOpen size={15} />
+              </Button>
+            </div>
+          )}
+          <div className="kpi-sidebar-tabs" hidden={catalogueCollapsed}>
             <div
               className="kpi-sidebar-tabbar"
               role="tablist"
@@ -528,6 +542,17 @@ function Workspace({
               >
                 {translate("kpi.498227f2b5c6")}
               </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="kpi-catalog-toggle ml-auto self-center"
+                title={translate("panel.collapse_catalogue")}
+                aria-label={translate("panel.collapse_catalogue")}
+                data-testid="kpi-catalog-collapse"
+                onClick={() => cataloguePanel.current?.collapse()}
+              >
+                <PanelLeftClose size={15} />
+              </Button>
             </div>
             {activeCatalog === "kpi" ? (
               <KpiCatalogSidebar
@@ -558,23 +583,6 @@ function Workspace({
           <div
             className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
           >
-            <Button
-              variant="ghost"
-              size="icon"
-              className="kpi-catalog-toggle"
-              title={translate(
-                catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue",
-              )}
-              aria-label={translate(
-                catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue",
-              )}
-              onClick={() => {
-                if (cataloguePanel.current?.isCollapsed()) cataloguePanel.current.expand();
-                else cataloguePanel.current?.collapse();
-              }}
-            >
-              {catalogueCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
-            </Button>
             <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
               <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (

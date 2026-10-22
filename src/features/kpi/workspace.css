@@ -169,7 +169,9 @@
   scrollbar-gutter: stable;
   container-type: inline-size;
 }
-.kpi-catalog-toggle { position: sticky; top: 0; z-index: 5; width: 28px; height: 28px; background: var(--card); }
+.kpi-catalog-toggle { width: 28px; height: 28px; flex-shrink: 0; }
+.kpi-catalog-rail { display: flex; justify-content: center; padding-top: 4px; height: 100%; background: var(--card); border-right: 1px solid var(--border); }
+.kpi-sidebar-tabs[hidden] { display: none; }
 .kpi-filterbar,
 .kpi-graph-card,
 .kpi-data-table {
@@ -380,7 +382,7 @@
   width: 100%;
   min-width: 0;
   overflow-x: auto;
-  padding-block: 10px 6px;
+  padding-block: 0 6px;
   flex: 1;
 }
 .kpi-workspace-grid-viewport[hidden] {
