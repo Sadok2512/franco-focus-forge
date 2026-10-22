@@ -95,8 +95,8 @@ it("loads every actual VM page before publishing counts", async () => {
     { capture_id: "capture" },
     undefined,
     async (_p, _k, params) => {
-      calls.push(Number(params.page));
-      return Number(params.page) === 1 ? batch(1, rows.slice(0, 2)) : batch(2, rows.slice(2));
+      calls.push(Number(params["page"]));
+      return Number(params["page"]) === 1 ? batch(1, rows.slice(0, 2)) : batch(2, rows.slice(2));
     },
   );
   expect(calls).toEqual([1, 2]);
@@ -110,7 +110,7 @@ it("rejects partial or duplicate rows rather than publishing false counts", asyn
 it("rejects changing capture totals", async () => {
   await expect(
     getAllSignalingRows("p", {}, undefined, async (_p, _k, params) =>
-      Number(params.page) === 1 ? batch(1, rows.slice(0, 2)) : batch(2, rows.slice(2), 5),
+      Number(params["page"]) === 1 ? batch(1, rows.slice(0, 2)) : batch(2, rows.slice(2), 5),
     ),
   ).rejects.toThrow("changing");
 });

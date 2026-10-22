@@ -1086,7 +1086,7 @@ export function SignalingPage({
   });
   const remoteListing = useQuery({
     queryKey: ["signaling", projectId, filtered, page, size, sort, order],
-    enabled: !!capture,
+    enabled: !!capture && messageSelection === null,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "rows", { ...filtered, page, size, sort, order }, signal),
   });
