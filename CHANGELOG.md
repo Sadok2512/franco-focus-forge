@@ -1,3 +1,14 @@
+## 1.99.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.97→1.98 (Signaling cleanup) ↔ BC3 1.97.0 (Phase 2 Charts) (Agent BC3)
+
+Collision SemVer `1.97.0` : Lovable a bumpé `1.97.0` (patch) pour « Trajet GPS supprimé » exactement comme je bumpais `1.97.0` (minor) pour Phase 2 Charts. Deux lots indépendants, aucun conflit code (fichiers disjoints). Pour éviter l'ambiguïté, le merge saute à `1.99.0` et les deux entrées 1.97.0 sont conservées ci-dessous avec origine explicite.
+
+- Phase 2 Charts (BC3 c1e2269) : auto-mergée sans conflit.
+- Signaling map title removed (Lovable) + Signaling messages toolbar compact (Lovable 1.98.0) : auto-mergées.
+
+Entrées Lovable 1.97/1.98 conservées intégralement.
+
+---
+
 ## 1.97.0 (minor) — BC4-FRONT 2026-10-22 — Phase 2 Charts : synchronized cursor + Events Ribbon (Agent BC3)
 
 Mission `(c) Phase 2 Charts` : hover d'une carte Metrics propage le curseur à toutes les autres cartes + un ruban d'events RRC/HO/RLF/Task s'ajoute au-dessus de la grille.
@@ -36,7 +47,23 @@ Mission `(c) Phase 2 Charts` : hover d'une carte Metrics propage le curseur à t
 - Click sur un event du ribbon ne positionne pas (encore) un curseur persistant sur les cartes (zoom + follow). Nécessaire = state partagé `selectedTime` en haut de MetricsWorkspace + prop sur chaque carte + render d'une `<ReferenceLine>` à ce temps. Lot V2.1 si demandé.
 - Click-click = zoom range : idem lot V2.1.
 
+---
+
+## 1.98.0 (minor) — BC4-FRONT 2026-10-22 — Signaling : barre des messages compactée (compteur, recherche, actions en icônes) (Agent Lovable)
+
+- SignalingPage: dans la barre du tableau des messages, les actions « Colonnes (12/17) », « Export CSV » et « Effacer les filtres » deviennent des boutons icônes seuls (`sig-tool-icon`) — leur nom reste porté par `aria-label`/`title`, et celui de Colonnes conserve le compte « visibles/total ». La recherche devient un champ compact et élastique (130 px mini, 220 px maxi, contre 200–260 px avant) et l'en-tête est resserré (`gap-1.5 px-2.5 py-1.5`).
+- signaling.css: `.sig-count` passe en `flex: 0 0 auto` (jamais compressé, jamais coupé), `.sig-search` compact, nouvelle classe `.sig-tool-icon` (32 px, centré).
+- Aucune chaîne ajoutée : `sigTable.columns`, `sigTable.export`, `sigTable.clear` (fr/en en paire) sont réutilisées comme noms accessibles. Typecheck clean, 276 tests passent (2 skipped), build OK.
+- Navigateur (données de démonstration, session demo) : compteur « 2,043 messages » lu en premier, jamais coupé, menu Colonnes ouvert avec ses 17 lignes, bouton porteur de `aria-label="Columns (12/17)"`, trois actions rendues sans libellé texte, aucune erreur de page.
+
+## 1.97.0 (patch) — BC4-FRONT 2026-10-22 — Signaling : titre « Trajet · GPS précédent » supprimé (Agent Lovable)
+
+
+- SignalingPage: le titre de la zone carte est supprimé; le panneau garde un nom accessible via `aria-label={t("signalingV2.map")}` (« Carte » / « Map »), et la hauteur libérée profite à la carte.
+- Aucune chaîne ajoutée (clé existante réutilisée), fr/en déjà en paire. Typecheck clean, 276 tests passent (2 skipped), build OK.
+
 ## 1.96.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.92→1.95 (toolbar cleanup) ↔ BC3 1.92.1 (Scanner banner workspace-level) (Agent BC3)
+
 
 Suite directe des 2 lots (Lovable workspace toolbar removals 1.92→1.95 + BC3 scanner UI 1.92.1).
 
