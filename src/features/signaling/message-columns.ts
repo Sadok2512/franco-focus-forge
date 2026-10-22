@@ -23,7 +23,8 @@ export type ColKey =
   | "size_bytes"
   | "ecgi"
   | "pci"
-  | "source";
+  | "source"
+  | "action";
 
 export type ColDef = { key: ColKey; available: boolean; sortKey?: string; numeric?: boolean };
 
@@ -45,9 +46,43 @@ export const COLUMNS: readonly ColDef[] = [
   { key: "ecgi", available: true, sortKey: "ecgi" },
   { key: "pci", available: true, sortKey: "pci", numeric: true },
   { key: "source", available: true },
+  { key: "action", available: true },
 ];
 export const MANDATORY_COLS: readonly ColKey[] = ["seq", "t_rel_s", "message_name"];
-export const DEFAULT_ORDER: readonly ColKey[] = COLUMNS.map((c) => c.key);
+/** V11 default order: the twelve reference columns first, extra fields after. */
+export const DEFAULT_ORDER: readonly ColKey[] = [
+  "seq",
+  "t_rel_s",
+  "layer",
+  "direction",
+  "message_name",
+  "info",
+  "rrc_state",
+  "rsrp",
+  "rsrq",
+  "sinr",
+  "size_bytes",
+  "action",
+  "technology",
+  "band",
+  "cell_name",
+  "ecgi",
+  "pci",
+  "source",
+];
+/** Columns rendered centred in the V11 table. */
+export const CENTERED_COLS: readonly ColKey[] = [
+  "seq",
+  "layer",
+  "direction",
+  "rrc_state",
+  "rsrp",
+  "rsrq",
+  "sinr",
+  "size_bytes",
+  "action",
+  "pci",
+];
 export const DEFAULT_VISIBLE: readonly ColKey[] = [
   "seq",
   "t_rel_s",
@@ -55,16 +90,16 @@ export const DEFAULT_VISIBLE: readonly ColKey[] = [
   "direction",
   "message_name",
   "info",
-  "technology",
   "rrc_state",
   "rsrp",
   "rsrq",
   "sinr",
   "size_bytes",
+  "action",
 ];
 
 export type ColumnConfig = { order: ColKey[]; visible: ColKey[] };
-export const COLUMNS_STORAGE_KEY = "bc4-signaling-columns-v10";
+export const COLUMNS_STORAGE_KEY = "bc4-signaling-columns-v11";
 export const defaultColumns = (): ColumnConfig => ({
   order: [...DEFAULT_ORDER],
   visible: [...DEFAULT_VISIBLE],
@@ -76,13 +111,13 @@ export function parseColumns(raw: string | null): ColumnConfig {
   try {
     const value = JSON.parse(raw) as Partial<ColumnConfig>;
     const known = new Set<string>(DEFAULT_ORDER);
-    const order = (Array.isArray(value.order) ? value.order : []).filter(
-      (k): k is ColKey => known.has(k),
+    const order = (Array.isArray(value.order) ? value.order : []).filter((k): k is ColKey =>
+      known.has(k),
     );
     const unique = [...new Set(order)];
     for (const k of DEFAULT_ORDER) if (!unique.includes(k)) unique.push(k);
-    const visible = (Array.isArray(value.visible) ? value.visible : []).filter(
-      (k): k is ColKey => known.has(k),
+    const visible = (Array.isArray(value.visible) ? value.visible : []).filter((k): k is ColKey =>
+      known.has(k),
     );
     for (const k of MANDATORY_COLS) if (!visible.includes(k)) visible.push(k);
     return { order: unique, visible: [...new Set(visible)] };
@@ -140,7 +175,9 @@ export function infoKind(type: string): InfoKind {
  */
 export function messageInfo(row: Pick<SignalingLine, "seq" | "procedure_ids">, procedures: Proc[]) {
   const p = procedures.find(
-    (q) => row.procedure_ids.includes(q.id) && (q.seq_start === row.seq || q.boundary_seqs.includes(row.seq)),
+    (q) =>
+      row.procedure_ids.includes(q.id) &&
+      (q.seq_start === row.seq || q.boundary_seqs.includes(row.seq)),
   );
   if (!p) return null;
   const kind = infoKind(p.type);
@@ -194,7 +231,12 @@ export function radioAt(points: SeriesPoint[] | undefined, t: number | null | un
   for (let i = found; i >= 0; i--) {
     const p = points[i]!;
     if (typeof p.value === "number" && Number.isFinite(p.value))
-      return { value: p.value, dtS: t - p.t_rel_s, seq: p.seq, t: p.t_rel_s } satisfies RadioReading;
+      return {
+        value: p.value,
+        dtS: t - p.t_rel_s,
+        seq: p.seq,
+        t: p.t_rel_s,
+      } satisfies RadioReading;
   }
   return null;
 }
@@ -210,4 +252,42 @@ export function pageItems(page: number, pages: number): (number | "…")[] {
   if (to < pages - 1) out.push("…");
   out.push(pages);
   return out;
+}
+
+// ---------- RF value colour: black by default, red only below threshold ----------
+export const RF_THRESHOLDS = { rsrp: -110, rsrq: -16, sinr: 0 } as const;
+/** Compares the raw numeric value (never a formatted string); equality stays black. */
+export function rfAlert(metric: keyof typeof RF_THRESHOLDS, value: number | null | undefined) {
+  return value != null && Number.isFinite(value) && value < RF_THRESHOLDS[metric];
+}
+
+// ---------- Info / Procedure icon ----------
+export type ProcIcon =
+  | "radio-tower"
+  | "settings"
+  | "arrow-left-right"
+  | "repeat"
+  | "route"
+  | "circle-check"
+  | "circle-x"
+  | "phone-off"
+  | "alert-triangle"
+  | "activity";
+export type ProcTone = "purple" | "blue" | "orange" | "green" | "red" | "gray";
+/** Icon and colour from the VM procedure type/outcome; Release is never a Drop. */
+export function procedureVisual(type: string, outcome: string): { icon: ProcIcon; tone: ProcTone } {
+  const t = type.toLowerCase().replace(/[_-]+/g, " ");
+  if (/\brlf\b|radio link failure/.test(t)) return { icon: "alert-triangle", tone: "red" };
+  const ho = /handover|\bho\b/.test(t);
+  if (ho && (outcome === "fail" || /fail/.test(t))) return { icon: "circle-x", tone: "red" };
+  if (ho && /success/.test(t)) return { icon: "circle-check", tone: "green" };
+  if (/inter ?rat|irat/.test(t)) return { icon: "route", tone: "purple" };
+  if (ho && /inter/.test(t)) return { icon: "repeat", tone: "orange" };
+  if (ho) return { icon: "arrow-left-right", tone: "blue" };
+  if (/scg|endc|en dc/.test(t)) return { icon: "radio-tower", tone: "purple" };
+  if (/release|detach/.test(t)) return { icon: "phone-off", tone: "red" };
+  if (/reconfig/.test(t)) return { icon: "settings", tone: "blue" };
+  if (/setup|establish|connection|attach|request/.test(t))
+    return { icon: "radio-tower", tone: "purple" };
+  return { icon: "activity", tone: "gray" };
 }

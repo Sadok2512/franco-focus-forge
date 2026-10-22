@@ -508,7 +508,7 @@
     "count_other": "{{n}} messages",
     "countPending": "Messages",
     "search": "Search messages",
-    "searchPlaceholder": "Search messages…",
+    "searchPlaceholder": "Search message, procedure, cell, ...",
     "searchScope": "Server-side search over the whole capture, as supported by the VM",
     "layer": "Layer filter",
     "allLayers": "All layers",
@@ -533,7 +533,7 @@
     "previous": "Previous page",
     "next": "Next page",
     "rowsPerPage": "Rows per page",
-    "showing": "Showing {{from}}–{{to}} of {{total}} messages",
+    "showing": "{{from}}–{{to}} of {{total}} messages",
     "loading": "Loading messages…",
     "selectMessage": "Payload inspector",
     "selectHint": "Select a message to display its decoded payload.",
@@ -548,7 +548,7 @@
       "layer": "Layer",
       "direction": "Dir",
       "message_name": "Message",
-      "info": "Info",
+      "info": "Info / Procedure",
       "band": "Band",
       "technology": "Tech",
       "rrc_state": "RRC State",
@@ -559,8 +559,16 @@
       "size_bytes": "Bytes",
       "ecgi": "ECGI",
       "pci": "PCI",
-      "source": "Source"
-    }
+      "source": "Source",
+      "action": "Action"
+    },
+    "headTitle": "Messages ({{n}})",
+    "subtitle": "Signaling messages from the selected capture",
+    "reset": "Reset",
+    "open": "Open message #{{seq}} in the inspector",
+    "rows": "{{n}} rows",
+    "first": "First page",
+    "last": "Last page"
   },
   "sigFilters": {
     "title": "Filters",
