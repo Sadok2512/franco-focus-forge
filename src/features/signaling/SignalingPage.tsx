@@ -72,7 +72,14 @@ import {
   type MessageInfo,
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
-import { filterMessageRows, messageTypes, messagePage, messageRowsCsv, reconcileMessageSelection, type MessageSelection } from "./message-filter";
+import {
+  filterMessageRows,
+  messageTypes,
+  messagePage,
+  messageRowsCsv,
+  reconcileMessageSelection,
+  type MessageSelection,
+} from "./message-filter";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
@@ -540,7 +547,8 @@ const INFO_ICONS = {
 } as const;
 function InfoBadge({ info }: { info: MessageInfo | null }) {
   if (!info) return <span className="text-muted-foreground">—</span>;
-  const Icon = info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
+  const Icon =
+    info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
   return (
     <span className={`sig-info sig-info-${info.role}`} title={`${info.label} · ${info.outcome}`}>
       <Icon size={12} aria-hidden="true" />
@@ -553,10 +561,17 @@ function InfoBadge({ info }: { info: MessageInfo | null }) {
 function DecodedValues({
   parameters,
 }: {
-  parameters: { path: string; value?: unknown; param_key: string | null; redacted_reason?: string | null | undefined }[];
+  parameters: {
+    path: string;
+    value?: unknown;
+    param_key: string | null;
+    redacted_reason?: string | null | undefined;
+  }[];
 }) {
   const rows = parameters
-    .filter((p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"))
+    .filter(
+      (p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"),
+    )
     .slice(0, 10);
   if (!rows.length) return null;
   return (
@@ -1053,7 +1068,8 @@ export function SignalingPage({
   const catalog = useQuery({
     queryKey: ["signaling-message-types", projectId, capture],
     enabled: !!capture && catalogRequested,
-    queryFn: ({ signal }) => getAllSignalingRows(projectId, { capture_id: capture, protocols: layers.join(",") }, signal),
+    queryFn: ({ signal }) =>
+      getAllSignalingRows(projectId, { capture_id: capture, protocols: layers.join(",") }, signal),
     staleTime: Infinity,
     retry: false,
   });
@@ -1074,14 +1090,28 @@ export function SignalingPage({
     queryFn: ({ signal }) =>
       getSignaling(projectId, "rows", { ...filtered, page, size, sort, order }, signal),
   });
-  const selectedRows = useMemo(() => filterMessageRows(selectedPopulation.data?.rows ?? [], messageSelection), [selectedPopulation.data, messageSelection]);
-  const listing = messageSelection === null ? remoteListing : {
-    ...selectedPopulation,
-    data: messageSelection.length === 0
-      ? { ...remoteListing.data, ...messagePage([], page, size), procedures: remoteListing.data?.procedures ?? [], protocol_counts: remoteListing.data?.protocol_counts ?? {} }
-      : selectedPopulation.data ? { ...selectedPopulation.data, ...messagePage(selectedRows, page, size) } : undefined,
-    isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
-  };
+  const selectedRows = useMemo(
+    () => filterMessageRows(selectedPopulation.data?.rows ?? [], messageSelection),
+    [selectedPopulation.data, messageSelection],
+  );
+  const listing =
+    messageSelection === null
+      ? remoteListing
+      : {
+          ...selectedPopulation,
+          data:
+            messageSelection.length === 0
+              ? {
+                  ...remoteListing.data,
+                  ...messagePage([], page, size),
+                  procedures: remoteListing.data?.procedures ?? [],
+                  protocol_counts: remoteListing.data?.protocol_counts ?? {},
+                }
+              : selectedPopulation.data
+                ? { ...selectedPopulation.data, ...messagePage(selectedRows, page, size) }
+                : undefined,
+          isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
+        };
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
     enabled: !!capture && compact,
@@ -1172,7 +1202,13 @@ export function SignalingPage({
     return { rsrp: byCode("cell_rsrp"), rsrq: byCode("cell_rsrq"), sinr: byCode("ci_rs_snr") };
   }, [captureRadio.data]);
   const filtersActive =
-    messageSelection !== null || !!search || !!direction || !!technology || !!procedure || !!range || protocols.length !== layers.length;
+    messageSelection !== null ||
+    !!search ||
+    !!direction ||
+    !!technology ||
+    !!procedure ||
+    !!range ||
+    protocols.length !== layers.length;
   const inspectorTabs: InspectorTab[] = [
     "Payload",
     "Paramètres",
@@ -1181,7 +1217,8 @@ export function SignalingPage({
     ...(details.data?.hex ? (["Hexadécimal"] as InspectorTab[]) : []),
   ];
   useEffect(() => {
-    if (inspectorTab === "Hexadécimal" && details.data && !details.data.hex) setInspectorTab("Payload");
+    if (inspectorTab === "Hexadécimal" && details.data && !details.data.hex)
+      setInspectorTab("Payload");
   }, [inspectorTab, details.data]);
   const radioCell = (key: "rsrp" | "rsrq" | "sinr", t: number | null) => {
     const r = radioAt(radioSeries[key], t);
@@ -1281,9 +1318,13 @@ export function SignalingPage({
   const exportCsv = async () => {
     try {
       setExportError("");
-      const data = messageSelection === null
-        ? await getSignaling(projectId, "export", filtered)
-        : { csv: messageRowsCsv(selectedRows), filename: `signaling-${capture ?? "capture"}-filtered.csv` };
+      const data =
+        messageSelection === null
+          ? await getSignaling(projectId, "export", filtered)
+          : {
+              csv: messageRowsCsv(selectedRows),
+              filename: `signaling-${capture ?? "capture"}-filtered.csv`,
+            };
       const url = URL.createObjectURL(new Blob([data.csv], { type: "text/csv;charset=utf-8" }));
       const a = document.createElement("a");
       a.href = url;
@@ -1371,23 +1412,66 @@ export function SignalingPage({
               </aside>
             ) : (
               <SignalingFilters
-                layers={layers} protocols={protocols} technology={technology} direction={direction}
-                search={search} procedure={procedure} capture={capture} size={size}
-                captures={caps.data?.captures ?? []} procedures={procedures.data?.procedures ?? []}
+                layers={layers}
+                protocols={protocols}
+                technology={technology}
+                direction={direction}
+                search={search}
+                procedure={procedure}
+                capture={capture}
+                size={size}
+                captures={caps.data?.captures ?? []}
+                procedures={procedures.data?.procedures ?? []}
                 counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
-                total={listing.data?.total} selection={messageSelection} types={types}
-                catalogLoading={catalog.isPending} catalogError={catalog.isError}
-                onRequestTypes={() => { setCatalogRequested(true); if (catalog.isError) void catalog.refetch(); }}
-                onApply={(value) => { setMessageSelection(value); setPage(1); }}
-                onTechnology={(v) => { setTechnology(v); resetPage(); }}
-                onProtocols={(v) => { setProtocols(v); resetPage(); }}
-                onDirection={(v) => { setDirection(v); resetPage(); }}
+                total={listing.data?.total}
+                selection={messageSelection}
+                types={types}
+                catalogLoading={catalog.isPending}
+                catalogError={catalog.isError}
+                onRequestTypes={() => {
+                  setCatalogRequested(true);
+                  if (catalog.isError) void catalog.refetch();
+                }}
+                onApply={(value) => {
+                  setMessageSelection(value);
+                  setPage(1);
+                }}
+                onTechnology={(v) => {
+                  setTechnology(v);
+                  resetPage();
+                }}
+                onProtocols={(v) => {
+                  setProtocols(v);
+                  resetPage();
+                }}
+                onDirection={(v) => {
+                  setDirection(v);
+                  resetPage();
+                }}
                 onCapture={chooseCapture}
-                onProcedure={(v) => { setProcedure(v); resetPage(); }}
-                onSearch={(v) => { setSearch(v); resetPage(); }}
-                onSize={(v) => { setSize(v); setPage(1); }}
+                onProcedure={(v) => {
+                  setProcedure(v);
+                  resetPage();
+                }}
+                onSearch={(v) => {
+                  setSearch(v);
+                  resetPage();
+                }}
+                onSize={(v) => {
+                  setSize(v);
+                  setPage(1);
+                }}
                 onCollapse={toggleSidebar}
-                onReset={() => { setTechnology(""); setProtocols(layers); setDirection(""); setSearch(""); setProcedure(""); setRange(undefined); setMessageSelection(null); setPage(1); }}
+                onReset={() => {
+                  setTechnology("");
+                  setProtocols(layers);
+                  setDirection("");
+                  setSearch("");
+                  setProcedure("");
+                  setRange(undefined);
+                  setMessageSelection(null);
+                  setPage(1);
+                }}
               />
             )}
           </Panel>
@@ -1590,7 +1674,10 @@ export function SignalingPage({
                       <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
                         <h2 className="sig-count mr-1" data-testid="signaling-total">
                           {listing.data
-                            ? t("sigTable.count", { count: listing.data.total, n: fmtInt(listing.data.total) })
+                            ? t("sigTable.count", {
+                                count: listing.data.total,
+                                n: fmtInt(listing.data.total),
+                              })
                             : t("sigTable.countPending")}
                         </h2>
                         <label className="sig-search">
@@ -1610,7 +1697,13 @@ export function SignalingPage({
                           className="sig-select"
                           aria-label={t("sigTable.layer")}
                           data-testid="sig-filter-layer"
-                          value={protocols.length === layers.length ? "" : protocols.length === 1 ? protocols[0] : "__custom"}
+                          value={
+                            protocols.length === layers.length
+                              ? ""
+                              : protocols.length === 1
+                                ? protocols[0]
+                                : "__custom"
+                          }
                           onChange={(e) => {
                             setProtocols(e.target.value ? [e.target.value] : layers);
                             resetPage();
@@ -1702,7 +1795,9 @@ export function SignalingPage({
                                       type="button"
                                       className="sig-move"
                                       disabled={i === 0}
-                                      aria-label={t("sigTable.moveUp", { col: t(`sigTable.col.${c}`) })}
+                                      aria-label={t("sigTable.moveUp", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
                                     >
                                       <ChevronUp size={12} />
@@ -1711,7 +1806,9 @@ export function SignalingPage({
                                       type="button"
                                       className="sig-move"
                                       disabled={i === colConfig.order.length - 1}
-                                      aria-label={t("sigTable.moveDown", { col: t(`sigTable.col.${c}`) })}
+                                      aria-label={t("sigTable.moveDown", {
+                                        col: t(`sigTable.col.${c}`),
+                                      })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
                                     >
                                       <ChevronDown size={12} />
@@ -1772,8 +1869,16 @@ export function SignalingPage({
                                     key={c}
                                     data-col={c}
                                     className={def.numeric ? "num" : undefined}
-                                    title={def.available ? undefined : t("sigTable.notSuppliedHint")}
-                                    aria-sort={active ? (order === "asc" ? "ascending" : "descending") : undefined}
+                                    title={
+                                      def.available ? undefined : t("sigTable.notSuppliedHint")
+                                    }
+                                    aria-sort={
+                                      active
+                                        ? order === "asc"
+                                          ? "ascending"
+                                          : "descending"
+                                        : undefined
+                                    }
                                   >
                                     {def.sortKey ? (
                                       <button
@@ -1794,7 +1899,11 @@ export function SignalingPage({
                                             <ArrowDown size={11} aria-hidden="true" />
                                           )
                                         ) : (
-                                          <ArrowUpDown size={11} aria-hidden="true" className="opacity-40" />
+                                          <ArrowUpDown
+                                            size={11}
+                                            aria-hidden="true"
+                                            className="opacity-40"
+                                          />
                                         )}
                                       </button>
                                     ) : (
@@ -1825,7 +1934,11 @@ export function SignalingPage({
                                     <td
                                       key={c}
                                       data-col={c}
-                                      className={COLUMNS.find((d) => d.key === c)!.numeric ? "num" : undefined}
+                                      className={
+                                        COLUMNS.find((d) => d.key === c)!.numeric
+                                          ? "num"
+                                          : undefined
+                                      }
                                     >
                                       {renderCell(c, r)}
                                     </td>
@@ -1836,13 +1949,19 @@ export function SignalingPage({
                           </tbody>
                         </table>
                         {listing.data && listing.data.rows.length === 0 && (
-                          <p role="status" className="p-6 text-center text-xs text-muted-foreground">
+                          <p
+                            role="status"
+                            className="p-6 text-center text-xs text-muted-foreground"
+                          >
                             {t("sigTable.empty")}
                           </p>
                         )}
                       </div>
                       <footer className="sig-footer flex shrink-0 flex-wrap items-center gap-3 border-t px-3 py-2">
-                        <nav className="flex items-center gap-1" aria-label={t("sigTable.pagination")}>
+                        <nav
+                          className="flex items-center gap-1"
+                          aria-label={t("sigTable.pagination")}
+                        >
                           <button
                             type="button"
                             className="sig-page"
@@ -1853,22 +1972,23 @@ export function SignalingPage({
                             <ChevronLeft size={14} />
                           </button>
                           {listing.data &&
-                            pageItems(listing.data.page, Math.max(1, listing.data.pages)).map((p, i) =>
-                              p === "…" ? (
-                                <span key={`gap-${i}`} className="px-1 text-muted-foreground">
-                                  …
-                                </span>
-                              ) : (
-                                <button
-                                  type="button"
-                                  key={p}
-                                  className="sig-page"
-                                  aria-current={p === listing.data!.page ? "page" : undefined}
-                                  onClick={() => setPage(p)}
-                                >
-                                  {p}
-                                </button>
-                              ),
+                            pageItems(listing.data.page, Math.max(1, listing.data.pages)).map(
+                              (p, i) =>
+                                p === "…" ? (
+                                  <span key={`gap-${i}`} className="px-1 text-muted-foreground">
+                                    …
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    key={p}
+                                    className="sig-page"
+                                    aria-current={p === listing.data!.page ? "page" : undefined}
+                                    onClick={() => setPage(p)}
+                                  >
+                                    {p}
+                                  </button>
+                                ),
                             )}
                           <button
                             type="button"
@@ -1903,7 +2023,10 @@ export function SignalingPage({
                             ? t("sigTable.showing", {
                                 from: fmtInt((listing.data.page - 1) * listing.data.size + 1),
                                 to: fmtInt(
-                                  Math.min(listing.data.total, listing.data.page * listing.data.size),
+                                  Math.min(
+                                    listing.data.total,
+                                    listing.data.page * listing.data.size,
+                                  ),
                                 ),
                                 total: fmtInt(listing.data.total),
                               })
@@ -1940,14 +2063,19 @@ export function SignalingPage({
                           )}
                         </h2>
                         {seq !== undefined && (
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid="inspector-meta">
+                          <div
+                            className="mt-2 flex flex-wrap items-center gap-1.5"
+                            data-testid="inspector-meta"
+                          >
                             <span className="sig-chip">
                               <Clock size={12} aria-hidden="true" />
                               {timeShown(selected?.t_rel_s)} s
                             </span>
                             {layerBadge(selected?.protocol)}
                             {directionBadge(selected?.direction ?? null)}
-                            {selected?.technology && <span className="sig-chip">{selected.technology}</span>}
+                            {selected?.technology && (
+                              <span className="sig-chip">{selected.technology}</span>
+                            )}
                             {(() => {
                               const s = rrcStateAt(selected?.t_rel_s, provenRrc);
                               return s ? (
@@ -1956,7 +2084,9 @@ export function SignalingPage({
                                 </span>
                               ) : null;
                             })()}
-                            {selected?.pci != null && <span className="sig-chip">PCI {selected.pci}</span>}
+                            {selected?.pci != null && (
+                              <span className="sig-chip">PCI {selected.pci}</span>
+                            )}
                           </div>
                         )}
                       </header>
@@ -2047,7 +2177,10 @@ export function SignalingPage({
                                         </thead>
                                         <tbody>
                                           {details.data.parameters.map((p, i) => (
-                                            <tr key={`${p.path}:${i}`} className="border-b align-top">
+                                            <tr
+                                              key={`${p.path}:${i}`}
+                                              className="border-b align-top"
+                                            >
                                               <td className="p-1">
                                                 <a
                                                   href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
