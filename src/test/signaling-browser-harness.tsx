@@ -15,7 +15,7 @@ export function mountCursorHarness(client?: QueryClient) {
   function Harness() {
     const { window, setWindow } = useTimeWindow("cursor-test", 300, FULL_CAPTURE_S);
     const [state, setState] = useState<{ time: number | null; id: string | null }>({
-      time: null,
+      time: 0,
       id: null,
     });
     return (

@@ -25,6 +25,7 @@
 No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/en.json` and `src/locales/fr.json` in the same commit. English is the default. Backend-provided wording is translated by the API, not by client-side substitutions.
 
 - Signaling cursor uses one capture-time state in SignalingPage and a single ECharts pixel overlay across all RF grids; cursor motion is local so selection never becomes a list query key or triggers details requests.
+- Signaling starts its cursor at capture time zero without selecting a message; pixel overlays refresh on chart readiness and resize, and hover previews never replace the locked cursor.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
 
 - Signaling visible time is shared by all timeline views in SignalingPage and opens on the full capture; zoom changes are local and never message/map query keys, while selected-message identity/time alone triggers follow, to preserve investigation state.

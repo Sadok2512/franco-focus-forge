@@ -943,7 +943,10 @@ export function SignalingPage({
     [order, setOrder] = useState("asc");
   const [hover, setHover] = useState<string[]>([]),
     [exportError, setExportError] = useState("");
-  const [cursor, setCursor] = useState<TimelineCursorState>(emptyCursor);
+  const [cursor, setCursor] = useState<TimelineCursorState>({
+    ...emptyCursor,
+    selectedTimeS: 0,
+  });
   const [linkedMessages, setLinkedMessages] = useState<number[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<Partial<SignalingLine>>();
   const selectionCapture = useRef<string | undefined>(undefined);
@@ -1044,7 +1047,7 @@ export function SignalingPage({
     if (selectionCapture.current && selectionCapture.current !== capture) {
       setSeq(undefined);
       setSelectedRecord(undefined);
-      setCursor(emptyCursor);
+      setCursor({ ...emptyCursor, selectedTimeS: 0 });
       setLinkedMessages([]);
     }
     selectionCapture.current = capture;
