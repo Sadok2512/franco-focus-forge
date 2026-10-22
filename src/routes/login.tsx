@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { APP_VERSION } from "@/lib/version";
 import {
   BarChart3,
@@ -12,11 +12,16 @@ import {
   Radio,
   Scale,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import tower from "@/assets/login-tower.jpg";
-import { login } from "@/lib/auth";
+import { getSession, login } from "@/lib/auth";
+import { rememberedLogin } from "@/lib/api/http";
 
 export const Route = createFileRoute("/login")({
+  ssr: false,
+  beforeLoad: () => {
+    if (getSession()) throw redirect({ to: "/projects" });
+  },
   head: () => ({
     meta: [
       { title: "Connexion — BC4 Benchmark Radio" },
@@ -52,13 +57,14 @@ function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  useEffect(() => setId(rememberedLogin()), []);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErr(null);
     setBusy(true);
     try {
-      await login(id, pw);
+      await login(id, pw, remember);
       navigate({ to: "/projects" });
     } catch (x) {
       setErr((x as Error).message);
@@ -128,10 +134,11 @@ function LoginPage() {
             <span className="text-sm font-semibold">Adresse e-mail</span>
             <input
               type="text"
+              name="username"
               value={id}
               onChange={(e) => setId(e.target.value)}
               placeholder="admin@bc4.local"
-              autoComplete="email"
+              autoComplete="username"
               required
               className="mt-2 h-11 w-full rounded-md border border-input bg-card px-3 text-sm placeholder:text-muted-foreground"
             />
@@ -141,6 +148,7 @@ function LoginPage() {
             <div className="relative mt-2">
               <input
                 type={show ? "text" : "password"}
+                name="password"
                 value={pw}
                 onChange={(e) => setPw(e.target.value)}
                 autoComplete="current-password"
