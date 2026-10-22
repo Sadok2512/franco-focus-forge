@@ -59,7 +59,11 @@ describe("3GPP catalogue classification", () => {
   });
   it("G17 decoded channel wins and conflicts are reported", () => {
     const c = classifyRrc("LTE", "Paging", "dl_dcch-Message");
-    expect(c).toMatchObject({ logicalChannel: "DL-DCCH", classificationSource: "DECODED_CHANNEL", conflict: "PCCH" });
+    expect(c).toMatchObject({
+      logicalChannel: "DL-DCCH",
+      classificationSource: "DECODED_CHANNEL",
+      conflict: "PCCH",
+    });
   });
 });
 
