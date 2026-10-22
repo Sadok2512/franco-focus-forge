@@ -113,11 +113,7 @@ function layerBadge(protocol: string | null | undefined) {
   if (!protocol) return <span className="text-muted-foreground">—</span>;
   const b = LAYER_BADGE[protocol];
   if (!b) return <span>{protocol}</span>;
-  return (
-    <span className={`msg-layer ${b.className}`}>
-      {b.label}
-    </span>
-  );
+  return <span className={`msg-layer ${b.className}`}>{b.label}</span>;
 }
 
 // 1.55.0 — Directional badge. Spec §5 : UL = ↑ vert, DL = ↓ bleu, inconnu = —.
@@ -1715,111 +1711,115 @@ export function SignalingPage({
                             <p className="msg-subtitle">{t("sigTable.subtitle")}</p>
                           </div>
                           <div className="flex shrink-0 items-center gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <button
-                                type="button"
-                                className="msg-tool"
-                                aria-label={t("sigTable.columns")}
-                                data-testid="signaling-columns-trigger"
-                              >
-                                <Settings size={15} aria-hidden="true" />
-                                {t("sigTable.columns")} ({shownCols.length})
-                              </button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-72">
-                              <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
-                              {colConfig.order.map((c, i) => {
-                                const mandatory = MANDATORY_COLS.includes(c);
-                                const def = COLUMNS.find((d) => d.key === c)!;
-                                return (
-                                  <div
-                                    key={c}
-                                    className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
-                                  >
-                                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
-                                      <input
-                                        type="checkbox"
-                                        checked={colConfig.visible.includes(c)}
-                                        disabled={mandatory}
-                                        onChange={() => setColConfig((old) => toggleColumn(old, c))}
-                                        data-testid={`signaling-column-${c}`}
-                                      />
-                                      <span className="truncate">{t(`sigTable.col.${c}`)}</span>
-                                      {!def.available && (
-                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                                          {t("sigTable.notSupplied")}
-                                        </span>
-                                      )}
-                                      {mandatory && (
-                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-                                          {t("sigTable.required")}
-                                        </span>
-                                      )}
-                                    </label>
-                                    <button
-                                      type="button"
-                                      className="sig-move"
-                                      disabled={i === 0}
-                                      aria-label={t("sigTable.moveUp", {
-                                        col: t(`sigTable.col.${c}`),
-                                      })}
-                                      onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <button
+                                  type="button"
+                                  className="msg-tool"
+                                  aria-label={t("sigTable.columns")}
+                                  data-testid="signaling-columns-trigger"
+                                >
+                                  <Settings size={15} aria-hidden="true" />
+                                  {t("sigTable.columns")} ({shownCols.length})
+                                </button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-72">
+                                <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
+                                {colConfig.order.map((c, i) => {
+                                  const mandatory = MANDATORY_COLS.includes(c);
+                                  const def = COLUMNS.find((d) => d.key === c)!;
+                                  return (
+                                    <div
+                                      key={c}
+                                      className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
                                     >
-                                      <ChevronUp size={12} />
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="sig-move"
-                                      disabled={i === colConfig.order.length - 1}
-                                      aria-label={t("sigTable.moveDown", {
-                                        col: t(`sigTable.col.${c}`),
-                                      })}
-                                      onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
-                                    >
-                                      <ChevronDown size={12} />
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                              <DropdownMenuSeparator />
-                              <button
-                                type="button"
-                                onClick={() => setColConfig(defaultColumns())}
-                                className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
-                              >
-                                {t("sigTable.resetColumns")}
-                              </button>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                          <button
-                            type="button"
-                            className="msg-tool"
-                            disabled={!listing.data}
-                            onClick={() => void exportCsv()}
-                          >
-                            <Download size={15} aria-hidden="true" />
-                            {t("sigTable.export")}
-                          </button>
-                          <button
-                            type="button"
-                            className="msg-tool"
-                            data-testid="sig-clear-filters"
-                            disabled={!filtersActive}
-                            onClick={() => {
-                              setMessageSelection(null);
-                              setSearch("");
-                              setProtocols(layers);
-                              setDirection("");
-                              setTechnology("");
-                              setProcedure("");
-                              setRange(undefined);
-                              resetPage();
-                            }}
-                          >
-                            <RotateCcw size={15} aria-hidden="true" />
-                            {t("sigTable.reset")}
-                          </button>
+                                      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                                        <input
+                                          type="checkbox"
+                                          checked={colConfig.visible.includes(c)}
+                                          disabled={mandatory}
+                                          onChange={() =>
+                                            setColConfig((old) => toggleColumn(old, c))
+                                          }
+                                          data-testid={`signaling-column-${c}`}
+                                        />
+                                        <span className="truncate">{t(`sigTable.col.${c}`)}</span>
+                                        {!def.available && (
+                                          <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                            {t("sigTable.notSupplied")}
+                                          </span>
+                                        )}
+                                        {mandatory && (
+                                          <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                            {t("sigTable.required")}
+                                          </span>
+                                        )}
+                                      </label>
+                                      <button
+                                        type="button"
+                                        className="sig-move"
+                                        disabled={i === 0}
+                                        aria-label={t("sigTable.moveUp", {
+                                          col: t(`sigTable.col.${c}`),
+                                        })}
+                                        onClick={() =>
+                                          setColConfig((old) => moveColumn(old, c, -1))
+                                        }
+                                      >
+                                        <ChevronUp size={12} />
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="sig-move"
+                                        disabled={i === colConfig.order.length - 1}
+                                        aria-label={t("sigTable.moveDown", {
+                                          col: t(`sigTable.col.${c}`),
+                                        })}
+                                        onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
+                                      >
+                                        <ChevronDown size={12} />
+                                      </button>
+                                    </div>
+                                  );
+                                })}
+                                <DropdownMenuSeparator />
+                                <button
+                                  type="button"
+                                  onClick={() => setColConfig(defaultColumns())}
+                                  className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
+                                >
+                                  {t("sigTable.resetColumns")}
+                                </button>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            <button
+                              type="button"
+                              className="msg-tool"
+                              disabled={!listing.data}
+                              onClick={() => void exportCsv()}
+                            >
+                              <Download size={15} aria-hidden="true" />
+                              {t("sigTable.export")}
+                            </button>
+                            <button
+                              type="button"
+                              className="msg-tool"
+                              data-testid="sig-clear-filters"
+                              disabled={!filtersActive}
+                              onClick={() => {
+                                setMessageSelection(null);
+                                setSearch("");
+                                setProtocols(layers);
+                                setDirection("");
+                                setTechnology("");
+                                setProcedure("");
+                                setRange(undefined);
+                                resetPage();
+                              }}
+                            >
+                              <RotateCcw size={15} aria-hidden="true" />
+                              {t("sigTable.reset")}
+                            </button>
                           </div>
                         </div>
                         <div className="msg-search-row">
