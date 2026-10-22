@@ -7,18 +7,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
-import {
-  VISUALIZATIONS,
-  defaultConfig,
-  type ChartConfig,
-  type VisualizationType,
-} from "./visualization-model";
+import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -29,7 +18,6 @@ import {
   PanelLeftOpen,
   Plus,
   RefreshCw,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
@@ -421,22 +409,7 @@ function Workspace({
     catalogSearch.current?.focus();
     catalogSearch.current?.scrollIntoView({ block: "nearest" });
   };
-  // 1.76.0 (BC3) — Spec v2 G8 : +Add Panel pré-arme un mode (graph /
-  // histogram / table / map / task_series) ; le prochain clic KPI dans le
-  // catalogue l'ajoute avec ce mode via visualize(). Null = toggle par défaut.
-  const [pendingPanelKind, setPendingPanelKind] = useState<VisualizationType | null>(null);
-  const armPanel = (kind: VisualizationType) => {
-    setPendingPanelKind(kind);
-    addGraph();
-  };
-  const onCatalogToggle = (code: string) => {
-    if (pendingPanelKind) {
-      visualize(code, pendingPanelKind);
-      setPendingPanelKind(null);
-      return;
-    }
-    toggle(code);
-  };
+  const onCatalogToggle = (code: string) => toggle(code);
   const toggleRow = (id: string) =>
     setSelectedRows((prev) => {
       const next = new Set(prev);
@@ -583,123 +556,6 @@ function Workspace({
           <div
             className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
           >
-            <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
-              <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
-                {codes.map((code, index) => (
-                  <div key={code} className={effectiveActive === code ? "is-active" : ""}>
-                    <button aria-pressed={effectiveActive === code} onClick={() => focus(code)}>
-                      <span>{index + 1}</span>
-                      {entries.find((e) => e.item.code === code)?.item.name ?? code}
-                    </button>
-                    <button
-                      aria-label={translate("kpi.1f4632ebd015", { v0: code })}
-                      onClick={() => toggle(code)}
-                    >
-                      <X size={13} />
-                    </button>
-                  </div>
-                ))}
-                <button
-                  className="kpi-icon"
-                  aria-label={translate("kpi.1b7bfd15b343")}
-                  onClick={addGraph}
-                >
-                  <Plus size={16} />
-                </button>
-              </nav>
-              <section
-                className="kpi-workspace-controls"
-                aria-label={translate("kpi.2566f74ceb28")}
-              >
-                {/* 1.76.0 (BC3) — Spec v2 G8 : +Add Panel menu Graph/Histogram/
-                    Table/Map. Pré-arme un mode ; prochain clic KPI dans le
-                    catalogue l'ajoute avec ce mode via visualize(). */}
-                <label className="kpi-select-label" title={translate("panel.layout")}>
-                  {translate("panel.layout")}
-                  <select
-                    value={currentTab.layout}
-                    onChange={(e) =>
-                      setLayout(tabsState.activeTabId, e.target.value as WorkspaceLayout)
-                    }
-                    data-testid="toolbar-layout"
-                  >
-                    <option value="auto">{translate("wss.opt_auto")}</option>
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                  </select>
-                </label>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      className={`kpi-button ${pendingPanelKind ? "primary" : ""}`}
-                      aria-label="Add panel"
-                      data-testid="add-panel-button"
-                    >
-                      <Plus size={14} />{" "}
-                      {pendingPanelKind ? `+ ${VISUALIZATIONS[pendingPanelKind]}…` : "Add panel"}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="min-w-[180px]">
-                    <DropdownMenuItem
-                      onSelect={() => armPanel("chronogram")}
-                      data-testid="add-panel-chronogram"
-                    >
-                      {translate("panel.add_chronogram")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => armPanel("histogram")}
-                      data-testid="add-panel-histogram"
-                    >
-                      {translate("panel.add_histogram")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => armPanel("table")}
-                      data-testid="add-panel-table"
-                    >
-                      {translate("panel.add_table")}
-                    </DropdownMenuItem>
-                    {selectedMetrics.length > 0 && (
-                      <DropdownMenuItem
-                        onSelect={() =>
-                          setMetricsPaneRequest((n) => ({ pane: "table", n: n.n + 1 }))
-                        }
-                        data-testid="add-panel-metrics-table"
-                      >
-                        {translate("panel.add_metrics_table")}
-                      </DropdownMenuItem>
-                    )}
-                    <DropdownMenuItem onSelect={() => armPanel("map")} data-testid="add-panel-map">
-                      {translate("panel.add_map")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => armPanel("graph")}
-                      data-testid="add-panel-graph"
-                    >
-                      {translate("panel.add_kpi")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onSelect={() => armPanel("task_series")}
-                      data-testid="add-panel-series"
-                    >
-                      {translate("panel.add_series")}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled
-                      title={translate("panel.timeline_unavailable")}
-                      data-testid="add-panel-timeline"
-                    >
-                      {translate("panel.add_timeline")} — {translate("panel.timeline_unavailable")}
-                    </DropdownMenuItem>
-                    {pendingPanelKind && (
-                      <DropdownMenuItem onSelect={() => setPendingPanelKind(null)}>
-                        Cancel
-                      </DropdownMenuItem>
-                    )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </section>
-            </div>
             {limitMessage && (
               <p role="status" className="text-xs text-amber-700">
                 {limitMessage}

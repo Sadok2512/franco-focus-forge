@@ -1,3 +1,10 @@
+## 1.90.0 (patch) — BC4-FRONT 2026-10-22 — Barre du haut du workspace supprimée
+
+- **`src/features/kpi/KpiWorkspace.tsx`** : la barre au-dessus des panneaux (bouton « + Add panel » et sélecteur « Layout : Auto ») a été retirée ; les panneaux démarrent directement sous la barre de filtres.
+- **Code mort retiré dans le même mouvement** : imports `DropdownMenu*` et `VISUALIZATIONS`, icône `X`, état `pendingPanelKind` et fonction `armPanel` qui n'étaient utilisés que par ce bouton ; `onCatalogToggle` se réduit à `toggle(code)`.
+- **Accès conservés** : la disposition des graphiques se règle dans le popup ⚙ → onglet Graphiques (bouton « Appliquer »), et les types de panneau (Chronogramme, Histogramme, Tableau, Carte, Série de tâches) se choisissent dans le menu « ⋮ Visualisation » de chaque ligne du catalogue (`VisualizationItems`), vérifié dans le navigateur.
+- 266 tests passent, typecheck et lint propres.
+
 ## 1.89.0 (patch) — BC4-FRONT 2026-10-22 — Réglages du workspace : bouton « Appliquer »
 
 - **Popup ⚙** (`src/features/kpi/WorkspaceSettingsDialog.tsx`) : les modifications (apparence des tableaux, colonnes, disposition des graphiques) restent dans un brouillon local et ne touchent plus les tableaux ni la grille tant que l'utilisateur ne clique pas **Appliquer**.
