@@ -5,6 +5,7 @@ import {
   stateBandGeometry,
   stateLaneLayout,
   rrcStateLaneLabel,
+  stateLaneTitle,
 } from "@/features/signaling/state-presentation";
 
 const base: ProvenState = {
@@ -102,5 +103,10 @@ describe("V9 evidence-only product mapping", () => {
     expect(label).toContain("Idle");
     expect(label.startsWith("{title|")).toBe(true);
     expect(label).toContain("{idle|Idle}");
+  });
+  it("shows the RRC State title with its Idle badge in the lane gutter", () => {
+    const labels = { ueState: "UE State", rrcState: "RRC State", idle: "Idle" };
+    expect(stateLaneTitle("rrcstate", labels)).toEqual({ title: "RRC State", badge: "Idle" });
+    expect(stateLaneTitle("uestate", labels)).toEqual({ title: "UE State", badge: null });
   });
 });

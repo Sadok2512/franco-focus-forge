@@ -61,3 +61,13 @@ export function stateLaneLayout(lanes: string[]) {
 export function rrcStateLaneLabel(title: string, idle: string) {
   return `{title|${title}} {idle|${idle}}`;
 }
+
+/** Lane gutter titles: RRC State keeps the gray Idle badge, UE State has no badge. */
+export function stateLaneTitle(
+  lane: "uestate" | "rrcstate",
+  labels: { ueState: string; rrcState: string; idle: string },
+): { title: string; badge: string | null } {
+  return lane === "uestate"
+    ? { title: labels.ueState, badge: null }
+    : { title: labels.rrcState, badge: labels.idle };
+}
