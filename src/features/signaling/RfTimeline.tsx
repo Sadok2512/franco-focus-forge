@@ -12,7 +12,12 @@ import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./t
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack } from "./state-evidence";
-import { statePresentation, stateBandGeometry, stateLaneLayout } from "./state-presentation";
+import {
+  statePresentation,
+  stateBandGeometry,
+  stateLaneLayout,
+  rrcStateLaneLabel,
+} from "./state-presentation";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
