@@ -35,7 +35,10 @@ describe("Signaling cursor chart readiness", () => {
         selectedTime={0}
         eventId={null}
         events={[]}
-        series={[]}
+        series={[
+          { code: "cell_rsrp", label: "RSRP", unit: "dBm", points: [{ t_rel_s: 0, value: -99.3, seq: 1 }] },
+          { code: "cell_rsrq", label: "RSRQ", unit: "dB", points: [] },
+        ] as never}
         zoom={[0, 100]}
         duration={300}
         onTime={onTime}
@@ -50,8 +53,10 @@ describe("Signaling cursor chart readiness", () => {
     expect(screen.getByRole("slider").getAttribute("aria-valuenow")).toBe("0");
     expect(screen.queryByTestId("time-cursor-tooltip")).toBeNull();
     fireEvent.pointerDown(screen.getByRole("slider"));
-    expect(screen.getByTestId("time-cursor-tooltip")).toBeTruthy();
+    expect(screen.queryByTestId("time-cursor-tooltip")).toBeNull();
     expect(onTime).not.toHaveBeenCalled();
+    expect(screen.getByTestId("rf-readout-cell_rsrp").textContent).toContain("-99.3 dBm");
+    expect(screen.getByTestId("rf-readout-cell_rsrq").textContent).not.toMatch(/\b0\b/);
     result.unmount();
     expect(chart.off).toHaveBeenCalledWith("finished", finished);
     vi.unstubAllGlobals();
