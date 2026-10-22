@@ -9,7 +9,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 
 // 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
 // Reconstitue le timestamp UTC absolu depuis le label de capture
