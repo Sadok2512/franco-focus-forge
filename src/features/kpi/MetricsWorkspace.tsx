@@ -16,15 +16,17 @@ import { MetricGraphCard } from "./MetricGraphCard";
 // + `capture_date` (YYYY-MM-DD) au niveau top. Aucune date devinée depuis
 // le nom de capture : si `capture_date` ou `time_*` est null, cellule
 // grisée avec tooltip indiquant la raison (`reason` ou champ absent).
-const REASON_LABELS: Record<string, string> = {
-  no_gps_in_capture: "Pas de GPS dans la capture",
-  light_decode_no_gps: "Décode Light — GPS non projeté (nécessite deep decode)",
-  no_fix_before_seq: "Aucun fix GPS avant cette séquence",
-  no_utc_offset_header: "Entête `#UT` absent — offset UTC inconnu",
-};
-function reasonLabel(reason: string | null | undefined): string | undefined {
-  if (!reason) return undefined;
-  return REASON_LABELS[reason] ?? reason;
+// 1.91.1 — tooltip localisé via i18n `metrics.reason.<code>`. Clés en défaut
+// (lot BC1), traductions fr fournies. Fallback = code brut si clé manquante
+// (ne cache jamais un reason inconnu).
+function useReasonLabel() {
+  const { t: translate } = useTranslation();
+  return (reason: string | null | undefined): string | undefined => {
+    if (!reason) return undefined;
+    const key = `metrics.reason.${reason}`;
+    const translated = translate(key);
+    return translated === key ? reason : translated;
+  };
 }
 function fmtLatLng(v: number | null | undefined): string {
   return v == null ? "" : v.toFixed(6);
@@ -200,6 +202,7 @@ export function MetricsWorkspace({
   onRemove?: unknown;
 }) {
   const { t: translate } = useTranslation();
+  const reasonLabel = useReasonLabel();
   const [internalView, setInternalView] = useState<View>("table");
   const view = externalView ?? internalView;
   const setView = (v: View) => {

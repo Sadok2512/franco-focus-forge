@@ -97,8 +97,9 @@ describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 446215
     expect(screen.getByText("10:33:20.980")).toBeVisible();
     expect(screen.getByText("08:33:20.980")).toBeVisible();
 
-    // Null GPS → multiple "—" cells with reason tooltip "no_gps_in_capture" (humanized).
-    const dashCells = screen.getAllByTitle("Pas de GPS dans la capture");
+    // Null GPS → multiple "—" cells with reason tooltip "no_gps_in_capture"
+    // (i18n `metrics.reason.no_gps_in_capture` : "No GPS fix in this capture" en défaut).
+    const dashCells = screen.getAllByTitle("No GPS fix in this capture");
     expect(dashCells.length).toBeGreaterThan(0);
   });
 });

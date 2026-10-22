@@ -1,3 +1,9 @@
+## 1.91.1 (patch) — BC4-FRONT 2026-10-22 — i18n tooltip reason (en défaut, fr traduction) (Agent BC3)
+
+- `src/features/kpi/MetricsWorkspace.tsx:14-26` : `REASON_LABELS` statique en français retiré. Nouveau hook `useReasonLabel()` qui résout `metrics.reason.<code>` via `useTranslation()`. Fallback = code brut si clé absente (ne cache jamais un reason inconnu). Appelé une fois en haut du composant.
+- `src/locales/en.json:158-164` + `src/locales/fr.json:158-164` : nouveau bloc `metrics.reason.{no_gps_in_capture, light_decode_no_gps, no_fix_before_seq, no_utc_offset_header}`. **Anglais est la langue par défaut** (`fallbackLng: "en"` dans `src/lib/i18n.ts:31`) — conforme au lot BC1.
+- `src/test/metrics-workspace-time-gps.test.tsx:93` : assertion mise à jour → "No GPS fix in this capture".
+
 ## 1.91.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.88→1.90 (workspace cleanup) ↔ BC3 1.87.1→1.88.1 (Time/GPS + tests) (Agent BC3)
 
 Merge sélectif entre `feat/bc3-metrics` (BC3 Time/GPS + tests, 2 commits : 43188d2 + 863846f) et `github/main` (Lovable workspace cleanup Charts cards + ⚙ Apply button + top bar removal, 5+ commits).

@@ -155,7 +155,13 @@
     "catalogInfo": "Info",
     "catalogCopyId": "Copier l'id",
     "catalogCopyIdOk": "Copié",
-    "catalogStarred": "Métrique favorite"
+    "catalogStarred": "Métrique favorite",
+    "reason": {
+      "no_gps_in_capture": "Aucun fix GPS dans cette capture",
+      "light_decode_no_gps": "Décode Light — GPS non projeté (deep decode requis)",
+      "no_fix_before_seq": "Aucun fix GPS avant cette séquence",
+      "no_utc_offset_header": "Entête `#UT` absent — offset UTC inconnu"
+    }
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
