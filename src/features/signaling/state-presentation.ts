@@ -29,3 +29,15 @@ export function stateBandGeometry(state: ProvenState, states: ProvenState[]) {
     ? { offset: state.technology === "LTE" ? -9 : 9, height: 16 }
     : { offset: 0, height: 34 };
 }
+
+/** 42 px state tracks with a 4 px gap; preserve every other track's 44 px pitch. */
+export function stateLaneLayout(lanes: string[]) {
+  let top = 0;
+  const centers = lanes.map(lane => {
+    const state = lane === "uestate" || lane === "rrcstate";
+    const center = top + (state ? 21 : 22);
+    top += state ? 46 : 44;
+    return center;
+  });
+  return { centers, height: top };
+}

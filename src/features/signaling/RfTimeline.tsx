@@ -12,7 +12,7 @@ import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./t
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack } from "./state-evidence";
-import { statePresentation, stateBandGeometry } from "./state-presentation";
+import { statePresentation, stateBandGeometry, stateLaneLayout } from "./state-presentation";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
@@ -305,7 +305,8 @@ export function RfTimeline({
     redrawCursor((revision) => revision + 1);
   }, [visibleWindow[0], visibleWindow[1], duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
-  const trackHeight = stateTracksV2 ? lanes.length * 44 : 216;
+  const laneLayout = stateLaneLayout(lanes);
+  const trackHeight = stateTracksV2 ? laneLayout.height : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
   const chartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
   useEffect(() => {
@@ -320,6 +321,12 @@ export function RfTimeline({
       const lane = Number(api.value(0)),
         start = api.coord([api.value(1), lane]),
         end = api.coord([api.value(2), lane]);
+      if (stateTracksV2) {
+        const center = laneLayout.centers[lane];
+        if (center === undefined) return;
+        start[1] = 30 + center;
+        end[1] = 30 + center;
+      }
       const item = displayed[params.dataIndex];
       if (!item) return;
       const track = eventTrack(item);
@@ -801,6 +808,13 @@ export function RfTimeline({
         )}
       <div className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
+          {stateTracksV2 && ["uestate", "rrcstate"].map(lane => {
+            const index = lanes.indexOf(lane);
+            const center = laneLayout.centers[index];
+            return center === undefined ? null : <span key={lane} aria-hidden="true" className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground" style={{ top: 30 + center - 21 }}>
+              {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
+            </span>;
+          })}
           <div
             ref={host}
             style={{ height: chartHeight, minWidth: 320 }}
@@ -833,6 +847,10 @@ export function RfTimeline({
       )}
       {linked && (
         <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
+          {states.filter(state => state.event.id === linked.id).map(state => <span key={state.event.id} className="basis-full text-muted-foreground">
+            {linked.label} · {t("signalingV2.interval", { start: state.startS.toFixed(3), end: state.endS.toFixed(3) })} · {t("signalingV2.session")}: {state.sessionId}
+            {state.carrierStatus ? ` · ${state.componentCarriers} ${t(`signalingV2.${state.carrierStatus}`)}` : ""}
+          </span>)}
           {t("rfTimeline.evidence")}:{" "}
           {linked.linked_seqs.map((s) => (
             <Button
