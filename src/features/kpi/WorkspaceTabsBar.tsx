@@ -2,7 +2,9 @@
 // pas au-dessus des graphiques. [+] [Tab1 ×] [Tab2 ×] renommage double-clic,
 // drag réordonnement natif HTML5. Un onglet = un contexte KPI indépendant.
 import { useState } from "react";
-import { Plus, X } from "lucide-react";
+import { Plus, Settings, X } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { WorkspaceSettingsDialog } from "./WorkspaceSettingsDialog";
 import type { WorkspaceTab, WorkspaceLayout } from "./workspace-tabs";
 
 export function WorkspaceTabsBar({
@@ -15,6 +17,7 @@ export function WorkspaceTabsBar({
   onReorder,
   onLayoutChange,
   onOverlayToggle,
+  columns = [],
 }: {
   tabs: WorkspaceTab[];
   activeTabId: string;
@@ -25,7 +28,10 @@ export function WorkspaceTabsBar({
   onReorder: (fromIndex: number, toIndex: number) => void;
   onLayoutChange: (tabId: string, layout: WorkspaceLayout) => void;
   onOverlayToggle: (tabId: string, overlay: boolean) => void;
+  columns?: { code: string; label: string }[];
 }) {
+  const { t } = useTranslation();
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [editing, setEditing] = useState<string | null>(null);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
   const activeTab = tabs.find((t) => t.id === activeTabId) ?? tabs[0];
@@ -101,6 +107,18 @@ export function WorkspaceTabsBar({
                   <span className="kpi-tab-name">{tab.name}</span>
                 </button>
               )}
+              {isActive && editing !== tab.id && (
+                <button
+                  type="button"
+                  className="kpi-tab-close"
+                  onClick={() => setSettingsOpen(true)}
+                  aria-label={t("wss.title")}
+                  title={t("wss.title")}
+                  data-testid="workspace-settings-open"
+                >
+                  <Settings size={12} />
+                </button>
+              )}
               {tabs.length > 1 && (
                 <button
                   type="button"
@@ -118,6 +136,14 @@ export function WorkspaceTabsBar({
       </ol>
       {activeTab && (
         <>
+          <WorkspaceSettingsDialog
+            open={settingsOpen}
+            onOpenChange={setSettingsOpen}
+            workspaceId={activeTab.id}
+            layout={activeTab.layout}
+            onLayoutChange={(l) => onLayoutChange(activeTab.id, l)}
+            columns={columns}
+          />
           <button
             type="button"
             className={`kpi-tab-overlay ${activeTab.overlay ? "is-active" : ""}`}

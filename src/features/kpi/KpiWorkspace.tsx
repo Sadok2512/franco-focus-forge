@@ -765,6 +765,8 @@ function Workspace({
                   view={metricsView}
                   onViewChange={setMetricsView}
                   onTablePaneChange={setMetricsTablePane}
+                  workspaceId={tabsState.activeTabId}
+                  onColumnsChange={setTableColumns}
                   onClear={() => {
                     setSelectedMetrics([]);
                     void navigate({
@@ -836,6 +838,7 @@ function Workspace({
         </ResizablePanel>
       </ResizablePanelGroup>
       <WorkspaceTabsBar
+        columns={tableColumns}
         tabs={tabsState.tabs}
         activeTabId={tabsState.activeTabId}
         onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}
