@@ -1,3 +1,8 @@
+## 1.84.0 — Selected message row visible after a timeline click
+- The selected message row now carries a strong fill (light blue with dark text in light theme, royal blue with white text in dark theme), bold text and a continuous 2 px accent outline plus a 4 px left bar, so the row a timeline click selected is obvious at a glance.
+- The messages table now scrolls itself so the selected row is always inside the visible area below the sticky header (`reveal-row.ts`: pure `scrollDelta` math applied to the table's own scroll container — the page, the cursor and the queries never move).
+- Fixed the dark theme token block: `.dark` was overridden by the later `:root` block (equal specificity, later source order), so every `--sig-*` table colour silently stayed light in dark mode; the block is now `html.dark` and actually wins.
+
 ## 1.83.2 — Message filter tree closed by default
 - "Filter Messages" now opens with every technology and channel group closed: only the top-level technologies are listed, each with its own chevron.
 - Expanding a technology reveals its channels, expanding a channel reveals its messages; "Expand All" / "Collapse All" and search still work (a search temporarily reveals matches without touching the stored expansion state).
