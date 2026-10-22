@@ -36,7 +36,17 @@ import {
   Clock,
   Columns3,
   Download,
+  ChevronsLeft,
+  ChevronsRight,
+  ExternalLink,
   FilterX,
+  Mail,
+  PhoneOff,
+  Repeat,
+  RotateCcw,
+  Route,
+  Settings,
+  TriangleAlert,
   Gauge,
   LogIn,
   LogOut,
@@ -57,6 +67,7 @@ import { DecoderTree } from "./DecoderTree";
 import { provenStates } from "./state-evidence";
 import {
   COLUMNS,
+  CENTERED_COLS,
   COLUMNS_STORAGE_KEY,
   MANDATORY_COLS,
   defaultColumns,
@@ -64,6 +75,9 @@ import {
   moveColumn,
   pageItems,
   parseColumns,
+  procedureVisual,
+  rfAlert,
+  type ProcIcon,
   radioAt,
   rrcStateAt,
   toggleColumn,
@@ -94,33 +108,18 @@ const shown = (value: unknown) => (value === null || value === undefined ? "—"
 // les slugs servis par le back (layer) et sur les étiquettes françaises
 // (protocol) pour compat avec les lignes anciennes.
 const LAYER_BADGE: Record<string, { label: string; className: string }> = {
-  "RRC LTE": {
-    label: "RRC LTE",
-    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200",
-  },
-  "RRC NR": {
-    label: "RRC NR",
-    className: "bg-violet-100 text-violet-800 dark:bg-violet-900/50 dark:text-violet-200",
-  },
-  NAS: {
-    label: "NAS",
-    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-200",
-  },
-  "Événements Nemo": {
-    label: "Nemo",
-    className: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/50 dark:text-cyan-200",
-  },
-  "MAC-RACH": {
-    label: "MAC-RACH",
-    className: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-200",
-  },
+  "RRC LTE": { label: "RRC LTE", className: "msg-layer-lte" },
+  "RRC NR": { label: "RRC NR", className: "msg-layer-nr" },
+  NAS: { label: "NAS", className: "msg-layer-nas" },
+  "Événements Nemo": { label: "Nemo", className: "msg-layer-nemo" },
+  "MAC-RACH": { label: "MAC-RACH", className: "msg-layer-mac" },
 };
 function layerBadge(protocol: string | null | undefined) {
   if (!protocol) return <span className="text-muted-foreground">—</span>;
   const b = LAYER_BADGE[protocol];
   if (!b) return <span>{protocol}</span>;
   return (
-    <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-medium ${b.className}`}>
+    <span className={`msg-layer ${b.className}`}>
       {b.label}
     </span>
   );
@@ -132,15 +131,15 @@ function layerBadge(protocol: string | null | undefined) {
 function directionBadge(direction: string | null | undefined) {
   if (direction === "UL")
     return (
-      <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-        <ArrowUp size={12} aria-hidden="true" />
+      <span className="msg-dir msg-dir-ul">
+        <ArrowUp size={16} aria-hidden="true" />
         UL
       </span>
     );
   if (direction === "DL")
     return (
-      <span className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400">
-        <ArrowDown size={12} aria-hidden="true" />
+      <span className="msg-dir msg-dir-dl">
+        <ArrowDown size={16} aria-hidden="true" />
         DL
       </span>
     );
@@ -538,21 +537,27 @@ function messageCell(row: RowLike, procedures: ProcLike[]) {
 const fmtInt = (n: number) => new Intl.NumberFormat("en-US").format(n);
 const fmtRadio = (n: number) => (n < 0 ? `−${Math.abs(n).toFixed(1)}` : n.toFixed(1));
 
-const INFO_ICONS = {
-  setup: LogIn,
-  release: LogOut,
-  scg: RadioTower,
-  handover: ArrowLeftRight,
-  measurement: Gauge,
-  other: Activity,
-} as const;
+const PROC_ICONS: Record<ProcIcon, typeof Activity> = {
+  "radio-tower": RadioTower,
+  settings: Settings,
+  "arrow-left-right": ArrowLeftRight,
+  repeat: Repeat,
+  route: Route,
+  "circle-check": CircleCheck,
+  "circle-x": CircleX,
+  "phone-off": PhoneOff,
+  "alert-triangle": TriangleAlert,
+  activity: Activity,
+};
 function InfoBadge({ info }: { info: MessageInfo | null }) {
-  if (!info) return <span className="text-muted-foreground">—</span>;
-  const Icon =
-    info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
+  if (!info) return <span className="msg-muted">—</span>;
+  const v = procedureVisual(info.label, info.outcome);
+  const Icon = PROC_ICONS[v.icon];
   return (
-    <span className={`sig-info sig-info-${info.role}`} title={`${info.label} · ${info.outcome}`}>
-      <Icon size={12} aria-hidden="true" />
+    <span className="msg-proc" title={`${info.label} · ${info.outcome}`} data-tone={v.tone}>
+      <span className={`msg-proc-icon msg-tone-${v.tone}`}>
+        <Icon size={14} aria-hidden="true" />
+      </span>
       <span className="truncate">{info.label}</span>
     </span>
   );
@@ -1232,11 +1237,13 @@ export function SignalingPage({
   }, [inspectorTab, details.data]);
   const radioCell = (key: "rsrp" | "rsrq" | "sinr", t: number | null) => {
     const r = radioAt(radioSeries[key], t);
-    if (!r) return <span className="text-muted-foreground">—</span>;
+    if (!r) return <span className="msg-muted">—</span>;
     const exact = r.dtS === 0;
+    const alert = rfAlert(key, r.value);
     return (
       <span
-        className={exact ? undefined : "sig-radio-prev"}
+        className={`msg-rf${alert ? " msg-rf-alert" : ""}${exact ? "" : " sig-radio-prev"}`}
+        data-rf-alert={alert}
         title={
           exact
             ? `Mesure #${r.seq} au même instant (${r.t.toFixed(3)} s)`
@@ -1252,7 +1259,8 @@ export function SignalingPage({
       case "seq":
         return r.seq;
       case "t_rel_s":
-        return timeShown(r.t_rel_s);
+        // Only the capture-relative time is supplied; no absolute clock is invented.
+        return <span className="msg-time">{timeShown(r.t_rel_s)}</span>;
       case "layer":
         return layerBadge(r.protocol);
       case "direction":
@@ -1287,6 +1295,24 @@ export function SignalingPage({
         return shown(r.pci);
       case "source":
         return shown(r.source);
+      case "action":
+        return (
+          <button
+            type="button"
+            className="msg-action"
+            aria-label={t("sigTable.open", { seq: r.seq })}
+            data-testid={`sig-open-${r.seq}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              chooseSeq(r.seq);
+              document
+                .querySelector<HTMLElement>("[data-testid=signaling-inspector]")
+                ?.scrollIntoView({ block: "nearest" });
+            }}
+          >
+            <ExternalLink size={15} aria-hidden="true" />
+          </button>
+        );
       default:
         return <span className="text-muted-foreground">—</span>;
     }
