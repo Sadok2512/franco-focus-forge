@@ -124,8 +124,9 @@ describe("Metrics Charts pane card view", () => {
     const card = document.querySelector('[data-metric-code="ci_rs_snr@0"]');
     expect(card).not.toBeNull();
     expect(card?.getAttribute("data-view")).toBe("graph");
-    fireEvent.click(screen.getByTestId("metric-view-trigger"));
-    fireEvent.click(screen.getByRole("menuitem", { name: /table/i }));
+    fireEvent.pointerDown(screen.getByTestId("metric-view-trigger"));
+    const item = await screen.findByRole("menuitem", { name: /table/i });
+    fireEvent.click(item);
     await waitFor(() => {
       expect(
         document.querySelector('[data-metric-code="ci_rs_snr@0"]')?.getAttribute("data-view"),
