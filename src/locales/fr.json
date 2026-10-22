@@ -155,7 +155,13 @@
     "catalogInfo": "Info",
     "catalogCopyId": "Copier l'id",
     "catalogCopyIdOk": "Copié",
-    "catalogStarred": "Métrique favorite"
+    "catalogStarred": "Métrique favorite",
+    "reason": {
+      "no_gps_in_capture": "Aucun fix GPS dans cette capture",
+      "light_decode_no_gps": "Décode Light — GPS non projeté (deep decode requis)",
+      "no_fix_before_seq": "Aucun fix GPS avant cette séquence",
+      "no_utc_offset_header": "Entête `#UT` absent — offset UTC inconnu"
+    }
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
@@ -396,6 +402,15 @@
     "title": "Signaling View V2",
     "open": "UE / RRC · V2",
     "stable": "Signaling View",
+    "timeline": "Timeline",
+    "map": "Carte",
+    "on": "ON",
+    "off": "OFF",
+    "showTimeline": "Afficher la timeline",
+    "hideTimeline": "Masquer la timeline",
+    "showMap": "Afficher la carte",
+    "hideMap": "Masquer la carte",
+
     "window": "Fenêtre : {{size}} s",
     "fit": "Fit · toute la capture",
     "ueState": "État UE",
@@ -469,7 +484,7 @@
     "nsa": "NR NSA · unproven",
     "sa": "NR SA · unproven",
     "network": "Network events",
-    "dl": "DL Data",
+    "dl": "Durée des tâches",
     "ul": "UL Data",
     "volte": "VoLTE",
     "ping": "Ping",

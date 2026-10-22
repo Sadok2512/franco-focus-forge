@@ -155,7 +155,13 @@
     "catalogInfo": "Info",
     "catalogCopyId": "Copy id",
     "catalogCopyIdOk": "Copied",
-    "catalogStarred": "Starred metric"
+    "catalogStarred": "Starred metric",
+    "reason": {
+      "no_gps_in_capture": "No GPS fix in this capture",
+      "light_decode_no_gps": "Light decode — GPS not projected (deep decode required)",
+      "no_fix_before_seq": "No GPS fix before this sequence",
+      "no_utc_offset_header": "`#UT` header absent — UTC offset unknown"
+    }
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",
@@ -396,6 +402,15 @@
     "title": "Signaling View V2",
     "open": "UE / RRC · V2",
     "stable": "Signaling View",
+    "timeline": "Timeline",
+    "map": "Map",
+    "on": "ON",
+    "off": "OFF",
+    "showTimeline": "Show timeline",
+    "hideTimeline": "Hide timeline",
+    "showMap": "Show map",
+    "hideMap": "Hide map",
+
     "window": "Window: {{size}} s",
     "fit": "Fit · full capture",
     "ueState": "UE State",
@@ -469,7 +484,7 @@
     "nsa": "NR NSA · unproven",
     "sa": "NR SA · unproven",
     "network": "Network events",
-    "dl": "DL Data",
+    "dl": "Data Task Time",
     "ul": "UL Data",
     "volte": "VoLTE",
     "ping": "Ping",

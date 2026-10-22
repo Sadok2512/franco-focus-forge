@@ -46,7 +46,14 @@ export const signalingSchemas = {
   captures: z.object({
     project_id: z.string(),
     captures: z.array(
-      z.object({ capture_id: z.string(), label: z.string(), env: z.string().nullable() }),
+      z.object({
+        capture_id: z.string(),
+        label: z.string(),
+        env: z.string().nullable(),
+        // 1.92.0 — kind back 0.76.1 : 'ue'|'scanner'|null. Null = capture non décodée OU
+        // kind pré-0.76.0 non backfillé.
+        kind: z.enum(["ue", "scanner"]).nullable().optional(),
+      }),
     ),
   }),
   rows: z.object({

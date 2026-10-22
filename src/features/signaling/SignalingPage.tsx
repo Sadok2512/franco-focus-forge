@@ -36,7 +36,9 @@ import {
   Clock,
   Columns3,
   Download,
+  Eye,
   FilterX,
+
   Gauge,
   LogIn,
   LogOut,
@@ -1346,48 +1348,50 @@ export function SignalingPage({
       setExportError(String(e));
     }
   };
+  // View activations (view switch, timeline, map) live in the filters sidebar,
+  // never in a strip above the workspace.
+  const viewControls = (
+    <>
+      <Button asChild variant="outline" size="sm">
+        <Link
+          to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+          search={(previous) => ({ ...previous, capture_id: capture, seq })}
+        >
+          {t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+        </Link>
+      </Button>
+      <button
+        type="button"
+        className="kpi-button"
+        onClick={toggleTimeline}
+        aria-pressed={timelineVisible}
+        data-testid="signaling-timeline-toggle"
+        title={timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")}
+      >
+        {timelineVisible ? <Activity size={14} /> : <ActivitySquare size={14} />}
+        {t("signalingV2.timeline")} ·{" "}
+        {timelineVisible ? t("signalingV2.on") : t("signalingV2.off")}
+      </button>
+      <button
+        type="button"
+        className="kpi-button"
+        onClick={toggleMap}
+        aria-pressed={mapVisible}
+        data-testid="signaling-map-toggle"
+        title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
+      >
+        {mapVisible ? <MapPin size={14} /> : <MapPinOff size={14} />}
+        {t("signalingV2.map")} ·{" "}
+        {mapVisible ? t("signalingV2.on") : t("signalingV2.off")}
+      </button>
+    </>
+  );
+
   return (
+
     <main className="p-3" data-testid="signaling-page">
-      <header className="mb-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">
-          {stateTracksV2 ? t("signalingV2.title") : "Signaling View"}
-        </h1>
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link
-              to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
-              search={(previous) => ({ ...previous, capture_id: capture, seq })}
-            >
-              {t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
-            </Link>
-          </Button>
-          <button
-            type="button"
-            className="kpi-button"
-            onClick={toggleTimeline}
-            aria-pressed={timelineVisible}
-            data-testid="signaling-timeline-toggle"
-            title={timelineVisible ? "Masquer la timeline" : "Afficher la timeline"}
-          >
-            {timelineVisible ? <Activity size={14} /> : <ActivitySquare size={14} />}
-            Timeline · {timelineVisible ? "ON" : "OFF"}
-          </button>
-          <button
-            type="button"
-            className="kpi-button"
-            onClick={toggleMap}
-            aria-pressed={mapVisible}
-            data-testid="signaling-map-toggle"
-            title={mapVisible ? "Masquer la carte" : "Afficher la carte"}
-          >
-            {mapVisible ? <MapPin size={14} /> : <MapPinOff size={14} />}
-            Carte · {mapVisible ? "ON" : "OFF"}
-          </button>
-          <span className="text-xs text-muted-foreground">
-            Capture unique · ordre seq · sources Nemo et RRC
-          </span>
-        </div>
-      </header>
+      <h1 className="sr-only">{t(stateTracksV2 ? "signalingV2.title" : "signalingV2.stable")}</h1>
+
       {(error || exportError) && (
         <p role="alert" className="mb-3 rounded border border-destructive p-3 text-sm">
           {String(error?.message ?? exportError)}
@@ -1420,9 +1424,49 @@ export function SignalingPage({
                   <ChevronRight size={16} />
                 </button>
                 <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
+                <Button
+                  asChild
+                  variant="ghost"
+                  size="icon"
+                  className="kpi-icon"
+                  aria-label={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                  title={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                >
+                  <Link
+                    to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+                    search={(previous) => ({ ...previous, capture_id: capture, seq })}
+                  >
+                    <Eye size={16} />
+                  </Link>
+                </Button>
+                <button
+                  type="button"
+                  className="kpi-icon"
+                  onClick={toggleTimeline}
+                  aria-pressed={timelineVisible}
+                  aria-label={t("signalingV2.timeline")}
+                  data-testid="signaling-timeline-toggle"
+                  title={timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")}
+                >
+                  {timelineVisible ? <Activity size={16} /> : <ActivitySquare size={16} />}
+                </button>
+                <button
+                  type="button"
+                  className="kpi-icon"
+                  onClick={toggleMap}
+                  aria-pressed={mapVisible}
+                  aria-label={t("signalingV2.map")}
+                  data-testid="signaling-map-toggle"
+                  title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
+                >
+                  {mapVisible ? <MapPin size={16} /> : <MapPinOff size={16} />}
+                </button>
+
               </aside>
             ) : (
               <SignalingFilters
+                viewControls={viewControls}
+
                 layers={layers}
                 protocols={protocols}
                 technology={technology}
@@ -1659,8 +1703,7 @@ export function SignalingPage({
                     defaultSize={40}
                     data-testid="signaling-map-panel"
                   >
-                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      <h2 className="mb-2 text-sm font-semibold">Trajet · GPS précédent</h2>
+                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
                       {mapVisible && points.data ? (
                         <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
                       ) : (
@@ -1681,7 +1724,7 @@ export function SignalingPage({
                       className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
                       aria-label={t("sigTable.title")}
                     >
-                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b px-2.5 py-1.5">
                         <h2 className="sig-count mr-1" data-testid="signaling-total">
                           {listing.data
                             ? t("sigTable.count", {
@@ -1763,12 +1806,13 @@ export function SignalingPage({
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className="sig-tool"
-                                aria-label={t("sigTable.columns")}
+                                className="sig-tool sig-tool-icon"
+                                aria-label={`${t("sigTable.columns")} (${shownCols.length}/${COLUMNS.length})`}
+                                title={`${t("sigTable.columns")} (${shownCols.length}/${COLUMNS.length})`}
                                 data-testid="signaling-columns-trigger"
                               >
                                 <Columns3 size={14} aria-hidden="true" />
-                                {t("sigTable.columns")} ({shownCols.length}/{COLUMNS.length})
+
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-72">
@@ -1838,16 +1882,21 @@ export function SignalingPage({
                           </DropdownMenu>
                           <button
                             type="button"
-                            className="sig-tool"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t("sigTable.export")}
+                            title={t("sigTable.export")}
                             disabled={!listing.data}
                             onClick={() => void exportCsv()}
                           >
                             <Download size={14} aria-hidden="true" />
-                            {t("sigTable.export")}
+
                           </button>
                           <button
                             type="button"
-                            className="sig-tool"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t("sigTable.clear")}
+                            title={t("sigTable.clear")}
+
                             data-testid="sig-clear-filters"
                             disabled={!filtersActive}
                             onClick={() => {
@@ -1862,7 +1911,7 @@ export function SignalingPage({
                             }}
                           >
                             <FilterX size={14} aria-hidden="true" />
-                            {t("sigTable.clear")}
+
                           </button>
                         </div>
                       </header>

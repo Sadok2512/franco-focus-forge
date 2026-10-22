@@ -35,6 +35,7 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
+import { getMetricCaptures } from "@/lib/api/client";
 import type { MetricView } from "./MetricGraphCard";
 
 import { KpiFilters } from "./KpiFilters";
@@ -268,6 +269,14 @@ function Workspace({
     setSelectedRows(new Set());
   };
   const [captureId, setCaptureId] = useCaptureContext(projectId);
+  // 1.92.0 — captureKind depuis /metrics/captures (back 0.76.1) pour badge
+  // "Scanner" + désactivation UE cell_scoped metrics dans le catalogue.
+  const metricsCapturesQuery = useQuery({
+    queryKey: ["metric-captures", projectId, {}],
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+  });
+  const captureKind =
+    metricsCapturesQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
   // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
   // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
@@ -300,6 +309,13 @@ function Workspace({
     if (!selectedMetrics.includes(code)) {
       const next = [...selectedMetrics, code];
       setSelectedMetrics(next);
+    }
+    if (view === "table") {
+      // 1.91.0 — ⋮ → Tableau ouvre le grand tableau des métriques (avec les
+      // colonnes de paramètres) ; la carte reste en graphique.
+      setMetricsTablePane(true);
+      setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
+      return;
     }
     setMetricsView(view);
     setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
@@ -500,8 +516,8 @@ function Workspace({
               <button
                 role="tab"
                 aria-selected={activeCatalog === "metrics"}
-                title={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
-                aria-label={`${translate("kpi.498227f2b5c6")} · ${selectedMetrics.length}`}
+                title={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
+                aria-label={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
@@ -517,7 +533,7 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("kpi.498227f2b5c6")}
+                {translate("metrics.498227f2b5c6")}
               </button>
               <Button
                 variant="ghost"
@@ -547,6 +563,7 @@ function Workspace({
                 onToggle={toggleMetric}
                 onVisualization={visualizeMetric}
                 searchRef={catalogSearch}
+                captureKind={captureKind}
               />
             )}
           </div>
@@ -564,6 +581,23 @@ function Workspace({
               <p role="status" className="text-xs text-amber-700">
                 {limitMessage}
               </p>
+            )}
+            {/* 1.92.0 — bandeau Scanner visible dès que la capture active est
+                un scanner, même sans métrique sélectionnée. Jamais caché. */}
+            {activeCatalog === "metrics" && captureKind === "scanner" && (
+              <div
+                role="alert"
+                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                data-testid="scanner-capture-banner"
+              >
+                <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA,
+                throughput per layer) not available in scanner mode — Ibflex-Scanner
+                captures only expose <code>SCANCONFIG / STARTSCAN / CELLSCAN /
+                OFDMSCAN</code> events. UE cell leaves in the catalogue are
+                disabled with tooltip "no UE cell metrics in scanner capture"
+                (never hidden). Future "Scanner view" lot open — see CHANGELOG
+                back 0.76.1.
+              </div>
             )}
             {currentTab.overlay && panels.length >= 2 ? (
               <KpiOverlayCard
@@ -663,7 +697,7 @@ function Workspace({
                     onClear={() => {
                       setSelectedMetrics([]);
                     }}
-                    onRemove={(code) =>
+                    onRemove={(code: string) =>
                       setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
                     }
                   />

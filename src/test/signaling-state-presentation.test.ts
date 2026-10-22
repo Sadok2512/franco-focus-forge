@@ -4,6 +4,7 @@ import {
   statePresentation,
   stateBandGeometry,
   stateLaneLayout,
+  rrcStateLaneLabel,
   stateLaneTitle,
 } from "@/features/signaling/state-presentation";
 
@@ -53,33 +54,23 @@ describe("V9 evidence-only product mapping", () => {
         statePresentation({ ...base, componentCarriers: 2, carrierStatus: status })?.status,
       ).toBe(status);
   });
-  it("configured SCells alone do not assert active advanced LTE mode", () => {
-    expect(
-      statePresentation({
-        ...base,
-        track: "RRC_STATE",
-        state: "CONNECTED",
-        componentCarriers: 2,
-        carrierStatus: "CONFIGURED",
-      })?.key,
-    ).toBe("lte");
-  });
-  it("activated CA establishes the advanced LTE product mode", () => {
-    expect(
-      statePresentation({
-        ...base,
-        track: "RRC_STATE",
-        state: "CONNECTED",
-        componentCarriers: 2,
-        carrierStatus: "ACTIVATED",
-      })?.key,
-    ).toBe("lteAdvanced");
-  });
-  it("NR technology alone does not assert ENDC or SA", () => {
-    for (const technology of ["NR_NSA", "NR_SA"] as const)
+  it("RRC State lane only exposes Idle or Connected, independent of CA state", () => {
+    for (const carrierStatus of ["CONFIGURED", "ACTIVATED", "USED"] as const)
       expect(
-        statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", technology }),
-      ).toBeNull();
+        statePresentation({
+          ...base,
+          track: "RRC_STATE",
+          state: "CONNECTED",
+          componentCarriers: 2,
+          carrierStatus,
+        })?.key,
+      ).toBe("connected");
+  });
+  it("RRC State Connected keeps the connected key for NR technologies too", () => {
+    for (const technology of ["LTE", "NR_NSA", "NR_SA"] as const)
+      expect(
+        statePresentation({ ...base, track: "RRC_STATE", state: "CONNECTED", technology })?.key,
+      ).toBe("connected");
   });
   it("does not convert absent intervals into Idle", () => {
     expect(statePresentation(base)?.key).toBe("lte");
@@ -96,8 +87,14 @@ describe("V9 evidence-only product mapping", () => {
       height: 180,
     });
   });
-  it("does not assert a state in either lane gutter", () => {
-    const labels = { ueState: "UE State", rrcState: "RRC State", idle: "Idle" };
+  it("keeps the RRC State title without an Idle badge on the lane label", () => {
+    const label = rrcStateLaneLabel("RRC State");
+    expect(label).toContain("RRC State");
+    expect(label.startsWith("{title|")).toBe(true);
+    expect(label).not.toContain("Idle");
+  });
+  it("shows the RRC State title with no badge in the lane gutter", () => {
+    const labels = { ueState: "UE State", rrcState: "RRC State" };
     expect(stateLaneTitle("rrcstate", labels)).toEqual({ title: "RRC State", badge: null });
     expect(stateLaneTitle("uestate", labels)).toEqual({ title: "UE State", badge: null });
   });

@@ -73,6 +73,10 @@ export function MetricGraphCard({
   view: viewProp,
   onViewChange,
   onOpenTable,
+  // 1.97.0 (Phase 2 Charts) — syncId Recharts : toutes les cartes partageant
+  // le même syncId voient leur Tooltip/cursor déclenchés simultanément au
+  // survol de n'importe laquelle. Non-breaking : undefined = pas de sync.
+  syncId,
 }: {
   projectId: string;
   code: string;
@@ -86,6 +90,7 @@ export function MetricGraphCard({
   view?: MetricView | undefined;
   onViewChange?: ((view: MetricView) => void) | undefined;
   onOpenTable?: (() => void) | undefined;
+  syncId?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -156,7 +161,7 @@ export function MetricGraphCard({
           appliedFilters={appliedFilters}
         />
       ) : view === "graph" ? (
-        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} />
+        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} />
       ) : view === "table" ? (
         <MetricAggregateTable
           projectId={projectId}
@@ -438,11 +443,13 @@ function MetricTimePlot({
   code,
   label,
   unit,
+  syncId,
 }: {
   projectId: string;
   code: string;
   label: string;
   unit: string;
+  syncId?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
   const captures = useQuery({
@@ -510,7 +517,11 @@ function MetricTimePlot({
       data-n-points={points.length}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={points} margin={{ top: 10, right: 14, left: 4, bottom: 24 }}>
+        <LineChart
+          data={points}
+          margin={{ top: 10, right: 14, left: 4, bottom: 24 }}
+          {...(syncId ? { syncId } : {})}
+        >
           <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
           <XAxis
             type="number"

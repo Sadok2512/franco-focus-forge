@@ -10,10 +10,10 @@ COPY . .
 ENV VITE_BC4_DATA=api
 ENV VITE_BC4_API_UPSTREAM=http://api:8000
 RUN bun run build
-LABEL org.opencontainers.image.revision="e0b45cc"
-LABEL org.opencontainers.image.version="1.83.1"
-LABEL org.opencontainers.image.title="BC4 Front Signaling v2 + warm-up"
-LABEL org.opencontainers.image.description="Coexistence /signaling + /signaling-v2 (GitHub exact UI pin 75061cc + BC4 adapter) + warm-up Vite au boot."
+LABEL org.opencontainers.image.revision="c1e2269"
+LABEL org.opencontainers.image.version="1.97.0"
+LABEL org.opencontainers.image.title="BC4 Front — Phase 2 Charts (synchronized cursor + Events Ribbon)"
+LABEL org.opencontainers.image.description="MetricGraphCard syncId Recharts (cursor synchronisé entre cartes du grid) + MetricsEventsRibbon au-dessus du grid (task/ho/rlf/rrc markers). CSS matrix 1/2/3 cols."
 RUN chmod +x /app/docker-warmup.sh
 # Warm-up en arrière-plan + vite dev au premier plan.
 # Le warm-up attend que vite réponde avant de taper les routes.

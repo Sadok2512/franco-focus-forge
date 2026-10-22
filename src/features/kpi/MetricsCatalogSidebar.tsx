@@ -41,12 +41,17 @@ export function MetricsCatalogSidebar({
   onToggle,
   onVisualization,
   searchRef,
+  // 1.92.0 — captureKind : si 'scanner', les métriques UE cell_scoped sont
+  // désactivées + tooltip "no UE cell metrics in scanner capture". Jamais
+  // cachées. 'ue' ou null = comportement nominal.
+  captureKind,
 }: {
   projectId: string;
   selected: string[];
   onToggle: (code: string) => void;
   onVisualization?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
+  captureKind?: "ue" | "scanner" | null;
 }) {
   const { t, i18n } = useTranslation();
   const [search, setSearch] = useState("");
@@ -136,12 +141,16 @@ export function MetricsCatalogSidebar({
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
     const branchChecked =
       branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
-    const disabled = node.node_type === "leaf" && !node.selectable;
+    // 1.92.0 — métrique UE cell_scoped désactivée sur capture scanner.
+    // Jamais cachée. node.cell non-null = projection cellule (PCell/SCell/PSCell).
+    const scannerBlocked = captureKind === "scanner" && node.cell != null;
+    const disabled = (node.node_type === "leaf" && !node.selectable) || scannerBlocked;
+    const scannerTooltip = scannerBlocked ? "no UE cell metrics in scanner capture" : null;
     const label = cleanLabel(node.label);
     const isSelected = node.selectable && selected.includes(node.selection ?? "");
-    const canToggle = node.selectable && node.selection
+    const canToggle = (node.selectable && node.selection
       ? isSelected || selected.length < MAX_METRICS
-      : false;
+      : false) && !scannerBlocked;
     const statusClass =
       node.selectable && node.n > 0
         ? "status-available"
@@ -200,7 +209,7 @@ export function MetricsCatalogSidebar({
       <li key={node.node_id}>
         <div
           className={`kpi-tree-leaf ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
-          title={node.reason ?? node.source ?? label}
+          title={scannerTooltip ?? node.reason ?? node.source ?? label}
         >
           <button
             type="button"

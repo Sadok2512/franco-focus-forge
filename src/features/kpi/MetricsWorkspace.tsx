@@ -1,65 +1,35 @@
 import { useTranslation } from "react-i18next";
-import { Search } from "lucide-react";
-import { arrangeRows, orderedColumns, textFor, useTableSettings } from "./table-settings";
 import i18n from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
-import { Download, Maximize2, X } from "lucide-react";
-import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
-import { Button } from "@/components/ui/button";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
-import { PanelShell } from "./PanelShell";
+import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 
-// 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
-// Reconstitue le timestamp UTC absolu depuis le label de capture
-// (ex. "M1_FREE_DL-7Go_Max-10_W30_26Jun23_103320.4.nmf" → 2023-06-26)
-// + l'origin_ts du back (ex. "10:33:20.980") + t_rel_s de chaque row.
-function extractCaptureDate(label: string | undefined): string | null {
-  if (!label) return null;
-  const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_/);
-  if (!m) return null;
-  const months: Record<string, string> = {
-    Jan: "01",
-    Feb: "02",
-    Mar: "03",
-    Apr: "04",
-    May: "05",
-    Jun: "06",
-    Jul: "07",
-    Aug: "08",
-    Sep: "09",
-    Oct: "10",
-    Nov: "11",
-    Dec: "12",
+// 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
+// `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
+// + `capture_date` (YYYY-MM-DD) au niveau top. Aucune date devinée depuis
+// le nom de capture : si `capture_date` ou `time_*` est null, cellule
+// grisée avec tooltip indiquant la raison (`reason` ou champ absent).
+// 1.91.1 — tooltip localisé via i18n `metrics.reason.<code>`. Clés en défaut
+// (lot BC1), traductions fr fournies. Fallback = code brut si clé manquante
+// (ne cache jamais un reason inconnu).
+function useReasonLabel() {
+  const { t: translate } = useTranslation();
+  return (reason: string | null | undefined): string | undefined => {
+    if (!reason) return undefined;
+    const key = `metrics.reason.${reason}`;
+    const translated = translate(key);
+    return translated === key ? reason : translated;
   };
-  const [, d, monAbbr, yy] = m;
-  const mon = months[monAbbr!] ?? "01";
-  return `20${yy}-${mon}-${d}`;
 }
-function formatUtc(date: string | null, t_rel_s: number, originTs: string | null): string {
-  if (!date || !originTs) return "—";
-  // originTs = "HH:MM:SS.mmm" → add t_rel_s seconds
-  const parts = originTs.split(":");
-  if (parts.length !== 3) return "—";
-  const h = parseInt(parts[0]!, 10);
-  const m = parseInt(parts[1]!, 10);
-  const [sStr, msStr = "0"] = parts[2]!.split(".");
-  const s = parseInt(sStr!, 10);
-  const ms = parseInt(msStr.padEnd(3, "0").slice(0, 3), 10);
-  const baseMs = (h * 3600 + m * 60 + s) * 1000 + ms;
-  const totalMs = baseMs + Math.round(t_rel_s * 1000);
-  const H = String(Math.floor(totalMs / 3_600_000) % 24).padStart(2, "0");
-  const M = String(Math.floor(totalMs / 60_000) % 60).padStart(2, "0");
-  const S = String(Math.floor(totalMs / 1000) % 60).padStart(2, "0");
-  const Ms = String(totalMs % 1000).padStart(3, "0");
-  return `${date}T${H}:${M}:${S}.${Ms}Z`;
+function fmtLatLng(v: number | null | undefined): string {
+  return v == null ? "" : v.toFixed(6);
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
@@ -201,14 +171,19 @@ export function MetricsWorkspace({
   catalog,
   filters,
   onClear,
-  onRemove,
   view: externalView,
   onViewChange,
-  onTablePaneChange,
-  workspaceId = "default",
-  onColumnsChange,
-  paneRequest = 0,
+  // 1.91.0 — props Lovable introduites 1.89→1.90 (⚙ Apply + per-card view).
+  // Acceptées pour satisfaire le contrat KpiWorkspace mais no-op dans la
+  // version BC3 (le per-card view + Apply draft ne sont pas portés —
+  // conflits avec le Time/GPS lot). Si nécessaire plus tard, implémenter
+  // le state cardViews + onRemove dans un lot dédié.
+  onTablePaneChange: _onTablePaneChange,
+  workspaceId: _workspaceId,
+  onColumnsChange: _onColumnsChange,
+  paneRequest,
   cardViewRequest,
+  onRemove: _onRemove,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -217,17 +192,17 @@ export function MetricsWorkspace({
   catalog: MetricInfo[];
   filters: KpiQueryFilters;
   onClear: () => void;
-  onRemove?: ((code: string) => void) | undefined;
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
-  onTablePaneChange?: ((table: boolean) => void) | undefined;
-  workspaceId?: string | undefined;
-  onColumnsChange?: ((cols: { code: string; label: string }[]) => void) | undefined;
-  paneRequest?: number | undefined;
-  cardViewRequest?: { code: string; view: MetricView; n: number } | undefined;
+  onTablePaneChange?: unknown;
+  workspaceId?: string;
+  onColumnsChange?: unknown;
+  paneRequest?: number;
+  cardViewRequest?: { code: string; view: string; n: number } | undefined;
+  onRemove?: unknown;
 }) {
   const { t: translate } = useTranslation();
-  const [ts, updateTs] = useTableSettings(workspaceId);
+  const reasonLabel = useReasonLabel();
   const [internalView, setInternalView] = useState<View>("table");
   const view = externalView ?? internalView;
   const setView = (v: View) => {
@@ -442,15 +417,6 @@ export function MetricsWorkspace({
       series: [...lines, ...(!numeric.length ? eventSeries : []), ...categorical],
     };
   }, [translate, data, view, x]);
-  const exportCsv = () => {
-    if (!data) return;
-    const url = URL.createObjectURL(new Blob([data.csv], { type: "text/csv;charset=utf-8" }));
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `metrics-${data.capture_id}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
   // 1.81.0 — Spec Premium Adaptive Metrics Table Phase 1 :
   // - Supprimé : titre "Metrics - cells and events", sous-titre Light/Deep,
   //   Capture select, View select, Reset btn, Export CSV dupliqué, Search time.
@@ -463,9 +429,13 @@ export function MetricsWorkspace({
       onCaptureChange(captureQuery.data[0].capture_id);
     }
   }, [captureId, captureQuery.data, onCaptureChange]);
-  const captureLabel = captureQuery.data?.find((c) => c.capture_id === captureId)?.label;
-  const captureDate = extractCaptureDate(captureLabel);
-  const originTs = data?.origin_ts ?? null;
+  // 1.88.0 — date absolue vient uniquement du back (`data.capture_date`).
+  // Plus de regex sur le nom de capture.
+  const captureDate = data?.capture_date ?? null;
+  // 1.92.0 — kind back 0.76.1 pour badge "Scanner" + désactivation UE metrics
+  // sur captures scanner. Jamais caché (visibilité utilisateur requise).
+  const captureKind = captureQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
+  const isScannerCapture = captureKind === "scanner";
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
@@ -493,46 +463,29 @@ export function MetricsWorkspace({
     if (p === "table") setView("table");
     else if (p === "overlay") setView("graph");
   };
-  // 1.88.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
-  // peut basculer une carte sur histogram/table/map sans toucher les autres).
-  const [cardViews, setCardViews] = useState<Record<string, MetricView>>(() => {
-    try {
-      return JSON.parse(sessionStorage.getItem(`bc4.metrics.views.${workspaceId}`) ?? "{}");
-    } catch {
-      return {};
-    }
-  });
+  // 1.94.0 — la barre [View ▾ | Per row ▾ | Export CSV | Fullscreen] est
+  // supprimée. Le mode du panneau vient des demandes du catalogue Metrics :
+  // ⋮ → Tableau ouvre le grand tableau, ⋮ → Graphique/Histogramme/Carte y
+  // ramène. Rien d'autre ne change le mode.
   useEffect(() => {
-    try {
-      sessionStorage.setItem(`bc4.metrics.views.${workspaceId}`, JSON.stringify(cardViews));
-    } catch {
-      /* Memory-only if storage is unavailable. */
-    }
-  }, [cardViews, workspaceId]);
-  // Catalogue ⋮ → visualisation applies to that metric's own card.
-  useEffect(() => {
-    if (!cardViewRequest) return;
-    const { code, view } = cardViewRequest;
-    setCardViews((m) => (m[code] === view ? m : { ...m, [code]: view }));
-  }, [cardViewRequest]);
-  const panelRef = useRef<HTMLElement>(null);
-  useEffect(() => {
-    onTablePaneChange?.(pane === "table");
-  }, [pane, onTablePaneChange]);
-  const lastPaneRequest = useRef(paneRequest);
-  useEffect(() => {
-    if (lastPaneRequest.current === paneRequest) return;
-    lastPaneRequest.current = paneRequest;
-    setPaneRaw("table");
-    setView("table");
+    if (paneRequest) setPane("table");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
-  const previousExternalView = useRef(externalView);
   useEffect(() => {
-    if (previousExternalView.current === externalView) return;
-    previousExternalView.current = externalView;
-    if (externalView) setPaneRaw(externalView === "table" ? "table" : "overlay");
-  }, [externalView]);
+    if (cardViewRequest && cardViewRequest.view !== "table") setPane("charts");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardViewRequest]);
+  // 1.94.0 — le sélecteur « Per row » de la barre supprimée : le nombre de
+  // cartes par ligne reste celui mémorisé, il n'est plus réglé ici.
+  const [perRow] = useState<1 | 2 | 3>(() => {
+    try {
+      const n = Number(localStorage.getItem("bc3.metrics.perRow"));
+      if (n === 1 || n === 2 || n === 3) return n;
+    } catch {
+      /* ignore */
+    }
+    return 2;
+  });
   // Décoder chaque selection "code@cell" en { code, cell }
   const parsedSelections = useMemo(
     () =>
@@ -547,66 +500,23 @@ export function MetricsWorkspace({
     for (const info of catalog) m.set(info.code, info);
     return m;
   }, [catalog]);
-  const columnKey = (data?.columns ?? []).map((c) => c.code).join("|");
-  useEffect(() => {
-    onColumnsChange?.((data?.columns ?? []).map((c) => ({ code: c.code, label: c.label })));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [columnKey]);
-  const visibleCols = data ? orderedColumns(data.columns, ts) : [];
-  const shownRows = data
-    ? arrangeRows(
-        data.rows,
-        ts,
-        ts.search.trim()
-          ? (r) =>
-              visibleCols.some(
-                (c) => r.values[c.code] != null && fmt(r.values[c.code]).includes(ts.search.trim()),
-              )
-          : undefined,
-      )
-    : [];
-  const tableStyle = {
-    "--t-bg": ts.colors.background,
-    "--t-head-bg": ts.colors.headerBg,
-    "--t-head-fg": ts.colors.headerText,
-    "--t-row": ts.colors.rowBg,
-    "--t-alt": ts.zebra ? ts.colors.altRow : ts.colors.rowBg,
-    "--t-border": ts.colors.border,
-    "--t-sel": ts.colors.selected,
-    "--t-fg": textFor(ts.colors.rowBg),
-    "--t-font": { small: "11px", medium: "12px", large: "14px" }[ts.fontSize],
-    "--t-row-h": { compact: "22px", normal: "28px", comfortable: "36px" }[ts.rowHeight],
-    "--t-head-h": { compact: "26px", normal: "34px", large: "44px" }[ts.headerHeight],
-    "--t-pad": { small: "2px 6px", medium: "4px 10px", large: "8px 14px" }[ts.cellPadding],
-    "--t-gap": { compact: "0px", normal: "6px", wide: "14px" }[ts.spacing],
-    "--t-radius": ts.radius === "rounded" ? "8px" : "0px",
-    "--t-align": ts.cellAlign,
-    "--t-num-align": ts.numberAlign,
-    height:
-      ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
-    resize: ts.resizable ? "vertical" : undefined,
-  } as CSSProperties;
-  const tableTitle = parsedSelections
-    .map((selection) => {
-      const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
-      const column = data?.columns.find(
-        (c) => c.code === selection.full || c.code === selection.code,
-      );
-      const label = info?.label ?? column?.label ?? selection.code;
-      const cellLabel = info?.cell_options?.find((c) => c.cell === selection.cell)?.label;
-      return cellLabel ? `${label} · ${cellLabel}` : label;
-    })
-    .join(" · ");
   return (
-    <div className="kpi-unified-contents" data-testid="metrics-v3-workspace" data-pane={pane}>
-      {!captureId && (
-        <div className="kpi-graph-card col-span-full kpi-chart-state">
-          {translate("metrics.568f4197970b")}
-        </div>
+    <article
+      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      data-testid="metrics-v3-workspace"
+    >
+      {pane === "charts" && captureId && parsedSelections.length > 0 && (
+        <MetricsEventsRibbon
+          projectId={projectId}
+          captureId={captureId}
+          filters={filters}
+          syncId={`metrics-charts-${captureId}`}
+        />
       )}
-      {captureId && (
+      {pane === "charts" && captureId && (
         <section
-          className="kpi-metrics-charts-grid kpi-unified-contents"
+          className="kpi-metrics-charts-grid"
+          data-per-row={perRow}
           data-count={Math.min(parsedSelections.length, 8)}
           data-testid="metrics-charts-grid"
         >
@@ -615,264 +525,253 @@ export function MetricsWorkspace({
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
             return (
-              <PanelShell
+              <MetricGraphCard
                 key={s.full}
-                workspaceId={workspaceId}
-                id={`metric:${s.full}`}
-                natural={100 + i}
-                defaultTitle={title}
-              >
-                {(panelTitle) => (
-                  <MetricGraphCard
-                    projectId={projectId}
-                    code={s.full}
-                    label={`${i + 1}. ${panelTitle}`}
-                    unit={info?.unit ?? ""}
-                    tech={info?.tech ?? ""}
-                    category={info?.category_label ?? null}
-                    eventCode={info?.event_code ?? s.code}
-                    appliedFilters={filters}
-                    onRemove={() => {
-                      if (onRemove) onRemove(s.full);
-                      else if (selections.length === 1) onClear();
-                    }}
-                    onOpenTable={pane === "charts" ? () => setPane("table") : undefined}
-                    view={cardViews[s.full] ?? "graph"}
-                    onViewChange={(v) =>
-                      setCardViews((m) => {
-                        if (m[s.full] === v) return m;
-                        return { ...m, [s.full]: v };
-                      })
-                    }
-                  />
-                )}
-              </PanelShell>
+                projectId={projectId}
+                code={s.full}
+                label={`${i + 1}. ${title}`}
+                unit={info?.unit ?? ""}
+                tech={info?.tech ?? ""}
+                category={info?.category_label ?? null}
+                eventCode={info?.event_code ?? s.code}
+                appliedFilters={filters}
+                onRemove={() => {
+                  // Trigger removal via existing onClear if last, else notify parent
+                  const next = selections.filter((x) => x !== s.full);
+                  if (!next.length) onClear();
+                  else {
+                    // Rely on URL back-sync in KpiWorkspace via toggleMetric
+                    // Here no parent handler for individual remove: dispatch a custom event
+                    window.dispatchEvent(
+                      new CustomEvent("bc3-metrics-remove", { detail: { code: s.full } }),
+                    );
+                  }
+                }}
+                view="graph"
+                onViewChange={() => {
+                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
+                }}
+                syncId={captureId ? `metrics-charts-${captureId}` : undefined}
+              />
             );
           })}
+          {parsedSelections.length === 0 && (
+            <p className="kpi-chart-state">No metric selected. Pick one from the catalogue.</p>
+          )}
         </section>
       )}
-      {pane !== "charts" && (
-        <PanelShell
-          workspaceId={workspaceId}
-          id="metrics:pane"
-          natural={200}
-          defaultTitle={tableTitle}
+      {isScannerCapture && (
+        <div
+          role="alert"
+          className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+          data-testid="metrics-scanner-banner"
         >
-          {(panelTitle) => (
-            <article
-              ref={panelRef}
-              className="kpi-graph-card col-span-full kpi-metrics-table-premium"
-              data-pane={pane}
-            >
-              <header className="kpi-metrics-table-toolbar">
-                <h3 className="kpi-metrics-table-title" title={panelTitle}>
-                  {panelTitle}
-                </h3>
-                <WorkspacePanelMenu label={translate("panel.actions")}>
-                  <DropdownMenuItem disabled={!data} onSelect={exportCsv}>
-                    <Download size={14} /> {translate("panel.export_csv")}
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onSelect={() => void panelRef.current?.requestFullscreen?.()}>
-                    <Maximize2 size={14} /> {translate("panel.fullscreen")}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onSelect={() => setPane("charts")}>
-                    <X size={14} /> {translate("panel.remove")}
-                  </DropdownMenuItem>
-                </WorkspacePanelMenu>
-              </header>
-              {!captureId ? (
-                <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
-              ) : query.isPending ? (
-                <div className="kpi-chart-state" role="status">
-                  {" "}
-                  {translate("metrics.eb724a908f1f")}{" "}
-                </div>
-              ) : query.isError ? (
-                <div className="kpi-chart-state" role="alert">
-                  {query.error.message}
-                </div>
-              ) : (
-                data && (
-                  <>
-                    {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
+          <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche)
+          not available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
+          <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
+          sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
+          RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
+        </div>
+      )}
+      {!captureId ? (
+        <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+      ) : query.isPending ? (
+        <div className="kpi-chart-state" role="status">
+          {" "}
+          {translate("metrics.eb724a908f1f")}{" "}
+        </div>
+      ) : query.isError ? (
+        <div className="kpi-chart-state" role="alert">
+          {query.error.message}
+        </div>
+      ) : (
+        data && (
+          <>
+            {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
                 la réponse back est valide (200 Zod) mais vide. On remonte
                 la raison si fournie par le back (connected_reason) sinon
                 un fallback générique traçable. Jamais vide muet. */}
-                    {data.columns.length > 0 && data.rows.length === 0 && (
-                      <div
-                        role="alert"
-                        className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-                        data-testid="metrics-empty-banner"
-                      >
-                        <strong>Aucune donnée pour cette sélection.</strong>{" "}
-                        {data.connected_reason
-                          ? `Raison : ${data.connected_reason}.`
-                          : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
-                        <br />
-                        <span className="font-mono text-[10px] text-amber-700">
-                          capture_id={data.capture_id} · result_id=
-                          {String(data.result_id).slice(0, 8)}
-                        </span>
-                      </div>
-                    )}
-                    {view === "table" ? (
-                      <div
-                        className="kpi-data-table kpi-metrics-table-body kpi-ts"
-                        style={tableStyle}
-                        data-style={ts.style}
-                        data-borders={ts.borders}
-                        data-sticky-head={ts.stickyHeader}
-                        data-sticky-first={ts.stickyFirstColumn}
-                        data-wrap={ts.wrap}
-                        data-hscroll={ts.hScroll}
-                        data-testid="metrics-table-styled"
-                      >
-                        <label className="kpi-ts-search">
-                          <Search size={12} />
-                          <input
-                            value={ts.search}
-                            onChange={(e) => {
-                              updateTs({ search: e.target.value });
-                              setPage(1);
-                            }}
-                            placeholder={translate("wss.searchData")}
-                            aria-label={translate("wss.searchData")}
-                          />
-                        </label>
-                        <div className="kpi-table-scroll">
-                          <table>
-                            <thead>
-                              <tr>
-                                <th className="col-time">
-                                  Time (UTC)
-                                  <small className="block">yyyy-mm-ddThh:mm:ss.sssZ</small>
-                                </th>
-                                <th className="col-geo numeric">
-                                  Latitude
-                                  <small className="block">°</small>
-                                </th>
-                                <th className="col-geo numeric">
-                                  Longitude
-                                  <small className="block">°</small>
-                                </th>
-                                {visibleCols.map((c) => (
-                                  <th key={c.code} title={c.code} className="numeric">
-                                    {c.label}
-                                    {ts.showUnits && (
-                                      <small className="block">{c.unit || "—"}</small>
-                                    )}
-                                  </th>
-                                ))}
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {shownRows.slice((page - 1) * pageSize, page * pageSize).map((r) => (
-                                <tr key={r.second} data-second={r.second}>
-                                  <td
-                                    className="col-time font-mono text-[11px]"
-                                    title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
-                                  >
-                                    {formatUtc(captureDate, r.t_rel_s, originTs)}
-                                  </td>
-                                  {/* Phase 2 : join /signaling/points pour peupler lat/lng.
-                              Pour l'instant, "—" explicite (pas de 0 fabriqué). */}
-                                  <td className="col-geo numeric text-muted-foreground">—</td>
-                                  <td className="col-geo numeric text-muted-foreground">—</td>
-                                  {visibleCols.map((c) => (
-                                    <td
-                                      className="numeric"
-                                      key={c.code}
-                                      title={`n = ${r.counts[c.code] ?? "—"}`}
-                                    >
-                                      {c.kind === "event"
-                                        ? r.values[c.code] === 1
-                                          ? "1"
-                                          : ""
-                                        : r.values[c.code] == null
-                                          ? "—"
-                                          : fmt(r.values[c.code])}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        {/* V3 §8 : pagination 25/50/100 + "Showing X-Y of N rows" */}
-                        <div className="kpi-metrics-table-pager" data-testid="metrics-table-pager">
-                          <label>
-                            Rows per page
-                            <select
-                              value={pageSize}
-                              onChange={(e) => {
-                                setPageSize(Number(e.target.value) as 25 | 50 | 100);
-                                setPage(1);
-                              }}
-                            >
-                              <option value={25}>25</option>
-                              <option value={50}>50</option>
-                              <option value={100}>100</option>
-                            </select>
-                          </label>
-                          <span>
-                            Showing {Math.min((page - 1) * pageSize + 1, shownRows.length)}–
-                            {Math.min(page * pageSize, shownRows.length)} of {shownRows.length} rows
-                          </span>
-                          <span className="pager-nav">
-                            <button
-                              className="kpi-button"
-                              disabled={page <= 1}
-                              onClick={() => setPage((p) => Math.max(1, p - 1))}
-                            >
-                              Prev
-                            </button>
-                            <button
-                              className="kpi-button"
-                              disabled={page * pageSize >= shownRows.length}
-                              onClick={() => setPage((p) => p + 1)}
-                            >
-                              Next
-                            </button>
-                          </span>
-                        </div>
-                      </div>
-                    ) : view === "map" ? (
-                      <MetricMap data={data} />
-                    ) : (
-                      <Plot
-                        option={option}
-                        label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
-                      />
-                    )}
-                    {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
-                      <div className="p-3 text-xs">
-                        <p>
-                          {" "}
-                          {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
-                          {data.connected_reason}
-                        </p>
-                        {data.pair_rates.map((p) => (
-                          <p key={p.type}>
-                            {p.type} : {p.success}/{p.known_outcomes}{" "}
-                            {translate("metrics.8df97de2b567")} {fmt(p.success_pct)} % ·{" "}
-                            {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
-                          </p>
+            {data.columns.length > 0 && data.rows.length === 0 && (
+              <div
+                role="alert"
+                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                data-testid="metrics-empty-banner"
+              >
+                <strong>Aucune donnée pour cette sélection.</strong>{" "}
+                {data.connected_reason
+                  ? `Raison : ${data.connected_reason}.`
+                  : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
+                <br />
+                <span className="font-mono text-[10px] text-amber-700">
+                  capture_id={data.capture_id} · result_id={String(data.result_id).slice(0, 8)}
+                </span>
+              </div>
+            )}
+            {pane === "charts" ? null : view === "table" ? (
+              <div className="kpi-data-table kpi-metrics-table-body">
+                <div className="kpi-table-scroll">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th className="col-time">
+                          Time local
+                          <small className="block">{captureDate ?? "—"} · hh:mm:ss.sss</small>
+                        </th>
+                        <th className="col-time">
+                          Time UTC
+                          <small className="block">
+                            {captureDate ?? "—"}
+                            {data.utc_offset_min != null
+                              ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h`
+                              : " · offset —"}
+                          </small>
+                        </th>
+                        <th className="col-geo numeric">
+                          Latitude
+                          <small className="block">°</small>
+                        </th>
+                        <th className="col-geo numeric">
+                          Longitude
+                          <small className="block">°</small>
+                        </th>
+                        {data.columns.map((c) => (
+                          <th key={c.code} title={c.code} className="numeric">
+                            {c.label}
+                            <small className="block">{c.unit || "—"}</small>
+                          </th>
                         ))}
-                      </div>
-                    )}
-                    {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {data.rows.slice((page - 1) * pageSize, page * pageSize).map((r) => {
+                        const rowReason = reasonLabel(r.reason);
+                        const utcMissing = r.time_utc == null;
+                        const utcTooltip =
+                          utcMissing && rowReason
+                            ? rowReason
+                            : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
+                        const gpsTooltip =
+                          r.lat == null
+                            ? (rowReason ?? "—")
+                            : r.gps_source === "previous_fix" && r.gps_age_s != null
+                              ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
+                              : "exact fix";
+                        return (
+                          <tr key={r.second} data-second={r.second}>
+                            <td
+                              className="col-time font-mono text-[11px]"
+                              title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
+                            >
+                              {r.time_local ?? r.time_label}
+                            </td>
+                            <td
+                              className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
+                              title={utcTooltip}
+                            >
+                              {r.time_utc ?? "—"}
+                            </td>
+                            <td
+                              className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
+                              title={gpsTooltip}
+                            >
+                              {r.lat == null ? "—" : fmtLatLng(r.lat)}
+                            </td>
+                            <td
+                              className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
+                              title={gpsTooltip}
+                            >
+                              {r.lon == null ? "—" : fmtLatLng(r.lon)}
+                            </td>
+                            {data.columns.map((c) => (
+                              <td
+                                className="numeric"
+                                key={c.code}
+                                title={`n = ${r.counts[c.code] ?? "—"}`}
+                              >
+                                {c.kind === "event"
+                                  ? r.values[c.code] === 1
+                                    ? "1"
+                                    : ""
+                                  : r.values[c.code] == null
+                                    ? "—"
+                                    : fmt(r.values[c.code])}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                {/* V3 §8 : pagination 25/50/100 + "Showing X-Y of N rows" */}
+                <div className="kpi-metrics-table-pager" data-testid="metrics-table-pager">
+                  <label>
+                    Rows per page
+                    <select
+                      value={pageSize}
+                      onChange={(e) => {
+                        setPageSize(Number(e.target.value) as 25 | 50 | 100);
+                        setPage(1);
+                      }}
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                    </select>
+                  </label>
+                  <span>
+                    Showing {Math.min((page - 1) * pageSize + 1, data.rows.length)}–
+                    {Math.min(page * pageSize, data.rows.length)} of {data.rows.length} rows
+                  </span>
+                  <span className="pager-nav">
+                    <button
+                      className="kpi-button"
+                      disabled={page <= 1}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
+                    >
+                      Prev
+                    </button>
+                    <button
+                      className="kpi-button"
+                      disabled={page * pageSize >= data.rows.length}
+                      onClick={() => setPage((p) => p + 1)}
+                    >
+                      Next
+                    </button>
+                  </span>
+                </div>
+              </div>
+            ) : view === "map" ? (
+              <MetricMap data={data} />
+            ) : (
+              <Plot
+                option={option}
+                label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
+              />
+            )}
+            {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
+              <div className="p-3 text-xs">
+                <p>
+                  {" "}
+                  {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
+                  {data.connected_reason}
+                </p>
+                {data.pair_rates.map((p) => (
+                  <p key={p.type}>
+                    {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
+                    {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
+                  </p>
+                ))}
+              </div>
+            )}
+            {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
                 Table, Overlay). Les métadonnées (result_id, aggregation,
                 time_policy, pairing, decoder_version, decode_level, gaps)
                 restent accessibles côté API /metrics/table response et
                 via le tooltip title du row (`seq N–M · t_rel Xs`). */}
-                  </>
-                )
-              )}
-            </article>
-          )}
-        </PanelShell>
+          </>
+        )
       )}
-    </div>
+    </article>
   );
 }

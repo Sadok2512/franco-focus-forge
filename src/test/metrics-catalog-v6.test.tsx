@@ -9,6 +9,12 @@ import "@/lib/i18n";
 const getMetrics = vi.fn();
 vi.mock("@/lib/api/client", () => ({ getMetrics: (...args: unknown[]) => getMetrics(...args) }));
 
+// 1.88.1 — DOM aligné sur MetricsCatalogSidebar BC3 : chevron intégré dans la
+// bar `kpi-tree-root` / `kpi-tree-family`, feuille = `button[aria-pressed]`
+// avec `aria-label="Select <label>"`, status dot + ⋮ MoreVertical menu.
+// Plus de bouton "Expand <name>" (vocabulaire Lovable retiré), plus de
+// checkbox (sélection via toggle du bouton principal).
+
 const node = (
   node_id: string,
   parent_id: string | null,
@@ -37,8 +43,8 @@ const node = (
   ...extra,
 });
 
-describe("Metrics catalogue v6 tree", () => {
-  it("selects available cell leaves and keeps P4 leaves visible but disabled", async () => {
+describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
+  it("expands category + family via chevron bar, selects leaf via Select button, keeps P4 leaves disabled with status dot", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",
       title: "Nemo metrics",
@@ -82,12 +88,31 @@ describe("Metrics catalogue v6 tree", () => {
         />
       </QueryClientProvider>,
     );
-    expect(await screen.findByText("Serving radio")).toBeVisible();
-    fireEvent.click(screen.getByRole("button", { name: /Serving radio/i }));
-    fireEvent.click(screen.getByRole("button", { name: /RSRP \d+/ }));
+
+    // Category "Serving radio" visible, closed by default.
+    const servingRadio = await screen.findByRole("button", { name: /Serving radio/ });
+    expect(servingRadio).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(servingRadio);
+    expect(servingRadio).toHaveAttribute("aria-expanded", "true");
+
+    // Family "RSRP ★[CELLMEAS #9]" visible, closed → open it.
+    const rsrpFam = screen.getByRole("button", { name: /^RSRP/ });
+    expect(rsrpFam).toHaveAttribute("aria-expanded", "false");
+    fireEvent.click(rsrpFam);
+    expect(rsrpFam).toHaveAttribute("aria-expanded", "true");
+
+    // Leaves visible : PCell + PSCell.
+    expect(screen.getByText("RSRP — PCell")).toBeVisible();
     expect(screen.getByText("RSRP — PSCell")).toBeVisible();
-    expect(screen.getByTitle("P4 proof pending")).toHaveClass("opacity-45");
-    fireEvent.click(screen.getByRole("button", { name: /Select RSRP — PCell/i }));
+
+    // P4 (open-proof) leaf still visible but visually disabled.
+    const pscellLeaf = screen.getByText("RSRP — PSCell").closest(".kpi-tree-leaf");
+    expect(pscellLeaf).toHaveClass("opacity-45");
+
+    // Leaf = button[aria-pressed] with aria-label="Select <label>".
+    const pcellButton = screen.getByRole("button", { name: /Select RSRP — PCell/i });
+    expect(pcellButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(pcellButton);
     expect(onToggle).toHaveBeenCalledWith("cell_rsrp@0");
   });
 });

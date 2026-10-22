@@ -10,13 +10,11 @@ export function statePresentation(state: ProvenState) {
       status: null,
     };
   const ca = state.componentCarriers !== null && state.componentCarriers > 1;
+  // RRC State lane: Idle (gray) or Connected (blue) only — no LTE/NR/CC labels.
   if (state.track === "RRC_STATE") {
-    // NR technology alone is not proof of ENDC success or an SA context.
-    if (state.technology !== "LTE") return null;
-    const activeCa = ca && (state.carrierStatus === "ACTIVATED" || state.carrierStatus === "USED");
     return {
-      key: activeCa ? "lteAdvanced" : "lte",
-      role: activeCa ? "lte-ca" : "lte",
+      key: "connected",
+      role: "connected",
       count: null,
       status: null,
     };
@@ -57,10 +55,15 @@ export function stateLaneLayout(lanes: string[]) {
   return { centers, height: top };
 }
 
-/** Lane gutter titles never assert an unproven state. */
+/** RRC State lane label: title only — the Idle badge was deleted at the user's request. */
+export function rrcStateLaneLabel(title: string) {
+  return `{title|${title}}`;
+}
+
+/** Lane gutter titles: both state lanes show their title with no badge. */
 export function stateLaneTitle(
   lane: "uestate" | "rrcstate",
-  labels: { ueState: string; rrcState: string; idle: string },
+  labels: { ueState: string; rrcState: string },
 ): { title: string; badge: string | null } {
   return { title: lane === "uestate" ? labels.ueState : labels.rrcState, badge: null };
 }

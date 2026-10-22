@@ -8,18 +8,16 @@ import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
 import { isAllowedNetworkEvent } from "./network-events";
-import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
-import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
+import { FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { provenStates, stateTrack } from "./state-evidence";
 import {
   statePresentation,
   stateBandGeometry,
   stateLaneLayout,
   stateLaneTitle,
+  rrcStateLaneLabel,
 } from "./state-presentation";
 import { rrcStateSegments, type RrcStateSegment } from "./rrc-state-segments";
-import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
@@ -438,33 +436,46 @@ export function RfTimeline({
       const opacity =
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
       const children: Record<string, unknown>[] = [];
+      // UE State during Idle: leave the lane visually empty (no badge, no label).
+      if (isBand && proof?.track === "UE_STATE" && proof.state === "IDLE") return;
       if (isBand) {
         const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
         const y = (start[1] ?? 0) + geometry.offset;
-        // UE state band: filled rounded rect with the state label inside.
+        // RRC State lane renders as a compact pill badge for both Idle and Connected.
+        const rrcBadge = proof?.track === "RRC_STATE";
+        const idleBadge = rrcBadge && proof.state === "IDLE";
+        const rrcText = rrcBadge
+          ? proof.state === "IDLE"
+            ? t("signalingV2.idle")
+            : t("signalingV2.connected")
+          : item.label;
+        const bandWidth = rrcBadge ? Math.min(width, proof.state === "IDLE" ? 48 : 92) : width;
+        const bandLeft = left + (width - bandWidth) / 2;
         children.push({
           type: "rect",
           shape: {
-            x: left,
-            y: y - geometry.height / 2,
-            width,
-            height: geometry.height,
+            x: bandLeft,
+            y: y - (rrcBadge ? 18 : geometry.height) / 2,
+            width: bandWidth,
+            height: rrcBadge ? 18 : geometry.height,
             r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (width > Math.max(70, item.label.length * 7 + 16))
+        if (rrcBadge ? bandWidth >= 40 : width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
               x: left + width / 2,
               y,
-              text: item.label,
-              fill: stateTracksV2
-                ? getComputedStyle(document.documentElement)
-                    .getPropertyValue("--signaling-state-text")
-                    .trim()
-                : "#ffffff",
+              text: rrcText,
+              fill: idleBadge
+                ? tokens.getPropertyValue("--sig-table-text").trim()
+                : stateTracksV2
+                  ? getComputedStyle(document.documentElement)
+                      .getPropertyValue("--signaling-state-text")
+                      .trim()
+                  : "#ffffff",
               fontSize: 12,
               fontFamily: tokens.getPropertyValue("--font-sans").trim(),
               fontWeight: 600,
@@ -510,28 +521,29 @@ export function RfTimeline({
             },
           } as never);
         if (showLabels && width > 40) {
+          // Start / End render below the bar (user spec), aligned on the exact extremities.
           children.push({
             type: "text",
             style: {
               x: start[0]!,
-              y: start[1]! - 12,
+              y: start[1]! + 12,
               text: `Start\n${fmtT(item.t_rel_s ?? 0)} s`,
               fill: "#475569",
               fontSize: 8,
               align: "left",
-              verticalAlign: "bottom",
+              verticalAlign: "top",
             },
           } as never);
           children.push({
             type: "text",
             style: {
               x: end[0]!,
-              y: start[1]! - 12,
+              y: start[1]! + 12,
               text: `End\n${fmtT(item.t_rel_end_s)} s`,
               fill: "#475569",
               fontSize: 8,
               align: "right",
-              verticalAlign: "bottom",
+              verticalAlign: "top",
             },
           } as never);
         }
@@ -577,7 +589,7 @@ export function RfTimeline({
             style: {
               x: start[0]!,
               y: y + 13,
-              text: `${item.label}\n${fmtT(item.t_rel_s ?? 0)} s`,
+              text: item.label,
               fill: labelColor,
               fontSize: 8,
               align: "center",
@@ -723,27 +735,19 @@ export function RfTimeline({
           type: "category",
           inverse: true,
           data: lanes.map((k) =>
-            t(
-              stateTracksV2 && (k === "uestate" || k === "rrcstate")
-                ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
-                : `rfTimeline.${k}`,
-            ),
+            stateTracksV2 && k === "rrcstate"
+              ? rrcStateLaneLabel(t("signalingV2.rrcState"))
+              : t(
+                  stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                    ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                    : `rfTimeline.${k}`,
+                ),
           ),
           axisLabel: {
             color: "#94a3b8",
             fontSize: 11,
             rich: {
               title: { color: "#94a3b8", fontSize: 11, fontWeight: 600 },
-              idle: {
-                color: "#64748B",
-                backgroundColor: "rgba(148, 163, 184, 0.22)",
-                borderColor: "rgba(148, 163, 184, 0.5)",
-                borderWidth: 1,
-                borderRadius: 8,
-                padding: [2, 7, 2, 7],
-                fontSize: 10,
-                fontWeight: 600,
-              },
             },
           },
           axisTick: { show: false },
@@ -906,10 +910,6 @@ export function RfTimeline({
     laneLayout,
     visibleWindow,
   ]);
-  const zoomBy = (factor: number) => {
-    const width = Math.min(duration, Math.max(0.1, (visibleWindow[1] - visibleWindow[0]) * factor));
-    changeWindow(clampWindow(duration, (visibleWindow[0] + visibleWindow[1] - width) / 2, width));
-  };
   return (
     <div ref={root} className="flex min-h-0 flex-1 flex-col bg-card" data-testid="rf-timeline">
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -955,67 +955,6 @@ export function RfTimeline({
             ))}
           </div>
         </details>
-        <span className="ml-auto flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            title={t("rfTimeline.showCursor")}
-            aria-label={t("rfTimeline.showCursor")}
-            data-testid="show-time-cursor"
-            onClick={() => onTime((visibleWindow[0] + visibleWindow[1]) / 2)}
-          >
-            <Crosshair />
-          </Button>
-          {stateTracksV2 && (
-            <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />
-          )}
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            onClick={() => zoomBy(0.5)}
-            aria-label={t("rfTimeline.zoomIn")}
-          >
-            <ZoomIn />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            onClick={() => zoomBy(2)}
-            aria-label={t("rfTimeline.zoomOut")}
-          >
-            <ZoomOut />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            aria-label={t("rfTimeline.reset")}
-            title={t("rfTimeline.reset")}
-            onClick={() => {
-              changeWindow(clampWindow(duration, 0, stateTracksV2 ? 30 : FULL_CAPTURE_S));
-              setWindowSeq(undefined);
-              callbacks.current.onRange(undefined);
-            }}
-          >
-            <RotateCcw />
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="kpi-button"
-            aria-label={t("rfTimeline.fullscreen")}
-            title={t("rfTimeline.fullscreen")}
-            onClick={() => {
-              if (document.fullscreenElement) void document.exitFullscreen();
-              else void root.current?.requestFullscreen();
-            }}
-          >
-            <Maximize />
-          </Button>
-        </span>
       </div>
       {(events.isPending || radio.isPending) && <p role="status">{t("rfTimeline.loading")}</p>}
       {[events, radio, detailed]
@@ -1034,7 +973,6 @@ export function RfTimeline({
               const title = stateLaneTitle(lane, {
                 ueState: t("signalingV2.ueState"),
                 rrcState: t("signalingV2.rrcState"),
-                idle: t("signalingV2.idle"),
               });
               return center === undefined ? null : (
                 <span
@@ -1043,7 +981,6 @@ export function RfTimeline({
                   style={{ top: 30 + center - 21 }}
                 >
                   {title.title}
-                  {title.badge && <span className="sig-lane-idle">{title.badge}</span>}
                 </span>
               );
             })}
