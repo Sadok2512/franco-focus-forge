@@ -1,3 +1,8 @@
+## 1.86.0 — RRC State title back in the lane gutter
+- The top timeline band now shows its own "RRC State" title with the gray Idle badge beside it, in the same left gutter as UE State.
+- The gutter row that held only UE State was painting an empty box over the chart's own label, so the RRC State title never appeared; it now carries the title and badge as real text.
+- Band positions, proven-state rules, Idle badges inside proven Idle intervals, cursor, navigator and message table are untouched.
+
 ## 1.85.0 — Evidence messages section removed
 - The "Evidence messages" row under the Signaling timeline is gone: clicking an event no longer adds a strip with the interval, session and `#seq` buttons below the chart.
 - Selection feedback stays where it already was — the name chip on the timeline, the highlighted row in the messages table, the inspector, and the band tooltip that still carries the proven interval, session and proof sequences.

@@ -16,6 +16,7 @@ import {
   statePresentation,
   stateBandGeometry,
   stateLaneLayout,
+  stateLaneTitle,
   rrcStateLaneLabel,
 } from "./state-presentation";
 import { WindowSelector } from "./WindowSelector";
@@ -921,14 +922,19 @@ export function RfTimeline({
             (["uestate", "rrcstate"] as const).map((lane) => {
               const index = lanes.indexOf(lane);
               const center = laneLayout.centers[index];
+              const title = stateLaneTitle(lane, {
+                ueState: t("signalingV2.ueState"),
+                rrcState: t("signalingV2.rrcState"),
+                idle: t("signalingV2.idle"),
+              });
               return center === undefined ? null : (
                 <span
                   key={lane}
-                  aria-hidden="true"
-                  className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center bg-card text-xs font-semibold text-foreground"
+                  className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center gap-1.5 bg-card text-xs font-semibold text-foreground"
                   style={{ top: 30 + center - 21 }}
                 >
-                  {lane === "uestate" ? t("signalingV2.ueState") : null}
+                  {title.title}
+                  {title.badge && <span className="sig-lane-idle">{title.badge}</span>}
                 </span>
               );
             })}
