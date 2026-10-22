@@ -108,8 +108,15 @@ export function moveColumn(config: ColumnConfig, key: ColKey, delta: -1 | 1): Co
   return { ...config, order };
 }
 
+const KNOWN_COLS = new Set<string>(COLUMNS.map((c) => c.key));
+
+/** Ordered visible columns; keys absent from the catalog are ignored. */
 export const visibleColumns = (config: ColumnConfig) =>
-  config.order.filter((k) => config.visible.includes(k));
+  config.order.filter((k) => KNOWN_COLS.has(k) && config.visible.includes(k));
+
+/** Configured order restricted to catalog columns. */
+export const knownOrder = (config: ColumnConfig) =>
+  config.order.filter((k) => KNOWN_COLS.has(k));
 
 // ---------- Info: backend procedures only ----------
 type Proc = {
