@@ -1534,231 +1534,400 @@ export function SignalingPage({
               />
               <Panel id="inspection" minSize={300}>
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
-                  <Panel id="messages" defaultSize="55%" minSize={narrow ? 220 : "30%"}>
-                    <section className="signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card">
-                      <header className="flex items-center justify-between gap-2 border-b p-3 text-sm">
-                        <span>{shown(listing.data?.total)} messages</span>
-                        <div className="flex items-center gap-2">
+                  <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
+                    <section
+                      className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
+                      aria-label={t("sigTable.title")}
+                    >
+                      <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-2 border-b px-3 py-2">
+                        <h2 className="sig-count mr-1" data-testid="signaling-total">
+                          {listing.data
+                            ? t("sigTable.count", { count: listing.data.total, n: fmtInt(listing.data.total) })
+                            : t("sigTable.countPending")}
+                        </h2>
+                        <label className="sig-search">
+                          <Search size={14} aria-hidden="true" />
+                          <input
+                            aria-label={t("sigTable.search")}
+                            placeholder={t("sigTable.searchPlaceholder")}
+                            title={t("sigTable.searchScope")}
+                            value={search}
+                            onChange={(e) => {
+                              setSearch(e.target.value);
+                              resetPage();
+                            }}
+                          />
+                        </label>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.layer")}
+                          data-testid="sig-filter-layer"
+                          value={protocols.length === layers.length ? "" : protocols.length === 1 ? protocols[0] : "__custom"}
+                          onChange={(e) => {
+                            setProtocols(e.target.value ? [e.target.value] : layers);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allLayers")}</option>
+                          {protocols.length > 1 && protocols.length < layers.length && (
+                            <option value="__custom" disabled>
+                              {t("sigTable.customLayers", { n: protocols.length })}
+                            </option>
+                          )}
+                          {layers.map((l) => (
+                            <option key={l} value={l}>
+                              {LAYER_BADGE[l]?.label ?? l}
+                            </option>
+                          ))}
+                        </select>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.direction")}
+                          value={direction}
+                          onChange={(e) => {
+                            setDirection(e.target.value);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allDirections")}</option>
+                          <option value="UL">UL</option>
+                          <option value="DL">DL</option>
+                          <option value="unknown">{t("sigTable.undocumented")}</option>
+                        </select>
+                        <select
+                          className="sig-select"
+                          aria-label={t("sigTable.technology")}
+                          value={technology}
+                          onChange={(e) => {
+                            setTechnology(e.target.value);
+                            resetPage();
+                          }}
+                        >
+                          <option value="">{t("sigTable.allTechnologies")}</option>
+                          <option value="LTE">LTE</option>
+                          <option value="NR">NR</option>
+                        </select>
+                        <div className="ml-auto flex items-center gap-2">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button
                                 type="button"
-                                className="kpi-button"
-                                aria-label="Colonnes du tableau"
+                                className="sig-tool"
+                                aria-label={t("sigTable.columns")}
                                 data-testid="signaling-columns-trigger"
                               >
-                                <Columns3 size={14} />
-                                Colonnes ({visibleCols.size}/{Object.keys(COL_LABELS).length})
+                                <Columns3 size={14} aria-hidden="true" />
+                                {t("sigTable.columns")} ({shownCols.length}/{COLUMNS.length})
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-56">
-                              <DropdownMenuLabel>Colonnes affichées</DropdownMenuLabel>
-                              {(Object.keys(COL_LABELS) as ColKey[]).map((c) => {
+                            <DropdownMenuContent align="end" className="w-72">
+                              <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
+                              {colConfig.order.map((c, i) => {
                                 const mandatory = MANDATORY_COLS.includes(c);
+                                const def = COLUMNS.find((d) => d.key === c)!;
                                 return (
-                                  <label
+                                  <div
                                     key={c}
-                                    className="flex cursor-pointer items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
-                                    title={mandatory ? "Colonne obligatoire" : ""}
+                                    className="flex items-center gap-2 px-2 py-1 text-xs hover:bg-accent"
                                   >
-                                    <input
-                                      type="checkbox"
-                                      checked={visibleCols.has(c)}
-                                      disabled={mandatory}
-                                      onChange={() => toggleCol(c)}
-                                      data-testid={`signaling-column-${c}`}
-                                    />
-                                    {COL_LABELS[c]}
-                                    {mandatory && (
-                                      <span className="ml-auto text-[10px] text-muted-foreground">
-                                        obl.
-                                      </span>
-                                    )}
-                                  </label>
+                                    <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2">
+                                      <input
+                                        type="checkbox"
+                                        checked={colConfig.visible.includes(c)}
+                                        disabled={mandatory}
+                                        onChange={() => setColConfig((old) => toggleColumn(old, c))}
+                                        data-testid={`signaling-column-${c}`}
+                                      />
+                                      <span className="truncate">{t(`sigTable.col.${c}`)}</span>
+                                      {!def.available && (
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                          {t("sigTable.notSupplied")}
+                                        </span>
+                                      )}
+                                      {mandatory && (
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                          {t("sigTable.required")}
+                                        </span>
+                                      )}
+                                    </label>
+                                    <button
+                                      type="button"
+                                      className="sig-move"
+                                      disabled={i === 0}
+                                      aria-label={t("sigTable.moveUp", { col: t(`sigTable.col.${c}`) })}
+                                      onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
+                                    >
+                                      <ChevronUp size={12} />
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="sig-move"
+                                      disabled={i === colConfig.order.length - 1}
+                                      aria-label={t("sigTable.moveDown", { col: t(`sigTable.col.${c}`) })}
+                                      onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
+                                    >
+                                      <ChevronDown size={12} />
+                                    </button>
+                                  </div>
                                 );
                               })}
                               <DropdownMenuSeparator />
                               <button
                                 type="button"
-                                onClick={resetCols}
+                                onClick={() => setColConfig(defaultColumns())}
                                 className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
                               >
-                                Réinitialiser
+                                {t("sigTable.resetColumns")}
                               </button>
                             </DropdownMenuContent>
                           </DropdownMenu>
                           <button
-                            className="kpi-button"
+                            type="button"
+                            className="sig-tool"
                             disabled={!listing.data}
                             onClick={() => void exportCsv()}
                           >
-                            Export CSV
+                            <Download size={14} aria-hidden="true" />
+                            {t("sigTable.export")}
+                          </button>
+                          <button
+                            type="button"
+                            className="sig-tool"
+                            data-testid="sig-clear-filters"
+                            disabled={!filtersActive}
+                            onClick={() => {
+                              setSearch("");
+                              setProtocols(layers);
+                              setDirection("");
+                              setTechnology("");
+                              setProcedure("");
+                              setRange(undefined);
+                              resetPage();
+                            }}
+                          >
+                            <FilterX size={14} aria-hidden="true" />
+                            {t("sigTable.clear")}
                           </button>
                         </div>
                       </header>
-                      <div className="min-h-0 flex-1 overflow-auto">
-                        <table className="w-full text-xs" aria-label="Messages de signalisation">
-                          <thead className="sticky top-0 bg-muted">
+                      <div className="min-h-0 flex-1 overflow-auto" data-testid="sig-table-scroll">
+                        <table className="sig-table" aria-label={t("sigTable.title")}>
+                          <thead>
                             <tr>
-                              {(Object.keys(COL_LABELS) as ColKey[])
-                                .filter((c) => visibleCols.has(c))
-                                .map((c) => (
-                                  <th key={c} className="p-2 text-left" data-col={c}>
-                                    {c === "direction" || c === "source" ? (
-                                      COL_LABELS[c]
-                                    ) : (
+                              {shownCols.map((c) => {
+                                const def = COLUMNS.find((d) => d.key === c)!;
+                                const label = t(`sigTable.col.${c}`);
+                                const active = def.sortKey && sort === def.sortKey;
+                                return (
+                                  <th
+                                    key={c}
+                                    data-col={c}
+                                    className={def.numeric ? "num" : undefined}
+                                    title={def.available ? undefined : t("sigTable.notSuppliedHint")}
+                                    aria-sort={active ? (order === "asc" ? "ascending" : "descending") : undefined}
+                                  >
+                                    {def.sortKey ? (
                                       <button
+                                        type="button"
                                         onClick={() => {
-                                          const sortKey =
-                                            c === "layer" ? "protocol" : (c as string);
-                                          setSort(sortKey);
+                                          setSort(def.sortKey!);
                                           setOrder((old) =>
-                                            sort === sortKey && old === "asc" ? "desc" : "asc",
+                                            sort === def.sortKey && old === "asc" ? "desc" : "asc",
                                           );
                                           resetPage();
                                         }}
                                       >
-                                        {COL_LABELS[c]}
+                                        {label}
+                                        {active ? (
+                                          order === "asc" ? (
+                                            <ArrowUp size={11} aria-hidden="true" />
+                                          ) : (
+                                            <ArrowDown size={11} aria-hidden="true" />
+                                          )
+                                        ) : (
+                                          <ArrowUpDown size={11} aria-hidden="true" className="opacity-40" />
+                                        )}
                                       </button>
+                                    ) : (
+                                      label
                                     )}
                                   </th>
-                                ))}
+                                );
+                              })}
                             </tr>
                           </thead>
                           <tbody>
-                            {listing.data?.rows.map((r) => (
-                              <tr
-                                key={r.seq}
-                                data-seq={r.seq}
-                                aria-selected={r.seq === seq}
-                                data-event-linked={linkedMessages.includes(r.seq)}
-                                data-procedure-highlight={r.procedure_ids.some((id) =>
-                                  hover.includes(id),
-                                )}
-                                onMouseEnter={() => setHover(r.procedure_ids)}
-                                onMouseLeave={() => setHover([])}
-                                onClick={() => chooseSeq(r.seq)}
-                                className={`cursor-pointer border-b hover:bg-accent ${r.seq === seq ? "bg-primary/15" : linkedMessages.includes(r.seq) || r.procedure_ids.some((id) => hover.includes(id)) ? "bg-amber-100 dark:bg-amber-900/30" : ""}`}
-                              >
-                                {(Object.keys(COL_LABELS) as ColKey[])
-                                  .filter((c) => visibleCols.has(c))
-                                  .map((c) => (
+                            {listing.data?.rows.map((r) => {
+                              const linked = linkedMessages.includes(r.seq);
+                              const procHover = r.procedure_ids.some((id) => hover.includes(id));
+                              return (
+                                <tr
+                                  key={r.seq}
+                                  data-seq={r.seq}
+                                  aria-selected={r.seq === seq}
+                                  data-event-linked={linked}
+                                  data-procedure-highlight={procHover}
+                                  data-related={r.seq !== seq && (linked || procHover)}
+                                  onMouseEnter={() => setHover(r.procedure_ids)}
+                                  onMouseLeave={() => setHover([])}
+                                  onClick={() => chooseSeq(r.seq)}
+                                >
+                                  {shownCols.map((c) => (
                                     <td
                                       key={c}
-                                      className={
-                                        c === "seq" || c === "t_rel_s" ? "p-2 font-mono" : "p-2"
-                                      }
                                       data-col={c}
+                                      className={COLUMNS.find((d) => d.key === c)!.numeric ? "num" : undefined}
                                     >
-                                      {c === "seq"
-                                        ? r.seq
-                                        : c === "t_rel_s"
-                                          ? timeShown(r.t_rel_s)
-                                          : c === "layer"
-                                            ? layerBadge(r.protocol)
-                                            : c === "direction"
-                                              ? directionBadge(r.direction)
-                                              : c === "message_name"
-                                                ? messageCell(r, listing.data?.procedures ?? [])
-                                                : c === "ecgi"
-                                                  ? shown(r.ecgi)
-                                                  : c === "pci"
-                                                    ? shown(r.pci)
-                                                    : c === "size_bytes"
-                                                      ? shown(r.size_bytes)
-                                                      : c === "technology"
-                                                        ? shown(r.technology)
-                                                        : c === "source"
-                                                          ? shown(r.source)
-                                                          : null}
+                                      {renderCell(c, r)}
                                     </td>
                                   ))}
-                              </tr>
-                            ))}
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
+                        {listing.data && listing.data.rows.length === 0 && (
+                          <p role="status" className="p-6 text-center text-xs text-muted-foreground">
+                            {t("sigTable.empty")}
+                          </p>
+                        )}
                       </div>
-                      <footer className="flex items-center justify-between p-3 text-xs">
-                        <button
-                          className="kpi-button"
-                          disabled={!listing.data || listing.data.page <= 1}
-                          onClick={() => {
-                            setPage((listing.data?.page ?? 1) - 1);
-                            setSeq(undefined);
-                          }}
-                        >
-                          Précédent
-                        </button>
-                        <span>
-                          Page {shown(listing.data?.page)} / {shown(listing.data?.pages)}
+                      <footer className="sig-footer flex shrink-0 flex-wrap items-center gap-3 border-t px-3 py-2">
+                        <nav className="flex items-center gap-1" aria-label={t("sigTable.pagination")}>
+                          <button
+                            type="button"
+                            className="sig-page"
+                            aria-label={t("sigTable.previous")}
+                            disabled={!listing.data || listing.data.page <= 1}
+                            onClick={() => setPage((listing.data?.page ?? 1) - 1)}
+                          >
+                            <ChevronLeft size={14} />
+                          </button>
+                          {listing.data &&
+                            pageItems(listing.data.page, Math.max(1, listing.data.pages)).map((p, i) =>
+                              p === "…" ? (
+                                <span key={`gap-${i}`} className="px-1 text-muted-foreground">
+                                  …
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  key={p}
+                                  className="sig-page"
+                                  aria-current={p === listing.data!.page ? "page" : undefined}
+                                  onClick={() => setPage(p)}
+                                >
+                                  {p}
+                                </button>
+                              ),
+                            )}
+                          <button
+                            type="button"
+                            className="sig-page"
+                            aria-label={t("sigTable.next")}
+                            disabled={!listing.data || listing.data.page >= listing.data.pages}
+                            onClick={() => setPage((listing.data?.page ?? 1) + 1)}
+                          >
+                            <ChevronRight size={14} />
+                          </button>
+                        </nav>
+                        <label className="flex items-center gap-2">
+                          {t("sigTable.rowsPerPage")}
+                          <select
+                            className="sig-select"
+                            aria-label={t("sigTable.rowsPerPage")}
+                            value={size}
+                            onChange={(e) => {
+                              setSize(Number(e.target.value));
+                              resetPage();
+                            }}
+                          >
+                            {[25, 50, 100, 250, 500].map((n) => (
+                              <option key={n} value={n}>
+                                {n}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <span className="text-muted-foreground">
+                          {listing.data && listing.data.total > 0
+                            ? t("sigTable.showing", {
+                                from: fmtInt((listing.data.page - 1) * listing.data.size + 1),
+                                to: fmtInt(
+                                  Math.min(listing.data.total, listing.data.page * listing.data.size),
+                                ),
+                                total: fmtInt(listing.data.total),
+                              })
+                            : ""}
                         </span>
-                        <button
-                          className="kpi-button"
-                          disabled={!listing.data || listing.data.page >= listing.data.pages}
-                          onClick={() => {
-                            setPage((listing.data?.page ?? 1) + 1);
-                            setSeq(undefined);
-                          }}
-                        >
-                          Suivant
-                        </button>
+                        {listing.isFetching && (
+                          <span role="status" className="ml-auto text-muted-foreground">
+                            {t("sigTable.loading")}
+                          </span>
+                        )}
                       </footer>
-                      {listing.isFetching && (
-                        <p role="status" className="p-2 text-xs">
-                          Chargement des messages…
-                        </p>
-                      )}
                     </section>
                   </Panel>
                   <Separator
                     className="signaling-separator"
                     aria-label="Taille de la liste et du décodeur"
                   />
-                  <Panel id="details" minSize={narrow ? 300 : "28%"}>
+                  <Panel id="details" defaultSize="30%" minSize={narrow ? 300 : 360}>
                     <section
-                      className="signaling-pane flex flex-col rounded-lg border bg-card p-3 text-xs"
+                      className="sig-inspector signaling-pane flex flex-col rounded-lg border bg-card text-xs"
                       aria-label="Inspecteur de message"
+                      data-testid="signaling-inspector"
                     >
-                      <header className="mb-2 flex shrink-0 items-baseline justify-between gap-2">
-                        <h2 className="break-words text-sm font-semibold">
-                          {selected?.message_name ?? "Sélectionnez un message"}
-                          {seq !== undefined && (
-                            <span className="ml-2 font-mono text-xs text-muted-foreground">
-                              #{seq}
-                            </span>
+                      <header className="shrink-0 border-b px-3 pb-2 pt-3">
+                        <h2 className="sig-inspector-title break-words">
+                          {seq !== undefined ? (
+                            <>
+                              <span className="font-mono">#{seq}</span>
+                              {" — "}
+                              {selected?.message_name ?? "…"}
+                            </>
+                          ) : (
+                            t("sigTable.selectMessage")
                           )}
                         </h2>
                         {seq !== undefined && (
-                          <span className="shrink-0 text-xs text-muted-foreground">
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5" data-testid="inspector-meta">
+                            <span className="sig-chip">
+                              <Clock size={12} aria-hidden="true" />
+                              {timeShown(selected?.t_rel_s)} s
+                            </span>
+                            {layerBadge(selected?.protocol)}
                             {directionBadge(selected?.direction ?? null)}
-                          </span>
+                            {selected?.technology && <span className="sig-chip">{selected.technology}</span>}
+                            {(() => {
+                              const s = rrcStateAt(selected?.t_rel_s, provenRrc);
+                              return s ? (
+                                <span className={`sig-state sig-state-${s.state.toLowerCase()}`}>
+                                  RRC : {t(`sigTable.rrc.${s.state}`)}
+                                </span>
+                              ) : null;
+                            })()}
+                            {selected?.pci != null && <span className="sig-chip">PCI {selected.pci}</span>}
+                          </div>
                         )}
                       </header>
-                      {seq !== undefined && (
+                      {seq === undefined ? (
+                        <p role="status" className="p-4 text-muted-foreground">
+                          {t("sigTable.selectHint")}
+                        </p>
+                      ) : (
                         <>
                           <div
                             role="tablist"
-                            className="flex shrink-0 flex-wrap gap-1 border-b pb-2"
+                            className="sig-tabs flex shrink-0 gap-1 border-b px-3"
                             data-testid="inspector-tabs"
                           >
-                            {(
-                              [
-                                "Payload",
-                                "Hexadécimal",
-                                "Paramètres",
-                                "Call Flow",
-                                "Détails",
-                              ] as InspectorTab[]
-                            ).map((name) => (
+                            {inspectorTabs.map((name) => (
                               <button
                                 role="tab"
+                                type="button"
                                 aria-selected={inspectorTab === name}
                                 key={name}
-                                className={`rounded px-2 py-1 ${
-                                  inspectorTab === name
-                                    ? "bg-primary text-primary-foreground"
-                                    : "bg-muted"
-                                }`}
                                 onClick={() => setInspectorTab(name)}
                                 data-testid={`inspector-tab-${name.toLowerCase().replace(/[^a-z]/g, "")}`}
                               >
@@ -1767,28 +1936,33 @@ export function SignalingPage({
                             ))}
                           </div>
                           {details.isError ? (
-                            <p role="alert" className="mt-2">
+                            <p role="alert" className="m-3">
                               Erreur de récupération du décodage.{" "}
-                              <button onClick={() => void details.refetch()}>
+                              <button className="underline" onClick={() => void details.refetch()}>
                                 Réessayer le décodage
                               </button>
                             </p>
                           ) : details.isPending ? (
-                            <p role="status" className="mt-2">
+                            <p role="status" className="m-3">
                               Chargement du décodage…
                             </p>
                           ) : (
                             details.data && (
                               <div
-                                className="mt-2 min-h-0 flex-1 break-words overflow-auto"
+                                className="flex min-h-0 flex-1 flex-col break-words px-3 pt-2"
                                 data-testid="inspector-content"
                               >
                                 {inspectorTab === "Payload" ? (
                                   details.data.parameters.length ? (
-                                    <DecoderTree
-                                      key={`${capture}:${seq}`}
-                                      parameters={details.data.parameters}
-                                    />
+                                    <>
+                                      <div className="min-h-0 flex-1">
+                                        <DecoderTree
+                                          key={`${capture}:${seq}`}
+                                          parameters={details.data.parameters}
+                                        />
+                                      </div>
+                                      <DecodedValues parameters={details.data.parameters} />
+                                    </>
                                   ) : (
                                     <div>
                                       <p>Payload ASN.1 non disponible pour ce message.</p>
@@ -1799,77 +1973,79 @@ export function SignalingPage({
                                     </div>
                                   )
                                 ) : inspectorTab === "Hexadécimal" ? (
-                                  details.data.hex ? (
+                                  <div className="min-h-0 flex-1 overflow-auto">
                                     <pre
                                       className="whitespace-pre-wrap break-all font-mono text-xs"
                                       data-testid="inspector-hex"
                                     >
                                       {details.data.hex}
                                     </pre>
-                                  ) : (
-                                    <p role="status" className="rounded bg-muted p-3">
-                                      {details.data.hex_reason}
-                                    </p>
-                                  )
+                                  </div>
                                 ) : inspectorTab === "Paramètres" ? (
-                                  details.data.parameters.length ? (
-                                    <table
-                                      className="w-full text-xs"
-                                      aria-label="Paramètres décodés"
-                                      data-testid="inspector-params"
-                                    >
-                                      <thead className="sticky top-0 bg-muted">
-                                        <tr>
-                                          <th className="p-1 text-left">Paramètre</th>
-                                          <th className="p-1 text-left">Valeur</th>
-                                          <th className="p-1 text-left">Chemin ASN.1</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody>
-                                        {details.data.parameters.map((p, i) => (
-                                          <tr key={`${p.path}:${i}`} className="border-b align-top">
-                                            <td className="p-1">
-                                              <a
-                                                href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
-                                                className="text-primary underline"
-                                              >
-                                                {p.param_key ?? p.path.split("/").slice(-1)[0]}
-                                              </a>
-                                            </td>
-                                            <td className="p-1 font-mono">{shown(p.value)}</td>
-                                            <td className="p-1 font-mono text-[10px] text-muted-foreground">
-                                              {p.path}
-                                            </td>
+                                  <div className="min-h-0 flex-1 overflow-auto">
+                                    {details.data.parameters.length ? (
+                                      <table
+                                        className="w-full text-xs"
+                                        aria-label="Paramètres décodés"
+                                        data-testid="inspector-params"
+                                      >
+                                        <thead className="sticky top-0 bg-muted">
+                                          <tr>
+                                            <th className="p-1 text-left">Paramètre</th>
+                                            <th className="p-1 text-left">Valeur</th>
+                                            <th className="p-1 text-left">Chemin ASN.1</th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  ) : (
-                                    <p role="status" className="rounded bg-muted p-3">
-                                      {details.data.hex_reason ??
-                                        "Aucun paramètre décodé fourni par la source."}
-                                    </p>
-                                  )
+                                        </thead>
+                                        <tbody>
+                                          {details.data.parameters.map((p, i) => (
+                                            <tr key={`${p.path}:${i}`} className="border-b align-top">
+                                              <td className="p-1">
+                                                <a
+                                                  href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
+                                                  className="text-primary underline"
+                                                >
+                                                  {p.param_key ?? p.path.split("/").slice(-1)[0]}
+                                                </a>
+                                              </td>
+                                              <td className="p-1 font-mono">{shown(p.value)}</td>
+                                              <td className="p-1 font-mono text-[10px] text-muted-foreground">
+                                                {p.path}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    ) : (
+                                      <p role="status" className="rounded bg-muted p-3">
+                                        {details.data.hex_reason ??
+                                          "Aucun paramètre décodé fourni par la source."}
+                                      </p>
+                                    )}
+                                  </div>
                                 ) : inspectorTab === "Call Flow" ? (
-                                  <CallFlowPanel
-                                    projectId={projectId}
-                                    captureId={capture}
-                                    selected={selected}
-                                    procedures={listing.data?.procedures ?? []}
-                                    onSelect={chooseSeq}
-                                    seq={seq}
-                                  />
+                                  <div className="min-h-0 flex-1 overflow-auto">
+                                    <CallFlowPanel
+                                      projectId={projectId}
+                                      captureId={capture}
+                                      selected={selected}
+                                      procedures={listing.data?.procedures ?? []}
+                                      onSelect={chooseSeq}
+                                      seq={seq}
+                                    />
+                                  </div>
                                 ) : (
-                                  <DetailsPanel
-                                    selected={selected}
-                                    seq={seq}
-                                    context={context}
-                                    position={position}
-                                    pointsData={points.data}
-                                    detailsResultId={details.data?.result_id}
-                                    treeSource={details.data?.tree_source}
-                                    treeRouteGap={details.data?.tree_route_gap}
-                                  />
+                                  <div className="min-h-0 flex-1 overflow-auto">
+                                    <DetailsPanel
+                                      selected={selected}
+                                      seq={seq}
+                                      context={context}
+                                      position={position}
+                                      pointsData={points.data}
+                                      detailsResultId={details.data?.result_id}
+                                      treeSource={details.data?.tree_source}
+                                      treeRouteGap={details.data?.tree_route_gap}
+                                    />
+                                  </div>
                                 )}
                               </div>
                             )
