@@ -11,3 +11,142 @@
 @media(max-width: 900px) { .signaling-workspace { height: 1800px; } }
 .signaling-separator[aria-orientation=vertical] { width: 9px; }
 .signaling-separator[aria-orientation=horizontal] { height: 9px; }
+
+.signaling-cursor-overlay { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 3; }
+.signaling-cursor-line { stroke: var(--signaling-cursor); stroke-width: 2px; }
+.signaling-cursor-preview { stroke: var(--signaling-cursor); stroke-width: 1px; opacity: .5; }
+.signaling-cursor-handle { position: absolute; top: 4px; height: 22px; z-index: 5; background: var(--signaling-cursor); color: var(--signaling-cursor-foreground); cursor: ew-resize; font-size: 10px; touch-action: none; }
+.signaling-cursor-handle:hover { background: var(--signaling-cursor); }
+.signaling-cursor-tooltip { position: absolute; top: 44px; z-index: 4; max-height: 290px; overflow: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 15%, transparent); font-size: 11px; }
+.signaling-rf-marker { fill: var(--card); stroke: currentColor; stroke-width: 2px; }
+.signaling-rf-readout { position: absolute; left: 112px; right: 24px; bottom: 2px; height: 18px; display: flex; gap: 24px; align-items: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; pointer-events: none; background: transparent; }
+.signaling-rf-readout small { font-weight: 400; color: var(--muted-foreground); }
+.signaling-metric-0 { color: var(--primary); }
+.signaling-metric-1 { color: var(--sev-good); }
+.signaling-metric-2 { color: var(--op-orange); }
+.signaling-navigator-window { border-color: var(--signaling-navigator); background: color-mix(in srgb, var(--signaling-navigator) 20%, transparent); }
+.signaling-navigator-edge, .signaling-navigator-edge:hover { background: var(--signaling-navigator); border-radius: 2px; }
+
+/* Clicked item or measurement: the name only, kept small and out of the way. */
+.signaling-name-tag { position: absolute; z-index: 6; transform: translate(-50%, -100%); max-width: 240px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 2px 10px color-mix(in srgb, var(--foreground) 18%, transparent); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
+.signaling-name-tag.below { transform: translate(-50%, 0); }
+
+/* V10 premium messages table + inspector */
+.sig-messages, .sig-inspector { color: var(--sig-table-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.sig-count { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sig-search { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 200px; flex: 0 1 260px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); color: var(--sig-table-muted); }
+.sig-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 12px; color: var(--sig-table-text); }
+.sig-search:focus-within { border-color: var(--sig-accent); }
+.sig-select { height: 32px; padding: 0 8px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; color: var(--sig-table-text); }
+.sig-tool { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.sig-tool:hover:not(:disabled) { background: var(--sig-table-header); }
+.sig-tool:disabled { opacity: .5; cursor: not-allowed; }
+.sig-move { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; color: var(--sig-table-muted); }
+.sig-move:hover:not(:disabled) { background: var(--muted); color: var(--sig-table-text); }
+.sig-move:disabled { opacity: .3; }
+.sig-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sig-table thead th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 10px; background: var(--sig-table-header); border-bottom: 1px solid var(--sig-table-border); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+.sig-table thead th button { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.sig-table th.num, .sig-table td.num { text-align: right; }
+.sig-table th.num button { flex-direction: row-reverse; }
+.sig-table tbody td { height: 36px; padding: 4px 10px; border-bottom: 1px solid var(--sig-table-border); white-space: nowrap; vertical-align: middle; }
+.sig-table tbody td[data-col=message_name] { white-space: normal; min-width: 180px; }
+.sig-table tbody tr { cursor: pointer; }
+.sig-table tbody tr:hover td { background: color-mix(in srgb, var(--sig-table-header) 70%, transparent); }
+.sig-table tbody tr[data-related=true] td { background: var(--sig-row-related); }
+.sig-table tbody tr[aria-selected=true] td { background: var(--sig-row-selected); }
+.sig-table tbody tr[aria-selected=true] td:first-child { box-shadow: inset 3px 0 0 var(--sig-accent); }
+.sig-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 5px; background: var(--sig-table-header); border: 1px solid var(--sig-table-border); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.sig-state { display: inline-block; min-width: 72px; padding: 1px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; text-align: center; }
+.sig-state-connected { background: color-mix(in srgb, var(--signaling-state-connected) 16%, transparent); color: color-mix(in srgb, var(--signaling-state-connected) 75%, var(--sig-table-text)); }
+.sig-state-idle { background: var(--sig-table-header); color: var(--sig-table-muted); }
+.sig-info { display: inline-flex; align-items: center; gap: 5px; max-width: 190px; padding: 1px 8px 1px 4px; border-radius: 999px; font-size: 11px; font-weight: 500; --c: var(--sig-table-muted); background: color-mix(in srgb, var(--c) 12%, transparent); color: color-mix(in srgb, var(--c) 80%, var(--sig-table-text)); }
+.sig-info svg { flex: 0 0 auto; padding: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--c); color: var(--signaling-icon-foreground); }
+.sig-info-info { --c: var(--signaling-icon-info); }
+.sig-info-success { --c: var(--signaling-icon-success); }
+.sig-info-warning { --c: var(--signaling-icon-warning); }
+.sig-info-error { --c: var(--signaling-icon-error); }
+.sig-info-event { --c: var(--signaling-icon-event); }
+.sig-radio-prev { color: var(--sig-table-muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+.sig-footer { font-size: 12px; }
+.sig-page { min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.sig-page[aria-current=page] { background: var(--sig-accent); border-color: var(--sig-accent); color: var(--primary-foreground); }
+.sig-page:disabled { opacity: .4; }
+.sig-inspector-title { font-size: 15px; font-weight: 600; }
+.sig-tabs button { padding: 8px 10px; font-size: 12px; font-weight: 500; color: var(--sig-table-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.sig-tabs button[aria-selected=true] { color: var(--sig-accent); border-bottom-color: var(--sig-accent); }
+.sig-decoded { max-height: 38%; overflow: auto; padding-bottom: 8px; }
+.sig-decoded table { border: 1px solid var(--sig-table-border); border-radius: 6px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.sig-decoded th, .sig-decoded td { padding: 5px 8px; border-bottom: 1px solid var(--sig-table-border); text-align: left; vertical-align: top; }
+.sig-decoded th { width: 45%; font-weight: 500; background: var(--sig-table-header); }
+.sig-decoded td { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--sig-asn-value); word-break: break-all; }
+.decoder-field { color: var(--sig-asn-field); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.decoder-value { color: var(--sig-asn-value); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* Capture message filtering: sidebar remains fixed, Radix portals the popup. */
+.sig-filters { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--foreground); overflow:hidden; }
+.sig-filters-header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 12px 10px; border-bottom:1px solid var(--border); }
+.sig-filters-header h2 { flex:1; font-size:16px; letter-spacing:0; }
+.sig-filters-header p { flex-basis:100%; color:var(--muted-foreground); font-size:11px; }
+.sig-filters-header button { padding:0 4px; height:28px; }
+.sig-filter-icon { display:grid; place-items:center; color:var(--primary); }
+.sig-filters-sections { min-height:0; overflow:auto; flex:1; padding:0 12px 10px; }
+.sig-filter-section { padding:8px 0 11px; border-bottom:1px solid var(--border); }
+.sig-filter-section:last-child { border:0; }
+.sig-filter-heading { width:100%; height:30px; justify-content:flex-start; padding:0; font-size:12px; font-weight:600; }
+.sig-filter-heading>svg:first-child { color:var(--primary); }
+.sig-filter-heading>svg:last-child { margin-left:auto; width:12px; color:var(--muted-foreground); }
+.sig-filter-control { margin-top:6px; }
+.sig-filter-control select { width:100%; height:34px; border:1px solid var(--input); border-radius:6px; background:var(--background); padding:0 9px; font-size:12px; }
+.sig-filter-control .sig-search { width:100%; min-width:0; height:34px; }
+.sig-filter-subtitle { font-size:11px; color:var(--muted-foreground); margin-bottom:7px; }
+.sig-filter-layers { display:grid; gap:8px; }
+.sig-filter-layers label { display:flex; align-items:center; gap:7px; font-size:11px; }
+.sig-filter-layers .sig-occurrence { margin-left:auto; }
+.sig-filter-layers .sig-layer-badge { min-width:50px; padding:2px 4px; font-size:9px; }
+.sig-filter-directions, .sig-filter-sizes { display:flex; gap:4px; }
+.sig-filter-directions button { flex:1; padding:0 8px; height:30px; }
+.sig-filter-sizes button { flex:1; min-width:0; height:29px; padding:0 4px; font-size:11px; }
+.sig-message-trigger { width:100%; height:35px; justify-content:flex-start; padding:0 9px; }
+.sig-message-trigger span { flex:1; overflow:hidden; text-overflow:ellipsis; text-align:left; }
+.sig-message-trigger svg:last-child { width:12px; }
+.sig-message-popover { width:380px; max-width:calc(100vw - 24px); padding:0; display:flex; flex-direction:column; max-height:min(620px, var(--radix-popover-content-available-height)); border-radius:8px; background:var(--popover); box-shadow:var(--sig-filter-shadow); overflow:hidden; }
+.sig-message-header { display:flex; gap:10px; align-items:center; padding:14px 14px 10px; }
+.sig-message-header h3 { font-size:15px; font-weight:600; letter-spacing:0; }
+.sig-message-header p { font-size:11px; color:var(--muted-foreground); margin-top:2px; }
+.sig-message-header button { width:24px; height:24px; flex-shrink:0; }
+.sig-message-actions { display:flex; gap:6px; padding:0 14px 10px; }
+.sig-message-actions .sig-search { min-width:0; flex:1; height:32px; }
+.sig-message-actions button { padding:0 9px; }
+.sig-message-scope { padding:0 14px 8px; font-size:10px; color:var(--muted-foreground); }
+.sig-message-options { flex:1; min-height:70px; max-height:380px; overflow:auto; overscroll-behavior:contain; padding:0 8px 8px; }
+.sig-message-option { display:grid; grid-template-columns:16px 59px minmax(0,1fr) auto; gap:7px; align-items:center; min-height:36px; padding:7px 5px; cursor:pointer; border-radius:4px; }
+.sig-message-option:hover { background:var(--muted); }
+.sig-message-name { font-size:11px; overflow-wrap:anywhere; }
+.sig-occurrence { font-size:10px; font-variant-numeric:tabular-nums; color:var(--muted-foreground); }
+.sig-layer-badge { display:inline-block; text-align:center; border-radius:4px; padding:2px 5px; font-size:10px; font-weight:500; background:var(--muted); color:var(--muted-foreground); white-space:nowrap; --badge:var(--muted-foreground); }
+.sig-layer-lte { --badge:var(--sig-layer-lte); }
+.sig-layer-nr { --badge:var(--sig-layer-nr); }
+.sig-layer-nas { --badge:var(--sig-layer-nas); }
+.sig-layer-nemo { --badge:var(--sig-layer-nemo); }
+.sig-layer-mac { --badge:var(--sig-layer-mac); }
+.sig-layer-badge { color:color-mix(in oklab,var(--badge) 75%,var(--foreground)); background:color-mix(in oklab,var(--badge) 13%,var(--card)); }
+.sig-message-footer { display:flex; gap:7px; align-items:center; border-top:1px solid var(--border); padding:11px 14px; background:var(--background); }
+.sig-message-footer>span { flex:1; font-size:10px; color:var(--muted-foreground); }
+.sig-selection-note { padding:6px 12px; font-size:11px; color:var(--muted-foreground); background:var(--muted); border-top:1px solid var(--border); }
+@media(max-width:900px) {
+  [data-radix-popper-content-wrapper]:has(.sig-message-popover) { position:fixed !important; transform:none !important; left:12px !important; top:70px !important; width:calc(100vw - 24px); }
+  .sig-message-popover { width:calc(100vw - 24px); max-height:calc(100dvh - 94px); }
+}
+.sig-message-popover { width:460px; max-height:min(75vh, var(--radix-popover-content-available-height)); }
+.sig-message-toolbar { display:flex; flex-wrap:wrap; gap:6px; padding:0 14px 8px; }
+.sig-message-toolbar button { height:26px; font-size:11px; }
+.sig-tree-row { display:grid; grid-template-columns:18px 16px minmax(0,1fr) auto; gap:6px; align-items:center; min-height:28px; padding:3px 5px; border-radius:4px; }
+.sig-tree-row:hover { background:var(--muted); }
+.sig-tree-tech { font-weight:600; font-size:12px; }
+.sig-tree-tech .sig-layer-badge { justify-self:start; }
+.sig-tree-channel { padding-left:21px; font-size:11px; font-weight:500; }
+.sig-tree-message { grid-template-columns:16px minmax(0,1fr) auto; padding-left:61px; cursor:pointer; }
+.sig-tree-chevron { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; color:var(--muted-foreground); }
+.sig-tree-chevron:disabled { opacity:.4; }
+.sig-tree-channel-name { overflow-wrap:anywhere; }
