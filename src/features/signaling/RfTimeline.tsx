@@ -674,19 +674,26 @@ export function RfTimeline({
                         style: { fill: muted },
                       },
                   ...[-8, 8]
-                        .filter(
-                          (offset) =>
-                            !states.some(
-                              (state) =>
-                                state.track ===
-                                  (lane === lanes.indexOf("uestate")
-                                    ? "UE_STATE"
-                                    : "RRC_STATE") &&
-                                (state.technology === "LTE") === offset < 0 &&
-                                state.startS <= visibleWindow[0] &&
-                                state.endS > visibleWindow[0],
-                            ),
-                        )
+                        .filter((offset) => {
+                          const trackName =
+                            lane === lanes.indexOf("uestate") ? "UE_STATE" : "RRC_STATE";
+                          const rowStates = states.filter(
+                            (state) =>
+                              state.track === trackName &&
+                              (state.technology === "LTE") === offset < 0,
+                          );
+                          // Honest shading: label the row Unknown only while no proven
+                          // band covers the window start or sits inside the view.
+                          const coversStart = rowStates.some(
+                            (state) =>
+                              state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
+                          );
+                          const inView = rowStates.some(
+                            (state) =>
+                              state.startS < visibleWindow[1] && state.endS > visibleWindow[0],
+                          );
+                          return !coversStart && !inView;
+                        })
                         .map((offset) => ({
                           type: "text",
                           style: {
