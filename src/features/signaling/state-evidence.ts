@@ -31,9 +31,10 @@ export function provenState(event: RfEvent, captureId: string): ProvenState | nu
   const technology = a.technology;
   const seqs = a.source_seqs;
   const context = lteConnectedContext(event, captureId);
+  if (a.rule_id === LTE_CONNECTED_RULE && !context) return null;
   const session = context ?? a["session_id"];
   const state = context
-    ? "LTE"
+    ? track === "RRC_STATE" ? "CONNECTED" : "LTE"
     : typeof a["state"] === "string"
       ? a["state"].toUpperCase()
       : "";
@@ -102,6 +103,8 @@ export const LTE_CONNECTED_RULE = "nemo_context_connected";
  */
 function lteConnectedContext(event: RfEvent, captureId: string): string | null {
   const a = event.attrs;
+  const track = stateTrack(event);
+  const suppliedState = a["state"];
   // bc4-back ≥ 0.74.8 exposes context_id/session_id at event root; attrs kept as fallback.
   const context = event.context_id ?? a["context_id"];
   const seqs = a.source_seqs;
@@ -109,18 +112,27 @@ function lteConnectedContext(event: RfEvent, captureId: string): string | null {
     a.rule_id !== LTE_CONNECTED_RULE ||
     a.evidence_status !== "PROVEN" ||
     a.technology !== "LTE" ||
+    (track !== "UE_STATE" && track !== "RRC_STATE") ||
+    (track === "RRC_STATE" && suppliedState !== "CONNECTED") ||
+    (track === "UE_STATE" && suppliedState !== undefined && suppliedState !== "LTE") ||
     a["capture_id"] !== captureId ||
     (typeof context !== "string" && typeof context !== "number") ||
     !String(context).trim() ||
     !seqs ||
     seqs.length !== 3 ||
     event.seq_end === null ||
-    // RRA starts the band (seq), RRD closes it (seq_end), RRC sits strictly between.
-    seqs[0] !== event.seq ||
+    // RF view uses the RRC pivot as seq; legacy uses the opening RRA.
+    // Both retain the complete ordered RRA -> RRC -> RRD source chain.
+    (seqs[0] !== event.seq && seqs[1] !== event.seq) ||
     seqs[2] !== event.seq_end ||
-    !(seqs[0]! < seqs[1]! && seqs[1]! < seqs[2]!)
+    !seqs.every((seq) => Number.isInteger(seq) && seq >= 0)
   )
     return null;
+  const [requestSeq, connectedSeq, releaseSeq] = seqs;
+  if (
+    requestSeq === undefined || connectedSeq === undefined || releaseSeq === undefined ||
+    !(requestSeq < connectedSeq && connectedSeq < releaseSeq)
+  ) return null;
   const composite = `context:${captureId}:${String(context)}`;
   // A supplied session_id must agree with the composite (capture_id, context_id).
   if (event.session_id != null && event.session_id !== composite) return null;

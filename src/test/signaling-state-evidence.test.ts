@@ -203,3 +203,55 @@ describe("LTE Connected via (capture_id, context_id)", () => {
     expect(provenState({ ...base, t_rel_end_s: 1.4 }, cap)).toBeNull();
   });
 });
+
+describe("VM 0.74.10 RF state contract", () => {
+  const cap = "047e3f34e0af";
+  const ue: RfEvent = {
+    id: "connected:234", lane: "connexion", type: "LTE Connected", kind: "band",
+    seq: 243, seq_end: 1608, t_rel_s: 1.4, t_rel_end_s: 24.182,
+    duration_ms: 22782, outcome: null, cause: "rrd.rrc_rel_cause=1", label: "LTE Connected",
+    attrs: {
+      track: "UE_STATE", technology: "LTE", status: "UNKNOWN",
+      source: "nmf_event_pair + nmf_event_deep", source_seqs: [234, 243, 1608],
+      evidence_status: "PROVEN", rule_id: "nemo_context_connected", rule_version: "1.0.0",
+      time_evidence_status: "PROVEN", protocol: "Procedures", source_message: "RRC",
+      capture_id: cap, cause: "rrd.rrc_rel_cause=1", state: "LTE",
+    },
+    pivot_seq: 243, linked_seqs: [234, 243, 1608], link_rule: "nemo_context_connected",
+    seq_gap: 0, context_id: 54, session_id: "context:047e3f34e0af:54",
+  };
+  const rrc: RfEvent = {
+    ...ue, id: "rrc-state:234", type: "RRC Connected", label: "RRC Connected",
+    attrs: { ...ue.attrs, track: "RRC_STATE", state: "CONNECTED" },
+  };
+  it("accepts UE LTE with RRC pivot 243 and proven bounds 1.4–24.182", () => {
+    expect(provenState(ue, cap)).toMatchObject({
+      track: "UE_STATE", state: "LTE", startS: 1.4, endS: 24.182,
+      sessionId: "context:047e3f34e0af:54", evidenceSeqs: [234, 243, 1608],
+      componentCarriers: null,
+    });
+  });
+  it("accepts the independent RRC CONNECTED band with identical proven bounds", () => {
+    expect(provenStates([ue, rrc], cap).map(({ track, state, startS, endS }) =>
+      ({ track, state, startS, endS }))).toEqual([
+      { track: "UE_STATE", state: "LTE", startS: 1.4, endS: 24.182 },
+      { track: "RRC_STATE", state: "CONNECTED", startS: 1.4, endS: 24.182 },
+    ]);
+  });
+  it("rejects a pivot outside the complete source sequence", () => {
+    expect(provenState({ ...ue, seq: 999 }, cap)).toBeNull();
+  });
+  it("keeps PARTIAL RRC periods unknown", () => {
+    expect(provenState({ ...rrc, attrs: { ...rrc.attrs, evidence_status: "PARTIAL" } }, cap)).toBeNull();
+  });
+  it("does not reinterpret Idle as Connected using the LTE context exception", () => {
+    expect(provenState({ ...rrc, attrs: { ...rrc.attrs, state: "IDLE" } }, cap)).toBeNull();
+  });
+  it("rejects reversed RRA RRC source ordering", () => {
+    expect(provenState({ ...ue, attrs: { ...ue.attrs, source_seqs: [243, 234, 1608] } }, cap)).toBeNull();
+  });
+  it("cannot bypass a mismatched composite session via attrs", () => {
+    expect(provenState({ ...rrc, session_id: "context:other:54",
+      attrs: { ...rrc.attrs, session_id: "context:047e3f34e0af:54" } }, cap)).toBeNull();
+  });
+});
