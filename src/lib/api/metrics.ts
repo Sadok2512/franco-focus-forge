@@ -30,7 +30,12 @@ export const getMetricAggregate = (
 export const getMetricCaptures = (p: string, f: KpiQueryFilters, signal?: AbortSignal) =>
   kpiFetch(
     `/projects/${encodeURIComponent(p)}/metrics/captures${taskQuery(f)}`,
-    z.array(z.object({ capture_id: z.string(), label: z.string() })),
+    z.array(z.object({
+      capture_id: z.string(),
+      label: z.string(),
+      // 1.92.0 — kind back 0.76.1 : 'ue'|'scanner'|null.
+      kind: z.enum(["ue", "scanner"]).nullable().optional(),
+    })),
     signal,
   );
 export const getMetricSeries = (

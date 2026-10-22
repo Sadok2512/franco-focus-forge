@@ -65,7 +65,9 @@ export function SignalingFilters(props: {
   procedure: string;
   capture?: string | undefined;
   size: number;
-  captures: { capture_id: string; label: string }[];
+  // 1.92.0 — kind back 0.76.1 : 'ue'|'scanner'|null. Badge "Scanner" affiché
+  // dans l'option si kind='scanner'.
+  captures: { capture_id: string; label: string; kind?: "ue" | "scanner" | null | undefined }[];
   procedures: { id: string; type: string; seq_start: number; seq_end: number | null }[];
   counts?: Record<string, number> | undefined;
   total?: number | undefined;
@@ -201,7 +203,7 @@ export function SignalingFilters(props: {
           >
             {props.captures.map((c) => (
               <option key={c.capture_id} value={c.capture_id}>
-                {c.label}
+                {c.kind === "scanner" ? "[Scanner] " : ""}{c.label}
               </option>
             ))}
           </select>

@@ -441,6 +441,10 @@ export function MetricsWorkspace({
   // 1.88.0 — date absolue vient uniquement du back (`data.capture_date`).
   // Plus de regex sur le nom de capture.
   const captureDate = data?.capture_date ?? null;
+  // 1.92.0 — kind back 0.76.1 pour badge "Scanner" + désactivation UE metrics
+  // sur captures scanner. Jamais caché (visibilité utilisateur requise).
+  const captureKind = captureQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
+  const isScannerCapture = captureKind === "scanner";
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
@@ -599,6 +603,19 @@ export function MetricsWorkspace({
             <p className="kpi-chart-state">No metric selected. Pick one from the catalogue.</p>
           )}
         </section>
+      )}
+      {isScannerCapture && (
+        <div
+          role="alert"
+          className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+          data-testid="metrics-scanner-banner"
+        >
+          <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche)
+          not available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
+          <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
+          sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
+          RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
+        </div>
       )}
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>

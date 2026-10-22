@@ -1,3 +1,24 @@
+## 1.92.0 (minor) — BC4-FRONT 2026-10-22 — Capture.kind : badge "Scanner" + UE metrics désactivées sur capture scanner (Agent BC3)
+
+Suite directe de bc4-back 0.76.1 (expose `kind` dans endpoints captures). Visibilité utilisateur = badge + désactivation + tooltip, **jamais caché**.
+
+### Schémas
+- `src/lib/api/signaling.ts:49-55` : `captures[].kind: z.enum(["ue","scanner"]).nullable().optional()`.
+- `src/lib/api/metrics.ts:33-37` : `getMetricCaptures` → même ajout.
+- `src/features/signaling/SignalingFilters.tsx:68` : prop `captures[].kind?: 'ue'|'scanner'|null|undefined` ajoutée.
+
+### Rendu
+- **Signaling capture select** (`SignalingFilters.tsx:206`) : `<option>{c.kind === "scanner" ? "[Scanner] " : ""}{c.label}</option>` → prefix `[Scanner]` dans le dropdown.
+- **Metrics panel header** (`MetricsWorkspace.tsx:614-626`) : bandeau `role="alert"` jaune au top du pane quand `captureKind === "scanner"`, explique le pourquoi + référence le lot "Scanner view" ouvert.
+- **MetricsCatalogSidebar** (`MetricsCatalogSidebar.tsx:144-153, 213`) : nouvelle prop `captureKind?: 'ue'|'scanner'|null`. Si `captureKind === "scanner"` ET `node.cell != null` (métrique cell_scoped UE) → `scannerBlocked=true` → leaf `disabled`, classe `opacity-45`, tooltip `"no UE cell metrics in scanner capture"`. **Jamais cachée** (visibilité requise). `canToggle` force à `false` → clic sans effet, aria-pressed=false.
+- **KpiWorkspace** (`KpiWorkspace.tsx:38, 271-280, 559`) : query `getMetricCaptures` → dérive `captureKind` pour la capture active, passe à `MetricsCatalogSidebar`.
+
+### Tests
+- 274 passed | 2 skipped | 0 failed. `tsc --noEmit` : 0 erreur.
+
+### Écart ouvert (reporté du back 0.76.1)
+Lot futur "Scanner view" : exposer CELLSCAN RSRP/RSRQ par PCI scanné + OFDMSCAN power per PRB dans une UI dédiée. Hors scope Time/GPS et Phase 2 Charts.
+
 ## 1.91.1 (patch) — BC4-FRONT 2026-10-22 — i18n tooltip reason (en défaut, fr traduction) (Agent BC3)
 
 - `src/features/kpi/MetricsWorkspace.tsx:14-26` : `REASON_LABELS` statique en français retiré. Nouveau hook `useReasonLabel()` qui résout `metrics.reason.<code>` via `useTranslation()`. Fallback = code brut si clé absente (ne cache jamais un reason inconnu). Appelé une fois en haut du composant.

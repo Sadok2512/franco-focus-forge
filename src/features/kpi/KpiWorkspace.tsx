@@ -35,6 +35,7 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
+import { getMetricCaptures } from "@/lib/api/client";
 import type { MetricView } from "./MetricGraphCard";
 
 import { KpiFilters } from "./KpiFilters";
@@ -268,6 +269,14 @@ function Workspace({
     setSelectedRows(new Set());
   };
   const [captureId, setCaptureId] = useCaptureContext(projectId);
+  // 1.92.0 — captureKind depuis /metrics/captures (back 0.76.1) pour badge
+  // "Scanner" + désactivation UE cell_scoped metrics dans le catalogue.
+  const metricsCapturesQuery = useQuery({
+    queryKey: ["metric-captures", projectId, {}],
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+  });
+  const captureKind =
+    metricsCapturesQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
   // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
   // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
@@ -554,6 +563,7 @@ function Workspace({
                 onToggle={toggleMetric}
                 onVisualization={visualizeMetric}
                 searchRef={catalogSearch}
+                captureKind={captureKind}
               />
             )}
           </div>
