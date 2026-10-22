@@ -30,3 +30,55 @@
 /* Clicked item or measurement: the name only, kept small and out of the way. */
 .signaling-name-tag { position: absolute; z-index: 6; transform: translate(-50%, -100%); max-width: 240px; padding: 2px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 2px 10px color-mix(in srgb, var(--foreground) 18%, transparent); font-size: 11px; font-weight: 600; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none; }
 .signaling-name-tag.below { transform: translate(-50%, 0); }
+
+/* V10 premium messages table + inspector */
+.sig-messages, .sig-inspector { color: var(--sig-table-text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+.sig-count { font-size: 15px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.sig-search { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 200px; flex: 0 1 260px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); color: var(--sig-table-muted); }
+.sig-search input { flex: 1; min-width: 0; background: transparent; border: 0; outline: 0; font-size: 12px; color: var(--sig-table-text); }
+.sig-search:focus-within { border-color: var(--sig-accent); }
+.sig-select { height: 32px; padding: 0 8px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; color: var(--sig-table-text); }
+.sig-tool { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); font-size: 12px; font-weight: 500; white-space: nowrap; }
+.sig-tool:hover:not(:disabled) { background: var(--sig-table-header); }
+.sig-tool:disabled { opacity: .5; cursor: not-allowed; }
+.sig-move { display: grid; place-items: center; width: 20px; height: 20px; border-radius: 4px; color: var(--sig-table-muted); }
+.sig-move:hover:not(:disabled) { background: var(--muted); color: var(--sig-table-text); }
+.sig-move:disabled { opacity: .3; }
+.sig-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.sig-table thead th { position: sticky; top: 0; z-index: 1; height: 34px; padding: 0 10px; background: var(--sig-table-header); border-bottom: 1px solid var(--sig-table-border); font-size: 12px; font-weight: 600; text-align: left; white-space: nowrap; }
+.sig-table thead th button { display: inline-flex; align-items: center; gap: 4px; font-weight: 600; }
+.sig-table th.num, .sig-table td.num { text-align: right; }
+.sig-table th.num button { flex-direction: row-reverse; }
+.sig-table tbody td { height: 36px; padding: 4px 10px; border-bottom: 1px solid var(--sig-table-border); white-space: nowrap; vertical-align: middle; }
+.sig-table tbody td[data-col=message_name] { white-space: normal; min-width: 180px; }
+.sig-table tbody tr { cursor: pointer; }
+.sig-table tbody tr:hover td { background: color-mix(in srgb, var(--sig-table-header) 70%, transparent); }
+.sig-table tbody tr[data-related=true] td { background: var(--sig-row-related); }
+.sig-table tbody tr[aria-selected=true] td { background: var(--sig-row-selected); }
+.sig-table tbody tr[aria-selected=true] td:first-child { box-shadow: inset 3px 0 0 var(--sig-accent); }
+.sig-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 5px; background: var(--sig-table-header); border: 1px solid var(--sig-table-border); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.sig-state { display: inline-block; min-width: 72px; padding: 1px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; text-align: center; }
+.sig-state-connected { background: color-mix(in srgb, var(--signaling-state-connected) 16%, transparent); color: color-mix(in srgb, var(--signaling-state-connected) 75%, var(--sig-table-text)); }
+.sig-state-idle { background: var(--sig-table-header); color: var(--sig-table-muted); }
+.sig-info { display: inline-flex; align-items: center; gap: 5px; max-width: 190px; padding: 1px 8px 1px 4px; border-radius: 999px; font-size: 11px; font-weight: 500; --c: var(--sig-table-muted); background: color-mix(in srgb, var(--c) 12%, transparent); color: color-mix(in srgb, var(--c) 80%, var(--sig-table-text)); }
+.sig-info svg { flex: 0 0 auto; padding: 2px; width: 16px; height: 16px; border-radius: 999px; background: var(--c); color: var(--signaling-icon-foreground); }
+.sig-info-info { --c: var(--signaling-icon-info); }
+.sig-info-success { --c: var(--signaling-icon-success); }
+.sig-info-warning { --c: var(--signaling-icon-warning); }
+.sig-info-error { --c: var(--signaling-icon-error); }
+.sig-info-event { --c: var(--signaling-icon-event); }
+.sig-radio-prev { color: var(--sig-table-muted); text-decoration: underline dotted; text-underline-offset: 3px; }
+.sig-footer { font-size: 12px; }
+.sig-page { min-width: 30px; height: 30px; padding: 0 8px; border: 1px solid var(--sig-table-border); border-radius: 6px; background: var(--background); display: inline-grid; place-items: center; font-variant-numeric: tabular-nums; }
+.sig-page[aria-current=page] { background: var(--sig-accent); border-color: var(--sig-accent); color: var(--primary-foreground); }
+.sig-page:disabled { opacity: .4; }
+.sig-inspector-title { font-size: 15px; font-weight: 600; }
+.sig-tabs button { padding: 8px 10px; font-size: 12px; font-weight: 500; color: var(--sig-table-muted); border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.sig-tabs button[aria-selected=true] { color: var(--sig-accent); border-bottom-color: var(--sig-accent); }
+.sig-decoded { max-height: 38%; overflow: auto; padding-bottom: 8px; }
+.sig-decoded table { border: 1px solid var(--sig-table-border); border-radius: 6px; border-collapse: separate; border-spacing: 0; overflow: hidden; }
+.sig-decoded th, .sig-decoded td { padding: 5px 8px; border-bottom: 1px solid var(--sig-table-border); text-align: left; vertical-align: top; }
+.sig-decoded th { width: 45%; font-weight: 500; background: var(--sig-table-header); }
+.sig-decoded td { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--sig-asn-value); word-break: break-all; }
+.decoder-field { color: var(--sig-asn-field); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.decoder-value { color: var(--sig-asn-value); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }

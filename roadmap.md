@@ -32,3 +32,5 @@
 - [ ] U7 KPI Analytics
 - [x] U8 Assistant IA (6 scenarios + empty/error/cancelled) — OPEN: route /projects/:id/assistant (kept ?project= like other modules), period + Plaque>DR>Site filters
 - [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
+- [x] Premium messages table & always-open payload inspector (V10)
+- [ ] Band, Cell name, NSA/SA mode in messages table — blocked: not supplied by the VM rows API
