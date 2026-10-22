@@ -34,6 +34,7 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
+import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import type { MetricView } from "./MetricGraphCard";
@@ -681,6 +682,7 @@ function Workspace({
               data-unified="true"
               hidden={currentTab.overlay && panels.length >= 2}
             >
+              <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
               <PanelGridContext.Provider value={{ cols: gridCols }}>
                 {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
                   <PanelShell
@@ -774,6 +776,7 @@ function Workspace({
                   />
                 )}
               </PanelGridContext.Provider>
+              </TableSettingsWorkspaceContext.Provider>
             </div>
             {!panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">

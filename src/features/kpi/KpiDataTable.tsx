@@ -97,6 +97,7 @@ export function KpiDataTable({
   onSelect: (ids: Set<string>) => void;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
+  const tableProps = usePanelTableSettings();
   const [search, setSearch] = useState(""),
     [hidden, setHidden] = useState<Set<string>>(new Set());
   const [sort, setSort] = useState<{ key: keyof AnalyticRow; descending: boolean }>({
@@ -208,7 +209,7 @@ export function KpiDataTable({
           </button>
         </div>
       </header>
-      <div className="kpi-table-scroll">
+      <div className="kpi-table-scroll kpi-ts" {...tableProps}>
         <table>
           <thead>
             <tr>

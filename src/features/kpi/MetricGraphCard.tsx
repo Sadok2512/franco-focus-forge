@@ -344,6 +344,7 @@ function MetricAggregateTable({
   appliedFilters: KpiQueryFilters;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
+  const tableProps = usePanelTableSettings();
   const query = useQuery({
     queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
     queryFn: ({ signal }) =>
@@ -379,7 +380,7 @@ function MetricAggregateTable({
           maximumFractionDigits: unit === "%" ? 2 : unit === "dB" || unit === "dBm" ? 1 : 2,
         });
   return (
-    <div className="kpi-data-table" data-testid="metric-aggregate-table">
+    <div className="kpi-data-table kpi-ts" data-testid="metric-aggregate-table" {...tableProps}>
       <div className="kpi-table-scroll" style={{ maxHeight: 235 }}>
         <table>
           <thead>
