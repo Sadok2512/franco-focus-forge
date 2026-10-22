@@ -153,7 +153,7 @@ export function MetricVsTimeChart({
   return (
     <div
       className="w-full h-full"
-      style={{ height }}
+      style={{ height: height === 430 ? height : "var(--kpi-panel-chart-height, 235px)" }}
       data-testid="metric-vs-time-chart"
       data-result-id={data.evidence.result_id ?? ""}
       data-n-total={data.n_total}

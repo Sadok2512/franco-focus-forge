@@ -162,12 +162,14 @@
   width: 2px;
 }
 .kpi-analysis-scroll {
+  position: relative;
   height: 100%;
   overflow: auto;
   padding: 0 2px 8px 2px;
   scrollbar-gutter: stable;
   container-type: inline-size;
 }
+.kpi-catalog-toggle { position: sticky; top: 0; z-index: 5; width: 28px; height: 28px; background: var(--card); }
 .kpi-filterbar,
 .kpi-graph-card,
 .kpi-data-table {
@@ -1287,8 +1289,8 @@
 .kpi-graph-grid[data-columns="1"] { --kpi-panel-chart-height: 340px; }
 .kpi-graph-grid[data-columns="2"] { --kpi-panel-chart-height: 300px; }
 .kpi-graph-grid[data-columns="3"] { --kpi-panel-chart-height: 260px; }
-.kpi-panel-shell [data-testid="metric-card-echarts"],
-.kpi-panel-shell [data-testid="metric-card-chart"] { min-width: 0; width: 100%; }
+.kpi-panel-shell .kpi-plot,
+.kpi-panel-shell [data-testid="metric-time-plot"] { min-width: 0; width: 100%; }
 .kpi-panel-shell.is-drop { outline: 2px dashed var(--primary, #2563eb); outline-offset: 2px; }
 .kpi-panel-shell.is-collapsed { max-height: 46px; overflow: hidden; }
 .kpi-panel-tools { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); z-index: 5; display: flex; gap: 2px; padding: 1px 4px; border: 1px solid #dbe3ee; border-radius: 999px; background: #fff; opacity: 0; transition: opacity .15s; box-shadow: 0 1px 3px rgba(15,23,42,.08); }

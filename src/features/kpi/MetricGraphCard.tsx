@@ -315,7 +315,7 @@ function MetricAggregatePlot({
   return (
     <div
       className="kpi-plot"
-      style={{ height: 235 }}
+      style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
       ref={host}
       role="img"
       data-testid="metric-aggregate-plot"
@@ -502,7 +502,7 @@ function MetricTimePlot({
   return (
     <div
       className="w-full"
-      style={{ height: 235 }}
+      style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
       data-testid="metric-time-plot"
       data-capture-id={captureId}
       data-n-points={points.length}

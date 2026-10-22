@@ -22,7 +22,9 @@ import {
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { BarChart3, Download, Plus, RefreshCw, X } from "lucide-react";
+import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { PanelImperativeHandle } from "react-resizable-panels";
 import { getProjectKpi } from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
@@ -139,6 +141,8 @@ function Workspace({
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
+  const cataloguePanel = useRef<PanelImperativeHandle>(null);
+  const [catalogueCollapsed, setCatalogueCollapsed] = useState(false);
   // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
@@ -453,6 +457,10 @@ function Workspace({
           defaultSize="280px"
           minSize="230px"
           maxSize="460px"
+          panelRef={cataloguePanel}
+          collapsible
+          collapsedSize="0px"
+          onResize={() => setCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)}
           className="kpi-sidebar-panel"
         >
           <div className="kpi-sidebar-tabs">
@@ -542,6 +550,19 @@ function Workspace({
           <div
             className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
           >
+            <Button
+              variant="ghost"
+              size="icon"
+              className="kpi-catalog-toggle"
+              title={translate(catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue")}
+              aria-label={translate(catalogueCollapsed ? "panel.expand_catalogue" : "panel.collapse_catalogue")}
+              onClick={() => {
+                if (cataloguePanel.current?.isCollapsed()) cataloguePanel.current.expand();
+                else cataloguePanel.current?.collapse();
+              }}
+            >
+              {catalogueCollapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+            </Button>
             <div className="kpi-analysis-toolbar" hidden={tableOnlyWorkspace}>
               <nav className="kpi-graph-tabs" aria-label={translate("kpi.f2e069befac4")}>
                 {codes.map((code, index) => (
@@ -762,6 +783,7 @@ function Workspace({
                       onClear={() => {
                         setSelectedMetrics([]);
                       }}
+                      onRemove={(code) => setSelectedMetrics(selectedMetrics.filter((item) => item !== code))}
                     />
                   )}
               </TableSettingsWorkspaceContext.Provider>

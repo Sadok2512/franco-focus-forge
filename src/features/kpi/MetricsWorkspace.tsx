@@ -199,6 +199,7 @@ export function MetricsWorkspace({
   catalog,
   filters,
   onClear,
+  onRemove,
   view: externalView,
   onViewChange,
   onTablePaneChange,
@@ -213,6 +214,7 @@ export function MetricsWorkspace({
   catalog: MetricInfo[];
   filters: KpiQueryFilters;
   onClear: () => void;
+  onRemove?: ((code: string) => void) | undefined;
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
   onTablePaneChange?: ((table: boolean) => void) | undefined;
@@ -489,7 +491,18 @@ export function MetricsWorkspace({
   };
   // 1.88.0 — vue par carte dans le volet Charts (défaut graph, l'utilisateur
   // peut basculer une carte sur histogram/table/map sans toucher les autres).
-  const [cardViews, setCardViews] = useState<Record<string, MetricView>>({});
+  const [cardViews, setCardViews] = useState<Record<string, MetricView>>(() => {
+    try {
+      return JSON.parse(sessionStorage.getItem(`bc4.metrics.views.${workspaceId}`) ?? "{}");
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(`bc4.metrics.views.${workspaceId}`, JSON.stringify(cardViews));
+    } catch { /* Memory-only if storage is unavailable. */ }
+  }, [cardViews, workspaceId]);
   const panelRef = useRef<HTMLElement>(null);
   useEffect(() => {
     onTablePaneChange?.(pane === "table");
@@ -609,16 +622,8 @@ export function MetricsWorkspace({
                     eventCode={info?.event_code ?? s.code}
                     appliedFilters={filters}
                     onRemove={() => {
-                      // Trigger removal via existing onClear if last, else notify parent
-                      const next = selections.filter((x) => x !== s.full);
-                      if (!next.length) onClear();
-                      else {
-                        // Rely on URL back-sync in KpiWorkspace via toggleMetric
-                        // Here no parent handler for individual remove: dispatch a custom event
-                        window.dispatchEvent(
-                          new CustomEvent("bc3-metrics-remove", { detail: { code: s.full } }),
-                        );
-                      }
+                      if (onRemove) onRemove(s.full);
+                      else if (selections.length === 1) onClear();
                     }}
                     view={cardViews[s.full] ?? "graph"}
                     onViewChange={(v) =>
