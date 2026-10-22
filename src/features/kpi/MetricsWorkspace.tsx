@@ -493,7 +493,10 @@ export function MetricsWorkspace({
     return m;
   }, [catalog]);
   return (
-    <article className="kpi-graph-card col-span-full kpi-metrics-table-premium" data-testid="metrics-v3-workspace">
+    <article
+      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      data-testid="metrics-v3-workspace"
+    >
       {pane === "charts" && captureId && (
         <section
           className="kpi-metrics-charts-grid"
@@ -564,8 +567,7 @@ export function MetricsWorkspace({
                 className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
                 data-testid="metrics-empty-banner"
               >
-                <strong>Aucune donnée pour cette sélection.</strong>
-                {" "}
+                <strong>Aucune donnée pour cette sélection.</strong>{" "}
                 {data.connected_reason
                   ? `Raison : ${data.connected_reason}.`
                   : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
@@ -589,7 +591,9 @@ export function MetricsWorkspace({
                           Time UTC
                           <small className="block">
                             {captureDate ?? "—"}
-                            {data.utc_offset_min != null ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h` : " · offset —"}
+                            {data.utc_offset_min != null
+                              ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h`
+                              : " · offset —"}
                           </small>
                         </th>
                         <th className="col-geo numeric">
@@ -609,55 +613,61 @@ export function MetricsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows
-                        .slice((page - 1) * pageSize, page * pageSize)
-                        .map((r) => {
+                      {data.rows.slice((page - 1) * pageSize, page * pageSize).map((r) => {
                         const rowReason = reasonLabel(r.reason);
                         const utcMissing = r.time_utc == null;
-                        const utcTooltip = utcMissing && rowReason ? rowReason : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
-                        const gpsTooltip = r.lat == null ? (rowReason ?? "—") : (r.gps_source === "previous_fix" && r.gps_age_s != null ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s` : "exact fix");
+                        const utcTooltip =
+                          utcMissing && rowReason
+                            ? rowReason
+                            : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
+                        const gpsTooltip =
+                          r.lat == null
+                            ? (rowReason ?? "—")
+                            : r.gps_source === "previous_fix" && r.gps_age_s != null
+                              ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
+                              : "exact fix";
                         return (
-                        <tr key={r.second} data-second={r.second}>
-                          <td
-                            className="col-time font-mono text-[11px]"
-                            title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
-                          >
-                            {r.time_local ?? r.time_label}
-                          </td>
-                          <td
-                            className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
-                            title={utcTooltip}
-                          >
-                            {r.time_utc ?? "—"}
-                          </td>
-                          <td
-                            className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
-                            title={gpsTooltip}
-                          >
-                            {r.lat == null ? "—" : fmtLatLng(r.lat)}
-                          </td>
-                          <td
-                            className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
-                            title={gpsTooltip}
-                          >
-                            {r.lon == null ? "—" : fmtLatLng(r.lon)}
-                          </td>
-                          {data.columns.map((c) => (
+                          <tr key={r.second} data-second={r.second}>
                             <td
-                              className="numeric"
-                              key={c.code}
-                              title={`n = ${r.counts[c.code] ?? "—"}`}
+                              className="col-time font-mono text-[11px]"
+                              title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
                             >
-                              {c.kind === "event"
-                                ? r.values[c.code] === 1
-                                  ? "1"
-                                  : ""
-                                : r.values[c.code] == null
-                                  ? "—"
-                                  : fmt(r.values[c.code])}
+                              {r.time_local ?? r.time_label}
                             </td>
-                          ))}
-                        </tr>
+                            <td
+                              className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
+                              title={utcTooltip}
+                            >
+                              {r.time_utc ?? "—"}
+                            </td>
+                            <td
+                              className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
+                              title={gpsTooltip}
+                            >
+                              {r.lat == null ? "—" : fmtLatLng(r.lat)}
+                            </td>
+                            <td
+                              className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
+                              title={gpsTooltip}
+                            >
+                              {r.lon == null ? "—" : fmtLatLng(r.lon)}
+                            </td>
+                            {data.columns.map((c) => (
+                              <td
+                                className="numeric"
+                                key={c.code}
+                                title={`n = ${r.counts[c.code] ?? "—"}`}
+                              >
+                                {c.kind === "event"
+                                  ? r.values[c.code] === 1
+                                    ? "1"
+                                    : ""
+                                  : r.values[c.code] == null
+                                    ? "—"
+                                    : fmt(r.values[c.code])}
+                              </td>
+                            ))}
+                          </tr>
                         );
                       })}
                     </tbody>
