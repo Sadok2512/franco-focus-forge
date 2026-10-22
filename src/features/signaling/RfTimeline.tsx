@@ -7,6 +7,7 @@ import type { RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
+import { isAllowedNetworkEvent } from "./network-events";
 import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
@@ -124,7 +125,7 @@ export function RfTimeline({
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal, windowSeq),
     staleTime: 60000,
   });
-  const displayed = useMemo(
+  const eligibleEvents = useMemo(
     () =>
       events.data?.events.filter(
         (e) =>
@@ -136,6 +137,12 @@ export function RfTimeline({
           e.t_rel_s !== null,
       ) ?? [],
     [events.data, layers, allowedProtocols],
+  );
+  const displayed = useMemo(
+    () => eligibleEvents.filter((event) =>
+      laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event),
+    ),
+    [eligibleEvents],
   );
   const series = (detailed.data ?? radio.data)?.series;
   const lanes = useMemo(
@@ -150,7 +157,7 @@ export function RfTimeline({
   );
   const duration =
     radio.data?.duration_s ??
-    Math.max(0, ...displayed.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
+    Math.max(0, ...eligibleEvents.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
   const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
   const visibleWindow = timeWindow ?? localWindow.window;
   const changeWindow = onWindow ?? localWindow.setWindow;

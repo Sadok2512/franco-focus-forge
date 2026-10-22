@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- Network Events uses a frontend presentation allowlist in signaling/network-events.ts; other tracks, capture duration, source events and message queries remain independent of that allowlist.
 - UI reads data only through `src/lib/api/client.ts` (typed mock adapter, Zod schemas in `schemas.ts`); fixtures stay isolated in `fixtures.ts` so a real backend can replace them without touching components.
 - Shared filters live in URL search params on the `_app` layout (`src/lib/filters.ts`) so every module and future assistant use identical effective filters and links are shareable.
 - `_app` routes are client-only (`ssr: false`) because mock auth lives in localStorage.
