@@ -1,3 +1,9 @@
+## 1.92.0 (patch) — BC4-FRONT 2026-10-22 — RF timeline toolbar removed (Lovable)
+
+- **`RfTimeline.tsx`** : le groupe de contrôles au-dessus de la timeline (bouton curseur, sélecteur « Window », zoom +/−, réinitialiser, plein écran) est supprimé ; l'en-tête ne garde que la légende de sévérité et les replis Events/Measurements.
+- Nettoyage des imports devenus inutilisés (`Button`, icônes lucide `ZoomIn/ZoomOut/RotateCcw/Maximize/Crosshair`, `WindowSelector`, `clampWindow`) et de la fonction locale `zoomBy`.
+- Le Time Navigator attaché sous les pistes conserve fenêtre, zoom, réinitialisation et plein écran.
+
 ## 1.91.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.88→1.90 (workspace cleanup) ↔ BC3 1.87.1→1.88.1 (Time/GPS + tests) (Agent BC3)
 
 Merge sélectif entre `feat/bc3-metrics` (BC3 Time/GPS + tests, 2 commits : 43188d2 + 863846f) et `github/main` (Lovable workspace cleanup Charts cards + ⚙ Apply button + top bar removal, 5+ commits).
