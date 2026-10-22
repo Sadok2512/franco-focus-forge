@@ -166,32 +166,30 @@ export function WorkspaceSettingsDialog({
         <DialogHeader>
           <DialogTitle>{t("wss.title")}</DialogTitle>
         </DialogHeader>
+        {/* One layout for every panel: graphs and tables share the same grid. */}
+        <section className="space-y-2">
+          <h4 className="text-xs font-semibold">{t("wss.layout")}</h4>
+          <LayoutThumbs
+            value={draftLayout === "auto" ? 0 : Number(draftLayout)}
+            onChange={(n) => setDraftLayout(String(n) as WorkspaceLayout)}
+            label={(n) => t("wss.perRow", { n })}
+          />
+          <Button
+            variant={draftLayout === "auto" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setDraftLayout("auto")}
+          >
+            {t("wss.opt_auto")}
+          </Button>
+        </section>
         <Tabs defaultValue="tables">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="graphs">{t("wss.graphs")}</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="tables">{t("wss.tables")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="graphs" className="space-y-2">
-            <h4 className="text-xs font-semibold">{t("wss.graphLayout")}</h4>
-            <LayoutThumbs
-              value={draftLayout === "auto" ? 0 : Number(draftLayout)}
-              onChange={(n) => setDraftLayout(String(n) as WorkspaceLayout)}
-              label={(n) => t("wss.perRow", { n })}
-            />
-            <Button variant="outline" size="sm" onClick={() => setDraftLayout("auto")}>
-              {t("wss.opt_auto")}
-            </Button>
-          </TabsContent>
-
           <TabsContent value="tables" className="space-y-4">
             <section>
-              <h4 className="mb-1 text-xs font-semibold">{t("wss.layout")}</h4>
-              <LayoutThumbs
-                value={draft.perRow}
-                onChange={patch("perRow")}
-                label={(n) => t("wss.tablesPerRow", { n })}
-              />
+
               <Row label={t("wss.autoFit")}>
                 <Switch checked={draft.autoFitWidth} onCheckedChange={patch("autoFitWidth")} />
               </Row>
