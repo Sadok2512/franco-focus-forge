@@ -1,3 +1,17 @@
+## 1.95.0 (patch) — BC4-FRONT 2026-10-22 — Metrics panel toolbar removed (Lovable)
+
+- **`MetricsWorkspace.tsx`** : la barre « View ▾ / Per row ▾ / Export CSV / Fullscreen » au-dessus du panneau Metrics est supprimée ; les cartes et le grand tableau démarrent directement sous la barre de filtres.
+- Le mode du panneau (cartes ou grand tableau) est piloté par le menu ⋮ du catalogue : `paneRequest` (⋮ → Tableau) ouvre le grand tableau, `cardViewRequest.view !== "table"` (⋮ → Graphique) ramène les cartes ; les deux étaient ignorés (`_paneRequest`, `_cardViewRequest`) et sont maintenant reliés à `setPane`.
+- `perRow` conserve sa valeur mémorisée sans plus avoir de réglage ; `exportCsv` et les imports lucide devenus inutilisés (`Columns3`, `Download`, `Filter`, `Maximize2`) retirés.
+- **`workspace.css`** : règles mortes supprimées (`.kpi-metrics-table-toolbar`, son `.kpi-button`, `.kpi-metrics-table-counter`, le réglage toolbar du sélecteur `data-pane`).
+- Nouveau test `src/test/metrics-pane-request.test.tsx` (2 cas) ; capture navigateur : 0 barre, cartes présentes, ⋮ → Tableau ouvre bien le tableau (Time local / Time UTC / Latitude / Longitude).
+
+## 1.94.0 (patch) — BC4-FRONT 2026-10-22 — Signaling view controls moved to the sidebar (Lovable)
+
+- **`SignalingPage.tsx`** : la bande de contrôles au-dessus de la zone de travail (changement de vue, « Timeline · ON/OFF », « Carte · ON/OFF ») est supprimée ; il ne reste qu'un `h1` accessible visuellement caché.
+- **`SignalingFilters.tsx`** : ces trois contrôles sont repris sous le titre « Filtres » de la barre latérale, et en icônes (œil, pouls, épingle) dans le rail lorsque la barre est repliée.
+- **`signaling.css`** : hauteur de `.signaling-workspace` recalée à `calc(100dvh - 81px)` et styles `.sig-filters-view` ajoutés.
+
 ## 1.93.0 (patch) — BC4-FRONT 2026-10-22 — RRC State Idle badge removed (Lovable)
 
 - **`state-presentation.ts`** : `rrcStateLaneLabel(title)` ne renvoie plus que le titre ; `stateLaneTitle` retourne `badge: null` pour les deux pistes d'état.
