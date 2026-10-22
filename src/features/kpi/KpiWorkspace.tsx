@@ -7,11 +7,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
-import {
-  defaultConfig,
-  type ChartConfig,
-  type VisualizationType,
-} from "./visualization-model";
+import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
