@@ -1705,6 +1705,7 @@ export function SignalingPage({
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
 
+
                       {mapVisible && points.data ? (
                         <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
                       ) : (
