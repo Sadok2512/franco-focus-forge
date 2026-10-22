@@ -35,6 +35,7 @@ export function TimeCursor({
   onTime,
   onMessage,
   stateTracksV2 = false,
+  captureId,
 }: {
   chart: ECharts | undefined;
   host: React.RefObject<HTMLDivElement | null>;
@@ -47,6 +48,7 @@ export function TimeCursor({
   onTime: (time: number | null) => void;
   onMessage: (event: RfEvent, seq: number) => void;
   stateTracksV2?: boolean;
+  captureId?: string;
 }) {
   const { t, i18n } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
@@ -143,7 +145,7 @@ export function TimeCursor({
   const selectedX = selectedTime === null ? null : xAt(selectedTime);
   const event = hover === null ? events.find((e) => e.id === eventId) : undefined;
   const intervals = time === null ? [] : activeIntervals(events, time);
-  const states = stateTracksV2 && time !== null ? provenStates(events, "cursor")
+  const states = stateTracksV2 && time !== null && captureId ? provenStates(events, captureId)
     .filter((state) => state.startS <= time && time < state.endS) : [];
   const readings =
     time === null

@@ -1,3 +1,10 @@
+## 1.80.0 — Isolated Signaling V2 state tracks and navigator
+
+- Added /signaling-v2 with a shared 30-second initial window, 10/30/60/120/Fit controls and a draggable full-capture overview. Stable /signaling retains its full-capture default and no navigator.
+- Added independent compact UE/RRC lanes, technology sublines for LTE/NR coexistence and explicit Unknown backgrounds. Existing messages, inspector, map and query filters are reused.
+- Supplied state intervals require proven start/end sequences, session identity, technology and versioned evidence rules. Carrier-count labels require separately proven CONFIGURED/ACTIVATED/USED component carriers; measured frequencies never become CA proof.
+- No state reconstruction, VM contract modification or production deployment. Real capture/session/CA verification remains blocked without authorized VM data.
+
 ## 1.79.1 — Signaling timeline pager removed
 
 - The "Navigation temporelle" bar (previous/next, 10/30/60/120-second presets, zoom/reset/full-capture buttons and the draggable strip) is no longer rendered under the Signaling timeline, on request.

@@ -713,6 +713,7 @@ export function RfTimeline({
             onTime={onTime}
             onMessage={onSelect}
             stateTracksV2={stateTracksV2}
+            captureId={captureId}
           />
         </div>
       </div>
