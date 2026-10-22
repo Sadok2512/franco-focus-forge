@@ -1184,3 +1184,27 @@
   width: 100px;
   min-width: 100px;
 }
+
+/* 1.82.0 — Metrics Native Charts V2 Phase 1
+   Grille de MetricGraphCard, 1|2|3 par ligne, responsive. */
+.kpi-metrics-charts-grid {
+  display: grid;
+  gap: 10px;
+  padding: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpi-metrics-charts-grid[data-per-row="1"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+.kpi-metrics-charts-grid[data-per-row="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.kpi-metrics-charts-grid[data-per-row="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+@media (max-width: 1024px) {
+  .kpi-metrics-charts-grid[data-per-row="2"],
+  .kpi-metrics-charts-grid[data-per-row="3"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

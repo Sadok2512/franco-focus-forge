@@ -9,6 +9,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { MetricGraphCard } from "./MetricGraphCard";
 
 // 1.81.0 — Spec BC4_PREMIUM_ADAPTIVE_METRICS_TABLE_V1 Phase 1
 // Reconstitue le timestamp UTC absolu depuis le label de capture
@@ -436,17 +437,105 @@ export function MetricsWorkspace({
   const captureLabel = captureQuery.data?.find((c) => c.capture_id === captureId)?.label;
   const captureDate = extractCaptureDate(captureLabel);
   const originTs = data?.origin_ts ?? null;
+
+  // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1
+  // Nouveau mode "charts" = grille de MetricGraphCard, un par métrique.
+  // Table = mode table premium (Phase 1 1.81.0).
+  // Overlay = chronogramme multi-axes existant (view=graph interne).
+  type MetricPane = "charts" | "table" | "overlay";
+  const [pane, setPaneRaw] = useState<MetricPane>(() => {
+    try {
+      const stored = localStorage.getItem("bc3.metrics.pane");
+      if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
+    } catch {
+      /* ignore */
+    }
+    return "charts";
+  });
+  const setPane = (p: MetricPane) => {
+    setPaneRaw(p);
+    try {
+      localStorage.setItem("bc3.metrics.pane", p);
+    } catch {
+      /* ignore */
+    }
+    // Projection sur l'ancien `view` interne : table→table, overlay→graph.
+    // charts n'utilise pas /metrics/table en SSR, les cards gèrent leur propre série.
+    if (p === "table") setView("table");
+    else if (p === "overlay") setView("graph");
+  };
+  const [perRow, setPerRowRaw] = useState<1 | 2 | 3>(() => {
+    try {
+      const n = Number(localStorage.getItem("bc3.metrics.perRow"));
+      if (n === 1 || n === 2 || n === 3) return n;
+    } catch {
+      /* ignore */
+    }
+    return 2;
+  });
+  const setPerRow = (n: 1 | 2 | 3) => {
+    setPerRowRaw(n);
+    try {
+      localStorage.setItem("bc3.metrics.perRow", String(n));
+    } catch {
+      /* ignore */
+    }
+  };
+  // Décoder chaque selection "code@cell" en { code, cell }
+  const parsedSelections = useMemo(
+    () =>
+      selections.map((s) => {
+        const [code, cell = "all"] = s.split("@");
+        return { full: s, code: code ?? "", cell };
+      }),
+    [selections],
+  );
+  const metricInfoByCode = useMemo(() => {
+    const m = new Map<string, MetricInfo>();
+    for (const info of catalog) m.set(info.code, info);
+    return m;
+  }, [catalog]);
   return (
     <article className="kpi-graph-card col-span-full kpi-metrics-table-premium" data-testid="metrics-v3-workspace">
-      {/* Toolbar compacte : Columns | Filters | Export CSV | Fullscreen + compteur */}
+      {/* Toolbar compacte : View (Charts|Table|Overlay) | compteur |
+          Per row 1|2|3 (Charts only) | Columns/Filters (future) | Export | Fullscreen */}
       <header className="kpi-metrics-table-toolbar">
+        <div className="kpi-view-modes" role="tablist" aria-label="Metrics view mode">
+          {(["charts", "table", "overlay"] as MetricPane[]).map((p) => (
+            <button
+              key={p}
+              role="tab"
+              aria-pressed={pane === p}
+              aria-selected={pane === p}
+              className="kpi-button"
+              onClick={() => setPane(p)}
+              data-testid={`metrics-pane-${p}`}
+            >
+              {p === "charts" ? "Charts" : p === "table" ? "Table" : "Overlay"}
+            </button>
+          ))}
+        </div>
         <span className="kpi-metrics-table-counter">
-          {data?.columns.length ?? 0} metric{(data?.columns.length ?? 0) > 1 ? "s" : ""}
+          {selections.length} metric{selections.length > 1 ? "s" : ""}
         </span>
-        <button className="kpi-button" title="Columns (phase 2)" disabled>
+        {pane === "charts" && (
+          <label className="kpi-select-label" title="Cards per row">
+            Per row
+            <select
+              value={perRow}
+              onChange={(e) => setPerRow(Number(e.target.value) as 1 | 2 | 3)}
+              data-testid="metrics-per-row"
+            >
+              <option value={1}>1</option>
+              <option value={2}>2</option>
+              <option value={3}>3</option>
+            </select>
+          </label>
+        )}
+        <button className="kpi-button" title="Columns (phase 3)" disabled>
           <Columns3 size={13} /> Columns
         </button>
-        <button className="kpi-button" title="Filters (phase 2)" disabled>
+        <button className="kpi-button" title="Filters (phase 3)" disabled>
           <Filter size={13} /> Filters
         </button>
         <button className="kpi-button" disabled={!data} onClick={exportCsv} title="Export CSV">
@@ -454,12 +543,57 @@ export function MetricsWorkspace({
         </button>
         <button
           className="kpi-button"
-          title="Fullscreen (phase 3)"
+          title="Fullscreen"
           onClick={() => document.querySelector(".kpi-metrics-table-premium")?.requestFullscreen?.()}
         >
           <Maximize2 size={13} /> Fullscreen
         </button>
       </header>
+      {pane === "charts" && captureId && (
+        <section
+          className="kpi-metrics-charts-grid"
+          data-per-row={perRow}
+          data-testid="metrics-charts-grid"
+        >
+          {parsedSelections.map((s, i) => {
+            const info = metricInfoByCode.get(s.code);
+            const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
+            const title = info ? `${info.label} · ${cellLabel}` : s.full;
+            return (
+              <MetricGraphCard
+                key={s.full}
+                projectId={projectId}
+                code={s.full}
+                label={`${i + 1}. ${title}`}
+                unit={info?.unit ?? ""}
+                tech={info?.tech ?? ""}
+                category={info?.category_label ?? null}
+                eventCode={info?.event_code ?? s.code}
+                appliedFilters={filters}
+                onRemove={() => {
+                  // Trigger removal via existing onClear if last, else notify parent
+                  const next = selections.filter((x) => x !== s.full);
+                  if (!next.length) onClear();
+                  else {
+                    // Rely on URL back-sync in KpiWorkspace via toggleMetric
+                    // Here no parent handler for individual remove: dispatch a custom event
+                    window.dispatchEvent(
+                      new CustomEvent("bc3-metrics-remove", { detail: { code: s.full } }),
+                    );
+                  }
+                }}
+                view="graph"
+                onViewChange={() => {
+                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
+                }}
+              />
+            );
+          })}
+          {parsedSelections.length === 0 && (
+            <p className="kpi-chart-state">No metric selected. Pick one from the catalogue.</p>
+          )}
+        </section>
+      )}
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : query.isPending ? (
@@ -495,7 +629,7 @@ export function MetricsWorkspace({
                 </span>
               </div>
             )}
-            {view === "table" ? (
+            {pane === "charts" ? null : view === "table" ? (
               <div className="kpi-data-table kpi-metrics-table-body">
                 <div className="kpi-table-scroll">
                   <table>
