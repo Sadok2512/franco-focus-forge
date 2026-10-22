@@ -27,4 +27,4 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 - Signaling cursor uses one capture-time state in SignalingPage and a single ECharts pixel overlay across all RF grids; cursor motion is local so selection never becomes a list query key or triggers details requests.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
 
-- Signaling visible time is shared by all timeline views in SignalingPage; navigator changes are local and never message/map query keys, while selected-message identity/time alone triggers follow, to preserve investigation state.
+- Signaling visible time is shared by all timeline views in SignalingPage and opens on the full capture; zoom changes are local and never message/map query keys, while selected-message identity/time alone triggers follow, to preserve investigation state.
