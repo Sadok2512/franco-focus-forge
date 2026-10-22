@@ -50,7 +50,7 @@ export function filterMessageRows(rows: SignalingLine[], selection: MessageSelec
 
 export function messagePage(rows: SignalingLine[], page: number, size: number) {
   const pages = Math.max(1, Math.ceil(rows.length / size));
-  const effective = Math.min(Math.max(1, page), pages);
+  const effective = page > pages ? 1 : Math.max(1, page);
   return {
     rows: rows.slice((effective - 1) * size, effective * size),
     total: rows.length,

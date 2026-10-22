@@ -60,9 +60,9 @@ describe("capture message filter", () => {
   });
   it("clamps pagination when filtered results shrink", () => {
     expect(messagePage(rows, 9, 2)).toEqual({
-      rows: rows.slice(2),
+      rows: rows.slice(0, 2),
       total: 4,
-      page: 2,
+      page: 1,
       size: 2,
       pages: 2,
     });

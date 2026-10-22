@@ -183,6 +183,9 @@ export function SignalingFilters(props: {
               </Button>
             ))}
           </div>
+          <Button variant="ghost" size="sm" className="mt-1 h-6 text-xs text-muted-foreground" aria-pressed={props.direction === "unknown"} onClick={() => props.onDirection(props.direction === "unknown" ? "" : "unknown")}>
+            {t("sigTable.undocumented")}
+          </Button>
         </FilterSection>
         <FilterSection icon={FileText} title={t("sigFilters.capture")}>
           <select
