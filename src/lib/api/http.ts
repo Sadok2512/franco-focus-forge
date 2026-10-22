@@ -40,6 +40,12 @@ export function apiBase(): string {
 /* ---------- Session (Bearer token) ---------- */
 
 const LS_SESSION = "bc4.session";
+const LS_LOGIN = "bc4.remembered-login";
+
+export function rememberedLogin(): string {
+  if (typeof window === "undefined") return "";
+  return window.localStorage.getItem(LS_LOGIN) ?? "";
+}
 
 export type Session = {
   token: string;
@@ -58,16 +64,18 @@ const SessionSchema = z.object({
 function readSession(): Session | null {
   if (typeof window === "undefined") return null;
   try {
-    const raw = window.localStorage.getItem(LS_SESSION);
+    const storage = window.sessionStorage.getItem(LS_SESSION) ? window.sessionStorage : window.localStorage;
+    const raw = storage.getItem(LS_SESSION);
     if (!raw) return null;
     const parsed = SessionSchema.safeParse(JSON.parse(raw));
     if (!parsed.success) {
-      window.localStorage.removeItem(LS_SESSION);
+      storage.removeItem(LS_SESSION);
       return null;
     }
     // Vérif TTL : expiré → purge et renvoie null, pas de session « zombie ».
-    if (Date.now() >= Date.parse(parsed.data.expires_at)) {
-      window.localStorage.removeItem(LS_SESSION);
+    const expiry = Date.parse(parsed.data.expires_at);
+    if (!Number.isFinite(expiry) || Date.now() >= expiry) {
+      storage.removeItem(LS_SESSION);
       return null;
     }
     return parsed.data;
@@ -76,10 +84,11 @@ function readSession(): Session | null {
   }
 }
 
-export function setSession(s: Session | null): void {
+export function setSession(s: Session | null, remember = true): void {
   if (typeof window === "undefined") return;
-  if (s) window.localStorage.setItem(LS_SESSION, JSON.stringify(s));
-  else window.localStorage.removeItem(LS_SESSION);
+  window.localStorage.removeItem(LS_SESSION);
+  window.sessionStorage.removeItem(LS_SESSION);
+  if (s) (remember ? window.localStorage : window.sessionStorage).setItem(LS_SESSION, JSON.stringify(s));
 }
 
 export function getSession(): Session | null {
@@ -377,7 +386,12 @@ export function xhrPayloadOrThrow(xhr: XMLHttpRequest): unknown {
 /* ---------- Auth helpers ---------- */
 
 /** POST /auth/login — stocke la session complète (token+expiry+user). */
-export async function login(email: string, password: string): Promise<Session> {
+export async function login(email: string, password: string, remember = true): Promise<Session> {
+  const saveLogin = (session: Session) => {
+    setSession(session, remember);
+    if (remember) window.localStorage.setItem(LS_LOGIN, session.user.email);
+    else window.localStorage.removeItem(LS_LOGIN);
+  };
   // Compte de démonstration local (demo / demo) : fonctionne sans backend.
   if (email.trim().toLowerCase() === "demo" && password === "demo") {
     const s: Session = {
@@ -392,7 +406,7 @@ export async function login(email: string, password: string): Promise<Session> {
         created_at: new Date().toISOString(),
       },
     };
-    setSession(s);
+    saveLogin(s);
     return s;
   }
   const res = await apiFetch("/auth/login", LoginResponseSchema, {
@@ -405,7 +419,7 @@ export async function login(email: string, password: string): Promise<Session> {
     expires_at: res.expires_at,
     user: res.user,
   };
-  setSession(s);
+  saveLogin(s);
   return s;
 }
 
