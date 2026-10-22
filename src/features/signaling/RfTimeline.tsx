@@ -11,7 +11,8 @@ import { isAllowedNetworkEvent } from "./network-events";
 import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
 import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
-import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
+import { provenStates, stateTrack } from "./state-evidence";
+import { statePresentation, stateBandGeometry } from "./state-presentation";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
@@ -161,17 +162,20 @@ export function RfTimeline({
     const stateEvents = states
       .filter(
         (state) =>
-          !technology ||
-          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE"),
+          statePresentation(state) !== null && (!technology ||
+          (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
       )
-      .map((state) => ({
+      .map((state) => {
+        const presentation = statePresentation(state);
+        const label = presentation ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined }) : "";
+        return ({
         ...state.event,
-        label: t(stateLabelKey(state)),
+        label: presentation?.status ? `${label} · ${t(`signalingV2.${presentation.status}`)}` : label,
         attrs: {
           ...state.event.attrs,
           track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
         },
-      }));
+      }); });
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
   }, [eligibleEvents, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
@@ -327,18 +331,7 @@ export function RfTimeline({
         track === "sa" ||
         (stateTracksV2 && (track === "ue_state" || track === "rrc_state"));
       const proof = states.find((state) => state.event.id === item.id);
-      const stateRole =
-        proof?.state === "IDLE"
-          ? "idle"
-          : proof?.state === "CONNECTED"
-            ? "connected"
-            : proof?.state === "LTE"
-              ? proof.componentCarriers === 4
-                ? "lte-ca"
-                : "lte"
-              : proof?.componentCarriers === 2
-                ? "nr-ca"
-                : "nr";
+      const stateRole = proof ? statePresentation(proof)?.role : undefined;
       const stateColor = getComputedStyle(document.documentElement)
         .getPropertyValue(`--signaling-state-${stateRole}`)
         .trim();
@@ -366,20 +359,21 @@ export function RfTimeline({
         item.attrs.evidence_status === "PARTIAL" ? 0.45 : (api.style().opacity ?? 0.9);
       const children: Record<string, unknown>[] = [];
       if (isBand) {
-        const y = (start[1] ?? 0) + (stateTracksV2 ? (proof?.technology === "LTE" ? -8 : 8) : 0);
+        const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
+        const y = (start[1] ?? 0) + geometry.offset;
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
           shape: {
             x: left,
-            y: y - (stateTracksV2 ? 7 : 11),
+            y: y - geometry.height / 2,
             width,
-            height: stateTracksV2 ? 14 : 22,
-            r: 4,
+            height: geometry.height,
+            r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (width > 70)
+        if (width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
@@ -391,7 +385,8 @@ export function RfTimeline({
                     .getPropertyValue("--signaling-state-text")
                     .trim()
                 : "#ffffff",
-              fontSize: 10,
+              fontSize: 12,
+              fontFamily: tokens.getPropertyValue("--font-sans").trim(),
               fontWeight: 600,
               align: "center",
               verticalAlign: "middle",
@@ -571,7 +566,7 @@ export function RfTimeline({
                 : `rfTimeline.${k}`,
             ),
           ),
-          axisLabel: { color: "#94a3b8", fontSize: 11 },
+          axisLabel: { color: tokens.getPropertyValue("--foreground").trim(), fontSize: 12, fontWeight: 600 },
           axisTick: { show: false },
           axisLine: { show: false },
         },
@@ -644,79 +639,6 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(stateTracksV2
-          ? [
-              {
-                id: "state-background",
-                type: "custom" as const,
-                silent: true,
-                z: 0,
-                renderItem: ((_params, api) => {
-                  const lane = Number(api.value(0));
-                  const point = api.coord([0, lane]);
-                  const area = _params.coordSys as unknown as { x: number; width: number };
-                  const muted = getComputedStyle(document.documentElement)
-                    .getPropertyValue("--muted")
-                    .trim();
-                  const text = getComputedStyle(document.documentElement)
-                    .getPropertyValue("--muted-foreground")
-                    .trim();
-                  return {
-                    type: "group",
-                    children: [
-                      {
-                        type: "rect",
-                        shape: {
-                          x: area.x,
-                          y: (point[1] ?? 0) - 16,
-                          width: area.width,
-                          height: 32,
-                        },
-                        style: { fill: muted },
-                      },
-                  ...[-8, 8]
-                        .filter((offset) => {
-                          const trackName =
-                            lane === lanes.indexOf("uestate") ? "UE_STATE" : "RRC_STATE";
-                          const rowStates = states.filter(
-                            (state) =>
-                              state.track === trackName &&
-                              (state.technology === "LTE") === offset < 0,
-                          );
-                          // Honest shading: label the row Unknown only while no proven
-                          // band covers the window start or sits inside the view.
-                          const coversStart = rowStates.some(
-                            (state) =>
-                              state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
-                          );
-                          const inView = rowStates.some(
-                            (state) =>
-                              state.startS < visibleWindow[1] && state.endS > visibleWindow[0],
-                          );
-                          return !coversStart && !inView;
-                        })
-                        .map((offset) => ({
-                          type: "text",
-                          style: {
-                            x: area.x + 6,
-                            y: (point[1] ?? 0) + offset,
-                            text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
-                            fontSize: 9,
-                            verticalAlign: "middle",
-                            fill: text,
-                          },
-                        })),
-                    ],
-                  };
-                }) as CustomSeriesRenderItem,
-                data: [lanes.indexOf("uestate"), lanes.indexOf("rrcstate")]
-                  .filter((lane) => lane >= 0)
-                  .map((lane) => [lane, 0]),
-                encode: { y: 0 },
-                clip: true,
-              },
-            ]
-          : []),
         {
           id: "events",
           type: "custom",
