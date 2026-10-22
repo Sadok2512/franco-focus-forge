@@ -1348,8 +1348,8 @@ export function SignalingPage({
   };
   return (
     <main className="p-3" data-testid="signaling-page">
-      <header className="mb-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">
+      <header className="mb-1.5 flex items-center justify-end gap-2">
+        <h1 className="sr-only">
           {stateTracksV2 ? t("signalingV2.title") : "Signaling View"}
         </h1>
         <div className="flex items-center gap-2">
@@ -1383,9 +1383,6 @@ export function SignalingPage({
             {mapVisible ? <MapPin size={14} /> : <MapPinOff size={14} />}
             Carte · {mapVisible ? "ON" : "OFF"}
           </button>
-          <span className="text-xs text-muted-foreground">
-            Capture unique · ordre seq · sources Nemo et RRC
-          </span>
         </div>
       </header>
       {(error || exportError) && (
