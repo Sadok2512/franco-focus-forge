@@ -643,7 +643,7 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(false
+        ...(stateTracksV2
           ? [
               {
                 id: "state-background",
@@ -673,12 +673,15 @@ export function RfTimeline({
                         },
                         style: { fill: muted },
                       },
-                      ...[-8, 8]
+                  ...[-8, 8]
                         .filter(
                           (offset) =>
                             !states.some(
                               (state) =>
-                                state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
+                                state.track ===
+                                  (lane === lanes.indexOf("uestate")
+                                    ? "UE_STATE"
+                                    : "RRC_STATE") &&
                                 (state.technology === "LTE") === offset < 0 &&
                                 state.startS <= visibleWindow[0] &&
                                 state.endS > visibleWindow[0],
@@ -698,7 +701,9 @@ export function RfTimeline({
                     ],
                   };
                 }) as CustomSeriesRenderItem,
-                data: [0, 1].map((lane) => [lane, 0]),
+                data: [lanes.indexOf("uestate"), lanes.indexOf("rrcstate")]
+                  .filter((lane) => lane >= 0)
+                  .map((lane) => [lane, 0]),
                 encode: { y: 0 },
                 clip: true,
               },
