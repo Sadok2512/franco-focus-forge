@@ -208,6 +208,7 @@ export function MetricsWorkspace({
   workspaceId = "default",
   onColumnsChange,
   paneRequest = 0,
+  cardViewRequest,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -223,6 +224,7 @@ export function MetricsWorkspace({
   workspaceId?: string | undefined;
   onColumnsChange?: ((cols: { code: string; label: string }[]) => void) | undefined;
   paneRequest?: number | undefined;
+  cardViewRequest?: { code: string; view: MetricView; n: number } | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [ts, updateTs] = useTableSettings(workspaceId);
@@ -507,6 +509,12 @@ export function MetricsWorkspace({
       /* Memory-only if storage is unavailable. */
     }
   }, [cardViews, workspaceId]);
+  // Catalogue ⋮ → visualisation applies to that metric's own card.
+  useEffect(() => {
+    if (!cardViewRequest) return;
+    const { code, view } = cardViewRequest;
+    setCardViews((m) => (m[code] === view ? m : { ...m, [code]: view }));
+  }, [cardViewRequest]);
   const panelRef = useRef<HTMLElement>(null);
   useEffect(() => {
     onTablePaneChange?.(pane === "table");
