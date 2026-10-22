@@ -1,3 +1,4 @@
+- [ ] Simplify the Metrics Table panel header and expand its table, preserving workspace controls in other views.
 - [x] Charts cards respond to Table/Histogram/Graph selection (1.88.0).
 # BC4 roadmap
 - [x] RRC State title back in its place (1.86.0): the top timeline band shows "RRC State" with the gray Idle badge in the left gutter, above UE State; the gutter row that only carried UE State was covering the chart's own label with an empty box. Verified in the browser (gutter labels `['UE State', 'RRC StateIdle']`, screenshot read back) — 251 tests pass, typecheck clean, build OK. Real VM capture readback still blocked below.
