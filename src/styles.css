@@ -112,6 +112,13 @@
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --signaling-state-idle: #94A3B8;
+  --signaling-state-lte: #159DF0;
+  --signaling-state-lte-ca: #1459D9;
+  --signaling-state-nr: #A34DF0;
+  --signaling-state-nr-ca: #7123CF;
+  --signaling-state-connected: #16A36B;
+  --signaling-state-text: #FFFFFF;
   --signaling-cursor: #EF4444;
   --signaling-cursor-foreground: #FFFFFF;
   color-scheme: light;
