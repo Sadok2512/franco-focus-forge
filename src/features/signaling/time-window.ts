@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from "react";
 
 export type TimeWindow = [number, number];
 export const DEFAULT_WINDOW_S = 30;
+// Sentinel width meaning "show the whole capture": clampWindow caps it at duration.
+export const FULL_CAPTURE_S = Number.MAX_SAFE_INTEGER;
 export function clampWindow(
   duration: number,
   requestedStart: number,
@@ -22,9 +24,16 @@ export function followMessage(
   const width = window[1] - window[0];
   return clampWindow(duration, time - width / 2, width);
 }
-export function useTimeWindow(captureId: string | undefined, duration: number) {
-  const [request, setRequest] = useState({ start: 0, width: DEFAULT_WINDOW_S });
-  useEffect(() => setRequest({ start: 0, width: DEFAULT_WINDOW_S }), [captureId]);
+export function useTimeWindow(
+  captureId: string | undefined,
+  duration: number,
+  defaultWidth = DEFAULT_WINDOW_S,
+) {
+  const [request, setRequest] = useState({ start: 0, width: defaultWidth });
+  useEffect(
+    () => setRequest({ start: 0, width: defaultWidth }),
+    [captureId, defaultWidth],
+  );
   const window = clampWindow(duration, request.start, request.width);
   const setWindow = useCallback((next: TimeWindow) => {
     setRequest({ start: next[0], width: next[1] - next[0] });
