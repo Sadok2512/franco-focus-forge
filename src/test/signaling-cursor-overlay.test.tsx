@@ -1,4 +1,4 @@
-import { act, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ECharts } from "echarts";
@@ -48,6 +48,9 @@ describe("Signaling cursor chart readiness", () => {
       finished?.();
     });
     expect(screen.getByRole("slider").getAttribute("aria-valuenow")).toBe("0");
+    expect(screen.queryByTestId("time-cursor-tooltip")).toBeNull();
+    fireEvent.pointerDown(screen.getByRole("slider"));
+    expect(screen.getByTestId("time-cursor-tooltip")).toBeTruthy();
     expect(onTime).not.toHaveBeenCalled();
     result.unmount();
     expect(chart.off).toHaveBeenCalledWith("finished", finished);
