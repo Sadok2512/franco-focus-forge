@@ -1,5 +1,5 @@
 # BC4 roadmap
-- [ ] Limit Network Events timeline marks to RRC Request, RRC Release and SCG without changing source data or messages.
+- [x] Limit Network Events timeline marks to RRC Request, RRC Release and SCG without changing source data or messages; 25 tests and isolated browser filtering/mobility/cursor checks passed. Real VM capture remains unverified without an authorized session.
 - [x] Restore time cursors at capture start without restoring the navigator; 21 targeted tests and isolated browser load/hover/click/drag/exact-event/keyboard/resize checks pass. Live VM verification still requires an authorized session.
 - [x] LOT A — Shared Signaling window and independent cursor with follow-message; the visible navigator bar was removed on request (1.79.1) and the timeline opens on the full capture. 20 window/cursor tests pass.
 - [x] LOT B — Public VM OpenAPI audit recorded in signaling-ue-state-audit.md; session correlation remains unverified. Stop before reconstruction pending evidence and explicit approval.
