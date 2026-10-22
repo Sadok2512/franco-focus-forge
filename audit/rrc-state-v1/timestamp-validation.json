@@ -1,0 +1,74 @@
+{
+  "validated_at": "2026-10-22T19:43:16.981420+00:00",
+  "source": {
+    "url": "https://catalyst-sticker-inns-crafts.trycloudflare.com/projects/4b7bfd50ddb6/signaling/events?capture_id=047e3f34e0af&view=rf",
+    "authorization": "Bearer <reader token>"
+  },
+  "capture_id": "047e3f34e0af",
+  "api_rrc_event_count": 17,
+  "proven_positive_interval_count": 16,
+  "idle_interval_count": 0,
+  "window_0_120_s": [
+    {
+      "state": "UNKNOWN",
+      "start_s": 0,
+      "end_s": 1.4,
+      "basis": "bounded complement; no Idle evidence"
+    },
+    {
+      "state": "CONNECTED",
+      "start_s": 1.4,
+      "end_s": 24.182,
+      "source_seqs": [
+        234,
+        243,
+        1608
+      ],
+      "rule_id": "nemo_context_connected",
+      "rule_version": "1.0.0"
+    },
+    {
+      "state": "UNKNOWN",
+      "start_s": 24.182,
+      "end_s": 41.787,
+      "basis": "bounded complement; no Idle evidence"
+    },
+    {
+      "state": "CONNECTED",
+      "start_s": 41.787,
+      "end_s": 64.667,
+      "source_seqs": [
+        2239,
+        2248,
+        3653
+      ],
+      "rule_id": "nemo_context_connected",
+      "rule_version": "1.0.0"
+    },
+    {
+      "state": "UNKNOWN",
+      "start_s": 64.667,
+      "end_s": 82.246,
+      "basis": "bounded complement; no Idle evidence"
+    },
+    {
+      "state": "CONNECTED",
+      "start_s": 82.246,
+      "end_s": 105.092,
+      "source_seqs": [
+        4194,
+        4203,
+        5583
+      ],
+      "rule_id": "nemo_context_connected",
+      "rule_version": "1.0.0"
+    },
+    {
+      "state": "UNKNOWN",
+      "start_s": 105.092,
+      "end_s": 120,
+      "basis": "bounded complement; no Idle evidence"
+    }
+  ],
+  "adjacent_boundaries_match": true
+}

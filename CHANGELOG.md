@@ -1,3 +1,10 @@
+## 1.90.1 (patch) — BC4-FRONT 2026-10-22 — RRC State continuous proven timeline (Agent BC1)
+
+- **RRC State only**: proven LTE Connected intervals retain their exact API bounds; proven Idle intervals render in gray, while bounded gaps remain explicitly Unknown and hatched.
+- **Continuous geometry**: adjacent RRC segments share the same boundary without CSS gaps, with rounded corners only at the outer capture edges.
+- **Evidence UI**: RRC segment tooltips expose real start/end, duration, technology and source sequences; Unknown segments state that evidence is unavailable. The former static Idle lane badge was removed because it asserted an unproven state.
+- **Non-regression**: UE State, RF measurements, cursor, navigator and all other signaling tracks keep their existing data and rendering paths.
+
 ## 1.90.0 (patch) — BC4-FRONT 2026-10-22 — Barre du haut du workspace supprimée
 
 - **`src/features/kpi/KpiWorkspace.tsx`** : la barre au-dessus des panneaux (bouton « + Add panel » et sélecteur « Layout : Auto ») a été retirée ; les panneaux démarrent directement sous la barre de filtres.

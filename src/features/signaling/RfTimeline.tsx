@@ -17,8 +17,8 @@ import {
   stateBandGeometry,
   stateLaneLayout,
   stateLaneTitle,
-  rrcStateLaneLabel,
 } from "./state-presentation";
+import { rrcStateSegments, type RrcStateSegment } from "./rrc-state-segments";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
@@ -163,6 +163,13 @@ export function RfTimeline({
     () => (stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : []),
     [stateTracksV2, events.data, captureId],
   );
+  const duration =
+    radio.data?.duration_s ??
+    Math.max(0, ...eligibleEvents.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
+  const rrcSegments = useMemo(
+    () => (stateTracksV2 ? rrcStateSegments(states, duration) : []),
+    [stateTracksV2, states, duration],
+  );
   const displayed = useMemo(() => {
     const source = eligibleEvents.filter(
       (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
@@ -170,6 +177,7 @@ export function RfTimeline({
     const stateEvents = states
       .filter(
         (state) =>
+          state.track !== "RRC_STATE" &&
           statePresentation(state) !== null &&
           (!technology ||
             (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
@@ -206,9 +214,6 @@ export function RfTimeline({
       ),
     [displayed, stateTracksV2],
   );
-  const duration =
-    radio.data?.duration_s ??
-    Math.max(0, ...eligibleEvents.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
   const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
   const visibleWindow = timeWindow ?? localWindow.window;
   const changeWindow = onWindow ?? localWindow.setWindow;
@@ -436,35 +441,30 @@ export function RfTimeline({
       if (isBand) {
         const geometry = proof ? stateBandGeometry(proof, states) : { offset: 0, height: 22 };
         const y = (start[1] ?? 0) + geometry.offset;
-        const idleBadge = proof?.track === "RRC_STATE" && proof.state === "IDLE";
-        const bandWidth = idleBadge ? Math.min(width, 48) : width;
-        const bandLeft = left + (width - bandWidth) / 2;
         // UE state band: filled rounded rect with the state label inside.
         children.push({
           type: "rect",
           shape: {
-            x: bandLeft,
-            y: y - (idleBadge ? 18 : geometry.height) / 2,
-            width: bandWidth,
-            height: idleBadge ? 18 : geometry.height,
+            x: left,
+            y: y - geometry.height / 2,
+            width,
+            height: geometry.height,
             r: 5,
           },
           style: { fill: color, opacity },
         });
-        if (idleBadge ? bandWidth >= 40 : width > Math.max(70, item.label.length * 7 + 16))
+        if (width > Math.max(70, item.label.length * 7 + 16))
           children.push({
             type: "text",
             style: {
               x: left + width / 2,
               y,
               text: item.label,
-              fill: idleBadge
-                ? tokens.getPropertyValue("--sig-table-text").trim()
-                : stateTracksV2
-                  ? getComputedStyle(document.documentElement)
-                      .getPropertyValue("--signaling-state-text")
-                      .trim()
-                  : "#ffffff",
+              fill: stateTracksV2
+                ? getComputedStyle(document.documentElement)
+                    .getPropertyValue("--signaling-state-text")
+                    .trim()
+                : "#ffffff",
               fontSize: 12,
               fontFamily: tokens.getPropertyValue("--font-sans").trim(),
               fontWeight: 600,
@@ -589,6 +589,71 @@ export function RfTimeline({
         NonNullable<CustomSeriesRenderItem>
       >;
     };
+    const renderRrcSegment: CustomSeriesRenderItem = (params, api) => {
+      const item = rrcSegments[params.dataIndex];
+      const lane = lanes.indexOf("rrcstate");
+      const center = laneLayout.centers[lane];
+      if (!item || lane < 0 || center === undefined) return;
+      const start = api.coord([item.startS, lane]);
+      const end = api.coord([item.endS, lane]);
+      const coordSys = params.coordSys as unknown as { x: number; width: number };
+      const left = Math.max(coordSys.x, start[0] ?? coordSys.x);
+      const right = Math.min(coordSys.x + coordSys.width, end[0] ?? left);
+      if (right <= left) return;
+      const y = 30 + center;
+      const height = 34;
+      const roundStart = item.roundStart && left === start[0];
+      const roundEnd = item.roundEnd && right === end[0];
+      const radius = [roundStart ? 5 : 0, roundEnd ? 5 : 0, roundEnd ? 5 : 0, roundStart ? 5 : 0];
+      const fill =
+        item.state === "CONNECTED" ? "#0EA5E9" : item.state === "IDLE" ? "#CBD5E1" : "#E2E8F0";
+      const children: Record<string, unknown>[] = [
+        {
+          type: "rect",
+          shape: { x: left, y: y - height / 2, width: right - left, height, r: radius },
+          style: { fill },
+        },
+      ];
+      if (item.state === "UNKNOWN") {
+        for (let x = left - height; x < right + height; x += 10) {
+          children.push({
+            type: "line",
+            shape: { x1: x, y1: y + height / 2, x2: x + height, y2: y - height / 2 },
+            style: { stroke: "#94A3B8", lineWidth: 1, opacity: 0.65 },
+          });
+        }
+      }
+      const label =
+        item.state === "CONNECTED"
+          ? t("signalingV2.lte")
+          : item.state === "IDLE"
+            ? t("signalingV2.idle")
+            : t("signalingV2.unknownShort");
+      if (right - left > Math.max(54, label.length * 7 + 14)) {
+        children.push({
+          type: "text",
+          style: {
+            x: left + (right - left) / 2,
+            y,
+            text: label,
+            fill: item.state === "CONNECTED" ? "#FFFFFF" : "#334155",
+            fontSize: 12,
+            fontFamily: tokens.getPropertyValue("--font-sans").trim(),
+            fontWeight: 600,
+            align: "center",
+            verticalAlign: "middle",
+          },
+        } as never);
+      }
+      return {
+        type: "group",
+        clipPath: {
+          type: "rect",
+          shape: { x: left, y: y - height / 2, width: right - left, height, r: radius },
+        },
+        children,
+      } as unknown as ReturnType<NonNullable<CustomSeriesRenderItem>>;
+    };
     // V2: one RF sub-grid per metric, each with its own Y scale, sharing the X axis.
     const rfGrids = stateTracksV2 ? codes.length : 1;
     const subH = 52;
@@ -658,13 +723,11 @@ export function RfTimeline({
           type: "category",
           inverse: true,
           data: lanes.map((k) =>
-            stateTracksV2 && k === "rrcstate"
-              ? rrcStateLaneLabel(t("signalingV2.rrcState"), t("signalingV2.idle"))
-              : t(
-                  stateTracksV2 && (k === "uestate" || k === "rrcstate")
-                    ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
-                    : `rfTimeline.${k}`,
-                ),
+            t(
+              stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                : `rfTimeline.${k}`,
+            ),
           ),
           axisLabel: {
             color: "#94a3b8",
@@ -762,6 +825,51 @@ export function RfTimeline({
         },
       },
       series: [
+        ...(stateTracksV2
+          ? [
+              {
+                id: "rrc-state-segments",
+                type: "custom" as const,
+                renderItem: renderRrcSegment,
+                encode: { x: [1, 2], y: 0 },
+                clip: true,
+                z: 3,
+                tooltip: {
+                  show: true,
+                  formatter: (p: unknown) => {
+                    const segment = (p as { data: { rrcSegment?: RrcStateSegment } }).data
+                      .rrcSegment;
+                    if (!segment) return "";
+                    const name =
+                      segment.state === "CONNECTED"
+                        ? t("signalingV2.rrcLteConnected")
+                        : segment.state === "IDLE"
+                          ? t("signalingV2.idle")
+                          : t("signalingV2.unknown");
+                    const lines = [
+                      `<b>${escape(t("signalingV2.rrcState"))}: ${escape(name)}</b>`,
+                      `${escape(t("signalingV2.start"))}: ${fmtT(segment.startS)} s`,
+                      `${escape(t("signalingV2.end"))}: ${fmtT(segment.endS)} s`,
+                    ];
+                    if (segment.proof) {
+                      lines.push(
+                        `${escape(t("signalingV2.duration"))}: ${fmtT(segment.endS - segment.startS)} s`,
+                        `${escape(t("signalingV2.technology"))}: ${escape(segment.proof.technology)}`,
+                        `${escape(t("signalingV2.proof"))}: ${escape(segment.proof.evidenceSeqs.join(", "))}`,
+                      );
+                    } else {
+                      lines.push(escape(t("signalingV2.stateNotProven")));
+                    }
+                    return lines.join("<br/>");
+                  },
+                },
+                data: rrcSegments.map((segment) => ({
+                  value: [lanes.indexOf("rrcstate"), segment.startS, segment.endS],
+                  rrcSegment: segment,
+                })),
+              },
+            ]
+          : []),
         {
           id: "events",
           type: "custom",
@@ -792,6 +900,7 @@ export function RfTimeline({
     lanes,
     stateTracksV2,
     states,
+    rrcSegments,
     trackHeight,
     rfTop,
     laneLayout,
