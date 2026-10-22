@@ -374,6 +374,7 @@
     "0966c76fb9af": "Scatter plot (vs radio)",
     "16d2f405b392": "Measurements cannot be paired for these axes: the API provides aggregates, without paired observations or Task Time.",
     "f0153ab1a288": "No geolocated observations available for this KPI in the API response. Aggregates cannot locate measurements.",
+    "9c4f0a2b6d17": "Axis catalogue not exposed by the API",
     "5dcc75c368f9": "Aggregated KPIs",
     "03d088bb06c0": "Network area",
     "5fcd67575ab2": "ARCEP area",
