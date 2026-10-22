@@ -1,3 +1,8 @@
+## 1.88.0 (minor) — BC4-FRONT 2026-10-22 — Charts cards: Table/Histogram/Graph per card
+
+- **Metrics Workspace — Charts pane** (`src/features/kpi/MetricsWorkspace.tsx`) : les cartes du volet Charts ne sont plus verrouillées sur Graph. Le menu de visualisation d'une carte applique Histogram/Table/Graph/Map à cette carte seulement (état `cardViews` par sélection, défaut `graph`).
+- **Test de régression** (`src/test/metrics-card-view.test.tsx`) : cliquer Table sur une carte Charts bascule la carte sur `metric-aggregate-table` (`data-view="table"`).
+
 ## 1.87.0 (minor) — BC4-FRONT 2026-10-22 — Merge reconciliation github/main ↔ feat/bc3-metrics (Agent BC3)
 
 Merge sélectif entre `feat/bc3-metrics` (BC3 KPI/Metrics workspace, 22 commits) et `github/main` (Lovable Signaling updates, 257 commits).
