@@ -157,10 +157,6 @@ export function RfTimeline({
     const source = eligibleEvents.filter(
       (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
     );
-    // Clean RF display: UE/RRC State tracks are hidden from the timeline (data untouched).
-    return source.filter(
-      (event) => stateTrack(event) === null && !["uestate", "rrcstate"].includes(laneFor(event)),
-    );
     const stateEvents = states
       .filter(
         (state) =>
@@ -176,13 +172,14 @@ export function RfTimeline({
         },
       }));
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
-  }, [eligibleEvents, stateTracksV2, states, technology, t]);
+  }, [eligibleEvents, states, technology, t]);
   const series = (detailed.data ?? radio.data)?.series;
   const lanes = useMemo(
     () =>
       laneOrder.filter(
         (lane) =>
           lane === "network" ||
+          (stateTracksV2 && (lane === "uestate" || lane === "rrcstate")) ||
           displayed.some((event) => laneFor(event) === lane),
       ),
     [displayed, stateTracksV2],
@@ -646,7 +643,7 @@ export function RfTimeline({
         },
       },
       series: [
-        ...(false
+        ...(stateTracksV2
           ? [
               {
                 id: "state-background",
@@ -676,17 +673,27 @@ export function RfTimeline({
                         },
                         style: { fill: muted },
                       },
-                      ...[-8, 8]
-                        .filter(
-                          (offset) =>
-                            !states.some(
-                              (state) =>
-                                state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
-                                (state.technology === "LTE") === offset < 0 &&
-                                state.startS <= visibleWindow[0] &&
-                                state.endS > visibleWindow[0],
-                            ),
-                        )
+                  ...[-8, 8]
+                        .filter((offset) => {
+                          const trackName =
+                            lane === lanes.indexOf("uestate") ? "UE_STATE" : "RRC_STATE";
+                          const rowStates = states.filter(
+                            (state) =>
+                              state.track === trackName &&
+                              (state.technology === "LTE") === offset < 0,
+                          );
+                          // Honest shading: label the row Unknown only while no proven
+                          // band covers the window start or sits inside the view.
+                          const coversStart = rowStates.some(
+                            (state) =>
+                              state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
+                          );
+                          const inView = rowStates.some(
+                            (state) =>
+                              state.startS < visibleWindow[1] && state.endS > visibleWindow[0],
+                          );
+                          return !coversStart && !inView;
+                        })
                         .map((offset) => ({
                           type: "text",
                           style: {
@@ -701,7 +708,9 @@ export function RfTimeline({
                     ],
                   };
                 }) as CustomSeriesRenderItem,
-                data: [0, 1].map((lane) => [lane, 0]),
+                data: [lanes.indexOf("uestate"), lanes.indexOf("rrcstate")]
+                  .filter((lane) => lane >= 0)
+                  .map((lane) => [lane, 0]),
                 encode: { y: 0 },
                 clip: true,
               },
