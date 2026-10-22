@@ -56,7 +56,8 @@ export function TimeCursor({
   const { t, i18n } = useTranslation();
   const [hover, setHover] = useState<number | null>(null);
   const [size, setSize] = useState({ width: 480, height: 420 });
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(true);
+  const previousSelection = useRef({ selectedTime, eventId });
   const [, refreshGeometry] = useState(0);
   const drag = useRef(false);
   const frame = useRef<number | undefined>(undefined);
@@ -70,7 +71,13 @@ export function TimeCursor({
       ),
     [events, series],
   );
-  useEffect(() => setDismissed(false), [selectedTime, eventId]);
+  useEffect(() => {
+    const previous = previousSelection.current;
+    if (previous.selectedTime !== selectedTime || previous.eventId !== eventId) {
+      setDismissed(false);
+    }
+    previousSelection.current = { selectedTime, eventId };
+  }, [selectedTime, eventId]);
   useEffect(() => {
     const element = host.current;
     if (!element || !chart || chart.isDisposed()) return;
@@ -107,7 +114,10 @@ export function TimeCursor({
       const hit = chart.getZr().handler.findHover(event.offsetX, event.offsetY).target;
       if (hit) return;
       const time = timeAt(event);
-      if (time !== null) latest.current.onTime(time);
+      if (time !== null) {
+        setDismissed(false);
+        latest.current.onTime(time);
+      }
     };
     const leave = () => {
       if (!drag.current) {
@@ -242,6 +252,7 @@ export function TimeCursor({
               e.preventDefault();
                e.stopPropagation();
               drag.current = true;
+              setDismissed(false);
               setHover(null);
             }}
             onKeyDown={(e) => {
