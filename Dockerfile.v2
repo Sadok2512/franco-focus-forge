@@ -10,10 +10,10 @@ COPY . .
 ENV VITE_BC4_DATA=api
 ENV VITE_BC4_API_UPSTREAM=http://api:8000
 RUN bun run build
-LABEL org.opencontainers.image.revision="cd1aad3"
-LABEL org.opencontainers.image.version="1.88.0"
-LABEL org.opencontainers.image.title="BC4 Front — Metrics Time/GPS lot"
-LABEL org.opencontainers.image.description="Metrics table expose Time local + Time UTC + Lat/Lon depuis le back (0.75.0 utc_offset_min + GPS previous-or-same seq). Plus de regex sur le nom de capture."
+LABEL org.opencontainers.image.revision="fd538a6"
+LABEL org.opencontainers.image.version="1.91.0"
+LABEL org.opencontainers.image.title="BC4 Front — Time/GPS + reconcile Lovable 1.88→1.91"
+LABEL org.opencontainers.image.description="Metrics table Time local/UTC + Lat/Lon backend-driven (back 0.75.0) + merge Lovable workspace cleanup (Charts cards, ⚙ Apply draft, top bar removal, ⋮ Tableau → paneRequest no-op in BC3 MetricsWorkspace)."
 RUN chmod +x /app/docker-warmup.sh
 # Warm-up en arrière-plan + vite dev au premier plan.
 # Le warm-up attend que vite réponde avant de taper les routes.
