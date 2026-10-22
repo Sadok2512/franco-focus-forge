@@ -162,7 +162,7 @@ export function DecoderTree({ parameters }: { parameters: Parameter[] }) {
         </span>
       );
     }
-    return <span className="break-all font-mono text-primary">{v}</span>;
+    return <span className="decoder-value break-all">{v}</span>;
   };
 
   const render = (nodes: Map<string, Node>, depth = 0) => (
@@ -198,7 +198,7 @@ export function DecoderTree({ parameters }: { parameters: Parameter[] }) {
                 </span>
               )}
               <span
-                className={`min-w-0 break-words ${isContainer ? "font-semibold" : ""}`}
+                className={`decoder-field min-w-0 break-words ${isContainer ? "font-semibold" : ""}`}
                 title={node.path}
               >
                 {node.name}
