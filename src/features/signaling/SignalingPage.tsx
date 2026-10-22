@@ -1366,31 +1366,6 @@ export function SignalingPage({
                     data-testid="signaling-timeline-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <h2 className="text-sm font-semibold">{t("rfTimeline.title")}</h2>
-                        <div
-                          className="flex items-center gap-1"
-                          role="tablist"
-                          aria-label="Vue timeline"
-                        >
-                          {(["ribbon", "rf", "compact"] as const).map((v) => (
-                            <button
-                              key={v}
-                              type="button"
-                              role="tab"
-                              aria-selected={timelineView === v}
-                              className={`kpi-button text-xs ${timelineView === v ? "bg-primary/15 text-primary" : ""}`}
-                              onClick={() => {
-                                setTimelineView(v);
-                                setCompact(v === "compact");
-                              }}
-                              data-testid={`timeline-view-${v}`}
-                            >
-                              {v === "ribbon" ? "Ruban" : v === "rf" ? "RF" : "Histogram"}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
                       {timelineView === "ribbon" && capture ? (
                         <EventRibbon
                           key={capture}

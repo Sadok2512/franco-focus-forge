@@ -445,7 +445,6 @@
     "exact": "Observation exacte",
     "noRF": "Aucune mesure RF à cet instant",
     "messageCount": "Messages : {{count}}",
-    "title": "Chronologie des événements, état UE, tâches et métriques RF",
     "rf": "Timeline RF",
     "compact": "Compact",
     "events": "Événements / couches",

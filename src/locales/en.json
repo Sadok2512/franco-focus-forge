@@ -445,7 +445,6 @@
     "exact": "Exact observation",
     "noRF": "No RF measurement at selected time",
     "messageCount": "Messages: {{count}}",
-    "title": "Timeline of events, UE state, tasks and RF metrics",
     "rf": "RF timeline",
     "compact": "Compact",
     "events": "Events / layers",
