@@ -136,38 +136,70 @@ describe("Signaling V2 evidence gates", () => {
 });
 
 describe("LTE Connected via (capture_id, context_id)", () => {
+  // Raw event returned by bc4-back 0.74.8 for capture 047e3f34e0af.
   const base = {
-    id: "ctx",
-    seq: 84,
-    seq_end: 95,
-    t_rel_s: 0.001,
-    t_rel_end_s: 1.5,
+    id: "proc:5804c84d5646c23099c3a54f",
+    lane: "connexion",
+    type: "rrc_connection",
+    kind: "band",
+    seq: 234,
+    seq_end: 1608,
+    t_rel_s: 1.4,
+    t_rel_end_s: 24.182,
+    duration_ms: 22782.0,
+    outcome: "ok",
+    cause: null,
+    label: "rrc_connection",
     attrs: {
-      track: "lte",
       technology: "LTE",
-      capture_id: "cap",
-      context_id: "7",
-      source_seqs: [72, 84, 95],
-      evidence_status: "PROVEN",
+      capture_id: "047e3f34e0af",
+      track: "UE_STATE",
       rule_id: "nemo_context_connected",
       rule_version: "1.0.0",
+      evidence_status: "PROVEN",
+      source_seqs: [234, 243, 1608],
+      time_evidence_status: "PROVEN",
     },
-  } as unknown as Parameters<typeof provenState>[0];
+    pivot_seq: 234,
+    linked_seqs: [234, 243, 1608],
+    link_rule: "nemo_context_connected",
+    seq_gap: 1374,
+    context_id: 54,
+    session_id: "context:047e3f34e0af:54",
+  } as RfEvent;
+  const cap = "047e3f34e0af";
   const withAttrs = (x: Record<string, unknown>) =>
-    ({ ...base, attrs: { ...base.attrs, ...x } }) as typeof base;
-  it("accepts the full RRA -> RRC -> RRD chain with composite id", () => {
-    expect(provenState(base, "cap")?.sessionId).toBe("cap:7");
+    ({ ...base, attrs: { ...base.attrs, ...x } }) as RfEvent;
+  it("accepts the real VM period 1.400 s -> 24.182 s as LTE", () => {
+    const s = provenState(base, cap);
+    expect(s?.sessionId).toBe("context:047e3f34e0af:54");
+    expect(s?.state).toBe("LTE");
+    expect(s?.startS).toBe(1.4);
+    expect(s?.endS).toBe(24.182);
+    expect(s?.componentCarriers).toBeNull();
   });
   it("rejects PARTIAL evidence", () => {
-    expect(provenState(withAttrs({ evidence_status: "PARTIAL" }), "cap")).toBeNull();
+    expect(provenState(withAttrs({ evidence_status: "PARTIAL" }), cap)).toBeNull();
   });
   it("rejects another rule", () => {
-    expect(provenState(withAttrs({ rule_id: "other" }), "cap")).toBeNull();
+    expect(provenState(withAttrs({ rule_id: "other" }), cap)).toBeNull();
   });
   it("rejects incomplete chain", () => {
-    expect(provenState(withAttrs({ source_seqs: [84, 95] }), "cap")).toBeNull();
+    expect(provenState(withAttrs({ source_seqs: [234, 1608] }), cap)).toBeNull();
   });
   it("rejects missing capture_id", () => {
-    expect(provenState(withAttrs({ capture_id: undefined }), "cap")).toBeNull();
+    expect(provenState(withAttrs({ capture_id: undefined }), cap)).toBeNull();
+  });
+  it("rejects another capture", () => {
+    expect(provenState(base, "other")).toBeNull();
+  });
+  it("rejects missing context_id", () => {
+    expect(provenState({ ...base, context_id: null }, cap)).toBeNull();
+  });
+  it("rejects a session_id that contradicts (capture_id, context_id)", () => {
+    expect(provenState({ ...base, session_id: "context:047e3f34e0af:99" }, cap)).toBeNull();
+  });
+  it("rejects a zero-duration marker", () => {
+    expect(provenState({ ...base, t_rel_end_s: 1.4 }, cap)).toBeNull();
   });
 });
