@@ -10,7 +10,7 @@ import { activeIntervals } from "./cursor";
 import { isAllowedNetworkEvent } from "./network-events";
 import { clampWindow, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { Button } from "@/components/ui/button";
-import { ZoomIn, ZoomOut, RotateCcw, Maximize } from "lucide-react";
+import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
 import { WindowSelector } from "./WindowSelector";
 
@@ -724,6 +724,21 @@ export function RfTimeline({
           </div>
         </details>
         <span className="ml-auto flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="kpi-button"
+            title={t("rfTimeline.showCursor")}
+            aria-label={t("rfTimeline.showCursor")}
+            data-testid="show-time-cursor"
+            onClick={() => onTime(
+              selectedTime !== null && selectedTime >= visibleWindow[0] && selectedTime <= visibleWindow[1]
+                ? selectedTime
+                : (visibleWindow[0] + visibleWindow[1]) / 2,
+            )}
+          >
+            <Crosshair />
+          </Button>
           {stateTracksV2 && (
             <WindowSelector duration={duration} window={visibleWindow} onWindow={changeWindow} />
           )}

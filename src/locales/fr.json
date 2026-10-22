@@ -439,6 +439,7 @@
     }
   },
   "rfTimeline": {
+    "showCursor": "Afficher le curseur temporel",
     "cursor": "Curseur temporel",
     "outside": "Hors vue · recentrer",
     "exact": "Observation exacte",
