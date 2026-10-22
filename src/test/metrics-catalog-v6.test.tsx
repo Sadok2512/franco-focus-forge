@@ -84,7 +84,7 @@ describe("Metrics catalogue v6 tree", () => {
     );
     expect(await screen.findByText("Serving radio")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Serving radio/i }));
-    fireEvent.click(screen.getByRole("button", { name: "RSRP" }));
+    fireEvent.click(screen.getByRole("button", { name: /RSRP \d+/ }));
     expect(screen.getByText("RSRP — PSCell")).toBeVisible();
     expect(screen.getByTitle("P4 proof pending")).toHaveClass("opacity-45");
     fireEvent.click(screen.getByRole("button", { name: /Select RSRP — PCell/i }));
