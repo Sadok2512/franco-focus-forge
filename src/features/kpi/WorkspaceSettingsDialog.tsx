@@ -189,7 +189,6 @@ export function WorkspaceSettingsDialog({
 
           <TabsContent value="tables" className="space-y-4">
             <section>
-
               <Row label={t("wss.autoFit")}>
                 <Switch checked={draft.autoFitWidth} onCheckedChange={patch("autoFitWidth")} />
               </Row>

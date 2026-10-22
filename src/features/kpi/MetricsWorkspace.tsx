@@ -656,7 +656,6 @@ export function MetricsWorkspace({
           id="metrics:pane"
           natural={200}
           defaultTitle={tableTitle}
-          fullRow
         >
           {(panelTitle) => (
             <article
