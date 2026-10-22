@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { getSignaling, getMetricSeries } from "@/lib/api/client";
+import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/client";
 import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
@@ -71,6 +71,8 @@ import {
   type ColumnConfig,
   type MessageInfo,
 } from "./message-columns";
+import { SignalingFilters } from "./SignalingFilters";
+import { filterMessageRows, messageTypes, messagePage, messageRowsCsv, reconcileMessageSelection, type MessageSelection } from "./message-filter";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
@@ -1046,12 +1048,40 @@ export function SignalingPage({
     () => ({ ...base, from_s: range?.[0], to_s: range?.[1] }),
     [base, range],
   );
-  const listing = useQuery({
+  const [messageSelection, setMessageSelection] = useState<MessageSelection>(null);
+  const [catalogRequested, setCatalogRequested] = useState(false);
+  const catalog = useQuery({
+    queryKey: ["signaling-message-types", projectId, capture],
+    enabled: !!capture && catalogRequested,
+    queryFn: ({ signal }) => getAllSignalingRows(projectId, { capture_id: capture, protocols: layers.join(",") }, signal),
+    staleTime: Infinity,
+    retry: false,
+  });
+  const types = useMemo(() => messageTypes(catalog.data?.rows ?? []), [catalog.data]);
+  useEffect(() => {
+    if (catalog.data) setMessageSelection((old) => reconcileMessageSelection(old, types));
+  }, [catalog.data, types]);
+  const selectedPopulation = useQuery({
+    queryKey: ["signaling-message-population", projectId, filtered, sort, order],
+    enabled: !!capture && messageSelection !== null && messageSelection.length > 0,
+    queryFn: ({ signal }) => getAllSignalingRows(projectId, { ...filtered, sort, order }, signal),
+    staleTime: 60000,
+    retry: false,
+  });
+  const remoteListing = useQuery({
     queryKey: ["signaling", projectId, filtered, page, size, sort, order],
     enabled: !!capture,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "rows", { ...filtered, page, size, sort, order }, signal),
   });
+  const selectedRows = useMemo(() => filterMessageRows(selectedPopulation.data?.rows ?? [], messageSelection), [selectedPopulation.data, messageSelection]);
+  const listing = messageSelection === null ? remoteListing : {
+    ...selectedPopulation,
+    data: messageSelection.length === 0
+      ? { ...remoteListing.data, ...messagePage([], page, size), procedures: remoteListing.data?.procedures ?? [], protocol_counts: remoteListing.data?.protocol_counts ?? {} }
+      : selectedPopulation.data ? { ...selectedPopulation.data, ...messagePage(selectedRows, page, size) } : undefined,
+    isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
+  };
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
     enabled: !!capture && compact,
@@ -1142,7 +1172,7 @@ export function SignalingPage({
     return { rsrp: byCode("cell_rsrp"), rsrq: byCode("cell_rsrq"), sinr: byCode("ci_rs_snr") };
   }, [captureRadio.data]);
   const filtersActive =
-    !!search || !!direction || !!technology || !!procedure || !!range || protocols.length !== layers.length;
+    messageSelection !== null || !!search || !!direction || !!technology || !!procedure || !!range || protocols.length !== layers.length;
   const inspectorTabs: InspectorTab[] = [
     "Payload",
     "Paramètres",
@@ -1251,7 +1281,9 @@ export function SignalingPage({
   const exportCsv = async () => {
     try {
       setExportError("");
-      const data = await getSignaling(projectId, "export", filtered);
+      const data = messageSelection === null
+        ? await getSignaling(projectId, "export", filtered)
+        : { csv: messageRowsCsv(selectedRows), filename: `signaling-${capture ?? "capture"}-filtered.csv` };
       const url = URL.createObjectURL(new Blob([data.csv], { type: "text/csv;charset=utf-8" }));
       const a = document.createElement("a");
       a.href = url;
@@ -1314,9 +1346,9 @@ export function SignalingPage({
           <Panel
             id="filters"
             panelRef={filtersPanelRef}
-            defaultSize={narrow ? "17%" : "16%"}
-            minSize={sidebarCollapsed ? 0 : narrow ? 220 : 185}
-            maxSize={narrow ? "30%" : "26%"}
+            defaultSize={narrow ? "34%" : 300}
+            minSize={sidebarCollapsed ? 0 : narrow ? 280 : 280}
+            maxSize={narrow ? "50%" : 360}
             collapsible
             collapsedSize={44}
           >
@@ -1338,160 +1370,25 @@ export function SignalingPage({
                 <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
               </aside>
             ) : (
-              <aside
-                className="signaling-pane overflow-auto space-y-4 rounded-lg border bg-card p-3 text-sm"
-                data-testid="signaling-sidebar"
-              >
-                <div className="flex items-center justify-between">
-                  <h2 className="text-sm font-semibold">Filtres</h2>
-                  <button
-                    type="button"
-                    className="kpi-icon"
-                    title="Masquer les filtres"
-                    aria-label="Masquer les filtres"
-                    aria-expanded="true"
-                    onClick={toggleSidebar}
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                </div>
-                <label className="block">
-                  Technologie
-                  <select
-                    aria-label="Technologie signalisation"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={technology}
-                    onChange={(e) => {
-                      setTechnology(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">LTE + NR / états non attribués</option>
-                    <option>LTE</option>
-                    <option>NR</option>
-                  </select>
-                </label>
-                <fieldset className="space-y-2">
-                  <legend className="mb-2 font-semibold">Couches</legend>
-                  {layers.map((p, i) => (
-                    <label key={p} className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={protocols.includes(p)}
-                        onChange={(e) => {
-                          setProtocols((old) =>
-                            e.target.checked ? [...old, p] : old.filter((x) => x !== p),
-                          );
-                          resetPage();
-                        }}
-                      />
-                      <span className="h-2 w-2 rounded-full" style={{ background: colors[i] }} />
-                      {p}
-                      <span className="ml-auto font-mono text-xs">
-                        {shown(listing.data?.protocol_counts[p])}
-                      </span>
-                    </label>
-                  ))}
-                </fieldset>
-                <label className="block">
-                  Direction
-                  <select
-                    aria-label="Direction"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={direction}
-                    onChange={(e) => {
-                      setDirection(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">Toutes</option>
-                    <option>UL</option>
-                    <option>DL</option>
-                    <option value="unknown">Non documentée</option>
-                  </select>
-                </label>
-                <label className="block">
-                  Capture
-                  <select
-                    aria-label="Capture signalisation"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={capture ?? ""}
-                    onChange={(e) => chooseCapture(e.target.value)}
-                  >
-                    {caps.data?.captures.map((c) => (
-                      <option key={c.capture_id} value={c.capture_id}>
-                        {c.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Procédure
-                  <select
-                    aria-label="Procédure"
-                    className="mt-1 w-full rounded border bg-background p-2"
-                    value={procedure}
-                    onChange={(e) => {
-                      setProcedure(e.target.value);
-                      resetPage();
-                    }}
-                  >
-                    <option value="">
-                      Toutes{procedures.data ? ` (${procedures.data.total})` : ""}
-                    </option>
-                    {procedures.data &&
-                      Object.keys(procedures.data.types)
-                        .sort()
-                        .map((type) => (
-                          <optgroup key={type} label={`${type} · ${procedures.data!.types[type]}`}>
-                            {procedures
-                              .data!.procedures.filter((p) => p.type === type)
-                              .map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  seq {p.seq_start}
-                                  {p.seq_end ? `→${p.seq_end}` : ""} · {shown(p.duration_ms)} ms ·{" "}
-                                  {p.outcome}
-                                </option>
-                              ))}
-                          </optgroup>
-                        ))}
-                  </select>
-                </label>
-                <label className="block">
-                  Recherche
-                  <input
-                    aria-label="Rechercher un message"
-                    placeholder="Nom du message"
-                    value={search}
-                    onChange={(e) => {
-                      setSearch(e.target.value);
-                      resetPage();
-                    }}
-                    className="mt-1 w-full rounded border bg-background p-2"
-                  />
-                </label>
-                <label className="block">
-                  Taille de page
-                  <select
-                    aria-label="Taille de page"
-                    value={size}
-                    onChange={(e) => {
-                      setSize(Number(e.target.value));
-                      resetPage();
-                    }}
-                    className="ml-2 rounded border bg-background p-1"
-                  >
-                    {[50, 100, 250, 500].map((n) => (
-                      <option key={n}>{n}</option>
-                    ))}
-                  </select>
-                </label>
-                {range && (
-                  <button className="kpi-button" onClick={() => setRange(undefined)}>
-                    Effacer la brosse
-                  </button>
-                )}
-              </aside>
+              <SignalingFilters
+                layers={layers} protocols={protocols} technology={technology} direction={direction}
+                search={search} procedure={procedure} capture={capture} size={size}
+                captures={caps.data?.captures ?? []} procedures={procedures.data?.procedures ?? []}
+                counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
+                total={listing.data?.total} selection={messageSelection} types={types}
+                catalogLoading={catalog.isPending} catalogError={catalog.isError}
+                onRequestTypes={() => { setCatalogRequested(true); if (catalog.isError) void catalog.refetch(); }}
+                onApply={(value) => { setMessageSelection(value); setPage(1); }}
+                onTechnology={(v) => { setTechnology(v); resetPage(); }}
+                onProtocols={(v) => { setProtocols(v); resetPage(); }}
+                onDirection={(v) => { setDirection(v); resetPage(); }}
+                onCapture={chooseCapture}
+                onProcedure={(v) => { setProcedure(v); resetPage(); }}
+                onSearch={(v) => { setSearch(v); resetPage(); }}
+                onSize={(v) => { setSize(v); setPage(1); }}
+                onCollapse={toggleSidebar}
+                onReset={() => { setTechnology(""); setProtocols(layers); setDirection(""); setSearch(""); setProcedure(""); setRange(undefined); setMessageSelection(null); setPage(1); }}
+              />
             )}
           </Panel>
           <Separator className="signaling-separator" aria-label="Largeur des filtres" />
@@ -1847,6 +1744,7 @@ export function SignalingPage({
                             data-testid="sig-clear-filters"
                             disabled={!filtersActive}
                             onClick={() => {
+                              setMessageSelection(null);
                               setSearch("");
                               setProtocols(layers);
                               setDirection("");
