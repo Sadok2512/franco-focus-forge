@@ -28,10 +28,15 @@ export function provenState(event: RfEvent, captureId: string): ProvenState | nu
   const a = event.attrs;
   const start = event.t_rel_s;
   const end = event.t_rel_end_s;
-  const session = a["session_id"];
   const technology = a.technology;
-  const state = typeof a["state"] === "string" ? a["state"].toUpperCase() : "";
   const seqs = a.source_seqs;
+  const context = lteConnectedContext(event, captureId);
+  const session = context ?? a["session_id"];
+  const state = context
+    ? "LTE"
+    : typeof a["state"] === "string"
+      ? a["state"].toUpperCase()
+      : "";
   if (
     !track ||
     !captureId ||
@@ -86,6 +91,35 @@ export function provenState(event: RfEvent, captureId: string): ProvenState | nu
         : null,
     evidenceSeqs: [...new Set(seqs)],
   };
+}
+
+export const LTE_CONNECTED_RULE = "nemo_context_connected";
+
+/**
+ * Approved exception: context_id stands in for a session only for LTE Connected,
+ * scoped by the composite (capture_id, context_id), with the full RRA -> RRC -> RRD
+ * evidence chain. Returns the composite session key or null.
+ */
+function lteConnectedContext(event: RfEvent, captureId: string): string | null {
+  const a = event.attrs;
+  const context = a["context_id"];
+  const seqs = a.source_seqs;
+  if (
+    a.rule_id !== LTE_CONNECTED_RULE ||
+    a.evidence_status !== "PROVEN" ||
+    a.technology !== "LTE" ||
+    a["capture_id"] !== captureId ||
+    (typeof context !== "string" && typeof context !== "number") ||
+    !String(context).trim() ||
+    !seqs ||
+    seqs.length !== 3 ||
+    event.seq_end === null ||
+    seqs[1] !== event.seq ||
+    seqs[2] !== event.seq_end ||
+    !(seqs[0] < seqs[1] && seqs[1] < seqs[2])
+  )
+    return null;
+  return `${captureId}:${String(context)}`;
 }
 
 export function provenStates(events: RfEvent[], captureId: string): ProvenState[] {
