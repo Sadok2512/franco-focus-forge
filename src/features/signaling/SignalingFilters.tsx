@@ -84,6 +84,8 @@ export function SignalingFilters(props: {
   onSize: (v: number) => void;
   onReset: () => void;
   onCollapse: () => void;
+  viewControls?: ReactNode;
+
 }) {
   const { t } = useTranslation();
   return (
