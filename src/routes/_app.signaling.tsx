@@ -36,6 +36,7 @@ function Page() {
       projectId={activeProject.id}
       initialCapture={search.capture_id}
       initialSeq={search.seq}
+      stateTracksV2
     />
   ) : (
     <NoActiveProject scope="Signaling View" />
