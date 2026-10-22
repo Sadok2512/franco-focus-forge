@@ -498,23 +498,6 @@ export function MetricsWorkspace({
     previousExternalView.current = externalView;
     if (externalView) setPaneRaw(externalView === "table" ? "table" : "overlay");
   }, [externalView]);
-  const [perRow, setPerRowRaw] = useState<1 | 2 | 3>(() => {
-    try {
-      const n = Number(localStorage.getItem("bc3.metrics.perRow"));
-      if (n === 1 || n === 2 || n === 3) return n;
-    } catch {
-      /* ignore */
-    }
-    return 2;
-  });
-  const setPerRow = (n: 1 | 2 | 3) => {
-    setPerRowRaw(n);
-    try {
-      localStorage.setItem("bc3.metrics.perRow", String(n));
-    } catch {
-      /* ignore */
-    }
-  };
   // Décoder chaque selection "code@cell" en { code, cell }
   const parsedSelections = useMemo(
     () =>
@@ -588,7 +571,6 @@ export function MetricsWorkspace({
       {captureId && (
         <section
           className="kpi-metrics-charts-grid kpi-unified-contents"
-          data-per-row={perRow}
           data-count={Math.min(parsedSelections.length, 8)}
           data-testid="metrics-charts-grid"
         >
@@ -695,7 +677,7 @@ export function MetricsWorkspace({
                 </span>
               </div>
             )}
-            {pane === "charts" ? null : view === "table" ? (
+            {view === "table" ? (
               <div
                 className="kpi-data-table kpi-metrics-table-body kpi-ts"
                 style={tableStyle}
