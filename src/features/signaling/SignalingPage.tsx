@@ -1520,7 +1520,7 @@ export function SignalingPage({
                           Chargement de la timeline…
                         </p>
                       )}
-                      {stateTracksV2 && capture && (
+                      {capture && (
                         <TimeNavigator
                           duration={captureDuration}
                           window={timeWindow}
