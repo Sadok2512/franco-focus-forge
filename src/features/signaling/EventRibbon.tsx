@@ -77,7 +77,7 @@ export function EventRibbon({
   const [enabledLanes, setEnabledLanes] = useState<Set<Lane>>(
     () => new Set(LANES.map((l) => l.key)),
   );
-  const cursorT = preview ?? selectedTime;
+  const cursorT = selectedTime;
 
   const q = useQuery({
     queryKey: ["signaling-events", projectId, captureId, failuresOnly],
@@ -379,7 +379,7 @@ export function EventRibbon({
                 y1={TOP - 6}
                 x2={X(cursorT)}
                 y2={H - 6}
-                className={preview === null ? "signaling-cursor-line" : "signaling-cursor-preview"}
+                className="signaling-cursor-line"
                 strokeWidth={2}
               />
               <text
@@ -393,6 +393,16 @@ export function EventRibbon({
                 {cursorT.toFixed(3)}s
               </text>
             </g>
+          )}
+          {preview !== null && preview !== selectedTime && (
+            <line
+              x1={X(preview)}
+              x2={X(preview)}
+              y1={TOP - 6}
+              y2={H - 6}
+              className="signaling-cursor-preview"
+              pointerEvents="none"
+            />
           )}
         </svg>
       </div>

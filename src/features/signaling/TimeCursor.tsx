@@ -41,6 +41,7 @@ export function TimeCursor({
   const [hover, setHover] = useState<number | null>(null);
   const [size, setSize] = useState({ width: 480, height: 420 });
   const [dismissed, setDismissed] = useState(false);
+  const [, refreshGeometry] = useState(0);
   const drag = useRef(false);
   const frame = useRef<number | undefined>(undefined);
   const latest = useRef({ onTime, selectedTime });
@@ -57,9 +58,15 @@ export function TimeCursor({
   useEffect(() => {
     const element = host.current;
     if (!element || !chart) return;
-    const observer = new ResizeObserver(() =>
-      setSize({ width: element.clientWidth, height: element.clientHeight }),
-    );
+    // ECharts initializes its axes after the overlay mounts. Redraw when pixels
+    // become available, and after resize/zoom, not only after pointer movement.
+    const updateGeometry = () => {
+      setSize({ width: element.clientWidth, height: element.clientHeight });
+      refreshGeometry((revision) => revision + 1);
+    };
+    updateGeometry();
+    chart.on("finished", updateGeometry);
+    const observer = new ResizeObserver(updateGeometry);
     observer.observe(element);
     const timeAt = (event: PointerEvent) => {
       const rect = element.getBoundingClientRect();
@@ -103,6 +110,7 @@ export function TimeCursor({
     window.addEventListener("pointerup", up);
     return () => {
       observer.disconnect();
+      chart.off("finished", updateGeometry);
       element.removeEventListener("pointermove", move);
       element.removeEventListener("pointerdown", down);
       element.removeEventListener("pointerleave", leave);
@@ -113,7 +121,10 @@ export function TimeCursor({
   }, [chart, host, duration]);
   const visible = (time: number) =>
     time >= (duration * zoom[0]) / 100 && time <= (duration * zoom[1]) / 100;
-  const xAt = (time: number) => chart?.convertToPixel({ xAxisIndex: 0 }, time) as number;
+  const xAt = (time: number) => {
+    if (!chart?.getOption()?.["xAxis"]) return NaN;
+    return chart.convertToPixel({ xAxisIndex: 0 }, time) as number;
+  };
   const time = hover ?? selectedTime;
   const x = time === null ? null : xAt(time);
   const selectedX = selectedTime === null ? null : xAt(selectedTime);
