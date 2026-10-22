@@ -18,7 +18,6 @@ import {
   PanelLeftOpen,
   Plus,
   RefreshCw,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
