@@ -702,5 +702,25 @@
     "opt_lightgray": "Gris clair",
     "opt_dark": "Sombre",
     "opt_blue": "Bleu technique"
+  },
+  "panel": {
+    "move": "Glisser pour déplacer",
+    "rename": "Renommer",
+    "width": "Largeur du panneau",
+    "duplicate": "Dupliquer",
+    "collapse": "Replier",
+    "expand": "Déplier",
+    "resize": "Glisser pour changer la hauteur",
+    "remove": "Fermer le panneau",
+    "layout": "Disposition",
+    "add_chronogram": "Ajouter un Chronogram",
+    "add_histogram": "Ajouter un Histogram",
+    "add_table": "Ajouter une Table",
+    "add_metrics_table": "Ajouter le tableau Metrics",
+    "add_map": "Ajouter une Map",
+    "add_kpi": "Ajouter un KPI",
+    "add_series": "Ajouter une série Task Time",
+    "add_timeline": "Ajouter une Timeline",
+    "timeline_unavailable": "disponible seulement dans Signaling"
   }
 }

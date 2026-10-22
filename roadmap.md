@@ -45,3 +45,7 @@
 - [ ] U9–U11 workspaces, shortcuts, a11y polish, QA
 - [x] Premium messages table & always-open payload inspector (V10)
 - [ ] Band, Cell name, NSA/SA mode in messages table — blocked: not supplied by the VM rows API
+- [x] Unified workspace step 1-2: mixed KPI/Metrics panels, rename, move, width/height, collapse, Add panel 7 types.
+- [ ] Sync Time across temporal panels (step 3).
+- [ ] Panel duplicate (needs per-panel ids instead of unique KPI codes).
+- [ ] Timeline/Events panel in KPI (no timeline renderer outside Signaling).
