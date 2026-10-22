@@ -665,7 +665,7 @@ export function RfTimeline({
           inverse: true,
           data: lanes.map((k) =>
             stateTracksV2 && k === "rrcstate"
-              ? rrcStateLaneLabel(t("signalingV2.rrcState"), t("signalingV2.idle"))
+              ? rrcStateLaneLabel(t("signalingV2.rrcState"))
               : t(
                   stateTracksV2 && (k === "uestate" || k === "rrcstate")
                     ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
@@ -677,16 +677,6 @@ export function RfTimeline({
             fontSize: 11,
             rich: {
               title: { color: "#94a3b8", fontSize: 11, fontWeight: 600 },
-              idle: {
-                color: "#64748B",
-                backgroundColor: "rgba(148, 163, 184, 0.22)",
-                borderColor: "rgba(148, 163, 184, 0.5)",
-                borderWidth: 1,
-                borderRadius: 8,
-                padding: [2, 7, 2, 7],
-                fontSize: 10,
-                fontWeight: 600,
-              },
             },
           },
           axisTick: { show: false },
@@ -866,7 +856,6 @@ export function RfTimeline({
               const title = stateLaneTitle(lane, {
                 ueState: t("signalingV2.ueState"),
                 rrcState: t("signalingV2.rrcState"),
-                idle: t("signalingV2.idle"),
               });
               return center === undefined ? null : (
                 <span
@@ -875,7 +864,6 @@ export function RfTimeline({
                   style={{ top: 30 + center - 21 }}
                 >
                   {title.title}
-                  {title.badge && <span className="sig-lane-idle">{title.badge}</span>}
                 </span>
               );
             })}

@@ -1,3 +1,9 @@
+## 1.93.0 (patch) — BC4-FRONT 2026-10-22 — RRC State Idle badge removed (Lovable)
+
+- **`state-presentation.ts`** : `rrcStateLaneLabel(title)` ne renvoie plus que le titre ; `stateLaneTitle` retourne `badge: null` pour les deux pistes d'état.
+- **`RfTimeline.tsx`** : plus de badge gris « Idle » à côté de « RRC State » dans la gouttière (retrait du style `rich.idle` et du span `.sig-lane-idle`) ; les libellés « Idle » à l'intérieur des intervalles Idle prouvés restent inchangés.
+- **`signaling.css`** : règles `.sig-lane-idle` supprimées.
+
 ## 1.92.0 (patch) — BC4-FRONT 2026-10-22 — RF timeline toolbar removed (Lovable)
 
 - **`RfTimeline.tsx`** : le groupe de contrôles au-dessus de la timeline (bouton curseur, sélecteur « Window », zoom +/−, réinitialiser, plein écran) est supprimé ; l'en-tête ne garde que la légende de sévérité et les replis Events/Measurements.
