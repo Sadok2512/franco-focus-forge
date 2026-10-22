@@ -55,8 +55,18 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
 }
 
 export const TECH_ORDER: MessageTech[] = ["LTE", "NR", "NAS", "NEMO", "MAC", "OTHER"];
-export type ChannelNode = { id: string; channel: string | null; count: number; types: MessageType[] };
-export type TechNode = { id: string; technology: MessageTech; count: number; channels: ChannelNode[] };
+export type ChannelNode = {
+  id: string;
+  channel: string | null;
+  count: number;
+  types: MessageType[];
+};
+export type TechNode = {
+  id: string;
+  technology: MessageTech;
+  count: number;
+  channels: ChannelNode[];
+};
 
 /** Technology → Channel → Message, only from present types; unproven channels go to null (Unclassified). */
 export function buildMessageTree(types: MessageType[]): TechNode[] {
@@ -80,7 +90,11 @@ export function buildMessageTree(types: MessageType[]): TechNode[] {
 }
 
 /** Hierarchical search: a matching technology or channel keeps all its children. */
-export function searchMessageTree(tree: TechNode[], query: string, techLabel: (t: MessageTech) => string = (t) => t) {
+export function searchMessageTree(
+  tree: TechNode[],
+  query: string,
+  techLabel: (t: MessageTech) => string = (t) => t,
+) {
   const q = query.trim().toLocaleLowerCase();
   if (!q) return tree;
   const has = (s: string | null) => !!s && s.toLocaleLowerCase().includes(q);
@@ -95,7 +109,8 @@ export function searchMessageTree(tree: TechNode[], query: string, techLabel: (t
     .filter((tech) => tech.channels.length);
 }
 
-export const treeTypes = (tree: TechNode[]) => tree.flatMap((t) => t.channels.flatMap((c) => c.types));
+export const treeTypes = (tree: TechNode[]) =>
+  tree.flatMap((t) => t.channels.flatMap((c) => c.types));
 
 export function checkState(types: MessageType[], selected: Set<string>): boolean | "indeterminate" {
   const n = types.filter((t) => selected.has(t.key)).length;

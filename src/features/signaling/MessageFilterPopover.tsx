@@ -161,16 +161,36 @@ export function MessageFilterPopover({
           </label>
         </div>
         <div className="sig-message-toolbar">
-          <Button variant="outline" size="sm" disabled={loading || error} onClick={() => set(visible, true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || error}
+            onClick={() => set(visible, true)}
+          >
             {t(searching ? "sigFilters.selectVisible" : "sigFilters.all")}
           </Button>
-          <Button variant="outline" size="sm" disabled={loading || error} onClick={() => set(visible, false)}>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={loading || error}
+            onClick={() => set(visible, false)}
+          >
             {t(searching ? "sigFilters.clearVisible" : "sigFilters.none")}
           </Button>
-          <Button variant="ghost" size="sm" disabled={searching} onClick={() => setCollapsed(new Set())}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={searching}
+            onClick={() => setCollapsed(new Set())}
+          >
             {t("sigFilters.expandAll")}
           </Button>
-          <Button variant="ghost" size="sm" disabled={searching} onClick={() => setCollapsed(new Set(groupIds))}>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={searching}
+            onClick={() => setCollapsed(new Set(groupIds))}
+          >
             {t("sigFilters.collapseAll")}
           </Button>
         </div>
@@ -197,7 +217,10 @@ export function MessageFilterPopover({
               const kind = techKinds[tech.technology];
               return (
                 <div key={tech.id} role="treeitem" aria-expanded={isOpen(tech.id)}>
-                  <div className="sig-tree-row sig-tree-tech" data-testid={`tree-tech-${tech.technology}`}>
+                  <div
+                    className="sig-tree-row sig-tree-tech"
+                    data-testid={`tree-tech-${tech.technology}`}
+                  >
                     <Chevron id={tech.id} />
                     <Checkbox
                       aria-label={techLabel(tech.technology)}
@@ -214,7 +237,10 @@ export function MessageFilterPopover({
                       const chLabel = ch.channel ?? t("sigFilters.unclassified");
                       return (
                         <div key={ch.id} role="group">
-                          <div className="sig-tree-row sig-tree-channel" data-testid={`tree-channel-${ch.id}`}>
+                          <div
+                            className="sig-tree-row sig-tree-channel"
+                            data-testid={`tree-channel-${ch.id}`}
+                          >
                             <Chevron id={ch.id} />
                             <Checkbox
                               aria-label={`${techLabel(tech.technology)} · ${chLabel}`}
@@ -222,7 +248,11 @@ export function MessageFilterPopover({
                               onCheckedChange={(c) => set(ch.types, c)}
                             />
                             <span
-                              className={ch.channel ? "sig-tree-channel-name" : "sig-tree-channel-name text-muted-foreground italic"}
+                              className={
+                                ch.channel
+                                  ? "sig-tree-channel-name"
+                                  : "sig-tree-channel-name text-muted-foreground italic"
+                              }
                               title={ch.channel ? undefined : t("sigFilters.unclassifiedHint")}
                             >
                               {chLabel}
