@@ -63,6 +63,7 @@ import {
   decodeTabs,
   encodeTabs,
   newTabsState,
+  migrateMetrics,
   removeTab,
   reorderTab,
   updateTab,
@@ -141,17 +142,20 @@ function Workspace({
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
   const tabsStorageKey = `bc4.kpi.tabs.${projectId}`;
+  const legacyMetrics = Array.isArray(search["metrics"])
+    ? search["metrics"].filter((v): v is string => typeof v === "string")
+    : [];
   const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() => {
     const raw = typeof search["tabs"] === "string" ? (search["tabs"] as string) : "";
     if (raw) {
       const decoded = decodeTabs(raw);
-      if (decoded) return decoded;
+      if (decoded) return migrateMetrics(decoded, legacyMetrics);
     }
     try {
       const stored = localStorage.getItem(tabsStorageKey);
       if (stored) {
         const decoded = decodeTabs(stored);
-        if (decoded) return decoded;
+        if (decoded) return migrateMetrics(decoded, legacyMetrics);
       }
     } catch {
       /* ignore */
@@ -174,7 +178,7 @@ function Workspace({
     const hasExplicitSelection =
       requested.length > 0 || Array.isArray(search["kpis"]) || typeof search["kpi"] === "string";
     const seedCodes = hasExplicitSelection ? valid : [];
-    return newTabsState(seedCodes);
+    return updateTab(newTabsState(seedCodes), "", {});
   });
   const currentTab = pickActiveTab(tabsState);
   const gridCols = currentTab.layout === "auto" ? 2 : Number(currentTab.layout);
