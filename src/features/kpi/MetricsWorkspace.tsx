@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { Search } from "lucide-react";
+import { arrangeRows, orderedColumns, textFor, useTableSettings } from "./table-settings";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -199,6 +201,8 @@ export function MetricsWorkspace({
   view: externalView,
   onViewChange,
   onTablePaneChange,
+  workspaceId = "default",
+  onColumnsChange,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -210,8 +214,11 @@ export function MetricsWorkspace({
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
   onTablePaneChange?: ((table: boolean) => void) | undefined;
+  workspaceId?: string | undefined;
+  onColumnsChange?: ((cols: { code: string; label: string }[]) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
+  const [ts, updateTs] = useTableSettings(workspaceId);
   const [internalView, setInternalView] = useState<View>("table");
   const view = externalView ?? internalView;
   const setView = (v: View) => {
@@ -521,6 +528,32 @@ export function MetricsWorkspace({
     for (const info of catalog) m.set(info.code, info);
     return m;
   }, [catalog]);
+  const columnKey = (data?.columns ?? []).map((c) => c.code).join("|");
+  useEffect(() => {
+    onColumnsChange?.((data?.columns ?? []).map((c) => ({ code: c.code, label: c.label })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [columnKey]);
+  const visibleCols = data ? orderedColumns(data.columns, ts) : [];
+  const shownRows = data
+    ? arrangeRows(data.rows, ts, ts.search.trim()
+        ? (r) => visibleCols.some((c) => r.values[c.code] != null && fmt(r.values[c.code]).includes(ts.search.trim()))
+        : undefined)
+    : [];
+  const tableStyle = {
+    "--t-bg": ts.colors.background, "--t-head-bg": ts.colors.headerBg, "--t-head-fg": ts.colors.headerText,
+    "--t-row": ts.colors.rowBg, "--t-alt": ts.zebra ? ts.colors.altRow : ts.colors.rowBg, "--t-border": ts.colors.border,
+    "--t-sel": ts.colors.selected, "--t-fg": textFor(ts.colors.rowBg),
+    "--t-font": { small: "11px", medium: "12px", large: "14px" }[ts.fontSize],
+    "--t-row-h": { compact: "22px", normal: "28px", comfortable: "36px" }[ts.rowHeight],
+    "--t-head-h": { compact: "26px", normal: "34px", large: "44px" }[ts.headerHeight],
+    "--t-pad": { small: "2px 6px", medium: "4px 10px", large: "8px 14px" }[ts.cellPadding],
+    "--t-gap": { compact: "0px", normal: "6px", wide: "14px" }[ts.spacing],
+    "--t-radius": ts.radius === "rounded" ? "8px" : "0px",
+    "--t-align": ts.cellAlign, "--t-num-align": ts.numberAlign,
+    maxWidth: ts.autoFitWidth ? undefined : `${100 / ts.perRow}%`,
+    height: ts.height === "fixed" ? "480px" : ts.height === "custom" ? `${ts.customHeight}px` : undefined,
+    resize: ts.resizable ? "vertical" : undefined,
+  } as React.CSSProperties;
   const tableTitle = parsedSelections.map((selection) => {
     const info = metricInfoByCode.get(selection.full) ?? metricInfoByCode.get(selection.code);
     const column = data?.columns.find((c) => c.code === selection.full || c.code === selection.code);
@@ -663,7 +696,26 @@ export function MetricsWorkspace({
               </div>
             )}
             {pane === "charts" ? null : view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body">
+              <div
+                className="kpi-data-table kpi-metrics-table-body kpi-ts"
+                style={tableStyle}
+                data-style={ts.style}
+                data-borders={ts.borders}
+                data-sticky-head={ts.stickyHeader}
+                data-sticky-first={ts.stickyFirstColumn}
+                data-wrap={ts.wrap}
+                data-hscroll={ts.hScroll}
+                data-testid="metrics-table-styled"
+              >
+                <label className="kpi-ts-search">
+                  <Search size={12} />
+                  <input
+                    value={ts.search}
+                    onChange={(e) => { updateTs({ search: e.target.value }); setPage(1); }}
+                    placeholder={translate("wss.searchData")}
+                    aria-label={translate("wss.searchData")}
+                  />
+                </label>
                 <div className="kpi-table-scroll">
                   <table>
                     <thead>
@@ -680,16 +732,16 @@ export function MetricsWorkspace({
                           Longitude
                           <small className="block">°</small>
                         </th>
-                        {data.columns.map((c) => (
+                        {visibleCols.map((c) => (
                           <th key={c.code} title={c.code} className="numeric">
                             {c.label}
-                            <small className="block">{c.unit || "—"}</small>
+                            {ts.showUnits && <small className="block">{c.unit || "—"}</small>}
                           </th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows.slice((page - 1) * pageSize, page * pageSize).map((r) => (
+                      {shownRows.slice((page - 1) * pageSize, page * pageSize).map((r) => (
                         <tr key={r.second} data-second={r.second}>
                           <td
                             className="col-time font-mono text-[11px]"
@@ -701,7 +753,7 @@ export function MetricsWorkspace({
                               Pour l'instant, "—" explicite (pas de 0 fabriqué). */}
                           <td className="col-geo numeric text-muted-foreground">—</td>
                           <td className="col-geo numeric text-muted-foreground">—</td>
-                          {data.columns.map((c) => (
+                          {visibleCols.map((c) => (
                             <td
                               className="numeric"
                               key={c.code}
@@ -738,8 +790,8 @@ export function MetricsWorkspace({
                     </select>
                   </label>
                   <span>
-                    Showing {Math.min((page - 1) * pageSize + 1, data.rows.length)}–
-                    {Math.min(page * pageSize, data.rows.length)} of {data.rows.length} rows
+                    Showing {Math.min((page - 1) * pageSize + 1, shownRows.length)}–
+                    {Math.min(page * pageSize, shownRows.length)} of {shownRows.length} rows
                   </span>
                   <span className="pager-nav">
                     <button
@@ -751,7 +803,7 @@ export function MetricsWorkspace({
                     </button>
                     <button
                       className="kpi-button"
-                      disabled={page * pageSize >= data.rows.length}
+                      disabled={page * pageSize >= shownRows.length}
                       onClick={() => setPage((p) => p + 1)}
                     >
                       Next
