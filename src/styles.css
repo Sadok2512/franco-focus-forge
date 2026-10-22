@@ -57,6 +57,15 @@
 
 /* ---- thème sombre (bascule) ---- */
 .dark {
+  --sig-table-header: #1E293B;
+  --sig-table-border: #334155;
+  --sig-table-text: #E2E8F0;
+  --sig-table-muted: #94A3B8;
+  --sig-row-selected: #1E3A8A;
+  --sig-row-related: #422006;
+  --sig-accent: #60A5FA;
+  --sig-asn-field: #BFDBFE;
+  --sig-asn-value: #60A5FA;
   color-scheme: dark;
   --radius: 0.25rem;
   --background: oklch(0.188 0.029 254);        /* #0A1420 */
@@ -132,6 +141,15 @@
   --signaling-cursor: #EF4444;
   --signaling-navigator: #2563EB;
   --signaling-cursor-foreground: #FFFFFF;
+  --sig-table-header: #F1F5F9;
+  --sig-table-border: #E2E8F0;
+  --sig-table-text: #0F172A;
+  --sig-table-muted: #64748B;
+  --sig-row-selected: #DBEAFE;
+  --sig-row-related: #FEF3C7;
+  --sig-accent: #2563EB;
+  --sig-asn-field: #1E3A8A;
+  --sig-asn-value: #2563EB;
   color-scheme: light;
   --radius: 0.5rem;
   --chart-1: oklch(0.6 0.18 250);
