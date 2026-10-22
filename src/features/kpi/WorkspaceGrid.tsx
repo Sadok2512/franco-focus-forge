@@ -3,7 +3,12 @@ import { PanelGridContext } from "./PanelShell";
 import { workspaceColumns } from "./workspace-grid";
 import type { WorkspaceLayout } from "./workspace-tabs";
 
-export function WorkspaceGrid({ layout, count, hidden, children }: {
+export function WorkspaceGrid({
+  layout,
+  count,
+  hidden,
+  children,
+}: {
   layout: WorkspaceLayout;
   count: number;
   hidden?: boolean;
@@ -29,7 +34,9 @@ export function WorkspaceGrid({ layout, count, hidden, children }: {
         data-columns={cols}
         data-unified="true"
         data-testid="workspace-panel-grid"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(${cols === 1 ? "0" : "260px"}, 1fr))` }}
+        style={{
+          gridTemplateColumns: `repeat(${cols}, minmax(${cols === 1 ? "0" : "260px"}, 1fr))`,
+        }}
       >
         <PanelGridContext.Provider value={{ cols }}>{children}</PanelGridContext.Provider>
       </div>

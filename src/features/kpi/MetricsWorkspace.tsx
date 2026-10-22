@@ -501,7 +501,9 @@ export function MetricsWorkspace({
   useEffect(() => {
     try {
       sessionStorage.setItem(`bc4.metrics.views.${workspaceId}`, JSON.stringify(cardViews));
-    } catch { /* Memory-only if storage is unavailable. */ }
+    } catch {
+      /* Memory-only if storage is unavailable. */
+    }
   }, [cardViews, workspaceId]);
   const panelRef = useRef<HTMLElement>(null);
   useEffect(() => {

@@ -519,7 +519,8 @@ export function KpiGraphCard({
                     }}
                   >
                     <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
-                    <VisualizationItems excludeGraph
+                    <VisualizationItems
+                      excludeGraph
                       throughput={seriesAvailable}
                       seriesAvailable={seriesAvailable}
                       onChange={(visualization) => onConfig({ ...config, visualization })}
