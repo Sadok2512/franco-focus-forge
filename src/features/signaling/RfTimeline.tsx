@@ -609,7 +609,11 @@ export function RfTimeline({
                         },
                         style: { fill: muted },
                       },
-                      ...[-8, 8].map((offset) => ({
+                      ...[-8, 8].filter((offset) => !states.some((state) =>
+                        state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
+                        (state.technology === "LTE") === (offset < 0) &&
+                        state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
+                      )).map((offset) => ({
                         type: "text",
                         style: {
                           x: area.x + 6,
