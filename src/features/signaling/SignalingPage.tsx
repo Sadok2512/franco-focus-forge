@@ -2,6 +2,7 @@ import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
 import { RfTimeline } from "./RfTimeline";
 import { EventRibbon } from "./EventRibbon";
+import { revealRow } from "./reveal-row";
 import { followMessage, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { TimeNavigator } from "./TimeNavigator";
 import { Link } from "@tanstack/react-router";
@@ -1112,6 +1113,14 @@ export function SignalingPage({
                 : undefined,
           isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
         };
+  const tableScroll = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (seq === undefined) return;
+    const id = requestAnimationFrame(() => {
+      if (tableScroll.current) revealRow(tableScroll.current, seq);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [seq, page, listing.data?.rows]);
   const timeline = useQuery({
     queryKey: ["signaling-timeline", projectId, base],
     enabled: !!capture && compact,
@@ -1855,7 +1864,11 @@ export function SignalingPage({
                           </button>
                         </div>
                       </header>
-                      <div className="min-h-0 flex-1 overflow-auto" data-testid="sig-table-scroll">
+                      <div
+                        className="min-h-0 flex-1 overflow-auto"
+                        data-testid="sig-table-scroll"
+                        ref={tableScroll}
+                      >
                         <table className="sig-table" aria-label={t("sigTable.title")}>
                           <thead>
                             <tr>
