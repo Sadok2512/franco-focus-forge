@@ -718,6 +718,7 @@
     "expand": "Expand",
     "resize": "Drag to resize height",
     "remove": "Close panel",
+    "open_metrics_table": "Show metrics table",
     "layout": "Layout",
     "add_chronogram": "Add Chronogram",
     "add_histogram": "Add Histogram",

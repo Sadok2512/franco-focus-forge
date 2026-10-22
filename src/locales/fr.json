@@ -718,6 +718,7 @@
     "expand": "Déplier",
     "resize": "Glisser pour changer la hauteur",
     "remove": "Fermer le panneau",
+    "open_metrics_table": "Afficher le tableau des métriques",
     "layout": "Disposition",
     "add_chronogram": "Ajouter un Chronogram",
     "add_histogram": "Ajouter un Histogram",
