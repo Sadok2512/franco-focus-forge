@@ -23,12 +23,26 @@ import {
   Activity,
   ActivitySquare,
   ArrowDown,
+  ArrowLeftRight,
   ArrowUp,
+  ArrowUpDown,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
+  CircleCheck,
+  CircleX,
+  Clock,
   Columns3,
+  Download,
+  FilterX,
+  Gauge,
+  LogIn,
+  LogOut,
   MapPin,
   MapPinOff,
+  RadioTower,
+  Search,
   SlidersHorizontal,
 } from "lucide-react";
 import {
@@ -39,42 +53,31 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DecoderTree } from "./DecoderTree";
+import { provenStates } from "./state-evidence";
+import {
+  COLUMNS,
+  COLUMNS_STORAGE_KEY,
+  MANDATORY_COLS,
+  defaultColumns,
+  messageInfo,
+  moveColumn,
+  pageItems,
+  parseColumns,
+  radioAt,
+  rrcStateAt,
+  toggleColumn,
+  visibleColumns,
+  type ColKey,
+  type ColumnConfig,
+  type MessageInfo,
+} from "./message-columns";
 import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = layers.map((layer) => rfProtocolColors[layer]!);
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
 
-// 1.55.0 (V3 LOT 2) — Column catalog. Only fields supported by the back
-// Line contract. Section 6 of the V3 spec forbids inventing values; any
-// column requested by the spec but not provided by /signaling (EARFCN,
-// Bande, Service, RSRP/RSRQ/SINR/CQI/BLER, eNB/gNB, Lat/Lng/Speed) is
-// absent from this catalog and must stay hidden until the back supplies
-// the data.
-type ColKey =
-  | "seq"
-  | "t_rel_s"
-  | "layer"
-  | "direction"
-  | "message_name"
-  | "ecgi"
-  | "pci"
-  | "size_bytes"
-  | "technology"
-  | "source";
-const COL_LABELS: Record<ColKey, string> = {
-  seq: "#",
-  t_rel_s: "Temps (s)",
-  layer: "Couche",
-  direction: "Sens",
-  message_name: "Message",
-  ecgi: "ECGI",
-  pci: "PCI",
-  size_bytes: "Octets",
-  technology: "Techno",
-  source: "Source",
-};
-const MANDATORY_COLS: readonly ColKey[] = ["seq", "t_rel_s", "message_name"];
+// V10 column catalog lives in message-columns.ts (catalog, persistence, Info/RRC/radio rules).
 
 // 1.61.0 — Badges couleur par couche. Spec §5 : RRC LTE bleu, RRC NR
 // violet, NAS orange, Événements Nemo cyan, MAC-RACH vert. Mapping sur
@@ -522,16 +525,61 @@ function messageCell(row: RowLike, procedures: ProcLike[]) {
     </>
   );
 }
-const DEFAULT_COLS: readonly ColKey[] = [
-  "seq",
-  "t_rel_s",
-  "layer",
-  "direction",
-  "message_name",
-  "ecgi",
-  "pci",
-  "size_bytes",
-];
+const fmtInt = (n: number) => new Intl.NumberFormat("en-US").format(n);
+const fmtRadio = (n: number) => (n < 0 ? `−${Math.abs(n).toFixed(1)}` : n.toFixed(1));
+
+const INFO_ICONS = {
+  setup: LogIn,
+  release: LogOut,
+  scg: RadioTower,
+  handover: ArrowLeftRight,
+  measurement: Gauge,
+  other: Activity,
+} as const;
+function InfoBadge({ info }: { info: MessageInfo | null }) {
+  if (!info) return <span className="text-muted-foreground">—</span>;
+  const Icon = info.role === "error" ? CircleX : info.role === "success" ? CircleCheck : INFO_ICONS[info.kind];
+  return (
+    <span className={`sig-info sig-info-${info.role}`} title={`${info.label} · ${info.outcome}`}>
+      <Icon size={12} aria-hidden="true" />
+      <span className="truncate">{info.label}</span>
+    </span>
+  );
+}
+
+/** Compact summary of leaf values actually decoded (first named fields only). */
+function DecodedValues({
+  parameters,
+}: {
+  parameters: { path: string; value: unknown; param_key: string | null; redacted_reason?: string | null | undefined }[];
+}) {
+  const rows = parameters
+    .filter((p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"))
+    .slice(0, 10);
+  if (!rows.length) return null;
+  return (
+    <section className="sig-decoded shrink-0 border-t pt-2" data-testid="decoded-values">
+      <h3 className="mb-1 text-xs font-semibold">Decoded values</h3>
+      <table className="w-full">
+        <tbody>
+          {rows.map((p, i) => (
+            <tr key={`${p.path}:${i}`}>
+              <th scope="row" title={p.path}>
+                {p.param_key ?? p.path.split("/").slice(-1)[0]}
+              </th>
+              <td>{typeof p.value === "string" ? p.value : JSON.stringify(p.value)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {parameters.length > rows.length && (
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          {rows.length} / {parameters.length} — liste complète dans « Paramètres »
+        </p>
+      )}
+    </section>
+  );
+}
 
 const timeShown = (value: number | null | undefined) => (value == null ? "—" : value.toFixed(3));
 const radioShown = (value: number | null | undefined, unit: string) =>
@@ -883,23 +931,22 @@ export function SignalingPage({
     if (next) filtersPanelRef.current?.collapse();
     else filtersPanelRef.current?.expand();
   };
-  // 1.55.0 (V3 LOT 2) — visibilité des colonnes, session-scoped useState
-  // (jamais inclus dans un queryKey, jamais déclencheur de refetch).
-  const [visibleCols, setVisibleCols] = useState<Set<ColKey>>(() => new Set<ColKey>(DEFAULT_COLS));
-  const toggleCol = (c: ColKey) => {
-    if (MANDATORY_COLS.includes(c)) return;
-    setVisibleCols((prev) => {
-      const next = new Set(prev);
-      if (next.has(c)) next.delete(c);
-      else next.add(c);
-      return next;
-    });
-  };
-  const resetCols = () => setVisibleCols(new Set<ColKey>(DEFAULT_COLS));
-  // 1.56.0 (V3 LOT 3) — Inspector Payload First. Tab state séparé de la
-  // sélection (P0 1.50.1) et de toute clé React Query. Default = Payload,
-  // préservé entre deux sélections conformément à spec §7.
-  type InspectorTab = "Payload" | "Hexadécimal" | "Paramètres" | "Call Flow" | "Détails";
+  // V10 — column visibility + order, persisted locally; never part of a query key.
+  const [colConfig, setColConfig] = useState<ColumnConfig>(() =>
+    typeof window === "undefined"
+      ? defaultColumns()
+      : parseColumns(window.localStorage.getItem(COLUMNS_STORAGE_KEY)),
+  );
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(colConfig));
+    } catch {
+      /* storage unavailable: keep session config */
+    }
+  }, [colConfig]);
+  const shownCols = visibleColumns(colConfig);
+  // Inspector tab state is independent of selection and of every query key.
+  type InspectorTab = "Payload" | "Paramètres" | "Call Flow" | "Détails" | "Hexadécimal";
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("Payload");
   // 1.58.0 (V3 LOT 5) — Toggle Carte ON/OFF, session-local useState.
   // Jamais inclus dans un queryKey (ne déclenche aucun refetch des points).
