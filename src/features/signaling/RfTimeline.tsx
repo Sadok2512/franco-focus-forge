@@ -345,13 +345,13 @@ export function RfTimeline({
         .trim();
       const color = proof
         ? stateColor
-        : item.attrs.status === "FAILURE"
+        : marker.role === "error"
           ? rfColors["failure"]!
           : isBand
             ? (rfColors[track] ?? rfColors["unknown"]!)
-            : item.attrs.track === "network"
+            : track === "network"
               ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
-              : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
+              : (rfColors[track] ?? rfColors["unknown"]!);
       const coordSys = params.coordSys as unknown as { x: number; width: number };
       if (
         stateTracksV2 &&
