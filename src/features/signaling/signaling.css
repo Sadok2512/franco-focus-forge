@@ -19,6 +19,8 @@
 .signaling-cursor-handle:hover { background: var(--signaling-cursor); }
 .signaling-cursor-tooltip { position: absolute; top: 44px; z-index: 4; max-height: 290px; overflow: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 15%, transparent); font-size: 11px; }
 .signaling-rf-marker { fill: var(--card); stroke: currentColor; stroke-width: 2px; }
+.signaling-rf-readout { position: absolute; left: 112px; right: 24px; bottom: 2px; height: 18px; display: flex; gap: 24px; align-items: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; pointer-events: none; background: transparent; }
+.signaling-rf-readout small { font-weight: 400; color: var(--muted-foreground); }
 .signaling-metric-0 { color: var(--primary); }
 .signaling-metric-1 { color: var(--sev-good); }
 .signaling-metric-2 { color: var(--op-orange); }
