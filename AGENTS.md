@@ -30,6 +30,7 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 - Signaling cursor uses one capture-time state in SignalingPage and a single ECharts pixel overlay across all RF grids; cursor motion is local so selection never becomes a list query key or triggers details requests.
 - Signaling starts its cursor at capture time zero without selecting a message; pixel overlays refresh on chart readiness and resize, and hover previews never replace the locked cursor.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
+- MetricsWorkspace reports its Table pane to the parent; hide KPI-only controls only in a metrics-only Table workspace, preserving controls for mixed/KPI and other views. Table titles use API metric and cell labels, never a hardcoded example.
 
 - Signaling visible time and TimeNavigator are shared by all timeline views in SignalingPage; both /signaling and /signaling-v2 use the UE/RRC State layout with the configurable 30 s initial window (user request to match the V6 mockup). Zoom changes are local and never message/map query keys.
 - Navigator edge resizing uses a pure boundary-clamping helper and capture-coordinate pointer deltas; it changes only the shared visible window, never cursor or message state.
