@@ -542,6 +542,17 @@ function Workspace({
               >
                 {translate("kpi.498227f2b5c6")}
               </button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="kpi-catalog-toggle ml-auto self-center"
+                title={translate("panel.collapse_catalogue")}
+                aria-label={translate("panel.collapse_catalogue")}
+                data-testid="kpi-catalog-collapse"
+                onClick={() => cataloguePanel.current?.collapse()}
+              >
+                <PanelLeftClose size={15} />
+              </Button>
             </div>
             {activeCatalog === "kpi" ? (
               <KpiCatalogSidebar
