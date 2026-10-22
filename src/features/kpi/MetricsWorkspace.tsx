@@ -753,30 +753,11 @@ export function MetricsWorkspace({
                 ))}
               </div>
             )}
-            {/* 1.82.1 — Panel "Information · #UUID" supprimé en mode Charts
-                et Overlay/graph (user). Les métadonnées restent accessibles
-                via le hover title du row du Table (tooltip) + les cartes
-                individuelles MetricGraphCard (chacune a son propre info). */}
-            {pane === "table" && (
-              <details className="p-3 border-t text-xs">
-                <summary title={`result_id: ${data.result_id}`}>
-                  {translate("metrics.23c32c5569dc")}{" "}
-                  <span className="text-muted-foreground font-mono text-[10px]">
-                    #{String(data.result_id).slice(0, 8)}
-                  </span>
-                </summary>
-                <p>{data.aggregation}</p>
-                <p>{data.time_policy}</p>
-                <p>{data.pairing}</p>
-                <p>
-                  {" "}
-                  {translate("metrics.11d1fa9f3de9")} {data.decoder_version} · {data.decode_level}
-                </p>
-                {data.gaps.map((g) => (
-                  <p key={g}>{g}</p>
-                ))}
-              </details>
-            )}
+            {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
+                Table, Overlay). Les métadonnées (result_id, aggregation,
+                time_policy, pairing, decoder_version, decode_level, gaps)
+                restent accessibles côté API /metrics/table response et
+                via le tooltip title du row (`seq N–M · t_rel Xs`). */}
           </>
         )
       )}
