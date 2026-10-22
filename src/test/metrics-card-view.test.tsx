@@ -132,7 +132,7 @@ describe("Metrics Charts pane card view", () => {
     const card = document.querySelector('[data-metric-code="ci_rs_snr@0"]');
     expect(card).not.toBeNull();
     expect(card?.getAttribute("data-view")).toBe("graph");
-    fireEvent.keyDown(screen.getByTestId("metric-view-trigger"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByTestId("workspace-panel-menu"), { key: "Enter" });
     const item = await screen.findByRole("menuitem", { name: /table/i });
     fireEvent.click(item);
     await waitFor(() => {

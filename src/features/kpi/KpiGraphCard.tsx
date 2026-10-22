@@ -480,95 +480,93 @@ export function KpiGraphCard({
                     }
                   }}
                 >
+                  <DropdownMenuItem
+                    onSelect={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
+                  >
+                    <Info size={14} /> {translate("panel.info")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={() => setFull(true)}>
+                    <Maximize2 size={14} /> {translate("panel.fullscreen")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
+                  <VisualizationItems
+                    excludeGraph
+                    throughput={seriesAvailable}
+                    seriesAvailable={seriesAvailable}
+                    onChange={(visualization) => onConfig({ ...config, visualization })}
+                  />
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    title={taskView ? translate("kpi.853624eed2fd") : undefined}
+                    disabled={
+                      config.visualization === "task_scatter" ||
+                      config.visualization === "chronogram"
+                    }
+                    onSelect={() => {
+                      settingsRequested.current = true;
+                    }}
+                  >
+                    {" "}
+                    {translate("kpi.c50196dca9cc")}{" "}
+                  </DropdownMenuItem>
+                  <DropdownMenuLabel>{translate("kpi.4d7107c7bbd7")}</DropdownMenuLabel>
+                  {groupOptions.map((group) => (
                     <DropdownMenuItem
-                      onSelect={() => (taskView ? taskPanel.current?.info() : setInfo(true))}
+                      key={group}
+                      disabled={taskView}
+                      title={taskView ? translate("kpi.2403c2e13659") : undefined}
+                      onSelect={() => onConfig({ ...config, groupBy: group, xMetric: group })}
                     >
-                      <Info size={14} /> {translate("panel.info")}
+                      {GROUP_LABELS[group]}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={() => setFull(true)}>
-                      <Maximize2 size={14} /> {translate("panel.fullscreen")}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>{translate("kpi.a9b06cf1234b")}</DropdownMenuLabel>
-                    <VisualizationItems
-                      excludeGraph
-                      throughput={seriesAvailable}
-                      seriesAvailable={seriesAvailable}
-                      onChange={(visualization) => onConfig({ ...config, visualization })}
-                    />
-                    <DropdownMenuSeparator />
+                  ))}
+                  <DropdownMenuLabel>{translate("kpi.a6fc812e6cb4")}</DropdownMenuLabel>
+                  {choices.map((stat) => (
                     <DropdownMenuItem
-                      title={taskView ? translate("kpi.853624eed2fd") : undefined}
-                      disabled={
-                        config.visualization === "task_scatter" ||
-                        config.visualization === "chronogram"
-                      }
-                      onSelect={() => {
-                        settingsRequested.current = true;
-                      }}
+                      key={stat}
+                      disabled={taskView}
+                      title={taskView ? translate("kpi.4ad1fbe164ab") : undefined}
+                      onSelect={() => onStatistic(stat)}
                     >
-                      {" "}
-                      {translate("kpi.c50196dca9cc")}{" "}
+                      {STAT_LABELS[stat]}
                     </DropdownMenuItem>
-                    <DropdownMenuLabel>{translate("kpi.4d7107c7bbd7")}</DropdownMenuLabel>
-                    {groupOptions.map((group) => (
-                      <DropdownMenuItem
-                        key={group}
-                        disabled={taskView}
-                        title={taskView ? translate("kpi.2403c2e13659") : undefined}
-                        onSelect={() => onConfig({ ...config, groupBy: group, xMetric: group })}
-                      >
-                        {GROUP_LABELS[group]}
-                      </DropdownMenuItem>
-                    ))}
-                    <DropdownMenuLabel>{translate("kpi.a6fc812e6cb4")}</DropdownMenuLabel>
-                    {choices.map((stat) => (
-                      <DropdownMenuItem
-                        key={stat}
-                        disabled={taskView}
-                        title={taskView ? translate("kpi.4ad1fbe164ab") : undefined}
-                        onSelect={() => onStatistic(stat)}
-                      >
-                        {STAT_LABELS[stat]}
-                      </DropdownMenuItem>
-                    ))}
-                    {!choices.length && (
-                      <DropdownMenuItem disabled>{translate("kpi.c4e1ed3eaecc")}</DropdownMenuItem>
-                    )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      title={
-                        taskView ? translate("kpi.88838bdebe9c") : translate("kpi.71776885807e")
-                      }
-                      disabled={
-                        !plot ||
-                        !["histogram", "graph"].includes(config.visualization) ||
-                        status !== "Available"
-                      }
-                      onSelect={exportPng}
-                    >
-                      {" "}
-                      {translate("kpi.724ac19af72e")}{" "}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      disabled={!taskView && !rows.length}
-                      onSelect={() =>
-                        taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
-                      }
-                    >
-                      {" "}
-                      {translate("kpi.b84f9613287b")}{" "}
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(-1)}>
-                      <ArrowLeft size={14} /> {translate("kpi.e88429ea6b60")}{" "}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(1)}>
-                      <ArrowRight size={14} /> {translate("kpi.e26063a217d2")}{" "}
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onSelect={onRemove}>
-                      <X size={14} /> {translate("kpi.bc0501383465")}{" "}
-                    </DropdownMenuItem>
+                  ))}
+                  {!choices.length && (
+                    <DropdownMenuItem disabled>{translate("kpi.c4e1ed3eaecc")}</DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    title={taskView ? translate("kpi.88838bdebe9c") : translate("kpi.71776885807e")}
+                    disabled={
+                      !plot ||
+                      !["histogram", "graph"].includes(config.visualization) ||
+                      status !== "Available"
+                    }
+                    onSelect={exportPng}
+                  >
+                    {" "}
+                    {translate("kpi.724ac19af72e")}{" "}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    disabled={!taskView && !rows.length}
+                    onSelect={() =>
+                      taskView ? taskPanel.current?.csv() : exportRows(rows, entry.item.code)
+                    }
+                  >
+                    {" "}
+                    {translate("kpi.b84f9613287b")}{" "}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem disabled={index === 0} onSelect={() => onMove(-1)}>
+                    <ArrowLeft size={14} /> {translate("kpi.e88429ea6b60")}{" "}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem disabled={index === count - 1} onSelect={() => onMove(1)}>
+                    <ArrowRight size={14} /> {translate("kpi.e26063a217d2")}{" "}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onSelect={onRemove}>
+                    <X size={14} /> {translate("kpi.bc0501383465")}{" "}
+                  </DropdownMenuItem>
                 </WorkspacePanelMenu>
               </span>
             </PopoverAnchor>

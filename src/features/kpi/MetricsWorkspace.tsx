@@ -665,9 +665,7 @@ export function MetricsWorkspace({
                   <DropdownMenuItem disabled={!data} onSelect={exportCsv}>
                     <Download size={14} /> {translate("panel.export_csv")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem
-                    onSelect={() => void panelRef.current?.requestFullscreen?.()}
-                  >
+                  <DropdownMenuItem onSelect={() => void panelRef.current?.requestFullscreen?.()}>
                     <Maximize2 size={14} /> {translate("panel.fullscreen")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
