@@ -609,21 +609,28 @@ export function RfTimeline({
                         },
                         style: { fill: muted },
                       },
-                      ...[-8, 8].filter((offset) => !states.some((state) =>
-                        state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
-                        (state.technology === "LTE") === (offset < 0) &&
-                        state.startS <= visibleWindow[0] && state.endS > visibleWindow[0],
-                      )).map((offset) => ({
-                        type: "text",
-                        style: {
-                          x: area.x + 6,
-                          y: (point[1] ?? 0) + offset,
-                          text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
-                          fontSize: 9,
-                          verticalAlign: "middle",
-                          fill: text,
-                        },
-                      })),
+                      ...[-8, 8]
+                        .filter(
+                          (offset) =>
+                            !states.some(
+                              (state) =>
+                                state.track === (lane === 0 ? "UE_STATE" : "RRC_STATE") &&
+                                (state.technology === "LTE") === offset < 0 &&
+                                state.startS <= visibleWindow[0] &&
+                                state.endS > visibleWindow[0],
+                            ),
+                        )
+                        .map((offset) => ({
+                          type: "text",
+                          style: {
+                            x: area.x + 6,
+                            y: (point[1] ?? 0) + offset,
+                            text: `${offset < 0 ? "LTE" : "NR"} · ${t("signalingV2.unknown")}`,
+                            fontSize: 9,
+                            verticalAlign: "middle",
+                            fill: text,
+                          },
+                        })),
                     ],
                   };
                 }) as CustomSeriesRenderItem,
