@@ -6,8 +6,8 @@ import type { MessageSelection } from "@/features/signaling/message-filter";
 import "@/lib/i18n";
 
 const types = [
-  { key: "paging", name: "Paging", protocol: "RRC LTE", count: 24 },
-  { key: "request", name: "RRCConnectionRequest", protocol: "RRC LTE", count: 11 },
+  { key: "paging", name: "Paging", protocol: "RRC LTE", count: 24, technology: "LTE" as const, channel: "PCCH" },
+  { key: "request", name: "RRCConnectionRequest", protocol: "RRC LTE", count: 11, technology: "LTE" as const, channel: "UL-CCCH" },
 ];
 describe("transactional popup", () => {
   it("Cancel leaves the applied selection untouched; Apply persists across reopen", async () => {

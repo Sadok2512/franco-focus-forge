@@ -80,7 +80,7 @@ export function buildMessageTree(types: MessageType[]): TechNode[] {
 }
 
 /** Hierarchical search: a matching technology or channel keeps all its children. */
-export function searchMessageTree(tree: TechNode[], query: string, techLabel = (t: MessageTech) => t) {
+export function searchMessageTree(tree: TechNode[], query: string, techLabel: (t: MessageTech) => string = (t) => t) {
   const q = query.trim().toLocaleLowerCase();
   if (!q) return tree;
   const has = (s: string | null) => !!s && s.toLocaleLowerCase().includes(q);
