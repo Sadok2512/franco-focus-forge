@@ -105,7 +105,6 @@ export function RfTimeline({
   const { t, i18n } = useTranslation();
   const [layers, setLayers] = useState(protocols);
   const [measures, setMeasures] = useState(codes);
-  const [linked, setLinked] = useState<RfEvent>();
   const [ready, setReady] = useState(0);
   const [, redrawCursor] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
@@ -238,7 +237,6 @@ export function RfTimeline({
   current.current = { displayed, series, duration, cursorSeries };
   useEffect(() => {
     setWindowSeq(undefined);
-    setLinked(undefined);
     setNameTag(null);
   }, [captureId]);
   // The chip is anchored to pixels, so it must not survive a pan or a zoom.
@@ -287,7 +285,6 @@ export function RfTimeline({
         const x = p.event?.offsetX ?? 0;
         const y = p.event?.offsetY ?? 0;
         if (p.data?.event) {
-          setLinked(p.data.event);
           callbacks.current.onSelect(p.data.event);
           setNameTag({ name: p.data.event.label, code: "event", x, y });
           return;
@@ -971,37 +968,6 @@ export function RfTimeline({
             </span>
           ) : null}
         </div>
-        {linked && (
-          <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
-            {states
-              .filter((state) => state.event.id === linked.id)
-              .map((state) => (
-                <span key={state.event.id} className="basis-full text-muted-foreground">
-                  {linked.label} ·{" "}
-                  {t("signalingV2.interval", {
-                    start: state.startS.toFixed(3),
-                    end: state.endS.toFixed(3),
-                  })}{" "}
-                  · {t("signalingV2.session")}: {state.sessionId}
-                  {state.carrierStatus
-                    ? ` · ${state.componentCarriers} ${t(`signalingV2.${state.carrierStatus}`)}`
-                    : ""}
-                </span>
-              ))}
-            {t("rfTimeline.evidence")}:{" "}
-            {linked.linked_seqs.map((s) => (
-              <Button
-                variant="outline"
-                size="sm"
-                key={s}
-                className="kpi-button"
-                onClick={() => onSelect(linked, s)}
-              >
-                #{s}
-              </Button>
-            ))}
-          </div>
-        )}
         <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
       </div>
     </div>
