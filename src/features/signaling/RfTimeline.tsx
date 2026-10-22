@@ -15,6 +15,7 @@ import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
+import { TimeNavigator } from "./TimeNavigator";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -900,7 +901,6 @@ export function RfTimeline({
             captureId={captureId}
           />
         </div>
-      </div>
       {false && (
         <p
           className="shrink-0 text-[10px] text-muted-foreground"
@@ -910,7 +910,7 @@ export function RfTimeline({
         </p>
       )}
       {linked && (
-        <div className="flex flex-wrap gap-2 text-xs" data-testid="rf-evidence">
+        <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
           {t("rfTimeline.evidence")}:{" "}
           {linked.linked_seqs.map((s) => (
             <Button
@@ -925,6 +925,8 @@ export function RfTimeline({
           ))}
         </div>
       )}
+        <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />
+      </div>
     </div>
   );
 }
