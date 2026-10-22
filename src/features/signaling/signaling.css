@@ -1,4 +1,4 @@
-.signaling-workspace { height: calc(100dvh - 130px); min-height: 650px; }
+.signaling-workspace { height: calc(100dvh - 81px); min-height: 650px; }
 .signaling-pane { height: 100%; min-height: 0; min-width: 0; }
 .signaling-separator { flex: 0 0 9px; position: relative; border-radius: 4px; outline-offset: -2px; }
 .signaling-separator:hover, .signaling-separator:focus-visible { background: color-mix(in srgb, var(--primary) 18%, transparent); }
@@ -20,8 +20,6 @@
 .signaling-cursor-tooltip { position: absolute; top: 44px; z-index: 4; max-height: 290px; overflow: auto; border: 1px solid var(--border); border-radius: 4px; padding: 8px; background: var(--popover); color: var(--popover-foreground); box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 15%, transparent); font-size: 11px; }
 .signaling-rf-marker { fill: var(--card); stroke: currentColor; stroke-width: 2px; }
 .signaling-rf-readout { position: absolute; left: 112px; right: 24px; bottom: 2px; height: 18px; display: flex; gap: 24px; align-items: center; font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; pointer-events: none; background: transparent; }
-.sig-lane-idle { display: inline-block; padding: 1px 7px; border: 1px solid rgba(148, 163, 184, 0.5); border-radius: 8px; background: rgba(148, 163, 184, 0.22); color: #64748b; font-size: 10px; font-weight: 600; line-height: 1.5; white-space: nowrap; }
-html.dark .sig-lane-idle { border-color: rgba(148, 163, 184, 0.4); background: rgba(148, 163, 184, 0.14); color: #94a3b8; }
 .signaling-rf-readout small { font-weight: 400; color: var(--muted-foreground); }
 .signaling-metric-0 { color: var(--primary); }
 .signaling-metric-1 { color: var(--sev-good); }
@@ -92,7 +90,9 @@ html.dark .sig-lane-idle { border-color: rgba(148, 163, 184, 0.4); background: r
 .sig-filters-header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 12px 10px; border-bottom:1px solid var(--border); }
 .sig-filters-header h2 { flex:1; font-size:16px; letter-spacing:0; }
 .sig-filters-header p { flex-basis:100%; color:var(--muted-foreground); font-size:11px; }
-.sig-filters-header button { padding:0 4px; height:28px; }
+.sig-filters-header > button { padding:0 4px; height:28px; }
+.sig-filters-view { flex-basis:100%; display:flex; flex-wrap:wrap; gap:6px; align-items:center; margin-top:2px; }
+
 .sig-filter-icon { display:grid; place-items:center; color:var(--primary); }
 .sig-filters-sections { min-height:0; overflow:auto; flex:1; padding:0 12px 10px; }
 .sig-filter-section { padding:8px 0 11px; border-bottom:1px solid var(--border); }

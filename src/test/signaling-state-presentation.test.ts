@@ -87,16 +87,15 @@ describe("V9 evidence-only product mapping", () => {
       height: 180,
     });
   });
-  it("keeps the RRC State title and a gray Idle badge on the lane label", () => {
-    const label = rrcStateLaneLabel("RRC State", "Idle");
+  it("keeps the RRC State title without an Idle badge on the lane label", () => {
+    const label = rrcStateLaneLabel("RRC State");
     expect(label).toContain("RRC State");
-    expect(label).toContain("Idle");
     expect(label.startsWith("{title|")).toBe(true);
-    expect(label).toContain("{idle|Idle}");
+    expect(label).not.toContain("Idle");
   });
-  it("shows the RRC State title with its Idle badge in the lane gutter", () => {
-    const labels = { ueState: "UE State", rrcState: "RRC State", idle: "Idle" };
-    expect(stateLaneTitle("rrcstate", labels)).toEqual({ title: "RRC State", badge: "Idle" });
+  it("shows the RRC State title with no badge in the lane gutter", () => {
+    const labels = { ueState: "UE State", rrcState: "RRC State" };
+    expect(stateLaneTitle("rrcstate", labels)).toEqual({ title: "RRC State", badge: null });
     expect(stateLaneTitle("uestate", labels)).toEqual({ title: "UE State", badge: null });
   });
 });

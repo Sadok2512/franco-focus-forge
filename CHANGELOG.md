@@ -1,3 +1,19 @@
+## 1.96.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.92→1.95 (toolbar cleanup) ↔ BC3 1.92.1 (Scanner banner workspace-level) (Agent BC3)
+
+Suite directe des 2 lots (Lovable workspace toolbar removals 1.92→1.95 + BC3 scanner UI 1.92.1).
+
+- MetricsWorkspace: version Lovable (barres toolbar supprimées) retenue — compatible avec BC3 Time/GPS (fichier merged auto).
+- SignalingFilters: version Lovable (view controls déplacés en sidebar) + mon badge Scanner prefix maintenu dans le select.
+- state-presentation.ts: version Lovable (badge Idle gutter supprimé) retenue — ne touche pas ma logique Idle/Connected lane.
+- KpiWorkspace: ma version BC3 (banner scanner workspace-level) retenue.
+- MetricsCatalogSidebar: ma version BC3 (captureKind prop + grayed cell leaves) retenue.
+
+Lovable n'a pas touché à mes points sensibles — merge essentiellement conservatif.
+
+Entrées Lovable 1.92/1.93/1.94/1.95 conservées intégralement ci-dessous.
+
+---
+
 ## 1.92.0 (minor) — BC4-FRONT 2026-10-22 — Capture.kind : badge "Scanner" + UE metrics désactivées sur capture scanner (Agent BC3)
 
 Suite directe de bc4-back 0.76.1 (expose `kind` dans endpoints captures). Visibilité utilisateur = badge + désactivation + tooltip, **jamais caché**.
@@ -24,6 +40,34 @@ Lot futur "Scanner view" : exposer CELLSCAN RSRP/RSRQ par PCI scanné + OFDMSCAN
 - `src/features/kpi/MetricsWorkspace.tsx:14-26` : `REASON_LABELS` statique en français retiré. Nouveau hook `useReasonLabel()` qui résout `metrics.reason.<code>` via `useTranslation()`. Fallback = code brut si clé absente (ne cache jamais un reason inconnu). Appelé une fois en haut du composant.
 - `src/locales/en.json:158-164` + `src/locales/fr.json:158-164` : nouveau bloc `metrics.reason.{no_gps_in_capture, light_decode_no_gps, no_fix_before_seq, no_utc_offset_header}`. **Anglais est la langue par défaut** (`fallbackLng: "en"` dans `src/lib/i18n.ts:31`) — conforme au lot BC1.
 - `src/test/metrics-workspace-time-gps.test.tsx:93` : assertion mise à jour → "No GPS fix in this capture".
+
+---
+
+## 1.95.0 (patch) — BC4-FRONT 2026-10-22 — Metrics panel toolbar removed (Lovable)
+
+- **`MetricsWorkspace.tsx`** : la barre « View ▾ / Per row ▾ / Export CSV / Fullscreen » au-dessus du panneau Metrics est supprimée ; les cartes et le grand tableau démarrent directement sous la barre de filtres.
+- Le mode du panneau (cartes ou grand tableau) est piloté par le menu ⋮ du catalogue : `paneRequest` (⋮ → Tableau) ouvre le grand tableau, `cardViewRequest.view !== "table"` (⋮ → Graphique) ramène les cartes ; les deux étaient ignorés (`_paneRequest`, `_cardViewRequest`) et sont maintenant reliés à `setPane`.
+- `perRow` conserve sa valeur mémorisée sans plus avoir de réglage ; `exportCsv` et les imports lucide devenus inutilisés (`Columns3`, `Download`, `Filter`, `Maximize2`) retirés.
+- **`workspace.css`** : règles mortes supprimées (`.kpi-metrics-table-toolbar`, son `.kpi-button`, `.kpi-metrics-table-counter`, le réglage toolbar du sélecteur `data-pane`).
+- Nouveau test `src/test/metrics-pane-request.test.tsx` (2 cas) ; capture navigateur : 0 barre, cartes présentes, ⋮ → Tableau ouvre bien le tableau (Time local / Time UTC / Latitude / Longitude).
+
+## 1.94.0 (patch) — BC4-FRONT 2026-10-22 — Signaling view controls moved to the sidebar (Lovable)
+
+- **`SignalingPage.tsx`** : la bande de contrôles au-dessus de la zone de travail (changement de vue, « Timeline · ON/OFF », « Carte · ON/OFF ») est supprimée ; il ne reste qu'un `h1` accessible visuellement caché.
+- **`SignalingFilters.tsx`** : ces trois contrôles sont repris sous le titre « Filtres » de la barre latérale, et en icônes (œil, pouls, épingle) dans le rail lorsque la barre est repliée.
+- **`signaling.css`** : hauteur de `.signaling-workspace` recalée à `calc(100dvh - 81px)` et styles `.sig-filters-view` ajoutés.
+
+## 1.93.0 (patch) — BC4-FRONT 2026-10-22 — RRC State Idle badge removed (Lovable)
+
+- **`state-presentation.ts`** : `rrcStateLaneLabel(title)` ne renvoie plus que le titre ; `stateLaneTitle` retourne `badge: null` pour les deux pistes d'état.
+- **`RfTimeline.tsx`** : plus de badge gris « Idle » à côté de « RRC State » dans la gouttière (retrait du style `rich.idle` et du span `.sig-lane-idle`) ; les libellés « Idle » à l'intérieur des intervalles Idle prouvés restent inchangés.
+- **`signaling.css`** : règles `.sig-lane-idle` supprimées.
+
+## 1.92.0 (patch) — BC4-FRONT 2026-10-22 — RF timeline toolbar removed (Lovable)
+
+- **`RfTimeline.tsx`** : le groupe de contrôles au-dessus de la timeline (bouton curseur, sélecteur « Window », zoom +/−, réinitialiser, plein écran) est supprimé ; l'en-tête ne garde que la légende de sévérité et les replis Events/Measurements.
+- Nettoyage des imports devenus inutilisés (`Button`, icônes lucide `ZoomIn/ZoomOut/RotateCcw/Maximize/Crosshair`, `WindowSelector`, `clampWindow`) et de la fonction locale `zoomBy`.
+- Le Time Navigator attaché sous les pistes conserve fenêtre, zoom, réinitialisation et plein écran.
 
 ## 1.91.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.88→1.90 (workspace cleanup) ↔ BC3 1.87.1→1.88.1 (Time/GPS + tests) (Agent BC3)
 

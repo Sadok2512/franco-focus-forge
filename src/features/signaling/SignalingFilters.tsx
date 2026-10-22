@@ -86,6 +86,8 @@ export function SignalingFilters(props: {
   onSize: (v: number) => void;
   onReset: () => void;
   onCollapse: () => void;
+  viewControls?: ReactNode;
+
 }) {
   const { t } = useTranslation();
   return (
@@ -112,6 +114,12 @@ export function SignalingFilters(props: {
             ? t("sigFilters.pending")
             : t("sigFilters.total", { count: props.total })}
         </p>
+        {props.viewControls && (
+          <div className="sig-filters-view" data-testid="signaling-view-controls">
+            {props.viewControls}
+          </div>
+        )}
+
       </header>
       <div className="sig-filters-sections">
         <FilterSection icon={Radio} title={t("sigFilters.technology")}>
