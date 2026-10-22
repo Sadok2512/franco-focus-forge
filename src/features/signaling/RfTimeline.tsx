@@ -300,7 +300,7 @@ export function RfTimeline({
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   const trackHeight = stateTracksV2 ? lanes.length * 34 : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
-  const chartHeight = stateTracksV2 ? rfTop + 176 : 470;
+  const chartHeight = stateTracksV2 ? rfTop + 3 * 60 + 16 : 470;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -460,7 +460,10 @@ export function RfTimeline({
         NonNullable<CustomSeriesRenderItem>
       >;
     };
-    const xAxes = [0, 1].map((i) => ({
+    // V2: one RF sub-grid per metric, each with its own Y scale, sharing the X axis.
+    const rfGrids = stateTracksV2 ? codes.length : 1;
+    const subH = 52;
+    const xAxes = Array.from({ length: 1 + rfGrids }, (_, i) => ({
       type: "value" as const,
       gridIndex: i,
       min: 0,
@@ -477,11 +480,12 @@ export function RfTimeline({
       id: code,
       name: t(`rfTimeline.${code}`),
       type: "line" as const,
-      xAxisIndex: 1,
-      yAxisIndex: 1,
-      showSymbol: false,
+      xAxisIndex: stateTracksV2 ? 1 + i : 1,
+      yAxisIndex: stateTracksV2 ? 1 + i : 1,
+      showSymbol: stateTracksV2,
+      symbolSize: 2,
       connectNulls: false,
-      lineStyle: { width: 1.6, color: rfColors[code]! },
+      lineStyle: { width: stateTracksV2 ? 1.2 : 1.6, color: rfColors[code]! },
       itemStyle: { color: rfColors[code]! },
       z: 2 + i,
       data:
@@ -498,9 +502,17 @@ export function RfTimeline({
       backgroundColor: "transparent",
       grid: [
         { top: 30, height: trackHeight, left: 112, right: 24 },
-        { top: rfTop, height: 138, left: 112, right: 24 },
+        ...(stateTracksV2
+          ? codes.map((_, i) => ({
+              top: rfTop + i * (subH + 8),
+              height: subH,
+              left: 112,
+              right: 24,
+            }))
+          : [{ top: rfTop, height: 138, left: 112, right: 24 }]),
       ],
       legend: {
+        show: !stateTracksV2,
         top: rfTop + 8,
         left: 2,
         orient: "vertical",
@@ -527,20 +539,36 @@ export function RfTimeline({
           axisTick: { show: false },
           axisLine: { show: false },
         },
-        {
-          type: "value",
-          gridIndex: 1,
-          scale: true,
-          name: t("rfTimeline.rfMetrics"),
-          nameTextStyle: { color: "#94a3b8", fontSize: 10 },
-          axisLabel: { color: "#94a3b8", fontSize: 10 },
-          splitLine: { lineStyle: { color: "#334155", opacity: 0.25 } },
-        },
+        ...(stateTracksV2
+          ? codes.map((code, i) => ({
+              type: "value" as const,
+              gridIndex: 1 + i,
+              scale: true,
+              splitNumber: 2,
+              name: t(`rfTimeline.${code}`),
+              nameLocation: "middle" as const,
+              nameRotate: 0,
+              nameGap: 46,
+              nameTextStyle: { color: rfColors[code]!, fontSize: 10, align: "right" as const },
+              axisLabel: { color: "#94a3b8", fontSize: 9 },
+              splitLine: { lineStyle: { color: "#334155", opacity: 0.15 } },
+            }))
+          : [
+              {
+                type: "value" as const,
+                gridIndex: 1,
+                scale: true,
+                name: t("rfTimeline.rfMetrics"),
+                nameTextStyle: { color: "#94a3b8", fontSize: 10 },
+                axisLabel: { color: "#94a3b8", fontSize: 10 },
+                splitLine: { lineStyle: { color: "#334155", opacity: 0.25 } },
+              },
+            ]),
       ],
       dataZoom: [
         {
           type: "inside",
-          xAxisIndex: [0, 1],
+          xAxisIndex: xAxes.map((_, i) => i),
           filterMode: "none",
           zoomOnMouseWheel: "ctrl",
           startValue: visibleWindow[0],
@@ -549,13 +577,13 @@ export function RfTimeline({
         {
           type: "slider",
           show: false,
-          xAxisIndex: [0, 1],
+          xAxisIndex: xAxes.map((_, i) => i),
           filterMode: "none",
           startValue: visibleWindow[0],
           endValue: visibleWindow[1],
         },
       ],
-      brush: { xAxisIndex: [0, 1], brushType: "lineX", toolbox: ["lineX", "clear"] },
+      brush: { xAxisIndex: xAxes.map((_, i) => i), brushType: "lineX", toolbox: ["lineX", "clear"] },
       tooltip: {
         trigger: "item",
         confine: true,

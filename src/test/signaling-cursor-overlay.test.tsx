@@ -84,7 +84,7 @@ describe("Signaling cursor chart readiness", () => {
     expect(convertToPixel.mock.calls.every(([finder]) => finder.xAxisIndex === 0)).toBe(true);
     option = { xAxis: [{}, {}], yAxis: [{}, {}] };
     result.rerender(<TimeCursor {...props} />);
-    expect(convertToPixel).toHaveBeenCalledWith({ xAxisIndex: 1, yAxisIndex: 1 }, [10, -90]);
+    expect(convertToPixel).toHaveBeenCalledWith({ seriesId: "cell_rsrp" }, [10, -90]);
     disposed = true;
     convertToPixel.mockClear();
     result.rerender(<TimeCursor {...props} />);
