@@ -22,3 +22,5 @@
 .signaling-metric-0 { color: var(--primary); }
 .signaling-metric-1 { color: var(--sev-good); }
 .signaling-metric-2 { color: var(--op-orange); }
+.signaling-navigator-window { border-color: var(--signaling-navigator); background: color-mix(in srgb, var(--signaling-navigator) 20%, transparent); }
+.signaling-navigator-edge, .signaling-navigator-edge:hover { background: var(--signaling-navigator); border-radius: 2px; }

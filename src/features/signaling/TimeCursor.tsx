@@ -148,10 +148,11 @@ export function TimeCursor({
   const selectedX = selectedTime === null ? null : xAt(selectedTime);
   const event = hover === null ? events.find((e) => e.id === eventId) : undefined;
   const intervals = time === null ? [] : activeIntervals(events, time);
-  const states =
-    stateTracksV2 && time !== null && captureId
-      ? provenStates(events, captureId).filter((state) => state.startS <= time && time < state.endS)
-      : [];
+  const suppliedStates = useMemo(
+    () => stateTracksV2 && captureId ? provenStates(events, captureId) : [],
+    [events, captureId, stateTracksV2],
+  );
+  const states = time === null ? [] : suppliedStates.filter((state) => state.startS <= time && time < state.endS);
   const readings =
     time === null
       ? []
@@ -238,6 +239,7 @@ export function TimeCursor({
             data-testid="time-cursor-handle"
             onPointerDown={(e) => {
               e.preventDefault();
+               e.stopPropagation();
               drag.current = true;
               setHover(null);
             }}

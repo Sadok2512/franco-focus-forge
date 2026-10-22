@@ -418,6 +418,8 @@
     "next": "Next window",
     "size": "Window size",
     "window": "Visible time window",
+    "start": "Resize window start",
+    "end": "Resize window end",
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "reset": "Reset to 0–30 s",

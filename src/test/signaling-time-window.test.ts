@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clampWindow, followMessage } from "@/features/signaling/time-window";
+import { clampWindow, followMessage, resizeWindow } from "@/features/signaling/time-window";
 describe("Signaling time navigator rules", () => {
   it("G1 opens a 546.905-second capture at 0–30 seconds", () =>
     expect(clampWindow(546.905, 0)).toEqual([0, 30]));
@@ -20,4 +20,16 @@ describe("Signaling time navigator rules", () => {
   });
   it("does not follow unavailable timestamps", () =>
     expect(followMessage([0, 30], null, 546.905)).toEqual([0, 30]));
+  it("resizes the left edge without moving the right edge", () =>
+    expect(resizeWindow([120, 150], "start", 125, 546.905)).toEqual([125, 150]));
+  it("resizes the right edge without moving the left edge", () =>
+    expect(resizeWindow([120, 150], "end", 160, 546.905)).toEqual([120, 160]));
+  it("clamps the resized window to the complete capture", () => {
+    expect(resizeWindow([120, 150], "start", -10, 546.905)).toEqual([0, 150]);
+    expect(resizeWindow([120, 150], "end", 600, 546.905)).toEqual([120, 546.905]);
+  });
+  it("prevents crossed window handles", () => {
+    expect(resizeWindow([120, 150], "start", 160, 546.905)).toEqual([149.9, 150]);
+    expect(resizeWindow([120, 150], "end", 100, 546.905)).toEqual([120, 120.1]);
+  });
 });

@@ -31,4 +31,5 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
 
 - Signaling visible time is shared by all timeline views in SignalingPage; stable /signaling opens on the full capture, while the opt-in sibling /signaling-v2 uses the configurable short window and navigator. Zoom changes are local and never message/map query keys; selected-message identity/time alone triggers follow, preserving investigation state.
+- Navigator edge resizing uses a pure boundary-clamping helper and capture-coordinate pointer deltas; it changes only the shared visible window, never cursor or message state.
 - Signaling V2 validates supplied state intervals in state-evidence.ts only, never reconstructs them from nearby messages; both boundary sequences, capture/session identity, technology and versioned source rules are required, and carrier labels require separate explicit CA evidence. This keeps Unknown honest until the VM evidence contract is validated.
