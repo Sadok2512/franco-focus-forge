@@ -300,7 +300,7 @@ export function RfTimeline({
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
   const trackHeight = stateTracksV2 ? lanes.length * 34 : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
-  const chartHeight = stateTracksV2 ? rfTop + 176 : 470;
+  const chartHeight = stateTracksV2 ? rfTop + 3 * 60 + 16 : 470;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -568,7 +568,7 @@ export function RfTimeline({
       dataZoom: [
         {
           type: "inside",
-          xAxisIndex: [0, 1],
+          xAxisIndex: xAxes.map((_, i) => i),
           filterMode: "none",
           zoomOnMouseWheel: "ctrl",
           startValue: visibleWindow[0],
@@ -577,13 +577,13 @@ export function RfTimeline({
         {
           type: "slider",
           show: false,
-          xAxisIndex: [0, 1],
+          xAxisIndex: xAxes.map((_, i) => i),
           filterMode: "none",
           startValue: visibleWindow[0],
           endValue: visibleWindow[1],
         },
       ],
-      brush: { xAxisIndex: [0, 1], brushType: "lineX", toolbox: ["lineX", "clear"] },
+      brush: { xAxisIndex: xAxes.map((_, i) => i), brushType: "lineX", toolbox: ["lineX", "clear"] },
       tooltip: {
         trigger: "item",
         confine: true,
