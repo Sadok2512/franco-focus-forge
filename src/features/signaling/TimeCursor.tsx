@@ -202,7 +202,7 @@ export function TimeCursor({
             !visible(s.point.t_rel_s)
           )
             return null;
-          const coords = chart.convertToPixel({ xAxisIndex: 1, yAxisIndex: 1 }, [
+          const coords = chart.convertToPixel({ seriesId: s.code }, [
             s.point.t_rel_s,
             s.point.value,
           ]) as number[];
