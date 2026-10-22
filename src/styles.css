@@ -56,12 +56,14 @@
 }
 
 /* ---- thème sombre (bascule) ---- */
-.dark {
+html.dark {
   --sig-table-header: #1E293B;
   --sig-table-border: #334155;
   --sig-table-text: #E2E8F0;
   --sig-table-muted: #94A3B8;
-  --sig-row-selected: #1E3A8A;
+  --sig-row-selected: #1E40AF;
+  --sig-row-selected-hover: #2563EB;
+  --sig-row-selected-text: #FFFFFF;
   --sig-row-related: #422006;
   --sig-accent: #60A5FA;
   --sig-asn-field: #BFDBFE;
@@ -151,7 +153,9 @@
   --sig-table-border: #E2E8F0;
   --sig-table-text: #0F172A;
   --sig-table-muted: #64748B;
-  --sig-row-selected: #DBEAFE;
+  --sig-row-selected: #BFDBFE;
+  --sig-row-selected-hover: #93C5FD;
+  --sig-row-selected-text: #0B1220;
   --sig-row-related: #FEF3C7;
   --sig-accent: #2563EB;
   --sig-asn-field: #1E3A8A;

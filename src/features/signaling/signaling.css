@@ -54,8 +54,10 @@
 .sig-table tbody tr { cursor: pointer; }
 .sig-table tbody tr:hover td { background: color-mix(in srgb, var(--sig-table-header) 70%, transparent); }
 .sig-table tbody tr[data-related=true] td { background: var(--sig-row-related); }
-.sig-table tbody tr[aria-selected=true] td { background: var(--sig-row-selected); }
-.sig-table tbody tr[aria-selected=true] td:first-child { box-shadow: inset 3px 0 0 var(--sig-accent); }
+.sig-table tbody tr[aria-selected=true] td { background: var(--sig-row-selected); color: var(--sig-row-selected-text); font-weight: 600; }
+.sig-table tbody tr[aria-selected=true]:hover td { background: var(--sig-row-selected-hover); }
+.sig-table tbody tr[aria-selected=true] { outline: 2px solid var(--sig-accent); outline-offset: -2px; }
+.sig-table tbody tr[aria-selected=true] td:first-child { box-shadow: inset 4px 0 0 var(--sig-accent); }
 .sig-chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 5px; background: var(--sig-table-header); border: 1px solid var(--sig-table-border); font-size: 11px; font-weight: 500; white-space: nowrap; }
 .sig-state { display: inline-block; min-width: 72px; padding: 1px 8px; border-radius: 5px; font-size: 11px; font-weight: 500; text-align: center; }
 .sig-state-connected { background: color-mix(in srgb, var(--signaling-state-connected) 16%, transparent); color: color-mix(in srgb, var(--signaling-state-connected) 75%, var(--sig-table-text)); }
