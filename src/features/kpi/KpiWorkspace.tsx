@@ -63,6 +63,7 @@ import {
   decodeTabs,
   encodeTabs,
   newTabsState,
+  migrateMetrics,
   removeTab,
   reorderTab,
   updateTab,
@@ -141,17 +142,20 @@ function Workspace({
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
   const tabsStorageKey = `bc4.kpi.tabs.${projectId}`;
+  const legacyMetrics = Array.isArray(search["metrics"])
+    ? search["metrics"].filter((v): v is string => typeof v === "string")
+    : [];
   const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() => {
     const raw = typeof search["tabs"] === "string" ? (search["tabs"] as string) : "";
     if (raw) {
       const decoded = decodeTabs(raw);
-      if (decoded) return decoded;
+      if (decoded) return migrateMetrics(decoded, legacyMetrics);
     }
     try {
       const stored = localStorage.getItem(tabsStorageKey);
       if (stored) {
         const decoded = decodeTabs(stored);
-        if (decoded) return decoded;
+        if (decoded) return migrateMetrics(decoded, legacyMetrics);
       }
     } catch {
       /* ignore */
@@ -174,7 +178,8 @@ function Workspace({
     const hasExplicitSelection =
       requested.length > 0 || Array.isArray(search["kpis"]) || typeof search["kpi"] === "string";
     const seedCodes = hasExplicitSelection ? valid : [];
-    return newTabsState(seedCodes);
+    const initial = newTabsState(seedCodes);
+    return updateTab(initial, initial.activeTabId, { metricCodes: legacyMetrics });
   });
   const currentTab = pickActiveTab(tabsState);
   const gridCols = currentTab.layout === "auto" ? 2 : Number(currentTab.layout);
@@ -195,6 +200,7 @@ function Workspace({
         tabs: encoded,
         kpis: pickActiveTab(next).codes,
         kpi: pickActiveTab(next).codes[0],
+        metrics: pickActiveTab(next).metricCodes ?? [],
       }),
       replace: true,
     } as never);
@@ -267,20 +273,14 @@ function Workspace({
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
   const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics">("kpi");
   const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
-  const [selectedMetrics, setSelectedMetrics] = useState<string[]>(() => {
-    const raw = Array.isArray(search["metrics"]) ? (search["metrics"] as unknown[]) : [];
-    return raw.filter((v): v is string => typeof v === "string");
-  });
+  const selectedMetrics = currentTab.metricCodes ?? [];
+  const setSelectedMetrics = (next: string[]) =>
+    persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricCodes: next }));
   const toggleMetric = (code: string) => {
     const next = selectedMetrics.includes(code)
       ? selectedMetrics.filter((candidate) => candidate !== code)
       : [...selectedMetrics, code];
     setSelectedMetrics(next);
-    void navigate({
-      to: ".",
-      search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
-      replace: true,
-    } as never);
   };
   // 1.73.0 (BC3) — vue partagée MetricsWorkspace, pilotée par le menu ⋯ du sidebar
   // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
@@ -297,11 +297,6 @@ function Workspace({
     if (!selectedMetrics.includes(code)) {
       const next = [...selectedMetrics, code];
       setSelectedMetrics(next);
-      void navigate({
-        to: ".",
-        search: (previous: Record<string, unknown>) => ({ ...previous, metrics: next }),
-        replace: true,
-      } as never);
     }
     setMetricsView(view);
   };
@@ -754,6 +749,7 @@ function Workspace({
                   ))}
                   {selectedMetrics.length > 0 && (
                     <MetricsWorkspace
+                      key={currentTab.id}
                       projectId={projectId}
                       captureId={captureId}
                       onCaptureChange={setCaptureId}
@@ -768,11 +764,6 @@ function Workspace({
                       paneRequest={metricsPaneRequest.n}
                       onClear={() => {
                         setSelectedMetrics([]);
-                        void navigate({
-                          to: ".",
-                          search: (p: Record<string, unknown>) => ({ ...p, metrics: [] }),
-                          replace: true,
-                        } as never);
                       }}
                     />
                   )}
