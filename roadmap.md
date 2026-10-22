@@ -1,4 +1,6 @@
 # BC4 roadmap
+- [ ] LOT A — Shared 30-second Signaling window, draggable navigator, independent cursor and follow-message; tests and browser checks.
+- [ ] LOT B — Audit UE-state evidence and session correlation; stop before reconstruction pending approval.
 - [x] Match Metrics presentation to KPI: compact catalog, selected rows, chart header and visualization controls; 12 regression tests and isolated browser chart/table/info/remove checks passed. Live VM readback unavailable without a session.
 - [x] Interactive Signaling cursor implementation and isolated tests: continuous axis, hover/click/drag/keyboard, local RF tooltips and proven links; no backend changes.
 - [ ] Real-capture message/payload/GPS verification and screenshot — blocked by unavailable VM session and rejected preview CORS origin.
