@@ -636,6 +636,7 @@ export function MetricsWorkspace({
                       if (onRemove) onRemove(s.full);
                       else if (selections.length === 1) onClear();
                     }}
+                    onOpenTable={pane === "charts" ? () => setPane("table") : undefined}
                     view={cardViews[s.full] ?? "graph"}
                     onViewChange={(v) =>
                       setCardViews((m) => {
