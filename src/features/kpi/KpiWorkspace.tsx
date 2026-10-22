@@ -301,6 +301,13 @@ function Workspace({
       const next = [...selectedMetrics, code];
       setSelectedMetrics(next);
     }
+    if (view === "table") {
+      // 1.91.0 — ⋮ → Tableau ouvre le grand tableau des métriques (avec les
+      // colonnes de paramètres) ; la carte reste en graphique.
+      setMetricsTablePane(true);
+      setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
+      return;
+    }
     setMetricsView(view);
     setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
   };
