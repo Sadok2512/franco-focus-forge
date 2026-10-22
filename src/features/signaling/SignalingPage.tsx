@@ -551,7 +551,7 @@ function InfoBadge({ info }: { info: MessageInfo | null }) {
 function DecodedValues({
   parameters,
 }: {
-  parameters: { path: string; value: unknown; param_key: string | null; redacted_reason?: string | null | undefined }[];
+  parameters: { path: string; value?: unknown; param_key: string | null; redacted_reason?: string | null | undefined }[];
 }) {
   const rows = parameters
     .filter((p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"))
