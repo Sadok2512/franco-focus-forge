@@ -603,6 +603,7 @@
       "nas": "NAS",
       "nemo": "Nemo",
       "mac": "MAC-RACH"
-    }
+    },
+    "selectedOutside": "Message #{{seq}} is outside the applied filter; its payload remains selected."
   }
 }
