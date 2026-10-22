@@ -1,4 +1,10 @@
+## 1.97.0 (patch) — BC4-FRONT 2026-10-22 — Signaling : titre « Trajet · GPS précédent » supprimé (Agent Lovable)
+
+- SignalingPage: le titre de la zone carte est supprimé; le panneau garde un nom accessible via `aria-label={t("signalingV2.map")}` (« Carte » / « Map »), et la hauteur libérée profite à la carte.
+- Aucune chaîne ajoutée (clé existante réutilisée), fr/en déjà en paire. Typecheck clean, 276 tests passent (2 skipped), build OK.
+
 ## 1.96.0 (minor) — BC4-FRONT 2026-10-22 — Merge Lovable 1.92→1.95 (toolbar cleanup) ↔ BC3 1.92.1 (Scanner banner workspace-level) (Agent BC3)
+
 
 Suite directe des 2 lots (Lovable workspace toolbar removals 1.92→1.95 + BC3 scanner UI 1.92.1).
 
