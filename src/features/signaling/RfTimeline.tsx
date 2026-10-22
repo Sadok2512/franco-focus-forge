@@ -708,7 +708,6 @@ export function RfTimeline({
   return (
     <div ref={root} className="flex min-h-0 flex-1 flex-col bg-card" data-testid="rf-timeline">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <h3 className="mr-1 text-sm font-semibold">{t("rfTimeline.title")}</h3>
         <span className="flex items-center gap-2" aria-hidden="true">
           {severityLegend.map((s) => (
             <span key={s.key} className="flex items-center gap-1 text-[10px] text-muted-foreground">
