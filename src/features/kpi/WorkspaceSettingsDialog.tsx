@@ -132,8 +132,10 @@ export function WorkspaceSettingsDialog({
     setDraftLayout(layoutRef.current);
   }, [open, workspaceId]);
 
-  const patch = <K extends keyof TableSettings>(k: K) => (v: TableSettings[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
+  const patch =
+    <K extends keyof TableSettings>(k: K) =>
+    (v: TableSettings[K]) =>
+      setDraft((d) => ({ ...d, [k]: v }));
   const order = [...columns].sort((a, b) => {
     const ia = draft.order.indexOf(a.code),
       ib = draft.order.indexOf(b.code);
@@ -496,7 +498,12 @@ export function WorkspaceSettingsDialog({
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               {t("wss.cancel")}
             </Button>
-            <Button size="sm" onClick={apply} disabled={!dirty} data-testid="workspace-settings-apply">
+            <Button
+              size="sm"
+              onClick={apply}
+              disabled={!dirty}
+              data-testid="workspace-settings-apply"
+            >
               {t("wss.apply")}
             </Button>
           </div>
