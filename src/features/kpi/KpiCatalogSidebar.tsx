@@ -170,7 +170,7 @@ export function KpiCatalogSidebar({
                                 <DropdownMenuLabel>
                                   {translate("kpi.af3aaf87ff99")}
                                 </DropdownMenuLabel>
-                                <VisualizationItems
+                                <VisualizationItems excludeGraph
                                   throughput={item.unit === "Mbit/s"}
                                   onChange={(mode) => onVisualization(item.code, mode)}
                                 />

@@ -15,16 +15,20 @@ export function VisualizationItems({
   onChange,
   throughput = false,
   seriesAvailable = false,
+  excludeGraph = false,
 }: {
   throughput?: boolean;
   seriesAvailable?: boolean;
+  excludeGraph?: boolean;
   onChange: (mode: VisualizationType) => void;
 }) {
   const { t: translate } = useTranslation();
   return (
     <>
       {(Object.keys(VISUALIZATIONS) as VisualizationType[])
-        .filter((mode) => mode !== "task_scatter" || throughput)
+        // 1.79.0 — Spec v2 §2 : "Graph" supprimé du menu KPI (mode exclusif
+        // sur chronogram/histogram/table/map/series). Appel via excludeGraph.
+        .filter((mode) => (mode !== "task_scatter" || throughput) && !(excludeGraph && mode === "graph"))
         .map((mode) => {
           const Icon = icons[mode];
           return (

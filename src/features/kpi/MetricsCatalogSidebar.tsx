@@ -240,7 +240,7 @@ export function MetricsCatalogSidebar({
                 <DropdownMenuLabel>{t("kpi.af3aaf87ff99")}</DropdownMenuLabel>
                 {onVisualization && node.selectable && node.selection && (
                   <>
-                    <VisualizationItems
+                    <VisualizationItems excludeGraph
                       throughput={node.unit === "Mbit/s" || node.unit === "Mbps"}
                       onChange={(mode: VisualizationType) => {
                         if (

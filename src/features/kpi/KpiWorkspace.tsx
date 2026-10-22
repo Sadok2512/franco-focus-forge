@@ -165,14 +165,13 @@ function Workspace({
           typeof code === "string" && entries.some((e) => e.item.code === code),
       )
       .slice(0, MAX_GRAPHS);
-    const seedCodes =
-      requested.length || Array.isArray(search["kpis"])
-        ? valid
-        : entries.find((e) => e.item.status === "AVAILABLE")
-          ? [entries.find((e) => e.item.status === "AVAILABLE")!.item.code]
-          : entries[0]
-            ? [entries[0].item.code]
-            : [];
+    // 1.79.0 — Spec v2 §1 : workspace vide par défaut. Pas d'auto-select
+    // d'un KPI AVAILABLE au démarrage. Si l'URL contient explicitement
+    // ?kpis=... ou ?kpi=..., on restaure cette sélection (session restaurée).
+    // Sinon, un nouveau workspace démarre vide.
+    const hasExplicitSelection =
+      requested.length > 0 || Array.isArray(search["kpis"]) || typeof search["kpi"] === "string";
+    const seedCodes = hasExplicitSelection ? valid : [];
     return newTabsState(seedCodes);
   });
   const currentTab = pickActiveTab(tabsState);
@@ -611,7 +610,10 @@ function Workspace({
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <VisualizationItems
+                    {/* 1.79.0 — Spec v2 §2 : mode exclusif WORKSPACE-level.
+                        onChange applique le mode à TOUS les KPI sélectionnés
+                        de l'onglet actif (pas seulement l'actif). */}
+                    <VisualizationItems excludeGraph
                       throughput={
                         !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
                       }
@@ -619,11 +621,15 @@ function Workspace({
                         !!entries.find((e) => e.item.code === effectiveActive)?.item.temporal_source
                       }
                       onChange={(visualization) => {
-                        if (effectiveActive)
-                          updateConfig(effectiveActive, {
-                            ...configFor(effectiveActive),
-                            visualization,
-                          });
+                        setConfigs((prev) => {
+                          const next = { ...prev };
+                          for (const code of codes) {
+                            const current = next[code] ?? defaultConfig(code, "none");
+                            next[code] = { ...current, visualization };
+                          }
+                          return next;
+                        });
+                        setSelectedRows(new Set());
                       }}
                     />
                   </DropdownMenuContent>
