@@ -1,3 +1,9 @@
+## 1.80.4 — Click names the item
+
+- Clicking a timeline event or an RF measurement shows one small chip containing the name only; clicking blank space, panning, zooming or pressing Escape hides it again.
+- Measurement clicks resolve the nearest plotted point within 14 px, so a click on a curve names that measurement; no time, session, sequence or evidence text is added to the chip.
+- Event selection, message table, red cursor, Time Navigator and the evidence row behave exactly as before. No backend changes. Visual checks use fixtures, not authenticated VM captures. No production publication.
+
 ## 1.80.3 — Evidence-only V9 UE/RRC presentation
 
 - Wider UE and RRC segments, centered labels with width-aware suppression, V9 semantic palette; unknown areas stay uncolored without permanent Unknown labels.

@@ -17,6 +17,7 @@ import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
+import { clampNameTagX, nearestNameTag, type NameTag } from "./name-tag";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -103,6 +104,8 @@ export function RfTimeline({
   const [ready, setReady] = useState(0);
   const [, redrawCursor] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
+  // Chip shown on click: the name of the clicked event or measurement, nothing else.
+  const [nameTag, setNameTag] = useState<NameTag | null>(null);
 
   const host = useRef<HTMLDivElement>(null),
     root = useRef<HTMLDivElement>(null);
@@ -224,12 +227,24 @@ export function RfTimeline({
       })),
     [series, measures, technology, t],
   );
-  const current = useRef({ displayed, series, duration });
-  current.current = { displayed, series, duration };
+  const current = useRef({ displayed, series, duration, cursorSeries });
+  current.current = { displayed, series, duration, cursorSeries };
   useEffect(() => {
     setWindowSeq(undefined);
     setLinked(undefined);
+    setNameTag(null);
   }, [captureId]);
+  // The chip is anchored to pixels, so it must not survive a pan or a zoom.
+  useEffect(() => {
+    setNameTag(null);
+  }, [visibleWindow[0], visibleWindow[1]]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setNameTag(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
   useEffect(() => {
     let stopped = false;
     let observer: ResizeObserver | undefined;
@@ -240,12 +255,55 @@ export function RfTimeline({
       setReady((n) => n + 1);
       observer = new ResizeObserver(() => c.resize());
       observer.observe(host.current);
-      c.on("click", (ev: unknown) => {
-        const data = (ev as { data?: { event?: RfEvent } }).data;
-        if (data?.event) {
-          setLinked(data.event);
-          callbacks.current.onSelect(data.event);
+      const nameAt = (x: number, y: number) => {
+        try {
+          return nearestNameTag(
+            current.current.cursorSeries,
+            (code, time, value) => {
+              const pixel = c.convertToPixel({ seriesId: code }, [time, value]) as
+                | number[]
+                | undefined;
+              return Array.isArray(pixel) ? [pixel[0] ?? NaN, pixel[1] ?? NaN] : null;
+            },
+            x,
+            y,
+          );
+        } catch {
+          return null;
         }
+      };
+      c.on("click", (ev: unknown) => {
+        const p = ev as {
+          data?: { event?: RfEvent; source?: string };
+          event?: { offsetX: number; offsetY: number };
+        };
+        const x = p.event?.offsetX ?? 0;
+        const y = p.event?.offsetY ?? 0;
+        if (p.data?.event) {
+          setLinked(p.data.event);
+          callbacks.current.onSelect(p.data.event);
+          setNameTag({ name: p.data.event.label, code: "event", x, y });
+          return;
+        }
+        const near = nameAt(x, y);
+        if (near) setNameTag(near);
+        else if (p.data?.source)
+          setNameTag({
+            name:
+              current.current.cursorSeries.find((s) => s.code === p.data!.source)?.label ?? "",
+            code: p.data.source,
+            x,
+            y,
+          });
+        else setNameTag(null);
+      });
+      // Blank-area clicks reach zrender only: name the nearest measurement, if any.
+      c.getZr().on("click", (ev: unknown) => {
+        const e = ev as { target?: unknown; offsetX: number; offsetY: number };
+        if (e.target) return;
+        const near = nameAt(e.offsetX, e.offsetY);
+        if (near) setNameTag(near);
+        else setNameTag(null);
       });
       c.on("datazoom", () => {
         const option = c.getOption() as { dataZoom: { start: number; end: number }[] };
@@ -866,6 +924,19 @@ export function RfTimeline({
             stateTracksV2={stateTracksV2}
             captureId={captureId}
           />
+          {nameTag && nameTag.name ? (
+            <span
+              className={`signaling-name-tag${nameTag.y < 44 ? " below" : ""}`}
+              data-testid="rf-name-tag"
+              role="status"
+              style={{
+                left: clampNameTagX(nameTag.x, host.current?.clientWidth ?? 480),
+                top: nameTag.y < 44 ? nameTag.y + 14 : nameTag.y - 10,
+              }}
+            >
+              {nameTag.name}
+            </span>
+          ) : null}
         </div>
         {linked && (
           <div className="flex flex-wrap gap-2 border-t py-2 text-xs" data-testid="rf-evidence">
