@@ -23,6 +23,7 @@
 
 - RRC chart and table share effective grouping, value/legend filtering, normalization and semantic color mapping from `chart-data.ts` so displayed cells and marks remain synchronized.
 
+- Tests always run against fixtures: `vitest.config.ts` sets `VITE_BC4_DATA=mock` before Vite loads `.env`, so the suite never depends on whichever backend the local `.env` points at.
 ## UI translations
 No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/en.json` and `src/locales/fr.json` in the same commit. English is the default. Backend-provided wording is translated by the API, not by client-side substitutions.
 
