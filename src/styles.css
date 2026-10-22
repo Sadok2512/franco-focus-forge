@@ -112,6 +112,13 @@
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --signaling-icon-info: #1769E0;
+  --signaling-icon-success: #16A34A;
+  --signaling-icon-warning: #F97316;
+  --signaling-icon-error: #DC2626;
+  --signaling-icon-event: #9333EA;
+  --signaling-icon-scg: #06B6D4;
+  --signaling-icon-foreground: #FFFFFF;
   --signaling-state-idle: #94A3B8;
   --signaling-state-lte: #159DF0;
   --signaling-state-lte-ca: #1459D9;
