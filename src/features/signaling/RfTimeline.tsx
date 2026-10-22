@@ -19,11 +19,11 @@ import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
 import { clampNameTagX, nearestNameTag, type NameTag } from "./name-tag";
 
-// Fixed lane order matching the reference layout: UE state bands on top,
+// Fixed lane order: RRC state on top (user request), then UE state,
 // then network events, task lanes, mobility, and one combined RF grid.
 const laneOrder = [
-  "uestate",
   "rrcstate",
+  "uestate",
   "network",
   "dl",
   "ul",
@@ -900,6 +900,11 @@ export function RfTimeline({
                   style={{ top: 30 + center - 21 }}
                 >
                   {t(`signalingV2.${lane === "uestate" ? "ueState" : "rrcState"}`)}
+                  {lane === "rrcstate" && (
+                    <span className="sig-state-idle ml-1 rounded border border-border px-1 text-[10px] font-medium leading-4">
+                      {t("signalingV2.idle")}
+                    </span>
+                  )}
                 </span>
               );
             })}
