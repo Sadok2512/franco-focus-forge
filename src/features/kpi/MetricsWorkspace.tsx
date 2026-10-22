@@ -503,6 +503,27 @@ export function MetricsWorkspace({
       ) : (
         data && (
           <>
+            {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
+                la réponse back est valide (200 Zod) mais vide. On remonte
+                la raison si fournie par le back (connected_reason) sinon
+                un fallback générique traçable. Jamais vide muet. */}
+            {data.columns.length > 0 && data.rows.length === 0 && (
+              <div
+                role="alert"
+                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                data-testid="metrics-empty-banner"
+              >
+                <strong>Aucune donnée pour cette sélection.</strong>
+                {" "}
+                {data.connected_reason
+                  ? `Raison : ${data.connected_reason}.`
+                  : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
+                <br />
+                <span className="font-mono text-[10px] text-amber-700">
+                  capture_id={data.capture_id} · result_id={String(data.result_id).slice(0, 8)}
+                </span>
+              </div>
+            )}
             {view === "table" ? (
               <div className="kpi-data-table">
                 <input
