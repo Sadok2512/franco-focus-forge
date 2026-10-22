@@ -293,12 +293,16 @@ function Workspace({
     n: 0,
   });
   const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
+  const [cardViewRequest, setCardViewRequest] = useState<
+    { code: string; view: MetricView; n: number } | undefined
+  >();
   const visualizeMetric = (code: string, view: MetricView) => {
     if (!selectedMetrics.includes(code)) {
       const next = [...selectedMetrics, code];
       setSelectedMetrics(next);
     }
     setMetricsView(view);
+    setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
@@ -655,6 +659,7 @@ function Workspace({
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}
+                    cardViewRequest={cardViewRequest}
                     onClear={() => {
                       setSelectedMetrics([]);
                     }}
