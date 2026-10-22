@@ -684,6 +684,7 @@ function Timeline({
           },
         ],
         brush: { xAxisIndex: 0, brushType: "lineX", toolbox: [] },
+        toolbox: { show: false },
         series: layers.map((name, i) => ({
           id: name,
           name,
