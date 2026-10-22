@@ -14,6 +14,7 @@ import { ZoomIn, ZoomOut, RotateCcw, Maximize, Crosshair } from "lucide-react";
 import { provenStates, stateTrack, stateLabelKey } from "./state-evidence";
 import { WindowSelector } from "./WindowSelector";
 import { eventIcon, iconImage } from "./event-icons";
+import { eventTrack } from "./event-track";
 
 // Fixed lane order matching the reference layout: UE state bands on top,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -46,6 +47,7 @@ const laneOf = (track: string | undefined): Lane => {
     return track;
   return "network";
 };
+const laneFor = (event: Pick<RfEvent, "attrs" | "lane">): Lane => laneOf(eventTrack(event));
 const codes = ["cell_rsrp", "cell_rsrq", "ci_rs_snr"];
 const protocols = ["RRC LTE", "RRC NR", "NAS", "Nemo", "MAC-RACH", "Procedures"];
 const severityLegend = [
@@ -137,11 +139,12 @@ export function RfTimeline({
     () =>
       events.data?.events.filter(
         (e) =>
-          layers.includes(e.attrs.protocol ?? "") &&
-          (e.attrs.protocol === "Procedures" ||
-            allowedProtocols.includes(
-              e.attrs.protocol === "Nemo" ? "Événements Nemo" : (e.attrs.protocol ?? ""),
-            )) &&
+          !e.attrs.protocol ||
+          (layers.includes(e.attrs.protocol) &&
+            (e.attrs.protocol === "Procedures" ||
+              allowedProtocols.includes(
+                e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
+              ))) &&
           e.t_rel_s !== null,
       ) ?? [],
     [events.data, layers, allowedProtocols],
@@ -152,7 +155,7 @@ export function RfTimeline({
   );
   const displayed = useMemo(() => {
     const source = eligibleEvents.filter(
-      (event) => laneOf(event.attrs.track) !== "network" || isAllowedNetworkEvent(event),
+      (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
     );
     if (!stateTracksV2) return source;
     const stateEvents = states
@@ -179,7 +182,7 @@ export function RfTimeline({
           lane === "uestate" ||
           (stateTracksV2 && lane === "rrcstate") ||
           lane === "network" ||
-          displayed.some((event) => laneOf(event.attrs.track) === lane),
+          displayed.some((event) => laneFor(event) === lane),
       ),
     [displayed, stateTracksV2],
   );
@@ -281,7 +284,7 @@ export function RfTimeline({
         {
           id: "events",
           data: displayed.map((e) => ({
-            value: [lanes.indexOf(laneOf(e.attrs.track)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
+            value: [lanes.indexOf(laneFor(e)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
             event: e,
             itemStyle: { opacity: e.id === selectedEventId || active.has(e.id) ? 1 : 0.65 },
           })),
@@ -316,7 +319,7 @@ export function RfTimeline({
         end = api.coord([api.value(2), lane]);
       const item = displayed[params.dataIndex];
       if (!item) return;
-      const track = item.attrs.track ?? "";
+      const track = eventTrack(item);
       const marker = eventIcon(item);
       const markerColor = tokens.getPropertyValue(`--signaling-icon-${marker.role}`).trim();
       const isBand =
@@ -342,13 +345,13 @@ export function RfTimeline({
         .trim();
       const color = proof
         ? stateColor
-        : item.attrs.status === "FAILURE"
+        : marker.role === "error"
           ? rfColors["failure"]!
           : isBand
             ? (rfColors[track] ?? rfColors["unknown"]!)
-            : item.attrs.track === "network"
+            : track === "network"
               ? (rfProtocolColors[item.attrs.protocol ?? ""] ?? rfColors["unknown"]!)
-              : (rfColors[item.attrs.track ?? "unknown"] ?? rfColors["unknown"]!);
+              : (rfColors[track] ?? rfColors["unknown"]!);
       const coordSys = params.coordSys as unknown as { x: number; width: number };
       if (
         stateTracksV2 &&
@@ -475,7 +478,7 @@ export function RfTimeline({
           shape: { cx: x, cy: y + 10, r: 2 },
           style: { fill: markerColor, opacity },
         });
-        const nearby = displayed.some((other) => other.id !== item.id && laneOf(other.attrs.track) === laneOf(track) && other.t_rel_s !== null && Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90);
+        const nearby = displayed.some((other) => other.id !== item.id && laneFor(other) === laneFor(item) && other.t_rel_s !== null && Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90);
         if (showLabels && !nearby)
           children.push({
             type: "text",
@@ -709,7 +712,7 @@ export function RfTimeline({
           encode: { x: [1, 2], y: 0 },
           clip: true,
           data: displayed.map((e) => ({
-            value: [lanes.indexOf(laneOf(e.attrs.track)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
+            value: [lanes.indexOf(laneFor(e)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
             event: e,
           })),
         },
@@ -857,7 +860,7 @@ export function RfTimeline({
       {!stateTracksV2 &&
         !events.isPending &&
         !events.isError &&
-        !displayed.some((e) => laneOf(e.attrs.track) === "uestate") && (
+        !displayed.some((e) => laneFor(e) === "uestate") && (
           <p className="text-[10px] text-muted-foreground" data-testid="rf-uestate-empty">
             {t("rfTimeline.ueStateEmpty")}
           </p>

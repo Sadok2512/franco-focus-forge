@@ -1,21 +1,32 @@
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-  Activity, ArrowLeftRight, CheckCheck, CircleCheck, CircleX, Download,
-  FileCheck, FilePlus, Globe, MessageSquare, PhoneCall, PhoneIncoming,
-  PhoneOff, RadioTower, Repeat, Route, Settings, TriangleAlert, Upload,
-  type LucideIcon,
+  Activity, ArrowLeftRight, CheckCheck, CircleCheck, CircleDot, CircleX,
+  Download, FileCheck, FilePlus, Flag, Globe, MessageSquare, PhoneCall,
+  PhoneIncoming, PhoneOff, Radar, RadioTower, Repeat, Route, Send, Settings,
+  TriangleAlert, Upload, type LucideIcon,
 } from "lucide-react";
 import type { RfEvent } from "@/lib/api/signaling";
+import { eventTrack } from "./event-track";
 
 type IconRole = "info" | "success" | "warning" | "error" | "event" | "scg";
 export function eventIcon(event: RfEvent): { icon: LucideIcon; role: IconRole } {
-  const track = event.attrs.track ?? "";
+  const track = eventTrack(event);
   const name = `${event.type} ${event.label}`.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
-  const failure = event.attrs.status === "FAILURE" || /failure|failed|drop|\brlf\b/.test(name);
+  const failure =
+    event.outcome === "fail" ||
+    event.attrs.status === "FAILURE" ||
+    /failure|failed|drop|\brlf\b/.test(name);
   if (failure) return { icon: track === "mobility" && /handover|\bho\b/.test(name) ? CircleX : TriangleAlert, role: "error" };
   if (/scg/.test(name)) return { icon: RadioTower, role: /release|remov/.test(name) ? "warning" : track === "mobility" ? "scg" : "event" };
   if (track === "mobility") {
+    // VM mobility codes (HOA/HOS/HOI/MEI marks and `ho` procedure bars) arrive
+    // without a name, so each keeps its own glyph and the lane stays readable.
+    const code = event.type.toUpperCase();
+    if (code === "HOA") return { icon: Flag, role: "info" };
+    if (code === "HOS") return { icon: CircleCheck, role: "info" };
+    if (code === "HOI") return { icon: CircleDot, role: "info" };
+    if (code === "MEI") return { icon: Radar, role: "info" };
     if (/inter.?rat/.test(name)) return { icon: Route, role: "event" };
     if (/inter.?freq|inter.*\bho\b/.test(name)) return { icon: Repeat, role: "warning" };
     if (/success/.test(name)) return { icon: CircleCheck, role: "success" };
