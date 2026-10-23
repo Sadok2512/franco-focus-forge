@@ -1306,21 +1306,8 @@
   display: contents;
 }
 
-/* 1.99.1 (lot C axe X temps) — Switcher Clock/UTC/Capture. */
-.kpi-metrics-time-axis-switch {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 0 6px 0;
-  padding: 3px 10px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-}
-.kpi-metrics-time-axis-options { display: flex; gap: 4px; }
-.kpi-metrics-time-axis-options button { font-size: 10px; padding: 3px 8px; }
-.kpi-metrics-time-axis-options button[disabled] { opacity: 0.45; cursor: not-allowed; }
+/* 1.99.1 (lot C axe X temps) — Switcher Clock/UTC/Capture retiré (1.105.3). */
+
 
 /* Inline chart loading: spinner centred in the plot area, no extra height. */
 .kpi-chart-spinner-box { height: var(--kpi-panel-chart-height, 235px); display: flex; align-items: center; justify-content: center; }

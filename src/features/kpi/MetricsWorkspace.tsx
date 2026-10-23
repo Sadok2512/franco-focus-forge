@@ -528,10 +528,8 @@ export function MetricsWorkspace({
   // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
   // pas de meta #START/#UT (null). Jamais une heure inventée.
   const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
-  const setTimeAxisMode = (m: TimeAxisMode) => {
-    setTimeAxisModeRaw(m);
-    writeTimeAxisMode(m);
-  };
+  // Le switcher Clock (local)/Clock (UTC)/Capture time (s) a été retiré de
+  // l'interface ; le mode reste mémorisé (localStorage) et pilote les ticks.
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
