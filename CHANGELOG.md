@@ -4,6 +4,11 @@
 - Browser API calls use the same-origin `/api` path; the Nitro server proxies that path to the configured internal `BC4_API_UPSTREAM`, so remote browsers no longer try `http://localhost:8000`.
 - Added a Docker build context ignore list so images are built only from tracked application sources and do not copy local dependencies, build output or audit artifacts.
 
+## 1.99.0
+- KPI : le tableau des mesures s'ajoute à côté des graphes au lieu de les remplacer, avec son propre bouton de fermeture ; état mémorisé par onglet.
+- KPI : cercle de chargement centré dans chaque graphe, Retry en cas d'erreur, texte « Loading measurements… » externe supprimé.
+- KPI : apparition douce des nouveaux panneaux (désactivée si moins d'animations demandées).
+
 ## 1.99.2 (patch) — BC4-FRONT 2026-10-22 — Axe X temps : Clock (local|UTC) + Capture time + switcher (Agent BC3)
 
 Lot (C) : l'axe X des cartes Metrics affichait `t_rel_s` (0 s / 200 s / …), peu lisible. Par défaut maintenant **Clock (local)** `HH:MM:SS` — identique à la colonne `Time local` de la Table (même origine `nmf_start_at + origin_ts + t_rel_s`, même modulo 86400). Bascule 3-way utilisateur, mémorisée en localStorage.
