@@ -16,3 +16,8 @@ export function workspaceColumns(layout: WorkspaceLayout, width: number, count: 
 export function panelColumns(span: number | "full", cols: number): number {
   return span === "full" ? cols : Math.max(1, Math.min(span, cols));
 }
+
+/** A table cannot inherit a graph's previously saved narrow span. */
+export function effectivePanelSpan(fullRow: boolean, savedSpan: number | "full"): number | "full" {
+  return fullRow ? "full" : savedSpan;
+}

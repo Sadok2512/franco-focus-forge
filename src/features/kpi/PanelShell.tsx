@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Columns2, Copy, GripVertical, Pencil } from "lucide-react";
-import { panelColumns } from "./workspace-grid";
+import { effectivePanelSpan, panelColumns } from "./workspace-grid";
 import {
   movePanel,
   panelOrder,
@@ -48,11 +48,11 @@ export function PanelShell({
   }, [id]);
   const title = s.titles[id] || defaultTitle;
   // Tables always reserve an entire row, including when a narrower span was saved.
-  const span: PanelSpan | "full" = fullRow ? "full" : perRow
+  const span = effectivePanelSpan(!!fullRow, perRow
     ? perRow === 1
       ? "full"
       : (Math.max(1, Math.floor(cols / perRow)) as PanelSpan)
-    : (s.span[id] ?? 1);
+    : (s.span[id] ?? 1));
   const collapsed = !!s.collapsed[id];
   const height = s.height[id];
   const nextSpan = (): PanelSpan =>

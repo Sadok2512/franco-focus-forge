@@ -44,12 +44,21 @@ describe("workspace settings apply button", () => {
     expect(localStorage.getItem(KEY)).toBeNull();
   });
 
-  it("applies the graph layout only on Apply", () => {
+  it.each([1, 2, 3])("applies %i graph columns only on Apply", (n) => {
     const onLayoutChange = openDialog();
     // Radix tabs activate on focus, not on click.
-    fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.perRow", { n: 2 }) }));
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.perRow", { n }) }));
     expect(onLayoutChange).not.toHaveBeenCalled();
     fireEvent.click(applyBtn());
-    expect(onLayoutChange).toHaveBeenCalledWith("2");
+    expect(onLayoutChange).toHaveBeenCalledWith(String(n));
+  });
+  it("applies Auto after an explicit layout only on Apply", () => {
+    const onLayoutChange = vi.fn();
+    render(<WorkspaceSettingsDialog open onOpenChange={vi.fn()} workspaceId={WS}
+      layout="3" onLayoutChange={onLayoutChange} columns={[]} />);
+    fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.opt_auto"), exact: true }));
+    expect(onLayoutChange).not.toHaveBeenCalled();
+    fireEvent.click(applyBtn());
+    expect(onLayoutChange).toHaveBeenCalledWith("auto");
   });
 });
