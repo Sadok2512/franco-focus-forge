@@ -1,3 +1,15 @@
+## 1.105.9 (minor) — BC4-FRONT 2026-10-23 — Upload : ZIP + dossier automatiquement extraits (Agent BC3)
+
+Deux chemins d'upload étendus (`NmfImportPanel` + `ProjectRowNmfAction`) :
+
+1. **ZIP** : si l'utilisateur sélectionne un `.zip`, le fichier est ouvert côté client via JSZip (lazy import, 150 kB chargés uniquement si besoin). Chaque entrée `.nmf` est extraite en `File` et injectée dans la queue d'upload. Les autres fichiers (txt, csv, nested zip) sont ignorés silencieusement. ZIP sans aucun `.nmf` → erreur visible « Aucun .nmf trouvé dans X.zip ».
+
+2. **Dossier** : nouveau bouton « Choisir un dossier » (`webkitdirectory` HTML, support Chrome/Edge/Safari/Firefox récent). La FileList est aplatie — on filtre les `.nmf` partout dans l'arbre.
+
+Zéro invention de noms : le nom extrait du zip devient le `filename` baked dans `nmf_file` par le back. Dédup `(nom:taille)` conserve la logique anti-doublon existante.
+
+Nouvelle dépendance : `jszip ^3.10.1` (ajoutée à `bun.lock`, bundle lazy).
+
 ## 1.105.8 (patch) — BC4-FRONT 2026-10-23 — Vue Map ferme le grand Measurements table (Agent BC3)
 
 Quand une métrique bascule en vue « Map » (⋮ → Carte depuis le MetricGraphCard **ou** depuis le menu catalogue), on referme automatiquement le grand « Measurements table » affiché en bas du workspace. Le besoin UX : « afficher QUE la map », pas une map suivie du tableau.

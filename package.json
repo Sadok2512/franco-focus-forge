@@ -1,6 +1,6 @@
 {
   "name": "tanstack_start_ts",
-  "version": "1.105.8",
+  "version": "1.105.9",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -73,6 +73,7 @@
     "recharts": "^2.15.4",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.5.0",
+    "jszip": "^3.10.1",
     "tailwindcss": "^4.2.1",
     "tw-animate-css": "^1.3.4",
     "vaul": "^1.1.2",

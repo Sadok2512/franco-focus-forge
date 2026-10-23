@@ -50,28 +50,61 @@ export function NmfImportPanel({
 
   const totalBytes = useMemo(() => rows.reduce((s, r) => s + r.file.size, 0), [rows]);
 
-  const addFiles = (fs: FileList | null) => {
-    if (!fs || !fs.length) return;
-    const incoming = Array.from(fs).map<NmfFileRow>((f) => ({
-      file: f,
-      status: "pending",
-      loaded: 0,
-      percent: 0,
-      error_msg: null,
-    }));
-    setQueued((prev) => {
-      const seen = new Set(prev.map((r) => `${r.file.name}:${r.file.size}`));
-      const merged = [...prev];
-      for (const r of incoming) {
-        const k = `${r.file.name}:${r.file.size}`;
-        if (!seen.has(k)) {
-          merged.push(r);
-          seen.add(k);
-        }
+  // 1.105.9 — Si une entrée est un .zip, on l'ouvre côté client (JSZip) et
+  // on injecte chaque fichier .nmf qu'il contient. Si l'utilisateur a choisi
+  // un dossier (webkitdirectory), FileList contient déjà tous les fichiers
+  // à plat, on filtre juste les .nmf. Zéro renommage : la clé de dédup
+  // (nom:taille) reste la même, qu'importe la source (direct, zip, dossier).
+  const [zipError, setZipError] = useState<string | null>(null);
+  const expandOne = async (f: File): Promise<File[]> => {
+    const lower = f.name.toLowerCase();
+    if (lower.endsWith(".nmf")) return [f];
+    if (lower.endsWith(".zip")) {
+      const { default: JSZip } = await import("jszip");
+      const zip = await JSZip.loadAsync(f);
+      const out: File[] = [];
+      const entries = Object.values(zip.files);
+      for (const entry of entries) {
+        if (entry.dir) continue;
+        if (!entry.name.toLowerCase().endsWith(".nmf")) continue;
+        const blob = await entry.async("blob");
+        const basename = entry.name.split("/").pop() ?? entry.name;
+        out.push(new File([blob], basename, { type: "application/octet-stream" }));
       }
-      return merged;
-    });
-    nmf.reset();
+      if (!out.length) throw new Error(`Aucun .nmf trouvé dans ${f.name}`);
+      return out;
+    }
+    return []; // ignore silently (dossier contient d'autres fichiers)
+  };
+  const addFiles = async (fs: FileList | null) => {
+    if (!fs || !fs.length) return;
+    setZipError(null);
+    try {
+      const expanded = (await Promise.all(Array.from(fs).map(expandOne))).flat();
+      if (!expanded.length) return;
+      const incoming = expanded.map<NmfFileRow>((f) => ({
+        file: f,
+        status: "pending",
+        loaded: 0,
+        percent: 0,
+        error_msg: null,
+      }));
+      setQueued((prev) => {
+        const seen = new Set(prev.map((r) => `${r.file.name}:${r.file.size}`));
+        const merged = [...prev];
+        for (const r of incoming) {
+          const k = `${r.file.name}:${r.file.size}`;
+          if (!seen.has(k)) {
+            merged.push(r);
+            seen.add(k);
+          }
+        }
+        return merged;
+      });
+      nmf.reset();
+    } catch (e) {
+      setZipError(e instanceof Error ? e.message : String(e));
+    }
   };
 
   const removeAt = (idx: number) => setQueued((prev) => prev.filter((_, i) => i !== idx));
@@ -101,15 +134,40 @@ export function NmfImportPanel({
             ref={inputRef}
             type="file"
             multiple
-            accept=".nmf,application/octet-stream"
+            // 1.105.9 — accepte aussi .zip (extrait côté client) ; dossier
+            // via le picker séparé ci-dessous (webkitdirectory).
+            accept=".nmf,.zip,application/zip,application/octet-stream"
             disabled={uploading}
             className="block w-full text-xs file:mr-3 file:rounded-md file:border file:bg-card file:px-3 file:py-1.5 file:text-xs file:font-medium hover:file:bg-muted"
-            onChange={(e) => addFiles(e.target.files)}
+            onChange={(e) => void addFiles(e.target.files)}
+          />
+          <label
+            htmlFor="nmf-folder"
+            className="mt-2 inline-flex cursor-pointer items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-[11px] font-medium hover:bg-muted"
+          >
+            <Upload className="h-3.5 w-3.5" aria-hidden /> Choisir un dossier
+          </label>
+          <input
+            id="nmf-folder"
+            type="file"
+            // @ts-expect-error — attribut non-standard (Chromium/Edge/Safari).
+            webkitdirectory=""
+            directory=""
+            multiple
+            disabled={uploading}
+            className="sr-only"
+            onChange={(e) => void addFiles(e.target.files)}
           />
           <p className="text-[11px] text-muted-foreground">
-            Multi-sélection acceptée. Les fichiers volumineux sont streamés via XHR ; chaque fichier
-            a sa propre barre de progression ci-dessous.
+            Multi-sélection acceptée. ZIP ouverts côté client (seuls les .nmf
+            sont extraits). Dossier → tous les .nmf du dossier et sous-dossiers.
+            XHR streaming + progression par fichier ci-dessous.
           </p>
+          {zipError && (
+            <p role="alert" className="mt-1 text-[11px] text-destructive">
+              {zipError}
+            </p>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <button

@@ -58,9 +58,37 @@ export function ProjectRowNmfAction({
     inputRef.current.click();
   };
 
+  // 1.105.9 — ZIP ouvert côté client (JSZip, lazy import). Dossier via
+  // webkitdirectory : la FileList est déjà aplatie, on filtre les .nmf.
+  const expandOne = async (f: File): Promise<File[]> => {
+    const lower = f.name.toLowerCase();
+    if (lower.endsWith(".nmf")) return [f];
+    if (lower.endsWith(".zip")) {
+      const { default: JSZip } = await import("jszip");
+      const zip = await JSZip.loadAsync(f);
+      const out: File[] = [];
+      for (const entry of Object.values(zip.files)) {
+        if (entry.dir) continue;
+        if (!entry.name.toLowerCase().endsWith(".nmf")) continue;
+        const blob = await entry.async("blob");
+        const basename = entry.name.split("/").pop() ?? entry.name;
+        out.push(new File([blob], basename, { type: "application/octet-stream" }));
+      }
+      if (!out.length) throw new Error(`Aucun .nmf trouvé dans ${f.name}`);
+      return out;
+    }
+    return [];
+  };
   const handleFiles = async (fs: FileList | null) => {
     if (!fs || !fs.length) return;
-    const files = Array.from(fs);
+    let files: File[];
+    try {
+      files = (await Promise.all(Array.from(fs).map(expandOne))).flat();
+    } catch (e) {
+      onError(e instanceof Error ? e.message : String(e));
+      return;
+    }
+    if (!files.length) return;
     onStart?.();
     const r = await nmf.upload(files, onError);
     // Réinitialise la valeur de l'input pour permettre un re-pick
@@ -85,7 +113,7 @@ export function ProjectRowNmfAction({
         id={inputId}
         type="file"
         multiple
-        accept=".nmf,application/octet-stream"
+        accept=".nmf,.zip,application/zip,application/octet-stream"
         className="sr-only"
         disabled={disabled || uploading}
         onChange={(e) => void handleFiles(e.target.files)}
