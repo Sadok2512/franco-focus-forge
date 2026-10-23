@@ -92,7 +92,7 @@ export function MetricsEventsRibbon({
       data-markers={totalMarkers}
     >
       <small className="kpi-metrics-events-header text-muted-foreground">{header}</small>
-      <div style={{ height: 50 }}>
+      <div style={{ height: 38 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
             margin={{ top: 4, right: 14, left: 4, bottom: 16 }}
@@ -147,8 +147,8 @@ export function MetricsEventsRibbon({
                     const on = isActive(payload.id);
                     return (
                       <g data-event-id={payload.id} data-active={on || undefined} style={{ cursor: "pointer" }}>
-                        {on && <circle cx={cx} cy={cy} r={7} fill="none" stroke={eventColor(payload.type)} strokeOpacity={0.45} strokeWidth={2} />}
-                        <circle cx={cx} cy={cy} r={on ? 4.5 : 3.5} fill={eventColor(payload.type)} fillOpacity={on ? 1 : 0.7} />
+                        {on && <circle cx={cx} cy={cy} r={5.5} fill="none" stroke={eventColor(payload.type)} strokeOpacity={0.45} strokeWidth={1.5} />}
+                        <circle cx={cx} cy={cy} r={on ? 3 : 2.5} fill={eventColor(payload.type)} fillOpacity={on ? 1 : 0.7} />
                       </g>
                     );
                   }}

@@ -627,50 +627,8 @@ export function MetricsWorkspace({
       data-testid="metrics-v3-workspace"
     >
       {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
-          Capture time (s). Mémorisé en localStorage (try/catch dans time-axis.ts).
-          Capture sans #START/#UT (meta null) : désactivé + tooltip + repli auto
-          sur Capture time (jamais une heure inventée). */}
-      {captureId && parsedSelections.length > 0 && (
-        <div
-          className="kpi-metrics-time-axis-switch"
-          role="radiogroup"
-          aria-label="Time axis mode"
-          data-testid="metrics-time-axis-switch"
-        >
-          <small className="text-muted-foreground">
-            Axis: <strong>{timeAxisLabel(effectiveTimeAxisMode, timeMeta)}</strong>
-          </small>
-          <div className="kpi-metrics-time-axis-options">
-            {(
-              [
-                { v: "clock-local", label: "Clock (local)" },
-                { v: "clock-utc", label: "Clock (UTC)" },
-                { v: "capture", label: "Capture time (s)" },
-              ] as { v: TimeAxisMode; label: string }[]
-            ).map(({ v, label }) => {
-              const disabled = (v === "clock-local" || v === "clock-utc") && !clockOk;
-              const title = disabled
-                ? "Clock unavailable: capture header missing #START or #UT"
-                : label;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  role="radio"
-                  aria-checked={effectiveTimeAxisMode === v}
-                  disabled={disabled}
-                  title={title}
-                  className={`kpi-button ${effectiveTimeAxisMode === v ? "primary" : ""}`}
-                  onClick={() => setTimeAxisMode(v)}
-                  data-testid={`metrics-time-axis-${v}`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
+          continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
       {captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
