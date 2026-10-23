@@ -1,4 +1,6 @@
-## 1.106.0 — Glisser-déposer de métriques dans les graphiques Metrics existants : ajout ciblé, deux axes physiques, légende et réglages par série, conservation par onglet, chargement indépendant. Aucun changement serveur ; validation réelle détaillée dans multi-metric-validation.md.
+## 1.106.0
+- Glisser-déposer de métriques dans les graphiques Metrics existants : ajout ciblé, deux axes physiques, légende et réglages par série, conservation par onglet, chargement indépendant.
+- Vérification sur BC4 : deux séries de débit Mbit/s puis RSRP PCell dBm, même capture et origine, trois métriques conservées après rechargement. Aucun changement serveur ni publication.
 
 ## 1.105.5 — Tableau des mesures : le menu ⋯ redevient visible et cliquable (pastille ancrée dans le panneau, espace réservé dans la dernière colonne).
 
