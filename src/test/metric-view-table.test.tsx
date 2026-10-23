@@ -82,7 +82,7 @@ describe("métrique ajoutée en Tableau", () => {
       () => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument(),
       { timeout: 3000 },
     );
-    fireEvent.click(screen.getByTestId("metrics-table-close"));
+    await removeTable();
     await waitFor(
       () => expect(screen.queryByTestId("metrics-table-panel")).toBeNull(),
       { timeout: 3000 },
@@ -102,3 +102,10 @@ describe("métrique ajoutée en Tableau", () => {
     expect(readMetricViews("tab-b")).toEqual({});
   });
 });
+
+async function removeTable() {
+  const { fireEvent: fe, screen: sc, within: wi } = await import("@testing-library/react");
+  const panel = sc.getByTestId("metrics-table-panel");
+  fe.keyDown(wi(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
+  fe.click(await sc.findByTestId("metrics-table-remove"));
+}
