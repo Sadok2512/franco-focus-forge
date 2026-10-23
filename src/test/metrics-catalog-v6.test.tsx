@@ -115,4 +115,45 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     fireEvent.click(pcellButton);
     expect(onToggle).toHaveBeenCalledWith("cell_rsrp@0");
   });
+
+  it("shows the compact loading bar while a catalogue request is in flight, never the empty message", async () => {
+    getMetrics.mockReset();
+    getMetrics.mockReturnValue(new Promise<MetricCatalogResponse>(() => {}));
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+    const bar = await screen.findByRole("progressbar", { name: "Loading catalogue…" });
+    expect(bar).toHaveClass("kpi-measurements-progress");
+    expect(bar.querySelector("span")).not.toBeNull();
+    expect(screen.queryByText("No KPIs match this search.")).toBeNull();
+  });
+
+  it("offers a retry when the catalogue request fails and refetches on click", async () => {
+    getMetrics.mockReset();
+    getMetrics.mockRejectedValueOnce(new Error("Failed to fetch"));
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByRole("alert")).toHaveTextContent("Failed to fetch");
+    fireEvent.click(screen.getByRole("button", { name: /Retry catalogue/ }));
+    expect(getMetrics).toHaveBeenCalledTimes(2);
+  });
 });
