@@ -82,7 +82,7 @@ describe("métrique ajoutée en Tableau", () => {
       () => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument(),
       { timeout: 3000 },
     );
-    fireEvent.click(screen.getByTestId("metrics-table-remove"));
+    fireEvent.click(screen.getByTestId("metrics-table-close"));
     await waitFor(
       () => expect(screen.queryByTestId("metrics-table-panel")).toBeNull(),
       { timeout: 3000 },
