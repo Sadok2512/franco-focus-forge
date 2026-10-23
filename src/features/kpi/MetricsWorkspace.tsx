@@ -550,7 +550,11 @@ export function MetricsWorkspace({
     }
     return "charts";
   });
+  const tableOnlyDismissed = useRef(false);
   const setPane = (p: MetricPane) => {
+    // 1.105.1 — fermer le tableau quand il n'y a rien à grapher ne doit pas
+    // être rouverte en boucle par l'effet table-only ci-dessous.
+    if (p !== "table") tableOnlyDismissed.current = true;
     setPaneRaw(p);
     try {
       localStorage.setItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"), p);
@@ -719,19 +723,6 @@ export function MetricsWorkspace({
             );
           })}
         </section>
-      )}
-      {captureId && parsedSelections.length > 0 && graphSelections.length === 0 && (
-        <p className="kpi-chart-state" data-testid="metrics-table-only-state">
-          {translate("metrics.tableOnlyHint")}{" "}
-          <button
-            type="button"
-            className="kpi-button"
-            data-testid="metrics-show-table"
-            onClick={() => setPane("table")}
-          >
-            {translate("metrics.showTable")}
-          </button>
-        </p>
       )}
       {isScannerCapture && (
         <div
