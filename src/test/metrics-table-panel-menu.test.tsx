@@ -65,7 +65,8 @@ async function openMenu() {
   mount();
   const panel = await screen.findByTestId("metrics-table-panel");
   const trigger = within(panel).getByTestId("workspace-panel-menu");
-  fireEvent.click(trigger);
+  // jsdom ne connaît pas les pointeurs de Radix : le menu s'ouvre au clavier.
+  fireEvent.keyDown(trigger, { key: "Enter" });
   return panel;
 }
 
