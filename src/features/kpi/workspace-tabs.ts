@@ -2,12 +2,14 @@
 // localStorage. Chaque onglet détient ses propres `codes` KPI + mode layout
 // (1/2/3/auto colonnes). Les requêtes ne se déclenchent que sur l'onglet actif
 // (G11 perf). Pas de nouveau stockage back ; URL = source de vérité.
+import type { MetricGraphGroups } from "./multi-metric-model";
 export type WorkspaceLayout = "auto" | "1" | "2" | "3";
 export type WorkspaceTab = {
   id: string;
   name: string;
   codes: string[];
   metricCodes?: string[];
+  metricGraphs?: MetricGraphGroups;
   activeCode: string | null;
   layout: WorkspaceLayout;
   // 1.76.0 (BC3) — Spec v2 G6 : overlay = tous les codes du tab rendus dans
@@ -51,6 +53,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
       n: t.name,
       c: t.codes,
        m: t.metricCodes,
+      g: t.metricGraphs,
       a: t.activeCode,
       l: t.layout,
       o: t.overlay ? 1 : 0,
@@ -94,6 +97,9 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
           ? { metricCodes: r["m"].filter((v): v is string => typeof v === "string") }
           : {}),
         activeCode,
+        ...(r["g"] && typeof r["g"] === "object" && !Array.isArray(r["g"])
+          ? { metricGraphs: Object.fromEntries(Object.entries(r["g"]).filter(([, v]) => v && typeof v === "object" && Array.isArray(v.metrics) && v.metrics.every((m: Record<string, unknown>) => m && typeof m["selection"] === "string" && typeof m["unit"] === "string" && typeof m["label"] === "string"))) }
+          : {}),
         layout,
         overlay,
       });

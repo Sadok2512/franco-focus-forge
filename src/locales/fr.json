@@ -166,6 +166,9 @@
     "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
     "7f626224ba1f": "Aucune métrique ne correspond à cette recherche."
   },
+  "multiMetric": {
+    "drop": "Déposer pour ajouter la métrique", "thirdUnit": "Deux unités physiques utilisent déjà les axes disponibles.", "separate": "Créer un graphique séparé", "categorical": "Une métrique catégorielle ne peut pas être ajoutée comme courbe continue.", "unit": "Le catalogue ne fournit pas d’unité physique.", "unavailable": "Aucune observation compatible pour cette capture et cette origine.", "empty": "Aucune série", "points": "Points", "color": "Couleur de la série", "visibility": "Afficher / masquer la série", "min": "Minimum", "max": "Maximum"
+  },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
     "76b9fda37ce9": "sélectionnés",

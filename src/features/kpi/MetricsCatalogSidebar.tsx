@@ -32,6 +32,7 @@ import type { MetricView } from "./MetricGraphCard";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
+import { METRIC_DRAG_TYPE } from "./multi-metric-model";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -218,6 +219,22 @@ export function MetricsCatalogSidebar({
         <div
           className={`kpi-tree-leaf ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
           title={scannerTooltip ?? node.reason ?? node.source ?? label}
+          draggable={node.selectable && !!node.selection && !disabled && node.n > 0}
+          data-drag-metric={node.selection ?? undefined}
+          onDragStart={(event) => {
+            const selection = node.selection;
+            if (!selection || disabled) { event.preventDefault(); return; }
+            const info = query.data?.metrics.find((m) => m.code === selection.split("@")[0]);
+            const metric = { selection, label, unit: info?.unit || node.unit || "", tech: info?.tech ?? "", kind: info?.kind ?? "categorical" };
+            event.dataTransfer.setData(METRIC_DRAG_TYPE, JSON.stringify(metric));
+            event.dataTransfer.effectAllowed = "copy";
+            const preview = document.createElement("div");
+            preview.className = "metric-drag-preview";
+            preview.textContent = `${metric.label}\n${metric.tech} · ${metric.unit}`;
+            document.body.append(preview);
+            event.dataTransfer.setDragImage(preview, 15, 15);
+            requestAnimationFrame(() => preview.remove());
+          }}
         >
           <button
             type="button"
@@ -276,7 +293,7 @@ export function MetricsCatalogSidebar({
                           mode === "table" ||
                           mode === "map"
                         ) {
-                          onVisualization(node.selection!, mode as MetricView);
+                          if (node.selection) onVisualization(node.selection, mode as MetricView);
                         }
                       }}
                     />
