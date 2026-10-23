@@ -27,12 +27,9 @@ import {
   type TimeAxisMode,
 } from "./time-axis";
 
-const TYPE_COLORS: Record<string, string> = {
-  task: "#2563eb",
-  ho: "#dc2626",
-  rlf: "#ea580c",
-  rrc: "#16a34a",
-};
+import { eventColor, eventId, useActiveEvents } from "./active-events";
+
+type Pt = { id: string; t_rel_s: number; y: number; label: string; type: string };
 
 export function MetricsEventsRibbon({
   projectId,
@@ -55,8 +52,9 @@ export function MetricsEventsRibbon({
     enabled: !!captureId,
   });
   // Un group par type pour affecter une couleur et une "lane" y fixe.
+  const { isActive, toggle } = useActiveEvents();
   const byType = useMemo(() => {
-    const buckets: Record<string, { t_rel_s: number; y: number; label: string; type: string }[]> = {
+    const buckets: Record<string, Pt[]> = {
       task: [],
       ho: [],
       rlf: [],
@@ -65,10 +63,10 @@ export function MetricsEventsRibbon({
     const yByType: Record<string, number> = { task: 1, ho: 2, rlf: 3, rrc: 4 };
     for (const m of q.data?.markers ?? []) {
       const y = yByType[m.type] ?? 1;
-      (buckets[m.type] ??= []).push({ t_rel_s: m.t_rel_s, y, label: m.label, type: m.type });
+      (buckets[m.type] ??= []).push({ id: eventId(captureId, m.type, m.seq), t_rel_s: m.t_rel_s, y, label: m.label, type: m.type });
     }
     return buckets;
-  }, [q.data]);
+  }, [q.data, captureId]);
   const totalMarkers = (q.data?.markers ?? []).length;
   const header = `Events · ${totalMarkers} marker${totalMarkers === 1 ? "" : "s"}`;
   if (q.isPending) {
@@ -136,9 +134,24 @@ export function MetricsEventsRibbon({
                 <Scatter
                   key={type}
                   data={pts}
-                  fill={TYPE_COLORS[type] ?? "#64748b"}
-                  shape="circle"
+                  fill={eventColor(type)}
                   isAnimationActive={false}
+                  cursor="pointer"
+                  onClick={(d: unknown) => {
+                    const p = ((d as { payload?: Pt }).payload ?? d) as Pt;
+                    if (!p?.id) return;
+                    toggle({ id: p.id, captureId, t_rel_s: p.t_rel_s, label: p.label, type: p.type, color: eventColor(p.type) });
+                  }}
+                  shape={(props: unknown) => {
+                    const { cx, cy, payload } = props as { cx: number; cy: number; payload: Pt };
+                    const on = isActive(payload.id);
+                    return (
+                      <g data-event-id={payload.id} data-active={on || undefined} style={{ cursor: "pointer" }}>
+                        {on && <circle cx={cx} cy={cy} r={7} fill="none" stroke={eventColor(payload.type)} strokeOpacity={0.45} strokeWidth={2} />}
+                        <circle cx={cx} cy={cy} r={on ? 4.5 : 3.5} fill={eventColor(payload.type)} fillOpacity={on ? 1 : 0.7} />
+                      </g>
+                    );
+                  }}
                 />
               ),
             )}
