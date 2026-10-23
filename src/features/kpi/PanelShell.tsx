@@ -60,7 +60,7 @@ export function PanelShell({
 
   return (
     <div
-      className={`kpi-panel-shell${over ? " is-drop" : ""}${collapsed ? " is-collapsed" : ""}`}
+      className={`kpi-panel-shell kpi-panel-enter${over ? " is-drop" : ""}${collapsed ? " is-collapsed" : ""}`}
       data-panel-id={id}
       data-testid={`panel-${id}`}
       style={{
