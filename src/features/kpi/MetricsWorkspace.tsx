@@ -9,7 +9,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricGraphCard, METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import {
@@ -181,6 +181,49 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
     />
   );
 }
+function MetricMapCard({ projectId, captureId, selection, title, filters, onRemove, onVisualization }: {
+  projectId: string;
+  captureId: string;
+  selection: string;
+  title: string;
+  filters: KpiQueryFilters;
+  onRemove: () => void;
+  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
+}) {
+  const { t } = useTranslation();
+  const panelRef = useRef<HTMLElement>(null);
+  const query = useQuery({
+    queryKey: ["metric-map", projectId, captureId, selection, filters],
+    queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { include_map: true }, signal),
+    staleTime: 60_000,
+  });
+  return (
+    <article ref={panelRef} className="kpi-graph-card" data-metric-code={selection} data-view="map">
+      <header className="kpi-card-header">
+        <h3 title={title}>{title}</h3>
+        <WorkspacePanelMenu label={title}>
+          {onVisualization && (["graph", "histogram", "table", "map"] as MetricView[]).map((mode) => {
+            const Icon = METRIC_VIEW_ICONS[mode];
+            return <DropdownMenuItem key={mode} onSelect={() => onVisualization(selection, mode)}>
+              <Icon size={14} />{METRIC_VIEW_LABELS[mode]}
+            </DropdownMenuItem>;
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => void panelRef.current?.requestFullscreen?.()}>
+            <Maximize2 size={14} />{t("panel.fullscreen")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onRemove}><X size={14} />{t("panel.remove")}</DropdownMenuItem>
+        </WorkspacePanelMenu>
+      </header>
+      {query.isPending ? <div className="kpi-measurements-loading" aria-busy="true">
+        <div className="kpi-measurements-progress" role="progressbar" aria-label={t("metrics.eb724a908f1f")}><span /></div>
+      </div> : query.isError ? <div className="kpi-chart-state" role="alert">
+        <p>{query.error.message}</p>
+        <Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t("kpi.af273d956b5b")}</Button>
+      </div> : query.data ? <MetricMap data={query.data} /> : null}
+    </article>
+  );
+}
 export function MetricsWorkspace({
   projectId,
   captureId,
@@ -203,6 +246,7 @@ export function MetricsWorkspace({
   paneRequest,
   cardViewRequest,
   onRemove,
+  onVisualization,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -220,6 +264,7 @@ export function MetricsWorkspace({
   paneRequest?: number;
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
+  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -628,6 +673,12 @@ export function MetricsWorkspace({
             const info = metricInfoByCode.get(s.code);
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
+            const metricView = viewsProp?.[s.full] ?? "graph";
+            const remove = () => {
+              const next = selections.filter((x) => x !== s.full);
+              if (!next.length) onClear();
+              else onRemove?.(s.full);
+            };
             return (
               <PanelShell
                 key={s.full}
@@ -636,7 +687,15 @@ export function MetricsWorkspace({
                 natural={100 + i}
                 defaultTitle={`${i + 1}. ${title}`}
               >
-                {(panelTitle) => <MetricGraphCard
+                {(panelTitle) => metricView === "map" ? <MetricMapCard
+                  projectId={projectId}
+                  captureId={captureId}
+                  selection={s.full}
+                  title={panelTitle}
+                  filters={filters}
+                  onRemove={remove}
+                  onVisualization={onVisualization}
+                /> : <MetricGraphCard
                 projectId={projectId}
                 code={s.full}
                 label={panelTitle}
@@ -645,15 +704,9 @@ export function MetricsWorkspace({
                 category={info?.category_label ?? null}
                 eventCode={info?.event_code ?? s.code}
                 appliedFilters={filters}
-                onRemove={() => {
-                  const next = selections.filter((x) => x !== s.full);
-                  if (!next.length) onClear();
-                  else onRemove?.(s.full);
-                }}
-                view="graph"
-                onViewChange={() => {
-                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
-                }}
+                onRemove={remove}
+                view={metricView}
+                onViewChange={(next) => onVisualization?.(s.full, next)}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                 timeAxisMode={effectiveTimeAxisMode}
               />}
