@@ -191,7 +191,7 @@ export function MetricsWorkspace({
   onColumnsChange: _onColumnsChange,
   paneRequest,
   cardViewRequest,
-  onRemove: _onRemove,
+  onRemove,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -207,7 +207,7 @@ export function MetricsWorkspace({
   onColumnsChange?: unknown;
   paneRequest?: number;
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
-  onRemove?: unknown;
+  onRemove?: ((code: string) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -612,16 +612,9 @@ export function MetricsWorkspace({
                 eventCode={info?.event_code ?? s.code}
                 appliedFilters={filters}
                 onRemove={() => {
-                  // Trigger removal via existing onClear if last, else notify parent
                   const next = selections.filter((x) => x !== s.full);
                   if (!next.length) onClear();
-                  else {
-                    // Rely on URL back-sync in KpiWorkspace via toggleMetric
-                    // Here no parent handler for individual remove: dispatch a custom event
-                    window.dispatchEvent(
-                      new CustomEvent("bc3-metrics-remove", { detail: { code: s.full } }),
-                    );
-                  }
+                  else onRemove?.(s.full);
                 }}
                 view="graph"
                 onViewChange={() => {
