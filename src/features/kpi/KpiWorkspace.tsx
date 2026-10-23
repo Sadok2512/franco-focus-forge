@@ -726,6 +726,7 @@ function Workspace({
                     onViewChange={setMetricsView}
                     onTablePaneChange={setMetricsTablePane}
                     views={metricViews}
+                    onVisualization={visualizeMetric}
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}
