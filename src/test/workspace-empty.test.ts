@@ -49,9 +49,8 @@ describe("first launch of a project", () => {
   });
 
   it("restores a saved session from the link or from the memory of the project", () => {
-    const saved = updateTab(newTabsState(["LTE_RACH_ATTEMPTS"]), newTabsState(["LTE_RACH_ATTEMPTS"]).activeTabId, {
-      metricCodes: ["cell_rsrp@0"],
-    });
+    const base = newTabsState(["LTE_RACH_ATTEMPTS"]);
+    const saved = updateTab(base, base.activeTabId, { metricCodes: ["cell_rsrp@0"] });
     const encoded = encodeTabs(saved);
     const fromUrl = initialTabsState({ urlTabs: encoded, storedTabs: null, legacyMetrics: [] });
     expect(activeTab(fromUrl).codes).toEqual(["LTE_RACH_ATTEMPTS"]);
