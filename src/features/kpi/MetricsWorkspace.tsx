@@ -25,7 +25,6 @@ import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   isClockAvailable,
   readTimeAxisMode,
-  timeAxisLabel,
   writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
