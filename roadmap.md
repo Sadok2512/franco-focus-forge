@@ -78,3 +78,6 @@
 - [ ] Sync Time across temporal panels (step 3).
 - [ ] Panel duplicate (needs per-panel ids instead of unique KPI codes).
 - [ ] Timeline/Events panel in KPI (no timeline renderer outside Signaling).
+
+- [x] Projects : Superstreams (création, arbre, édition, suppression)
+- [ ] Superstreams : routes serveur /projects/{id}/superstreams (bloqué : backend BC4)
