@@ -10,6 +10,7 @@
 - [x] 1.105.0 — premier lancement d'un projet : workspace 1 vide, même avec un ancien `?kpis=/?kpi=/?metrics=` dans le lien ; reprise de session par `?tabs=` ou onglets mémorisés. 3 tests ciblés (321 passent), navigateur : lien périmé → 0 panneau + « Choose your metrics », ajout de « LTE RACH Attempts » → 1 panneau, rechargement → toujours 1 panneau.
 - [x] 1.105.2 — barre « Axis: Capture time (s)… » + boutons Clock (local)/Clock (UTC)/Capture time (s) supprimées au-dessus des cartes Metrics (mode mémorisé conservé) ; marqueurs Events plus petits.
 - [x] 1.105.2 — données du tableau des mesures centrées dans chaque cellule (en-têtes, heures, GPS, valeurs), défauts Workspace settings cellAlign/numberAlign = centre ; 313 tests passent, build OK.
+- [x] 1.105.5 — menu ⋯ du tableau des mesures de nouveau visible et cliquable : la pastille était décalée hors du panneau (overflow hidden) et recouverte par la grille ; 14 tests passent, navigateur : ⋯ ouvert (Export CSV, Plein écran, Fermer le panneau), « Fermer » retire le tableau et laisse les 2 cartes.
 - [x] 1.105.1 — suppression du message « The selected metrics are shown in the measurements table » et de son bouton : le tableau des mesures s'ouvre seul (en haut quand il est seul) et une fermeture volontaire n'est pas rouverte ; 3 tests ciblés dans metric-view-table.test.tsx.
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
