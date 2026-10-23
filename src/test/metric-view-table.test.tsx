@@ -63,17 +63,28 @@ describe("métrique ajoutée en Tableau", () => {
     expect(card("cell_rsrq@0")).not.toBeNull();
   });
 
-  it("sans carte à afficher, propose le tableau au lieu d'un graphe", async () => {
+  it("sans carte à afficher, le tableau s'ouvre seul, sans message ni bouton", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "charts");
     mount({ selections: ["cell_rsrp@0"], views: { "cell_rsrp@0": "table" } });
     await waitFor(
-      () => expect(screen.getByTestId("metrics-table-only-state")).toBeVisible(),
+      () => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument(),
       { timeout: 3000 },
     );
     expect(card("cell_rsrp@0")).toBeNull();
-    fireEvent.click(screen.getByTestId("metrics-show-table"));
+    expect(screen.queryByTestId("metrics-table-only-state")).toBeNull();
+    expect(screen.queryByTestId("metrics-show-table")).toBeNull();
+  });
+
+  it("fermer le tableau quand il n'y a rien à grapher ne le rouvre pas", async () => {
+    window.localStorage.setItem("bc3.metrics.pane", "table");
+    mount({ selections: ["cell_rsrp@0"], views: { "cell_rsrp@0": "table" } });
     await waitFor(
       () => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument(),
+      { timeout: 3000 },
+    );
+    fireEvent.click(screen.getByTestId("metrics-table-remove"));
+    await waitFor(
+      () => expect(screen.queryByTestId("metrics-table-panel")).toBeNull(),
       { timeout: 3000 },
     );
   });
