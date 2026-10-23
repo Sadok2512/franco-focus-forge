@@ -1,3 +1,11 @@
+## 1.105.7 (patch) — BC4-FRONT 2026-10-23 — KpiMapOSM : tile.openstreetmap.org direct (fix 404 en prod) (Agent BC3)
+
+Sur la vue KPI Analytics (et toute vue utilisant `KpiMapOSM`), la carte restait bloquée sur « Loading OSM map… ». Cause : `KpiMapOSM.tsx:134` demandait les tuiles sur `/osm/{z}/{x}/{y}.png` — proxy configuré dans `vite.config.ts:40` **uniquement en dev**. En prod Nitro node-server il n'y a pas de proxy → 404.
+
+Remplacement par `https://tile.openstreetmap.org/{z}/{x}/{y}.png` direct, cohérent avec les 5 autres cartes du projet (`AssistantMap`, `SignalingMap`, `RadioMap`, `GeoPreviewMap`, `DictionaryPage`) qui tapent déjà OSM en direct sans problème.
+
+Guard : `curl -s -o /dev/null -w "%{http_code}" http://localhost:5174/osm/5/16/11.png` → 404 avant fix, non-utilisé après fix.
+
 ## 1.105.6 (patch) — BC4-FRONT 2026-10-23 — Auto-select capture masque le prompt "Select capture" (Agent BC3)
 
 Sur un projet qui a au moins une capture (nominal), le MetricsWorkspace auto-sélectionne la 1re capture au mount (useEffect:502). Pendant la fenêtre très courte entre arrivée de `captureQuery.data` et propagation du nouveau `captureId` au parent, le prompt "Sélectionnez la capture à analyser" clignotait inutilement — l'utilisateur n'a rien à sélectionner en pratique.

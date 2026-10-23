@@ -127,11 +127,11 @@ export function KpiMapOSM({
           sources: {
             osm: {
               type: "raster",
-              // 1.67.0 — Même origine via proxy Vite dev `/osm/*` →
-              // tile.openstreetmap.org. Permet au navigateur de charger
-              // les tuiles même quand son réseau n'a pas accès direct à
-              // OSM (Back100 relaie).
-              tiles: ["/osm/{z}/{x}/{y}.png"],
+              // 1.105.7 — tile.openstreetmap.org direct. Le proxy Vite dev
+              // `/osm/*` n'existe pas en prod Nitro node-server (donc 404).
+              // Les autres cartes du projet (AssistantMap, SignalingMap,
+              // RadioMap, GeoPreviewMap) tapent déjà en direct avec succès.
+              tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
               tileSize: 256,
               attribution: "© OpenStreetMap",
             },
