@@ -1,3 +1,6 @@
+## 1.105.0
+- KPI : au premier lancement d'un projet, l'espace de travail 1 est **vide**. Un lien qui traîne un ancien `?kpis=`, `?kpi=` ou `?metrics=` ne remplit plus le premier onglet. La reprise d'une session passe par `?tabs=` ou par les onglets mémorisés du projet : les graphes et tableaux ajoutés restent en place après un rechargement.
+
 ## 1.104.1
 - KPI : le catalogue Metrics affiche la barre de chargement dès qu'une requête catalogue est en cours (et plus seulement au tout premier chargement), et propose « Réessayer le catalogue » quand la requête échoue, au lieu du seul message d'erreur.
 

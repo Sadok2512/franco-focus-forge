@@ -157,6 +157,26 @@ export function activeTab(state: WorkspaceTabsState): WorkspaceTab {
   return state.tabs.find((t) => t.id === state.activeTabId) ?? state.tabs[0] ?? defaultTab();
 }
 
+/**
+ * 1.105.0 — Premier lancement d'un projet (aucun onglet dans l'URL, aucun onglet
+ * mémorisé) : le workspace démarre VIDE. Un lien qui traîne un ancien
+ * ?kpis=/?kpi=/?metrics= ne remplit pas le premier onglet ; la restauration
+ * d'une session passe par ?tabs= (écrit en même temps que kpis/metrics) ou par
+ * les onglets mémorisés du projet.
+ */
+export function initialTabsState(params: {
+  urlTabs: string;
+  storedTabs: string | null;
+  legacyMetrics: string[];
+}): WorkspaceTabsState {
+  for (const raw of [params.urlTabs, params.storedTabs]) {
+    if (!raw) continue;
+    const decoded = decodeTabs(raw);
+    if (decoded) return migrateMetrics(decoded, params.legacyMetrics);
+  }
+  return newTabsState([]);
+}
+
 /** Import the former project-wide metric selection into the active legacy tab only. */
 export function migrateMetrics(state: WorkspaceTabsState, metrics: string[]): WorkspaceTabsState {
   return {
