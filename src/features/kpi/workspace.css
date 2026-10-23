@@ -1323,8 +1323,17 @@
 .kpi-panel-enter { animation: kpi-panel-in 180ms ease-out both; }
 @keyframes kpi-panel-in { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .kpi-panel-enter { animation: none; } }
-.kpi-metrics-table-head { position: absolute; top: 2px; right: 2px; z-index: 6; display: flex; align-items: center; height: 0; overflow: visible; }
-.kpi-metrics-table-head > div { margin-top: 18px; transform: translateY(-50%); }
+/* 1.105.5 — le ⋯ du tableau des mesures est une pastille posée entièrement à
+   l'intérieur du panneau : ancrée en haut à droite, jamais décalée hors du
+   cadre (le panneau est à overflow hidden, une pastille à cheval sur le bord
+   était masquée et inutilisable). */
+.kpi-metrics-table-head { position: absolute; top: 8px; right: 10px; z-index: 8; display: flex; align-items: center; }
+.kpi-metrics-table-head .kpi-icon {
+  background: color-mix(in oklab, var(--background) 92%, transparent);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 14%, transparent);
+}
+.kpi-metrics-table-head .kpi-icon:hover { background: var(--accent); }
 .kpi-panel-veil { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--background) 55%, transparent); }
 
 /* Measurements loading stays compact; no fabricated progress percentage. */
