@@ -37,6 +37,7 @@ import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import { getMetricCaptures } from "@/lib/api/client";
 import type { MetricView } from "./MetricGraphCard";
+import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
 
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
@@ -290,6 +291,12 @@ function Workspace({
       ? selectedMetrics.filter((candidate) => candidate !== code)
       : [...selectedMetrics, code];
     setSelectedMetrics(next);
+    // Une métrique retirée de l'onglet perd aussi la vue qui lui était liée.
+    if (!next.includes(code) && metricViews[code]) {
+      const rest = { ...metricViews };
+      delete rest[code];
+      writeViews(rest);
+    }
   };
   // 1.73.0 (BC3) — vue partagée MetricsWorkspace, pilotée par le menu ⋯ du sidebar
   // premium ou par les onglets du workspace. MetricView (histogram|graph|table|map)
@@ -301,18 +308,44 @@ function Workspace({
     pane: "table",
     n: 0,
   });
-  const tableOnlyWorkspace = selectedMetrics.length > 0 && codes.length === 0 && metricsTablePane;
+  // 1.101.0 — la visualisation demandée pour chaque métrique (⋮ du catalogue).
+  // Une métrique choisie en « Tableau » n'a jamais de carte graphique : elle
+  // n'existe que dans le grand tableau des mesures. Mémorisée par onglet.
+  const [viewsState, setViewsState] = useState(() => ({
+    tabId: tabsState.activeTabId,
+    views: readMetricViews(tabsState.activeTabId),
+  }));
+  if (viewsState.tabId !== tabsState.activeTabId) {
+    setViewsState({
+      tabId: tabsState.activeTabId,
+      views: readMetricViews(tabsState.activeTabId),
+    });
+  }
+  const metricViews = viewsState.views;
+  const writeViews = (next: MetricViews) => {
+    setViewsState({ tabId: tabsState.activeTabId, views: next });
+    writeMetricViews(tabsState.activeTabId, next);
+  };
+  const graphMetricCount = selectedMetrics.filter(
+    (code) => metricViews[code] !== "table",
+  ).length;
+  const tableOnlyWorkspace =
+    selectedMetrics.length > 0 &&
+    graphMetricCount === 0 &&
+    codes.length === 0 &&
+    metricsTablePane;
   const [cardViewRequest, setCardViewRequest] = useState<
     { code: string; view: MetricView; n: number } | undefined
   >();
   const visualizeMetric = (code: string, view: MetricView) => {
+    writeViews({ ...metricViews, [code]: view });
     if (!selectedMetrics.includes(code)) {
-      const next = [...selectedMetrics, code];
-      setSelectedMetrics(next);
+      setSelectedMetrics([...selectedMetrics, code]);
     }
     if (view === "table") {
       // 1.91.0 — ⋮ → Tableau ouvre le grand tableau des métriques (avec les
-      // colonnes de paramètres) ; la carte reste en graphique.
+      // colonnes de paramètres). 1.101.0 — cette métrique ne reçoit aucune
+      // carte graphique : le tableau est sa seule représentation.
       setMetricsTablePane(true);
       setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
       return;
@@ -606,7 +639,7 @@ function Workspace({
               />
             ) : null}
             <WorkspaceGrid
-              count={panels.length + selectedMetrics.length + (metricsTablePane ? 1 : 0)}
+              count={panels.length + graphMetricCount + (metricsTablePane ? 1 : 0)}
               layout={currentTab.layout}
               hidden={currentTab.overlay && panels.length >= 2}
             >
@@ -690,6 +723,7 @@ function Workspace({
                     view={metricsView}
                     onViewChange={setMetricsView}
                     onTablePaneChange={setMetricsTablePane}
+                    views={metricViews}
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}

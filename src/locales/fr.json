@@ -162,7 +162,10 @@
       "no_fix_before_seq": "Aucun fix GPS avant cette séquence",
       "no_utc_offset_header": "Entête `#UT` absent — offset UTC inconnu"
     },
-    "tablePanel": "Tableau des mesures"
+    "tablePanel": "Tableau des mesures",
+    "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
+    "tableOnlyHint": "Les métriques sélectionnées sont affichées dans le tableau des mesures.",
+    "showTable": "Afficher le tableau des mesures"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
