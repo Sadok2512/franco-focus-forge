@@ -225,7 +225,7 @@ export function MetricsCatalogSidebar({
             const selection = node.selection;
             if (!selection || disabled) { event.preventDefault(); return; }
             const info = query.data?.metrics.find((m) => m.code === selection.split("@")[0]);
-            const metric = { selection, label: `${info?.label ?? label}${node.cell ? ` · ${label}` : ""}`, unit: node.unit || info?.unit || "", tech: info?.tech ?? "", kind: info?.kind ?? "categorical" };
+            const metric = { selection, label, unit: info?.unit || node.unit || "", tech: info?.tech ?? "", kind: info?.kind ?? "categorical" };
             event.dataTransfer.setData(METRIC_DRAG_TYPE, JSON.stringify(metric));
             event.dataTransfer.effectAllowed = "copy";
             const preview = document.createElement("div");
