@@ -1332,3 +1332,4 @@
 @media (prefers-reduced-motion: reduce) { .kpi-panel-enter { animation: none; } }
 .kpi-metrics-table-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .kpi-metrics-table-head h3 { font-size: 13px; font-weight: 600; margin: 0; }
+.kpi-panel-veil { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--background) 55%, transparent); }
