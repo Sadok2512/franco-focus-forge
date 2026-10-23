@@ -1,0 +1,9 @@
+.git
+.output
+node_modules
+dist
+coverage
+audit
+playwright-report
+test-results
+*.log

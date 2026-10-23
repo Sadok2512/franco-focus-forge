@@ -7,6 +7,39 @@ type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
+const API_PREFIX = "/api";
+
+function apiUpstream(): string {
+  return (
+    process.env["BC4_API_UPSTREAM"] ??
+    process.env["VITE_BC4_API_UPSTREAM"] ??
+    "http://api:8000"
+  ).replace(/\/+$/, "");
+}
+
+async function proxyApiRequest(request: Request): Promise<Response> {
+  const source = new URL(request.url);
+  const path = source.pathname.slice(API_PREFIX.length) || "/";
+  const target = `${apiUpstream()}${path}${source.search}`;
+  const headers = new Headers(request.headers);
+
+  // The upstream receives a server-to-server request. Keeping the browser's
+  // Host/Origin would make the backend apply CORS to an internal hop.
+  headers.delete("host");
+  headers.delete("origin");
+
+  const init: RequestInit & { duplex?: "half" } = {
+    method: request.method,
+    headers,
+    redirect: "manual",
+  };
+  if (request.method !== "GET" && request.method !== "HEAD") {
+    init.body = request.body;
+    init.duplex = "half";
+  }
+  return fetch(target, init);
+}
+
 let serverEntryPromise: Promise<ServerEntry> | undefined;
 
 async function getServerEntry(): Promise<ServerEntry> {
@@ -47,6 +80,10 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const pathname = new URL(request.url).pathname;
+      if (pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`)) {
+        return await proxyApiRequest(request);
+      }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);
