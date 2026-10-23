@@ -1125,6 +1125,12 @@
   display: flex;
   flex-direction: column;
 }
+/* 1.102.0 — le tableau des mesures passe en plein écran depuis son menu ⋮ :
+   le panneau doit garder le fond du thème, jamais le fond noir du navigateur. */
+.kpi-metrics-table-body:fullscreen {
+  background: var(--card);
+  padding: 0 8px 8px;
+}
 .kpi-metrics-table-body .kpi-table-scroll {
   overflow: auto;
   max-height: 600px;

@@ -1,3 +1,7 @@
+## 1.102.0
+- KPI : le tableau des mesures a maintenant son propre menu « ⋮ », comme les autres panneaux. Il propose **Exporter CSV** (le fichier renvoyé par l'API), **Plein écran** (le tableau seul) et **Fermer le panneau**. Le bouton ✕ d'affichage rapide reste en place.
+- Le titre du tableau reste dynamique (nom du paramètre et de la cellule renvoyés par l'API) et l'en-tête ne gagne aucune barre supplémentaire.
+
 ## 1.101.0
 - KPI : une métrique ajoutée par ⋮ → Tableau n'affiche plus jamais de carte graphique. Elle n'apparaît que dans le tableau des mesures ; les autres métriques gardent leur graphe. La vue choisie est mémorisée par onglet, et le tableau des mesures reste accessible par un bouton quand aucun graphe n'a à être affiché.
 - KPI : le mode du panneau (cartes ou tableau) est désormais signalé au parent à l'ouverture de l'onglet, donc la grille compte exactement les panneaux visibles.
