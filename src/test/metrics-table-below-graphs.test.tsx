@@ -64,7 +64,8 @@ describe("measurements table position", () => {
       expect(Number(card.style.order)).toBeLessThan(tableOrder);
       expect(card.style.gridColumn).toBe("span 1");
     }
-    expect(table.style.gridColumn).toBe("1 / -1");
+    // La règle CSS « pleine largeur » vise les enfants directs du conteneur.
+    expect(table.parentElement?.dataset.testid).toBe("metrics-v3-workspace");
   });
 
   it("sinks a table panel below a graph with the same saved position", () => {
