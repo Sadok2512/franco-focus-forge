@@ -1334,6 +1334,10 @@
   box-shadow: 0 1px 3px color-mix(in oklab, var(--foreground) 14%, transparent);
 }
 .kpi-metrics-table-head .kpi-icon:hover { background: var(--accent); }
+/* La pastille est posée sur le coin droit de la ligne d'en-têtes : on réserve
+   sa largeur dans la dernière colonne pour qu'aucun nom de colonne ne passe
+   dessous. */
+.kpi-metrics-table-body thead th:last-child { padding-right: 44px; }
 .kpi-panel-veil { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--background) 55%, transparent); }
 
 /* Measurements loading stays compact; no fabricated progress percentage. */
