@@ -1,4 +1,5 @@
 import { Download, Maximize2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -9,9 +10,10 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard } from "./MetricGraphCard";
+import { MetricGraphCard, METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
+import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -23,7 +25,6 @@ import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   isClockAvailable,
   readTimeAxisMode,
-  timeAxisLabel,
   writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
@@ -181,6 +182,49 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
     />
   );
 }
+function MetricMapCard({ projectId, captureId, selection, title, filters, onRemove, onVisualization }: {
+  projectId: string;
+  captureId: string;
+  selection: string;
+  title: string;
+  filters: KpiQueryFilters;
+  onRemove: () => void;
+  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
+}) {
+  const { t } = useTranslation();
+  const panelRef = useRef<HTMLElement>(null);
+  const query = useQuery({
+    queryKey: ["metric-map", projectId, captureId, selection, filters],
+    queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { group_by: "operator", include_map: true }, signal),
+    staleTime: 60_000,
+  });
+  return (
+    <article ref={panelRef} className="kpi-graph-card" data-metric-code={selection} data-view="map">
+      <header className="kpi-card-header">
+        <h3 title={title}>{title}</h3>
+        <WorkspacePanelMenu label={title}>
+          {onVisualization && (["graph", "histogram", "table", "map"] as MetricView[]).map((mode) => {
+            const Icon = METRIC_VIEW_ICONS[mode];
+            return <DropdownMenuItem key={mode} onSelect={() => onVisualization(selection, mode)}>
+              <Icon size={14} />{METRIC_VIEW_LABELS[mode]}
+            </DropdownMenuItem>;
+          })}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => void panelRef.current?.requestFullscreen?.()}>
+            <Maximize2 size={14} />{t("panel.fullscreen")}
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={onRemove}><X size={14} />{t("panel.remove")}</DropdownMenuItem>
+        </WorkspacePanelMenu>
+      </header>
+      {query.isPending ? <div className="kpi-measurements-loading" aria-busy="true">
+        <div className="kpi-measurements-progress" role="progressbar" aria-label={t("metrics.eb724a908f1f")}><span /></div>
+      </div> : query.isError ? <div className="kpi-chart-state" role="alert">
+        <p>{query.error.message}</p>
+        <Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t("kpi.af273d956b5b")}</Button>
+      </div> : query.data ? <MetricMap data={query.data} /> : null}
+    </article>
+  );
+}
 export function MetricsWorkspace({
   projectId,
   captureId,
@@ -203,6 +247,7 @@ export function MetricsWorkspace({
   paneRequest,
   cardViewRequest,
   onRemove,
+  onVisualization,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -220,6 +265,7 @@ export function MetricsWorkspace({
   paneRequest?: number;
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
+  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -482,10 +528,8 @@ export function MetricsWorkspace({
   // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
   // pas de meta #START/#UT (null). Jamais une heure inventée.
   const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
-  const setTimeAxisMode = (m: TimeAxisMode) => {
-    setTimeAxisModeRaw(m);
-    writeTimeAxisMode(m);
-  };
+  // Le switcher Clock (local)/Clock (UTC)/Capture time (s) a été retiré de
+  // l'interface ; le mode reste mémorisé (localStorage) et pilote les ticks.
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
@@ -503,7 +547,11 @@ export function MetricsWorkspace({
     }
     return "charts";
   });
+  const tableOnlyDismissed = useRef(false);
   const setPane = (p: MetricPane) => {
+    // 1.105.1 — fermer le tableau quand il n'y a rien à grapher ne doit pas
+    // être rouverte en boucle par l'effet table-only ci-dessous.
+    if (p !== "table") tableOnlyDismissed.current = true;
     setPaneRaw(p);
     try {
       localStorage.setItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"), p);
@@ -554,56 +602,30 @@ export function MetricsWorkspace({
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
   );
+  // 1.105.1 — plus de message « The selected metrics are shown in the
+  // measurements table » ni de bouton : quand il n'y a rien à grapher, le
+  // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
+  // n'est pas rouverte tant qu'aucun graphe ne revient.
+  useEffect(() => {
+    if (graphSelections.length > 0) {
+      tableOnlyDismissed.current = false;
+      return;
+    }
+    if (parsedSelections.length > 0 && pane !== "table" && !tableOnlyDismissed.current) {
+      setPane("table");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphSelections.length, parsedSelections.length, pane]);
+  const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
+    <ActiveEventsContext.Provider value={activeEvents}>
     <article
       className="kpi-metrics-table-premium kpi-unified-contents"
       data-testid="metrics-v3-workspace"
     >
       {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
-          Capture time (s). Mémorisé en localStorage (try/catch dans time-axis.ts).
-          Capture sans #START/#UT (meta null) : désactivé + tooltip + repli auto
-          sur Capture time (jamais une heure inventée). */}
-      {captureId && parsedSelections.length > 0 && (
-        <div
-          className="kpi-metrics-time-axis-switch"
-          role="radiogroup"
-          aria-label="Time axis mode"
-          data-testid="metrics-time-axis-switch"
-        >
-          <small className="text-muted-foreground">
-            Axis: <strong>{timeAxisLabel(effectiveTimeAxisMode, timeMeta)}</strong>
-          </small>
-          <div className="kpi-metrics-time-axis-options">
-            {(
-              [
-                { v: "clock-local", label: "Clock (local)" },
-                { v: "clock-utc", label: "Clock (UTC)" },
-                { v: "capture", label: "Capture time (s)" },
-              ] as { v: TimeAxisMode; label: string }[]
-            ).map(({ v, label }) => {
-              const disabled = (v === "clock-local" || v === "clock-utc") && !clockOk;
-              const title = disabled
-                ? "Clock unavailable: capture header missing #START or #UT"
-                : label;
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  role="radio"
-                  aria-checked={effectiveTimeAxisMode === v}
-                  disabled={disabled}
-                  title={title}
-                  className={`kpi-button ${effectiveTimeAxisMode === v ? "primary" : ""}`}
-                  onClick={() => setTimeAxisMode(v)}
-                  data-testid={`metrics-time-axis-${v}`}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
+          Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
+          continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
       {captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
@@ -628,6 +650,12 @@ export function MetricsWorkspace({
             const info = metricInfoByCode.get(s.code);
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
+            const metricView = viewsProp?.[s.full] ?? "graph";
+            const remove = () => {
+              const next = selections.filter((x) => x !== s.full);
+              if (!next.length) onClear();
+              else onRemove?.(s.full);
+            };
             return (
               <PanelShell
                 key={s.full}
@@ -636,7 +664,15 @@ export function MetricsWorkspace({
                 natural={100 + i}
                 defaultTitle={`${i + 1}. ${title}`}
               >
-                {(panelTitle) => <MetricGraphCard
+                {(panelTitle) => metricView === "map" ? <MetricMapCard
+                  projectId={projectId}
+                  captureId={captureId}
+                  selection={s.full}
+                  title={panelTitle}
+                  filters={filters}
+                  onRemove={remove}
+                  onVisualization={onVisualization}
+                /> : <MetricGraphCard
                 projectId={projectId}
                 code={s.full}
                 label={panelTitle}
@@ -645,35 +681,17 @@ export function MetricsWorkspace({
                 category={info?.category_label ?? null}
                 eventCode={info?.event_code ?? s.code}
                 appliedFilters={filters}
-                onRemove={() => {
-                  const next = selections.filter((x) => x !== s.full);
-                  if (!next.length) onClear();
-                  else onRemove?.(s.full);
-                }}
-                view="graph"
-                onViewChange={() => {
-                  /* Mode exclusif Charts : la vue est verrouillée sur graph */
-                }}
+                onRemove={remove}
+                view={metricView}
+                onViewChange={(next) => onVisualization?.(s.full, next)}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                 timeAxisMode={effectiveTimeAxisMode}
+                eventsCaptureId={captureId}
               />}
               </PanelShell>
             );
           })}
         </section>
-      )}
-      {captureId && parsedSelections.length > 0 && graphSelections.length === 0 && (
-        <p className="kpi-chart-state" data-testid="metrics-table-only-state">
-          {translate("metrics.tableOnlyHint")}{" "}
-          <button
-            type="button"
-            className="kpi-button"
-            data-testid="metrics-show-table"
-            onClick={() => setPane("table")}
-          >
-            {translate("metrics.showTable")}
-          </button>
-        </p>
       )}
       {isScannerCapture && (
         <div
@@ -825,8 +843,16 @@ export function MetricsWorkspace({
                             : r.gps_source === "previous_fix" && r.gps_age_s != null
                               ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
                               : "exact fix";
+                        const rowEvents = eventsAt(activeEvents.active, captureId, r.t_rel_s);
+                        const hit = rowEvents[0];
                         return (
-                          <tr key={r.second} data-second={r.second}>
+                          <tr
+                            key={r.second}
+                            data-second={r.second}
+                            data-event-active={hit ? rowEvents.map((e) => e.id).join(" ") : undefined}
+                            title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
+                            style={hit ? { boxShadow: `inset 3px 0 0 ${hit.color}`, background: `color-mix(in srgb, ${hit.color} 9%, transparent)` } : undefined}
+                          >
                             <td
                               className="col-time font-mono text-[11px]"
                               title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
@@ -942,5 +968,6 @@ export function MetricsWorkspace({
         )
       )}
     </article>
+    </ActiveEventsContext.Provider>
   );
 }

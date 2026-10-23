@@ -1,3 +1,28 @@
+## 1.105.3 (patch) — BC4-FRONT 2026-10-23 — Synchronisation GitHub et cache catalogue (Agent BC1)
+
+- Fusionne la version GitHub 1.105.2 avec les correctifs locaux de carte, i18n et cache SWR des catalogues KPI/Metrics.
+- Conserve la barre de rechargement et l’action Réessayer ajoutées en 1.104.1, avec hydratation immédiate depuis le cache local puis actualisation en arrière-plan.
+
+## 1.105.2
+- KPI : les données du tableau des mesures sont centrées dans chaque cellule (en-têtes, heures, coordonnées et valeurs numériques), y compris pour les tableaux des réglages Workspace par défaut (alignement cellule et nombre = centre).
+- KPI : la barre « Axis: Capture time (s) · origin: capture start » avec les boutons Clock (local) / Clock (UTC) / Capture time (s) est supprimée au-dessus des cartes Metrics ; le mode d'axe mémorisé continue de piloter les graduations. Les marqueurs d'événements sont plus petits (bande Events plus compacte).
+
+## 1.105.1
+- KPI : le message « The selected metrics are shown in the measurements table. » et son bouton « Show the measurements table » sont supprimés. Quand il n'y a plus rien à grapher, le tableau des mesures s'ouvre seul et se place en haut du pane ; le refermer n'est pas rouverte tant qu'aucun graphe ne revient.
+
+## 1.105.0
+- KPI : au premier lancement d'un projet, l'espace de travail 1 est **vide**. Un lien qui traîne un ancien `?kpis=`, `?kpi=` ou `?metrics=` ne remplit plus le premier onglet. La reprise d'une session passe par `?tabs=` ou par les onglets mémorisés du projet : les graphes et tableaux ajoutés restent en place après un rechargement.
+
+## 1.104.1
+- KPI : le catalogue Metrics affiche la barre de chargement dès qu'une requête catalogue est en cours (et plus seulement au tout premier chargement), et propose « Réessayer le catalogue » quand la requête échoue, au lieu du seul message d'erreur.
+
+## 1.104.0
+- KPI : clic sur un événement de la barre Events = affiché (ligne verticale 2 px de sa couleur sur tous les graphes de l'onglet, ligne du tableau au temps exact surlignée) ; 2e clic = masqué. Plusieurs événements indépendants, sans rechargement ni changement de zoom.
+
+## 1.103.0
+- Projects : Superstreams. Menu ⋮ du projet → « Create Superstream » / « Manage Superstreams » ; popup (nom unique par projet, recherche, sélection multiple conservée, collage de noms séparés par virgules avec rejet des inconnus/ambigus) ; arbre Superstreams/Logs sous le projet avec Voir, Modifier, Renommer, Supprimer (sans toucher aux logs).
+- Backend attendu : `GET/POST /projects/{id}/superstreams`, `PATCH/DELETE /projects/{id}/superstreams/{ssid}` — non présents côté serveur ; en démo, enregistrement local par projet.
+
 ## 1.103.3 (patch) — BC4-FRONT 2026-10-23 — Catalogues KPI/Metrics instantanés via cache localStorage SWR (Agent BC3)
 
 « Loading catalogue… » disparaît dès la 2e visite d'un projet. React Query hydrate avec `initialData` depuis `localStorage` et refetch silencieux en arrière-plan (SWR) : UI immédiate, données toujours fraîches.

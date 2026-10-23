@@ -164,8 +164,6 @@
     },
     "tablePanel": "Measurements table",
     "pickFromCatalogue": "No metric selected. Pick one from the catalogue.",
-    "tableOnlyHint": "The selected metrics are shown in the measurements table.",
-    "showTable": "Show the measurements table",
     "7f626224ba1f": "No metrics match this search."
   },
   "kpi": {
@@ -759,5 +757,53 @@
     "export_csv": "Export CSV",
     "fullscreen": "Fullscreen",
     "info": "Information"
+  },
+  "superstream": {
+    "createTitle": "Create Superstream",
+    "editTitle": "Edit Superstream",
+    "subtitle": "Create a Superstream by selecting one or more logs from project {{project}}.",
+    "name": "Superstream name",
+    "nameError": {
+      "required": "Name is required.",
+      "invalid": "Use letters, digits, spaces, dashes, underscores or dots only.",
+      "duplicate": "A Superstream with this name already exists in this project."
+    },
+    "selectLogs": "Select project logs",
+    "available": "{{count}} logs available",
+    "search": "Search logs",
+    "selectAll": "Select all project logs ({{count}})",
+    "selectFiltered": "Select all filtered results ({{count}})",
+    "clear": "Clear selection",
+    "selected": "{{count}} selected",
+    "toggleVisible": "Toggle all filtered logs",
+    "col": {
+      "filename": "Filename",
+      "captures": "Captures",
+      "events": "Events",
+      "gps": "GPS",
+      "imported": "Imported"
+    },
+    "loadingLogs": "Loading logs…",
+    "noLogs": "No logs match.",
+    "paste": "Or paste log filenames (comma-separated)",
+    "unknown": "Not found in this project:",
+    "ambiguous": "Several files match, select them explicitly:",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
+    "discardConfirm": "Discard unsaved changes?",
+    "created": "Superstream created",
+    "saved": "Superstream saved",
+    "deleted": "Superstream deleted",
+    "branch": "Superstreams",
+    "logsBranch": "Logs",
+    "loading": "Loading…",
+    "empty": "No Superstream yet.",
+    "actionsFor": "Actions for {{name}}",
+    "viewLogs": "View logs",
+    "edit": "Edit Superstream",
+    "rename": "Rename",
+    "delete": "Delete Superstream",
+    "deleteConfirm": "Delete this Superstream? The original project logs will not be deleted.",
+    "manage": "Manage Superstreams"
   }
 }

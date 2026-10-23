@@ -60,10 +60,8 @@ import {
   type WorkspaceTabsState,
   activeTab as pickActiveTab,
   addTab,
-  decodeTabs,
   encodeTabs,
-  newTabsState,
-  migrateMetrics,
+  initialTabsState,
   removeTab,
   reorderTab,
   updateTab,
@@ -148,42 +146,23 @@ function Workspace({
   const legacyMetrics = Array.isArray(search["metrics"])
     ? search["metrics"].filter((v): v is string => typeof v === "string")
     : [];
-  const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() => {
-    const raw = typeof search["tabs"] === "string" ? (search["tabs"] as string) : "";
-    if (raw) {
-      const decoded = decodeTabs(raw);
-      if (decoded) return migrateMetrics(decoded, legacyMetrics);
-    }
+  const storedTabs = useMemo(() => {
     try {
-      const stored = localStorage.getItem(tabsStorageKey);
-      if (stored) {
-        const decoded = decodeTabs(stored);
-        if (decoded) return migrateMetrics(decoded, legacyMetrics);
-      }
+      return localStorage.getItem(tabsStorageKey);
     } catch {
-      /* ignore */
+      return null;
     }
-    const requested = Array.isArray(search["kpis"])
-      ? search["kpis"]
-      : typeof search["kpi"] === "string"
-        ? [search["kpi"]]
-        : [];
-    const valid = [...new Set(requested)]
-      .filter(
-        (code): code is string =>
-          typeof code === "string" && entries.some((e) => e.item.code === code),
-      )
-      .slice(0, MAX_GRAPHS);
-    // 1.79.0 — Spec v2 §1 : workspace vide par défaut. Pas d'auto-select
-    // d'un KPI AVAILABLE au démarrage. Si l'URL contient explicitement
-    // ?kpis=... ou ?kpi=..., on restaure cette sélection (session restaurée).
-    // Sinon, un nouveau workspace démarre vide.
-    const hasExplicitSelection =
-      requested.length > 0 || Array.isArray(search["kpis"]) || typeof search["kpi"] === "string";
-    const seedCodes = hasExplicitSelection ? valid : [];
-    const initial = newTabsState(seedCodes);
-    return updateTab(initial, initial.activeTabId, { metricCodes: legacyMetrics });
-  });
+  }, [tabsStorageKey]);
+  // 1.105.0 — un projet jamais ouvert démarre VIDE : un lien qui traîne un
+  // ancien ?kpis=/?kpi=/?metrics= ne remplit plus le premier onglet. La session
+  // se restaure par ?tabs= ou par les onglets mémorisés du projet.
+  const [tabsState, setTabsStateRaw] = useState<WorkspaceTabsState>(() =>
+    initialTabsState({
+      urlTabs: typeof search["tabs"] === "string" ? search["tabs"] : "",
+      storedTabs,
+      legacyMetrics,
+    }),
+  );
   const currentTab = pickActiveTab(tabsState);
   const codes = currentTab.codes;
   const active = currentTab.activeCode;
@@ -726,6 +705,7 @@ function Workspace({
                     onViewChange={setMetricsView}
                     onTablePaneChange={setMetricsTablePane}
                     views={metricViews}
+                    onVisualization={visualizeMetric}
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}

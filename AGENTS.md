@@ -16,7 +16,10 @@
 - `_app` routes are client-only (`ssr: false`) because mock auth lives in localStorage.
 - maplibre-gl is excluded from Vite optimizeDeps; prebundling breaks its module worker.
 - Missing measurements are `null` and rendered "N/D", never coerced to zero.
+- Metric map panels request proven GPS through the typed analysis adapter for the active capture and individual selection; their per-tab visualization is independent of the measurements table so changing a card never replaces that table.
 - Tests always run against fixtures: `vitest.config.ts` sets `VITE_BC4_DATA=mock` before Vite loads `.env`, so the suite never depends on whichever backend the local `.env` points at.
+
+- Superstreams only reference existing project logs by id through `src/lib/api/superstreams.ts`; managing them never copies, decodes or deletes logs.
 
 ## UI translations
 No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/en.json` and `src/locales/fr.json` in the same commit. English is the default. Backend-provided wording is translated by the API, not by client-side substitutions.

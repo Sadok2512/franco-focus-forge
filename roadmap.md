@@ -1,10 +1,16 @@
 ## KPI multi-panneaux (plan validé)
+- [x] Corriger ⋮ → Carte : panneau carte indépendant via include_map=true pour la capture active, sans graphe de substitution, tableau conservé. 8 tests ciblés passent ; clic du catalogue vérifié sur fixtures (canvas MapLibre, tableau présent). Rendu des tuiles et capture réelle non vérifiés ; rien publié.
 - [x] Corriger 1/2/3/Auto depuis les réglages : suppression de la grille Metrics héritée à 2 colonnes, graphes dans la grille commune et chaque tableau seul en pleine largeur même après un ancien réglage de largeur ; 301 tests passent (2 ignorés). Clics Appliquer vérifiés sur le jeu de test dans le navigateur : 1/2/3, Auto large puis réduit, tableau toujours pleine largeur ; aucune erreur de page. Projet réel non vérifié, rien publié.
 - [x] Texte de chargement remplacé par une barre animée de 3 px : zone initiale compacte, barre en haut du tableau pendant la mise à jour, animation désactivée en mouvement réduit ; 8 tests existants passent, contrôle visuel isolé sur données de démonstration (chargement puis tableau), sans erreur. Accès au projet réel non vérifié : la page redirige vers la connexion.
 - [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
 - [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)
 - [x] 1.102.0 — le tableau des mesures a son menu ⋮ (Exporter CSV, Plein écran, Fermer le panneau), 4 tests ; navigateur : menu ouvert sur les données de démo, téléchargement `metrics_44621571bccc.csv`, fermeture qui retire le tableau
 - [x] 1.102.3 — le tableau des mesures reste sous tous les graphes (disposition 1/2/3/Auto, ordre mémorisé) ; panneaux « tableau » d'un KPI eux aussi descendus sous les cartes, 2 tests ; navigateur : 6 cartes en 2 colonnes, tableau pleine largeur en dernière ligne (carte la plus basse 1233 → tableau à 1263), aucune erreur de page. Projet réel non vérifié, rien publié.
+- [x] 1.104.1 — catalogue Metrics : barre de chargement pendant toute requête catalogue en cours (le catalogue est préchargé au démarrage, donc un simple « pending » ne s'affichait jamais) + « Réessayer le catalogue » en cas d'échec ; 2 tests ciblés, 318 tests passent, build OK. Non vérifié dans l'app : la page KPI du projet réel demande une session qui ne peut pas être rétablie ici.
+- [x] 1.105.0 — premier lancement d'un projet : workspace 1 vide, même avec un ancien `?kpis=/?kpi=/?metrics=` dans le lien ; reprise de session par `?tabs=` ou onglets mémorisés. 3 tests ciblés (321 passent), navigateur : lien périmé → 0 panneau + « Choose your metrics », ajout de « LTE RACH Attempts » → 1 panneau, rechargement → toujours 1 panneau.
+- [x] 1.105.2 — barre « Axis: Capture time (s)… » + boutons Clock (local)/Clock (UTC)/Capture time (s) supprimées au-dessus des cartes Metrics (mode mémorisé conservé) ; marqueurs Events plus petits.
+- [x] 1.105.2 — données du tableau des mesures centrées dans chaque cellule (en-têtes, heures, GPS, valeurs), défauts Workspace settings cellAlign/numberAlign = centre ; 313 tests passent, build OK.
+- [x] 1.105.1 — suppression du message « The selected metrics are shown in the measurements table » et de son bouton : le tableau des mesures s'ouvre seul (en haut quand il est seul) et une fermeture volontaire n'est pas rouverte ; 3 tests ciblés dans metric-view-table.test.tsx.
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
 - [ ] Voile + spinner pendant mise à jour, protection réponses en retard
@@ -77,3 +83,6 @@
 - [ ] Sync Time across temporal panels (step 3).
 - [ ] Panel duplicate (needs per-panel ids instead of unique KPI codes).
 - [ ] Timeline/Events panel in KPI (no timeline renderer outside Signaling).
+
+- [x] Projects : Superstreams (création, arbre, édition, suppression)
+- [ ] Superstreams : routes serveur /projects/{id}/superstreams (bloqué : backend BC4)
