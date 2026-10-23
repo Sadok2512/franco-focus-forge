@@ -616,6 +616,18 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphSelections.length, parsedSelections.length, pane]);
+  // 1.105.8 — Si au moins une métrique affichée est en vue "map", on ferme
+  // le grand Measurements table (requis UX : "afficher QUE la map"). Couvre
+  // les 2 chemins d'activation : view switcher d'une carte ET pick direct
+  // "Map" depuis le menu ⋮ du catalogue (passant par viewsProp).
+  useEffect(() => {
+    const hasMapView = parsedSelections.some((s) => viewsProp?.[s.full] === "map");
+    if (hasMapView && pane === "table") {
+      tableOnlyDismissed.current = true;
+      setPane("charts");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewsProp, parsedSelections, pane]);
   const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
     <ActiveEventsContext.Provider value={activeEvents}>
@@ -683,7 +695,14 @@ export function MetricsWorkspace({
                 appliedFilters={filters}
                 onRemove={remove}
                 view={metricView}
-                onViewChange={(next) => onVisualization?.(s.full, next)}
+                onViewChange={(next) => {
+                  onVisualization?.(s.full, next);
+                  // 1.105.8 — Quand l'utilisateur bascule une carte en vue Map,
+                  // on referme le grand Measurements table (le besoin UX est
+                  // d'afficher UNIQUEMENT la map). L'utilisateur peut rouvrir
+                  // le tableau via ⋮ → Tableau.
+                  if (next === "map") setPane("charts");
+                }}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                 timeAxisMode={effectiveTimeAxisMode}
                 eventsCaptureId={captureId}

@@ -1,3 +1,13 @@
+## 1.105.8 (patch) — BC4-FRONT 2026-10-23 — Vue Map ferme le grand Measurements table (Agent BC3)
+
+Quand une métrique bascule en vue « Map » (⋮ → Carte depuis le MetricGraphCard **ou** depuis le menu catalogue), on referme automatiquement le grand « Measurements table » affiché en bas du workspace. Le besoin UX : « afficher QUE la map », pas une map suivie du tableau.
+
+Fix `MetricsWorkspace.tsx` :
+1. `onViewChange` de `MetricGraphCard` : si `next === 'map'`, `setPane('charts')`.
+2. Nouveau useEffect réactif sur `viewsProp` : si au moins une métrique a `view === 'map'` ET `pane === 'table'`, close + marque `tableOnlyDismissed` pour éviter la réouverture auto.
+
+L'utilisateur peut rouvrir le tableau explicitement via ⋮ → Tableau.
+
 ## 1.105.7 (patch) — BC4-FRONT 2026-10-23 — KpiMapOSM : tile.openstreetmap.org direct (fix 404 en prod) (Agent BC3)
 
 Sur la vue KPI Analytics (et toute vue utilisant `KpiMapOSM`), la carte restait bloquée sur « Loading OSM map… ». Cause : `KpiMapOSM.tsx:134` demandait les tuiles sur `/osm/{z}/{x}/{y}.png` — proxy configuré dans `vite.config.ts:40` **uniquement en dev**. En prod Nitro node-server il n'y a pas de proxy → 404.
