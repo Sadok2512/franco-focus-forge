@@ -750,7 +750,7 @@
   position: sticky;
   top: 0;
   z-index: 1;
-  text-align: left;
+  text-align: center;
   font-size: 10px;
   font-weight: 600;
   color: #637994;
@@ -764,7 +764,7 @@
   text-overflow: ellipsis;
 }
 .kpi-data-table .numeric {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .kpi-data-table tr.selected {
@@ -1164,7 +1164,7 @@
   font-size: 9.5px;
 }
 .kpi-metrics-table-body thead th.numeric {
-  text-align: right;
+  text-align: center;
 }
 .kpi-metrics-table-body tbody td {
   padding: 3px 8px;
@@ -1172,9 +1172,10 @@
   white-space: nowrap;
   min-height: 24px;
   line-height: 1.4;
+  text-align: center;
 }
 .kpi-metrics-table-body tbody td.numeric {
-  text-align: right;
+  text-align: center;
   font-variant-numeric: tabular-nums;
 }
 .kpi-metrics-table-body tbody tr:hover td {
