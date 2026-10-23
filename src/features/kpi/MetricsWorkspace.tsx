@@ -677,7 +677,7 @@ export function MetricsWorkspace({
                 </span>
               </div>
             )}
-            {pane === "charts" ? null : view === "table" ? (
+            {view === "table" ? (
               <div className="kpi-data-table kpi-metrics-table-body">
                 <div className="kpi-table-scroll">
                   <table>
