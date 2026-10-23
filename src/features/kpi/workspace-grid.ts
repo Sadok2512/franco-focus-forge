@@ -21,3 +21,11 @@ export function panelColumns(span: number | "full", cols: number): number {
 export function effectivePanelSpan(fullRow: boolean, savedSpan: number | "full"): number | "full" {
   return fullRow ? "full" : savedSpan;
 }
+
+/** Higher than any panel order a workspace can hold: tables sink below graphs. */
+export const TABLE_PANEL_ORDER = 100_000;
+
+/** A table keeps its place among other tables but never rises above a graph. */
+export function sunkPanelOrder(fullRow: boolean, order: number): number {
+  return fullRow ? TABLE_PANEL_ORDER + order : order;
+}

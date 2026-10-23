@@ -1,3 +1,7 @@
+## 1.102.3
+- KPI : le tableau des mesures s'affiche toujours **sous tous les graphes**, quelle que soit la disposition (1/2/3/Auto) ou l'ordre mémorisé des panneaux. Les panneaux « tableau » d'un KPI descendent eux aussi sous les cartes graphiques, tout en gardant leur ordre relatif entre tableaux.
+- Rappel des deux correctifs non consignés : ajouter un graphe ne ferme plus le tableau des mesures (1.102.1) et ne change plus la vue du tableau (1.102.2).
+
 ## 1.102.0
 - KPI : le tableau des mesures a maintenant son propre menu « ⋮ », comme les autres panneaux. Il propose **Exporter CSV** (le fichier renvoyé par l'API), **Plein écran** (le tableau seul) et **Fermer le panneau**. Le bouton ✕ d'affichage rapide reste en place.
 - Le titre du tableau reste dynamique (nom du paramètre et de la cellule renvoyés par l'API) et l'en-tête ne gagne aucune barre supplémentaire.
