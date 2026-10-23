@@ -160,12 +160,13 @@ export function WorkspaceSettingsDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-h-[85vh] max-w-xl overflow-y-auto"
+        className="flex max-h-[85vh] max-w-xl flex-col overflow-hidden"
         data-testid="workspace-settings-dialog"
       >
         <DialogHeader>
           <DialogTitle>{t("wss.title")}</DialogTitle>
         </DialogHeader>
+        <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto px-6">
         {/* One layout for every panel: graphs and tables share the same grid. */}
         <section className="space-y-2">
           <h4 className="text-xs font-semibold">{t("wss.layout")}</h4>
@@ -483,8 +484,9 @@ export function WorkspaceSettingsDialog({
             </Button>
           </TabsContent>
         </Tabs>
+        </div>
 
-        <div className="sticky bottom-0 -mb-6 flex items-center justify-between gap-2 border-t border-border bg-background px-1 pt-3 pb-1">
+        <div className="flex items-center justify-between gap-2 border-t border-border bg-background px-1 pt-3 pb-1">
           <span
             data-testid="workspace-settings-status"
             className={`text-[11px] ${dirty ? "text-amber-600" : "text-muted-foreground"}`}
