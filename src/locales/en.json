@@ -165,7 +165,8 @@
     "tablePanel": "Measurements table",
     "pickFromCatalogue": "No metric selected. Pick one from the catalogue.",
     "tableOnlyHint": "The selected metrics are shown in the measurements table.",
-    "showTable": "Show the measurements table"
+    "showTable": "Show the measurements table",
+    "7f626224ba1f": "No metrics match this search."
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",

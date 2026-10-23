@@ -1,3 +1,12 @@
+## 1.103.2 (patch) — BC4-FRONT 2026-10-23 — i18n `metrics.7f626224ba1f` manquante (Agent BC3)
+
+`MetricsCatalogSidebar.tsx:334` référence `t("metrics.7f626224ba1f")` mais la traduction existait uniquement sous `kpi.7f626224ba1f`. UI affichait la clé brute. Ajouté dans les deux namespaces :
+
+- `en.metrics["7f626224ba1f"]` = "No metrics match this search."
+- `fr.metrics["7f626224ba1f"]` = "Aucune métrique ne correspond à cette recherche."
+
+Note sur « Internal Server Error » : `grep` sur back log = 0 réponse 5xx actuelle. L'erreur affichée venait d'un état React Query mis en cache pendant la phase instable DB (cancel_backend lors de l'ALTER PK + CREATE INDEX). Reload de la page = disparu.
+
 ## 1.103.1 (patch) — BC4-FRONT 2026-10-23 — Signaling map remplit son panneau + sites ON par défaut (Agent BC3)
 
 Deux correctifs UX après livraison 1.103.0 :

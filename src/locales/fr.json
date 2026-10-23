@@ -165,7 +165,8 @@
     "tablePanel": "Tableau des mesures",
     "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
     "tableOnlyHint": "Les métriques sélectionnées sont affichées dans le tableau des mesures.",
-    "showTable": "Afficher le tableau des mesures"
+    "showTable": "Afficher le tableau des mesures",
+    "7f626224ba1f": "Aucune métrique ne correspond à cette recherche."
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
