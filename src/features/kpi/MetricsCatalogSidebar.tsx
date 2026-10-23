@@ -8,16 +8,16 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-  import {
-    BarChart3,
-    ChevronDown,
-    ChevronRight,
-    Copy,
-    Info,
-    MoreVertical,
-    RefreshCw,
-    Search,
-  } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Info,
+  MoreVertical,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
 import {
   DropdownMenu,
