@@ -56,7 +56,7 @@ describe("workspace settings apply button", () => {
     const onLayoutChange = vi.fn();
     render(<WorkspaceSettingsDialog open onOpenChange={vi.fn()} workspaceId={WS}
       layout="3" onLayoutChange={onLayoutChange} columns={[]} />);
-    fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.opt_auto"), exact: true }));
+    fireEvent.click(screen.getByTestId("workspace-layout-auto"));
     expect(onLayoutChange).not.toHaveBeenCalled();
     fireEvent.click(applyBtn());
     expect(onLayoutChange).toHaveBeenCalledWith("auto");

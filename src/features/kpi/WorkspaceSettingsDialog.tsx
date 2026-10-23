@@ -179,6 +179,7 @@ export function WorkspaceSettingsDialog({
           <Button
             variant={draftLayout === "auto" ? "default" : "outline"}
             size="sm"
+            data-testid="workspace-layout-auto"
             onClick={() => setDraftLayout("auto")}
           >
             {t("wss.opt_auto")}
