@@ -474,7 +474,7 @@ export function MetricsWorkspace({
   const [page, setPage] = useState(1);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
     try {
-      const stored = localStorage.getItem(`bc3.metrics.pane.${_workspaceId ?? ""}`);
+      const stored = localStorage.getItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"));
       if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
     } catch {
       /* ignore */
@@ -484,7 +484,7 @@ export function MetricsWorkspace({
   const setPane = (p: MetricPane) => {
     setPaneRaw(p);
     try {
-      localStorage.setItem(`bc3.metrics.pane.${_workspaceId ?? ""}`, p);
+      localStorage.setItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"), p);
     } catch {
       /* ignore */
     }
