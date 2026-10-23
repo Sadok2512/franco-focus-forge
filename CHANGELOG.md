@@ -1,3 +1,38 @@
+## 1.103.0 (minor) — BC4-FRONT 2026-10-23 — Site layer MapLibre lazy par bbox + sector beams (Agent BC3)
+
+Nouvelle couche "Sites" sur toute instance `KpiMapOSM`. Lazy loading : chaque pan/zoom déclenche `GET /sites?bbox=...` debouncé 300 ms. Jamais tout d'un coup (458K cellules en base).
+
+### 3 niveaux d'agrégation serveur-side (back 0.78.2)
+
+- **zoom < 12** → clusters par geo-hash 0.01° (count n_sites, n_cells, n_4g, n_5g)
+- **zoom 12-14** → 1 point par site (couleur par operator ORF/BYT/SFR/FRM, taille = n_cells)
+- **zoom ≥ 15** → cellule individuelle + **polygone secteur orienté par azimuth** (ouverture 60°, couleur par band)
+
+Cap dur 2000 features par réponse ; au-delà → banner "Zoom in to see all N sites".
+
+### Composants
+
+- `src/lib/api/sites.ts` : Zod schema `SitesResponseSchema` + `getSites(filters, signal)`.
+- `src/features/kpi/SitesLayer.tsx` : hook `useSitesLayer(map, enabled, filters)`. Monte sources + 4 layers MapLibre (cluster circle, site circle, cell circle, cell sector fill). Debounce 300 ms sur `moveend`. AbortController sur chaque fetch. Popup au click avec contenu adapté au kind.
+- `src/features/kpi/SitesLayerControls.tsx` : panneau pliable (icône Layers) avec master toggle + 3 technos + 13 bands (6 LTE + 7 NR) + 4 operators. État persisté `localStorage: bc4.map.sitesLayer.v1`.
+- `KpiMapOSM.tsx` : nouvelle prop `sitesLayerEnabled?: boolean` (défaut `true`). `SitesLayerHarness` relie hook + controls.
+
+### Tests back live (API 0.78.2)
+
+```
+GET /sites?bbox=2.0,48.5,2.6,48.95&zoom=12   agg=site     total=48 071  returned=2000  (truncated)
+GET /sites?bbox=2.33,48.86,2.37,48.88&zoom=15 agg=cell    total=1 650   returned=1 650
+GET /sites?bbox=-5,41,10,52&zoom=5           agg=cluster  total=457 833 returned=2 000  (truncated)
+```
+
+Palette BAND_COLORS alignée fréquences (basses=bleu, moyennes=vert/jaune, hautes=rouge/violet).
+
+### Non-régression
+
+- `tsc --noEmit` : 0 erreur.
+- `vitest run` : 303 passed | 2 skipped | 0 failed.
+- `KpiMapOSM` défaut `sitesLayerEnabled=true` → le panneau Layers apparaît mais toggle OFF par défaut (`enabled: false` dans le state initial).
+
 ## 1.102.3
 - KPI : le tableau des mesures s'affiche toujours **sous tous les graphes**, quelle que soit la disposition (1/2/3/Auto) ou l'ordre mémorisé des panneaux. Les panneaux « tableau » d'un KPI descendent eux aussi sous les cartes graphiques, tout en gardant leur ordre relatif entre tableaux.
 - Rappel des deux correctifs non consignés : ajouter un graphe ne ferme plus le tableau des mesures (1.102.1) et ne change plus la vue du tableau (1.102.2).
