@@ -40,7 +40,7 @@ describe("Map selection keeps its own panel", () => {
     /></QueryClientProvider>);
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
     expect(getMetricAnalysis).toHaveBeenCalledWith("project-a", "44621571bccc",
-      ["cell_rsrp@0"], {}, { include_map: true }, expect.any(AbortSignal));
+      ["cell_rsrp@0"], {}, { group_by: "operator", include_map: true }, expect.any(AbortSignal));
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");

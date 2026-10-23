@@ -195,7 +195,7 @@ function MetricMapCard({ projectId, captureId, selection, title, filters, onRemo
   const panelRef = useRef<HTMLElement>(null);
   const query = useQuery({
     queryKey: ["metric-map", projectId, captureId, selection, filters],
-    queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { include_map: true }, signal),
+    queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { group_by: "operator", include_map: true }, signal),
     staleTime: 60_000,
   });
   return (
