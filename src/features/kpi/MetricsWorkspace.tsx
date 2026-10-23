@@ -251,8 +251,17 @@ export function MetricsWorkspace({
       ),
     enabled: !!captureId && selections.length > 0,
     staleTime: 60_000,
+    // Adding/removing a parameter keeps the current table on screen (veiled)
+    // instead of blanking it; a capture or filter change never reuses old rows.
+    placeholderData: (prev, prevQuery) =>
+      prevQuery &&
+      prevQuery.queryKey[2] === captureId &&
+      JSON.stringify(prevQuery.queryKey[4]) === JSON.stringify(filters)
+        ? prev
+        : undefined,
   });
   const data = query.data;
+  const refreshing = query.isPlaceholderData && query.isFetching;
   const option = useMemo<EChartsOption>(() => {
     if (!data) return {};
     const base: EChartsOption = {
@@ -679,7 +688,12 @@ export function MetricsWorkspace({
               </div>
             )}
             {view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter" data-testid="metrics-table-panel">
+              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing}>
+                {refreshing && (
+                  <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
+                    <div className="kpi-chart-spinner" role="status" aria-label={translate("metrics.eb724a908f1f")} />
+                  </div>
+                )}
                 <div className="kpi-metrics-table-head">
                   <h3>{translate("metrics.tablePanel")}</h3>
                   <button
