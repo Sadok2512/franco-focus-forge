@@ -29,16 +29,29 @@ export function eventsAt(active: ActiveEvent[], captureId: string, t_rel_s: numb
 }
 
 type Ctx = { active: ActiveEvent[]; isActive: (id: string) => boolean; toggle: (ev: ActiveEvent) => void };
-const ActiveEventsContext = createContext<Ctx>({ active: [], isActive: () => false, toggle: () => {} });
+const EMPTY = new Map<string, ActiveEvent>();
+const Ctx0 = createContext<Ctx>({ active: [], isActive: () => false, toggle: () => {} });
 
-export function ActiveEventsProvider({ children }: { children: ReactNode }) {
-  const [map, setMap] = useState<Map<string, ActiveEvent>>(new Map());
+export const ActiveEventsContext = Ctx0;
+/** State owner: reset when the workspace or capture changes (resetKey). */
+export function useActiveEventsState(resetKey: string): Ctx {
+  const [state, setState] = useState<{ key: string; map: Map<string, ActiveEvent> }>({ key: resetKey, map: new Map() });
+  const map = state.key === resetKey ? state.map : EMPTY;
+  const setMap = useCallback(
+    (f: (p: Map<string, ActiveEvent>) => Map<string, ActiveEvent>) =>
+      setState((s) => ({ key: resetKey, map: f(s.key === resetKey ? s.map : EMPTY) })),
+    [resetKey],
+  );
   const toggle = useCallback((ev: ActiveEvent) => setMap((p) => toggleIn(p, ev)), []);
   const value = useMemo(
     () => ({ active: [...map.values()], isActive: (id: string) => map.has(id), toggle }),
     [map, toggle],
   );
-  return <ActiveEventsContext.Provider value={value}>{children}</ActiveEventsContext.Provider>;
+  return value;
 }
 
-export const useActiveEvents = () => useContext(ActiveEventsContext);
+export function ActiveEventsProvider({ resetKey, children }: { resetKey: string; children: ReactNode }) {
+  return <Ctx0.Provider value={useActiveEventsState(resetKey)}>{children}</Ctx0.Provider>;
+}
+
+export const useActiveEvents = () => useContext(Ctx0);
