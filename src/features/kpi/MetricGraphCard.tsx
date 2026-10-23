@@ -10,6 +10,7 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -22,6 +23,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { useActiveEvents } from "./active-events";
 import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -84,6 +86,7 @@ export function MetricGraphCard({
   // le même syncId voient leur Tooltip/cursor déclenchés simultanément au
   // survol de n'importe laquelle. Non-breaking : undefined = pas de sync.
   syncId,
+  eventsCaptureId,
   // 1.99.1 (lot C axe X temps) — mode d'affichage de l'axe temps + meta pour
   // le compute (nmf_start_at + origin_ts + utc_offset_min). Undefined =
   // "capture" (comportement 1.97.0).
@@ -102,6 +105,7 @@ export function MetricGraphCard({
   onViewChange?: ((view: MetricView) => void) | undefined;
   onOpenTable?: (() => void) | undefined;
   syncId?: string | undefined;
+  eventsCaptureId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
 }) {
   const { t: translate } = useTranslation();
@@ -173,7 +177,7 @@ export function MetricGraphCard({
           appliedFilters={appliedFilters}
         />
       ) : view === "graph" ? (
-        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} timeAxisMode={timeAxisMode} />
+        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} timeAxisMode={timeAxisMode} eventsCaptureId={eventsCaptureId} />
       ) : view === "table" ? (
         <MetricAggregateTable
           projectId={projectId}
@@ -457,6 +461,7 @@ function MetricTimePlot({
   unit,
   syncId,
   timeAxisMode,
+  eventsCaptureId,
 }: {
   projectId: string;
   code: string;
@@ -464,8 +469,10 @@ function MetricTimePlot({
   unit: string;
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
+  eventsCaptureId?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
+  const { active: activeEvents } = useActiveEvents();
   const captures = useQuery({
     queryKey: ["metric-captures", projectId],
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
@@ -579,6 +586,19 @@ function MetricTimePlot({
             connectNulls={false}
             isAnimationActive={false}
           />
+          {activeEvents
+            .filter((e) => e.captureId === captureId && (!eventsCaptureId || e.captureId === eventsCaptureId))
+            .map((e) => (
+              <ReferenceLine
+                key={e.id}
+                x={e.t_rel_s}
+                stroke={e.color}
+                strokeWidth={2}
+                ifOverflow="hidden"
+                className="kpi-event-line"
+                label={{ value: e.label, position: "insideTopRight", fontSize: 9, fill: e.color }}
+              />
+            ))}
           {points.length > 50 ? (
             <Brush
               dataKey="t_rel_s"

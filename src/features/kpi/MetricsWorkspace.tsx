@@ -13,6 +13,7 @@ import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard, METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
+import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
 import {
   DropdownMenuItem,
   DropdownMenuSeparator,
@@ -600,7 +601,9 @@ export function MetricsWorkspace({
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
   );
+  const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
+    <ActiveEventsContext.Provider value={activeEvents}>
     <article
       className="kpi-metrics-table-premium kpi-unified-contents"
       data-testid="metrics-v3-workspace"
@@ -710,6 +713,7 @@ export function MetricsWorkspace({
                 onViewChange={(next) => onVisualization?.(s.full, next)}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                 timeAxisMode={effectiveTimeAxisMode}
+                eventsCaptureId={captureId}
               />}
               </PanelShell>
             );
@@ -879,8 +883,16 @@ export function MetricsWorkspace({
                             : r.gps_source === "previous_fix" && r.gps_age_s != null
                               ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
                               : "exact fix";
+                        const rowEvents = eventsAt(activeEvents.active, captureId, r.t_rel_s);
+                        const hit = rowEvents[0];
                         return (
-                          <tr key={r.second} data-second={r.second}>
+                          <tr
+                            key={r.second}
+                            data-second={r.second}
+                            data-event-active={hit ? rowEvents.map((e) => e.id).join(" ") : undefined}
+                            title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
+                            style={hit ? { boxShadow: `inset 3px 0 0 ${hit.color}`, background: `color-mix(in srgb, ${hit.color} 9%, transparent)` } : undefined}
+                          >
                             <td
                               className="col-time font-mono text-[11px]"
                               title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
@@ -996,5 +1008,6 @@ export function MetricsWorkspace({
         )
       )}
     </article>
+    </ActiveEventsContext.Provider>
   );
 }
