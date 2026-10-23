@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { Download, Maximize2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -12,6 +12,12 @@ import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
+import {
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { downloadCsv } from "./workspace-model";
 import {
   isClockAvailable,
   readTimeAxisMode,
@@ -484,6 +490,8 @@ export function MetricsWorkspace({
   // V3 §8 : pagination Table 25/50/100 (défaut 25)
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
+  // 1.102.0 — le menu ⋮ du tableau des mesures (export, plein écran, fermeture).
+  const tablePanelRef = useRef<HTMLDivElement>(null);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
     try {
       const stored = localStorage.getItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"));
@@ -721,7 +729,7 @@ export function MetricsWorkspace({
               </div>
             )}
             {view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing}>
+              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing} ref={tablePanelRef}>
                 {refreshing && (
                   <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
                     <div className="kpi-chart-spinner" role="status" aria-label={translate("metrics.eb724a908f1f")} />
@@ -729,16 +737,37 @@ export function MetricsWorkspace({
                 )}
                 <div className="kpi-metrics-table-head">
                   <h3>{translate("metrics.tablePanel")}</h3>
-                  <button
-                    type="button"
-                    className="kpi-button"
-                    aria-label={translate("panel.remove")}
-                    title={translate("panel.remove")}
-                    data-testid="metrics-table-close"
-                    onClick={() => setPane("charts")}
-                  >
-                    <X size={14} />
-                  </button>
+                  <div className="flex gap-0.5 shrink-0 items-center">
+                    <WorkspacePanelMenu label={translate("panel.actions")}>
+                      <DropdownMenuItem
+                        data-testid="metrics-table-export"
+                        disabled={!data.csv}
+                        onSelect={() => downloadCsv(data.csv, `metrics_${data.capture_id}`)}
+                      >
+                        <Download size={14} /> {translate("panel.export_csv")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        data-testid="metrics-table-fullscreen"
+                        onSelect={() => void tablePanelRef.current?.requestFullscreen?.()}
+                      >
+                        <Maximize2 size={14} /> {translate("panel.fullscreen")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem data-testid="metrics-table-remove" onSelect={() => setPane("charts")}>
+                        <X size={14} /> {translate("panel.remove")}
+                      </DropdownMenuItem>
+                    </WorkspacePanelMenu>
+                    <button
+                      type="button"
+                      className="kpi-button"
+                      aria-label={translate("panel.remove")}
+                      title={translate("panel.remove")}
+                      data-testid="metrics-table-close"
+                      onClick={() => setPane("charts")}
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className="kpi-table-scroll">
                   <table>
