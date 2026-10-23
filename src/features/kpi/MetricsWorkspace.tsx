@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -473,7 +474,7 @@ export function MetricsWorkspace({
   const [page, setPage] = useState(1);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
     try {
-      const stored = localStorage.getItem("bc3.metrics.pane");
+      const stored = localStorage.getItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"));
       if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
     } catch {
       /* ignore */
@@ -483,7 +484,7 @@ export function MetricsWorkspace({
   const setPane = (p: MetricPane) => {
     setPaneRaw(p);
     try {
-      localStorage.setItem("bc3.metrics.pane", p);
+      localStorage.setItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"), p);
     } catch {
       /* ignore */
     }
@@ -538,7 +539,7 @@ export function MetricsWorkspace({
           Capture time (s). Mémorisé en localStorage (try/catch dans time-axis.ts).
           Capture sans #START/#UT (meta null) : désactivé + tooltip + repli auto
           sur Capture time (jamais une heure inventée). */}
-      {pane === "charts" && captureId && parsedSelections.length > 0 && (
+      {captureId && parsedSelections.length > 0 && (
         <div
           className="kpi-metrics-time-axis-switch"
           role="radiogroup"
@@ -579,7 +580,7 @@ export function MetricsWorkspace({
           </div>
         </div>
       )}
-      {pane === "charts" && captureId && parsedSelections.length > 0 && (
+      {captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
           captureId={captureId}
@@ -589,7 +590,7 @@ export function MetricsWorkspace({
           timeMeta={timeMeta}
         />
       )}
-      {pane === "charts" && captureId && (
+      {captureId && (
         <section
           className="kpi-metrics-charts-grid"
           data-per-row={perRow}
@@ -645,7 +646,7 @@ export function MetricsWorkspace({
       )}
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
-      ) : pane === "charts" ? null : query.isPending ? (
+      ) : pane !== "table" ? null : query.isPending ? (
         <div className="kpi-chart-state" role="status">
           {" "}
           {translate("metrics.eb724a908f1f")}{" "}
@@ -678,7 +679,20 @@ export function MetricsWorkspace({
               </div>
             )}
             {view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body">
+              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter" data-testid="metrics-table-panel">
+                <div className="kpi-metrics-table-head">
+                  <h3>{translate("metrics.tablePanel")}</h3>
+                  <button
+                    type="button"
+                    className="kpi-button"
+                    aria-label={translate("panel.remove")}
+                    title={translate("panel.remove")}
+                    data-testid="metrics-table-close"
+                    onClick={() => setPane("charts")}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
                 <div className="kpi-table-scroll">
                   <table>
                     <thead>

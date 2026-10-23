@@ -1,3 +1,11 @@
+## KPI multi-panneaux (plan validé)
+- [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
+- [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
+- [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
+- [ ] Voile + spinner pendant mise à jour, protection réponses en retard
+- [ ] Panneau Map, multi-KPI
+- [ ] Scénarios G1–G16 dans le navigateur
+
 - [x] Optimise the Signaling messages header (1.98.0): the counter ("2,043 messages") now always sits first on the first line (`.sig-count` is `flex: 0 0 auto`, nowrap), the search box is a compact flexible field (130–220 px) and Columns/Export CSV/Clear filters render as icon-only buttons carrying their name in `aria-label`/`title` (Columns keeps the "visible/total" count). No new strings (existing fr/en keys reused), typecheck clean, 276 tests pass (2 skipped), build OK; demo-data browser run reads the counter first with no clipping, the Columns menu opens with its 17 rows, and the three actions render without text labels.
 - [x] Delete the "Trajet · GPS précédent" heading above the Signaling map (1.97.0): the map pane now starts at its own top edge and keeps an accessible name through `aria-label={t("signalingV2.map")}`; no new strings (existing key reused), typecheck clean, 276 tests pass (2 skipped), build OK.
 
