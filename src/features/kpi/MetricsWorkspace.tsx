@@ -645,7 +645,7 @@ export function MetricsWorkspace({
       )}
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
-      ) : query.isPending ? (
+      ) : pane === "charts" ? null : query.isPending ? (
         <div className="kpi-chart-state" role="status">
           {" "}
           {translate("metrics.eb724a908f1f")}{" "}

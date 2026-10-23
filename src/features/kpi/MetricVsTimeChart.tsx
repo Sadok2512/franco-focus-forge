@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/i18n";
+import { ChartSpinner } from "./ChartSpinner";
 import { useTranslation } from "react-i18next";
 import type { CurveType } from "./visualization-model";
 import { useEffect, useMemo } from "react";
@@ -100,19 +101,13 @@ export function MetricVsTimeChart({
       );
     }
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.de3b78444032")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.de3b78444032")} />
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.705a2156c1b4")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.705a2156c1b4")} />
     );
   }
   if (query.isError) {
