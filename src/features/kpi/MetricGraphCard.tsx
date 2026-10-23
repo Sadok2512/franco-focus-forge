@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/i18n";
+import { ChartSpinner } from "./ChartSpinner";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -308,10 +309,7 @@ function MetricAggregatePlot({
 
   if (query.isPending) {
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.fc725ec040f4")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.fc725ec040f4")} />
     );
   }
   if (query.isError) {
@@ -319,6 +317,9 @@ function MetricAggregatePlot({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   }
@@ -370,16 +371,16 @@ function MetricAggregateTable({
   });
   if (query.isPending)
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.fc725ec040f4")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.fc725ec040f4")} />
     );
   if (query.isError)
     return (
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   const groups = query.data?.groups ?? [];
@@ -496,10 +497,7 @@ function MetricTimePlot({
   if (!captureId) {
     if (captures.isPending)
       return (
-        <div className="kpi-chart-state animate-pulse" role="status">
-          {" "}
-          {translate("metrics.de3b78444032")}{" "}
-        </div>
+        <ChartSpinner label={translate("metrics.de3b78444032")} />
       );
     return (
       <div className="kpi-chart-state" role="status">
@@ -510,16 +508,16 @@ function MetricTimePlot({
   }
   if (series.isPending)
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.d90f3037b488")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.d90f3037b488")} />
     );
   if (series.isError)
     return (
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.a0f3fe3387b3")}</strong>
         <p>{series.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void series.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   if (!points.length)

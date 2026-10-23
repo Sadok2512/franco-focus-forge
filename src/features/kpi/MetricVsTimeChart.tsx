@@ -1,4 +1,5 @@
 import { formatNumber } from "@/lib/i18n";
+import { ChartSpinner } from "./ChartSpinner";
 import { useTranslation } from "react-i18next";
 import type { CurveType } from "./visualization-model";
 import { useEffect, useMemo } from "react";
@@ -88,6 +89,9 @@ export function MetricVsTimeChart({
         <div className="kpi-chart-state" role="alert">
           <strong>{translate("metrics.d854ce90120a")}</strong>
           <p>{toUserMessage(captures.error)}</p>
+        <button type="button" className="kpi-button" onClick={() => void captures.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
         </div>
       );
     }
@@ -100,19 +104,13 @@ export function MetricVsTimeChart({
       );
     }
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.de3b78444032")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.de3b78444032")} />
     );
   }
 
   if (query.isPending) {
     return (
-      <div className="kpi-chart-state animate-pulse" role="status">
-        {" "}
-        {translate("metrics.705a2156c1b4")}{" "}
-      </div>
+      <ChartSpinner label={translate("metrics.705a2156c1b4")} />
     );
   }
   if (query.isError) {
@@ -120,6 +118,9 @@ export function MetricVsTimeChart({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f1d7675032b2")}</strong>
         <p>{toUserMessage(query.error)}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   }
