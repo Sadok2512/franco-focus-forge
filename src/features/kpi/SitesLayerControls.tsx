@@ -6,13 +6,14 @@
  *  - Bands : B20, B3, B28, B1, B7, B8 (LTE) + n78, n28, n1, n3, n7, n75, n258 (NR)
  *  - Operators : ORF, BYT, SFR, FRM
  *
- * État persisté localStorage `bc4.map.sitesLayer.v1`. Vide = tous actifs.
+ * État persisté localStorage `bc4.map.sitesLayer.v2`. Vide = tous actifs.
+ * 1.103.1 — enabled ON par défaut + bump v1→v2 pour reset auto.
  */
 import { Layers } from "lucide-react";
 import { useEffect, useState } from "react";
 import type { SitesLayerFilters } from "./SitesLayer";
 
-const STORAGE_KEY = "bc4.map.sitesLayer.v1";
+const STORAGE_KEY = "bc4.map.sitesLayer.v2";
 
 type State = {
   enabled: boolean;
@@ -20,7 +21,7 @@ type State = {
 };
 
 const DEFAULT_STATE: State = {
-  enabled: false,
+  enabled: true,
   filters: { technos: [], bands: [], operators: [] },
 };
 

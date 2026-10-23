@@ -1,3 +1,16 @@
+## 1.103.1 (patch) — BC4-FRONT 2026-10-23 — Signaling map remplit son panneau + sites ON par défaut (Agent BC3)
+
+Deux correctifs UX après livraison 1.103.0 :
+
+1. `KpiMapOSM.tsx:194` — `h-[310px]` → `h-full min-h-[310px]`. Sur `SignalingPage` (et toute vue qui wrap la map dans un panneau flex-1 h-full), la carte était contrainte à 310 px fixes au lieu de remplir l'espace disponible. Avec `h-full min-h-[310px]` elle utilise la hauteur du parent tout en gardant 310 px minimum pour les vues qui comptaient dessus (KpiMapInfo).
+
+2. `SitesLayerControls.tsx` — `DEFAULT_STATE.enabled: false → true` + bump `STORAGE_KEY` v1→v2. Les sites sont désormais affichés dès le premier mount sans action utilisateur (le toggle "Show sites on map" reste disponible pour désactiver). Le bump de clé localStorage force la réinitialisation du state pour les sessions existantes qui avaient `enabled=false`.
+
+Guards :
+- `grep -n "h-\[310px\]" src/features/kpi/KpiMapOSM.tsx` → 0 occurrence
+- `grep -n "bc4.map.sitesLayer.v2" src/features/kpi/SitesLayerControls.tsx` → ligne 15
+- `docker exec bc4-front-1 grep '"version"' /app/package.json` → `"version": "1.103.1"`
+
 ## 1.103.0 (minor) — BC4-FRONT 2026-10-23 — Site layer MapLibre lazy par bbox + sector beams (Agent BC3)
 
 Nouvelle couche "Sites" sur toute instance `KpiMapOSM`. Lazy loading : chaque pan/zoom déclenche `GET /sites?bbox=...` debouncé 300 ms. Jamais tout d'un coup (458K cellules en base).

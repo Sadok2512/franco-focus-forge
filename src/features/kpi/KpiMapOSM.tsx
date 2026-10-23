@@ -191,7 +191,7 @@ export function KpiMapOSM({
       className={
         full
           ? "fixed inset-0 z-[60] bg-background"
-          : "relative h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
+          : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
       <div ref={el} className="h-full w-full" aria-label={translate("kpi.37f8ac5eacf2")} />
