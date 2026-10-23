@@ -71,8 +71,8 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
   it("closing the table panel keeps the graphs", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "table");
     mount({});
-    await waitFor(() => expect(screen.getByTestId("metrics-table-close")).toBeVisible(), { timeout: 3000 });
-    fireEvent.click(screen.getByTestId("metrics-table-close"));
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), { timeout: 3000 });
+    await removeTable();
     expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
     expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
   });
@@ -92,3 +92,10 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
     expect(screen.queryByTestId("metrics-table-pager")).toBeNull();
   });
 });
+
+async function removeTable() {
+  const { fireEvent: fe, screen: sc, within: wi } = await import("@testing-library/react");
+  const panel = sc.getByTestId("metrics-table-panel");
+  fe.keyDown(wi(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
+  fe.click(await sc.findByTestId("metrics-table-remove"));
+}

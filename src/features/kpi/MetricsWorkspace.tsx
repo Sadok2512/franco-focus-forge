@@ -763,7 +763,6 @@ export function MetricsWorkspace({
                   </div>
                 )}
                 <div className="kpi-metrics-table-head">
-                  <h3>{translate("metrics.tablePanel")}</h3>
                   <div className="flex gap-0.5 shrink-0 items-center">
                     <WorkspacePanelMenu label={translate("panel.actions")}>
                       <DropdownMenuItem
@@ -784,16 +783,6 @@ export function MetricsWorkspace({
                         <X size={14} /> {translate("panel.remove")}
                       </DropdownMenuItem>
                     </WorkspacePanelMenu>
-                    <button
-                      type="button"
-                      className="kpi-button"
-                      aria-label={translate("panel.remove")}
-                      title={translate("panel.remove")}
-                      data-testid="metrics-table-close"
-                      onClick={() => setPane("charts")}
-                    >
-                      <X size={14} />
-                    </button>
                   </div>
                 </div>
                 <div className="kpi-table-scroll">
