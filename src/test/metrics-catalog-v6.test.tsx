@@ -140,6 +140,13 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
   it("offers a retry when the catalogue request fails and refetches on click", async () => {
     getMetrics.mockReset();
     getMetrics.mockRejectedValueOnce(new Error("Failed to fetch"));
+    getMetrics.mockResolvedValue({
+      catalogue_version: "v6",
+      title: "Nemo metrics",
+      header: "",
+      metrics: [],
+      nodes: [],
+    } satisfies MetricCatalogResponse);
     render(
       <QueryClientProvider
         client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
