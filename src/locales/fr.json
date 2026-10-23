@@ -163,9 +163,7 @@
       "no_utc_offset_header": "Entête `#UT` absent — offset UTC inconnu"
     },
     "tablePanel": "Tableau des mesures",
-    "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
-    "tableOnlyHint": "Les métriques sélectionnées sont affichées dans le tableau des mesures.",
-    "showTable": "Afficher le tableau des mesures"
+    "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue."
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",

@@ -1,3 +1,6 @@
+## 1.105.1
+- KPI : le message « The selected metrics are shown in the measurements table. » et son bouton « Show the measurements table » sont supprimés. Quand il n'y a plus rien à grapher, le tableau des mesures s'ouvre seul et se place en haut du pane ; le refermer n'est pas rouverte tant qu'aucun graphe ne revient.
+
 ## 1.105.0
 - KPI : au premier lancement d'un projet, l'espace de travail 1 est **vide**. Un lien qui traîne un ancien `?kpis=`, `?kpi=` ou `?metrics=` ne remplit plus le premier onglet. La reprise d'une session passe par `?tabs=` ou par les onglets mémorisés du projet : les graphes et tableaux ajoutés restent en place après un rechargement.
 
