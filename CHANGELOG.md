@@ -1,3 +1,11 @@
+## 1.105.6 (patch) — BC4-FRONT 2026-10-23 — Auto-select capture masque le prompt "Select capture" (Agent BC3)
+
+Sur un projet qui a au moins une capture (nominal), le MetricsWorkspace auto-sélectionne la 1re capture au mount (useEffect:502). Pendant la fenêtre très courte entre arrivée de `captureQuery.data` et propagation du nouveau `captureId` au parent, le prompt "Sélectionnez la capture à analyser" clignotait inutilement — l'utilisateur n'a rien à sélectionner en pratique.
+
+Fix `MetricsWorkspace.tsx:709` : on remplace le prompt par un loader discret quand `captureQuery.isPending` OU `captureQuery.data.length > 0`. Le prompt reste visible uniquement si le projet n'a vraiment aucune capture (projet draft, jamais ingéré) — cas où l'utilisateur doit effectivement uploader avant d'analyser.
+
+Zéro changement de contrat API ou de state logic.
+
 ## 1.105.5 — Tableau des mesures : le menu ⋯ redevient visible et cliquable (pastille ancrée dans le panneau, espace réservé dans la dernière colonne).
 
 ## 1.105.4 — Tableau des mesures : titre et bouton ✕ supprimés, seul le ⋮ reste en haut à droite (Retirer le panneau inclus), en-têtes de colonnes remontés.

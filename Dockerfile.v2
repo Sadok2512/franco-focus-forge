@@ -16,7 +16,7 @@ ENV HOST=0.0.0.0
 ENV PORT=5173
 RUN bun run build
 ARG VCS_REF=unknown
-ARG APP_VERSION=1.105.3
+ARG APP_VERSION=1.105.6
 LABEL org.opencontainers.image.revision=$VCS_REF
 LABEL org.opencontainers.image.version=$APP_VERSION
 LABEL org.opencontainers.image.title="BC4 Front — production Nitro runtime"

@@ -707,7 +707,19 @@ export function MetricsWorkspace({
         </div>
       )}
       {!captureId ? (
-        <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+        // 1.105.4 — Si captureQuery pending ou >=1 capture dispo, l'auto-select
+        // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
+        // un petit loader discret au lieu du prompt "Select capture". Prompt
+        // visible uniquement si captures vraiment vides (projet jamais ingéré).
+        captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
+          <div className="kpi-chart-state" role="status" aria-busy="true">
+            <span className="kpi-measurements-progress" aria-label={translate("metrics.eb724a908f1f")}>
+              <span />
+            </span>
+          </div>
+        ) : (
+          <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+        )
       ) : pane !== "table" ? null : query.isPending ? (
         <div
           className="kpi-measurements-loading"
