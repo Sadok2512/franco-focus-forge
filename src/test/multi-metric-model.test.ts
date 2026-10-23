@@ -5,7 +5,7 @@ const metric = (selection: string, unit: string): GraphMetric => ({ selection, u
 describe("Multi-metric physical and panel integrity", () => {
   it("appends without replacing the existing throughput", () => {
     const a = metric("pdsch_bitrate@0", "Mbit/s"); const b = metric("pdsch_bitrate_cw0@0", "Mbit/s");
-    expect(addGraphMetric({ metrics: [a] }, b).metrics).toEqual([a, b]);
+    expect(addGraphMetric({ metrics: [a] }, b).metrics.map(({ color, ...m }) => m)).toEqual([a, b]);
   });
   it("does not add duplicate cell selections", () => {
     const a = metric("pdsch_bitrate@0", "Mbit/s");
@@ -24,6 +24,12 @@ describe("Multi-metric physical and panel integrity", () => {
   it("never merges dB and dBm", () => expect(metricAxes([metric("a", "dB"), metric("b", "dBm")])).toEqual(["dB", "dBm"]));
   it("rejects categorical series", () => expect(validateMetricDrop([], { ...metric("band", "MHz"), kind: "categorical" })).toBe("categorical"));
   it("uses distinct stable colours", () => expect(seriesColor(metric("a", "Mbit/s"), 0)).not.toBe(seriesColor(metric("b", "Mbit/s"), 1)));
+  it("keeps series colours after removing another series", () => {
+    const config = addGraphMetric({ metrics: [metric("a", "Mbit/s")] }, metric("b", "Mbit/s"));
+    const b = config.metrics[1];
+    if (!b) throw new Error("Missing added series");
+    expect(seriesColor(b, 0)).toBe(seriesColor(b, 1));
+  });
   it("retains series, colour and visibility through tab roundtrip without changing another tab", () => {
     const state = newTabsState(); const id = state.activeTabId;
     const other = { ...state.tabs[0], id: "other", name: "Other", codes: [], metricCodes: ["other@0"], activeCode: null, layout: "auto" as const, overlay: false };

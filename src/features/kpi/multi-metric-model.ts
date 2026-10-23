@@ -17,7 +17,10 @@ export function validateMetricDrop(metrics: GraphMetric[], metric: GraphMetric):
   return null;
 }
 export function addGraphMetric(settings: MetricGraphSettings, metric: GraphMetric): MetricGraphSettings {
-  return validateMetricDrop(settings.metrics, metric) ? settings : { ...settings, metrics: [...settings.metrics, metric] };
+  if (validateMetricDrop(settings.metrics, metric)) return settings;
+  const used = settings.metrics.map(seriesColor);
+  const color = SERIES_COLORS.find((candidate) => !used.includes(candidate));
+  return { ...settings, metrics: [...settings.metrics.map((existing, index) => ({ ...existing, color: seriesColor(existing, index) })), { ...metric, ...(color ? { color: metric.color ?? color } : {}) }] };
 }
 export const SERIES_COLORS = Array.from({ length: 8 }, (_, i) => `var(--metric-series-${i + 1})`);
 export function seriesColor(metric: GraphMetric, index: number): string {
