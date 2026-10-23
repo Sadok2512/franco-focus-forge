@@ -4,6 +4,9 @@
 - Browser API calls use the same-origin `/api` path; the Nitro server proxies that path to the configured internal `BC4_API_UPSTREAM`, so remote browsers no longer try `http://localhost:8000`.
 - Added a Docker build context ignore list so images are built only from tracked application sources and do not copy local dependencies, build output or audit artifacts.
 
+## 1.100.1
+- KPI : ajouter un paramètre ne fait plus disparaître le tableau des mesures ; il reste affiché sous un voile avec le cercle de chargement (jamais réutilisé si la capture ou les filtres changent).
+
 ## 1.100.0
 - KPI : le tableau des mesures s'ajoute à côté des graphes au lieu de les remplacer, avec son propre bouton de fermeture ; état mémorisé par onglet.
 - KPI : cercle de chargement centré dans chaque graphe, Retry en cas d'erreur, texte « Loading measurements… » externe supprimé.
