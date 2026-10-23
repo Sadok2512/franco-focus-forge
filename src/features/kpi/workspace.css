@@ -762,6 +762,7 @@
   max-width: 280px;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: center;
 }
 .kpi-data-table .numeric {
   text-align: center;
