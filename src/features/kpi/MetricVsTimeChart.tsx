@@ -89,6 +89,9 @@ export function MetricVsTimeChart({
         <div className="kpi-chart-state" role="alert">
           <strong>{translate("metrics.d854ce90120a")}</strong>
           <p>{toUserMessage(captures.error)}</p>
+        <button type="button" className="kpi-button" onClick={() => void captures.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
         </div>
       );
     }
@@ -115,6 +118,9 @@ export function MetricVsTimeChart({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f1d7675032b2")}</strong>
         <p>{toUserMessage(query.error)}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   }

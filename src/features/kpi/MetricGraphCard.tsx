@@ -317,6 +317,9 @@ function MetricAggregatePlot({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   }
@@ -375,6 +378,9 @@ function MetricAggregateTable({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.f82af3f196cf")}</strong>
         <p>{query.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   const groups = query.data?.groups ?? [];
@@ -509,6 +515,9 @@ function MetricTimePlot({
       <div className="kpi-chart-state" role="alert">
         <strong>{translate("metrics.a0f3fe3387b3")}</strong>
         <p>{series.error.message}</p>
+        <button type="button" className="kpi-button" onClick={() => void series.refetch()}>
+          {translate("kpi.af273d956b5b")}
+        </button>
       </div>
     );
   if (!points.length)
