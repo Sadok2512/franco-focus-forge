@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart3, ChevronDown, ChevronRight, Copy, Info, MoreVertical, Search } from "lucide-react";
-import { getMetrics } from "@/lib/api/client";
+import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,11 +58,10 @@ export function MetricsCatalogSidebar({
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
-  const query = useQuery({
-    queryKey: ["project-metrics", projectId],
-    queryFn: ({ signal }) => getMetrics(projectId, signal),
-    staleTime: 300_000,
-  });
+  // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
+  // localStorage + initialData → 2e visite affiche le catalogue instantanément,
+  // refetch silencieux en arrière-plan (SWR). Zéro invention.
+  const query = useQuery(metricsCatalogQuery(projectId));
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
     for (const node of query.data?.nodes ?? []) {

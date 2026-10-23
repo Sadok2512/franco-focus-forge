@@ -1,3 +1,25 @@
+## 1.103.3 (patch) — BC4-FRONT 2026-10-23 — Catalogues KPI/Metrics instantanés via cache localStorage SWR (Agent BC3)
+
+« Loading catalogue… » disparaît dès la 2e visite d'un projet. React Query hydrate avec `initialData` depuis `localStorage` et refetch silencieux en arrière-plan (SWR) : UI immédiate, données toujours fraîches.
+
+Fichier central : `src/lib/analytics-bootstrap.ts` — helper `persistedQuery(key, fetcher, staleTime)` qui wrappe `queryOptions` avec :
+- `queryFn` : fetch + `localStorage.setItem('bc4.cache.<key>', JSON.stringify(data))`
+- `initialData` : lecture `localStorage` au mount ; `undefined` si vide
+- `initialDataUpdatedAt: 0` : force refetch background à l'ouverture (SWR)
+
+Appliqué à :
+- `kpiCatalogQuery` → `bc4.cache.project-kpi.catalog.<id>` (staleTime 5 min)
+- `metricsCatalogQuery` → `bc4.cache.project-metrics.<id>` (staleTime 1 min)
+
+`MetricsCatalogSidebar.tsx` : passage de `useQuery({ queryKey, queryFn })` ad-hoc à `useQuery(metricsCatalogQuery(projectId))` partagé.
+
+Zéro invention — si le back renvoie du nouveau, localStorage est écrasé. Si le cache ne décode pas, fallback au fetch normal.
+
+Guards :
+- `grep "bc4.cache" src/lib/analytics-bootstrap.ts` → 1 occurrence (helper)
+- `docker exec bc4-front-1 bun run typecheck` sur src/features/kpi/* + src/lib/analytics-bootstrap.ts → 0 erreur nouvelle
+- `localStorage.getItem('bc4.cache.project-metrics.<id>')` doit retourner un payload JSON après 1ère visite
+
 ## 1.103.2 (patch) — BC4-FRONT 2026-10-23 — i18n `metrics.7f626224ba1f` manquante (Agent BC3)
 
 `MetricsCatalogSidebar.tsx:334` référence `t("metrics.7f626224ba1f")` mais la traduction existait uniquement sous `kpi.7f626224ba1f`. UI affichait la clé brute. Ajouté dans les deux namespaces :
