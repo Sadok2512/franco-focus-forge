@@ -1,4 +1,5 @@
 import { Download, Maximize2, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
