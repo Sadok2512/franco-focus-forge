@@ -1,3 +1,5 @@
+## 1.105.3 — Barre Events compacte : cadre ≤ 52 px, points 9.5 px (hover 11.5, sélection + anneau 2 px), zone cliquable 24×24, une seule ligne alignée, ticks sous les points.
+
 ## 1.105.3 (patch) — BC4-FRONT 2026-10-23 — Synchronisation GitHub et cache catalogue (Agent BC1)
 
 - Fusionne la version GitHub 1.105.2 avec les correctifs locaux de carte, i18n et cache SWR des catalogues KPI/Metrics.
