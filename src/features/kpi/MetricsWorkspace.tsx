@@ -10,6 +10,7 @@ import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard } from "./MetricGraphCard";
+import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import {
   isClockAvailable,
@@ -187,7 +188,8 @@ export function MetricsWorkspace({
   // version BC3 (le per-card view + Apply draft ne sont pas portés —
   // conflits avec le Time/GPS lot). Si nécessaire plus tard, implémenter
   // le state cardViews + onRemove dans un lot dédié.
-  onTablePaneChange: _onTablePaneChange,
+  onTablePaneChange,
+  views: viewsProp,
   workspaceId: _workspaceId,
   onColumnsChange: _onColumnsChange,
   paneRequest,
@@ -203,7 +205,8 @@ export function MetricsWorkspace({
   onClear: () => void;
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
-  onTablePaneChange?: unknown;
+  onTablePaneChange?: ((open: boolean) => void) | undefined;
+  views?: MetricViews | undefined;
   workspaceId?: string;
   onColumnsChange?: unknown;
   paneRequest?: number;
@@ -501,6 +504,9 @@ export function MetricsWorkspace({
     // charts n'utilise pas /metrics/table en SSR, les cards gèrent leur propre série.
     if (p === "table") setView("table");
     else if (p === "overlay") setView("graph");
+    // Le parent a besoin du mode pour dimensionner la grille et savoir que le
+    // tableau est ouvert (compteur de panneaux, disposition table-only).
+    onTablePaneChange?.(p === "table");
   };
   // 1.94.0 — la barre [View ▾ | Per row ▾ | Export CSV | Fullscreen] est
   // supprimée. Le mode du panneau vient des demandes du catalogue Metrics :
@@ -514,6 +520,12 @@ export function MetricsWorkspace({
     if (cardViewRequest && cardViewRequest.view !== "table") setPane("charts");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cardViewRequest]);
+  // 1.101.0 — le mode mémorisé à l'ouverture de l'onglet est signalé au parent
+  // (le compteur de panneaux de KpiWorkspace part du tableau des mesures).
+  useEffect(() => {
+    onTablePaneChange?.(pane === "table");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   // 1.94.0 — le sélecteur « Per row » de la barre supprimée : le nombre de
   // cartes par ligne reste celui mémorisé, il n'est plus réglé ici.
   const [perRow] = useState<1 | 2 | 3>(() => {
@@ -539,6 +551,12 @@ export function MetricsWorkspace({
     for (const info of catalog) m.set(info.code, info);
     return m;
   }, [catalog]);
+  // 1.101.0 — une métrique demandée en « Tableau » dans le catalogue ⋮ n'a pas
+  // de carte graphique : elle n'existe que dans le grand tableau des mesures.
+  const graphSelections = useMemo(
+    () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
+    [parsedSelections, viewsProp],
+  );
   return (
     <article
       className="kpi-graph-card col-span-full kpi-metrics-table-premium"
@@ -599,14 +617,19 @@ export function MetricsWorkspace({
           timeMeta={timeMeta}
         />
       )}
-      {captureId && (
+      {captureId && parsedSelections.length === 0 && (
+        <p className="kpi-chart-state" data-testid="metrics-no-selection">
+          {translate("metrics.pickFromCatalogue")}
+        </p>
+      )}
+      {captureId && graphSelections.length > 0 && (
         <section
           className="kpi-metrics-charts-grid"
           data-per-row={perRow}
-          data-count={Math.min(parsedSelections.length, 8)}
+          data-count={Math.min(graphSelections.length, 8)}
           data-testid="metrics-charts-grid"
         >
-          {parsedSelections.map((s, i) => {
+          {graphSelections.map((s, i) => {
             const info = metricInfoByCode.get(s.code);
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
@@ -635,10 +658,20 @@ export function MetricsWorkspace({
               />
             );
           })}
-          {parsedSelections.length === 0 && (
-            <p className="kpi-chart-state">No metric selected. Pick one from the catalogue.</p>
-          )}
         </section>
+      )}
+      {captureId && parsedSelections.length > 0 && graphSelections.length === 0 && (
+        <p className="kpi-chart-state" data-testid="metrics-table-only-state">
+          {translate("metrics.tableOnlyHint")}{" "}
+          <button
+            type="button"
+            className="kpi-button"
+            data-testid="metrics-show-table"
+            onClick={() => setPane("table")}
+          >
+            {translate("metrics.showTable")}
+          </button>
+        </p>
       )}
       {isScannerCapture && (
         <div
