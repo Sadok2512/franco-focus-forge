@@ -652,6 +652,7 @@ function Workspace({
                     id={`kpi:${entry.item.code}`}
                     natural={natural}
                     defaultTitle={entry.item.name}
+                    fullRow={configFor(entry.item.code).visualization === "table"}
                   >
                     {(panelTitle) => (
                       <KpiGraphCard

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { panelColumns, workspaceColumns } from "@/features/kpi/workspace-grid";
+import { effectivePanelSpan, panelColumns, workspaceColumns } from "@/features/kpi/workspace-grid";
 
 describe("workspace column rules", () => {
   it.each([1, 2, 3] as const)("retains explicit %i columns at all container widths", (cols) => {
@@ -19,5 +19,12 @@ describe("workspace column rules", () => {
     expect(panelColumns(2, 1)).toBe(1);
     expect(panelColumns("full", 3)).toBe(3);
     expect(panelColumns(1, 3)).toBe(1);
+  });
+  it("keeps every table alone across all columns despite a saved narrow span", () => {
+    for (const cols of [1, 2, 3]) {
+      expect(effectivePanelSpan(true, 1)).toBe("full");
+      expect(panelColumns(effectivePanelSpan(true, 1), cols)).toBe(cols);
+    }
+    expect(effectivePanelSpan(false, 1)).toBe(1);
   });
 });

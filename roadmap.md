@@ -1,4 +1,5 @@
 ## KPI multi-panneaux (plan validé)
+- [x] Corriger 1/2/3/Auto depuis les réglages : suppression de la grille Metrics héritée à 2 colonnes, graphes dans la grille commune et chaque tableau seul en pleine largeur même après un ancien réglage de largeur ; 301 tests passent (2 ignorés). Clics Appliquer vérifiés sur le jeu de test dans le navigateur : 1/2/3, Auto large puis réduit, tableau toujours pleine largeur ; aucune erreur de page. Projet réel non vérifié, rien publié.
 - [x] Texte de chargement remplacé par une barre animée de 3 px : zone initiale compacte, barre en haut du tableau pendant la mise à jour, animation désactivée en mouvement réduit ; 8 tests existants passent, contrôle visuel isolé sur données de démonstration (chargement puis tableau), sans erreur. Accès au projet réel non vérifié : la page redirige vers la connexion.
 - [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
 - [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)

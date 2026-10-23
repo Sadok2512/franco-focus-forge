@@ -1068,10 +1068,12 @@
    bleu BC4 (#1769e0) accents, bordures fines, en-têtes bleutés, typographie
    compacte, alignement rigoureux. Adaptive widths selon #columns. */
 .kpi-metrics-table-premium {
-  display: flex;
-  flex-direction: column;
+  display: contents;
   padding: 0;
   overflow: hidden;
+}
+.kpi-metrics-table-premium > :not(.kpi-metrics-charts-grid) {
+  grid-column: 1 / -1;
 }
 .kpi-analysis-toolbar[hidden] {
   display: none;
@@ -1299,16 +1301,8 @@
   margin-bottom: 2px;
 }
 .kpi-metrics-charts-grid {
-  display: grid;
-  gap: 10px;
+  display: contents;
 }
-.kpi-metrics-charts-grid[data-per-row="1"] { grid-template-columns: repeat(1, minmax(0, 1fr)); }
-.kpi-metrics-charts-grid[data-per-row="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.kpi-metrics-charts-grid[data-per-row="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-/* Si moins de cartes que le per-row demandé, ne pas étirer la dernière carte. */
-.kpi-metrics-charts-grid[data-per-row="2"][data-count="1"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="1"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.kpi-metrics-charts-grid[data-per-row="3"][data-count="2"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 /* 1.99.1 (lot C axe X temps) — Switcher Clock/UTC/Capture. */
 .kpi-metrics-time-axis-switch {
