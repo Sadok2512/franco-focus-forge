@@ -695,9 +695,12 @@ export function MetricsWorkspace({
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : pane !== "table" ? null : query.isPending ? (
-        <div className="kpi-chart-state" role="status">
-          {" "}
-          {translate("metrics.eb724a908f1f")}{" "}
+        <div className="kpi-measurements-loading" aria-busy="true">
+          <h3>{translate("metrics.tablePanel")}</h3>
+          <div className="kpi-measurements-progress" role="progressbar"
+            aria-label={translate("metrics.eb724a908f1f")}>
+            <span />
+          </div>
         </div>
       ) : query.isError ? (
         <div className="kpi-chart-state" role="alert">
@@ -730,7 +733,10 @@ export function MetricsWorkspace({
               <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing} ref={tablePanelRef}>
                 {refreshing && (
                   <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
-                    <div className="kpi-chart-spinner" role="status" aria-label={translate("metrics.eb724a908f1f")} />
+                    <div className="kpi-measurements-progress kpi-measurements-progress-overlay"
+                      role="progressbar" aria-label={translate("metrics.eb724a908f1f")}>
+                      <span />
+                    </div>
                   </div>
                 )}
                 <div className="kpi-metrics-table-head">

@@ -1339,3 +1339,12 @@
 .kpi-metrics-table-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 .kpi-metrics-table-head h3 { font-size: 13px; font-weight: 600; margin: 0; }
 .kpi-panel-veil { position: absolute; inset: 0; z-index: 10; display: flex; align-items: center; justify-content: center; background: color-mix(in oklab, var(--background) 55%, transparent); }
+
+/* Measurements loading stays compact; no fabricated progress percentage. */
+.kpi-measurements-loading { flex: 0 0 auto; padding: 10px; }
+.kpi-measurements-loading h3 { margin: 0 0 10px; font-size: 13px; font-weight: 600; color: var(--foreground); }
+.kpi-measurements-progress { position: relative; height: 3px; width: 100%; overflow: hidden; border-radius: 2px; background: var(--muted); }
+.kpi-measurements-progress span { position: absolute; inset-block: 0; left: 0; width: 35%; border-radius: inherit; background: var(--primary); animation: kpi-measurements-progress 1.6s cubic-bezier(.4, 0, .2, 1) infinite; }
+.kpi-measurements-progress-overlay { position: absolute; inset: 0 0 auto; }
+@keyframes kpi-measurements-progress { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
+@media (prefers-reduced-motion: reduce) { .kpi-measurements-progress span { animation: none; left: 32.5%; } }

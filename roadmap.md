@@ -1,4 +1,5 @@
 ## KPI multi-panneaux (plan validé)
+- [x] Texte de chargement remplacé par une barre animée de 3 px : zone initiale compacte, barre en haut du tableau pendant la mise à jour, animation désactivée en mouvement réduit ; 8 tests existants passent, contrôle visuel isolé sur données de démonstration (chargement puis tableau), sans erreur. Accès au projet réel non vérifié : la page redirige vers la connexion.
 - [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
 - [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)
 - [x] 1.102.0 — le tableau des mesures a son menu ⋮ (Exporter CSV, Plein écran, Fermer le panneau), 4 tests ; navigateur : menu ouvert sur les données de démo, téléchargement `metrics_44621571bccc.csv`, fermeture qui retire le tableau
