@@ -98,7 +98,7 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
           : {}),
         activeCode,
         ...(r["g"] && typeof r["g"] === "object" && !Array.isArray(r["g"])
-          ? { metricGraphs: Object.fromEntries(Object.entries(r["g"]).filter(([, v]) => v && typeof v === "object" && Array.isArray(v.metrics) && v.metrics.every((m: Record<string, unknown>) => m && typeof m.selection === "string" && typeof m.unit === "string" && typeof m.label === "string"))) }
+          ? { metricGraphs: Object.fromEntries(Object.entries(r["g"]).filter(([, v]) => v && typeof v === "object" && Array.isArray(v.metrics) && v.metrics.every((m: Record<string, unknown>) => m && typeof m["selection"] === "string" && typeof m["unit"] === "string" && typeof m["label"] === "string"))) }
           : {}),
         layout,
         overlay,

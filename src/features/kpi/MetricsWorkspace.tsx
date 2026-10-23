@@ -270,7 +270,7 @@ export function MetricsWorkspace({
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
-  metricGraphs?: MetricGraphGroups;
+  metricGraphs?: MetricGraphGroups | undefined;
   onGraphChange?: (root: string, settings: MetricGraphSettings) => void;
 }) {
   const { t: translate } = useTranslation();
