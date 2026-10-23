@@ -1,6 +1,7 @@
 ## KPI multi-panneaux (plan validé)
 - [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
 - [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)
+- [x] 1.102.0 — le tableau des mesures a son menu ⋮ (Exporter CSV, Plein écran, Fermer le panneau), 4 tests ; navigateur : menu ouvert sur les données de démo, téléchargement `metrics_44621571bccc.csv`, fermeture qui retire le tableau
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
 - [ ] Voile + spinner pendant mise à jour, protection réponses en retard
