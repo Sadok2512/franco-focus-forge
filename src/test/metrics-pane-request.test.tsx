@@ -2,6 +2,7 @@
 // Metrics est supprimée. Le mode (cartes ou grand tableau) est donc piloté par
 // les demandes du catalogue : ⋮ → Tableau = paneRequest, ⋮ → Graphique =
 // cardViewRequest. Ces deux tests verrouillent les deux directions.
+import { fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -63,6 +64,17 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
       },
       { timeout: 3000 },
     );
+    // Adding the table keeps the graphs: both panels coexist.
+    expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
+  });
+
+  it("closing the table panel keeps the graphs", async () => {
+    window.localStorage.setItem("bc3.metrics.pane", "table");
+    mount({});
+    await waitFor(() => expect(screen.getByTestId("metrics-table-close")).toBeVisible(), { timeout: 3000 });
+    fireEvent.click(screen.getByTestId("metrics-table-close"));
+    expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
+    expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
   });
 
   it("⋮ → Graphique (cardViewRequest) ramène les cartes alors que le mode mémorisé est table", async () => {
