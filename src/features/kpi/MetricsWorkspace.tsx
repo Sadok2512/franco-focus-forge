@@ -605,6 +605,20 @@ export function MetricsWorkspace({
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
   );
+  // 1.105.1 — plus de message « The selected metrics are shown in the
+  // measurements table » ni de bouton : quand il n'y a rien à grapher, le
+  // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
+  // n'est pas rouverte tant qu'aucun graphe ne revient.
+  useEffect(() => {
+    if (graphSelections.length > 0) {
+      tableOnlyDismissed.current = false;
+      return;
+    }
+    if (parsedSelections.length > 0 && pane !== "table" && !tableOnlyDismissed.current) {
+      setPane("table");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [graphSelections.length, parsedSelections.length, pane]);
   const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
     <ActiveEventsContext.Provider value={activeEvents}>
