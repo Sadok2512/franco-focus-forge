@@ -1,3 +1,8 @@
+## 1.101.0
+- KPI : une métrique ajoutée par ⋮ → Tableau n'affiche plus jamais de carte graphique. Elle n'apparaît que dans le tableau des mesures ; les autres métriques gardent leur graphe. La vue choisie est mémorisée par onglet, et le tableau des mesures reste accessible par un bouton quand aucun graphe n'a à être affiché.
+- KPI : le mode du panneau (cartes ou tableau) est désormais signalé au parent à l'ouverture de l'onglet, donc la grille compte exactement les panneaux visibles.
+- KPI : le message « aucune métrique sélectionnée » et l'état « affichées dans le tableau » passent par les clés `metrics.pickFromCatalogue`, `metrics.tableOnlyHint` et `metrics.showTable` (fr + en) au lieu d'un texte en dur.
+
 ## 1.99.3 (patch) — BC4-FRONT 2026-10-23 — Production runtime and KPI catalogue startup (Agent BC1)
 
 - The deployed image now runs the prebuilt Nitro Node server instead of Vite's development server, removing dependency re-optimization and intermittent blank/loading states after container startup.
