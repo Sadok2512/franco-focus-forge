@@ -1,3 +1,6 @@
+## 1.105.2
+- KPI : les données du tableau des mesures sont centrées dans chaque cellule (en-têtes, heures, coordonnées et valeurs numériques), y compris pour les tableaux des réglages Workspace par défaut (alignement cellule/nombre = centre).
+
 ## 1.105.1
 - KPI : le message « The selected metrics are shown in the measurements table. » et son bouton « Show the measurements table » sont supprimés. Quand il n'y a plus rien à grapher, le tableau des mesures s'ouvre seul et se place en haut du pane ; le refermer n'est pas rouverte tant qu'aucun graphe ne revient.
 
