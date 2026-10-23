@@ -1,3 +1,6 @@
+## 1.104.1
+- KPI : le catalogue Metrics affiche la barre de chargement dès qu'une requête catalogue est en cours (et plus seulement au tout premier chargement), et propose « Réessayer le catalogue » quand la requête échoue, au lieu du seul message d'erreur.
+
 ## 1.104.0
 - KPI : clic sur un événement de la barre Events = affiché (ligne verticale 2 px de sa couleur sur tous les graphes de l'onglet, ligne du tableau au temps exact surlignée) ; 2e clic = masqué. Plusieurs événements indépendants, sans rechargement ni changement de zoom.
 

@@ -8,7 +8,16 @@
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { BarChart3, ChevronDown, ChevronRight, Copy, Info, MoreVertical, Search } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Info,
+  MoreVertical,
+  RefreshCw,
+  Search,
+} from "lucide-react";
 import { getMetrics } from "@/lib/api/client";
 import {
   DropdownMenu,
@@ -318,19 +327,31 @@ export function MetricsCatalogSidebar({
           />
         </label>
       </header>
-      {query.isPending && (
-        <p className="p-3 text-xs" role="status">
-          {t("metrics.109826adfba2")}
-        </p>
+      {/* The catalogue is prefetched at app start, so a tab opened later joins an
+          already-finished request: show the bar for any in-flight fetch, not only
+          the first pending one. */}
+      {(query.isPending || (query.isFetching && !query.data)) && (
+        <div className="kpi-measurements-loading" aria-busy="true">
+          <div
+            className="kpi-measurements-progress"
+            role="progressbar"
+            aria-label={t("metrics.109826adfba2")}
+          >
+            <span />
+          </div>
+        </div>
       )}
       {query.isError && (
-        <p role="alert" className="p-3 text-destructive">
-          {query.error.message}
-        </p>
+        <div role="alert" className="space-y-2 p-3">
+          <p className="text-xs text-destructive">{query.error.message}</p>
+          <button className="kpi-button" onClick={() => void query.refetch()}>
+            <RefreshCw size={14} /> {t("kpi.d61cacf6ec3e")}
+          </button>
+        </div>
       )}
       <ul className="kpi-tree p-2 space-y-1">
         {tree.map((node) => renderNode(node))}
-        {!tree.length && !query.isPending && (
+        {!tree.length && !query.isPending && !(query.isFetching && !query.data) && (
           <li className="p-4 text-xs text-muted-foreground">{t("metrics.7f626224ba1f") || "—"}</li>
         )}
       </ul>

@@ -6,6 +6,7 @@
 - [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)
 - [x] 1.102.0 — le tableau des mesures a son menu ⋮ (Exporter CSV, Plein écran, Fermer le panneau), 4 tests ; navigateur : menu ouvert sur les données de démo, téléchargement `metrics_44621571bccc.csv`, fermeture qui retire le tableau
 - [x] 1.102.3 — le tableau des mesures reste sous tous les graphes (disposition 1/2/3/Auto, ordre mémorisé) ; panneaux « tableau » d'un KPI eux aussi descendus sous les cartes, 2 tests ; navigateur : 6 cartes en 2 colonnes, tableau pleine largeur en dernière ligne (carte la plus basse 1233 → tableau à 1263), aucune erreur de page. Projet réel non vérifié, rien publié.
+- [x] 1.104.1 — catalogue Metrics : barre de chargement pendant toute requête catalogue en cours (le catalogue est préchargé au démarrage, donc un simple « pending » ne s'affichait jamais) + « Réessayer le catalogue » en cas d'échec ; 2 tests ciblés, 318 tests passent, build OK. Non vérifié dans l'app : la page KPI du projet réel demande une session qui ne peut pas être rétablie ici.
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
 - [ ] Voile + spinner pendant mise à jour, protection réponses en retard
