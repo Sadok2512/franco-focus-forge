@@ -75,7 +75,7 @@ describe("MetricsWorkspace — menu ⋮ du tableau des mesures", () => {
     const panel = await openMenu();
     const exportItem = await screen.findByTestId("metrics-table-export");
     expect(within(panel).getByTestId("metrics-table-close")).toBeInTheDocument();
-    expect(exportItem).toHaveAttribute("aria-disabled", "false");
+    expect(exportItem).not.toHaveAttribute("aria-disabled");
     expect(exportItem.textContent).toMatch(/CSV/);
     expect(screen.getByTestId("metrics-table-fullscreen")).toBeInTheDocument();
     expect(screen.getByTestId("metrics-table-remove")).toBeInTheDocument();
