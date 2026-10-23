@@ -1,3 +1,6 @@
+## 1.104.0
+- KPI : clic sur un événement de la barre Events = affiché (ligne verticale 2 px de sa couleur sur tous les graphes de l'onglet, ligne du tableau au temps exact surlignée) ; 2e clic = masqué. Plusieurs événements indépendants, sans rechargement ni changement de zoom.
+
 ## 1.103.0
 - Projects : Superstreams. Menu ⋮ du projet → « Create Superstream » / « Manage Superstreams » ; popup (nom unique par projet, recherche, sélection multiple conservée, collage de noms séparés par virgules avec rejet des inconnus/ambigus) ; arbre Superstreams/Logs sous le projet avec Voir, Modifier, Renommer, Supprimer (sans toucher aux logs).
 - Backend attendu : `GET/POST /projects/{id}/superstreams`, `PATCH/DELETE /projects/{id}/superstreams/{ssid}` — non présents côté serveur ; en démo, enregistrement local par projet.
