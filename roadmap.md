@@ -1,5 +1,6 @@
 ## KPI multi-panneaux (plan validé)
 - [x] 1.100.0 — tableau ajouté à côté des graphes, spinner local, apparition douce
+- [x] 1.101.0 — ⋮ → Tableau ne crée plus de carte graphique : la métrique n'existe que dans le tableau des mesures (vue mémorisée par onglet, 3 tests, vérifié dans le navigateur sur données de démo)
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
 - [ ] Voile + spinner pendant mise à jour, protection réponses en retard
