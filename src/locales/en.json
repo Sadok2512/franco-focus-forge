@@ -43,6 +43,7 @@
     "selectionSummary": "{{count}} selected · {{total}} options"
   },
   "metrics": {
+    "multiMetricUnused": "",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Fullscreen",
     "captureLabel": "Capture",
@@ -165,6 +166,9 @@
     "tablePanel": "Measurements table",
     "pickFromCatalogue": "No metric selected. Pick one from the catalogue.",
     "7f626224ba1f": "No metrics match this search."
+  },
+  "multiMetric": {
+    "drop": "Drop to add metric", "thirdUnit": "Two physical units already use the available axes.", "separate": "Create separate graph", "categorical": "Categorical metrics cannot be added as continuous curves.", "unit": "The catalogue does not supply a physical unit.", "unavailable": "No compatible observations for this capture and origin.", "empty": "No series", "points": "Points", "color": "Series colour", "visibility": "Show / hide series", "min": "Minimum", "max": "Maximum"
   },
   "kpi": {
     "3ad34a87a145": "KPI catalogue",

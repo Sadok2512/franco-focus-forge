@@ -12,6 +12,8 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard, METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
+import { MultiMetricGraph } from "./MultiMetricGraph";
+import type { MetricGraphGroups, MetricGraphSettings } from "./multi-metric-model";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
 import {
@@ -248,6 +250,8 @@ export function MetricsWorkspace({
   cardViewRequest,
   onRemove,
   onVisualization,
+  metricGraphs,
+  onGraphChange,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -266,6 +270,8 @@ export function MetricsWorkspace({
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
+  metricGraphs?: MetricGraphGroups;
+  onGraphChange?: (root: string, settings: MetricGraphSettings) => void;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -296,7 +302,7 @@ export function MetricsWorkspace({
     queryFn: ({ signal }) =>
       getMetricAnalysis(
         projectId,
-        captureId!,
+        captureId ?? "",
         selections,
         filters,
         {
@@ -672,6 +678,12 @@ export function MetricsWorkspace({
                   filters={filters}
                   onRemove={remove}
                   onVisualization={onVisualization}
+                /> : metricView === "graph" && onGraphChange ? <MultiMetricGraph
+                  projectId={projectId} captureId={captureId} title={panelTitle}
+                  root={{ selection: s.full, label: title, unit: info?.unit ?? "", tech: info?.tech ?? "", kind: info?.kind ?? "numeric" }}
+                  settings={metricGraphs?.[s.full]} filters={filters} timeAxisMode={effectiveTimeAxisMode}
+                  onChange={(next) => onGraphChange(s.full, next)} onRemove={remove}
+                  onSeparate={(code) => onVisualization?.(code, "graph")}
                 /> : <MetricGraphCard
                 projectId={projectId}
                 code={s.full}

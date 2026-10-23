@@ -69,6 +69,7 @@ import {
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
 import { PanelShell } from "./PanelShell";
 import { WorkspaceGrid } from "./WorkspaceGrid";
+import type { MetricGraphSettings } from "./multi-metric-model";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -708,6 +709,8 @@ function Workspace({
                     onVisualization={visualizeMetric}
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
+                    metricGraphs={currentTab.metricGraphs}
+                    onGraphChange={(root: string, settings: MetricGraphSettings) => persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricGraphs: { ...currentTab.metricGraphs, [root]: settings } }))}
                     paneRequest={metricsPaneRequest.n}
                     cardViewRequest={cardViewRequest}
                     onClear={() => {

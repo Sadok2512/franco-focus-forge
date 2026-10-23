@@ -123,6 +123,14 @@ html.dark {
 
 /* ---- Thème clair par défaut ---- */
 :root {
+  --metric-series-1: #2563EB;
+  --metric-series-2: #16A34A;
+  --metric-series-3: #F97316;
+  --metric-series-4: #9333EA;
+  --metric-series-5: #0891B2;
+  --metric-series-6: #DB2777;
+  --metric-series-7: #4F46E5;
+  --metric-series-8: #D97706;
   --sig-layer-lte: oklch(0.55 0.19 258);
   --sig-layer-nr: oklch(0.56 0.2 300);
   --sig-layer-nas: oklch(0.55 0.14 153);
@@ -266,3 +274,15 @@ html.dark {
 }
 
 html[data-density="comfortable"] body { font-size: 14px; }
+.metric-multi-graph { position: relative; }
+.metric-drop-active { outline: 2px solid var(--primary); outline-offset: -2px; background: color-mix(in oklab, var(--primary) 6%, var(--card)); }
+.metric-drop-hint { position: absolute; top: 44px; right: 10px; z-index: 5; background: var(--popover); color: var(--primary); border: 1px solid var(--primary); padding: 4px 8px; font-size: 11px; pointer-events: none; }
+.metric-drag-preview { position: fixed; top: -200px; left: 0; background: var(--popover); color: var(--foreground); border: 1px solid var(--primary); border-radius: 6px; padding: 10px 14px; white-space: pre-line; cursor: grabbing; }
+[data-drag-metric][draggable="true"] { cursor: grab; }
+[data-drag-metric][draggable="true"]:active { cursor: grabbing; }
+.metric-series-legend { display: flex; flex-wrap: wrap; gap: 2px 8px; padding: 2px 8px; }
+.metric-legend-item { display: flex; align-items: center; max-width: 100%; min-width: 0; }
+.metric-multi-plot { position: relative; height: var(--kpi-panel-chart-height, 235px); min-height: 180px; }
+.metric-local-spinner { position: absolute; top: 8px; right: 12px; }
+.metric-multi-graph:fullscreen { background: var(--card); overflow: auto; }
+.metric-multi-graph:fullscreen .metric-multi-plot { height: calc(100dvh - 130px); }

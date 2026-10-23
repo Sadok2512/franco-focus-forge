@@ -1,4 +1,5 @@
 # KPI workspace rules
+- Multi-metric graphs extend each existing tab through metricGraphs keyed by the original selection; use the existing native workspace drag MIME with a separate metric payload, and query each series independently through the typed adapter. Validate catalogue physical units and response capture/origin before rendering; exact-timestamp unions contain no synthetic values. Preserve panel identities, table selections and event context.
 
 - Metric Map selections render independent map cards using the analysis API with `include_map: true` for the active capture and selected parameter; never fall back to a graph or change the measurements table's view. Catalogue and panel view changes share the per-tab metric view state.
 - KPI and metric selections persist together per workspace tab; legacy URL metrics migrate only to the active tab, so new tabs are empty and switching restores each tab's panels.
