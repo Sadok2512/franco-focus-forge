@@ -19,6 +19,7 @@ import {
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { PanelShell } from "./PanelShell";
 import { downloadCsv } from "./workspace-model";
+import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   isClockAvailable,
   readTimeAxisMode,
@@ -690,7 +691,11 @@ export function MetricsWorkspace({
       {!captureId ? (
         <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
       ) : pane !== "table" ? null : query.isPending ? (
-        <div className="kpi-measurements-loading" aria-busy="true">
+        <div
+          className="kpi-measurements-loading"
+          aria-busy="true"
+          style={{ order: TABLE_PANEL_ORDER }}
+        >
           <h3>{translate("metrics.tablePanel")}</h3>
           <div className="kpi-measurements-progress" role="progressbar"
             aria-label={translate("metrics.eb724a908f1f")}>
@@ -698,7 +703,11 @@ export function MetricsWorkspace({
           </div>
         </div>
       ) : query.isError ? (
-        <div className="kpi-chart-state" role="alert">
+        <div
+          className="kpi-chart-state"
+          role="alert"
+          style={{ order: TABLE_PANEL_ORDER }}
+        >
           {query.error.message}
         </div>
       ) : (
@@ -713,6 +722,7 @@ export function MetricsWorkspace({
                 role="alert"
                 className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
                 data-testid="metrics-empty-banner"
+                style={{ order: TABLE_PANEL_ORDER }}
               >
                 <strong>Aucune donnée pour cette sélection.</strong>{" "}
                 {data.connected_reason
@@ -725,7 +735,7 @@ export function MetricsWorkspace({
               </div>
             )}
             {view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing} ref={tablePanelRef}>
+              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing} ref={tablePanelRef} style={{ order: TABLE_PANEL_ORDER }}>
                 {refreshing && (
                   <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
                     <div className="kpi-measurements-progress kpi-measurements-progress-overlay"
