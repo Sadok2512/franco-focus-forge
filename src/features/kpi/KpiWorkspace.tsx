@@ -350,7 +350,8 @@ function Workspace({
       setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
       return;
     }
-    setMetricsView(view);
+    // 1.102.2 — un graphe ajouté ne change jamais la vue du tableau des
+    // mesures : sinon le tableau devenait un graphe unique de toutes les métriques.
     setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
