@@ -47,12 +47,12 @@ export function PanelShell({
     };
   }, [id]);
   const title = s.titles[id] || defaultTitle;
-  // Table settings "N tables per row" overrides the saved span for table panels.
-  const span: PanelSpan | "full" = perRow
+  // Tables always reserve an entire row, including when a narrower span was saved.
+  const span: PanelSpan | "full" = fullRow ? "full" : perRow
     ? perRow === 1
       ? "full"
       : (Math.max(1, Math.floor(cols / perRow)) as PanelSpan)
-    : (s.span[id] ?? (fullRow ? "full" : 1));
+    : (s.span[id] ?? 1);
   const collapsed = !!s.collapsed[id];
   const height = s.height[id];
   const nextSpan = (): PanelSpan =>
@@ -65,7 +65,7 @@ export function PanelShell({
       data-testid={`panel-${id}`}
       style={{
         order: panelOrder(s, id, natural),
-        gridColumn: `span ${panelColumns(span, cols)}`,
+        gridColumn: fullRow ? "1 / -1" : `span ${panelColumns(span, cols)}`,
         height: !collapsed && height ? `${height}px` : undefined,
       }}
       onDragOver={(e) => {
@@ -105,7 +105,7 @@ export function PanelShell({
         >
           <Pencil size={11} />
         </button>
-        <button
+        {!fullRow && <button
           type="button"
           title={t("panel.width")}
           aria-label={t("panel.width")}
@@ -113,7 +113,7 @@ export function PanelShell({
         >
           <Columns2 size={11} />
           <small>{span === "full" ? "↔" : span}</small>
-        </button>
+        </button>}
         {onDuplicate && (
           <button
             type="button"

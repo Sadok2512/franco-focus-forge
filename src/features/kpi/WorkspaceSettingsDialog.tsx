@@ -69,12 +69,13 @@ function LayoutThumbs({
   return (
     <div className="grid grid-cols-3 gap-2">
       {([1, 2, 3] as const).map((n) => (
-        <button
+        <Button
           key={n}
           type="button"
+          variant="outline"
           onClick={() => onChange(n)}
           aria-pressed={value === n}
-          className={`rounded-md border p-2 text-[11px] ${value === n ? "border-primary ring-1 ring-primary" : "border-border"}`}
+          className={`block h-auto rounded-md border p-2 text-[11px] ${value === n ? "border-primary ring-1 ring-primary" : "border-border"}`}
         >
           <div className="mb-1 grid h-8 gap-1" style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}>
             {Array.from({ length: n }, (_, i) => (
@@ -82,7 +83,7 @@ function LayoutThumbs({
             ))}
           </div>
           {label(n)}
-        </button>
+        </Button>
       ))}
     </div>
   );
@@ -167,7 +168,7 @@ export function WorkspaceSettingsDialog({
           <DialogTitle>{t("wss.title")}</DialogTitle>
         </DialogHeader>
         <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto px-6">
-        {/* One layout for every panel: graphs and tables share the same grid. */}
+        {/* Graphs follow this layout; tables always reserve an entire row. */}
         <section className="space-y-2">
           <h4 className="text-xs font-semibold">{t("wss.layout")}</h4>
           <LayoutThumbs

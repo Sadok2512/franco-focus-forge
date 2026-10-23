@@ -17,6 +17,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { PanelShell } from "./PanelShell";
 import { downloadCsv } from "./workspace-model";
 import {
   isClockAvailable,
@@ -532,17 +533,6 @@ export function MetricsWorkspace({
     onTablePaneChange?.(pane === "table");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  // 1.94.0 — le sélecteur « Per row » de la barre supprimée : le nombre de
-  // cartes par ligne reste celui mémorisé, il n'est plus réglé ici.
-  const [perRow] = useState<1 | 2 | 3>(() => {
-    try {
-      const n = Number(localStorage.getItem("bc3.metrics.perRow"));
-      if (n === 1 || n === 2 || n === 3) return n;
-    } catch {
-      /* ignore */
-    }
-    return 2;
-  });
   // Décoder chaque selection "code@cell" en { code, cell }
   const parsedSelections = useMemo(
     () =>
@@ -565,7 +555,7 @@ export function MetricsWorkspace({
   );
   return (
     <article
-      className="kpi-graph-card col-span-full kpi-metrics-table-premium"
+      className="kpi-metrics-table-premium kpi-unified-contents"
       data-testid="metrics-v3-workspace"
     >
       {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
@@ -631,8 +621,6 @@ export function MetricsWorkspace({
       {captureId && graphSelections.length > 0 && (
         <section
           className="kpi-metrics-charts-grid"
-          data-per-row={perRow}
-          data-count={Math.min(graphSelections.length, 8)}
           data-testid="metrics-charts-grid"
         >
           {graphSelections.map((s, i) => {
@@ -640,11 +628,17 @@ export function MetricsWorkspace({
             const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
             const title = info ? `${info.label} · ${cellLabel}` : s.full;
             return (
-              <MetricGraphCard
+              <PanelShell
                 key={s.full}
+                workspaceId={_workspaceId ?? "metrics"}
+                id={`metric:${s.full}`}
+                natural={100 + i}
+                defaultTitle={`${i + 1}. ${title}`}
+              >
+                {(panelTitle) => <MetricGraphCard
                 projectId={projectId}
                 code={s.full}
-                label={`${i + 1}. ${title}`}
+                label={panelTitle}
                 unit={info?.unit ?? ""}
                 tech={info?.tech ?? ""}
                 category={info?.category_label ?? null}
@@ -661,7 +655,8 @@ export function MetricsWorkspace({
                 }}
                 syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                 timeAxisMode={effectiveTimeAxisMode}
-              />
+              />}
+              </PanelShell>
             );
           })}
         </section>
