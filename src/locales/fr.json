@@ -161,7 +161,8 @@
       "light_decode_no_gps": "Décode Light — GPS non projeté (deep decode requis)",
       "no_fix_before_seq": "Aucun fix GPS avant cette séquence",
       "no_utc_offset_header": "Entête `#UT` absent — offset UTC inconnu"
-    }
+    },
+    "tablePanel": "Tableau des mesures"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",
@@ -410,7 +411,6 @@
     "hideTimeline": "Masquer la timeline",
     "showMap": "Afficher la carte",
     "hideMap": "Masquer la carte",
-
     "window": "Fenêtre : {{size}} s",
     "fit": "Fit · toute la capture",
     "ueState": "État UE",
