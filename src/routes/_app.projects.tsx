@@ -36,6 +36,11 @@ import {
   type ProjectRowNmfReport,
 } from "@/features/projects/ProjectRowNmfAction";
 import { ProjectRowDetails } from "@/features/projects/ProjectRowDetails";
+import { SuperstreamDialog } from "@/features/projects/SuperstreamDialog";
+import { SuperstreamTree, superstreamsKey } from "@/features/projects/SuperstreamTree";
+import { listSuperstreams, type Superstream } from "@/lib/api/superstreams";
+import { useTranslation } from "react-i18next";
+import { Layers } from "lucide-react";
 import {
   OperatorChip,
   TechBadge,
@@ -156,6 +161,14 @@ function ProjectsPage() {
   // peut concerner un projet en erreur ou en traitement, sans croiser
   // les overlays d'upload.
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
+  const { t } = useTranslation();
+  const [ssProject, setSsProject] = useState<Project | null>(null);
+  const [ssHighlight, setSsHighlight] = useState<Record<string, string>>({});
+  const ssList = useQuery({
+    queryKey: ssProject ? superstreamsKey(ssProject.id) : ["superstreams-none"],
+    queryFn: ({ signal }) => (ssProject ? listSuperstreams(ssProject.id, signal) : Promise.resolve([] as Superstream[])),
+    enabled: ssProject !== null,
+  });
   // Notification discrète (succès suppression). Pas de dépendance
   // sonner — on garde un state local qui s'auto-efface au bout de 4s.
   const [notice, setNotice] = useState<string | null>(null);
@@ -517,6 +530,21 @@ function ProjectsPage() {
                             <DropdownMenuContent align="end" className="w-56">
                               <DropdownMenuItem
                                 onSelect={(e) => {
+                                  e.preventDefault();
+                                  setTimeout(() => setSsProject(p), 0);
+                                }}
+                              >
+                                <Layers className="h-4 w-4" aria-hidden />
+                                {t("superstream.createTitle")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={() => setExpanded((prev) => new Set(prev).add(p.id))}
+                              >
+                                <Layers className="h-4 w-4" aria-hidden />
+                                {t("superstream.manage")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onSelect={(e) => {
                                   // Empêche la fermeture synchrone qui
                                   // casse le focus de l'AlertDialog qu'on
                                   // va ouvrir juste après — on diffère
@@ -537,6 +565,9 @@ function ProjectsPage() {
                     {isOpen && (
                       <tr id={`project-row-details-${p.id}`} className="border-t">
                         <td colSpan={10} className="p-0">
+                          <div className="bg-muted/30 px-4 pt-4">
+                            <SuperstreamTree projectId={p.id} projectName={p.name} highlightId={ssHighlight[p.id] ?? null} />
+                          </div>
                           <ProjectRowDetails project={p} open={isOpen} />
                         </td>
                       </tr>
@@ -578,6 +609,24 @@ function ProjectsPage() {
           promesse `onConfirm` RÉSOUT en succès (invalide la liste
           projets, émet la notif) et REJETTE en erreur (reste ouverte
           avec un message `toUserMessage`). */}
+      {ssProject && (
+        <SuperstreamDialog
+          open
+          projectId={ssProject.id}
+          projectName={ssProject.name}
+          existing={ssList.data ?? []}
+          editing={null}
+          onClose={() => setSsProject(null)}
+          onSaved={(created) => {
+            const pid = ssProject.id;
+            setSsProject(null);
+            void qc.invalidateQueries({ queryKey: superstreamsKey(pid) });
+            setExpanded((prev) => new Set(prev).add(pid));
+            setSsHighlight((prev) => ({ ...prev, [pid]: created.id }));
+            toast.success(t("superstream.created"));
+          }}
+        />
+      )}
       <DeleteProjectDialog
         open={pendingDelete !== null}
         projectName={pendingDelete?.name ?? ""}
