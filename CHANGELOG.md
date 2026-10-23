@@ -1,3 +1,7 @@
+## 1.103.0
+- Projects : Superstreams. Menu ⋮ du projet → « Create Superstream » / « Manage Superstreams » ; popup (nom unique par projet, recherche, sélection multiple conservée, collage de noms séparés par virgules avec rejet des inconnus/ambigus) ; arbre Superstreams/Logs sous le projet avec Voir, Modifier, Renommer, Supprimer (sans toucher aux logs).
+- Backend attendu : `GET/POST /projects/{id}/superstreams`, `PATCH/DELETE /projects/{id}/superstreams/{ssid}` — non présents côté serveur ; en démo, enregistrement local par projet.
+
 ## 1.102.3
 - KPI : le tableau des mesures s'affiche toujours **sous tous les graphes**, quelle que soit la disposition (1/2/3/Auto) ou l'ordre mémorisé des panneaux. Les panneaux « tableau » d'un KPI descendent eux aussi sous les cartes graphiques, tout en gardant leur ordre relatif entre tableaux.
 - Rappel des deux correctifs non consignés : ajouter un graphe ne ferme plus le tableau des mesures (1.102.1) et ne change plus la vue du tableau (1.102.2).
