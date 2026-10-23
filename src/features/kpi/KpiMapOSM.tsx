@@ -12,6 +12,8 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
+import { useSitesLayer } from "./SitesLayer";
+import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
@@ -20,6 +22,31 @@ const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
   { op: "Bouygues", hex: "#009FE3" },
   { op: "Free", hex: "#7C8794" },
 ];
+
+/** Harness interne : relie `useSitesLayer` au contrôle UI persistant.
+ *  Doit être enfant de KpiMapOSM pour avoir accès au Map instance. */
+function SitesLayerHarness({ map }: { map: MlMap | null }) {
+  const { enabled, filters, setEnabled, toggleTechno, toggleBand, toggleOperator } =
+    useSitesLayerState();
+  const status = useSitesLayer(map, enabled, filters);
+  return (
+    <SitesLayerControls
+      enabled={enabled}
+      filters={filters}
+      onToggleEnabled={setEnabled}
+      onToggleTechno={toggleTechno}
+      onToggleBand={toggleBand}
+      onToggleOperator={toggleOperator}
+      status={{
+        loading: status.loading,
+        error: status.error,
+        ...(status.data?.n_returned != null ? { n_returned: status.data.n_returned } : {}),
+        ...(status.data?.n_total_in_bbox != null ? { n_total: status.data.n_total_in_bbox } : {}),
+        truncated: Boolean(status.data?.reason?.startsWith("truncated")),
+      }}
+    />
+  );
+}
 
 export function KpiMapOSM({
   center = [2.4, 46.6],
@@ -34,6 +61,10 @@ export function KpiMapOSM({
   onRecenter,
   children,
   measurementStatus,
+  // 2.0.0 (SA2–SA4) — Site layer MapLibre lazy par bbox + contrôles UI.
+  // Toujours disponible via le panneau "Layers" en haut à droite, OFF
+  // par défaut. Utilisateur active + filtre techno/band/operator.
+  sitesLayerEnabled = true,
 }: {
   center?: [number, number];
   zoom?: number;
@@ -47,6 +78,7 @@ export function KpiMapOSM({
   onRecenter?: (() => void) | undefined;
   children?: ReactNode;
   measurementStatus?: string | null;
+  sitesLayerEnabled?: boolean;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const readyCallback = useRef(onMapReady);
@@ -285,6 +317,10 @@ export function KpiMapOSM({
         </div>
       )}
       {children}
+      {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
+      {sitesLayerEnabled && ready && (
+        <SitesLayerHarness map={map.current} />
+      )}
       {/* Compact empty-measurement status; attribution remains on the map. */}
       {measurementStatus !== null && (
         <div
