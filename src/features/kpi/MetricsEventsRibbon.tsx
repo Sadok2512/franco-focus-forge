@@ -9,7 +9,7 @@
  * placeholder « No capture events ».
  */
 import { useQuery } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   Scatter,
@@ -53,6 +53,7 @@ export function MetricsEventsRibbon({
   });
   // Un group par type pour affecter une couleur et une "lane" y fixe.
   const { isActive, toggle } = useActiveEvents();
+  const [hover, setHover] = useState<string | null>(null);
   const byType = useMemo(() => {
     const buckets: Record<string, Pt[]> = {
       task: [],
@@ -60,7 +61,8 @@ export function MetricsEventsRibbon({
       rlf: [],
       rrc: [],
     };
-    const yByType: Record<string, number> = { task: 1, ho: 2, rlf: 3, rrc: 4 };
+    // One aligned row: X stays the real timestamp, no lanes.
+    const yByType: Record<string, number> = { task: 1, ho: 1, rlf: 1, rrc: 1 };
     for (const m of q.data?.markers ?? []) {
       const y = yByType[m.type] ?? 1;
       (buckets[m.type] ??= []).push({ id: eventId(captureId, m.type, m.seq), t_rel_s: m.t_rel_s, y, label: m.label, type: m.type });
@@ -92,10 +94,10 @@ export function MetricsEventsRibbon({
       data-markers={totalMarkers}
     >
       <small className="kpi-metrics-events-header text-muted-foreground">{header}</small>
-      <div style={{ height: 38 }}>
+      <div style={{ height: 28 }}>
         <ResponsiveContainer width="100%" height="100%">
           <ScatterChart
-            margin={{ top: 4, right: 14, left: 4, bottom: 16 }}
+            margin={{ top: 6, right: 14, left: 4, bottom: 0 }}
             {...(syncId ? { syncId } : {})}
           >
             <XAxis
@@ -103,7 +105,10 @@ export function MetricsEventsRibbon({
               dataKey="t_rel_s"
               domain={[0, "dataMax"]}
               tickCount={6}
-              tick={{ fontSize: 9, fill: "#64748b" }}
+              tick={{ fontSize: 9, fill: "#64748b", dy: 2 }}
+              tickSize={0}
+              axisLine={false}
+              height={12}
               tickFormatter={(v: number) =>
                 typeof v === "number" ? formatTimeTick(v, timeAxisMode ?? "capture", timeMeta) : String(v)
               }
@@ -111,7 +116,7 @@ export function MetricsEventsRibbon({
             <YAxis
               type="number"
               dataKey="y"
-              domain={[0.5, 4.5]}
+              domain={[0.5, 1.5]}
               hide
             />
             <Tooltip
@@ -145,10 +150,15 @@ export function MetricsEventsRibbon({
                   shape={(props: unknown) => {
                     const { cx, cy, payload } = props as { cx: number; cy: number; payload: Pt };
                     const on = isActive(payload.id);
+                    const hov = hover === payload.id;
+                    const c = eventColor(payload.type);
+                    const r = on ? 5.5 : hov ? 5.75 : 4.75;
                     return (
-                      <g data-event-id={payload.id} data-active={on || undefined} style={{ cursor: "pointer" }}>
-                        {on && <circle cx={cx} cy={cy} r={5.5} fill="none" stroke={eventColor(payload.type)} strokeOpacity={0.45} strokeWidth={1.5} />}
-                        <circle cx={cx} cy={cy} r={on ? 3 : 2.5} fill={eventColor(payload.type)} fillOpacity={on ? 1 : 0.7} />
+                      <g data-event-id={payload.id} data-active={on || undefined} style={{ cursor: "pointer" }}
+                        onMouseEnter={() => setHover(payload.id)} onMouseLeave={() => setHover((h) => (h === payload.id ? null : h))}>
+                        <rect x={cx - 12} y={cy - 12} width={24} height={24} fill="transparent" />
+                        {on && <circle cx={cx} cy={cy} r={r + 2.5} fill="none" stroke={c} strokeOpacity={0.55} strokeWidth={2} />}
+                        <circle cx={cx} cy={cy} r={r} fill={c} fillOpacity={on || hov ? 1 : 0.8} stroke="#fff" strokeWidth={1} />
                       </g>
                     );
                   }}
