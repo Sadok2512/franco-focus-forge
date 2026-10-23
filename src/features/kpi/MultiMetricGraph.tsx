@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { Brush, CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Download, Eye, EyeOff, Maximize2, MoreHorizontal, Settings2, X, LoaderCircle } from "lucide-react";
+import { Download, Eye, EyeOff, Maximize2, Settings2, X, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
@@ -69,7 +69,7 @@ export function MultiMetricGraph({ projectId, captureId, root, title, settings, 
     } catch { setRejected({ reason: "unavailable" }); }
   };
   const startIndex = windowRange?.capture === captureId ? Math.max(0, points.findIndex((p) => (p.time ?? 0) >= windowRange.start)) : 0;
-  const endIndex = windowRange?.capture === captureId ? Math.max(startIndex, points.findLastIndex((p) => (p.time ?? 0) <= windowRange.end)) : Math.max(0, points.length - 1);
+  const endIndex = windowRange?.capture === captureId ? Math.max(startIndex, points.reduce((last, p, i) => (p.time ?? 0) <= windowRange.end ? i : last, 0)) : Math.max(0, points.length - 1);
   return <article ref={panel} className={`kpi-graph-card metric-multi-graph${over ? " metric-drop-active" : ""}`} data-metric-code={root.selection} data-view="graph" data-series-count={metrics.length}
     onDragOver={(e) => { if (e.dataTransfer.types.includes(METRIC_DRAG_TYPE)) { e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "copy"; setOver(true); } }}
     onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false); }} onDrop={drop}>
