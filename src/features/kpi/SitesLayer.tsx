@@ -47,6 +47,42 @@ const OPERATOR_COLORS: Record<string, string> = {
   SFR: "#E2001A",
   FRM: "#7C8794",
 };
+/** 1.106.5 — le back nomme les opérateurs en clair (« Bouygues ») alors que la
+ *  légende, les filtres et les couleurs parlent en codes (BYT). Une seule clé
+ *  canonique pour les deux orthographes : sans elle Bouygues tombait dans le
+ *  gris « inconnu » et se confondait avec les sites non identifiés. */
+const OPERATOR_LABELS: Record<string, string> = {
+  ORF: "Orange",
+  BYT: "Bouygues",
+  SFR: "SFR",
+  FRM: "Free",
+};
+const OPERATOR_ALIASES: Record<string, string> = {
+  ORF: "ORF",
+  ORANGE: "ORF",
+  BYT: "BYT",
+  BOUYGUES: "BYT",
+  "BOUYGUES TELECOM": "BYT",
+  SFR: "SFR",
+  FRM: "FRM",
+  FREE: "FRM",
+};
+/** Compteurs par opérateur, sommés dans les bulbes (clusterProperties). */
+const OP_FIELD_BY_KEY: Record<string, string> = {
+  ORF: "n_orf",
+  BYT: "n_byt",
+  SFR: "n_sfr",
+  FRM: "n_frm",
+};
+export function operatorKey(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return OPERATOR_ALIASES[value.trim().toUpperCase()] ?? null;
+}
+export function operatorLabel(value: unknown): string {
+  const key = operatorKey(value);
+  if (key) return OPERATOR_LABELS[key] ?? key;
+  return typeof value === "string" && value.trim() ? value : "?";
+}
 const OP_ORF = OPERATOR_COLORS["ORF"];
 const OP_BYT = OPERATOR_COLORS["BYT"];
 const OP_SFR = OPERATOR_COLORS["SFR"];
@@ -133,7 +169,13 @@ export function useSitesLayer(
           cluster: true,
           clusterRadius: 60,
           clusterMaxZoom: 14,
-          clusterProperties: { n_sites: ["+", ["coalesce", ["get", "n_sites"], 1]] },
+          clusterProperties: {
+            n_sites: ["+", ["coalesce", ["get", "n_sites"], 1]],
+            n_orf: ["+", ["coalesce", ["get", "n_orf"], 0]],
+            n_byt: ["+", ["coalesce", ["get", "n_byt"], 0]],
+            n_sfr: ["+", ["coalesce", ["get", "n_sfr"], 0]],
+            n_frm: ["+", ["coalesce", ["get", "n_frm"], 0]],
+          },
         });
       }
       const bubblePaint = {
@@ -192,7 +234,7 @@ export function useSitesLayer(
           paint: {
             "circle-radius": 6,
             "circle-color": [
-              "match", ["get", "operator"],
+              "match", ["get", "op_key"],
               "ORF", OP_ORF ?? "#FF7900",
               "BYT", OP_BYT ?? "#009FE3",
               "SFR", OP_SFR ?? "#E2001A",
