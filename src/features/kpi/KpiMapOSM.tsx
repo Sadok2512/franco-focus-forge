@@ -190,7 +190,7 @@ export function KpiMapOSM({
           : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
-      <div ref={el} className="h-full w-full" aria-label={translate("kpi.37f8ac5eacf2")} />
+      <div ref={el} className="absolute inset-0" aria-label={translate("kpi.37f8ac5eacf2")} />
       {!ready && !tileError && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground">
           {" "}
