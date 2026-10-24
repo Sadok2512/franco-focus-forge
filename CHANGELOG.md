@@ -1,6 +1,7 @@
 ## 1.106.2 (patch) — BC4-FRONT 2026-10-24 — Cartes KPI/Metrics de nouveau visibles
 
 - Les cartes (KPI map, vue « Carte » des métriques) restaient blanches : le worker MapLibre v6 échouait (« Worker failed to load ») dans KpiMapOSM, qui utilisait encore l'ancien contournement `workerCount = 0`. Corrigé comme les autres cartes (Signaling, Assistant, Dictionary, RadioMap, GeoPreview) : worker bundlé explicite via `setWorkerUrl`.
+- Le bouton plein écran des cartes KPI/Metrics est décalé pour ne plus recouvrir le contrôle « Sites ON/OFF ».
 - Le conteneur interne de la carte (`h-full`) s'effondrait à 0 px quand son parent n'a qu'une hauteur `min-height` : remplacé par `absolute inset-0` pour remplir la carte quelle que soit la hauteur du panneau.
 - Le grand Measurements table ouvert explicitement (⋮ → Tableau) n'est plus refermé automatiquement quand une autre métrique est en vue « Carte » ; l'auto-fermeture (1.105.8) ne s'applique qu'aux ouvertures automatiques. Test : `metric-map-view.test.tsx`.
 
