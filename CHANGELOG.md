@@ -1,3 +1,7 @@
+## 1.106.5 (patch) — BC4-FRONT 2026-10-25 — Sites : chaque opérateur à sa couleur
+- Le back nomme les opérateurs en clair (« Bouygues ») alors que la légende et les couleurs parlent en codes (BYT) : la couche Sites ne reconnaissait que les codes, donc les sites Bouygues, Orange et Free prenaient le gris « inconnu » et se confondaient avec les sites non identifiés. Une clé canonique unique (code ou libellé) pilote désormais la couleur, la popup et les compteurs.
+- Les bulbes de sites affichent la répartition par opérateur (ex. « Bouygues 12 · SFR 8 ») dès qu'au moins un site est identifié dans le regroupement.
+
 ## 1.106.4 (patch) — BC4-FRONT 2026-10-24 — Carte : sites lisibles
 - La couche Sites regroupe les agrégats serveur et les sites en bulles lisibles avec le nombre de sites ; un clic zoome dessus, les sites restent colorés par opérateur au zoom fort.
 - Les compteurs des clusters (sites et points de mesure) s'affichent grâce aux glyphes ajoutés aux styles de carte.

@@ -12,6 +12,7 @@
 - [x] 1.105.2 — données du tableau des mesures centrées dans chaque cellule (en-têtes, heures, GPS, valeurs), défauts Workspace settings cellAlign/numberAlign = centre ; 313 tests passent, build OK.
 - [x] 1.105.5 — menu ⋯ du tableau des mesures de nouveau visible et cliquable : la pastille était décalée hors du panneau (overflow hidden) et recouverte par la grille ; 14 tests passent, navigateur : ⋯ ouvert (Export CSV, Plein écran, Fermer le panneau), « Fermer » retire le tableau et laisse les 2 cartes.
 - [x] 1.105.1 — suppression du message « The selected metrics are shown in the measurements table » et de son bouton : le tableau des mesures s'ouvre seul (en haut quand il est seul) et une fermeture volontaire n'est pas rouverte ; 3 tests ciblés dans metric-view-table.test.tsx.
+- [x] 1.106.5 — sites Bouygues à leur couleur : le back nomme les opérateurs en clair (« Bouygues ») alors que la carte cherchait les codes (« BYT »), donc Bouygues/Orange/Free prenaient le gris « inconnu » ; une clé canonique unique pilote couleur, popup et compteurs par opérateur dans les bulbes ; 2 tests ciblés (327 passent), typecheck clean, build OK. Non vérifié sur le projet réel : la session démo est refusée par le serveur (401), donc le rendu des sites Bouygues chez l'utilisateur reste à confirmer.
 - [ ] Modèle de panneaux par onglet (Graph/Table/Map avec identité propre) + migration
 - [ ] Menus Add as Graph/Table/Map, Add to existing, Switch par panneau
 - [ ] Voile + spinner pendant mise à jour, protection réponses en retard
