@@ -1,3 +1,10 @@
+## 1.106.1 (minor) — BC4-FRONT 2026-10-24 — Carte Signaling : couche Sites + graphes multi-métriques
+
+- Carte Signaling : la couche Sites des cartes KPI est désormais disponible — bouton « Sites ON/OFF » persistant en haut à droite, chargement lazy par bbox (clusters au zoom arrière, points colorés par opérateur, secteurs au zoom fort, popup au clic), filtres techno/bandes/opérateur.
+- Le bouton plein écran de la carte est décalé pour laisser la place au contrôle Sites ; trajet GPS et événements géolocalisés inchangés.
+- Graphes KPI multi-métriques (1.106.0) : glisser-déposer une métrique du catalogue sur un graphe l'ajoute comme courbe supplémentaire sans remplacer les séries existantes ; axes séparés par unité (Mbit/s, dBm…), couleurs stables, troisième unité refusée avec message.
+- Tests : `signaling-map-sites.test.tsx` (bouton, chargement bbox, couche désactivée), `multi-metric-model.test.ts` (11 cas).
+
 ## 1.105.9 (minor) — BC4-FRONT 2026-10-23 — Upload : ZIP + dossier automatiquement extraits (Agent BC3)
 
 Deux chemins d'upload étendus (`NmfImportPanel` + `ProjectRowNmfAction`) :

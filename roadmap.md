@@ -87,3 +87,4 @@
 
 - [x] Projects : Superstreams (création, arbre, édition, suppression)
 - [ ] Superstreams : routes serveur /projects/{id}/superstreams (bloqué : backend BC4)
+- [x] 1.106.1 — carte Signaling : couche Sites (bouton ON/OFF persistant, chargement par bbox, clusters/opérateurs/secteurs, popup) réutilisée des cartes KPI ; bouton plein écran décalé ; 2 tests ciblés, 324 tests passent, build OK. Non vérifié en navigateur : le compte demo ne peut pas lire les données réelles (401 sur /projects), validation faite par tests avec MapLibre simulé.

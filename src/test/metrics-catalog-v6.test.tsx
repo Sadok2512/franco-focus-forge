@@ -1,13 +1,14 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
 
 const getMetrics = vi.fn();
-vi.mock("@/lib/api/client", () => ({ getMetrics: (...args: unknown[]) => getMetrics(...args) }));
+// Le catalogue passe par analytics-bootstrap → @/lib/api/metrics (pas client).
+vi.mock("@/lib/api/metrics", () => ({ getMetrics: (...args: unknown[]) => getMetrics(...args) }));
 
 // 1.88.1 — DOM aligné sur MetricsCatalogSidebar BC3 : chevron intégré dans la
 // bar `kpi-tree-root` / `kpi-tree-family`, feuille = `button[aria-pressed]`
@@ -44,6 +45,9 @@ const node = (
 });
 
 describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
+  // persistedQuery met le catalogue en cache localStorage : chaque test
+  // repart d'un cache vide pour rester indépendant de l'ordre d'exécution.
+  beforeEach(() => window.localStorage.clear());
   it("expands category + family via chevron bar, selects leaf via Select button, keeps P4 leaves disabled with status dot", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",

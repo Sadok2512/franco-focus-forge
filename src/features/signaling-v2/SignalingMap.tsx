@@ -5,6 +5,32 @@ import type { SigCapture } from "@/lib/api/signaling-schemas-v2";
 import { SEV_COLOR } from "./Timeline";
 import { Button } from "@/components/ui/button";
 import { fmtSec } from "./shared";
+import { useSitesLayer } from "@/features/kpi/SitesLayer";
+import { SitesLayerControls, useSitesLayerState } from "@/features/kpi/SitesLayerControls";
+
+/** Relie la couche Sites (bbox lazy, clusters/site/cell) au contrôle persistant. */
+function SitesLayerHarness({ map }: { map: MlMap | null }) {
+  const { enabled, filters, setEnabled, toggleTechno, toggleBand, toggleOperator } =
+    useSitesLayerState();
+  const status = useSitesLayer(map, enabled, filters);
+  return (
+    <SitesLayerControls
+      enabled={enabled}
+      filters={filters}
+      onToggleEnabled={setEnabled}
+      onToggleTechno={toggleTechno}
+      onToggleBand={toggleBand}
+      onToggleOperator={toggleOperator}
+      status={{
+        loading: status.loading,
+        error: status.error,
+        ...(status.data?.n_returned != null ? { n_returned: status.data.n_returned } : {}),
+        ...(status.data?.n_total_in_bbox != null ? { n_total: status.data.n_total_in_bbox } : {}),
+        truncated: Boolean(status.data?.reason?.startsWith("truncated")),
+      }}
+    />
+  );
+}
 
 /** Carte GPS synchronisée : trajet réel, événements géolocalisés, sélection. */
 export function SignalingMap({
@@ -20,6 +46,7 @@ export function SignalingMap({
   const map = useRef<MlMap | null>(null);
   const [ready, setReady] = useState(false);
   const [full, setFull] = useState(false);
+  const [mapInstance, setMapInstance] = useState<MlMap | null>(null);
 
   const trackGeo = useMemo(
     () => ({
@@ -139,6 +166,7 @@ export function SignalingMap({
           { padding: 40, duration: 0 },
         );
         setReady(true);
+        setMapInstance(m);
       });
       map.current = m;
     });
@@ -147,6 +175,7 @@ export function SignalingMap({
       map.current?.remove();
       map.current = null;
       setReady(false);
+      setMapInstance(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capture.id]);
@@ -177,10 +206,11 @@ export function SignalingMap({
     <div className={`relative overflow-hidden ${full ? "fixed inset-4 z-50 rounded-md border bg-card shadow-2xl" : "h-full"}`}>
       <div ref={el} className="h-full w-full bg-muted" role="region" aria-label="Carte — Trajet GPS" />
       <div className="panel absolute left-2 top-2 z-10 px-2 py-1 text-[11px] font-semibold shadow">Carte - Trajet GPS</div>
+      <SitesLayerHarness map={mapInstance} />
       <Button variant="outline" size="sm"
         onClick={() => setFull((f) => !f)}
         aria-label={full ? "Quitter plein écran" : "Carte plein écran"}
-        className="panel absolute right-2 top-2 z-10 p-1.5 shadow"
+        className="panel absolute right-24 top-2 z-10 p-1.5 shadow"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </Button>
