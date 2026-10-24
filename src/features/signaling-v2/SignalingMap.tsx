@@ -166,6 +166,7 @@ export function SignalingMap({
           { padding: 40, duration: 0 },
         );
         setReady(true);
+        setMapInstance(m);
       });
       map.current = m;
     });
@@ -174,6 +175,7 @@ export function SignalingMap({
       map.current?.remove();
       map.current = null;
       setReady(false);
+      setMapInstance(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [capture.id]);
