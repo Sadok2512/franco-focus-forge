@@ -388,7 +388,7 @@ export function useSitesLayer(
           n_frm: key === "FRM" ? 1 : 0,
         },
       };
-      const q = base.properties;
+      const q: Record<string, unknown> = base.properties;
       if (q["kind"] !== "cell" || typeof q["azimuth"] !== "number") return base;
       return { ...base, properties: { ...q, sector_poly: true } };
     });

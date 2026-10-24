@@ -24,15 +24,15 @@ const serverCluster = {
   properties: { kind: "cluster", n_sites: 4800, n_cells: 12000 },
 };
 
-const getSites = vi.fn(async () => ({
-  type: "FeatureCollection" as const,
+const getSites = vi.fn().mockResolvedValue({
+  type: "FeatureCollection",
   features: [bytSite, orfSite, serverCluster],
-  aggregation: "site" as const,
+  aggregation: "site",
   bbox: [2.2, 48.89, 2.24, 48.91],
   n_total_in_bbox: 4802,
   n_returned: 3,
   reason: null,
-}));
+});
 vi.mock("@/lib/api/sites", () => ({ getSites: (...a: unknown[]) => getSites(...a) }));
 
 class FakeSource {
