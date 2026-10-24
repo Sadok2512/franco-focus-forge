@@ -86,6 +86,14 @@ vi.mock("maplibre-gl", () => {
 vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));
 
+// jsdom ne connaît pas ResizeObserver.
+class RO {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+(globalThis as unknown as { ResizeObserver: typeof RO }).ResizeObserver ??= RO;
+
 import { SignalingMap } from "@/features/signaling-v2/SignalingMap";
 
 const capture: SigCapture = {
