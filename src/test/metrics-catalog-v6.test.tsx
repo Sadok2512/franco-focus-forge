@@ -7,7 +7,8 @@ import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
 
 const getMetrics = vi.fn();
-vi.mock("@/lib/api/client", () => ({ getMetrics: (...args: unknown[]) => getMetrics(...args) }));
+// Le catalogue passe par analytics-bootstrap → @/lib/api/metrics (pas client).
+vi.mock("@/lib/api/metrics", () => ({ getMetrics: (...args: unknown[]) => getMetrics(...args) }));
 
 // 1.88.1 — DOM aligné sur MetricsCatalogSidebar BC3 : chevron intégré dans la
 // bar `kpi-tree-root` / `kpi-tree-family`, feuille = `button[aria-pressed]`
