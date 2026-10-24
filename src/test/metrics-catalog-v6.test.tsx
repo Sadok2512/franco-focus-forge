@@ -45,6 +45,9 @@ const node = (
 });
 
 describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
+  // persistedQuery met le catalogue en cache localStorage : chaque test
+  // repart d'un cache vide pour rester indépendant de l'ordre d'exécution.
+  beforeEach(() => window.localStorage.clear());
   it("expands category + family via chevron bar, selects leaf via Select button, keeps P4 leaves disabled with status dot", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",
