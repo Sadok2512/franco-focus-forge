@@ -1,0 +1,130 @@
+// 1.106.1 — la carte Signaling expose la même couche Sites que les cartes
+// KPI : bouton « Sites ON/OFF » persistant, chargement lazy par bbox via
+// GET /sites, sans toucher au trajet GPS ni aux événements géolocalisés.
+import { render, screen, waitFor } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import type { SigCapture } from "@/lib/api/signaling-schemas-v2";
+import "@/lib/i18n";
+
+const getSites = vi.fn().mockResolvedValue({
+  type: "FeatureCollection",
+  features: [],
+  n_returned: 0,
+  n_total_in_bbox: 0,
+  reason: null,
+});
+vi.mock("@/lib/api/sites", () => ({ getSites: (...a: unknown[]) => getSites(...a) }));
+
+// MapLibre factice : déclenche « load » immédiatement et expose l'API
+// minimale utilisée par SignalingMap et useSitesLayer.
+vi.mock("maplibre-gl", () => {
+  class FakeMap {
+    handlers = new Map<string, Array<(...a: unknown[]) => void>>();
+    addControl() {}
+    addSource() {}
+    addLayer() {}
+    getSource() {
+      return { setData: vi.fn() };
+    }
+    getLayer() {
+      return undefined;
+    }
+    removeLayer() {}
+    removeSource() {}
+    setFilter() {}
+    fitBounds() {}
+    resize() {}
+    remove() {}
+    isStyleLoaded() {
+      return true;
+    }
+    getCanvas() {
+      return { style: {} };
+    }
+    getBounds() {
+      return {
+        getSouthWest: () => ({ lng: 2.2, lat: 48.89 }),
+        getNorthEast: () => ({ lng: 2.24, lat: 48.91 }),
+      };
+    }
+    getZoom() {
+      return 13;
+    }
+    on(id: string, cb: (...a: unknown[]) => void) {
+      const list = this.handlers.get(id) ?? [];
+      list.push(cb);
+      this.handlers.set(id, list);
+      if (id === "load") queueMicrotask(() => cb());
+    }
+    once(id: string, cb: (...a: unknown[]) => void) {
+      if (id === "styledata") queueMicrotask(() => cb());
+    }
+    off() {}
+  }
+  class Popup {
+    setLngLat() {
+      return this;
+    }
+    setHTML() {
+      return this;
+    }
+    setDOMContent() {
+      return this;
+    }
+    addTo() {
+      return this;
+    }
+    remove() {}
+  }
+  return {
+    Map: FakeMap,
+    Popup,
+    NavigationControl: class {},
+    setWorkerUrl: vi.fn(),
+  };
+});
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
+vi.mock("maplibre-gl/dist/maplibre-gl.css", () => ({}));
+
+import { SignalingMap } from "@/features/signaling-v2/SignalingMap";
+
+const capture: SigCapture = {
+  id: "cap-1",
+  track: [
+    { lng: 2.22, lat: 48.9, t: 0 },
+    { lng: 2.23, lat: 48.905, t: 10 },
+  ],
+  events: [
+    { id: "e1", name: "RRC Request", severity: "info", t: 1, message_index: 0 },
+  ],
+  events_gps: [{ event_id: "e1", lng: 2.221, lat: 48.901, t: 1 }],
+} as unknown as SigCapture;
+
+describe("SignalingMap — couche Sites", () => {
+  it("affiche le bouton Sites ON/OFF et charge les sites de la bbox visible", async () => {
+    window.localStorage.setItem(
+      "bc4.map.sitesLayer.v2",
+      JSON.stringify({ enabled: true, filters: { technos: [], bands: [], operators: [] } }),
+    );
+    render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
+    const toggle = await screen.findByRole("button", { name: "Site layer controls" });
+    expect(toggle.textContent).toMatch(/Sites ON/);
+    await waitFor(() => expect(getSites).toHaveBeenCalled());
+    const args = getSites.mock.calls[0]![0] as { bbox: number[]; zoom: number };
+    expect(args.bbox).toEqual([2.2, 48.89, 2.24, 48.91]);
+    expect(args.zoom).toBe(13);
+  });
+
+  it("ne charge aucun site quand la couche est désactivée", async () => {
+    getSites.mockClear();
+    window.localStorage.setItem(
+      "bc4.map.sitesLayer.v2",
+      JSON.stringify({ enabled: false, filters: { technos: [], bands: [], operators: [] } }),
+    );
+    render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
+    const toggle = await screen.findByRole("button", { name: "Site layer controls" });
+    expect(toggle.textContent).toMatch(/Sites OFF/);
+    await new Promise((r) => setTimeout(r, 100));
+    expect(getSites).not.toHaveBeenCalled();
+  });
+});
