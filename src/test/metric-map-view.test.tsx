@@ -28,7 +28,11 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
-  it("requests GPS for only the map metric, never graphs it, and keeps the table", async () => {
+  // 1.105.8 — une métrique en vue « map » ferme le grand Measurements table
+  // (requis UX : « afficher QUE la map »). Le test vérifie que la carte
+  // demande le GPS pour sa seule métrique, ne la graphe jamais, et que le
+  // tableau reste fermé.
+  it("requests GPS for only the map metric, never graphs it, and closes the table", async () => {
     localStorage.setItem("bc3.metrics.pane.map-test", "table");
     writeMetricViews("map-test", { "cell_rsrp@0": "map", "cell_rsrq@0": "table" });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
