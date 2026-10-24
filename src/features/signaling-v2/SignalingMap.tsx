@@ -206,10 +206,11 @@ export function SignalingMap({
     <div className={`relative overflow-hidden ${full ? "fixed inset-4 z-50 rounded-md border bg-card shadow-2xl" : "h-full"}`}>
       <div ref={el} className="h-full w-full bg-muted" role="region" aria-label="Carte — Trajet GPS" />
       <div className="panel absolute left-2 top-2 z-10 px-2 py-1 text-[11px] font-semibold shadow">Carte - Trajet GPS</div>
+      <SitesLayerHarness map={mapInstance} />
       <Button variant="outline" size="sm"
         onClick={() => setFull((f) => !f)}
         aria-label={full ? "Quitter plein écran" : "Carte plein écran"}
-        className="panel absolute right-2 top-2 z-10 p-1.5 shadow"
+        className="panel absolute right-24 top-2 z-10 p-1.5 shadow"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </Button>
