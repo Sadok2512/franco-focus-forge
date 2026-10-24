@@ -51,4 +51,28 @@ describe("Map selection keeps its own panel", () => {
     await waitFor(() => expect(screen.queryByTestId("metrics-table-panel")).toBeNull());
     expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("charts");
   });
+
+  // 1.106.2 — ouvrir le tableau explicitement (⋮ → Tableau, paneRequest)
+  // alors qu'une autre métrique est en vue « map » doit le laisser ouvert :
+  // la demande explicite de l'utilisateur prime sur l'auto-fermeture 1.105.8.
+  it("keeps the table open when explicitly requested while a metric is a map", async () => {
+    localStorage.setItem("bc3.metrics.pane.map-test", "charts");
+    writeMetricViews("map-test", { "cell_rsrp@0": "map", "ci_rs_snr@1": "graph" });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { rerender } = render(<QueryClientProvider client={client}><MetricsWorkspace
+      workspaceId="map-test" projectId="project-a" captureId="44621571bccc"
+      selections={["cell_rsrp@0", "ci_rs_snr@1"]}
+      views={readMetricViews("map-test")} catalog={[]} filters={{}}
+      onClear={() => {}} onCaptureChange={() => {}}
+    /></QueryClientProvider>);
+    await waitFor(() => expect(renderers.map).toHaveBeenCalled());
+    rerender(<QueryClientProvider client={client}><MetricsWorkspace
+      workspaceId="map-test" projectId="project-a" captureId="44621571bccc"
+      selections={["cell_rsrp@0", "ci_rs_snr@1"]}
+      views={readMetricViews("map-test")} catalog={[]} filters={{}}
+      onClear={() => {}} onCaptureChange={() => {}} paneRequest={1}
+    /></QueryClientProvider>);
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeTruthy());
+    await waitFor(() => expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table"));
+  });
 });

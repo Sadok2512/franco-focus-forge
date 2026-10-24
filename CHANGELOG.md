@@ -1,3 +1,9 @@
+## 1.106.2 (patch) — BC4-FRONT 2026-10-24 — Cartes KPI/Metrics de nouveau visibles
+
+- Les cartes (KPI map, vue « Carte » des métriques) restaient blanches : le worker MapLibre v6 échouait (« Worker failed to load ») dans KpiMapOSM, qui utilisait encore l'ancien contournement `workerCount = 0`. Corrigé comme les autres cartes (Signaling, Assistant, Dictionary, RadioMap, GeoPreview) : worker bundlé explicite via `setWorkerUrl`.
+- Le bouton plein écran des cartes KPI/Metrics est décalé pour ne plus recouvrir le contrôle « Sites ON/OFF ».
+- Le grand Measurements table ouvert explicitement (⋮ → Tableau) n'est plus refermé automatiquement quand une autre métrique est en vue « Carte » ; l'auto-fermeture (1.105.8) ne s'applique qu'aux ouvertures automatiques. Test : `metric-map-view.test.tsx`.
+
 ## 1.106.1 (minor) — BC4-FRONT 2026-10-24 — Carte Signaling : couche Sites + graphes multi-métriques
 
 - Carte Signaling : la couche Sites des cartes KPI est désormais disponible — bouton « Sites ON/OFF » persistant en haut à droite, chargement lazy par bbox (clusters au zoom arrière, points colorés par opérateur, secteurs au zoom fort, popup au clic), filtres techno/bandes/opérateur.
