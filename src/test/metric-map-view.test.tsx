@@ -48,7 +48,7 @@ describe("Map selection keeps its own panel", () => {
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
-    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument());
-    expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table");
+    await waitFor(() => expect(screen.queryByTestId("metrics-table-panel")).toBeNull());
+    expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("charts");
   });
 });
