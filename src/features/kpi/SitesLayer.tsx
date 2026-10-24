@@ -287,17 +287,26 @@ export function useSitesLayer(
         if (kind === "cluster") {
           node.innerHTML =
             `<b>${p["n_sites"] ?? "?"} sites</b> · ${p["n_cells"] ?? "?"} cells` +
-            `<br/>4G ${p["n_4g"] ?? 0} · 5G ${p["n_5g"] ?? 0}` +
-            `<br/><em>Zoom in to see each site</em>`;
+            `<br/>4G ${p["n_4g"] ?? 0} · 5G ${p["n_5g"] ?? 0}`;
+          // Répartition par opérateur dès qu'au moins un site est identifié.
+          const byOp = (["ORF", "BYT", "SFR", "FRM"] as const)
+            .map((k) => {
+              const field = OP_FIELD_BY_KEY[k] ?? "";
+              return [OPERATOR_LABELS[k] ?? k, Number(p[field] ?? 0)] as const;
+            })
+            .filter(([, n]) => n > 0);
+          if (byOp.length)
+            node.innerHTML += `<br/>` + byOp.map(([label, n]) => `${label} ${n}`).join(" · ");
+          node.innerHTML += `<br/><em>Zoom in to see each site</em>`;
         } else if (kind === "site") {
           const bands = Array.isArray(p["bands"]) ? (p["bands"] as string[]).join(", ") : "";
           node.innerHTML =
-            `<b>${p["site_name"] ?? p["site_id"] ?? "site"}</b> · ${p["operator"] ?? "?"}` +
+            `<b>${p["site_name"] ?? p["site_id"] ?? "site"}</b> · ${operatorLabel(p["operator"])}` +
             `<br/>${p["n_cells"] ?? 0} cells (${p["n_4g"] ?? 0}×4G · ${p["n_5g"] ?? 0}×5G)` +
             (bands ? `<br/>Bands: ${bands}` : "");
         } else {
           node.innerHTML =
-            `<b>${p["techno"] ?? ""} ${p["band"] ?? ""}</b> · ${p["operator"] ?? ""}` +
+            `<b>${p["techno"] ?? ""} ${p["band"] ?? ""}</b> · ${p["operator"] ? operatorLabel(p["operator"]) : ""}` +
             `<br/>Site: ${p["site_name"] ?? p["site_id"] ?? ""}` +
             `<br/>PCI ${p["pci"] ?? "?"} · az ${p["azimuth"] ?? "?"}° · tilt ${p["tilt"] ?? "?"}°`;
         }
@@ -367,18 +376,21 @@ export function useSitesLayer(
     // (triangle orienté par azimuth) pour le layer fill.
     const features = status.data.features.map((f) => {
       const p = f.properties ?? {};
-      if (p["kind"] !== "cell" || typeof p["azimuth"] !== "number") return f;
-      const az = p["azimuth"] as number;
-      const coords = f.geometry.coordinates as [number, number];
-      const poly = sectorPolygon(coords[0], coords[1], az, 60, 0.00045);
-      return {
+      const key = operatorKey(p["operator"]);
+      const base = {
         ...f,
-        properties: { ...p, sector_poly: true },
-        // On ajoute un deuxième "feature" en polygone — mais MapLibre
-        // n'accepte qu'un seul geometry par feature. On stocke le polygon
-        // dans properties pour un rendu custom, OU on ajoute un feature
-        // polygon séparé plus bas.
+        properties: {
+          ...p,
+          op_key: key ?? "",
+          n_orf: key === "ORF" ? 1 : 0,
+          n_byt: key === "BYT" ? 1 : 0,
+          n_sfr: key === "SFR" ? 1 : 0,
+          n_frm: key === "FRM" ? 1 : 0,
+        },
       };
+      const q = base.properties;
+      if (q["kind"] !== "cell" || typeof q["azimuth"] !== "number") return base;
+      return { ...base, properties: { ...q, sector_poly: true } };
     });
     // Ajoute en parallèle les polygons secteurs comme Features séparés.
     const sectorFeatures = status.data.features.flatMap((f) => {
