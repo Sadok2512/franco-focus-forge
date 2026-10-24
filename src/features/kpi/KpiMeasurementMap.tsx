@@ -137,11 +137,23 @@ export function KpiMeasurementMap({
       popup?.remove();
       popup = new Popup().setLngLat(event.lngLat).setDOMContent(content).addTo(map);
     };
+    const clickCluster = async (event: import("maplibre-gl").MapLayerMouseEvent) => {
+      const clusterId = event.features?.[0]?.properties?.["cluster_id"];
+      if (clusterId == null) return;
+      const src = map.getSource("kpi-measures") as GeoJSONSource | undefined;
+      if (!src) return;
+      const zoom = await src.getClusterExpansionZoom(clusterId as number);
+      if (disposed) return;
+      const coords = (event.features?.[0]?.geometry as { coordinates: [number, number] }).coordinates;
+      map.easeTo({ center: coords, zoom });
+    };
     map.on("click", "kpi-measures", click);
+    map.on("click", "kpi-measures-clusters", clickCluster);
     return () => {
       disposed = true;
       popup?.remove();
       map.off("click", "kpi-measures", click);
+      map.off("click", "kpi-measures-clusters", clickCluster);
     };
   }, [map, code, features, translate]);
   const message = !allowed
