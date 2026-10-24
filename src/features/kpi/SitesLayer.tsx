@@ -16,10 +16,30 @@ import type { GeoJSONSource, Map as MlMap, MapLayerMouseEvent, Popup as MlPopup 
 import { getSites, type SitesResponse } from "@/lib/api/sites";
 
 const SOURCE_ID = "bc4-sites";
+/** 1.106.4 — Agrégats serveur + sites regroupés côté client (lisibles). */
+const AGG_SOURCE_ID = "bc4-sites-agg";
+const LAYER_AGG_ID = "bc4-sites-agg";
+const LAYER_AGG_COUNT_ID = "bc4-sites-agg-count";
 const LAYER_CLUSTER_ID = "bc4-sites-cluster";
+const LAYER_CLUSTER_COUNT_ID = "bc4-sites-cluster-count";
 const LAYER_SITE_ID = "bc4-sites-site";
 const LAYER_CELL_ID = "bc4-sites-cell";
 const LAYER_CELL_SECTOR_ID = "bc4-sites-cell-sector";
+const ALL_LAYERS = [
+  LAYER_AGG_COUNT_ID,
+  LAYER_AGG_ID,
+  LAYER_CLUSTER_COUNT_ID,
+  LAYER_CLUSTER_ID,
+  LAYER_SITE_ID,
+  LAYER_CELL_ID,
+  LAYER_CELL_SECTOR_ID,
+];
+
+/** Glyphes nécessaires aux compteurs de clusters (couches symbol). */
+export const MAP_GLYPHS = "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf";
+const COUNT_FONT = ["Open Sans Semibold"];
+const SITE_BUBBLE_COLOR = "#334155";
+const SITE_BUBBLE_RADIUS = ["step", ["get", "n_sites"], 11, 10, 14, 50, 17, 200, 21, 1000, 26];
 
 const OPERATOR_COLORS: Record<string, string> = {
   ORF: "#FF7900",
@@ -88,10 +108,11 @@ export function useSitesLayer(
     if (!map) return;
     if (!enabled) {
       // Désactiver : vider les sources, retirer les layers.
-      for (const id of [LAYER_CLUSTER_ID, LAYER_SITE_ID, LAYER_CELL_ID, LAYER_CELL_SECTOR_ID]) {
+      for (const id of ALL_LAYERS) {
         if (map.getLayer(id)) map.removeLayer(id);
       }
       if (map.getSource(SOURCE_ID)) map.removeSource(SOURCE_ID);
+      if (map.getSource(AGG_SOURCE_ID)) map.removeSource(AGG_SOURCE_ID);
       setStatus({ loading: false, error: null, data: null });
       return;
     }
@@ -102,38 +123,74 @@ export function useSitesLayer(
           data: { type: "FeatureCollection", features: [] },
         });
       }
-      // 1 layer par niveau d'agrégation, filtered on properties.kind.
+      // Agrégats serveur (kind=cluster) et sites (kind=site) dans une source
+      // regroupée côté client : la grille serveur, dense à zoom moyen, se
+      // fond en quelques bulles lisibles avec le nombre de sites.
+      if (!map.getSource(AGG_SOURCE_ID)) {
+        map.addSource(AGG_SOURCE_ID, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+          cluster: true,
+          clusterRadius: 60,
+          clusterMaxZoom: 14,
+          clusterProperties: { n_sites: ["+", ["coalesce", ["get", "n_sites"], 1]] },
+        });
+      }
+      const bubblePaint = {
+        "circle-radius": SITE_BUBBLE_RADIUS,
+        "circle-color": SITE_BUBBLE_COLOR,
+        "circle-opacity": 0.82,
+        "circle-stroke-color": "#ffffff",
+        "circle-stroke-width": 2,
+      } as never;
+      const countLayout = {
+        "text-field": ["to-string", ["get", "n_sites"]],
+        "text-font": COUNT_FONT,
+        "text-size": 11,
+        "text-allow-overlap": true,
+      } as never;
+      if (!map.getLayer(LAYER_AGG_ID))
+        map.addLayer({
+          id: LAYER_AGG_ID,
+          type: "circle",
+          source: AGG_SOURCE_ID,
+          filter: ["has", "point_count"],
+          paint: bubblePaint,
+        });
+      if (!map.getLayer(LAYER_AGG_COUNT_ID))
+        map.addLayer({
+          id: LAYER_AGG_COUNT_ID,
+          type: "symbol",
+          source: AGG_SOURCE_ID,
+          filter: ["has", "point_count"],
+          layout: countLayout,
+          paint: { "text-color": "#ffffff" },
+        });
       if (!map.getLayer(LAYER_CLUSTER_ID))
         map.addLayer({
           id: LAYER_CLUSTER_ID,
           type: "circle",
-          source: SOURCE_ID,
-          filter: ["==", ["get", "kind"], "cluster"],
-          paint: {
-            "circle-radius": [
-              "interpolate", ["linear"], ["get", "n_sites"],
-              1, 6,
-              100, 18,
-              1000, 32,
-            ],
-            "circle-color": "#2563eb",
-            "circle-opacity": 0.72,
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1.5,
-          },
+          source: AGG_SOURCE_ID,
+          filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "kind"], "cluster"]],
+          paint: bubblePaint,
+        });
+      if (!map.getLayer(LAYER_CLUSTER_COUNT_ID))
+        map.addLayer({
+          id: LAYER_CLUSTER_COUNT_ID,
+          type: "symbol",
+          source: AGG_SOURCE_ID,
+          filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "kind"], "cluster"]],
+          layout: countLayout,
+          paint: { "text-color": "#ffffff" },
         });
       if (!map.getLayer(LAYER_SITE_ID))
         map.addLayer({
           id: LAYER_SITE_ID,
           type: "circle",
-          source: SOURCE_ID,
-          filter: ["==", ["get", "kind"], "site"],
+          source: AGG_SOURCE_ID,
+          filter: ["all", ["!", ["has", "point_count"]], ["==", ["get", "kind"], "site"]],
           paint: {
-            "circle-radius": [
-              "interpolate", ["linear"], ["get", "n_cells"],
-              1, 4,
-              48, 10,
-            ],
+            "circle-radius": 6,
             "circle-color": [
               "match", ["get", "operator"],
               "ORF", OP_ORF ?? "#FF7900",
@@ -142,9 +199,9 @@ export function useSitesLayer(
               "FRM", OP_FRM ?? "#7C8794",
               "#64748b",
             ],
-            "circle-opacity": 0.85,
+            "circle-opacity": 0.95,
             "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1,
+            "circle-stroke-width": 1.5,
           },
         });
       if (!map.getLayer(LAYER_CELL_SECTOR_ID))
@@ -207,8 +264,25 @@ export function useSitesLayer(
           .setDOMContent(node)
           .addTo(map);
       };
+      const zoomInto = async (e: MapLayerMouseEvent) => {
+        const feat = e.features?.[0];
+        if (!feat) return;
+        const center = (feat.geometry as unknown as { coordinates: [number, number] }).coordinates;
+        const clusterId = feat.properties?.["cluster_id"];
+        let target = map.getZoom() + 2;
+        if (clusterId != null) {
+          const src = map.getSource(AGG_SOURCE_ID) as GeoJSONSource | undefined;
+          try {
+            if (src) target = Math.max(target - 1, await src.getClusterExpansionZoom(Number(clusterId)));
+          } catch {
+            /* zoom par défaut */
+          }
+        }
+        map.easeTo({ center, zoom: Math.min(target, 16) });
+      };
       const handlers = {
-        [LAYER_CLUSTER_ID]: (e: MapLayerMouseEvent) => void openPopup(e, "cluster"),
+        [LAYER_AGG_ID]: (e: MapLayerMouseEvent) => void zoomInto(e),
+        [LAYER_CLUSTER_ID]: (e: MapLayerMouseEvent) => void zoomInto(e),
         [LAYER_SITE_ID]: (e: MapLayerMouseEvent) => void openPopup(e, "site"),
         [LAYER_CELL_ID]: (e: MapLayerMouseEvent) => void openPopup(e, "cell"),
       };
@@ -279,9 +353,15 @@ export function useSitesLayer(
         properties: { ...p, sector_poly: true, kind: "cell" },
       }];
     });
+    const isAgg = (f: { properties?: Record<string, unknown> | null }) =>
+      f.properties?.["kind"] === "cluster" || f.properties?.["kind"] === "site";
     src.setData({
       type: "FeatureCollection",
-      features: [...features, ...sectorFeatures],
+      features: [...features.filter((f) => !isAgg(f)), ...sectorFeatures],
+    });
+    (map.getSource(AGG_SOURCE_ID) as GeoJSONSource | undefined)?.setData({
+      type: "FeatureCollection",
+      features: features.filter(isAgg),
     });
   }, [map, status.data]);
 

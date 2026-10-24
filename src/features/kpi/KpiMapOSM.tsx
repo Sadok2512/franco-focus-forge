@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
-import { useSitesLayer } from "./SitesLayer";
+import { useSitesLayer, MAP_GLYPHS } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
@@ -120,6 +120,7 @@ export function KpiMapOSM({
         attributionControl: { compact: true },
         style: {
           version: 8,
+          glyphs: MAP_GLYPHS,
           sources: {
             osm: {
               type: "raster",
