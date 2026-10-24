@@ -1,0 +1,26 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>maplab</title>
+<link rel="stylesheet" href="/node_modules/maplibre-gl/dist/maplibre-gl.css">
+<style>html,body,#m{height:100%;margin:0}</style></head>
+<body><div id="m"></div>
+<script type="module">
+  import * as ml from "/node_modules/maplibre-gl/dist/maplibre-gl.mjs";
+  const worker = (await import("/node_modules/maplibre-gl/dist/maplibre-gl-worker.mjs?url")).default;
+  ml.setWorkerUrl(worker);
+  const map = new ml.Map({
+    container: "m",
+    center: [2.35, 48.85],
+    zoom: 11,
+    attributionControl: { compact: true },
+    style: {
+      version: 8,
+      sources: { osm: { type: "raster", tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"], tileSize: 256, attribution: "© OpenStreetMap" } },
+      layers: [{ id: "osm", type: "raster", source: "osm" }],
+    },
+  });
+  map.on("error", (e) => console.log("MAP_ERROR", JSON.stringify(String(e?.error?.message ?? e))));
+  map.on("load", () => {
+    document.title = "MAP_LOADED";
+    console.log("LOAD_OK tiles_loaded=" + (map.areTilesLoaded() || "n/a"));
+  });
+</script></body></html>
