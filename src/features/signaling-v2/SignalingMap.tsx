@@ -1,32 +1,59 @@
 import { Maximize2, Minimize2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { Map as MlMap } from "maplibre-gl";
 import type { SigCapture } from "@/lib/api/signaling-schemas-v2";
 import { SEV_COLOR } from "./Timeline";
 import { Button } from "@/components/ui/button";
 import { fmtSec } from "./shared";
-import { MAP_GLYPHS, useSitesLayer } from "@/features/kpi/SitesLayer";
+import { CELLS_VISIBLE_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "@/features/kpi/SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "@/features/kpi/SitesLayerControls";
 
-/** Relie la couche Sites (bbox lazy, clusters/site/cell) au contrôle persistant. */
+/** Relie les couches Sites et Cells (bbox lazy, sans clustering) au contrôle persistant. */
 function SitesLayerHarness({ map }: { map: MlMap | null }) {
-  const { enabled, filters, setEnabled, toggleTechno, toggleBand, toggleOperator } =
-    useSitesLayerState();
-  const status = useSitesLayer(map, enabled, filters);
+  const { t } = useTranslation();
+  const {
+    enabled,
+    cellsEnabled,
+    filters,
+    setEnabled,
+    setCellsEnabled,
+    toggleTechno,
+    toggleBand,
+    toggleOperator,
+  } = useSitesLayerState();
+  const labels = useMemo(
+    () => ({
+      siteName: t("mapSites.siteName"),
+      siteId: t("mapSites.siteId"),
+      technology: t("mapSites.technology"),
+      cells: t("mapSites.cellCount"),
+      band: t("mapSites.band"),
+      pci: t("mapSites.pci"),
+      azimuth: t("mapSites.azimuth"),
+    }),
+    [t],
+  );
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels);
+  const truncated = [status.sites, status.cells].some((response) =>
+    Boolean(response?.reason?.startsWith("truncated")),
+  );
   return (
     <SitesLayerControls
       enabled={enabled}
+      cellsEnabled={cellsEnabled}
+      cellsAvailable={status.zoom >= CELLS_VISIBLE_ZOOM}
       filters={filters}
       onToggleEnabled={setEnabled}
+      onToggleCells={setCellsEnabled}
       onToggleTechno={toggleTechno}
       onToggleBand={toggleBand}
       onToggleOperator={toggleOperator}
       status={{
         loading: status.loading,
         error: status.error,
-        ...(status.data?.n_returned != null ? { n_returned: status.data.n_returned } : {}),
-        ...(status.data?.n_total_in_bbox != null ? { n_total: status.data.n_total_in_bbox } : {}),
-        truncated: Boolean(status.data?.reason?.startsWith("truncated")),
+        n_returned: (status.sites?.n_returned ?? 0) + (status.cells?.n_returned ?? 0),
+        truncated,
       }}
     />
   );
@@ -99,10 +126,10 @@ export function SignalingMap({
         container: el.current,
         center: [2.219, 48.902],
         zoom: 12,
+        minZoom: MAP_MIN_ZOOM,
         attributionControl: { compact: true },
         style: {
           version: 8,
-          glyphs: MAP_GLYPHS,
           sources: {
             osm: {
               type: "raster",
@@ -111,19 +138,32 @@ export function SignalingMap({
               attribution: "© OpenStreetMap",
             },
           },
-          layers: [{ id: "osm", type: "raster", source: "osm", paint: { "raster-saturation": -0.4, "raster-opacity": 0.9 } }],
+          layers: [
+            {
+              id: "osm",
+              type: "raster",
+              source: "osm",
+              paint: { "raster-saturation": -0.4, "raster-opacity": 0.9 },
+            },
+          ],
         },
       });
       m.addControl(new ml.NavigationControl({ showCompass: false }), "top-left");
       m.on("load", () => {
-        m.addSource("track", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        m.addSource("track", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
         m.addLayer({
           id: "track",
           type: "line",
           source: "track",
           paint: { "line-color": "#1769E0", "line-width": 2.5, "line-opacity": 0.75 },
         });
-        m.addSource("events", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+        m.addSource("events", {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
         m.addLayer({
           id: "events",
           type: "circle",
@@ -140,13 +180,24 @@ export function SignalingMap({
           type: "circle",
           source: "events",
           filter: ["==", ["get", "id"], ""],
-          paint: { "circle-radius": 12, "circle-color": "rgba(0,0,0,0)", "circle-stroke-width": 2.5, "circle-stroke-color": "#0F172A" },
+          paint: {
+            "circle-radius": 12,
+            "circle-color": "rgba(0,0,0,0)",
+            "circle-stroke-width": 2.5,
+            "circle-stroke-color": "#0F172A",
+          },
         });
         const popup = new ml.Popup({ closeButton: false, closeOnClick: false, offset: 10 });
         m.on("mousemove", "events", (e) => {
           m.getCanvas().style.cursor = "pointer";
           const p = e.features?.[0]?.properties as Record<string, string> | undefined;
-          if (p) popup.setLngLat(e.lngLat).setHTML(`<div style="font:12px Inter"><b>${p["name"]}</b><br/>${Number(p["t"]).toLocaleString("fr-FR", { minimumFractionDigits: 3 })} s</div>`).addTo(m);
+          if (p)
+            popup
+              .setLngLat(e.lngLat)
+              .setHTML(
+                `<div style="font:12px Inter"><b>${p["name"]}</b><br/>${Number(p["t"]).toLocaleString("fr-FR", { minimumFractionDigits: 3 })} s</div>`,
+              )
+              .addTo(m);
         });
         m.on("mouseleave", "events", () => {
           m.getCanvas().style.cursor = "";
@@ -154,18 +205,24 @@ export function SignalingMap({
         });
         m.on("click", "events", (e) => {
           const p = e.features?.[0]?.properties as Record<string, unknown> | undefined;
-          if (p) onSelectEvent(String(p["id"]), Number(p["t"]), p["message_index"] == null ? null : Number(p["message_index"]));
+          if (p)
+            onSelectEvent(
+              String(p["id"]),
+              Number(p["t"]),
+              p["message_index"] == null ? null : Number(p["message_index"]),
+            );
         });
         // Cadrage initial sur le trajet réel.
         const lngs = capture.track.map((p) => p.lng);
         const lats = capture.track.map((p) => p.lat);
-        if (capture.track.length) m.fitBounds(
-          [
-            [Math.min(...lngs), Math.min(...lats)],
-            [Math.max(...lngs), Math.max(...lats)],
-          ],
-          { padding: 40, duration: 0 },
-        );
+        if (capture.track.length)
+          m.fitBounds(
+            [
+              [Math.min(...lngs), Math.min(...lats)],
+              [Math.max(...lngs), Math.max(...lats)],
+            ],
+            { padding: 40, duration: 0 },
+          );
         setReady(true);
         setMapInstance(m);
       });
@@ -183,15 +240,18 @@ export function SignalingMap({
 
   useEffect(() => {
     if (!ready || !map.current) return;
-    (map.current.getSource("track") as { setData: (d: unknown) => void } | undefined)?.setData(trackGeo);
-    (map.current.getSource("events") as { setData: (d: unknown) => void } | undefined)?.setData(eventsGeo);
+    (map.current.getSource("track") as { setData: (d: unknown) => void } | undefined)?.setData(
+      trackGeo,
+    );
+    (map.current.getSource("events") as { setData: (d: unknown) => void } | undefined)?.setData(
+      eventsGeo,
+    );
   }, [trackGeo, eventsGeo, ready]);
 
   // Clic timeline → mise en évidence du point GPS prouvé, zoom conservé.
   useEffect(() => {
     if (!ready || !map.current) return;
     map.current.setFilter("sel", ["==", ["get", "id"], selectedEventId ?? ""]);
-
   }, [selectedEventId, ready, capture.events_gps]);
 
   useEffect(() => {
@@ -204,11 +264,22 @@ export function SignalingMap({
   }, [full]);
 
   return (
-    <div className={`relative overflow-hidden ${full ? "fixed inset-4 z-50 rounded-md border bg-card shadow-2xl" : "h-full"}`}>
-      <div ref={el} className="h-full w-full bg-muted" role="region" aria-label="Carte — Trajet GPS" />
-      <div className="panel absolute left-2 top-2 z-10 px-2 py-1 text-[11px] font-semibold shadow">Carte - Trajet GPS</div>
+    <div
+      className={`relative overflow-hidden ${full ? "fixed inset-4 z-50 rounded-md border bg-card shadow-2xl" : "h-full"}`}
+    >
+      <div
+        ref={el}
+        className="h-full w-full bg-muted"
+        role="region"
+        aria-label="Carte — Trajet GPS"
+      />
+      <div className="panel absolute left-2 top-2 z-10 px-2 py-1 text-[11px] font-semibold shadow">
+        Carte - Trajet GPS
+      </div>
       <SitesLayerHarness map={mapInstance} />
-      <Button variant="outline" size="sm"
+      <Button
+        variant="outline"
+        size="sm"
         onClick={() => setFull((f) => !f)}
         aria-label={full ? "Quitter plein écran" : "Carte plein écran"}
         className="panel absolute right-24 top-2 z-10 p-1.5 shadow"
@@ -216,7 +287,12 @@ export function SignalingMap({
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </Button>
       {selectedEventId && !capture.events_gps.some((g) => g.event_id === selectedEventId) && (
-        <p role="status" className="absolute bottom-2 right-2 rounded border bg-card px-2 py-1 text-[10px] text-muted-foreground">GPS de l’événement : N/D</p>
+        <p
+          role="status"
+          className="absolute bottom-2 right-2 rounded border bg-card px-2 py-1 text-[10px] text-muted-foreground"
+        >
+          GPS de l’événement : N/D
+        </p>
       )}
       <div className="panel absolute bottom-2 left-2 z-10 p-2 text-[10px] shadow">
         <p className="mb-1 font-semibold">Événements géolocalisés</p>
@@ -224,7 +300,10 @@ export function SignalingMap({
           const ev = capture.events.find((e) => e.id === g.event_id);
           return (
             <div key={g.event_id} className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full" style={{ background: SEV_COLOR[ev?.severity ?? "info"] }} />
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{ background: SEV_COLOR[ev?.severity ?? "info"] }}
+              />
               <span>{ev?.name}</span>
               <span className="num font-mono text-muted-foreground">{fmtSec(g.t)}</span>
             </div>

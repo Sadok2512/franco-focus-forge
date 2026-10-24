@@ -1,3 +1,11 @@
+## 1.107.0 (minor) — BC4-FRONT 2026-10-24 — Sites et beams GEOREF sans clustering (Agent BC1)
+
+- Les cartes partagées KPI, Metrics et Signaling interdisent désormais le zoom inférieur à 11 et chargent les sites comme points individuels dès ce niveau ; la couche de clusters et ses compteurs ont été retirés du rendu.
+- Les couches Sites et Cells sont indépendantes. Les cellules sont chargées et affichées à partir du zoom 13, puis masquées en revenant au zoom 12 sans reconstruire les sources MapLibre.
+- Les beams réutilisent la projection d’azimut, le polygone courbe et les rayons par zoom de `georef-frontend/src/components/otarie/DetailedSectorsLayer.tsx` et `sitesMonitorMapUtils.ts`. Une cellule sans azimut prouvé ne produit aucun beam.
+- Les sites utilisent des points compacts avec contour blanc, survol, sélection et détails limités aux champs fournis par `/sites`. Toute réponse tronquée reste signalée.
+- Le contrat backend et les données restent inchangés. `/sites` conserve sa limite explicite de 2 000 entités par bbox ; l’interface indique une population partielle lorsqu’elle s’applique.
+
 ## 1.106.5 (patch) — BC4-FRONT 2026-10-25 — Sites : chaque opérateur à sa couleur
 - Le back nomme les opérateurs en clair (« Bouygues ») alors que la légende et les couleurs parlent en codes (BYT) : la couche Sites ne reconnaissait que les codes, donc les sites Bouygues, Orange et Free prenaient le gris « inconnu » et se confondaient avec les sites non identifiés. Une clé canonique unique (code ou libellé) pilote désormais la couleur, la popup et les compteurs.
 - Les bulbes de sites affichent la répartition par opérateur (ex. « Bouygues 12 · SFR 8 ») dès qu'au moins un site est identifié dans le regroupement.

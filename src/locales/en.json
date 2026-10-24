@@ -805,5 +805,26 @@
     "delete": "Delete Superstream",
     "deleteConfirm": "Delete this Superstream? The original project logs will not be deleted.",
     "manage": "Manage Superstreams"
+  },
+  "mapSites": {
+    "controls": "Site and cell layers",
+    "sitesOn": "Sites ON",
+    "sitesOff": "Sites OFF",
+    "loading": "Loading…",
+    "showSites": "Show sites",
+    "showCells": "Show cell beams",
+    "cellsFromZoom": "Cell beams from zoom 13",
+    "technology": "Technology",
+    "lteBands": "LTE bands",
+    "nrBands": "NR bands",
+    "operator": "Operator",
+    "partial": "partial population — zoom in",
+    "error": "Error",
+    "siteName": "Site name",
+    "siteId": "Site ID",
+    "cellCount": "Number of cells",
+    "band": "Band",
+    "pci": "PCI",
+    "azimuth": "Azimuth"
   }
 }

@@ -805,5 +805,26 @@
     "delete": "Supprimer le Superstream",
     "deleteConfirm": "Supprimer ce Superstream ? Les logs d'origine du projet ne seront pas supprimés.",
     "manage": "Gérer les Superstreams"
+  },
+  "mapSites": {
+    "controls": "Couches sites et cellules",
+    "sitesOn": "Sites ON",
+    "sitesOff": "Sites OFF",
+    "loading": "Chargement…",
+    "showSites": "Afficher les sites",
+    "showCells": "Afficher les beams cellules",
+    "cellsFromZoom": "Beams cellules à partir du zoom 13",
+    "technology": "Technologie",
+    "lteBands": "Bandes LTE",
+    "nrBands": "Bandes NR",
+    "operator": "Opérateur",
+    "partial": "population partielle — zoomez",
+    "error": "Erreur",
+    "siteName": "Nom du site",
+    "siteId": "ID du site",
+    "cellCount": "Nombre de cellules",
+    "band": "Bande",
+    "pci": "PCI",
+    "azimuth": "Azimut"
   }
 }

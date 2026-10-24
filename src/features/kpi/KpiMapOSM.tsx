@@ -9,10 +9,10 @@ import { useTranslation } from "react-i18next";
 // Centre par défaut : centroid approximatif FR métropolitaine. Si le
 // projet a un `center` validé, utiliser `project.center` à la place.
 // -----------------------------------------------------------------------
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
-import { useSitesLayer, MAP_GLYPHS } from "./SitesLayer";
+import { CELLS_VISIBLE_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
@@ -26,23 +26,50 @@ const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
 /** Harness interne : relie `useSitesLayer` au contrôle UI persistant.
  *  Doit être enfant de KpiMapOSM pour avoir accès au Map instance. */
 function SitesLayerHarness({ map }: { map: MlMap | null }) {
-  const { enabled, filters, setEnabled, toggleTechno, toggleBand, toggleOperator } =
-    useSitesLayerState();
-  const status = useSitesLayer(map, enabled, filters);
+  const { t } = useTranslation();
+  const {
+    enabled,
+    cellsEnabled,
+    filters,
+    setEnabled,
+    setCellsEnabled,
+    toggleTechno,
+    toggleBand,
+    toggleOperator,
+  } = useSitesLayerState();
+  const labels = useMemo(
+    () => ({
+      siteName: t("mapSites.siteName"),
+      siteId: t("mapSites.siteId"),
+      technology: t("mapSites.technology"),
+      cells: t("mapSites.cellCount"),
+      band: t("mapSites.band"),
+      pci: t("mapSites.pci"),
+      azimuth: t("mapSites.azimuth"),
+    }),
+    [t],
+  );
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels);
+  const truncated = [status.sites, status.cells].some((response) =>
+    Boolean(response?.reason?.startsWith("truncated")),
+  );
+  const returned = (status.sites?.n_returned ?? 0) + (status.cells?.n_returned ?? 0);
   return (
     <SitesLayerControls
       enabled={enabled}
+      cellsEnabled={cellsEnabled}
+      cellsAvailable={status.zoom >= CELLS_VISIBLE_ZOOM}
       filters={filters}
       onToggleEnabled={setEnabled}
+      onToggleCells={setCellsEnabled}
       onToggleTechno={toggleTechno}
       onToggleBand={toggleBand}
       onToggleOperator={toggleOperator}
       status={{
         loading: status.loading,
         error: status.error,
-        ...(status.data?.n_returned != null ? { n_returned: status.data.n_returned } : {}),
-        ...(status.data?.n_total_in_bbox != null ? { n_total: status.data.n_total_in_bbox } : {}),
-        truncated: Boolean(status.data?.reason?.startsWith("truncated")),
+        n_returned: returned,
+        truncated,
       }}
     />
   );
@@ -50,7 +77,7 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
 
 export function KpiMapOSM({
   center = [2.4, 46.6],
-  zoom = 5,
+  zoom = MAP_MIN_ZOOM,
   nPoints,
   contextLabel = "KPI",
   premium = false,
@@ -116,11 +143,11 @@ export function KpiMapOSM({
       const instance = new maplibregl.Map({
         container: el.current,
         center,
-        zoom,
+        zoom: Math.max(MAP_MIN_ZOOM, zoom),
+        minZoom: MAP_MIN_ZOOM,
         attributionControl: { compact: true },
         style: {
           version: 8,
-          glyphs: MAP_GLYPHS,
           sources: {
             osm: {
               type: "raster",
@@ -191,7 +218,11 @@ export function KpiMapOSM({
           : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
-      <div ref={el} style={{ position: "absolute", inset: 0 }} aria-label={translate("kpi.37f8ac5eacf2")} />
+      <div
+        ref={el}
+        style={{ position: "absolute", inset: 0 }}
+        aria-label={translate("kpi.37f8ac5eacf2")}
+      />
       {!ready && !tileError && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground">
           {" "}
@@ -315,9 +346,7 @@ export function KpiMapOSM({
       )}
       {children}
       {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
-      {sitesLayerEnabled && ready && (
-        <SitesLayerHarness map={map.current} />
-      )}
+      {sitesLayerEnabled && ready && <SitesLayerHarness map={map.current} />}
       {/* Compact empty-measurement status; attribution remains on the map. */}
       {measurementStatus !== null && (
         <div
@@ -349,7 +378,7 @@ export function KpiMapOSM({
               : translate("kpi.dee312b0129c")
         }
         title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
-        className="absolute right-[104px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
+        className="absolute right-[50px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>

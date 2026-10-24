@@ -13,6 +13,7 @@ const getSites = vi.fn().mockResolvedValue({
   n_total_in_bbox: 0,
   reason: null,
 });
+const fakeMapState = vi.hoisted(() => ({ zoom: 13 }));
 vi.mock("@/lib/api/sites", () => ({ getSites: (...a: unknown[]) => getSites(...a) }));
 
 // MapLibre factice : déclenche « load » immédiatement et expose l'API
@@ -32,6 +33,7 @@ vi.mock("maplibre-gl", () => {
     removeLayer() {}
     removeSource() {}
     setFilter() {}
+    setFeatureState() {}
     fitBounds() {}
     resize() {}
     remove() {}
@@ -48,7 +50,7 @@ vi.mock("maplibre-gl", () => {
       };
     }
     getZoom() {
-      return 13;
+      return fakeMapState.zoom;
     }
     on(id: string, cb: (...a: unknown[]) => void) {
       const list = this.handlers.get(id) ?? [];
@@ -102,37 +104,68 @@ const capture: SigCapture = {
     { lng: 2.22, lat: 48.9, t: 0 },
     { lng: 2.23, lat: 48.905, t: 10 },
   ],
-  events: [
-    { id: "e1", name: "RRC Request", severity: "info", t: 1, message_index: 0 },
-  ],
+  events: [{ id: "e1", name: "RRC Request", severity: "info", t: 1, message_index: 0 }],
   events_gps: [{ event_id: "e1", lng: 2.221, lat: 48.901, t: 1 }],
 } as unknown as SigCapture;
 
 describe("SignalingMap — couche Sites", () => {
   it("affiche le bouton Sites ON/OFF et charge les sites de la bbox visible", async () => {
+    fakeMapState.zoom = 13;
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v2",
-      JSON.stringify({ enabled: true, filters: { technos: [], bands: [], operators: [] } }),
+      "bc4.map.sitesLayer.v3",
+      JSON.stringify({
+        enabled: true,
+        cellsEnabled: true,
+        filters: { technos: [], bands: [], operators: [] },
+      }),
     );
     render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
-    const toggle = await screen.findByRole("button", { name: "Site layer controls" });
+    const toggle = await screen.findByRole("button", { name: "Site and cell layers" });
     expect(toggle.textContent).toMatch(/Sites ON/);
     await waitFor(() => expect(getSites).toHaveBeenCalled());
-    const args = getSites.mock.calls[0]![0] as { bbox: number[]; zoom: number };
-    expect(args.bbox).toEqual([2.2, 48.89, 2.24, 48.91]);
-    expect(args.zoom).toBe(13);
+    const requests = getSites.mock.calls.map((call) => call[0] as { bbox: number[]; zoom: number });
+    expect(requests).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ bbox: [2.2, 48.89, 2.24, 48.91], zoom: 12 }),
+        expect.objectContaining({ bbox: [2.2, 48.89, 2.24, 48.91], zoom: 15 }),
+      ]),
+    );
   });
 
   it("ne charge aucun site quand la couche est désactivée", async () => {
+    fakeMapState.zoom = 13;
     getSites.mockClear();
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v2",
-      JSON.stringify({ enabled: false, filters: { technos: [], bands: [], operators: [] } }),
+      "bc4.map.sitesLayer.v3",
+      JSON.stringify({
+        enabled: false,
+        cellsEnabled: false,
+        filters: { technos: [], bands: [], operators: [] },
+      }),
     );
     render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
-    const toggle = await screen.findByRole("button", { name: "Site layer controls" });
+    const toggle = await screen.findByRole("button", { name: "Site and cell layers" });
     expect(toggle.textContent).toMatch(/Sites OFF/);
     await new Promise((r) => setTimeout(r, 100));
     expect(getSites).not.toHaveBeenCalled();
+  });
+
+  it("au zoom 12 charge les sites individuels sans demander les cellules", async () => {
+    getSites.mockClear();
+    fakeMapState.zoom = 12;
+    window.localStorage.setItem(
+      "bc4.map.sitesLayer.v3",
+      JSON.stringify({
+        enabled: true,
+        cellsEnabled: true,
+        filters: { technos: [], bands: [], operators: [] },
+      }),
+    );
+    render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
+    await screen.findByRole("button", { name: "Site and cell layers" });
+    await waitFor(() => expect(getSites).toHaveBeenCalled());
+    const requestedZooms = getSites.mock.calls.map((call) => (call[0] as { zoom: number }).zoom);
+    expect(requestedZooms).toContain(12);
+    expect(requestedZooms).not.toContain(15);
   });
 });

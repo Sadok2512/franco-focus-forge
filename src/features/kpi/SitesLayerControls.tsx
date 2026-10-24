@@ -6,22 +6,25 @@
  *  - Bands : B20, B3, B28, B1, B7, B8 (LTE) + n78, n28, n1, n3, n7, n75, n258 (NR)
  *  - Operators : ORF, BYT, SFR, FRM
  *
- * État persisté localStorage `bc4.map.sitesLayer.v2`. Vide = tous actifs.
+ * État persisté localStorage `bc4.map.sitesLayer.v3`. Vide = tous actifs.
  * 1.103.1 — enabled ON par défaut + bump v1→v2 pour reset auto.
  */
 import { Layers } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { SitesLayerFilters } from "./SitesLayer";
 
-const STORAGE_KEY = "bc4.map.sitesLayer.v2";
+const STORAGE_KEY = "bc4.map.sitesLayer.v3";
 
 type State = {
   enabled: boolean;
+  cellsEnabled: boolean;
   filters: SitesLayerFilters;
 };
 
 const DEFAULT_STATE: State = {
   enabled: true,
+  cellsEnabled: true,
   filters: { technos: [], bands: [], operators: [] },
 };
 
@@ -43,6 +46,7 @@ function readState(): State {
     const parsed = JSON.parse(raw) as Partial<State>;
     return {
       enabled: Boolean(parsed.enabled),
+      cellsEnabled: parsed.cellsEnabled !== false,
       filters: {
         technos: Array.isArray(parsed.filters?.technos) ? parsed.filters!.technos : [],
         bands: Array.isArray(parsed.filters?.bands) ? parsed.filters!.bands : [],
@@ -68,8 +72,10 @@ export function useSitesLayerState() {
   useEffect(() => writeState(state), [state]);
   return {
     enabled: state.enabled,
+    cellsEnabled: state.cellsEnabled,
     filters: state.filters,
     setEnabled: (v: boolean) => setState((s) => ({ ...s, enabled: v })),
+    setCellsEnabled: (v: boolean) => setState((s) => ({ ...s, cellsEnabled: v })),
     toggleTechno: (t: string) =>
       setState((s) => ({
         ...s,
@@ -106,21 +112,34 @@ export function useSitesLayerState() {
 
 export function SitesLayerControls({
   enabled,
+  cellsEnabled,
+  cellsAvailable,
   filters,
   onToggleEnabled,
+  onToggleCells,
   onToggleTechno,
   onToggleBand,
   onToggleOperator,
   status,
 }: {
   enabled: boolean;
+  cellsEnabled: boolean;
+  cellsAvailable: boolean;
   filters: SitesLayerFilters;
   onToggleEnabled: (v: boolean) => void;
+  onToggleCells: (v: boolean) => void;
   onToggleTechno: (t: string) => void;
   onToggleBand: (b: string) => void;
   onToggleOperator: (o: string) => void;
-  status?: { loading: boolean; error: string | null; n_returned?: number; n_total?: number; truncated?: boolean };
+  status?: {
+    loading: boolean;
+    error: string | null;
+    n_returned?: number;
+    n_total?: number;
+    truncated?: boolean;
+  };
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const technoActive = (t: string) => filters.technos.length === 0 || filters.technos.includes(t);
   const bandActive = (b: string) => filters.bands.length === 0 || filters.bands.includes(b);
@@ -128,7 +147,7 @@ export function SitesLayerControls({
     filters.operators.length === 0 || filters.operators.includes(o);
   return (
     <div
-      className="absolute right-2 top-2 z-10 rounded border border-[#E2E8F0] bg-white/95 text-[11px] shadow-sm"
+      className="absolute right-2 top-20 z-10 rounded border border-[#E2E8F0] bg-white/95 text-[11px] shadow-sm"
       data-testid="sites-layer-controls"
     >
       <button
@@ -136,22 +155,39 @@ export function SitesLayerControls({
         className="flex items-center gap-1 px-2 py-1"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        aria-label="Site layer controls"
+        aria-label={t("mapSites.controls")}
       >
         <Layers size={14} />
-        <span>{enabled ? "Sites ON" : "Sites OFF"}</span>
-        {status?.loading && <span className="text-muted-foreground">· loading…</span>}
+        <span>{enabled ? t("mapSites.sitesOn") : t("mapSites.sitesOff")}</span>
+        {status?.loading && (
+          <span className="text-muted-foreground">· {t("mapSites.loading")}</span>
+        )}
       </button>
       {open && (
         <div className="p-2 border-t border-[#E2E8F0] space-y-2 min-w-[200px]">
           <label className="flex items-center gap-2">
-            <input type="checkbox" checked={enabled} onChange={(e) => onToggleEnabled(e.target.checked)} />
-            <strong>Show sites on map</strong>
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => onToggleEnabled(e.target.checked)}
+            />
+            <strong>{t("mapSites.showSites")}</strong>
           </label>
-          {enabled && (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={cellsEnabled}
+              disabled={!cellsAvailable}
+              onChange={(e) => onToggleCells(e.target.checked)}
+            />
+            <strong>
+              {cellsAvailable ? t("mapSites.showCells") : t("mapSites.cellsFromZoom")}
+            </strong>
+          </label>
+          {(enabled || cellsEnabled) && (
             <>
               <div>
-                <div className="font-semibold mt-1">Techno</div>
+                <div className="font-semibold mt-1">{t("mapSites.technology")}</div>
                 <div className="flex gap-2 mt-1">
                   {TECHNOS.map((t) => (
                     <label key={t} className="flex items-center gap-1">
@@ -166,29 +202,37 @@ export function SitesLayerControls({
                 </div>
               </div>
               <div>
-                <div className="font-semibold mt-1">LTE bands</div>
+                <div className="font-semibold mt-1">{t("mapSites.lteBands")}</div>
                 <div className="flex gap-1 flex-wrap mt-1">
                   {BANDS_LTE.map((b) => (
                     <label key={b} className="flex items-center gap-1">
-                      <input type="checkbox" checked={bandActive(b)} onChange={() => onToggleBand(b)} />
+                      <input
+                        type="checkbox"
+                        checked={bandActive(b)}
+                        onChange={() => onToggleBand(b)}
+                      />
                       <span>{b}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="font-semibold mt-1">NR bands</div>
+                <div className="font-semibold mt-1">{t("mapSites.nrBands")}</div>
                 <div className="flex gap-1 flex-wrap mt-1">
                   {BANDS_NR.map((b) => (
                     <label key={b} className="flex items-center gap-1">
-                      <input type="checkbox" checked={bandActive(b)} onChange={() => onToggleBand(b)} />
+                      <input
+                        type="checkbox"
+                        checked={bandActive(b)}
+                        onChange={() => onToggleBand(b)}
+                      />
                       <span>{b}</span>
                     </label>
                   ))}
                 </div>
               </div>
               <div>
-                <div className="font-semibold mt-1">Operator</div>
+                <div className="font-semibold mt-1">{t("mapSites.operator")}</div>
                 <div className="flex gap-2 mt-1 flex-wrap">
                   {OPERATORS.map((o) => (
                     <label key={o.v} className="flex items-center gap-1">
@@ -207,13 +251,14 @@ export function SitesLayerControls({
                   className={`text-[10px] mt-1 ${status.truncated ? "text-amber-700" : "text-muted-foreground"}`}
                   role={status.truncated ? "alert" : "status"}
                 >
-                  {status.n_returned.toLocaleString()} / {status.n_total?.toLocaleString() ?? "?"}
-                  {status.truncated ? " · zoom in to see all" : ""}
+                  {status.n_returned.toLocaleString()}
+                  {status.n_total != null ? ` / ${status.n_total.toLocaleString()}` : ""}
+                  {status.truncated ? ` · ${t("mapSites.partial")}` : ""}
                 </p>
               )}
               {status?.error && (
                 <p className="text-[10px] mt-1 text-red-700" role="alert">
-                  Error: {status.error}
+                  {t("mapSites.error")}: {status.error}
                 </p>
               )}
             </>
