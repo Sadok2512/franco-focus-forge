@@ -1,3 +1,7 @@
+## 1.106.4 (patch) — BC4-FRONT 2026-10-24 — Carte : sites lisibles
+- La couche Sites regroupe les agrégats serveur et les sites en bulles lisibles avec le nombre de sites ; un clic zoome dessus, les sites restent colorés par opérateur au zoom fort.
+- Les compteurs des clusters (sites et points de mesure) s'affichent grâce aux glyphes ajoutés aux styles de carte.
+
 ## 1.106.3 (patch) — BC4-FRONT 2026-10-24 — Cartes : points de mesure clusterisés
 
 - Les cartes KPI/Metrics affichaient des milliers de cercles superposés en une tache bleue illisible. Les points de mesure sont désormais clusterisés (MapLibre `cluster: true`) : clusters gradués avec compteur au zoom arrière, clic sur un cluster pour zoomer, points individuels au zoom fort. Appliqué aux deux cartes : vue « Carte » des métriques (MetricsWorkspace) et carte de mesures KPI (KpiMeasurementMap).
