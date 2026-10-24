@@ -66,13 +66,44 @@ export function KpiMeasurementMap({
     if (map.getSource("kpi-measures"))
       (map.getSource("kpi-measures") as GeoJSONSource).setData(data);
     else {
-      map.addSource("kpi-measures", { type: "geojson", data });
+      // 1.106.3 — clusterisation : des milliers de cercles superposés
+      // formaient une tache illisible. Clusters gradués + compteur,
+      // points individuels au zoom fort.
+      map.addSource("kpi-measures", {
+        type: "geojson",
+        data,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
+      map.addLayer({
+        id: "kpi-measures-clusters",
+        type: "circle",
+        source: "kpi-measures",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-radius": ["step", ["get", "point_count"], 13, 50, 17, 250, 22, 1000, 28],
+          "circle-color": "#1769E0",
+          "circle-opacity": 0.78,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
+        id: "kpi-measures-cluster-count",
+        type: "symbol",
+        source: "kpi-measures",
+        filter: ["has", "point_count"],
+        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
+        paint: { "text-color": "#ffffff" },
+      });
       map.addLayer({
         id: "kpi-measures",
         type: "circle",
         source: "kpi-measures",
+        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-radius": 5,
+          "circle-radius": 4,
           "circle-color": "#1769E0",
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1.5,
