@@ -46,6 +46,7 @@ export function SignalingMap({
   const map = useRef<MlMap | null>(null);
   const [ready, setReady] = useState(false);
   const [full, setFull] = useState(false);
+  const [mapInstance, setMapInstance] = useState<MlMap | null>(null);
 
   const trackGeo = useMemo(
     () => ({
