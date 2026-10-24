@@ -551,6 +551,7 @@ export function MetricsWorkspace({
   // 1.106.2 — dernier paneRequest « table » appliqué : une ouverture explicite
   // du tableau (⋮ → Tableau) ne doit pas être refermée par l'auto-fermeture
   // « vue map » (1.105.8).
+  const tablePaneRequestRef = useRef<number>(-1);
   const setPane = (p: MetricPane) => {
     // 1.105.1 — fermer le tableau quand il n'y a rien à grapher ne doit pas
     // être rouverte en boucle par l'effet table-only ci-dessous.
