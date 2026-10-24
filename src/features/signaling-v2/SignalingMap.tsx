@@ -5,6 +5,32 @@ import type { SigCapture } from "@/lib/api/signaling-schemas-v2";
 import { SEV_COLOR } from "./Timeline";
 import { Button } from "@/components/ui/button";
 import { fmtSec } from "./shared";
+import { useSitesLayer } from "@/features/kpi/SitesLayer";
+import { SitesLayerControls, useSitesLayerState } from "@/features/kpi/SitesLayerControls";
+
+/** Relie la couche Sites (bbox lazy, clusters/site/cell) au contrôle persistant. */
+function SitesLayerHarness({ map }: { map: MlMap | null }) {
+  const { enabled, filters, setEnabled, toggleTechno, toggleBand, toggleOperator } =
+    useSitesLayerState();
+  const status = useSitesLayer(map, enabled, filters);
+  return (
+    <SitesLayerControls
+      enabled={enabled}
+      filters={filters}
+      onToggleEnabled={setEnabled}
+      onToggleTechno={toggleTechno}
+      onToggleBand={toggleBand}
+      onToggleOperator={toggleOperator}
+      status={{
+        loading: status.loading,
+        error: status.error,
+        ...(status.data?.n_returned != null ? { n_returned: status.data.n_returned } : {}),
+        ...(status.data?.n_total_in_bbox != null ? { n_total: status.data.n_total_in_bbox } : {}),
+        truncated: Boolean(status.data?.reason?.startsWith("truncated")),
+      }}
+    />
+  );
+}
 
 /** Carte GPS synchronisée : trajet réel, événements géolocalisés, sélection. */
 export function SignalingMap({
