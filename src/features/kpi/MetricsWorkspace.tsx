@@ -136,18 +136,61 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
     const source = map.getSource("metrics-v3") as GeoJSONSource | undefined;
     if (source) source.setData(geo);
     else {
-      map.addSource("metrics-v3", { type: "geojson", data: geo });
+      // 1.106.3 — points clusterisés : des milliers de cercles de 5 px
+      // se superposaient en une tache illisible. Clusters gradués +
+      // compteur, points individuels seulement au zoom fort.
+      map.addSource("metrics-v3", {
+        type: "geojson",
+        data: geo,
+        cluster: true,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
+      });
+      map.addLayer({
+        id: "metrics-v3-clusters",
+        type: "circle",
+        source: "metrics-v3",
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-radius": ["step", ["get", "point_count"], 13, 50, 17, 250, 22, 1000, 28],
+          "circle-color": "#1769E0",
+          "circle-opacity": 0.78,
+          "circle-stroke-color": "#ffffff",
+          "circle-stroke-width": 1.5,
+        },
+      });
+      map.addLayer({
+        id: "metrics-v3-cluster-count",
+        type: "symbol",
+        source: "metrics-v3",
+        filter: ["has", "point_count"],
+        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
+        paint: { "text-color": "#ffffff" },
+      });
       map.addLayer({
         id: "metrics-v3",
         type: "circle",
         source: "metrics-v3",
+        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-radius": 5,
+          "circle-radius": 4,
           "circle-color": "#60a5fa",
           "circle-stroke-color": "#ffffff",
           "circle-stroke-width": 1,
         },
       });
+    }
+    // Cadrer sur l'étendue réelle des points (et non la France entière).
+    if (features.length) {
+      const lngs = features.map((f) => f.geometry.coordinates[0]);
+      const lats = features.map((f) => f.geometry.coordinates[1]);
+      map.fitBounds(
+        [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)],
+        ],
+        { padding: 48, maxZoom: 14, duration: 0 },
+      );
     }
   }, [map, features]);
   useEffect(() => {
@@ -162,10 +205,36 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       popup?.remove();
       popup = new Popup().setLngLat(e.lngLat).setDOMContent(node).addTo(map);
     };
+    const clickCluster = async (e: import("maplibre-gl").MapLayerMouseEvent) => {
+      const clusterId = e.features?.[0]?.properties?.["cluster_id"];
+      if (clusterId == null) return;
+      const src = map.getSource("metrics-v3") as GeoJSONSource | undefined;
+      if (!src) return;
+      const zoom = await src.getClusterExpansionZoom(clusterId as number);
+      if (disposed) return;
+      const coords = (e.features?.[0]?.geometry as { coordinates: [number, number] }).coordinates;
+      map.easeTo({ center: coords, zoom });
+    };
+    const pointer = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+    const noPointer = () => {
+      map.getCanvas().style.cursor = "";
+    };
     map.on("click", "metrics-v3", click);
+    map.on("click", "metrics-v3-clusters", clickCluster);
+    map.on("mouseenter", "metrics-v3", pointer);
+    map.on("mouseleave", "metrics-v3", noPointer);
+    map.on("mouseenter", "metrics-v3-clusters", pointer);
+    map.on("mouseleave", "metrics-v3-clusters", noPointer);
     return () => {
       disposed = true;
       map.off("click", "metrics-v3", click);
+      map.off("click", "metrics-v3-clusters", clickCluster);
+      map.off("mouseenter", "metrics-v3", pointer);
+      map.off("mouseleave", "metrics-v3", noPointer);
+      map.off("mouseenter", "metrics-v3-clusters", pointer);
+      map.off("mouseleave", "metrics-v3-clusters", noPointer);
       popup?.remove();
     };
   }, [map]);
