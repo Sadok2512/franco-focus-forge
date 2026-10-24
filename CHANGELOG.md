@@ -1,3 +1,8 @@
+## 1.106.3 (patch) — BC4-FRONT 2026-10-24 — Cartes : points de mesure clusterisés
+
+- Les cartes KPI/Metrics affichaient des milliers de cercles superposés en une tache bleue illisible. Les points de mesure sont désormais clusterisés (MapLibre `cluster: true`) : clusters gradués avec compteur au zoom arrière, clic sur un cluster pour zoomer, points individuels au zoom fort. Appliqué aux deux cartes : vue « Carte » des métriques (MetricsWorkspace) et carte de mesures KPI (KpiMeasurementMap).
+- La vue « Carte » des métriques cadre automatiquement sur l'étendue réelle des points (fitBounds, zoom max 14) au lieu de rester sur une vue France entière.
+
 ## 1.106.2 (patch) — BC4-FRONT 2026-10-24 — Cartes KPI/Metrics de nouveau visibles
 
 - Les cartes (KPI map, vue « Carte » des métriques) restaient blanches : le worker MapLibre v6 échouait (« Worker failed to load ») dans KpiMapOSM, qui utilisait encore l'ancien contournement `workerCount = 0`. Corrigé comme les autres cartes (Signaling, Assistant, Dictionary, RadioMap, GeoPreview) : worker bundlé explicite via `setWorkerUrl`.
