@@ -144,7 +144,7 @@ export function KpiMeasurementMap({
       if (!src) return;
       const zoom = await src.getClusterExpansionZoom(clusterId as number);
       if (disposed) return;
-      const coords = (event.features?.[0]?.geometry as { coordinates: [number, number] }).coordinates;
+      const coords = (event.features?.[0]?.geometry as unknown as { coordinates: [number, number] }).coordinates;
       map.easeTo({ center: coords, zoom });
     };
     map.on("click", "kpi-measures", click);

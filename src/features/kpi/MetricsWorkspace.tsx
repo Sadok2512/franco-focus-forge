@@ -125,7 +125,7 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
     () =>
       data.map_points.map((p) => ({
         type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
         properties: { tooltip: p.tooltip, code: p.code },
       })),
     [data],
@@ -212,7 +212,7 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       if (!src) return;
       const zoom = await src.getClusterExpansionZoom(clusterId as number);
       if (disposed) return;
-      const coords = (e.features?.[0]?.geometry as { coordinates: [number, number] }).coordinates;
+      const coords = (e.features?.[0]?.geometry as unknown as { coordinates: [number, number] }).coordinates;
       map.easeTo({ center: coords, zoom });
     };
     const pointer = () => {
