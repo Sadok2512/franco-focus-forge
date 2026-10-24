@@ -5,7 +5,7 @@ import type { SigCapture } from "@/lib/api/signaling-schemas-v2";
 import { SEV_COLOR } from "./Timeline";
 import { Button } from "@/components/ui/button";
 import { fmtSec } from "./shared";
-import { useSitesLayer } from "@/features/kpi/SitesLayer";
+import { MAP_GLYPHS, useSitesLayer } from "@/features/kpi/SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "@/features/kpi/SitesLayerControls";
 
 /** Relie la couche Sites (bbox lazy, clusters/site/cell) au contrôle persistant. */
@@ -102,6 +102,7 @@ export function SignalingMap({
         attributionControl: { compact: true },
         style: {
           version: 8,
+          glyphs: MAP_GLYPHS,
           sources: {
             osm: {
               type: "raster",
