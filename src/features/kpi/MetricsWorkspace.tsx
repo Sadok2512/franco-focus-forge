@@ -548,6 +548,10 @@ export function MetricsWorkspace({
     return "charts";
   });
   const tableOnlyDismissed = useRef(false);
+  // 1.106.2 — dernier paneRequest « table » appliqué : une ouverture explicite
+  // du tableau (⋮ → Tableau) ne doit pas être refermée par l'auto-fermeture
+  // « vue map » (1.105.8).
+  const tablePaneRequestRef = useRef<number>(-1);
   const setPane = (p: MetricPane) => {
     // 1.105.1 — fermer le tableau quand il n'y a rien à grapher ne doit pas
     // être rouverte en boucle par l'effet table-only ci-dessous.
@@ -571,7 +575,10 @@ export function MetricsWorkspace({
   // ⋮ → Tableau ouvre le grand tableau, ⋮ → Graphique/Histogramme/Carte y
   // ramène. Rien d'autre ne change le mode.
   useEffect(() => {
-    if (paneRequest) setPane("table");
+    if (paneRequest) {
+      tablePaneRequestRef.current = paneRequest;
+      setPane("table");
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
   // 1.102.1 — ajouter un graphe ne ferme plus le tableau des mesures : les
@@ -622,12 +629,15 @@ export function MetricsWorkspace({
   // "Map" depuis le menu ⋮ du catalogue (passant par viewsProp).
   useEffect(() => {
     const hasMapView = parsedSelections.some((s) => viewsProp?.[s.full] === "map");
-    if (hasMapView && pane === "table") {
+    // 1.106.2 — saute l'auto-fermeture si le tableau vient d'être ouvert
+    // explicitement (⋮ → Tableau) : la demande de l'utilisateur prime.
+    const explicitTableOpen = tablePaneRequestRef.current === paneRequest;
+    if (hasMapView && pane === "table" && !explicitTableOpen) {
       tableOnlyDismissed.current = true;
       setPane("charts");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewsProp, parsedSelections, pane]);
+  }, [viewsProp, parsedSelections, pane, paneRequest]);
   const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
     <ActiveEventsContext.Provider value={activeEvents}>

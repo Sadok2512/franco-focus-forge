@@ -107,15 +107,11 @@ export function KpiMapOSM({
     (async () => {
       const maplibregl = await import("maplibre-gl");
       await import("maplibre-gl/dist/maplibre-gl.css");
-      // 1.62.0 — Vite ESM dev-only : le worker URL calculé par MapLibre
-      // v4+ échoue (@fs/.../maplibre-gl.mjs:5...). Fallback main-thread
-      // (workerCount=0) : lent sur très gros datasets mais garantit
-      // l'affichage des tuiles OSM. Pas d'impact en build production.
-      try {
-        (maplibregl as unknown as { workerCount: number }).workerCount = 0;
-      } catch {
-        /* ignore */
-      }
+      // 1.106.2 — MapLibre v6 : le worker calculé par Vite échoue
+      // (« Worker failed to load »), la carte restait blanche. Même
+      // correctif que SignalingMap/AssistantMap : worker bundlé explicite.
+      const worker = await import("maplibre-gl/dist/maplibre-gl-worker.mjs?url");
+      maplibregl.setWorkerUrl(worker.default);
       if (disposed || !el.current) return;
       const instance = new maplibregl.Map({
         container: el.current,
@@ -194,7 +190,7 @@ export function KpiMapOSM({
           : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
-      <div ref={el} className="h-full w-full" aria-label={translate("kpi.37f8ac5eacf2")} />
+      <div ref={el} style={{ position: "absolute", inset: 0 }} aria-label={translate("kpi.37f8ac5eacf2")} />
       {!ready && !tileError && (
         <div className="absolute inset-0 flex items-center justify-center bg-muted/20 text-[11px] text-muted-foreground">
           {" "}
@@ -352,7 +348,7 @@ export function KpiMapOSM({
               : translate("kpi.dee312b0129c")
         }
         title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
-        className="absolute right-12 top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
+        className="absolute right-[104px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>

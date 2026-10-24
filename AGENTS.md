@@ -15,6 +15,7 @@
 - Shared filters live in URL search params on the `_app` layout (`src/lib/filters.ts`) so every module and future assistant use identical effective filters and links are shareable.
 - `_app` routes are client-only (`ssr: false`) because mock auth lives in localStorage.
 - maplibre-gl is excluded from Vite optimizeDeps; prebundling breaks its module worker.
+- Every maplibre-gl v6 map must set an explicit bundled worker before creating the Map: `import("maplibre-gl/dist/maplibre-gl-worker.mjs?url")` then `setWorkerUrl(worker.default)` (see KpiMapOSM, SignalingMap, AssistantMap). The old `workerCount = 0` fallback is removed in v6 and leaves a blank canvas.
 - Missing measurements are `null` and rendered "N/D", never coerced to zero.
 - Metric map panels request proven GPS through the typed analysis adapter for the active capture and individual selection; their per-tab visualization is independent of the measurements table so changing a card never replaces that table.
 - Tests always run against fixtures: `vitest.config.ts` sets `VITE_BC4_DATA=mock` before Vite loads `.env`, so the suite never depends on whichever backend the local `.env` points at.
