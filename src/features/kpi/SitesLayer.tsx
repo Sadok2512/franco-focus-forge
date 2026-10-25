@@ -462,7 +462,7 @@ export function useSitesLayer(
     if (!map) return;
     const apply = () => {
       const set = (id: string, on: boolean) => {
-        if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+        if (map.getLayer(id)) map.setLayoutProperty?.(id, "visibility", on ? "visible" : "none");
       };
       set(CELL_BEAM_LAYER_ID, display.beams);
       set(CELL_BEAM_OUTLINE_LAYER_ID, display.beams);
