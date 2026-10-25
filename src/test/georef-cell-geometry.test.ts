@@ -43,4 +43,20 @@ describe("GEOREF cell beam geometry", () => {
   it("does not create geometry from invalid evidence", () => {
     expect(getGeorefSectorCoords([2.35, 48.85], Number.NaN, 154)).toEqual([]);
   });
+
+  it("splits a multi-band sector into contiguous slices covering the full aperture", () => {
+    const center: [number, number] = [2.35, 48.85];
+    const full = getGeorefSectorCoords(center, 90, 154);
+    const left = getGeorefSectorSliceCoords(center, 90, 154, 0, 2);
+    const right = getGeorefSectorSliceCoords(center, 90, 154, 1, 2);
+    expect(left).toHaveLength(23);
+    // First slice starts where the full sector starts, last ends where it ends.
+    expect(left[1]).toEqual(full[1]);
+    expect(right[21]).toEqual(full[21]);
+    // Adjacent slices share their edge: no gap, no overlap.
+    expect(left[21]).toEqual(right[1]);
+    // Out-of-range slices produce nothing.
+    expect(getGeorefSectorSliceCoords(center, 90, 154, 2, 2)).toEqual([]);
+    expect(getGeorefSectorSliceCoords(center, 90, 154, 0, 0)).toEqual([]);
+  });
 });

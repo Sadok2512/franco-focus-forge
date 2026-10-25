@@ -11,6 +11,17 @@ describe("site / cell popup", () => {
     expect(card.textContent).toContain("EARFCN");
     expect(dd.filter((v) => v === "—").length).toBeGreaterThanOrEqual(3);
   });
+  it("shows every band of a multi-band cell, as badges and in the grid", () => {
+    const card = buildCellCard(
+      { cell_name: "C1", bands: ["B3", "B20"], band: "B3", techno: "LTE", pci: 12 },
+      "Orange",
+      null,
+    );
+    const badges = [...card.querySelectorAll(".bc4-pop-badge")].map((b) => b.textContent);
+    expect(badges).toContain("B3");
+    expect(badges).toContain("B20");
+    expect(card.textContent).toContain("B3, B20");
+  });
   it("lists the site's cells and opens a cell on click", () => {
     const onCell = vi.fn();
     const cells = [{ cell_name: "A", band: "n78", techno: "5G", pci: 1 }];
