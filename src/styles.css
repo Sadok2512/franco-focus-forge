@@ -268,6 +268,7 @@ html.dark {
 html[data-density="comfortable"] body { font-size: 14px; }
 
 /* Shared network-map site/cell popup (Map page + Signaling View). */
+.bc4-net-popup { z-index: 30; }
 .bc4-net-popup .maplibregl-popup-content {
   border-radius: 13px;
   padding: 10px 12px;
