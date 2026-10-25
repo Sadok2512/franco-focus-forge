@@ -4,8 +4,8 @@ import { beamPercent } from "./beam-display";
 import type { SitesLayerDisplay } from "./SitesLayer";
 
 export type BeamDisplayControlProps = {
-  display?: SitesLayerDisplay;
-  onSetBeamDisplay?: (key: "beamSize" | "beamIntensity", value: number) => void;
+  display?: SitesLayerDisplay | undefined;
+  onSetBeamDisplay?: ((key: "beamSize" | "beamIntensity", value: number) => void) | undefined;
 };
 
 export function BeamDisplayControls({ display, onSetBeamDisplay }: BeamDisplayControlProps) {
