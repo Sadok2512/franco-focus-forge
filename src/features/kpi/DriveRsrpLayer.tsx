@@ -2,12 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getProjectKpiCatalog } from "@/lib/api/project-kpi";
-import { getKpiCaptures, getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
+import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/metrics";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { mapFeatures } from "./map-model";
-import { RSRP_CLASSES, findRsrpKpi, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import { RSRP_CLASSES, RSRP_METRIC, rsrpClass, type RsrpClassId } from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -38,34 +36,42 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
       return next;
     });
 
-  const catalog = useQuery({
-    queryKey: ["kpi-catalog", projectId],
-    queryFn: ({ signal }) => getProjectKpiCatalog(projectId, signal),
+  const captures = useQuery({
+    queryKey: ["metric-captures", projectId],
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
     enabled: prefs.on,
   });
-  const kpi = findRsrpKpi(catalog.data);
-  const code = kpi?.code;
-  const captures = useQuery({
-    queryKey: ["kpi-captures", projectId, code],
-    queryFn: ({ signal }) => getKpiCaptures(projectId, code!, signal),
-    enabled: prefs.on && !!code,
-  });
   useEffect(() => {
-    const best = [...(captures.data ?? [])].sort((a, b) => b.n_observations - a.n_observations)[0];
-    if (!captureId && best) setCaptureId(best.capture_id);
+    if (captureId || !captures.data?.length) return;
+    const fromUrl = new URLSearchParams(window.location.search).get("capture_id");
+    setCaptureId(
+      captures.data.find((c) => c.capture_id === fromUrl)?.capture_id ?? captures.data[0]!.capture_id,
+    );
   }, [captures.data, captureId]);
-  const series = useQuery({
-    queryKey: ["kpi-timeseries", projectId, captureId, code, 5000],
-    queryFn: ({ signal }) => getKpiTimeSeries(projectId, captureId!, code!, 5000, signal),
-    enabled: prefs.on && !!code && !!captureId,
+  const analysis = useQuery({
+    queryKey: ["drive-rsrp", projectId, captureId],
+    queryFn: ({ signal }) =>
+      getMetricAnalysis(projectId, captureId!, [RSRP_METRIC], {}, { group_by: "operator", include_map: true }, signal),
+    enabled: prefs.on && !!captureId,
+    staleTime: 60_000,
   });
   const features = useMemo(
     () =>
-      mapFeatures(series.data).map((f) => ({
-        ...f,
-        properties: { ...f.properties, rsrp_class: rsrpClass(typeof f.properties.value === "number" ? f.properties.value : null) },
-      })),
-    [series.data],
+      (analysis.data?.map_points ?? [])
+        .filter((p) => p.code === RSRP_METRIC && typeof p.value === "number")
+        .filter((p) => Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
+        .map((p) => ({
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
+          properties: {
+            value: p.value as number,
+            seq: p.seq,
+            capture_id: captureId,
+            unit: "dBm",
+            rsrp_class: rsrpClass(p.value as number),
+          },
+        })),
+    [analysis.data, captureId],
   );
 
   // Source + layer (added once the style is parsed, kept across basemap changes).
@@ -155,15 +161,13 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
 
   const status = !prefs.on
     ? null
-    : catalog.isError || captures.isError || series.isError
+    : captures.isError || analysis.isError
       ? t("mapWorkspace.driveRsrpError")
-      : catalog.isPending || (code && (captures.isPending || (captureId && series.isPending)))
+      : captures.isLoading || analysis.isLoading
         ? t("mapWorkspace.driveRsrpLoading")
-        : !code || !captures.data?.length
+        : !captures.data?.length
           ? t("mapWorkspace.driveRsrpNone")
-          : series.data && series.data.status !== "AVAILABLE"
-            ? (series.data.reason ?? t("mapWorkspace.driveRsrpNone"))
-            : !features.length
+          : !features.length
               ? t("mapWorkspace.driveRsrpNoGps")
               : t("mapWorkspace.driveRsrpCount", { count: features.length });
 
@@ -203,7 +207,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
             >
               {captures.data.map((c) => (
                 <option key={c.capture_id} value={c.capture_id}>
-                  {c.capture_id}
+                  {c.label || c.capture_id}
                 </option>
               ))}
             </select>

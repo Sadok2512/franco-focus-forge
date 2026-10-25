@@ -9,6 +9,9 @@ export const RSRP_CLASSES = [
   { id: "bad", min: -Infinity, color: "#dc2626" },
 ] as const;
 
+/** Serving-cell RSRP metric code (same series as the Signaling RF timeline). */
+export const RSRP_METRIC = "cell_rsrp";
+
 export type RsrpClassId = (typeof RSRP_CLASSES)[number]["id"];
 
 /** Class of a measured value; null/non-finite stays null (never coerced). */
