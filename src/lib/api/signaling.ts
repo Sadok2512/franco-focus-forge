@@ -94,6 +94,10 @@ export const signalingSchemas = {
           "services",
           "acces",
           "contexte",
+          // State intervals (UE_STATE / RRC_STATE) carry their own canonical
+          // lanes; rejecting them here used to fail the whole events query.
+          "ue_state",
+          "rrc_state",
         ]),
         type: z.string(),
         kind: z.enum(["mark", "bar", "band", "fail", "tri", "x"]),
