@@ -423,6 +423,26 @@ export function useSitesLayer(
     };
     // Priority: site marker > cell point > beam. Signaling markers keep their own click.
     const mapClick = (event: MapMouseEvent) => {
+      if (map.getLayer(SITE_CLUSTER_LAYER_ID)) {
+        const cluster = map.queryRenderedFeatures(event.point, {
+          layers: [SITE_CLUSTER_LAYER_ID],
+        })[0];
+        if (cluster) {
+          const clusterId = cluster.properties?.["cluster_id"] as number | undefined;
+          const source = map.getSource(SITE_SOURCE_ID) as GeoJSONSource | undefined;
+          if (clusterId != null && source?.getClusterExpansionZoom) {
+            void source
+              .getClusterExpansionZoom(clusterId)
+              .then((zoom) =>
+                map.easeTo({
+                  center: (cluster.geometry as GeoJSON.Point).coordinates as [number, number],
+                  zoom: Math.min(zoom + 0.5, 18),
+                }),
+              );
+          }
+          return;
+        }
+      }
       const layers = [SITE_LAYER_ID, CELL_POINT_LAYER_ID, CELL_BEAM_LAYER_ID].filter((id) => map.getLayer(id));
       const own = map.getStyle?.()?.layers?.filter((l) => l.id.startsWith("signaling")).map((l) => l.id) ?? [];
       if (own.length && map.queryRenderedFeatures(event.point, { layers: own }).length) return;
