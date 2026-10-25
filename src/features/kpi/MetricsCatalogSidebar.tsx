@@ -1,10 +1,18 @@
-// 1.78.0 (BC3) — Metrics tree aligned strictement sur KPI tree.
-// Arbre dérivé de /metrics back (jamais hardcodé). Hiérarchie 4-5 niveaux
-// (catégorie → groupe → métrique → cellule) rendue avec le même style que
+// 1.107.0 (BC3 Phase 3b) — Metrics tree lit l'enveloppe `catalog_release`
+// + `decoder_version` + `reason` du GET /metrics (back 0.80.0) :
+//   - footer "Catalog X.Y.Z · Decoder A.B.C" piloté par l'enveloppe
+//     (fallback explicite "legacy" quand catalog_release=null) ;
+//   - 4 niveaux Technology → Catégorie → Métrique (NFF event) → Feuilles
+//     cellule, hérités du JSON 2.50.5 avec `node_type` ∈ {tech, category,
+//     event, leaf} ;
+//   - badge "PER CELL" dérivé du `metric_id` suffixé `@<cell_type>` ;
+//   - case "Active only" (défaut OFF) qui replie les feuilles n=0 sans
+//     JAMAIS cacher les feuilles non-sélectionnables (grisage + tooltip
+//     `reason` préservés).
+// 1.78.0 (BC3 héritage) — Metrics tree aligned strictement sur KPI tree.
+// Arbre dérivé de /metrics back (jamais hardcodé). Même style que
 // KpiCatalogSidebar : header p-2, pas d'eyebrow, pas d'Expand/Collapse,
-// chevron intégré dans la row (bar-click = expand), status dot, ⋮ menu
-// MoreVertical + VisualizationItems partagé. Pas d'icône ★, pas de source
-// badge, pas de compteur par leaf.
+// chevron intégré dans la row, status dot, ⋮ menu MoreVertical.
 import { useTranslation } from "react-i18next";
 import { useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -67,6 +75,10 @@ export function MetricsCatalogSidebar({
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
+  // 1.107.0 — "Active only" filtre les feuilles n=0 ; les feuilles
+  // non-sélectionnables (hors colonne décodeur, par ex.) restent affichées
+  // en grisé avec tooltip reason, JAMAIS cachées même avec filtre ON.
+  const [activeOnly, setActiveOnly] = useState(false);
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
@@ -142,10 +154,37 @@ export function MetricsCatalogSidebar({
     }
   };
 
+  // 1.107.0 — "PER CELL" dérivé du metric_id : `event_field@<cell_type>`.
+  // Null si pas de suffixe `@` ou non-leaf. Garanti par le build_catalog_v4
+  // back qui laisse `node.cell=null` tant qu'on n'a pas mappé les cell_type
+  // vers "pcell"/"scell*".
+  const perCellBadge = (node: MetricCatalogNode): string | null => {
+    if (node.node_type !== "leaf") return null;
+    const mid = node.metric_id ?? "";
+    const at = mid.lastIndexOf("@");
+    if (at < 0) return null;
+    const suffix = mid.slice(at + 1);
+    if (!suffix) return null;
+    // Mapping lisible pour les cell_type NFF 2.50 fréquents.
+    if (suffix === "0") return "PCell";
+    if (suffix === "199") return "PSCell";
+    if (/^\d{1,2}$/.test(suffix)) return `SCell ${suffix}`;
+    if (/^1\d{2}$/.test(suffix)) return `SCG SCell ${Number(suffix) - 100}`;
+    return suffix;
+  };
+
   const renderNode = (node: MetricCatalogNode): ReactNode => {
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
     const expanded = Boolean(matching) || open.has(node.node_id);
+    // 1.107.0 — Active only : masque les feuilles sélectionnables à n=0.
+    // Les non-sélectionnables (!selectable) restent toujours affichées en
+    // grisé (contrat produit : feuilles jamais cachées, tooltip reason).
+    if (
+      activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0
+    ) {
+      return null;
+    }
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
     const branchChecked =
       branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
@@ -169,12 +208,35 @@ export function MetricsCatalogSidebar({
     const copyPayload =
       node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
 
-    // CATEGORIE : même pattern que KPI techno (bar entière cliquable, chevron intégré)
-    if (node.node_type === "category") {
+    // 1.107.0 — TECH (racine Technology LTE / NR / Shared / Other).
+    // Rendu kpi-tree-root (top-level) ; les catégories deviennent children
+    // family. Préserve le design actuel (chevron intégré, bar-click = expand).
+    if (node.node_type === "tech") {
       return (
         <li key={node.node_id}>
           <button
             className="kpi-tree-root"
+            aria-expanded={expanded}
+            onClick={() => toggleOpen(node.node_id)}
+          >
+            {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+            {label}
+          </button>
+          {expanded && (
+            <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
+          )}
+        </li>
+      );
+    }
+
+    // CATEGORIE : rendu kpi-tree-root quand pas sous un tech, sinon family
+    // (évite de dupliquer le niveau racine quand l'arbre est "flat").
+    if (node.node_type === "category") {
+      const underTech = node.parent_id && byParent.has(node.parent_id);
+      return (
+        <li key={node.node_id}>
+          <button
+            className={underTech ? "kpi-tree-family" : "kpi-tree-root"}
             aria-expanded={expanded}
             onClick={() => toggleOpen(node.node_id)}
           >
@@ -233,7 +295,18 @@ export function MetricsCatalogSidebar({
               aria-hidden="true"
             />
             <span className="min-w-0 flex-1">
-              <span className="block truncate">{label}</span>
+              <span className="block truncate">
+                {label}
+                {/* 1.107.0 — Badge PER CELL dérivé de metric_id@<cell_type> */}
+                {perCellBadge(node) && (
+                  <span
+                    className="ml-1 inline-flex items-center rounded border border-primary/30 bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary"
+                    data-testid={`per-cell-${node.node_id}`}
+                  >
+                    {perCellBadge(node)}
+                  </span>
+                )}
+              </span>
               {search && (
                 <span className="text-[10px] text-muted-foreground">
                   {node.source ?? node.metric_id ?? ""}
@@ -325,6 +398,20 @@ export function MetricsCatalogSidebar({
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
+        {/* 1.107.0 — Case "Active only" : replie les feuilles n=0, laisse les
+            non-sélectionnables toujours grisées (jamais cachées). Défaut OFF. */}
+        <label
+          className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground"
+          data-testid="metrics-active-only"
+        >
+          <input
+            type="checkbox"
+            checked={activeOnly}
+            onChange={(e) => setActiveOnly(e.target.checked)}
+            className="h-3 w-3"
+          />
+          {t("metrics.activeOnly")}
+        </label>
       </header>
       {/* The catalogue is prefetched at app start, so a tab opened later joins an
           already-finished request: show the bar for any in-flight fetch, not only
@@ -354,11 +441,30 @@ export function MetricsCatalogSidebar({
           <li className="p-4 text-xs text-muted-foreground">{t("metrics.7f626224ba1f") || "—"}</li>
         )}
       </ul>
+      {/* 1.107.0 — Footer lit l'enveloppe `catalog_release` + `decoder_version`
+          du back 0.80.0. Jamais en dur. Fallback explicite "legacy" quand
+          catalog_release=null (bootstrap frais / fallback_legacy). */}
       <footer
         className="border-t p-2 text-[10px] text-muted-foreground"
         title={`front v${APP_VERSION} · ${t("metrics.498227f2b5c6")}`}
+        data-testid="metrics-catalog-footer"
       >
-        {t("metrics.498227f2b5c6")}
+        {query.data?.catalog_release ? (
+          <span>
+            {t("metrics.footerCatalogDecoder", {
+              catalog: query.data.catalog_release.version,
+              decoder: query.data.decoder_version || "?",
+            })}
+          </span>
+        ) : query.data ? (
+          <span>
+            {t("metrics.footerLegacy", {
+              reason: query.data.reason || "legacy",
+            })}
+          </span>
+        ) : (
+          <span>{t("metrics.498227f2b5c6")}</span>
+        )}
       </footer>
       {info && (
         <div

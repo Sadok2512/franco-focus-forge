@@ -5,13 +5,29 @@
 - La page réutilise strictement `KpiMapOSM`, `useSitesLayer` et la géométrie partagée `georef-cell-geometry` : points individuels sans clustering, beams GEOREF à partir du zoom 13 et aucune coordonnée ou orientation inventée.
 - Les cartes KPI, Metrics et Signaling conservent leur contrôle compact existant. Les nouveaux libellés sont disponibles en anglais et en français.
 
-## 1.107.0 (minor) — BC4-FRONT 2026-10-24 — Sites et beams GEOREF sans clustering (Agent BC1)
+### Couche GEOREF partagée incluse dans 1.108.0
 
 - Les cartes partagées KPI, Metrics et Signaling interdisent désormais le zoom inférieur à 11 et chargent les sites comme points individuels dès ce niveau ; la couche de clusters et ses compteurs ont été retirés du rendu.
 - Les couches Sites et Cells sont indépendantes. Les cellules sont chargées et affichées à partir du zoom 13, puis masquées en revenant au zoom 12 sans reconstruire les sources MapLibre.
 - Les beams réutilisent la projection d’azimut, le polygone courbe et les rayons par zoom de `georef-frontend/src/components/otarie/DetailedSectorsLayer.tsx` et `sitesMonitorMapUtils.ts`. Une cellule sans azimut prouvé ne produit aucun beam.
 - Les sites utilisent des points compacts avec contour blanc, survol, sélection et détails limités aux champs fournis par `/sites`. Toute réponse tronquée reste signalée.
 - Le contrat backend et les données restent inchangés. `/sites` conserve sa limite explicite de 2 000 entités par bbox ; l’interface indique une population partielle lorsqu’elle s’applique.
+
+## 1.107.0 (minor) — BC4-FRONT 2026-10-25 — Metrics sidebar : enveloppe catalog_release + arbre 2.50.5 (Phase 3b, Agent BC3)
+
+Alignement sur le back 0.80.0 (`feat/bc3-metrics-v3`) qui bascule `/metrics` sur le catalogue NFF 2.50.5 (5115 feuilles `displayed=true`, `node_id` unique par position, enveloppe `catalog_release` + `decoder_version` + `reason`).
+
+Livré :
+- **Pied `MetricsCatalogSidebar`** piloté par l'enveloppe : affiche `Catalog X.Y.Z · Decoder A.B.C` lu depuis `query.data.catalog_release.version` + `query.data.decoder_version`, JAMAIS en dur. Fallback explicite `legacy ({{reason}})` quand `catalog_release=null` (bootstrap frais / back pré-0.80.0). Keys i18n `metrics.footerCatalogDecoder` + `metrics.footerLegacy`.
+- **Arbre Technology → Catégorie → Métrique → Feuilles cellule** : `MetricCatalogNodeSchema.node_type` accepte désormais `"tech"`, `"category"`, `"group"`, `"metric"`, `"event"`, `"leaf"` (ancien `"group"/"metric"` conservé pour le fallback legacy catalogue_v6). Les `tech` nodes rendent en `kpi-tree-root` ; les `category` sous un tech rendent en `kpi-tree-family`.
+- **Badge PER CELL** (data-testid `per-cell-<node_id>`) dérivé du `metric_id` suffixé `@<cell_type>` : `@0`→PCell, `@199`→PSCell, `@1..31`→SCell N, `@100..131`→SCG SCell. Jamais inventé — le badge n'apparaît que si le suffixe existe.
+- **Case "Active only"** (défaut OFF, i18n `metrics.activeOnly`, data-testid `metrics-active-only`) : replie les feuilles `selectable=true && n==0`. Les feuilles `selectable=false` (hors colonne décodeur, out-of-scope corpus) restent affichées **grisées** avec tooltip `reason` ("Column not in decoder schema") — contrat produit, JAMAIS cachées.
+- **Design actuel inchangé** : status dot, chevrons, bar-click = expand, ⋮ menu MoreVertical, ⓘ dialog, VisualizationItems partagé — tout préservé.
+- **Schema zod** `MetricCatalogResponseSchema` : `catalogue_version` relâché en `z.string()` (plus de literal `"v6"`), `tech`/`proof` relâchés en string libre (2.50.5 inclut `"documented-2.50"`, `"Shared"`, `"Other"`), `node_type` étendu, `cell` nullable string libre, enveloppe `catalog_release/decoder_version/reason` ajoutée optionnelle avec default.
+
+Hors scope (dette ouverte 3c futur) :
+- Pas de pop-in Task column (3c, pas dans ce lot per directive BC3).
+- Les 4329 feuilles `selectable=false` (events hors corpus simple NFF 2.50) attendent 2.2b et la matérialisation des événements complexes/deep dans Light.
 
 ## 1.106.5 (patch) — BC4-FRONT 2026-10-25 — Sites : chaque opérateur à sa couleur
 - Le back nomme les opérateurs en clair (« Bouygues ») alors que la légende et les couleurs parlent en codes (BYT) : la couche Sites ne reconnaissait que les codes, donc les sites Bouygues, Orange et Free prenaient le gris « inconnu » et se confondaient avec les sites non identifiés. Une clé canonique unique (code ou libellé) pilote désormais la couleur, la popup et les compteurs.
