@@ -1,4 +1,4 @@
-- [ ] Ajouter et vérifier taille/intensité des faisceaux de 0 à 100 % sur les cartes partagées.
+- [x] Taille/intensité des faisceaux de 0 à 100 % sur les cartes partagées : curseurs mémorisés, géométrie et opacité locales sans requête supplémentaire ; 14 tests ciblés passent, carte vérifiée sur fixtures, build OK. Données réelles non vérifiées, rien publié.
 
 ## KPI multi-panneaux (plan validé)
 - [x] Corriger ⋮ → Carte : panneau carte indépendant via include_map=true pour la capture active, sans graphe de substitution, tableau conservé. 8 tests ciblés passent ; clic du catalogue vérifié sur fixtures (canvas MapLibre, tableau présent). Rendu des tuiles et capture réelle non vérifiés ; rien publié.
