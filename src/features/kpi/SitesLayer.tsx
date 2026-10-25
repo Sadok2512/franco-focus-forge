@@ -174,7 +174,7 @@ export function useSitesLayer(
           zoom,
         }));
       });
-  }, [map, sitesEnabled, cellsEnabled, filters.technos, filters.bands, filters.operators]);
+  }, [map, sitesEnabled, cellsEnabled, filters.technos, filters.bands, filters.operators, sitesMinZoom]);
 
   useEffect(() => {
     if (!map) return;
@@ -218,6 +218,7 @@ export function useSitesLayer(
           id: SITE_LAYER_ID,
           type: "circle",
           source: SITE_SOURCE_ID,
+          ...(sitesMinZoom > 0 ? { minzoom: sitesMinZoom } : {}),
           paint: {
             "circle-radius": [
               "case",
@@ -279,7 +280,7 @@ export function useSitesLayer(
         id: SITE_LABEL_LAYER_ID,
         type: "symbol",
         source: SITE_SOURCE_ID,
-        minzoom: 12,
+        minzoom: Math.max(12, sitesMinZoom),
         layout: {
           "text-field": ["coalesce", ["get", "site_name"], ["get", "site_id"], ""],
           "text-font": ["Open Sans Semibold"],
@@ -470,7 +471,7 @@ export function useSitesLayer(
     if (!map) return;
     const source = map.getSource(SITE_SOURCE_ID) as GeoJSONSource | undefined;
     if (!source) return;
-    if (!sitesEnabled || !status.sites) {
+    if (!sitesEnabled || !status.sites || status.zoom < sitesMinZoom) {
       sitesDataRef.current = [];
       return void source.setData(emptyCollection());
     }
