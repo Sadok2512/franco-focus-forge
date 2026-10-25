@@ -2,8 +2,15 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import "@/lib/i18n";
 import { SitesMapWorkspaceControls } from "@/features/kpi/SitesLayerControls";
+import { DEFAULT_NETWORK_MAP_CENTER, resolveNetworkMapCenter } from "@/features/map/map-center";
 
 describe("Map workspace chrome", () => {
+  it("does not open a legacy project with a [0, 0] sentinel outside the sites perimeter", () => {
+    expect(resolveNetworkMapCenter([0, 0])).toEqual(DEFAULT_NETWORK_MAP_CENTER);
+    expect(resolveNetworkMapCenter(undefined)).toEqual(DEFAULT_NETWORK_MAP_CENTER);
+    expect(resolveNetworkMapCenter([2.35, 48.86])).toEqual([2.35, 48.86]);
+  });
+
   it("renders functional top controls and API-backed bottom status", () => {
     const toggleSites = vi.fn();
     const toggleCells = vi.fn();

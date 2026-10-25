@@ -1,3 +1,9 @@
+## 1.108.1 (patch) — BC4-FRONT 2026-10-25 — Carte plein workspace et sites visibles (Agent BC1)
+
+- La page `/map` utilise désormais toute la hauteur disponible du workspace ; la hauteur compacte premium reste limitée aux cartes intégrées dans les autres modules.
+- Les centres projet sentinelles `[0, 0]` ne sont plus interprétés comme une position réelle. La carte utilise alors le centre de repli France déjà prévu, afin que la requête bbox `/sites` charge les sites réels au zoom 11.
+- Aucun contrat API, site, cellule, coordonnée ou beam n'est modifié.
+
 ## 1.108.0 (minor) — BC4-FRONT 2026-10-25 — Workspace Carte réseau GEOREF (Agent BC1)
 
 - Ajoute la page `/map` et son entrée « Carte » dans la navigation principale BC4. Le workspace utilise le centre réel du projet actif lorsqu'il est disponible et conserve le zoom minimal 11.

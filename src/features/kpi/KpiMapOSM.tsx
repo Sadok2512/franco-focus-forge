@@ -220,7 +220,7 @@ export function KpiMapOSM({
   return (
     <div
       style={
-        premium && !full
+        premium && !full && !workspace
           ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
           : undefined
       }

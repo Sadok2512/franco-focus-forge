@@ -5,6 +5,7 @@ import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { useActiveProject } from "@/lib/activeProject";
 import { getProject } from "@/lib/api/client";
+import { resolveNetworkMapCenter } from "./map-center";
 
 /** Dedicated network map. The basemap, /sites queries and GEOREF cell-beam
  * renderer remain owned by KpiMapOSM/SitesLayer; this page only supplies the
@@ -20,7 +21,7 @@ export function MapWorkspacePage() {
 
   if (!activeProject) return <NoActiveProject scope={t("mapWorkspace.title")} />;
 
-  const center = projectQuery.data?.center;
+  const center = resolveNetworkMapCenter(projectQuery.data?.center);
   return (
     <section className="flex h-[calc(100dvh-3.5rem)] min-h-[560px] flex-col overflow-hidden bg-slate-100 p-2 dark:bg-slate-950">
       <header className="flex h-11 shrink-0 items-center justify-between px-2">
@@ -43,7 +44,7 @@ export function MapWorkspacePage() {
       </header>
       <div className="min-h-0 flex-1">
         <KpiMapOSM
-          center={center ?? [2.4, 46.6]}
+          center={center}
           zoom={11}
           premium
           workspace
