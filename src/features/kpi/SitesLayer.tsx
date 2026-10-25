@@ -219,11 +219,61 @@ export function useSitesLayer(
           },
         });
       }
+      if (!map.getLayer(SITE_CLUSTER_LAYER_ID)) {
+        map.addLayer({
+          id: SITE_CLUSTER_LAYER_ID,
+          type: "circle",
+          source: SITE_SOURCE_ID,
+          filter: ["has", "point_count"],
+          paint: {
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              14,
+              25,
+              17,
+              100,
+              21,
+              500,
+              26,
+            ],
+            "circle-color": [
+              "step",
+              ["get", "point_count"],
+              "#64748b",
+              25,
+              "#475569",
+              100,
+              "#334155",
+              500,
+              "#1e293b",
+            ],
+            "circle-opacity": 0.85,
+            "circle-stroke-color": "#ffffff",
+            "circle-stroke-width": 1.5,
+          },
+        });
+      }
+      if (!map.getLayer(SITE_CLUSTER_COUNT_LAYER_ID) && map.getStyle?.()?.glyphs) {
+        map.addLayer({
+          id: SITE_CLUSTER_COUNT_LAYER_ID,
+          type: "symbol",
+          source: SITE_SOURCE_ID,
+          filter: ["has", "point_count"],
+          layout: {
+            "text-field": ["get", "point_count_abbreviated"],
+            "text-font": ["Open Sans Semibold"],
+            "text-size": 11,
+          },
+          paint: { "text-color": "#ffffff" },
+        });
+      }
       if (!map.getLayer(SITE_LAYER_ID)) {
         map.addLayer({
           id: SITE_LAYER_ID,
           type: "circle",
           source: SITE_SOURCE_ID,
+          filter: ["!", ["has", "point_count"]],
           paint: {
             "circle-radius": [
               "case",
