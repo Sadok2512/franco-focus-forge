@@ -106,7 +106,12 @@ export function useSitesLayer(
   filters: SitesLayerFilters,
   labels: SitesLayerLabels,
   display: SitesLayerDisplay = { beams: true, labels: false },
+  options: { sitesMinZoom?: number } = {},
 ) {
+  // Embedded maps (Signaling View) can gate site points to a minimum zoom so
+  // the GPS track stays readable; the Map page keeps the default 0 (every
+  // zoom). Presentation only — never clustering.
+  const sitesMinZoom = Math.max(0, options.sitesMinZoom ?? 0);
   const [status, setStatus] = useState<SitesLayerStatus>({
     loading: false,
     error: null,
@@ -136,9 +141,10 @@ export function useSitesLayer(
     const controller = new AbortController();
     abortRef.current = controller;
     setStatus((current) => ({ ...current, loading: true, error: null, zoom }));
-    const siteRequest = sitesEnabled
-      ? getSites({ ...common, zoom: 12 }, controller.signal)
-      : Promise.resolve(null);
+    const siteRequest =
+      sitesEnabled && zoom >= sitesMinZoom
+        ? getSites({ ...common, zoom: 12 }, controller.signal)
+        : Promise.resolve(null);
     const cellRequest =
       cellsEnabled && zoom >= CELLS_VISIBLE_ZOOM
         ? getSites({ ...common, zoom: 15 }, controller.signal)
