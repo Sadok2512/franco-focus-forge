@@ -9,7 +9,7 @@
  * État persisté localStorage `bc4.map.sitesLayer.v3`. Vide = tous actifs.
  * 1.103.1 — enabled ON par défaut + bump v1→v2 pour reset auto.
  */
-import { Antenna, Layers, MapPin, RadioTower, RotateCcw } from "lucide-react";
+import { Layers } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SitesLayerFilters } from "./SitesLayer";
@@ -20,18 +20,20 @@ type State = {
   enabled: boolean;
   cellsEnabled: boolean;
   filters: SitesLayerFilters;
+  display: { beams: boolean; labels: boolean };
 };
 
 const DEFAULT_STATE: State = {
   enabled: true,
   cellsEnabled: true,
+  display: { beams: true, labels: true },
   filters: { technos: [], bands: [], operators: [] },
 };
 
 const TECHNOS = ["4G", "5G", "LTE"] as const;
 const BANDS_LTE = ["B20", "B28", "B8", "B3", "B1", "B7"] as const;
 const BANDS_NR = ["n28", "n1", "n3", "n7", "n75", "n78", "n258"] as const;
-const OPERATORS = [
+export const OPERATORS = [
   { v: "ORF", label: "Orange", color: "#FF7900" },
   { v: "BYT", label: "Bouygues", color: "#009FE3" },
   { v: "SFR", label: "SFR", color: "#E2001A" },
@@ -70,6 +72,7 @@ function readState(): State {
     return {
       enabled: Boolean(parsed.enabled),
       cellsEnabled: parsed.cellsEnabled !== false,
+      display: { beams: parsed.display?.beams !== false, labels: parsed.display?.labels !== false },
       filters: {
         technos: Array.isArray(parsed.filters?.technos) ? parsed.filters!.technos : [],
         bands: Array.isArray(parsed.filters?.bands) ? parsed.filters!.bands : [],
@@ -97,6 +100,11 @@ export function useSitesLayerState() {
     enabled: state.enabled,
     cellsEnabled: state.cellsEnabled,
     filters: state.filters,
+    display: state.display,
+    setDisplay: (key: "beams" | "labels", v: boolean) =>
+      setState((s) => ({ ...s, display: { ...s.display, [key]: v } })),
+    setTechnos: (technos: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, technos } })),
+    setBands: (bands: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, bands } })),
     setEnabled: (v: boolean) => setState((s) => ({ ...s, enabled: v })),
     setCellsEnabled: (v: boolean) => setState((s) => ({ ...s, cellsEnabled: v })),
     toggleTechno: (t: string) =>
@@ -275,205 +283,3 @@ export function SitesLayerControls({
   );
 }
 
-/** Full-map chrome inspired by GEOREF's FloatingTopToolbar/FloatingStatusBar.
- * It consumes the same layer state and API status as the compact control: no
- * second map implementation and no derived/fabricated population counters. */
-export function SitesMapWorkspaceControls(props: SitesLayerControlsProps) {
-  const { t, i18n } = useTranslation();
-  const {
-    enabled,
-    cellsEnabled,
-    cellsAvailable,
-    filters,
-    onToggleEnabled,
-    onToggleCells,
-    onToggleTechno,
-    onToggleBand,
-    onToggleOperator,
-    onReset,
-    status,
-  } = props;
-  const locale = i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB";
-  const active = (items: string[], value: string) => items.length === 0 || items.includes(value);
-  const filterCount = filters.technos.length + filters.bands.length + filters.operators.length;
-
-  return (
-    <>
-      <div className="pointer-events-none absolute left-14 right-14 top-3 z-20 flex justify-center">
-        <div
-          data-testid="map-workspace-topbar"
-          className="pointer-events-auto flex max-w-full items-center gap-1.5 overflow-x-auto rounded-2xl border border-white/70 bg-white/80 p-1.5 shadow-lg backdrop-blur-md dark:border-slate-700 dark:bg-slate-950/80"
-        >
-          <span className="flex h-9 shrink-0 items-center gap-2 rounded-xl bg-slate-900 px-3 text-[11px] font-semibold text-white dark:bg-slate-100 dark:text-slate-900">
-            <RadioTower className="h-3.5 w-3.5" /> {t("mapWorkspace.networkMap")}
-          </span>
-          <button
-            type="button"
-            aria-pressed={enabled}
-            onClick={() => onToggleEnabled(!enabled)}
-            className={`flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold transition ${enabled ? "bg-sky-600 text-white" : "bg-muted text-muted-foreground"}`}
-          >
-            <MapPin className="h-3.5 w-3.5" /> {t("mapWorkspace.sites")}
-          </button>
-          <button
-            type="button"
-            aria-pressed={cellsEnabled}
-            disabled={!cellsAvailable}
-            title={!cellsAvailable ? t("mapSites.cellsFromZoom") : t("mapSites.showCells")}
-            onClick={() => onToggleCells(!cellsEnabled)}
-            className={`flex h-9 shrink-0 items-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${cellsEnabled && cellsAvailable ? "bg-emerald-600 text-white" : "bg-muted text-muted-foreground"}`}
-          >
-            <Antenna className="h-3.5 w-3.5" /> {t("mapWorkspace.cells")}
-          </button>
-          <span className="mx-0.5 h-6 w-px shrink-0 bg-border" />
-          <div
-            className="flex shrink-0 overflow-hidden rounded-xl border bg-card"
-            aria-label={t("mapSites.technology")}
-          >
-            {TECHNOS.map((techno) => (
-              <button
-                key={techno}
-                type="button"
-                aria-pressed={active(filters.technos, techno)}
-                onClick={() => onToggleTechno(techno)}
-                className={`h-9 border-r px-2.5 text-[10px] font-bold last:border-r-0 ${active(filters.technos, techno) ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              >
-                {techno}
-              </button>
-            ))}
-          </div>
-          <details className="group relative shrink-0">
-            <summary className="flex h-9 cursor-pointer list-none items-center rounded-xl border bg-card px-3 text-[11px] font-semibold hover:bg-muted">
-              {t("mapWorkspace.bands")}{" "}
-              {filters.bands.length ? `(${filters.bands.length})` : `(${t("common.all")})`}
-            </summary>
-            <div className="absolute left-0 top-11 z-30 w-64 rounded-xl border bg-popover p-3 shadow-xl">
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("mapSites.lteBands")}
-              </p>
-              <div className="mb-3 flex flex-wrap gap-1">
-                {BANDS_LTE.map((band) => (
-                  <FilterChip
-                    key={band}
-                    label={band}
-                    pressed={active(filters.bands, band)}
-                    onClick={() => onToggleBand(band)}
-                  />
-                ))}
-              </div>
-              <p className="mb-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                {t("mapSites.nrBands")}
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {BANDS_NR.map((band) => (
-                  <FilterChip
-                    key={band}
-                    label={band}
-                    pressed={active(filters.bands, band)}
-                    onClick={() => onToggleBand(band)}
-                  />
-                ))}
-              </div>
-            </div>
-          </details>
-          <details className="group relative shrink-0">
-            <summary className="flex h-9 cursor-pointer list-none items-center rounded-xl border bg-card px-3 text-[11px] font-semibold hover:bg-muted">
-              {t("mapSites.operator")}{" "}
-              {filters.operators.length ? `(${filters.operators.length})` : `(${t("common.all")})`}
-            </summary>
-            <div className="absolute right-0 top-11 z-30 w-44 rounded-xl border bg-popover p-2 shadow-xl">
-              {OPERATORS.map((operator) => (
-                <button
-                  key={operator.v}
-                  type="button"
-                  onClick={() => onToggleOperator(operator.v)}
-                  className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-left text-xs hover:bg-muted"
-                >
-                  <span
-                    className="h-2.5 w-2.5 rounded-full"
-                    style={{ backgroundColor: operator.color }}
-                  />
-                  <span className="flex-1">{operator.label}</span>
-                  <span aria-hidden>{active(filters.operators, operator.v) ? "✓" : ""}</span>
-                </button>
-              ))}
-            </div>
-          </details>
-          {filterCount > 0 && (
-            <button
-              type="button"
-              onClick={onReset}
-              title={t("common.reset")}
-              aria-label={t("common.reset")}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border bg-card hover:bg-muted"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute bottom-4 left-1/2 z-20 max-w-[calc(100%-1rem)] -translate-x-1/2">
-        <div
-          data-testid="map-workspace-statusbar"
-          className="pointer-events-auto flex items-center gap-3 overflow-x-auto whitespace-nowrap rounded-full border border-white/70 bg-white/80 px-4 py-2 text-[11px] shadow-lg backdrop-blur-md dark:border-slate-700 dark:bg-slate-950/80"
-        >
-          <StatusValue label={t("mapWorkspace.zoom")} value={(status?.zoom ?? 11).toFixed(1)} />
-          <StatusValue
-            label={t("mapWorkspace.visibleSites")}
-            value={status?.n_sites == null ? "—" : status.n_sites.toLocaleString(locale)}
-          />
-          <StatusValue
-            label={t("mapWorkspace.visibleCells")}
-            value={status?.n_cells == null ? "—" : status.n_cells.toLocaleString(locale)}
-          />
-          <span
-            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-amber-500" : status?.error ? "bg-red-500" : "bg-emerald-500"}`}
-          />
-          <span
-            className={status?.error ? "max-w-64 truncate text-red-700" : "text-muted-foreground"}
-            {...(status?.error ? { title: status.error } : {})}
-          >
-            {status?.loading
-              ? t("mapSites.loading")
-              : status?.error
-                ? `${t("mapSites.error")}: ${status.error}`
-                : status?.truncated
-                  ? t("mapSites.partial")
-                  : t("mapWorkspace.ready")}
-          </span>
-        </div>
-      </div>
-    </>
-  );
-}
-
-function FilterChip({
-  label,
-  pressed,
-  onClick,
-}: {
-  label: string;
-  pressed: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={pressed}
-      onClick={onClick}
-      className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${pressed ? "border-primary bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-    >
-      {label}
-    </button>
-  );
-}
-
-function StatusValue({ label, value }: { label: string; value: string }) {
-  return (
-    <span className="inline-flex items-baseline gap-1">
-      <span className="text-muted-foreground">{label}</span>
-      <strong className="tabular-nums text-foreground">{value}</strong>
-    </span>
-  );
-}

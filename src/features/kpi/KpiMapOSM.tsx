@@ -13,11 +13,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
-import {
-  SitesLayerControls,
-  SitesMapWorkspaceControls,
-  useSitesLayerState,
-} from "./SitesLayerControls";
+import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
+import { NetworkMapChrome } from "./NetworkMapChrome";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
@@ -29,7 +26,19 @@ const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
 
 /** Harness interne : relie `useSitesLayer` au contrôle UI persistant.
  *  Doit être enfant de KpiMapOSM pour avoir accès au Map instance. */
-function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; workspace?: boolean }) {
+function SitesLayerHarness({
+  map,
+  workspace = false,
+  fullscreen = false,
+  onToggleFullscreen,
+  onRecenter,
+}: {
+  map: MlMap | null;
+  workspace?: boolean;
+  fullscreen?: boolean;
+  onToggleFullscreen?: () => void;
+  onRecenter?: () => void;
+}) {
   const { t } = useTranslation();
   const {
     enabled,
@@ -41,6 +50,10 @@ function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; work
     toggleBand,
     toggleOperator,
     reset,
+    display,
+    setDisplay,
+    setTechnos,
+    setBands,
   } = useSitesLayerState();
   const labels = useMemo(
     () => ({
@@ -54,7 +67,7 @@ function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; work
     }),
     [t],
   );
-  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels);
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display);
   const truncated = [status.sites, status.cells].some((response) =>
     Boolean(response?.reason?.startsWith("truncated")),
   );
@@ -81,7 +94,22 @@ function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; work
       truncated,
     },
   };
-  if (workspace) return <SitesMapWorkspaceControls {...controls} />;
+  if (workspace)
+    return (
+      <NetworkMapChrome
+        {...controls}
+        map={map}
+        display={display}
+        onToggleDisplay={setDisplay}
+        onSetTechnos={setTechnos}
+        onSetBands={setBands}
+        sitesFeatures={enabled ? status.sites?.features : []}
+        cellsFeatures={cellsEnabled ? status.cells?.features : []}
+        fullscreen={fullscreen}
+        {...(onToggleFullscreen ? { onToggleFullscreen } : {})}
+        {...(onRecenter ? { onRecenter } : {})}
+      />
+    );
   return <SitesLayerControls {...controls} />;
 }
 
@@ -160,6 +188,8 @@ export function KpiMapOSM({
         attributionControl: { compact: true },
         style: {
           version: 8,
+          // Glyphs for site labels (Layers → Labels).
+          glyphs: "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
           sources: {
             osm: {
               type: "raster",
@@ -184,7 +214,8 @@ export function KpiMapOSM({
         const err = e as { error?: { status?: number } };
         if (err?.error?.status) setTileError(true);
       });
-      instance.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+      if (!workspace)
+        instance.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
     })().catch(() => {
       if (!disposed) setTileError(true);
     });
@@ -227,7 +258,9 @@ export function KpiMapOSM({
       className={
         full
           ? "fixed inset-0 z-[60] bg-background"
-          : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
+          : workspace
+            ? "relative h-full min-h-[280px] w-full overflow-hidden rounded-xl border"
+            : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
       <div
@@ -251,7 +284,7 @@ export function KpiMapOSM({
           </p>
         </div>
       )}
-      {premium && (
+      {premium && !workspace && (
         <div className="absolute left-2 top-2 z-10">
           <div className="flex gap-1">
             <button
@@ -358,7 +391,15 @@ export function KpiMapOSM({
       )}
       {children}
       {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
-      {sitesLayerEnabled && ready && <SitesLayerHarness map={map.current} workspace={workspace} />}
+      {sitesLayerEnabled && ready && (
+        <SitesLayerHarness
+          map={map.current}
+          workspace={workspace}
+          fullscreen={full}
+          onToggleFullscreen={() => setFull(!full)}
+          onRecenter={() => (onRecenter ? onRecenter() : map.current?.flyTo({ center, zoom }))}
+        />
+      )}
       {/* Compact empty-measurement status; attribution remains on the map. */}
       {measurementStatus !== null && (
         <div
@@ -379,7 +420,8 @@ export function KpiMapOSM({
           </span>
         </div>
       )}
-      {/* Bouton plein écran ⤢ en haut à droite */}
+      {/* Bouton plein écran ⤢ en haut à droite (le rail du mode workspace en a un). */}
+      {!workspace && (
       <button
         onClick={() => setFull(!full)}
         aria-label={
@@ -394,6 +436,7 @@ export function KpiMapOSM({
       >
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
+      )}
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
       {showOperatorLegend && !workspace && (
         <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">

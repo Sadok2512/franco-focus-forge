@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import "@/lib/i18n";
-import { SitesMapWorkspaceControls } from "@/features/kpi/SitesLayerControls";
+import { NetworkMapChrome as SitesMapWorkspaceControls } from "@/features/kpi/NetworkMapChrome";
 import { DEFAULT_NETWORK_MAP_CENTER, resolveNetworkMapCenter } from "@/features/map/map-center";
 
 describe("Map workspace chrome", () => {

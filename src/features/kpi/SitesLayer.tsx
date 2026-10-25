@@ -18,6 +18,8 @@ const SITE_LAYER_ID = "bc4-sites-site";
 const CELL_POINT_LAYER_ID = "bc4-sites-cell";
 const CELL_BEAM_LAYER_ID = "bc4-sites-cell-sector";
 const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
+const SITE_LABEL_LAYER_ID = "bc4-sites-label";
+export type SitesLayerDisplay = { beams: boolean; labels: boolean };
 export const MAP_MIN_ZOOM = 6;
 export const MAP_INITIAL_ZOOM = 11;
 export const CELLS_VISIBLE_ZOOM = 13;
@@ -95,6 +97,7 @@ export function useSitesLayer(
   cellsEnabled: boolean,
   filters: SitesLayerFilters,
   labels: SitesLayerLabels,
+  display: SitesLayerDisplay = { beams: true, labels: false },
 ) {
   const [status, setStatus] = useState<SitesLayerStatus>({
     loading: false,
@@ -252,6 +255,28 @@ export function useSitesLayer(
       }
     };
 
+    const addLabels = () => {
+      if (map.getLayer(SITE_LABEL_LAYER_ID) || !map.getStyle?.()?.glyphs) return;
+      map.addLayer({
+        id: SITE_LABEL_LAYER_ID,
+        type: "symbol",
+        source: SITE_SOURCE_ID,
+        minzoom: 12,
+        layout: {
+          "text-field": ["coalesce", ["get", "site_name"], ["get", "site_id"], ""],
+          "text-font": ["Open Sans Semibold"],
+          "text-size": 10,
+          "text-offset": [0, 1.1],
+          "text-anchor": "top",
+          "text-optional": true,
+        },
+        paint: { "text-color": "#0f172a", "text-halo-color": "#ffffff", "text-halo-width": 1.4 },
+      });
+    };
+    const addAll = () => {
+      addSourcesAndLayers();
+      addLabels();
+    };
     let selectedSiteId: string | number | undefined;
     let hoveredSiteId: string | number | undefined;
     const openPopup = async (event: MapLayerMouseEvent, kind: "site" | "cell") => {
@@ -343,8 +368,8 @@ export function useSitesLayer(
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(fetchForCurrentBbox, 250);
     };
-    if (map.isStyleLoaded()) addSourcesAndLayers();
-    else map.once("styledata", addSourcesAndLayers);
+    if (map.isStyleLoaded()) addAll();
+    else map.once("styledata", addAll);
     map.on("click", SITE_LAYER_ID, siteClick);
     map.on("click", CELL_POINT_LAYER_ID, cellClick);
     map.on("mouseenter", SITE_LAYER_ID, siteEnter);
@@ -431,6 +456,22 @@ export function useSitesLayer(
     });
     source.setData({ type: "FeatureCollection", features: [...beams, ...cellFeatures] });
   }, [map, cellsEnabled, status.cells, status.zoom]);
+
+  // Beams / labels visibility toggles (Layers panel) — layout only, no refetch.
+  useEffect(() => {
+    if (!map) return;
+    const apply = () => {
+      const set = (id: string, on: boolean) => {
+        if (map.getLayer(id)) map.setLayoutProperty?.(id, "visibility", on ? "visible" : "none");
+      };
+      set(CELL_BEAM_LAYER_ID, display.beams);
+      set(CELL_BEAM_OUTLINE_LAYER_ID, display.beams);
+      set(SITE_LABEL_LAYER_ID, display.labels);
+    };
+    apply();
+    const id = setTimeout(apply, 120);
+    return () => clearTimeout(id);
+  }, [map, display.beams, display.labels]);
 
   return status;
 }
