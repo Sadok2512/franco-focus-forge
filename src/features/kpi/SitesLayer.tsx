@@ -176,7 +176,20 @@ export function useSitesLayer(
     if (!map) return;
     const addSourcesAndLayers = () => {
       if (!map.getSource(SITE_SOURCE_ID))
-        map.addSource(SITE_SOURCE_ID, { type: "geojson", data: emptyCollection() });
+        map.addSource(SITE_SOURCE_ID, {
+          type: "geojson",
+          data: emptyCollection(),
+          cluster: true,
+          clusterMaxZoom: SITES_CLUSTER_MAX_ZOOM,
+          clusterRadius: 55,
+          clusterProperties: {
+            n_sites: ["+", ["get", "n_sites"]],
+            n_orf: ["+", ["case", ["==", ["get", "op_key"], "ORF"], 1, 0]],
+            n_byt: ["+", ["case", ["==", ["get", "op_key"], "BYT"], 1, 0]],
+            n_sfr: ["+", ["case", ["==", ["get", "op_key"], "SFR"], 1, 0]],
+            n_frm: ["+", ["case", ["==", ["get", "op_key"], "FRM"], 1, 0]],
+          },
+        });
       if (!map.getSource(CELL_SOURCE_ID))
         map.addSource(CELL_SOURCE_ID, { type: "geojson", data: emptyCollection() });
       if (!map.getLayer(CELL_BEAM_LAYER_ID)) {
