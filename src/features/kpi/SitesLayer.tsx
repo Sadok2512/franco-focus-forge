@@ -489,32 +489,60 @@ export function useSitesLayer(
     if (!cellsEnabled || status.zoom < CELLS_VISIBLE_ZOOM || !status.cells)
       return void source.setData(emptyCollection());
     const radius = getGeorefBeamRadiusMeters(status.zoom);
-    const cellFeatures = status.cells.features.map((feature) => {
-      const bandColor = getGeorefBandColor(
-        feature.properties["band"],
-        feature.properties["techno"],
-      );
-      return {
-        ...feature,
-        properties: { ...feature.properties, band_color: bandColor, render_kind: "cell", cell_key: cellKey(feature.properties) },
-      };
-    });
-    const beams = status.cells.features.flatMap((feature) => {
+    // Multi-band cells: features sharing one physical sector (same site,
+    // azimuth and position) are grouped, then the sector is split into one
+    // colored slice per band. A single feature carrying a `bands` array is
+    // split the same way. One deduplicated cell point per sector.
+    const bandsOf = (properties: Record<string, unknown>): string[] => {
+      const many = properties["bands"];
+      if (Array.isArray(many) && many.length) return [...new Set(many.map(String))];
+      const single = properties["band"];
+      return single != null && single !== "" ? [String(single)] : [];
+    };
+    const groups = new Map<string, typeof status.cells.features>();
+    status.cells.features.forEach((feature) => {
       const azimuth = Number(feature.properties["azimuth"]);
-      if (!Number.isFinite(azimuth)) return [];
-      const coordinates = getGeorefSectorCoords(feature.geometry.coordinates, azimuth, radius);
-      if (!coordinates.length) return [];
-      const bandColor = getGeorefBandColor(
-        feature.properties["band"],
-        feature.properties["techno"],
-      );
-      return [
-        {
+      const [lng, lat] = feature.geometry.coordinates;
+      const key = `${String(feature.properties["site_id"] ?? "")}|${Number.isFinite(azimuth) ? azimuth.toFixed(1) : ""}|${lng.toFixed(5)},${lat.toFixed(5)}`;
+      const list = groups.get(key);
+      if (list) list.push(feature);
+      else groups.set(key, [feature]);
+    });
+    const cellFeatures: GeoJSON.Feature[] = [];
+    const beams: GeoJSON.Feature[] = [];
+    groups.forEach((features) => {
+      const first = features[0]!;
+      const bands = [...new Set(features.flatMap((f) => bandsOf(f.properties)))];
+      const primary = bands[0] ?? first.properties["band"];
+      const shared = {
+        ...first.properties,
+        bands,
+        band: primary,
+        band_color: getGeorefBandColor(primary, first.properties["techno"]),
+        render_kind: "cell",
+        cell_key: cellKey(first.properties),
+      };
+      cellFeatures.push({ ...first, properties: shared });
+      const azimuth = Number(first.properties["azimuth"]);
+      if (!Number.isFinite(azimuth)) return;
+      const sliceBands = bands.length > 1 ? bands : [primary];
+      sliceBands.forEach((band, index) => {
+        const coordinates =
+          sliceBands.length > 1
+            ? getGeorefSectorSliceCoords(first.geometry.coordinates, azimuth, radius, index, sliceBands.length)
+            : getGeorefSectorCoords(first.geometry.coordinates, azimuth, radius);
+        if (!coordinates.length) return;
+        beams.push({
           type: "Feature" as const,
           geometry: { type: "Polygon" as const, coordinates: [coordinates] },
-          properties: { ...feature.properties, band_color: bandColor, render_kind: "beam", cell_key: cellKey(feature.properties) },
-        },
-      ];
+          properties: {
+            ...shared,
+            band,
+            band_color: getGeorefBandColor(band, first.properties["techno"]),
+            render_kind: "beam",
+          },
+        });
+      });
     });
     source.setData({ type: "FeatureCollection", features: [...beams, ...cellFeatures] });
   }, [map, cellsEnabled, status.cells, status.zoom]);
