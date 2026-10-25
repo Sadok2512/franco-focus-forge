@@ -13,6 +13,8 @@ import { Layers } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { SitesLayerFilters } from "./SitesLayer";
+import { BeamDisplayControls, type BeamDisplayControlProps } from "./BeamDisplayControls";
+import { beamPercent } from "./beam-display";
 
 const STORAGE_KEY = "bc4.map.sitesLayer.v3";
 
@@ -20,13 +22,13 @@ type State = {
   enabled: boolean;
   cellsEnabled: boolean;
   filters: SitesLayerFilters;
-  display: { beams: boolean; labels: boolean };
+  display: { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 };
 
 const DEFAULT_STATE: State = {
   enabled: true,
   cellsEnabled: true,
-  display: { beams: true, labels: true },
+  display: { beams: true, labels: true, beamSize: 50, beamIntensity: 28 },
   filters: { technos: [], bands: [], operators: [] },
 };
 
@@ -40,7 +42,7 @@ export const OPERATORS = [
   { v: "FRM", label: "Free", color: "#16A34A" },
 ] as const;
 
-export type SitesLayerControlsProps = {
+export type SitesLayerControlsProps = BeamDisplayControlProps & {
   enabled: boolean;
   cellsEnabled: boolean;
   cellsAvailable: boolean;
@@ -72,7 +74,8 @@ function readState(): State {
     return {
       enabled: Boolean(parsed.enabled),
       cellsEnabled: parsed.cellsEnabled !== false,
-      display: { beams: parsed.display?.beams !== false, labels: parsed.display?.labels !== false },
+      display: { beams: parsed.display?.beams !== false, labels: parsed.display?.labels !== false,
+        beamSize: beamPercent(parsed.display?.beamSize, 50), beamIntensity: beamPercent(parsed.display?.beamIntensity, 28) },
       filters: {
         technos: Array.isArray(parsed.filters?.technos) ? parsed.filters!.technos : [],
         bands: Array.isArray(parsed.filters?.bands) ? parsed.filters!.bands : [],
@@ -103,6 +106,8 @@ export function useSitesLayerState() {
     display: state.display,
     setDisplay: (key: "beams" | "labels", v: boolean) =>
       setState((s) => ({ ...s, display: { ...s.display, [key]: v } })),
+    setBeamDisplay: (key: "beamSize" | "beamIntensity", value: number) =>
+      setState((s) => ({ ...s, display: { ...s.display, [key]: beamPercent(value, key === "beamSize" ? 50 : 28) } })),
     setTechnos: (technos: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, technos } })),
     setBands: (bands: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, bands } })),
     setEnabled: (v: boolean) => setState((s) => ({ ...s, enabled: v })),
@@ -152,6 +157,8 @@ export function SitesLayerControls({
   onToggleBand,
   onToggleOperator,
   status,
+  display,
+  onSetBeamDisplay,
 }: SitesLayerControlsProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -200,6 +207,7 @@ export function SitesLayerControls({
           </label>
           {(enabled || cellsEnabled) && (
             <>
+              <BeamDisplayControls display={display} onSetBeamDisplay={onSetBeamDisplay} />
               <div>
                 <div className="font-semibold mt-1">{t("mapSites.technology")}</div>
                 <div className="flex gap-2 mt-1">

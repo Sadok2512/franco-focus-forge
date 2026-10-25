@@ -27,6 +27,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { BASEMAPS, BASEMAP_PREVIEW, applyBasemap, readBasemap, writeBasemap, type BasemapId } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
+import { BeamDisplayControls } from "./BeamDisplayControls";
 import {
   BAND_CODES,
   LTE_COLOR,
@@ -47,7 +48,6 @@ import {
 
 export type NetworkMapChromeProps = SitesLayerControlsProps & {
   map?: MlMap | null;
-  display?: { beams: boolean; labels: boolean };
   onToggleDisplay?: (key: "beams" | "labels", v: boolean) => void;
   onSetTechnos?: (v: string[]) => void;
   onSetBands?: (v: string[]) => void;
@@ -256,6 +256,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               <Check label={t("mapWorkspace.cellSectors")} checked={cellsEnabled} onChange={onToggleCells} hint={cellsAvailable ? undefined : t("mapSites.cellsFromZoom")} />
               <Check label={t("mapWorkspace.beams")} checked={display.beams} disabled={!onToggleDisplay} onChange={(v) => onToggleDisplay?.("beams", v)} />
               <Check label={t("mapWorkspace.labels")} checked={display.labels} disabled={!onToggleDisplay} onChange={(v) => onToggleDisplay?.("labels", v)} />
+              <BeamDisplayControls display={display} onSetBeamDisplay={props.onSetBeamDisplay} />
             </Section>
             <Section title={t("mapWorkspace.technology")}>
               <Check label="5G NR" color={NR_COLOR} checked={isActive(filters.technos, ["5G"])} onChange={() => setTechnos(["5G"])} />

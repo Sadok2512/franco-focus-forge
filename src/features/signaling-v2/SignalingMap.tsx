@@ -21,6 +21,8 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
     toggleTechno,
     toggleBand,
     toggleOperator,
+    display,
+    setBeamDisplay,
   } = useSitesLayerState();
   const labels = useMemo(
     () => ({
@@ -34,12 +36,14 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
     }),
     [t],
   );
-  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels);
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display);
   const truncated = [status.sites, status.cells].some((response) =>
     Boolean(response?.reason?.startsWith("truncated")),
   );
   return (
     <SitesLayerControls
+      display={display}
+      onSetBeamDisplay={setBeamDisplay}
       enabled={enabled}
       cellsEnabled={cellsEnabled}
       cellsAvailable={status.zoom >= CELLS_VISIBLE_ZOOM}

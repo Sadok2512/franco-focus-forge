@@ -14,6 +14,7 @@ import {
   getGeorefSectorSliceCoords,
 } from "./georef-cell-geometry";
 import { buildCellCard, buildSiteCard, cellKey } from "./site-cell-popup";
+import { beamOpacity, beamRadiusScale } from "./beam-display";
 
 const SITE_SOURCE_ID = "bc4-sites";
 const CELL_SOURCE_ID = "bc4-cells";
@@ -26,7 +27,7 @@ const CELL_POINT_LAYER_ID = "bc4-sites-cell";
 const CELL_BEAM_LAYER_ID = "bc4-sites-cell-sector";
 const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
 const SITE_LABEL_LAYER_ID = "bc4-sites-label";
-export type SitesLayerDisplay = { beams: boolean; labels: boolean };
+export type SitesLayerDisplay = { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 export const MAP_MIN_ZOOM = 6;
 export const MAP_INITIAL_ZOOM = 11;
 export const CELLS_VISIBLE_ZOOM = 13;
@@ -491,7 +492,7 @@ export function useSitesLayer(
     if (!source) return;
     if (!cellsEnabled || status.zoom < CELLS_VISIBLE_ZOOM || !status.cells)
       return void source.setData(emptyCollection());
-    const radius = getGeorefBeamRadiusMeters(status.zoom);
+    const radius = getGeorefBeamRadiusMeters(status.zoom) * beamRadiusScale(display.beamSize);
     // Multi-band cells: features sharing one physical sector (same site,
     // azimuth and position) are grouped, then the sector is split into one
     // colored slice per band. A single feature carrying a `bands` array is
@@ -514,7 +515,8 @@ export function useSitesLayer(
     const cellFeatures: GeoJSON.Feature[] = [];
     const beams: GeoJSON.Feature[] = [];
     groups.forEach((features) => {
-      const first = features[0]!;
+      const first = features[0];
+      if (!first) return;
       const bands = [...new Set(features.flatMap((f) => bandsOf(f.properties)))];
       const primary = bands[0] ?? first.properties["band"];
       const shared = {
@@ -548,7 +550,7 @@ export function useSitesLayer(
       });
     });
     source.setData({ type: "FeatureCollection", features: [...beams, ...cellFeatures] });
-  }, [map, cellsEnabled, status.cells, status.zoom]);
+  }, [map, cellsEnabled, status.cells, status.zoom, display.beamSize]);
 
   // Beams / labels visibility toggles (Layers panel) — layout only, no refetch.
   useEffect(() => {
@@ -560,11 +562,14 @@ export function useSitesLayer(
       set(CELL_BEAM_LAYER_ID, display.beams);
       set(CELL_BEAM_OUTLINE_LAYER_ID, display.beams);
       set(SITE_LABEL_LAYER_ID, display.labels);
+      const opacity = beamOpacity(display.beamIntensity);
+      if (map.getLayer(CELL_BEAM_LAYER_ID)) map.setPaintProperty?.(CELL_BEAM_LAYER_ID, "fill-opacity", opacity);
+      if (map.getLayer(CELL_BEAM_OUTLINE_LAYER_ID)) map.setPaintProperty?.(CELL_BEAM_OUTLINE_LAYER_ID, "line-opacity", opacity === 0 ? 0 : Math.min(1, opacity * 2));
     };
     apply();
     const id = setTimeout(apply, 120);
     return () => clearTimeout(id);
-  }, [map, display.beams, display.labels]);
+  }, [map, display.beams, display.labels, display.beamIntensity]);
 
   return status;
 }

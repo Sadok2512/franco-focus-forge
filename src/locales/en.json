@@ -848,6 +848,8 @@
     "sitesAndCells": "Sites & Cells",
     "cellSectors": "Cell sectors",
     "beams": "Beams",
+    "beamSize": "Beam size",
+    "beamIntensity": "Colour intensity",
     "labels": "Labels",
     "technology": "Technology",
     "notInData": "Not present in network data",

@@ -1,5 +1,7 @@
 # KPI workspace rules
 
+- Beam size and opacity are presentation-only percentages in the shared Sites display state: rebuild sector geometry locally for radius changes and update paint for opacity, never refetch sites or change RF azimuths, coordinates, filters or multi-band slices.
+
 - Metric Map selections render independent map cards using the analysis API with `include_map: true` for the active capture and selected parameter; never fall back to a graph or change the measurements table's view. Catalogue and panel view changes share the per-tab metric view state.
 - KPI and metric selections persist together per workspace tab; legacy URL metrics migrate only to the active tab, so new tabs are empty and switching restores each tab's panels.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.

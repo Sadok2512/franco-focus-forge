@@ -1,3 +1,5 @@
+- [ ] Ajouter et vérifier taille/intensité des faisceaux de 0 à 100 % sur les cartes partagées.
+
 ## KPI multi-panneaux (plan validé)
 - [x] Corriger ⋮ → Carte : panneau carte indépendant via include_map=true pour la capture active, sans graphe de substitution, tableau conservé. 8 tests ciblés passent ; clic du catalogue vérifié sur fixtures (canvas MapLibre, tableau présent). Rendu des tuiles et capture réelle non vérifiés ; rien publié.
 - [x] Corriger 1/2/3/Auto depuis les réglages : suppression de la grille Metrics héritée à 2 colonnes, graphes dans la grille commune et chaque tableau seul en pleine largeur même après un ancien réglage de largeur ; 301 tests passent (2 ignorés). Clics Appliquer vérifiés sur le jeu de test dans le navigateur : 1/2/3, Auto large puis réduit, tableau toujours pleine largeur ; aucune erreur de page. Projet réel non vérifié, rien publié.
