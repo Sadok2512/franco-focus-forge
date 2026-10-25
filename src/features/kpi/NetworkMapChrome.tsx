@@ -431,15 +431,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom-left — legend */}
-      {!compact && (
-        <div className={`pointer-events-auto absolute bottom-3 left-3 rounded-xl px-3 py-2 ${glass}`} aria-label={t("mapWorkspace.legend")}>
-          {legend}
-        </div>
-      )}
-
-      {/* Bottom — status bar */}
-      <div className={`pointer-events-none absolute bottom-3 flex justify-center ${compact ? "left-3 right-3" : "left-1/2 -translate-x-1/2"}`}>
+      {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
+      <div className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}>
+        {!compact && (
+          <div className={`pointer-events-auto shrink-0 rounded-xl px-3 py-2 ${glass}`} aria-label={t("mapWorkspace.legend")}>
+            {legend}
+          </div>
+        )}
         <div data-testid="map-workspace-statusbar" className={`pointer-events-auto flex max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}>
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
@@ -475,6 +473,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <MenuItem onClick={() => { props.onRecenter?.(); setMenu(null); }}>{t("mapWorkspace.center")}</MenuItem>
           </Dropdown>
         </div>
+        {!compact && <span className="w-0 shrink" />}
       </div>
     </div>
   );
