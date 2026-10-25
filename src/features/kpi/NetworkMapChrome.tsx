@@ -438,7 +438,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             {legend}
           </div>
         )}
-        <div data-testid="map-workspace-statusbar" className={`pointer-events-auto flex max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}>
+        <div data-testid="map-workspace-statusbar" className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}>
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
           <span className="h-6 w-px bg-border" />
