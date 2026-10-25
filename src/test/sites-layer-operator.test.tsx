@@ -87,6 +87,15 @@ import {
 } from "@/features/kpi/SitesLayer";
 
 const NO_FILTER = { technos: [], bands: [], operators: [] };
+const LABELS = {
+  siteName: "Site Name",
+  siteId: "Site ID",
+  technology: "Technology",
+  cells: "Number of Cells",
+  band: "Band",
+  pci: "PCI",
+  azimuth: "Azimuth",
+};
 
 describe("SitesLayer — opérateurs", () => {
   it("reconnaît Bouygues sous l'orthographe du back comme sous le code du filtre", () => {
@@ -101,39 +110,29 @@ describe("SitesLayer — opérateurs", () => {
     expect(operatorLabel(null)).toBe("?");
   });
 
-  it("colore les sites Bouygues en bleu et compte les sites par opérateur", async () => {
+  it("colore les sites Bouygues en bleu sans réintroduire de cluster", async () => {
     const map = new FakeMap();
-    renderHook(() => useSitesLayer(map as unknown as MlMap, true, NO_FILTER));
+    renderHook(() =>
+      useSitesLayer(map as unknown as MlMap, true, false, NO_FILTER, LABELS),
+    );
     await waitFor(() => expect(getSites).toHaveBeenCalled());
     await waitFor(() => {
-      const agg = map.sources.get("bc4-sites-agg")?.data as
+      const sites = map.sources.get("bc4-sites")?.data as
         | { features: Props[] }
         | undefined;
-      expect(agg?.features.length).toBe(3);
+      expect(sites?.features.length).toBe(2);
     });
 
-    const agg = map.sources.get("bc4-sites-agg")!.data as { features: Props[] };
-    const byt = agg.features.find((f) => f.properties["op_key"] === "BYT");
-    expect(byt?.properties["n_byt"]).toBe(1);
-    expect(byt?.properties["n_orf"]).toBe(0);
-    // Les agrégats du back n'ont pas d'opérateur : ils ne comptent pour personne.
-    const cluster = agg.features.find((f) => f.properties["kind"] === "cluster");
-    expect(cluster?.properties["op_key"]).toBe("");
-    expect(cluster?.properties["n_byt"]).toBe(0);
-    expect(cluster?.properties["n_sites"]).toBe(4800);
+    const sites = map.sources.get("bc4-sites")!.data as { features: Props[] };
+    const byt = sites.features.find((f) => f.properties["op_key"] === "BYT");
+    expect(byt?.properties["operator"]).toBe("Bouygues");
+    expect(sites.features.some((f) => f.properties["kind"] === "cluster")).toBe(false);
 
     const color = map.layers.find((l) => l.id === "bc4-sites-site")?.paint?.[
       "circle-color"
     ] as unknown[];
     expect(JSON.stringify(color)).toContain('["get","op_key"]');
     expect(color[color.indexOf("BYT") + 1]).toBe("#009FE3");
-
-    const cp = map.sourceOptions.get("bc4-sites-agg")?.["clusterProperties"] as Record<
-      string,
-      unknown
-    >;
-    expect(Object.keys(cp)).toEqual(
-      expect.arrayContaining(["n_sites", "n_orf", "n_byt", "n_sfr", "n_frm"]),
-    );
+    expect(map.sourceOptions.get("bc4-sites")?.["cluster"]).not.toBe(true);
   });
 });

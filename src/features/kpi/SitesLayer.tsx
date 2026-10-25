@@ -28,6 +28,34 @@ const OPERATOR_COLORS = {
   FRM: "#16A34A",
 } as const;
 
+const OPERATOR_LABELS: Record<string, string> = {
+  ORF: "Orange",
+  BYT: "Bouygues",
+  SFR: "SFR",
+  FRM: "Free",
+};
+const OPERATOR_ALIASES: Record<string, string> = {
+  ORF: "ORF",
+  ORANGE: "ORF",
+  BYT: "BYT",
+  BOUYGUES: "BYT",
+  "BOUYGUES TELECOM": "BYT",
+  SFR: "SFR",
+  FRM: "FRM",
+  FREE: "FRM",
+};
+
+export function operatorKey(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  return OPERATOR_ALIASES[value.trim().toUpperCase()] ?? null;
+}
+
+export function operatorLabel(value: unknown): string {
+  const key = operatorKey(value);
+  if (key) return OPERATOR_LABELS[key] ?? key;
+  return typeof value === "string" && value.trim() ? value : "?";
+}
+
 export type SitesLayerFilters = { technos: string[]; bands: string[]; operators: string[] };
 export type SitesLayerStatus = {
   loading: boolean;
@@ -179,7 +207,7 @@ export function useSitesLayer(
             ],
             "circle-color": [
               "match",
-              ["get", "operator"],
+              ["get", "op_key"],
               "ORF",
               OPERATOR_COLORS.ORF,
               "BYT",
@@ -353,10 +381,16 @@ export function useSitesLayer(
     if (!sitesEnabled || !status.sites) return void source.setData(emptyCollection());
     source.setData({
       type: "FeatureCollection",
-      features: status.sites.features.map((feature, index) => ({
-        ...feature,
-        id: String(feature.properties["site_id"] ?? index),
-      })),
+      features: status.sites.features
+        .filter((feature) => feature.properties["kind"] !== "cluster")
+        .map((feature, index) => ({
+          ...feature,
+          id: String(feature.properties["site_id"] ?? index),
+          properties: {
+            ...feature.properties,
+            op_key: operatorKey(feature.properties["operator"]) ?? "",
+          },
+        })),
     });
   }, [map, sitesEnabled, status.sites]);
 
