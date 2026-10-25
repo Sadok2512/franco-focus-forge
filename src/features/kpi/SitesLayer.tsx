@@ -200,10 +200,10 @@ export function useSitesLayer(
             "circle-radius": [
               "case",
               ["boolean", ["feature-state", "selected"], false],
-              5,
+              6.5,
               ["boolean", ["feature-state", "hovered"], false],
-              4.25,
-              3.5,
+              5.5,
+              4.5,
             ],
             "circle-color": [
               "match",
@@ -218,7 +218,7 @@ export function useSitesLayer(
               OPERATOR_COLORS.FRM,
               "#64748b",
             ],
-            "circle-opacity": 0.9,
+            "circle-opacity": 1,
             "circle-stroke-color": [
               "case",
               ["boolean", ["feature-state", "selected"], false],
@@ -228,8 +228,8 @@ export function useSitesLayer(
             "circle-stroke-width": [
               "case",
               ["boolean", ["feature-state", "selected"], false],
-              2,
-              1,
+              2.5,
+              1.5,
             ],
           },
         });

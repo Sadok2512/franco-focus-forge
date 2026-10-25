@@ -1,3 +1,8 @@
+## 1.108.2 (patch) — BC4-FRONT 2026-10-25 — Visibilité des sites (Agent BC1)
+
+- Renforce la lisibilité des sites individuels sur le fond OSM : point de 9 px, opacité pleine et contour blanc de 1,5 px ; survol et sélection restent distincts.
+- Aucun clustering, déplacement de coordonnées ou changement de population n'est introduit.
+
 ## 1.108.1 (patch) — BC4-FRONT 2026-10-25 — Carte plein workspace et sites visibles (Agent BC1)
 
 - La page `/map` utilise désormais toute la hauteur disponible du workspace ; la hauteur compacte premium reste limitée aux cartes intégrées dans les autres modules.
