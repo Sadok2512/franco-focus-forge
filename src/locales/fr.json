@@ -896,7 +896,24 @@
       "dark": "Sombre",
       "street": "Rues",
       "satellite": "Satellite"
-    }
+    },
+    "driveRsrp": "RSRP du drive",
+    "driveRsrpToggle": "Afficher les points RSRP du drive",
+    "driveRsrpCapture": "Capture du drive",
+    "driveRsrpLegend": "Légende RSRP",
+    "driveRsrpOpacity": "Opacité des points",
+    "driveRsrpLoading": "Chargement des points…",
+    "driveRsrpError": "Points du drive indisponibles.",
+    "driveRsrpNone": "Aucune mesure RSRP dans ce projet.",
+    "driveRsrpNoGps": "RSRP mesuré mais sans position GPS.",
+    "driveRsrpCount_one": "{{count}} point affiché",
+    "driveRsrpCount_other": "{{count}} points affichés",
+    "driveRsrpPopup": "RSRP : {{value}} {{unit}}\nCapture : {{capture}}\nSeq : {{seq}}",
+    "rsrp_excellent": "Excellent",
+    "rsrp_good": "Bon",
+    "rsrp_fair": "Moyen",
+    "rsrp_poor": "Faible",
+    "rsrp_bad": "Mauvais"
   },
   "mapPopup": {
     "siteName": "Nom du site",

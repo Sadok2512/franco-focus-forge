@@ -1,4 +1,7 @@
+import { useState } from "react";
+import type { Map as MlMap } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
+import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 import { useTranslation } from "react-i18next";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
@@ -12,6 +15,7 @@ import { resolveNetworkMapCenter } from "./map-center";
 export function MapWorkspacePage() {
   const { t } = useTranslation();
   const { activeProject } = useActiveProject();
+  const [map, setMap] = useState<MlMap | null>(null);
   const projectQuery = useQuery({
     queryKey: ["project", activeProject?.id],
     queryFn: ({ signal }) => getProject(activeProject!.id, signal),
@@ -30,7 +34,9 @@ export function MapWorkspacePage() {
         showOperatorLegend={false}
         measurementStatus={null}
         contextLabel={activeProject.name}
+        onMapReady={setMap}
       >
+        <DriveRsrpLayer map={map} projectId={activeProject.id} />
         {projectQuery.isError && (
           <span
             role="status"
