@@ -168,4 +168,21 @@ describe("SignalingMap — couche Sites", () => {
     expect(requestedZooms).toContain(12);
     expect(requestedZooms).not.toContain(15);
   });
+
+  it("au zoom 10 ne charge ni n'affiche aucun site (trajet GPS lisible)", async () => {
+    getSites.mockClear();
+    fakeMapState.zoom = 10;
+    window.localStorage.setItem(
+      "bc4.map.sitesLayer.v3",
+      JSON.stringify({
+        enabled: true,
+        cellsEnabled: true,
+        filters: { technos: [], bands: [], operators: [] },
+      }),
+    );
+    render(<SignalingMap capture={capture} selectedEventId={null} onSelectEvent={() => {}} />);
+    await screen.findByRole("button", { name: "Site and cell layers" });
+    await new Promise((r) => setTimeout(r, 150));
+    expect(getSites).not.toHaveBeenCalled();
+  });
 });

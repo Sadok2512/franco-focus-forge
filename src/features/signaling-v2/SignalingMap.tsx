@@ -36,7 +36,11 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
     }),
     [t],
   );
-  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display);
+  // Carte intégrée : les points de sites n'apparaissent qu'à partir du zoom 12
+  // pour que le trajet GPS reste lisible (la page Map les affiche à tout zoom).
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display, {
+    sitesMinZoom: 12,
+  });
   const truncated = [status.sites, status.cells].some((response) =>
     Boolean(response?.reason?.startsWith("truncated")),
   );
