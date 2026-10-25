@@ -421,7 +421,10 @@ export function useSitesLayer(
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(fetchForCurrentBbox, 250);
     };
-    if (map.isStyleLoaded()) addAll();
+    // A parsed style can already accept overlays while satellite tiles are
+    // still loading. isStyleLoaded() also waits for those tiles; waiting for
+    // a one-shot styledata event here can strand the Sites layer indefinitely.
+    if (map.getStyle?.() || map.isStyleLoaded()) addAll();
     else map.once("styledata", addAll);
     map.on("click", mapClick);
     map.on("mouseenter", CELL_BEAM_LAYER_ID, pointer);
