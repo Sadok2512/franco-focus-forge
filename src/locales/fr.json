@@ -164,7 +164,10 @@
     },
     "tablePanel": "Tableau des mesures",
     "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
-    "7f626224ba1f": "Aucune métrique ne correspond à cette recherche."
+    "7f626224ba1f": "Aucune métrique ne correspond à cette recherche.",
+    "activeOnly": "Actifs uniquement",
+    "footerCatalogDecoder": "Catalogue {{catalog}} · Décodeur {{decoder}}",
+    "footerLegacy": "Catalogue métriques — legacy ({{reason}})"
   },
   "kpi": {
     "3ad34a87a145": "Catalogue KPI",

@@ -1,3 +1,19 @@
+## 1.107.0 (minor) — BC4-FRONT 2026-10-25 — Metrics sidebar : enveloppe catalog_release + arbre 2.50.5 (Phase 3b, Agent BC3)
+
+Alignement sur le back 0.80.0 (`feat/bc3-metrics-v3`) qui bascule `/metrics` sur le catalogue NFF 2.50.5 (5115 feuilles `displayed=true`, `node_id` unique par position, enveloppe `catalog_release` + `decoder_version` + `reason`).
+
+Livré :
+- **Pied `MetricsCatalogSidebar`** piloté par l'enveloppe : affiche `Catalog X.Y.Z · Decoder A.B.C` lu depuis `query.data.catalog_release.version` + `query.data.decoder_version`, JAMAIS en dur. Fallback explicite `legacy ({{reason}})` quand `catalog_release=null` (bootstrap frais / back pré-0.80.0). Keys i18n `metrics.footerCatalogDecoder` + `metrics.footerLegacy`.
+- **Arbre Technology → Catégorie → Métrique → Feuilles cellule** : `MetricCatalogNodeSchema.node_type` accepte désormais `"tech"`, `"category"`, `"group"`, `"metric"`, `"event"`, `"leaf"` (ancien `"group"/"metric"` conservé pour le fallback legacy catalogue_v6). Les `tech` nodes rendent en `kpi-tree-root` ; les `category` sous un tech rendent en `kpi-tree-family`.
+- **Badge PER CELL** (data-testid `per-cell-<node_id>`) dérivé du `metric_id` suffixé `@<cell_type>` : `@0`→PCell, `@199`→PSCell, `@1..31`→SCell N, `@100..131`→SCG SCell. Jamais inventé — le badge n'apparaît que si le suffixe existe.
+- **Case "Active only"** (défaut OFF, i18n `metrics.activeOnly`, data-testid `metrics-active-only`) : replie les feuilles `selectable=true && n==0`. Les feuilles `selectable=false` (hors colonne décodeur, out-of-scope corpus) restent affichées **grisées** avec tooltip `reason` ("Column not in decoder schema") — contrat produit, JAMAIS cachées.
+- **Design actuel inchangé** : status dot, chevrons, bar-click = expand, ⋮ menu MoreVertical, ⓘ dialog, VisualizationItems partagé — tout préservé.
+- **Schema zod** `MetricCatalogResponseSchema` : `catalogue_version` relâché en `z.string()` (plus de literal `"v6"`), `tech`/`proof` relâchés en string libre (2.50.5 inclut `"documented-2.50"`, `"Shared"`, `"Other"`), `node_type` étendu, `cell` nullable string libre, enveloppe `catalog_release/decoder_version/reason` ajoutée optionnelle avec default.
+
+Hors scope (dette ouverte 3c futur) :
+- Pas de pop-in Task column (3c, pas dans ce lot per directive BC3).
+- Les 4329 feuilles `selectable=false` (events hors corpus simple NFF 2.50) attendent 2.2b et la matérialisation des événements complexes/deep dans Light.
+
 ## 1.106.2 (patch) — BC4-FRONT 2026-10-24 — Cartes KPI/Metrics de nouveau visibles
 
 - Les cartes (KPI map, vue « Carte » des métriques) restaient blanches : le worker MapLibre v6 échouait (« Worker failed to load ») dans KpiMapOSM, qui utilisait encore l'ancien contournement `workerCount = 0`. Corrigé comme les autres cartes (Signaling, Assistant, Dictionary, RadioMap, GeoPreview) : worker bundlé explicite via `setWorkerUrl`.

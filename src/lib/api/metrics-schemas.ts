@@ -24,7 +24,10 @@ export const MetricSchema = z.object({
       proof_ref: z.string(),
     }),
   ),
-  proof: z.enum(["documented", "content", "none"]),
+  // 1.107.0 — proof du catalogue 2.50.5 inclut "documented-2.50" en plus
+  // des libellés historiques. Enum relâchée en string libre pour ne jamais
+  // faire tomber un contract-check sur un libellé nouveau.
+  proof: z.string(),
   available: z.boolean(),
   reason: z.string().nullable(),
   alias_of: z.string().nullable(),
@@ -38,7 +41,9 @@ export const MetricSchema = z.object({
   proof_ref: z.string(),
   source_table: z.string(),
   source_column: z.string(),
-  tech: z.enum(["LTE", "NR", "BOTH"]),
+  // 1.107.0 — tech vient de categories.yaml : "LTE", "NR", "Shared", "Other"
+  // en 2.50.5. On accepte string libre, l'arbre est organisé par groupe tech.
+  tech: z.string(),
   kind: z.enum(["numeric", "categorical", "event"]),
   n_in_project: z.number().int(),
   // 0.64.0 (F1 back) — champ YAML `category` du décodeur (14 catégories).
@@ -51,25 +56,47 @@ export const MetricCatalogNodeSchema = z.object({
   label: z.string(),
   note: z.string().nullable(),
   source: z.string().nullable(),
-  node_type: z.enum(["category", "group", "metric", "leaf"]),
+  // 1.107.0 — ajout "tech" (racine Technology) et "event" (NFF event,
+  // parent des feuilles cellule). "group"/"metric" conservés pour le
+  // fallback legacy catalogue_v6.
+  node_type: z.enum(["tech", "category", "group", "metric", "event", "leaf"]),
   metric_id: z.string().nullable(),
   selection: z.string().nullable(),
   event: z.string().nullable(),
   field_idx: z.number().int().nullable(),
   source_column: z.string().nullable(),
   unit: z.string(),
-  cell: z.enum(["pcell", "scell1", "scell2", "scell3", "scell4", "pscell", "scell_nr"]).nullable(),
+  // 1.107.0 — cell en string libre nullable : 2.50.5 ne mappe pas encore
+  // vers "pcell"/"scell*"/"pscell" ; le badge PER CELL est dérivé par le
+  // sidebar depuis `metric_id` (suffixe `@<cell_type>`).
+  cell: z.string().nullable(),
   n: z.number().int(),
-  proof: z.enum(["documented", "content", "open"]),
+  proof: z.string(),
   selectable: z.boolean(),
   reason: z.string().nullable(),
 });
+export const CatalogReleaseInfoSchema = z.object({
+  version: z.string(),
+  spec_version: z.string(),
+  decoder_min_version: z.string(),
+  sha256: z.string(),
+  n_leaves: z.number().int(),
+});
 export const MetricCatalogResponseSchema = z.object({
-  catalogue_version: z.literal("v6"),
+  // 1.107.0 — catalogue_version 2.50.5 (contrat enveloppe Phase 3a/3b) ou
+  // "v6" en fallback legacy. String libre : jamais un refus silencieux
+  // sur un bump catalogue.
+  catalogue_version: z.string(),
   title: z.string(),
   header: z.string(),
   metrics: z.array(MetricSchema),
   nodes: z.array(MetricCatalogNodeSchema),
+  // 1.107.0 — enveloppe Phase 3a : lue par le footer sidebar
+  // ("Catalog X.Y.Z · Decoder A.B.C"). Nullable quand catalog_release est
+  // vide (bootstrap frais) ; `reason` explicite la bascule legacy.
+  catalog_release: CatalogReleaseInfoSchema.nullable().optional(),
+  decoder_version: z.string().optional().default(""),
+  reason: z.string().optional().default(""),
 });
 
 /** 0.64.0 (F1 back) — /projects/{p}/metrics/{code}/aggregate */
