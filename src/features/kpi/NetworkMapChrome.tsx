@@ -50,8 +50,8 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   onToggleDisplay?: (key: "beams" | "labels", v: boolean) => void;
   onSetTechnos?: (v: string[]) => void;
   onSetBands?: (v: string[]) => void;
-  sitesFeatures?: SearchableFeature[];
-  cellsFeatures?: SearchableFeature[];
+  sitesFeatures?: SearchableFeature[] | undefined;
+  cellsFeatures?: SearchableFeature[] | undefined;
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
   onRecenter?: () => void;

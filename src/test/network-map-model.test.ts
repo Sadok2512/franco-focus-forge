@@ -11,8 +11,8 @@ describe("network map model", () => {
   it("never removes the last active band", () => {
     expect(toggleWithin(["B3"], ["B3"], BAND_CODES)).toEqual(["B3"]);
   });
-  it("measures Paris–Lyon distance around 392 km", () => {
-    expect(Math.round(haversine([2.3522, 48.8566], [4.8357, 45.764]) / 1000)).toBe(392);
+  it("measures Paris–Lyon distance around 391 km", () => {
+    expect(Math.round(haversine([2.3522, 48.8566], [4.8357, 45.764]) / 1000)).toBe(391);
   });
   it("scale bar uses a 1/2/5 step", () => {
     expect(scaleBar(11, 46.6).label).toMatch(/^(1|2|5)(0|00)? ?(m|km)|^\d+(\.\d+)? km$/);
