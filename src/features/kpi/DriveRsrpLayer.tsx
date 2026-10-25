@@ -113,6 +113,27 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
     src?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
   }, [map, features, prefs.on]);
 
+  // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
+  useEffect(() => {
+    if (!map || !prefs.on || !features.length) return;
+    const xs = features.map((f) => f.geometry.coordinates[0]);
+    const ys = features.map((f) => f.geometry.coordinates[1]);
+    const minX = Math.min(...xs),
+      maxX = Math.max(...xs),
+      minY = Math.min(...ys),
+      maxY = Math.max(...ys);
+    if (minX === maxX && minY === maxY) map.easeTo({ center: [minX, minY], zoom: 14, duration: 350 });
+    else
+      map.fitBounds(
+        [
+          [minX, minY],
+          [maxX, maxY],
+        ],
+        { padding: 60, maxZoom: 15, duration: 350 },
+      );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, prefs.on, captureId, features.length]);
+
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
     map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
