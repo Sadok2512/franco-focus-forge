@@ -3,6 +3,7 @@ import type {
   GeoJSONSource,
   Map as MlMap,
   MapLayerMouseEvent,
+  MapMouseEvent,
   Popup as MlPopup,
 } from "maplibre-gl";
 import { getSites, type SitesResponse } from "@/lib/api/sites";
@@ -11,6 +12,7 @@ import {
   getGeorefBeamRadiusMeters,
   getGeorefSectorCoords,
 } from "./georef-cell-geometry";
+import { buildCellCard, buildSiteCard, cellKey } from "./site-cell-popup";
 
 const SITE_SOURCE_ID = "bc4-sites";
 const CELL_SOURCE_ID = "bc4-cells";
@@ -279,54 +281,97 @@ export function useSitesLayer(
     };
     let selectedSiteId: string | number | undefined;
     let hoveredSiteId: string | number | undefined;
-    const openPopup = async (event: MapLayerMouseEvent, kind: "site" | "cell") => {
-      const feature = event.features?.[0];
-      if (!feature) return;
-      const properties = feature.properties ?? {};
-      if (kind === "site") {
-        if (selectedSiteId != null)
-          map.setFeatureState({ source: SITE_SOURCE_ID, id: selectedSiteId }, { selected: false });
-        selectedSiteId = feature.id as string | number | undefined;
-        if (selectedSiteId != null)
-          map.setFeatureState({ source: SITE_SOURCE_ID, id: selectedSiteId }, { selected: true });
-      }
+    const SELECTED_CELL_LAYER_ID = "bc4-sites-cell-selected";
+    const selectCell = (key: string) => {
+      if (!map.getLayer(SELECTED_CELL_LAYER_ID) && map.getSource(CELL_SOURCE_ID))
+        map.addLayer({
+          id: SELECTED_CELL_LAYER_ID,
+          type: "line",
+          source: CELL_SOURCE_ID,
+          filter: ["==", ["get", "cell_key"], ""],
+          paint: { "line-color": "#1D4ED8", "line-width": 3 },
+        });
+      map.setFilter?.(SELECTED_CELL_LAYER_ID, [
+        "all",
+        ["==", ["get", "render_kind"], "beam"],
+        ["==", ["get", "cell_key"], key],
+      ]);
+    };
+    const clearSelection = () => {
+      if (selectedSiteId != null)
+        map.setFeatureState({ source: SITE_SOURCE_ID, id: selectedSiteId }, { selected: false });
+      selectedSiteId = undefined;
+      if (map.getLayer(SELECTED_CELL_LAYER_ID)) selectCell("");
+    };
+    // One popup at a time, anchored on the clicked marker / sector.
+    const showPopup = async (lngLat: [number, number], node: HTMLElement) => {
       const { Popup } = await import("maplibre-gl");
       popupRef.current?.remove();
-      const node = document.createElement("div");
-      node.className = "space-y-0.5 text-[11px]";
-      const tech = [
-        Number(properties["n_4g"]) > 0 || Number(properties["n_lte"]) > 0 ? "LTE" : null,
-        Number(properties["n_5g"]) > 0 ? "NR" : null,
-      ]
-        .filter(Boolean)
-        .join(" + ");
-      const rows =
-        kind === "site"
-          ? [
-              popupRow(labels.siteName, properties["site_name"]),
-              popupRow(labels.siteId, properties["site_id"]),
-              popupRow(labels.technology, tech),
-              popupRow(labels.cells, properties["n_cells"]),
-            ]
-          : [
-              popupRow(labels.siteName, properties["site_name"] ?? properties["site_id"]),
-              popupRow(labels.technology, properties["techno"]),
-              popupRow(labels.band, properties["band"]),
-              popupRow(labels.pci, properties["pci"]),
-              popupRow(
-                labels.azimuth,
-                properties["azimuth"] == null ? null : `${properties["azimuth"]}°`,
-              ),
-            ];
-      rows.forEach((row) => row && node.append(row));
-      popupRef.current = new Popup({ closeButton: true })
-        .setLngLat(event.lngLat)
+      hoverPopupRef.current?.remove();
+      const popup = new Popup({ closeButton: true, maxWidth: "340px", className: "bc4-net-popup", offset: 10 })
+        .setLngLat(lngLat)
         .setDOMContent(node)
         .addTo(map);
+      popup.on?.("close", () => {
+        if (popupRef.current === popup) clearSelection();
+      });
+      popupRef.current = popup;
     };
-
-    const siteClick = (event: MapLayerMouseEvent) => void openPopup(event, "site");
-    const cellClick = (event: MapLayerMouseEvent) => void openPopup(event, "cell");
+    const openCell = (cell: Record<string, unknown>, at: [number, number]) => {
+      clearSelection();
+      selectCell(cellKey(cell));
+      const siteId = cell["site_id"];
+      const site = siteId == null ? null : siteFeatures().find((f) => f.properties?.["site_id"] === siteId);
+      void showPopup(
+        at,
+        buildCellCard(cell, operatorLabel(cell["operator"] ?? site?.properties?.["operator"]), site
+          ? () => openSite(site.properties ?? {}, (site.geometry as GeoJSON.Point).coordinates as [number, number])
+          : null),
+      );
+    };
+    const siteFeatures = () =>
+      ((map.getSource(SITE_SOURCE_ID) as unknown as { _data?: GeoJSON.FeatureCollection })?._data?.features ?? []) as GeoJSON.Feature[];
+    const openSite = (properties: Record<string, unknown>, at: [number, number], featureId?: string | number) => {
+      clearSelection();
+      selectedSiteId = featureId ?? (properties["site_id"] as string | undefined);
+      if (selectedSiteId != null)
+        map.setFeatureState({ source: SITE_SOURCE_ID, id: selectedSiteId }, { selected: true });
+      const op = operatorLabel(properties["operator"]);
+      const render = (cells: Array<Record<string, unknown>> | "loading" | "error") =>
+        void showPopup(at, buildSiteCard(properties, at, op, cells, (c) => openCell(c, at)));
+      render("loading");
+      const d = 0.004;
+      getSites({ bbox: [at[0] - d, at[1] - d, at[0] + d, at[1] + d], zoom: 15 })
+        .then((r) => {
+          const cells = r.features
+            .filter((f) => f.properties["site_id"] === properties["site_id"])
+            .map((f) => f.properties);
+          if (popupRef.current?.getLngLat?.().lng === at[0]) render(cells);
+        })
+        .catch(() => render("error"));
+    };
+    // Priority: site marker > cell point > beam. Signaling markers keep their own click.
+    const mapClick = (event: MapMouseEvent) => {
+      const layers = [SITE_LAYER_ID, CELL_POINT_LAYER_ID, CELL_BEAM_LAYER_ID].filter((id) => map.getLayer(id));
+      const own = map.getStyle?.()?.layers?.filter((l) => l.id.startsWith("signaling")).map((l) => l.id) ?? [];
+      if (own.length && map.queryRenderedFeatures(event.point, { layers: own }).length) return;
+      const hits = layers.length ? map.queryRenderedFeatures(event.point, { layers }) : [];
+      const site = hits.find((f) => f.layer.id === SITE_LAYER_ID);
+      const cell = hits.find((f) => f.layer.id === CELL_POINT_LAYER_ID) ?? hits.find((f) => f.layer.id === CELL_BEAM_LAYER_ID);
+      if (site) {
+        const at = (site.geometry as GeoJSON.Point).coordinates as [number, number];
+        openSite(site.properties ?? {}, at, site.id);
+      } else if (cell) {
+        const props = cell.properties ?? {};
+        const at: [number, number] =
+          cell.geometry.type === "Point" ? ((cell.geometry as GeoJSON.Point).coordinates as [number, number]) : [event.lngLat.lng, event.lngLat.lat];
+        openCell(props, at);
+      }
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && popupRef.current) popupRef.current.remove();
+    };
+    window.addEventListener("keydown", onKey);
     const siteEnter = async (event: MapLayerMouseEvent) => {
       map.getCanvas().style.cursor = "pointer";
       const feature = event.features?.[0];
@@ -370,8 +415,9 @@ export function useSitesLayer(
     };
     if (map.isStyleLoaded()) addAll();
     else map.once("styledata", addAll);
-    map.on("click", SITE_LAYER_ID, siteClick);
-    map.on("click", CELL_POINT_LAYER_ID, cellClick);
+    map.on("click", mapClick);
+    map.on("mouseenter", CELL_BEAM_LAYER_ID, pointer);
+    map.on("mouseleave", CELL_BEAM_LAYER_ID, defaultCursor);
     map.on("mouseenter", SITE_LAYER_ID, siteEnter);
     map.on("mouseenter", CELL_POINT_LAYER_ID, pointer);
     map.on("mouseleave", SITE_LAYER_ID, siteLeave);
@@ -386,8 +432,10 @@ export function useSitesLayer(
     };
     initialFetch();
     return () => {
-      map.off("click", SITE_LAYER_ID, siteClick);
-      map.off("click", CELL_POINT_LAYER_ID, cellClick);
+      map.off("click", mapClick);
+      map.off("mouseenter", CELL_BEAM_LAYER_ID, pointer);
+      map.off("mouseleave", CELL_BEAM_LAYER_ID, defaultCursor);
+      window.removeEventListener("keydown", onKey);
       map.off("mouseenter", SITE_LAYER_ID, siteEnter);
       map.off("mouseenter", CELL_POINT_LAYER_ID, pointer);
       map.off("mouseleave", SITE_LAYER_ID, siteLeave);
@@ -434,7 +482,7 @@ export function useSitesLayer(
       );
       return {
         ...feature,
-        properties: { ...feature.properties, band_color: bandColor, render_kind: "cell" },
+        properties: { ...feature.properties, band_color: bandColor, render_kind: "cell", cell_key: cellKey(feature.properties) },
       };
     });
     const beams = status.cells.features.flatMap((feature) => {
@@ -450,7 +498,7 @@ export function useSitesLayer(
         {
           type: "Feature" as const,
           geometry: { type: "Polygon" as const, coordinates: [coordinates] },
-          properties: { ...feature.properties, band_color: bandColor, render_kind: "beam" },
+          properties: { ...feature.properties, band_color: bandColor, render_kind: "beam", cell_key: cellKey(feature.properties) },
         },
       ];
     });
