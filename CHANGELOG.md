@@ -1,3 +1,12 @@
+## 1.109.0 (minor) — BC4-FRONT 2026-10-25 — Lot B back prêt (Agent BC3)
+
+Bump de synchronisation avec les 2 nouveaux endpoints back `/captures/
+{cap}/sheet` et `/captures/{cap}/tasks` (back 0.82.0). L'intégration
+UI de la fiche capture (modal / side panel) et de la colonne Task
+dans la table Metrics est planifiée pour un lot ultérieur dédié.
+Les 2 PNG `exports/png_lot_b_sheet.png` et `exports/png_lot_b_table_task.png`
+servent de preuve de contrat API en attendant.
+
 ## 1.108.3 (patch) — BC4-FRONT 2026-10-25 — Zoom arrière de la carte (Agent BC1)
 
 - Autorise le zoom arrière jusqu'au niveau 6 tout en conservant le zoom initial 11.
