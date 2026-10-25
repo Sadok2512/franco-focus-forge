@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { MapPinned } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
@@ -23,36 +22,24 @@ export function MapWorkspacePage() {
 
   const center = resolveNetworkMapCenter(projectQuery.data?.center);
   return (
-    <section className="flex h-[calc(100dvh-3.5rem)] min-h-[560px] flex-col overflow-hidden bg-slate-100 p-2 dark:bg-slate-950">
-      <header className="flex h-11 shrink-0 items-center justify-between px-2">
-        <div className="flex min-w-0 items-center gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <MapPinned className="h-4 w-4" />
-          </span>
-          <div className="min-w-0">
-            <h1 className="truncate text-sm font-semibold">{t("mapWorkspace.title")}</h1>
-            <p className="truncate text-[11px] text-muted-foreground">
-              {activeProject.name} · {t("mapWorkspace.subtitle")}
-            </p>
-          </div>
-        </div>
+    <section className="h-[calc(100dvh-3.5rem)] min-h-[520px] overflow-hidden bg-background p-1.5">
+      <KpiMapOSM
+        center={center}
+        zoom={11}
+        workspace
+        showOperatorLegend={false}
+        measurementStatus={null}
+        contextLabel={activeProject.name}
+      >
         {projectQuery.isError && (
-          <span className="text-[11px] text-amber-700" role="status">
+          <span
+            role="status"
+            className="absolute bottom-16 left-1/2 z-30 -translate-x-1/2 rounded-full border bg-card px-3 py-1 text-[11px] text-muted-foreground shadow"
+          >
             {t("mapWorkspace.projectCenterUnavailable")}
           </span>
         )}
-      </header>
-      <div className="min-h-0 flex-1">
-        <KpiMapOSM
-          center={center}
-          zoom={11}
-          premium
-          workspace
-          showOperatorLegend={false}
-          measurementStatus={null}
-          contextLabel={activeProject.name}
-        />
-      </div>
+      </KpiMapOSM>
     </section>
   );
 }

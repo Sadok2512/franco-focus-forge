@@ -901,6 +901,7 @@ function SignalMap({
         center={center}
         zoom={zoom}
         onMapReady={ready}
+        workspace
         showOperatorLegend={false}
         contextLabel="Signalisation"
         measurementStatus={null}
@@ -909,7 +910,7 @@ function SignalMap({
       {!hasMarkers && (
         <span
           role="status"
-          className="pointer-events-none absolute left-2 top-12 z-10 inline-block max-w-[calc(100%-7.5rem)] rounded-full bg-background/90 px-3 py-1 text-xs shadow"
+          className="pointer-events-none absolute bottom-16 left-1/2 z-30 inline-block max-w-[calc(100%-2rem)] -translate-x-1/2 rounded-full bg-background/90 px-3 py-1 text-xs shadow"
         >
           Aucun GPS précédent prouvé dans cette capture
         </span>
