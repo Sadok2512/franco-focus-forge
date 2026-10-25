@@ -266,3 +266,36 @@ html.dark {
 }
 
 html[data-density="comfortable"] body { font-size: 14px; }
+
+/* Shared network-map site/cell popup (Map page + Signaling View). */
+.bc4-net-popup { z-index: 30; }
+.bc4-net-popup .maplibregl-popup-content {
+  border-radius: 13px;
+  padding: 10px 12px;
+  background: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 10px 30px -8px color-mix(in oklab, var(--foreground) 30%, transparent);
+  border: 1px solid var(--border);
+}
+.bc4-net-popup .maplibregl-popup-tip { border-top-color: var(--card); border-bottom-color: var(--card); }
+.bc4-net-popup .maplibregl-popup-close-button { color: var(--muted-foreground); font-size: 16px; padding: 2px 6px; }
+.bc4-pop { font-size: 11px; max-height: 320px; overflow-y: auto; min-width: 230px; }
+.bc4-pop-head { display: flex; align-items: center; gap: 6px; margin: 0 18px 6px 0; }
+.bc4-pop-head strong { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bc4-pop-badges { display: inline-flex; gap: 3px; }
+.bc4-pop-badge { border-radius: 999px; padding: 1px 6px; font-size: 9px; font-weight: 700; background: var(--muted); color: var(--foreground); }
+.bc4-pop-badge.is-nr { background: #7c3aed; color: #fff; }
+.bc4-pop-badge.is-lte { background: #f39c12; color: #fff; }
+.bc4-pop-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
+.bc4-pop-grid dt { color: var(--muted-foreground); }
+.bc4-pop-grid dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.bc4-pop-grid dd.is-empty { color: var(--muted-foreground); font-weight: 400; }
+.bc4-pop-section { margin: 8px 0 3px; font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; }
+.bc4-pop-note { color: var(--muted-foreground); margin: 2px 0; }
+.bc4-pop-scroll { max-height: 140px; overflow-y: auto; }
+.bc4-pop-cells { width: 100%; border-collapse: collapse; font-size: 10px; font-variant-numeric: tabular-nums; }
+.bc4-pop-cells th { text-align: left; color: var(--muted-foreground); font-weight: 600; padding: 2px 3px; }
+.bc4-pop-cells td { padding: 2px 3px; border-top: 1px solid var(--border); }
+.bc4-pop-cells tr[role="button"] { cursor: pointer; }
+.bc4-pop-cells tr[role="button"]:hover td { background: var(--muted); }
+.bc4-pop-link { margin-top: 6px; color: var(--primary); font-weight: 600; font-size: 11px; }

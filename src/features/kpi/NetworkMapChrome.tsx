@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { BASEMAPS, BASEMAP_PREVIEW, applyBasemap, readBasemap, writeBasemap, type BasemapId } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
 import {
   BAND_CODES,
@@ -97,6 +98,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const [centerLat, setCenterLat] = useState(46.6);
   const [mode, setMode] = useState<MeasureMode>("none");
   const [points, setPoints] = useState<Array<[number, number]>>([]);
+  const [basemapOpen, setBasemapOpen] = useState(false);
+  const [basemap, setBasemap] = useState<BasemapId>(() => readBasemap());
+  const chooseBasemap = (id: BasemapId) => {
+    setBasemap(id);
+    writeBasemap(id);
+    if (map) applyBasemap(map, id);
+  };
 
   useEffect(() => {
     const node = rootRef.current;
@@ -412,10 +420,32 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         <button type="button" className={railBtn(mode === "none")} aria-pressed={mode === "none"} aria-label={t("mapWorkspace.select")} onClick={() => setMode("none")}>
           <MousePointer2 className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn(showPanel)} aria-pressed={showPanel} aria-label={t("mapWorkspace.toggleLayers")} onClick={() => setPanelOpen(!showPanel)}>
+        <button type="button" className={railBtn(basemapOpen)} aria-expanded={basemapOpen} aria-label={t("mapWorkspace.basemap")} onClick={() => setBasemapOpen((v) => !v)}>
           <Layers className="h-4 w-4" />
         </button>
       </div>
+
+      {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
+      {basemapOpen && (
+        <div role="radiogroup" aria-label={t("mapWorkspace.basemap")} className={`pointer-events-auto absolute right-14 w-56 rounded-xl p-2 ${glass}`} style={{ top: compact ? 56 : 300 }}>
+          <p className="mb-1.5 px-1 text-[11px] font-semibold">{t("mapWorkspace.basemap")}</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            {BASEMAPS.map((id) => (
+              <button
+                key={id}
+                type="button"
+                role="radio"
+                aria-checked={basemap === id}
+                onClick={() => chooseBasemap(id)}
+                className={`overflow-hidden rounded-lg border-2 text-left text-[10px] font-semibold transition ${basemap === id ? "border-primary" : "border-transparent hover:border-border"}`}
+              >
+                <img src={BASEMAP_PREVIEW[id].src} alt="" loading="lazy" className="h-14 w-full object-cover" style={BASEMAP_PREVIEW[id].filter ? { filter: BASEMAP_PREVIEW[id].filter } : undefined} />
+                <span className="block px-1.5 py-1">{t(`mapWorkspace.basemaps.${id}`)}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Measurement read-out */}
       {mode !== "none" && (

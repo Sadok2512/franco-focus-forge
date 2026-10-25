@@ -15,6 +15,7 @@ import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } fro
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 import { NetworkMapChrome } from "./NetworkMapChrome";
+import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
@@ -201,12 +202,14 @@ export function KpiMapOSM({
               tileSize: 256,
               attribution: "© OpenStreetMap",
             },
+            ...BASEMAP_EXTRA_SOURCES,
           },
-          layers: [{ id: "osm", type: "raster", source: "osm" }],
+          ...basemapStyleParts(),
         },
       });
       map.current = instance;
       instance.on("load", () => {
+        if (workspace) applyBasemap(instance, readBasemap());
         setReady(true);
         readyCallback.current?.(instance);
       });

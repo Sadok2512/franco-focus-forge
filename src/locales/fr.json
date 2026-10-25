@@ -887,6 +887,37 @@
     "measureHint": "Cliquez sur la carte pour ajouter des points",
     "clearMeasure": "Effacer",
     "totalInView": "Total dans la vue",
-    "returned": "Chargés"
+    "returned": "Chargés",
+    "basemap": "Fond de carte",
+    "basemaps": {
+      "light": "Clair",
+      "dark": "Sombre",
+      "street": "Rues",
+      "satellite": "Satellite"
+    }
+  },
+  "mapPopup": {
+    "siteName": "Nom du site",
+    "siteId": "ID site",
+    "operator": "Opérateur",
+    "latLng": "Lat / Lng",
+    "technologies": "Technologies",
+    "bands": "Bandes",
+    "cells": "Cellules",
+    "siteType": "Type de site",
+    "cellSummary": "Cellules",
+    "loadingCells": "Chargement des cellules…",
+    "cellsError": "Cellules indisponibles",
+    "noCells": "Aucune cellule renvoyée pour ce site",
+    "cell": "Cellule",
+    "tech": "Technologie",
+    "band": "Bande",
+    "cellNameId": "Nom / ID cellule",
+    "parentSite": "Site parent",
+    "azimuth": "Azimut",
+    "height": "Hauteur d'antenne",
+    "tilt": "Tilt méca. / élec.",
+    "bandwidth": "Largeur de bande",
+    "goToSite": "Aller au site parent →"
   }
 }
