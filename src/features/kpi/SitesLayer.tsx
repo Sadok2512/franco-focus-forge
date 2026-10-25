@@ -551,11 +551,13 @@ export function useSitesLayer(
       type: "FeatureCollection",
       features: status.sites.features
         .filter((feature) => feature.properties["kind"] !== "cluster")
+        .slice(0, MAX_SITE_FEATURES)
         .map((feature, index) => ({
           ...feature,
           id: String(feature.properties["site_id"] ?? index),
           properties: {
             ...feature.properties,
+            n_sites: 1,
             op_key: operatorKey(feature.properties["operator"]) ?? "",
           },
         })),
