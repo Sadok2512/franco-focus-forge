@@ -53,6 +53,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       catalogue_version: "v6",
       title: "Nemo metrics",
       header: "LTE — 345 metrics + NR 16",
+      decoder_version: "",
+      reason: "",
       metrics: [],
       nodes: [
         node("radio", null, "Serving radio", 0, { node_type: "category" }),
@@ -148,6 +150,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       catalogue_version: "v6",
       title: "Nemo metrics",
       header: "",
+      decoder_version: "",
+      reason: "",
       metrics: [],
       nodes: [],
     } satisfies MetricCatalogResponse);
