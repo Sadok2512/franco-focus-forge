@@ -491,7 +491,7 @@ export function useSitesLayer(
     };
     sitesDataRef.current = collection.features;
     source.setData(collection);
-  }, [map, sitesEnabled, status.sites]);
+  }, [map, sitesEnabled, status.sites, status.zoom, sitesMinZoom]);
 
   useEffect(() => {
     if (!map) return;
