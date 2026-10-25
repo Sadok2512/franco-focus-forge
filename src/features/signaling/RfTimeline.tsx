@@ -637,7 +637,7 @@ export function RfTimeline({
       }
       const label =
         item.state === "CONNECTED"
-          ? t("signalingV2.lte")
+          ? t("signalingV2.connected")
           : item.state === "IDLE"
             ? t("signalingV2.idle")
             : t("signalingV2.unknownShort");
