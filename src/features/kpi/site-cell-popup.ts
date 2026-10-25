@@ -137,15 +137,23 @@ export function buildSiteCard(
 export function buildCellCard(cell: Props, operatorName: string, onSite: (() => void) | null): HTMLElement {
   const root = el("div", "bc4-pop");
   const nr = isNr(cell);
+  // Multi-band cells carry a `bands` list (one slice per band on the map);
+  // single-band cells fall back to their lone `band`.
+  const bands =
+    Array.isArray(cell["bands"]) && cell["bands"].length
+      ? [...new Set(cell["bands"].map(String))]
+      : cell["band"] != null && cell["band"] !== ""
+        ? [String(cell["band"])]
+        : [];
   const name = String(pick(cell, [...FIELD.cellName]) ?? pick(cell, [...FIELD.cellId]) ?? "—");
-  root.append(header(name, [badge(nr ? "NR" : "LTE", nr), ...(cell["band"] ? [el("span", "bc4-pop-badge", String(cell["band"]))] : [])]));
+  root.append(header(name, [badge(nr ? "NR" : "LTE", nr), ...bands.map((b) => el("span", "bc4-pop-badge", b))]));
   root.append(
     grid([
       [t("cellNameId"), `${show(pick(cell, [...FIELD.cellName]))} / ${show(pick(cell, [...FIELD.cellId]))}`],
       [t("parentSite"), show(pick(cell, ["site_name"]) ?? pick(cell, [...FIELD.siteId]))],
       [t("operator"), operatorName],
       [t("tech"), show(pick(cell, [...FIELD.techno]))],
-      [t("band"), show(cell["band"])],
+      [t("band"), bands.length ? bands.join(", ") : "—"],
       [nr ? "NRARFCN" : "EARFCN", show(pick(cell, [...FIELD.arfcn]))],
       ["PCI", show(cell["pci"])],
       [nr ? "NCGI" : "ECGI", show(pick(cell, [...FIELD.cgi]))],

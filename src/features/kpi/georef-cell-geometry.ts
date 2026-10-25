@@ -57,22 +57,15 @@ export function getGeorefBeamRadiusMeters(zoom: number): number {
   return Math.max(1, baseMeters) * getGeorefCompactCellScale(zoom) * sectorScale;
 }
 
-/**
- * GEOREF getSectorCoords, adapted only from Leaflet [lat,lng] to GeoJSON
- * [lng,lat]. Azimuth follows the telecom convention: 0° north, 90° east.
- */
-export function getGeorefSectorCoords(
+/** Curved wedge between two telecom azimuths (0° north, 90° east). */
+function sectorArc(
   center: [number, number],
-  azimuth: number,
   radiusMeters: number,
-  aperture = GEOREF_RENDER_APERTURE_DEG,
+  startAngle: number,
+  endAngle: number,
 ): Array<[number, number]> {
   const [lng, lat] = center;
-  if (![lng, lat, azimuth, radiusMeters, aperture].every(Number.isFinite)) return [];
-  if (radiusMeters <= 0 || aperture <= 0) return [];
   const steps = 20;
-  const startAngle = azimuth - aperture / 2;
-  const endAngle = azimuth + aperture / 2;
   const points: Array<[number, number]> = [[lng, lat]];
   for (let index = 0; index <= steps; index += 1) {
     const angle = startAngle + (endAngle - startAngle) * (index / steps);
@@ -83,4 +76,41 @@ export function getGeorefSectorCoords(
   }
   points.push([lng, lat]);
   return points;
+}
+
+/**
+ * GEOREF getSectorCoords, adapted only from Leaflet [lat,lng] to GeoJSON
+ * [lng,lat]. Azimuth follows the telecom convention: 0° north, 90° east.
+ */
+export function getGeorefSectorCoords(
+  center: [number, number],
+  azimuth: number,
+  radiusMeters: number,
+  aperture = GEOREF_RENDER_APERTURE_DEG,
+): Array<[number, number]> {
+  if (![...center, azimuth, radiusMeters, aperture].every(Number.isFinite)) return [];
+  if (radiusMeters <= 0 || aperture <= 0) return [];
+  return sectorArc(center, radiusMeters, azimuth - aperture / 2, azimuth + aperture / 2);
+}
+
+/**
+ * One colored slice of a multi-band sector: slice `sliceIndex` (0-based) of
+ * `sliceCount` contiguous parts covering the full aperture. Adjacent slices
+ * share their edge, so the split sector has neither gaps nor overlaps.
+ */
+export function getGeorefSectorSliceCoords(
+  center: [number, number],
+  azimuth: number,
+  radiusMeters: number,
+  sliceIndex: number,
+  sliceCount: number,
+  aperture = GEOREF_RENDER_APERTURE_DEG,
+): Array<[number, number]> {
+  if (![...center, azimuth, radiusMeters, sliceIndex, sliceCount, aperture].every(Number.isFinite))
+    return [];
+  if (radiusMeters <= 0 || aperture <= 0) return [];
+  if (sliceCount < 1 || sliceIndex < 0 || sliceIndex >= sliceCount) return [];
+  const start = azimuth - aperture / 2;
+  const width = aperture / sliceCount;
+  return sectorArc(center, radiusMeters, start + width * sliceIndex, start + width * (sliceIndex + 1));
 }
