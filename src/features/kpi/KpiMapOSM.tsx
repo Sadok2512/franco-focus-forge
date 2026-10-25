@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
-import { CELLS_VISIBLE_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
+import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import {
   SitesLayerControls,
   SitesMapWorkspaceControls,
@@ -87,7 +87,7 @@ function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; work
 
 export function KpiMapOSM({
   center = [2.4, 46.6],
-  zoom = MAP_MIN_ZOOM,
+  zoom = MAP_INITIAL_ZOOM,
   nPoints,
   contextLabel = "KPI",
   premium = false,

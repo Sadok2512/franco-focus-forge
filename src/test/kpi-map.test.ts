@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapFeatures } from "@/features/kpi/map-model";
 import type { KpiTimeSeries } from "@/lib/api/kpi-timeseries";
-import { CELLS_VISIBLE_ZOOM, MAP_MIN_ZOOM } from "@/features/kpi/SitesLayer";
+import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM } from "@/features/kpi/SitesLayer";
 
 const data: KpiTimeSeries = {
   status: "AVAILABLE",
@@ -36,7 +36,8 @@ const data: KpiTimeSeries = {
 };
 describe("KPI geographic observations", () => {
   it("uses the approved site/cell zoom thresholds", () => {
-    expect(MAP_MIN_ZOOM).toBe(11);
+    expect(MAP_MIN_ZOOM).toBe(6);
+    expect(MAP_INITIAL_ZOOM).toBe(11);
     expect(CELLS_VISIBLE_ZOOM).toBe(13);
   });
   it("keeps proven zero coordinates and values, rejects missing/invalid GPS, retains evidence", () => {

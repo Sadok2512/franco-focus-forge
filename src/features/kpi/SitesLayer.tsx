@@ -18,7 +18,8 @@ const SITE_LAYER_ID = "bc4-sites-site";
 const CELL_POINT_LAYER_ID = "bc4-sites-cell";
 const CELL_BEAM_LAYER_ID = "bc4-sites-cell-sector";
 const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
-export const MAP_MIN_ZOOM = 11;
+export const MAP_MIN_ZOOM = 6;
+export const MAP_INITIAL_ZOOM = 11;
 export const CELLS_VISIBLE_ZOOM = 13;
 
 const OPERATOR_COLORS = {
@@ -100,7 +101,7 @@ export function useSitesLayer(
     error: null,
     sites: null,
     cells: null,
-    zoom: MAP_MIN_ZOOM,
+    zoom: MAP_INITIAL_ZOOM,
   });
   const abortRef = useRef<AbortController | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);

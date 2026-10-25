@@ -1,3 +1,9 @@
+## 1.108.3 (patch) — BC4-FRONT 2026-10-25 — Zoom arrière de la carte (Agent BC1)
+
+- Autorise le zoom arrière jusqu'au niveau 6 tout en conservant le zoom initial 11.
+- Les sites restent des points individuels sans clustering sous le zoom 11 ; les beams restent limités au zoom 13 et plus.
+- Les réponses limitées par le plafond `/sites` continuent d'être signalées comme population partielle.
+
 ## 1.108.2 (patch) — BC4-FRONT 2026-10-25 — Visibilité des sites (Agent BC1)
 
 - Renforce la lisibilité des sites individuels sur le fond OSM : point de 9 px, opacité pleine et contour blanc de 1,5 px ; survol et sélection restent distincts.
