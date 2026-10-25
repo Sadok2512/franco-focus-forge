@@ -887,6 +887,37 @@
     "measureHint": "Click the map to add points",
     "clearMeasure": "Clear",
     "totalInView": "Total in view",
-    "returned": "Loaded"
+    "returned": "Loaded",
+    "basemap": "Basemap",
+    "basemaps": {
+      "light": "Light",
+      "dark": "Dark",
+      "street": "Street",
+      "satellite": "Satellite"
+    }
+  },
+  "mapPopup": {
+    "siteName": "Site name",
+    "siteId": "Site ID",
+    "operator": "Operator",
+    "latLng": "Lat / Lng",
+    "technologies": "Technologies",
+    "bands": "Bands",
+    "cells": "Cells",
+    "siteType": "Site type",
+    "cellSummary": "Cells",
+    "loadingCells": "Loading cells…",
+    "cellsError": "Cells unavailable",
+    "noCells": "No cell returned for this site",
+    "cell": "Cell",
+    "tech": "Technology",
+    "band": "Band",
+    "cellNameId": "Cell name / ID",
+    "parentSite": "Parent site",
+    "azimuth": "Azimuth",
+    "height": "Antenna height",
+    "tilt": "Tilt mech. / elec.",
+    "bandwidth": "Bandwidth",
+    "goToSite": "Go to parent site →"
   }
 }
