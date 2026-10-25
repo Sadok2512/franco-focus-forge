@@ -130,6 +130,7 @@ export function SignalingMap({
         attributionControl: { compact: true },
         style: {
           version: 8,
+          glyphs: MAP_GLYPHS,
           sources: {
             osm: {
               type: "raster",
