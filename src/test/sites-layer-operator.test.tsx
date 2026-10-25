@@ -98,6 +98,24 @@ const LABELS = {
 };
 
 describe("SitesLayer — opérateurs", () => {
+  it("loads individual sites when a parsed satellite style still has pending tiles", async () => {
+    const map = new FakeMap();
+    map.isStyleLoaded = () => false;
+    const parsedMap = Object.assign(map, {
+      getStyle: () => ({ version: 8, sources: {}, layers: [] }),
+    });
+    renderHook(() =>
+      useSitesLayer(parsedMap as unknown as MlMap, true, false, NO_FILTER, LABELS),
+    );
+    await waitFor(() => {
+      const data = map.sources.get("bc4-sites")?.data as { features: Props[] } | undefined;
+      expect(data?.features).toHaveLength(2);
+      expect(data?.features.map((feature) => feature.properties["operator"])).toEqual([
+        "Bouygues", "Orange",
+      ]);
+    });
+  });
+
   it("reconnaît Bouygues sous l'orthographe du back comme sous le code du filtre", () => {
     expect(operatorKey("Bouygues")).toBe("BYT");
     expect(operatorKey("BYT")).toBe("BYT");
