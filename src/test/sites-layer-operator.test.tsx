@@ -110,7 +110,7 @@ describe("SitesLayer — opérateurs", () => {
     expect(operatorLabel(null)).toBe("?");
   });
 
-  it("colore les sites Bouygues en bleu et regroupe les sites en clusters paresseux", async () => {
+  it("colore les sites Bouygues en bleu et affiche chaque site individuellement, sans aucun cluster", async () => {
     const map = new FakeMap();
     renderHook(() =>
       useSitesLayer(map as unknown as MlMap, true, false, NO_FILTER, LABELS),
@@ -134,21 +134,18 @@ describe("SitesLayer — opérateurs", () => {
     expect(JSON.stringify(color)).toContain('["get","op_key"]');
     expect(color[color.indexOf("BYT") + 1]).toBe("#009FE3");
 
-    // Lazy display : la source regroupe les sites tant que le zoom est bas…
+    // Aucun regroupement : la source n'est jamais clusterée, à aucun zoom…
     const options = map.sourceOptions.get("bc4-sites");
-    expect(options?.["cluster"]).toBe(true);
-    expect(options?.["clusterMaxZoom"]).toBe(12);
-    const clusterProps = options?.["clusterProperties"] as Record<string, unknown>;
-    expect(Object.keys(clusterProps)).toEqual(
-      expect.arrayContaining(["n_sites", "n_orf", "n_byt", "n_sfr", "n_frm"]),
-    );
-    // …chaque site compte pour 1 dans les compteurs de cluster…
-    expect(sites.features.every((f) => f.properties["n_sites"] === 1)).toBe(true);
-    // …les bulbes de cluster existent et les sites individuels les excluent.
-    expect(map.layers.some((l) => l.id === "bc4-sites-cluster")).toBe(true);
+    expect(options?.["cluster"] ?? false).toBe(false);
+    expect(options?.["clusterMaxZoom"]).toBeUndefined();
+    expect(options?.["clusterProperties"]).toBeUndefined();
+    // …aucune bulbe de cluster n'existe…
+    expect(map.layers.some((l) => l.id === "bc4-sites-cluster")).toBe(false);
+    expect(map.layers.some((l) => l.id === "bc4-sites-cluster-count")).toBe(false);
+    // …et la couche des sites n'exclut personne (pas de filtre point_count).
     const siteLayer = map.layers.find((l) => l.id === "bc4-sites-site") as
       | { filter?: unknown }
       | undefined;
-    expect(JSON.stringify(siteLayer?.filter)).toContain("point_count");
+    expect(JSON.stringify(siteLayer?.filter ?? null)).not.toContain("point_count");
   });
 });

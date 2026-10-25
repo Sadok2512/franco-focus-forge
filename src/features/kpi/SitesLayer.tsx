@@ -17,10 +17,6 @@ import { buildCellCard, buildSiteCard, cellKey } from "./site-cell-popup";
 const SITE_SOURCE_ID = "bc4-sites";
 const CELL_SOURCE_ID = "bc4-cells";
 const SITE_LAYER_ID = "bc4-sites-site";
-const SITE_CLUSTER_LAYER_ID = "bc4-sites-cluster";
-const SITE_CLUSTER_COUNT_LAYER_ID = "bc4-sites-cluster-count";
-/** Zoom au-delà duquel les sites sont affichés individuellement (lazy display). */
-export const SITES_CLUSTER_MAX_ZOOM = 12;
 /** Safety cap: never push more raw site features than this into the map. */
 export const MAX_SITE_FEATURES = 3000;
 /** Glyphs URL required by every symbol (count label) layer. */
@@ -179,16 +175,6 @@ export function useSitesLayer(
         map.addSource(SITE_SOURCE_ID, {
           type: "geojson",
           data: emptyCollection(),
-          cluster: true,
-          clusterMaxZoom: SITES_CLUSTER_MAX_ZOOM,
-          clusterRadius: 55,
-          clusterProperties: {
-            n_sites: ["+", ["get", "n_sites"]],
-            n_orf: ["+", ["case", ["==", ["get", "op_key"], "ORF"], 1, 0]],
-            n_byt: ["+", ["case", ["==", ["get", "op_key"], "BYT"], 1, 0]],
-            n_sfr: ["+", ["case", ["==", ["get", "op_key"], "SFR"], 1, 0]],
-            n_frm: ["+", ["case", ["==", ["get", "op_key"], "FRM"], 1, 0]],
-          },
         });
       if (!map.getSource(CELL_SOURCE_ID))
         map.addSource(CELL_SOURCE_ID, { type: "geojson", data: emptyCollection() });
@@ -219,61 +205,11 @@ export function useSitesLayer(
           },
         });
       }
-      if (!map.getLayer(SITE_CLUSTER_LAYER_ID)) {
-        map.addLayer({
-          id: SITE_CLUSTER_LAYER_ID,
-          type: "circle",
-          source: SITE_SOURCE_ID,
-          filter: ["has", "point_count"],
-          paint: {
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              14,
-              25,
-              17,
-              100,
-              21,
-              500,
-              26,
-            ],
-            "circle-color": [
-              "step",
-              ["get", "point_count"],
-              "#64748b",
-              25,
-              "#475569",
-              100,
-              "#334155",
-              500,
-              "#1e293b",
-            ],
-            "circle-opacity": 0.85,
-            "circle-stroke-color": "#ffffff",
-            "circle-stroke-width": 1.5,
-          },
-        });
-      }
-      if (!map.getLayer(SITE_CLUSTER_COUNT_LAYER_ID) && map.getStyle?.()?.glyphs) {
-        map.addLayer({
-          id: SITE_CLUSTER_COUNT_LAYER_ID,
-          type: "symbol",
-          source: SITE_SOURCE_ID,
-          filter: ["has", "point_count"],
-          layout: {
-            "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["Open Sans Semibold"],
-            "text-size": 11,
-          },
-          paint: { "text-color": "#ffffff" },
-        });
-      }
       if (!map.getLayer(SITE_LAYER_ID)) {
         map.addLayer({
           id: SITE_LAYER_ID,
           type: "circle",
           source: SITE_SOURCE_ID,
-          filter: ["!", ["has", "point_count"]],
           paint: {
             "circle-radius": [
               "case",
@@ -423,26 +359,6 @@ export function useSitesLayer(
     };
     // Priority: site marker > cell point > beam. Signaling markers keep their own click.
     const mapClick = (event: MapMouseEvent) => {
-      if (map.getLayer(SITE_CLUSTER_LAYER_ID)) {
-        const cluster = map.queryRenderedFeatures(event.point, {
-          layers: [SITE_CLUSTER_LAYER_ID],
-        })[0];
-        if (cluster) {
-          const clusterId = cluster.properties?.["cluster_id"] as number | undefined;
-          const source = map.getSource(SITE_SOURCE_ID) as GeoJSONSource | undefined;
-          if (clusterId != null && source?.getClusterExpansionZoom) {
-            void source
-              .getClusterExpansionZoom(clusterId)
-              .then((zoom) =>
-                map.easeTo({
-                  center: (cluster.geometry as GeoJSON.Point).coordinates as [number, number],
-                  zoom: Math.min(zoom + 0.5, 18),
-                }),
-              );
-          }
-          return;
-        }
-      }
       const layers = [SITE_LAYER_ID, CELL_POINT_LAYER_ID, CELL_BEAM_LAYER_ID].filter((id) => map.getLayer(id));
       const own = map.getStyle?.()?.layers?.filter((l) => l.id.startsWith("signaling")).map((l) => l.id) ?? [];
       if (own.length && map.queryRenderedFeatures(event.point, { layers: own }).length) return;
@@ -557,7 +473,6 @@ export function useSitesLayer(
           id: String(feature.properties["site_id"] ?? index),
           properties: {
             ...feature.properties,
-            n_sites: 1,
             op_key: operatorKey(feature.properties["operator"]) ?? "",
           },
         })),
