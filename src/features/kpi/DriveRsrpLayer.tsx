@@ -63,7 +63,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
     () =>
       mapFeatures(series.data).map((f) => ({
         ...f,
-        properties: { ...f.properties, rsrp_class: rsrpClass(f.properties.value) },
+        properties: { ...f.properties, rsrp_class: rsrpClass(typeof f.properties.value === "number" ? f.properties.value : null) },
       })),
     [series.data],
   );
@@ -88,7 +88,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
               ["get", "rsrp_class"],
               ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
               "#94a3b8",
-            ],
+            ] as unknown as string,
             "circle-stroke-width": 0,
           },
         },
