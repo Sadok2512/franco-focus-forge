@@ -17,6 +17,14 @@ import { buildCellCard, buildSiteCard, cellKey } from "./site-cell-popup";
 const SITE_SOURCE_ID = "bc4-sites";
 const CELL_SOURCE_ID = "bc4-cells";
 const SITE_LAYER_ID = "bc4-sites-site";
+const SITE_CLUSTER_LAYER_ID = "bc4-sites-cluster";
+const SITE_CLUSTER_COUNT_LAYER_ID = "bc4-sites-cluster-count";
+/** Zoom au-delà duquel les sites sont affichés individuellement (lazy display). */
+export const SITES_CLUSTER_MAX_ZOOM = 12;
+/** Safety cap: never push more raw site features than this into the map. */
+export const MAX_SITE_FEATURES = 3000;
+/** Glyphs URL required by every symbol (count label) layer. */
+export const MAP_GLYPHS = "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf";
 const CELL_POINT_LAYER_ID = "bc4-sites-cell";
 const CELL_BEAM_LAYER_ID = "bc4-sites-cell-sector";
 const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
