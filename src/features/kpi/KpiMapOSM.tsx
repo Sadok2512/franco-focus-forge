@@ -13,7 +13,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
 import { CELLS_VISIBLE_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
-import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
+import {
+  SitesLayerControls,
+  SitesMapWorkspaceControls,
+  useSitesLayerState,
+} from "./SitesLayerControls";
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
@@ -25,7 +29,7 @@ const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
 
 /** Harness interne : relie `useSitesLayer` au contrôle UI persistant.
  *  Doit être enfant de KpiMapOSM pour avoir accès au Map instance. */
-function SitesLayerHarness({ map }: { map: MlMap | null }) {
+function SitesLayerHarness({ map, workspace = false }: { map: MlMap | null; workspace?: boolean }) {
   const { t } = useTranslation();
   const {
     enabled,
@@ -36,6 +40,7 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
     toggleTechno,
     toggleBand,
     toggleOperator,
+    reset,
   } = useSitesLayerState();
   const labels = useMemo(
     () => ({
@@ -54,25 +59,30 @@ function SitesLayerHarness({ map }: { map: MlMap | null }) {
     Boolean(response?.reason?.startsWith("truncated")),
   );
   const returned = (status.sites?.n_returned ?? 0) + (status.cells?.n_returned ?? 0);
-  return (
-    <SitesLayerControls
-      enabled={enabled}
-      cellsEnabled={cellsEnabled}
-      cellsAvailable={status.zoom >= CELLS_VISIBLE_ZOOM}
-      filters={filters}
-      onToggleEnabled={setEnabled}
-      onToggleCells={setCellsEnabled}
-      onToggleTechno={toggleTechno}
-      onToggleBand={toggleBand}
-      onToggleOperator={toggleOperator}
-      status={{
-        loading: status.loading,
-        error: status.error,
-        n_returned: returned,
-        truncated,
-      }}
-    />
-  );
+  const controls = {
+    enabled,
+    cellsEnabled,
+    cellsAvailable: status.zoom >= CELLS_VISIBLE_ZOOM,
+    filters,
+    onToggleEnabled: setEnabled,
+    onToggleCells: setCellsEnabled,
+    onToggleTechno: toggleTechno,
+    onToggleBand: toggleBand,
+    onToggleOperator: toggleOperator,
+    onReset: reset,
+    status: {
+      loading: status.loading,
+      error: status.error,
+      zoom: status.zoom,
+      ...(status.sites ? { n_sites: status.sites.n_returned } : {}),
+      ...(status.cells ? { n_cells: status.cells.n_returned } : {}),
+      n_returned: returned,
+      n_total: (status.sites?.n_total_in_bbox ?? 0) + (status.cells?.n_total_in_bbox ?? 0),
+      truncated,
+    },
+  };
+  if (workspace) return <SitesMapWorkspaceControls {...controls} />;
+  return <SitesLayerControls {...controls} />;
 }
 
 export function KpiMapOSM({
@@ -92,6 +102,7 @@ export function KpiMapOSM({
   // Toujours disponible via le panneau "Layers" en haut à droite, OFF
   // par défaut. Utilisateur active + filtre techno/band/operator.
   sitesLayerEnabled = true,
+  workspace = false,
 }: {
   center?: [number, number];
   zoom?: number;
@@ -106,6 +117,7 @@ export function KpiMapOSM({
   children?: ReactNode;
   measurementStatus?: string | null;
   sitesLayerEnabled?: boolean;
+  workspace?: boolean;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const readyCallback = useRef(onMapReady);
@@ -346,7 +358,7 @@ export function KpiMapOSM({
       )}
       {children}
       {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
-      {sitesLayerEnabled && ready && <SitesLayerHarness map={map.current} />}
+      {sitesLayerEnabled && ready && <SitesLayerHarness map={map.current} workspace={workspace} />}
       {/* Compact empty-measurement status; attribution remains on the map. */}
       {measurementStatus !== null && (
         <div
@@ -383,7 +395,7 @@ export function KpiMapOSM({
         {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
       </button>
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
-      {showOperatorLegend && (
+      {showOperatorLegend && !workspace && (
         <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">
           <div className="mb-0.5 font-semibold text-foreground">
             {translate("kpi.5bb4229062a5")}

@@ -14,6 +14,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppKpiRouteImport } from './routes/_app.kpi'
+import { Route as AppMapRouteImport } from './routes/_app.map'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRfRouteImport } from './routes/_app.rf'
@@ -56,6 +57,11 @@ const AppAssistantRoute = AppAssistantRouteImport.update({
 const AppKpiRoute = AppKpiRouteImport.update({
   id: '/kpi',
   path: '/kpi',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppMapRoute = AppMapRouteImport.update({
+  id: '/map',
+  path: '/map',
   getParentRoute: () => AppRoute,
 } as any)
 const AppOverviewRoute = AppOverviewRouteImport.update({
@@ -161,6 +167,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
+  '/map': typeof AppMapRoute
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRouteWithChildren
   '/rf': typeof AppRfRoute
@@ -186,6 +193,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/assistant': typeof AppAssistantRoute
   '/kpi': typeof AppKpiRoute
+  '/map': typeof AppMapRoute
   '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRouteWithChildren
   '/rf': typeof AppRfRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/kpi': typeof AppKpiRoute
+  '/_app/map': typeof AppMapRoute
   '/_app/overview': typeof AppOverviewRoute
   '/_app/projects': typeof AppProjectsRouteWithChildren
   '/_app/rf': typeof AppRfRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/assistant'
     | '/kpi'
+    | '/map'
     | '/overview'
     | '/projects'
     | '/rf'
@@ -264,6 +274,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/assistant'
     | '/kpi'
+    | '/map'
     | '/overview'
     | '/projects'
     | '/rf'
@@ -289,6 +300,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/_app/assistant'
     | '/_app/kpi'
+    | '/_app/map'
     | '/_app/overview'
     | '/_app/projects'
     | '/_app/rf'
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       path: '/kpi'
       fullPath: '/kpi'
       preLoaderRoute: typeof AppKpiRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/map': {
+      id: '/_app/map'
+      path: '/map'
+      fullPath: '/map'
+      preLoaderRoute: typeof AppMapRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/overview': {
@@ -534,6 +553,7 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
   AppKpiRoute: typeof AppKpiRoute
+  AppMapRoute: typeof AppMapRoute
   AppOverviewRoute: typeof AppOverviewRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppRfRoute: typeof AppRfRoute
@@ -547,6 +567,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
   AppKpiRoute: AppKpiRoute,
+  AppMapRoute: AppMapRoute,
   AppOverviewRoute: AppOverviewRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
   AppRfRoute: AppRfRoute,

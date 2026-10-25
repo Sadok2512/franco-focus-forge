@@ -7,7 +7,8 @@
     "signaling": "Signaling View",
     "rf": "RF Modules",
     "assistant": "Assistant IA",
-    "main": "Navigation principale"
+    "main": "Navigation principale",
+    "map": "Carte"
   },
   "common": {
     "user": "Utilisateur",
@@ -826,5 +827,19 @@
     "band": "Bande",
     "pci": "PCI",
     "azimuth": "Azimut"
+  },
+  "mapWorkspace": {
+    "title": "Carte réseau",
+    "description": "Carte réseau BC4 interactive avec sites individuels et beams cellules GEOREF.",
+    "subtitle": "sites et secteurs cellulaires",
+    "networkMap": "Carte réseau",
+    "sites": "Sites",
+    "cells": "Cellules",
+    "bands": "Bandes",
+    "zoom": "Zoom",
+    "visibleSites": "Sites",
+    "visibleCells": "Cellules",
+    "ready": "Prêt",
+    "projectCenterUnavailable": "Centre du projet indisponible — centre de carte par défaut utilisé."
   }
 }

@@ -34,6 +34,7 @@ import { APP_VERSION } from "@/lib/version";
 const NAV = [
   { to: "/projects", label: "nav.projects" },
   { to: "/overview", label: "nav.overview" },
+  { to: "/map", label: "nav.map" },
   { to: "/rrc", label: "nav.dictionary" },
   { to: "/kpi", label: "nav.kpi" },
   { to: "/signaling", label: "nav.signaling" },

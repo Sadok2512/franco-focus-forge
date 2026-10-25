@@ -7,7 +7,8 @@
     "signaling": "Signaling View",
     "rf": "RF Modules",
     "assistant": "AI Assistant",
-    "main": "Main navigation"
+    "main": "Main navigation",
+    "map": "Map"
   },
   "common": {
     "user": "User",
@@ -826,5 +827,19 @@
     "band": "Band",
     "pci": "PCI",
     "azimuth": "Azimuth"
+  },
+  "mapWorkspace": {
+    "title": "Network Map",
+    "description": "Interactive BC4 network map with individual sites and GEOREF cell beams.",
+    "subtitle": "sites and cell sectors",
+    "networkMap": "Network map",
+    "sites": "Sites",
+    "cells": "Cells",
+    "bands": "Bands",
+    "zoom": "Zoom",
+    "visibleSites": "Sites",
+    "visibleCells": "Cells",
+    "ready": "Ready",
+    "projectCenterUnavailable": "Project center unavailable — default map center used."
   }
 }

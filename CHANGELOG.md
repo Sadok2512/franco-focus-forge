@@ -1,3 +1,10 @@
+## 1.108.0 (minor) — BC4-FRONT 2026-10-25 — Workspace Carte réseau GEOREF (Agent BC1)
+
+- Ajoute la page `/map` et son entrée « Carte » dans la navigation principale BC4. Le workspace utilise le centre réel du projet actif lorsqu'il est disponible et conserve le zoom minimal 11.
+- La barre flottante supérieure reprend la composition GEOREF et pilote réellement les couches Sites/Cellules ainsi que les filtres technologie, bande et opérateur. La barre inférieure affiche le zoom et les populations visibles provenant des réponses `/sites`, avec les états loading, erreur et population partielle.
+- La page réutilise strictement `KpiMapOSM`, `useSitesLayer` et la géométrie partagée `georef-cell-geometry` : points individuels sans clustering, beams GEOREF à partir du zoom 13 et aucune coordonnée ou orientation inventée.
+- Les cartes KPI, Metrics et Signaling conservent leur contrôle compact existant. Les nouveaux libellés sont disponibles en anglais et en français.
+
 ## 1.107.0 (minor) — BC4-FRONT 2026-10-24 — Sites et beams GEOREF sans clustering (Agent BC1)
 
 - Les cartes partagées KPI, Metrics et Signaling interdisent désormais le zoom inférieur à 11 et chargent les sites comme points individuels dès ce niveau ; la couche de clusters et ses compteurs ont été retirés du rendu.
