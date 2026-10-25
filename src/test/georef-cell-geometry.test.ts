@@ -4,6 +4,7 @@ import {
   getGeorefBandColor,
   getGeorefBeamRadiusMeters,
   getGeorefSectorCoords,
+  getGeorefSectorSliceCoords,
 } from "@/features/kpi/georef-cell-geometry";
 
 describe("GEOREF cell beam geometry", () => {
