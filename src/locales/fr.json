@@ -848,6 +848,8 @@
     "sitesAndCells": "Sites et cellules",
     "cellSectors": "Secteurs de cellules",
     "beams": "Faisceaux",
+    "beamSize": "Taille des faisceaux",
+    "beamIntensity": "Intensité des couleurs",
     "labels": "Étiquettes",
     "technology": "Technologie",
     "notInData": "Absent des données réseau",

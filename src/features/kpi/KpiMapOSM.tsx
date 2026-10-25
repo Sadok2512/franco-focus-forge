@@ -53,6 +53,7 @@ function SitesLayerHarness({
     reset,
     display,
     setDisplay,
+    setBeamDisplay,
     setTechnos,
     setBands,
   } = useSitesLayerState();
@@ -74,6 +75,8 @@ function SitesLayerHarness({
   );
   const returned = (status.sites?.n_returned ?? 0) + (status.cells?.n_returned ?? 0);
   const controls = {
+    display,
+    onSetBeamDisplay: setBeamDisplay,
     enabled,
     cellsEnabled,
     cellsAvailable: status.zoom >= CELLS_VISIBLE_ZOOM,

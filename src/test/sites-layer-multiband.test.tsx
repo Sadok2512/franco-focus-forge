@@ -65,8 +65,10 @@ class FakeMap {
     this.layers.push(layer);
   }
   getLayer() {
-    return undefined;
+    return this.layers[0];
   }
+  setLayoutProperty = vi.fn();
+  setPaintProperty = vi.fn();
   isStyleLoaded() {
     return true;
   }
@@ -101,6 +103,38 @@ const LABELS = {
 };
 
 describe("SitesLayer — multi-band cells", () => {
+  it("resizes loaded beams locally from 0 to 100% without fetching again", async () => {
+    const map = new FakeMap();
+    const { rerender } = renderHook(({ beamSize }) => useSitesLayer(map as unknown as MlMap, false, true, NO_FILTER, LABELS,
+      { beams: true, labels: false, beamSize }), { initialProps: { beamSize: 50 } });
+    const read = () => (map.sources.get("bc4-cells")?.data as GeoJSON.FeatureCollection | undefined)?.features ?? [];
+    await waitFor(() => expect(read().filter(f => f.properties?.["render_kind"] === "beam")).toHaveLength(3));
+    const requests = getSites.mock.calls.length;
+    const edge = () => {
+      const beam = read().find(f => f.properties?.["render_kind"] === "beam");
+      return beam?.geometry.type === "Polygon" ? beam.geometry.coordinates[0]?.[1]?.[0] : undefined;
+    };
+    const original = edge();
+    expect(original).toBeTypeOf("number");
+    rerender({ beamSize: 100 });
+    expect(edge()).toBeCloseTo(2.22 + ((original ?? 0) - 2.22) * 2, 10);
+    rerender({ beamSize: 0 });
+    expect(read().filter(f => f.properties?.["render_kind"] === "beam")).toHaveLength(0);
+    expect(read().filter(f => f.properties?.["render_kind"] === "cell")).toHaveLength(2);
+    expect(getSites.mock.calls.length).toBe(requests);
+  });
+
+  it("applies 0% and 100% colour visibility to loaded beam layers", async () => {
+    const map = new FakeMap();
+    const { rerender } = renderHook(({ beamIntensity }) => useSitesLayer(map as unknown as MlMap, false, true, NO_FILTER, LABELS,
+      { beams: true, labels: false, beamIntensity }), { initialProps: { beamIntensity: 0 } });
+    expect(map.setPaintProperty).toHaveBeenCalledWith("bc4-sites-cell-sector", "fill-opacity", 0);
+    expect(map.setPaintProperty).toHaveBeenCalledWith("bc4-sites-cell-sector-outline", "line-opacity", 0);
+    rerender({ beamIntensity: 100 });
+    expect(map.setPaintProperty).toHaveBeenCalledWith("bc4-sites-cell-sector", "fill-opacity", 1);
+    expect(map.setPaintProperty).toHaveBeenCalledWith("bc4-sites-cell-sector-outline", "line-opacity", 1);
+  });
+
   it("splits a two-band sector into one colored slice per band and dedupes the cell point", async () => {
     const map = new FakeMap();
     renderHook(() => useSitesLayer(map as unknown as MlMap, false, true, NO_FILTER, LABELS));
