@@ -112,6 +112,7 @@ export function useSitesLayer(
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const popupRef = useRef<MlPopup | null>(null);
   const hoverPopupRef = useRef<MlPopup | null>(null);
+  const sitesDataRef = useRef<GeoJSON.Feature[]>([]);
 
   const fetchForCurrentBbox = useCallback(() => {
     if (!map || (!sitesEnabled && !cellsEnabled)) return;
@@ -329,8 +330,7 @@ export function useSitesLayer(
           : null),
       );
     };
-    const siteFeatures = () =>
-      ((map.getSource(SITE_SOURCE_ID) as unknown as { _data?: GeoJSON.FeatureCollection })?._data?.features ?? []) as GeoJSON.Feature[];
+    const siteFeatures = () => sitesDataRef.current;
     const openSite = (properties: Record<string, unknown>, at: [number, number], featureId?: string | number) => {
       clearSelection();
       selectedSiteId = featureId ?? (properties["site_id"] as string | undefined);
@@ -452,8 +452,11 @@ export function useSitesLayer(
     if (!map) return;
     const source = map.getSource(SITE_SOURCE_ID) as GeoJSONSource | undefined;
     if (!source) return;
-    if (!sitesEnabled || !status.sites) return void source.setData(emptyCollection());
-    source.setData({
+    if (!sitesEnabled || !status.sites) {
+      sitesDataRef.current = [];
+      return void source.setData(emptyCollection());
+    }
+    const collection: GeoJSON.FeatureCollection = {
       type: "FeatureCollection",
       features: status.sites.features
         .filter((feature) => feature.properties["kind"] !== "cluster")
@@ -465,7 +468,9 @@ export function useSitesLayer(
             op_key: operatorKey(feature.properties["operator"]) ?? "",
           },
         })),
-    });
+    };
+    sitesDataRef.current = collection.features;
+    source.setData(collection);
   }, [map, sitesEnabled, status.sites]);
 
   useEffect(() => {
