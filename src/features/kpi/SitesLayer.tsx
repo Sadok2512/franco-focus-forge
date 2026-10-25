@@ -11,6 +11,7 @@ import {
   getGeorefBandColor,
   getGeorefBeamRadiusMeters,
   getGeorefSectorCoords,
+  getGeorefSectorSliceCoords,
 } from "./georef-cell-geometry";
 import { buildCellCard, buildSiteCard, cellKey } from "./site-cell-popup";
 
