@@ -198,19 +198,19 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     `flex h-8 w-8 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
 
   const legend = (
-    <div className="space-y-1.5 text-[10px]">
+    <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
       <LegendRow title={t("mapWorkspace.technology")}>
         <Swatch color={NR_COLOR} label="5G NR" />
         <Swatch color={LTE_COLOR} label="4G LTE" />
       </LegendRow>
       <LegendRow title={t("mapWorkspace.bands")}>
         {NETWORK_BANDS.filter((b) => isActive(filters.bands, [b.code])).map((b) => (
-          <Swatch key={b.key} color={bandColor(b.key)} label={b.key} />
+          <Swatch key={b.key} color={bandColor(b.key)} label={b.key} hideLabel={!compact} />
         ))}
       </LegendRow>
       <LegendRow title={t("mapWorkspace.siteColour")}>
         {OPERATORS.filter((o) => isActive(filters.operators, [o.v])).map((o) => (
-          <Swatch key={o.v} color={o.color} label={o.label} round />
+          <Swatch key={o.v} color={o.color} label={o.label} round hideLabel={!compact} />
         ))}
       </LegendRow>
       <LegendRow title={t("mapWorkspace.symbols")}>
@@ -234,7 +234,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {showPanel ? (
         <aside
           aria-label={t("mapWorkspace.layers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex w-56 flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[92px]"}`}
+          className={`pointer-events-auto absolute left-3 top-3 flex w-56 flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[76px]"}`}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <h2 className="text-xs font-semibold">{t("mapWorkspace.layers")}</h2>
@@ -433,7 +433,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
 
       {/* Bottom-left — legend */}
       {!compact && (
-        <div className={`pointer-events-auto absolute bottom-3 left-3 max-w-[calc(50%-220px)] min-w-56 rounded-xl px-3 py-2 ${glass}`} aria-label={t("mapWorkspace.legend")}>
+        <div className={`pointer-events-auto absolute bottom-3 left-3 rounded-xl px-3 py-2 ${glass}`} aria-label={t("mapWorkspace.legend")}>
           {legend}
         </div>
       )}
@@ -578,11 +578,11 @@ function LegendRow({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
-function Swatch({ color, label, round }: { color: string; label: string; round?: boolean }) {
+function Swatch({ color, label, round, hideLabel }: { color: string; label: string; round?: boolean; hideLabel?: boolean }) {
   return (
-    <span className="inline-flex items-center gap-1">
-      <span className={`h-2.5 w-2.5 ${round ? "rounded-full" : "rounded-sm"}`} style={{ background: color }} />
-      {label}
+    <span className="inline-flex items-center gap-1" title={label}>
+      <span className={`h-2.5 w-2.5 ${round ? "rounded-full" : "rounded-sm"}`} style={{ background: color }} aria-label={hideLabel ? label : undefined} />
+      {!hideLabel && label}
     </span>
   );
 }
