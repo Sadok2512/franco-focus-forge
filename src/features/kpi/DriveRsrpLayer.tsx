@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures, getSignaling } from "@/lib/api/client";
+import { getMetricAnalysis, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -70,8 +70,9 @@ export function DriveRsrpLayer({
     });
 
   const captures = useQuery({
-    queryKey: ["metric-captures", projectId],
-    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    queryKey: ["map-captures", projectId],
+    queryFn: ({ signal }) =>
+      getSignaling(projectId, "captures", {}, signal).then((response) => response.captures),
     enabled: prefs.on && !embedded,
   });
   const lastKey = `${LAST_CAPTURE_STORE}.${projectId}`;
@@ -83,34 +84,12 @@ export function DriveRsrpLayer({
     return has(fromUrl) ?? has(last);
   }, [captures.data, embedded, lastKey]);
   useEffect(() => {
-    if (!embedded && !captureId && preferredCaptureId) setCaptureId(preferredCaptureId);
-  }, [captureId, embedded, preferredCaptureId]);
-
-  // /metrics/captures intentionally contains no inferred location flag. For
-  // a fresh Map page, inspect the capture GPS evidence in catalogue order and
-  // pick the first capture that actually contains positioned observations.
-  // This avoids loading expensive metric tables for every empty capture.
-  const mappedCapture = useQuery({
-    queryKey: ["drive-rsrp-mapped-capture", projectId, captures.data?.map((c) => c.capture_id)],
-    enabled:
-      prefs.on && !embedded && !captureId && !preferredCaptureId && Boolean(captures.data?.length),
-    queryFn: async ({ signal }) => {
-      for (const candidate of captures.data ?? []) {
-        const response = await getSignaling(
-          projectId,
-          "points",
-          { capture_id: candidate.capture_id },
-          signal,
-        );
-        if (response.positioned_count > 0) return candidate.capture_id;
-      }
-      return captures.data?.[0]?.capture_id;
-    },
-    staleTime: 60_000,
-  });
-  useEffect(() => {
-    if (!embedded && !captureId && mappedCapture.data) setCaptureId(mappedCapture.data);
-  }, [captureId, embedded, mappedCapture.data]);
+    if (embedded || captureId || !captures.data?.length) return;
+    // Environment is source metadata. Prefer one drive capture, then load
+    // only that capture's rows; never probe every session for GPS.
+    const drive = captures.data.find((capture) => capture.env === "incar")?.capture_id;
+    setCaptureId(preferredCaptureId ?? drive ?? captures.data[0]?.capture_id);
+  }, [captureId, captures.data, embedded, preferredCaptureId]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],

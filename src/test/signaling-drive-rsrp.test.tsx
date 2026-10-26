@@ -8,6 +8,7 @@ const api = vi.hoisted(() => ({ analysis: vi.fn(), captures: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: api.analysis,
   getMetricCaptures: api.captures,
+  getSignaling: vi.fn(),
 }));
 vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
   RsrpDiagnosisDialog: () => null,

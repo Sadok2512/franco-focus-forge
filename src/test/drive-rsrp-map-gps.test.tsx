@@ -7,8 +7,15 @@ import "@/lib/i18n";
 const api = vi.hoisted(() => ({ analysis: vi.fn(), captures: vi.fn(), points: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: api.analysis,
-  getMetricCaptures: api.captures,
-  getSignaling: api.points,
+  getSignaling: (
+    project: string,
+    endpoint: string,
+    query: Record<string, unknown>,
+    signal: AbortSignal,
+  ) =>
+    endpoint === "captures"
+      ? api.captures(project, query, signal)
+      : api.points(project, endpoint, query, signal),
 }));
 vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
   RsrpDiagnosisDialog: () => null,
@@ -48,7 +55,9 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    api.captures.mockResolvedValue([{ capture_id: "cap-1", label: "Drive 1" }]);
+    api.captures.mockResolvedValue({
+      captures: [{ capture_id: "cap-1", label: "Drive 1", env: "incar" }],
+    });
     api.points.mockResolvedValue({
       points: [
         { seq: 14, t_rel_s: 1, lat: 50.378, lng: 3.478, protocol: "lte", gps_seq: 14, seq_gap: 0 },
@@ -92,7 +101,7 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     const map = mapDouble();
     mount(map);
     await waitFor(() => expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(1));
-    expect(api.points).toHaveBeenCalledTimes(1);
+    expect(api.points).not.toHaveBeenCalled();
     expect(map.source.setData.mock.calls.at(-1)?.[0].features[0]).toMatchObject({
       properties: { position_source: "row" },
     });
@@ -106,38 +115,18 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBeNull();
   });
 
-  it("selects the first capture that has traceable RSRP points on a fresh map", async () => {
-    api.captures.mockResolvedValue([
-      { capture_id: "cap-empty", label: "No GPS" },
-      { capture_id: "cap-map", label: "Mapped drive" },
-    ]);
+  it("loads one drive capture without probing every session", async () => {
+    api.captures.mockResolvedValue({
+      captures: [
+        { capture_id: "cap-empty", label: "Indoor", env: "indoor" },
+        { capture_id: "cap-map", label: "Mapped drive", env: "incar" },
+        { capture_id: "cap-other", label: "Other drive", env: "incar" },
+      ],
+    });
     api.analysis.mockImplementation(async (_project: string, capture: string) =>
       capture === "cap-map"
         ? { ...rows(50.378, 3.478, -95), capture_id: capture }
         : { ...rows(null, null, -95), capture_id: capture },
-    );
-    api.points.mockImplementation(
-      async (_project: string, _endpoint: string, query: { capture_id: string }) => ({
-        points:
-          query.capture_id === "cap-map"
-            ? [
-                {
-                  seq: 14,
-                  t_rel_s: 1,
-                  lat: 50.378,
-                  lng: 3.478,
-                  protocol: "lte",
-                  gps_seq: 14,
-                  seq_gap: 0,
-                },
-              ]
-            : [],
-        markers: [],
-        positioned_count: query.capture_id === "cap-map" ? 1 : 0,
-        indoor: false,
-        floorplan_id: null,
-        reason: query.capture_id === "cap-map" ? null : "no_gps",
-      }),
     );
     const map = mapDouble();
     mount(map);
@@ -151,5 +140,7 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
       }),
     );
     expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBe("cap-map");
+    expect(api.analysis).toHaveBeenCalledTimes(1);
+    expect(api.points).not.toHaveBeenCalled();
   });
 });

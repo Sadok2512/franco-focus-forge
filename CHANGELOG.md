@@ -1,3 +1,9 @@
+## 1.110.3 (patch) — BC4-FRONT 2026-10-26 — Chargement Map limité à une capture (Agent BC1)
+
+- La page Map ne parcourt plus les sessions avec `/signaling/points` pour rechercher une capture GPS.
+- Une seule liste légère `/signaling/captures` est chargée, puis une seule capture de conduite (`env=incar`) alimente la couche RSRP.
+- La sélection explicite par URL, la dernière capture cartographiable mémorisée et le sélecteur manuel restent prioritaires.
+
 ## 1.110.2 (patch) — BC4-FRONT 2026-10-26 — Sites et points RSRP visibles sur Map (Agent BC1)
 
 - La couche Drive RSRP est active par défaut et la page Map choisit la première capture qui possède des positions GPS prouvées au lieu d'ouvrir une capture vide.
