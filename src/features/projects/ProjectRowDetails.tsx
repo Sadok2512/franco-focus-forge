@@ -17,12 +17,32 @@ import { DecodePanel } from "./DecodePanel";
 //   - les PLMN sont BRUTS (`20801`, `20810`…) tant qu'une table de
 //     référence PLMN→opérateur n'est pas branchée côté back (écart
 //     explicitement déclaré au CHANGELOG 1.5.1).
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { getImportReport } from "@/lib/api/client";
 import type { Project } from "@/lib/api/schemas";
 import { toUserMessage } from "@/lib/api/http";
+import { Button } from "@/components/ui/button";
 import { OperatorChip, TechBadge, nd, ndPct, sortByCountDesc } from "./shared";
+
+// Pagination du tableau « Fichiers importés » : 10 lignes par page, navigation
+// précédent/suivant. Le découpage est une fonction pure exportée pour les tests.
+export const IMPORT_FILES_PAGE_SIZE = 10;
+
+export function paginateImportFiles<T>(
+  files: T[],
+  page: number,
+): { page: number; pageCount: number; rows: T[] } {
+  const pageCount = Math.max(1, Math.ceil(files.length / IMPORT_FILES_PAGE_SIZE));
+  const safePage = Math.min(Math.max(0, page), pageCount - 1);
+  return {
+    page: safePage,
+    pageCount,
+    rows: files.slice(safePage * IMPORT_FILES_PAGE_SIZE, (safePage + 1) * IMPORT_FILES_PAGE_SIZE),
+  };
+}
 
 function StatusBadge({ status }: { status: "pending" | "decoding" | "done" | "error" }) {
   const map = {
