@@ -1,4 +1,4 @@
-import { render, waitFor, fireEvent, screen } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
@@ -50,7 +50,9 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     vi.clearAllMocks();
     api.captures.mockResolvedValue([{ capture_id: "cap-1", label: "Drive 1" }]);
     api.points.mockResolvedValue({
-      points: [{ seq: 14, t_rel_s: 1, lat: 50.378, lng: 3.478, protocol: "lte", gps_seq: 14, seq_gap: 0 }],
+      points: [
+        { seq: 14, t_rel_s: 1, lat: 50.378, lng: 3.478, protocol: "lte", gps_seq: 14, seq_gap: 0 },
+      ],
       markers: [],
       positioned_count: 1,
       indoor: false,
@@ -66,17 +68,13 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
         <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" autoFrame={false} />
       </QueryClientProvider>,
     );
-    // The Map page layer ships switched off: the technician turns it on.
-    fireEvent.click(screen.getByRole("switch"));
   }
 
   it("draws a row without its own GPS at the capture position of the same sequence", async () => {
     api.analysis.mockResolvedValue(rows(null, null, -95));
     const map = mapDouble();
     mount(map);
-    await waitFor(() =>
-      expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(1),
-    );
+    await waitFor(() => expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(1));
     expect(api.points).toHaveBeenCalledWith(
       "Test_3",
       "points",
@@ -93,10 +91,8 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     api.analysis.mockResolvedValue(rows(50.378, 3.478, -95));
     const map = mapDouble();
     mount(map);
-    await waitFor(() =>
-      expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(1),
-    );
-    expect(api.points).not.toHaveBeenCalled();
+    await waitFor(() => expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(1));
+    expect(api.points).toHaveBeenCalledTimes(1);
     expect(map.source.setData.mock.calls.at(-1)?.[0].features[0]).toMatchObject({
       properties: { position_source: "row" },
     });
@@ -108,5 +104,52 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     mount(map);
     await waitFor(() => expect(api.analysis).toHaveBeenCalled());
     expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBeNull();
+  });
+
+  it("selects the first capture that has traceable RSRP points on a fresh map", async () => {
+    api.captures.mockResolvedValue([
+      { capture_id: "cap-empty", label: "No GPS" },
+      { capture_id: "cap-map", label: "Mapped drive" },
+    ]);
+    api.analysis.mockImplementation(async (_project: string, capture: string) =>
+      capture === "cap-map"
+        ? { ...rows(50.378, 3.478, -95), capture_id: capture }
+        : { ...rows(null, null, -95), capture_id: capture },
+    );
+    api.points.mockImplementation(
+      async (_project: string, _endpoint: string, query: { capture_id: string }) => ({
+        points:
+          query.capture_id === "cap-map"
+            ? [
+                {
+                  seq: 14,
+                  t_rel_s: 1,
+                  lat: 50.378,
+                  lng: 3.478,
+                  protocol: "lte",
+                  gps_seq: 14,
+                  seq_gap: 0,
+                },
+              ]
+            : [],
+        markers: [],
+        positioned_count: query.capture_id === "cap-map" ? 1 : 0,
+        indoor: false,
+        floorplan_id: null,
+        reason: query.capture_id === "cap-map" ? null : "no_gps",
+      }),
+    );
+    const map = mapDouble();
+    mount(map);
+    await waitFor(() =>
+      expect(api.analysis.mock.calls.some((call) => call[1] === "cap-map")).toBe(true),
+    );
+    await waitFor(() =>
+      expect(map.source.setData.mock.calls.at(-1)?.[0].features[0]).toMatchObject({
+        geometry: { coordinates: [3.478, 50.378] },
+        properties: { capture_id: "cap-map", value: -95 },
+      }),
+    );
+    expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBe("cap-map");
   });
 });

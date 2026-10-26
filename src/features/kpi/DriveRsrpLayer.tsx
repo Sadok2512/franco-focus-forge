@@ -20,10 +20,12 @@ import {
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
-const STORE = "bc4.map.driveRsrp.v1";
+// v2 enables the measurement layer on first use. The dedicated Map page is
+// expected to open on real radio points rather than on an empty basemap.
+const STORE = "bc4.map.driveRsrp.v2";
 
 type Prefs = { on: boolean; opacity: number; hidden: RsrpClassId[] };
-const DEFAULT: Prefs = { on: false, opacity: 90, hidden: [] };
+const DEFAULT: Prefs = { on: true, opacity: 90, hidden: [] };
 const LAST_CAPTURE_STORE = "bc4.driveRsrp.lastCapture";
 
 function readPrefs(store: string, defaults: Prefs): Prefs {
@@ -35,7 +37,13 @@ function readPrefs(store: string, defaults: Prefs): Prefs {
 }
 
 /** Toggleable drive RSRP points with legend and per-class visibility. */
-export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true, positions }: {
+export function DriveRsrpLayer({
+  map,
+  projectId,
+  activeCaptureId,
+  autoFrame = true,
+  positions,
+}: {
   map: MlMap | null;
   projectId: string;
   activeCaptureId?: string;
@@ -49,11 +57,11 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
   // sessions may have persisted the layer OFF before it became the primary
   // map measurement. Signaling now opens with real RSRP visible and framed.
   const store = embedded ? "bc4.signaling.driveRsrp.v2" : STORE;
-  const [prefs, setPrefs] = useState<Prefs>({ ...DEFAULT, on: embedded });
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT);
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
-  useEffect(() => setPrefs(readPrefs(store, { ...DEFAULT, on: embedded })), [store, embedded]);
+  useEffect(() => setPrefs(readPrefs(store, DEFAULT)), [store]);
   const update = (patch: Partial<Prefs>) =>
     setPrefs((p) => {
       const next = { ...p, ...patch };
@@ -67,19 +75,55 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     enabled: prefs.on && !embedded,
   });
   const lastKey = `${LAST_CAPTURE_STORE}.${projectId}`;
-  useEffect(() => {
-    if (embedded || captureId || !captures.data?.length) return;
+  const preferredCaptureId = useMemo(() => {
+    if (embedded || !captures.data?.length) return undefined;
     const fromUrl = new URLSearchParams(window.location.search).get("capture_id");
     const last = localStorage.getItem(lastKey);
     const has = (id: string | null) => captures.data.find((c) => c.capture_id === id)?.capture_id;
-    setCaptureId(has(fromUrl) ?? has(last) ?? captures.data[0]?.capture_id);
-  }, [captures.data, captureId, embedded, lastKey]);
+    return has(fromUrl) ?? has(last);
+  }, [captures.data, embedded, lastKey]);
+  useEffect(() => {
+    if (!embedded && !captureId && preferredCaptureId) setCaptureId(preferredCaptureId);
+  }, [captureId, embedded, preferredCaptureId]);
+
+  // /metrics/captures intentionally contains no inferred location flag. For
+  // a fresh Map page, inspect the capture GPS evidence in catalogue order and
+  // pick the first capture that actually contains positioned observations.
+  // This avoids loading expensive metric tables for every empty capture.
+  const mappedCapture = useQuery({
+    queryKey: ["drive-rsrp-mapped-capture", projectId, captures.data?.map((c) => c.capture_id)],
+    enabled:
+      prefs.on && !embedded && !captureId && !preferredCaptureId && Boolean(captures.data?.length),
+    queryFn: async ({ signal }) => {
+      for (const candidate of captures.data ?? []) {
+        const response = await getSignaling(
+          projectId,
+          "points",
+          { capture_id: candidate.capture_id },
+          signal,
+        );
+        if (response.positioned_count > 0) return candidate.capture_id;
+      }
+      return captures.data?.[0]?.capture_id;
+    },
+    staleTime: 60_000,
+  });
+  useEffect(() => {
+    if (!embedded && !captureId && mappedCapture.data) setCaptureId(mappedCapture.data);
+  }, [captureId, embedded, mappedCapture.data]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
       if (!effectiveCaptureId) throw new Error("Missing capture");
-      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, { group_by: "operator", include_map: true }, signal);
+      return getMetricAnalysis(
+        projectId,
+        effectiveCaptureId,
+        [RSRP_SELECTION],
+        {},
+        { group_by: "operator", include_map: true },
+        signal,
+      );
     },
     enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
@@ -140,34 +184,41 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     if (!map) return;
     const add = () => {
       if (!map.getSource(SOURCE)) {
-      map.addSource(SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
-      const before = map.getStyle()?.layers?.find((l) => l.id.startsWith("bc4-sites"))?.id;
-      map.addLayer(
-        {
-          id: LAYER,
-          type: "circle",
-          source: SOURCE,
-          filter: ["!=", ["get", "rsrp_class"], null],
-          paint: {
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2, 14, 4, 18, 7],
-            "circle-color": [
-              "match",
-              ["get", "rsrp_class"],
-              ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
-              "#94a3b8",
-            ] as unknown as string,
-            "circle-stroke-width": 0,
+        map.addSource(SOURCE, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        const before = map.getStyle()?.layers?.find((l) => l.id.startsWith("bc4-sites"))?.id;
+        map.addLayer(
+          {
+            id: LAYER,
+            type: "circle",
+            source: SOURCE,
+            filter: ["!=", ["get", "rsrp_class"], null],
+            paint: {
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2, 14, 4, 18, 7],
+              "circle-color": [
+                "match",
+                ["get", "rsrp_class"],
+                ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
+                "#94a3b8",
+              ] as unknown as string,
+              "circle-stroke-width": 0,
+            },
           },
-        },
-        before,
-      );
+          before,
+        );
       }
       const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
       source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
-      map.setFilter(LAYER, ["all", ["!=", ["get", "rsrp_class"], null], ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]]]);
+      map.setFilter(LAYER, [
+        "all",
+        ["!=", ["get", "rsrp_class"], null],
+        ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
+      ]);
     };
     if (map.getStyle?.() || map.isStyleLoaded()) add();
     else map.once("load", add);
@@ -189,14 +240,18 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
       maxX = Math.max(...xs),
       minY = Math.min(...ys),
       maxY = Math.max(...ys);
-    if (minX === maxX && minY === maxY) map.easeTo({ center: [minX, minY], zoom: 14, duration: 350 });
+    if (minX === maxX && minY === maxY)
+      map.easeTo({ center: [minX, minY], zoom: 14, duration: 350 });
     else
       map.fitBounds(
         [
           [minX, minY],
           [maxX, maxY],
         ],
-        { padding: 60, maxZoom: 15, duration: 350 },
+        // Keep enough geographic context for the independently loaded site
+        // layer. Zoom 15 framed this short drive so tightly that every nearby
+        // reference site sat just outside the requested bbox.
+        { padding: 60, maxZoom: 13, duration: 350 },
       );
   };
 
@@ -214,7 +269,11 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     map.setFilter(
       LAYER,
       prefs.hidden.length
-        ? ["all", ["!=", ["get", "rsrp_class"], null], ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]]]
+        ? [
+            "all",
+            ["!=", ["get", "rsrp_class"], null],
+            ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
+          ]
         : ["!=", ["get", "rsrp_class"], null],
     );
   }, [map, prefs, features]);
@@ -258,14 +317,22 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
-    for (const f of features) if (f.properties.rsrp_class) c[f.properties.rsrp_class] = (c[f.properties.rsrp_class] ?? 0) + 1;
+    for (const f of features)
+      if (f.properties.rsrp_class)
+        c[f.properties.rsrp_class] = (c[f.properties.rsrp_class] ?? 0) + 1;
     return c;
   }, [features]);
 
   const diagStatus = useMemo(
     () => ({
       capture: effectiveCaptureId ?? null,
-      request: analysis.isError ? "error" : analysis.isLoading ? "loading" : analysis.data ? "ok" : "idle",
+      request: analysis.isError
+        ? "error"
+        : analysis.isLoading
+          ? "loading"
+          : analysis.data
+            ? "ok"
+            : "idle",
       rows: analysis.data ? diag.rows : null,
       rowsWithRsrp: analysis.data ? diag.rowsWithRsrp : null,
       rowsWithGps: analysis.data ? diag.rowsWithGps : null,
@@ -276,7 +343,15 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
       displayed: analysis.data ? features.length : null,
       gpsMarkers: allPositions.length,
     }),
-    [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, diag, allPositions.length],
+    [
+      analysis.data,
+      analysis.isError,
+      analysis.isLoading,
+      effectiveCaptureId,
+      features.length,
+      diag,
+      allPositions.length,
+    ],
   );
 
   const status = !prefs.on
@@ -296,7 +371,9 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
                 : t("mapWorkspace.driveRsrpNoGps");
 
   return (
-    <div className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}>
+    <div
+      className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}
+    >
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <Button
           type="button"
@@ -323,12 +400,24 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
             {status}
           </p>
           {!analysis.isLoading && (
-            <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={() => setDiagOpen(true)}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 shrink-0 px-2 text-[11px]"
+              onClick={() => setDiagOpen(true)}
+            >
               {t("rsrpDiagnosis.open")}
             </Button>
           )}
           {features.length > 0 && (
-            <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={frame}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-6 shrink-0 px-2 text-[11px]"
+              onClick={frame}
+            >
               {t("mapWorkspace.driveRsrpFrame")}
             </Button>
           )}
@@ -355,7 +444,11 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
             {RSRP_CLASSES.map((c, i) => {
               const upper = RSRP_CLASSES[i - 1]?.min;
               const range =
-                upper === undefined ? `≥ ${c.min}` : c.min === -Infinity ? `< ${upper}` : `${c.min} … ${upper}`;
+                upper === undefined
+                  ? `≥ ${c.min}`
+                  : c.min === -Infinity
+                    ? `< ${upper}`
+                    : `${c.min} … ${upper}`;
               const hidden = prefs.hidden.includes(c.id);
               return (
                 <li key={c.id}>
@@ -365,7 +458,9 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
                       checked={!hidden}
                       onChange={() =>
                         update({
-                          hidden: hidden ? prefs.hidden.filter((h) => h !== c.id) : [...prefs.hidden, c.id],
+                          hidden: hidden
+                            ? prefs.hidden.filter((h) => h !== c.id)
+                            : [...prefs.hidden, c.id],
                         })
                       }
                     />

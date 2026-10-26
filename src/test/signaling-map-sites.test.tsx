@@ -112,7 +112,7 @@ describe("SignalingMap — couche Sites", () => {
   it("affiche le bouton Sites ON/OFF et charge les sites de la bbox visible", async () => {
     fakeMapState.zoom = 13;
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v3",
+      "bc4.map.sitesLayer.v4",
       JSON.stringify({
         enabled: true,
         cellsEnabled: true,
@@ -136,7 +136,7 @@ describe("SignalingMap — couche Sites", () => {
     fakeMapState.zoom = 13;
     getSites.mockClear();
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v3",
+      "bc4.map.sitesLayer.v4",
       JSON.stringify({
         enabled: false,
         cellsEnabled: false,
@@ -154,7 +154,7 @@ describe("SignalingMap — couche Sites", () => {
     getSites.mockClear();
     fakeMapState.zoom = 12;
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v3",
+      "bc4.map.sitesLayer.v4",
       JSON.stringify({
         enabled: true,
         cellsEnabled: true,
@@ -173,7 +173,7 @@ describe("SignalingMap — couche Sites", () => {
     getSites.mockClear();
     fakeMapState.zoom = 10;
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v3",
+      "bc4.map.sitesLayer.v4",
       JSON.stringify({
         enabled: true,
         cellsEnabled: true,

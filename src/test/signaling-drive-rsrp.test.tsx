@@ -19,10 +19,12 @@ function mapDouble() {
   let added = false;
   return {
     source,
-    getSource: vi.fn(() => added ? source : undefined),
-    addSource: vi.fn(() => { added = true; }),
+    getSource: vi.fn(() => (added ? source : undefined)),
+    addSource: vi.fn(() => {
+      added = true;
+    }),
     addLayer: vi.fn(),
-    getLayer: vi.fn(() => added ? {} : undefined),
+    getLayer: vi.fn(() => (added ? {} : undefined)),
     getStyle: vi.fn(() => ({ layers: [] })),
     isStyleLoaded: vi.fn(() => true),
     setLayoutProperty: vi.fn(),
@@ -52,16 +54,27 @@ describe("Signaling drive RSRP", () => {
 
   function mount(map: ReturnType<typeof mapDouble>, capture: string) {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const view = (id: string) => <QueryClientProvider client={client}>
-      <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId={id} />
-    </QueryClientProvider>;
+    const view = (id: string) => (
+      <QueryClientProvider client={client}>
+        <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId={id} />
+      </QueryClientProvider>
+    );
     return { ...render(view(capture)), view };
   }
 
   it("loads RSRP for the active Signaling capture without choosing another capture", async () => {
     const map = mapDouble();
     const mounted = mount(map, "1e4e8d879a83");
-    await waitFor(() => expect(api.analysis).toHaveBeenCalledWith("Test_3", "1e4e8d879a83", ["cell_rsrp@0"], {}, { group_by: "operator", include_map: true }, expect.any(AbortSignal)));
+    await waitFor(() =>
+      expect(api.analysis).toHaveBeenCalledWith(
+        "Test_3",
+        "1e4e8d879a83",
+        ["cell_rsrp@0"],
+        {},
+        { group_by: "operator", include_map: true },
+        expect.any(AbortSignal),
+      ),
+    );
     expect(api.captures).not.toHaveBeenCalled();
     mounted.rerender(mounted.view("capture-2"));
     await waitFor(() => expect(api.analysis.mock.calls.at(-1)?.[1]).toBe("capture-2"));
@@ -87,7 +100,7 @@ describe("Signaling drive RSRP", () => {
           [2.2, 48.9],
           [2.21, 48.91],
         ],
-        { padding: 60, maxZoom: 15, duration: 350 },
+        { padding: 60, maxZoom: 13, duration: 350 },
       ),
     );
     expect(map.easeTo).not.toHaveBeenCalled();

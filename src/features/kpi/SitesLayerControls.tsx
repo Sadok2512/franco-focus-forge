@@ -6,7 +6,7 @@
  *  - Bands : B20, B3, B28, B1, B7, B8 (LTE) + n78, n28, n1, n3, n7, n75, n258 (NR)
  *  - Operators : ORF, BYT, SFR, FRM
  *
- * État persisté localStorage `bc4.map.sitesLayer.v3`. Vide = tous actifs.
+ * État persisté localStorage `bc4.map.sitesLayer.v4`. Vide = tous actifs.
  * 1.103.1 — enabled ON par défaut + bump v1→v2 pour reset auto.
  */
 import { Layers } from "lucide-react";
@@ -16,7 +16,9 @@ import type { SitesLayerFilters } from "./SitesLayer";
 import { BeamDisplayControls, type BeamDisplayControlProps } from "./BeamDisplayControls";
 import { beamPercent } from "./beam-display";
 
-const STORAGE_KEY = "bc4.map.sitesLayer.v3";
+// v4 resets legacy hidden layers/filters after the site reference import so
+// the real sites are visible on the first render of every map workspace.
+const STORAGE_KEY = "bc4.map.sitesLayer.v4";
 
 type State = {
   enabled: boolean;
@@ -74,8 +76,12 @@ function readState(): State {
     return {
       enabled: Boolean(parsed.enabled),
       cellsEnabled: parsed.cellsEnabled !== false,
-      display: { beams: parsed.display?.beams !== false, labels: parsed.display?.labels !== false,
-        beamSize: beamPercent(parsed.display?.beamSize, 50), beamIntensity: beamPercent(parsed.display?.beamIntensity, 28) },
+      display: {
+        beams: parsed.display?.beams !== false,
+        labels: parsed.display?.labels !== false,
+        beamSize: beamPercent(parsed.display?.beamSize, 50),
+        beamIntensity: beamPercent(parsed.display?.beamIntensity, 28),
+      },
       filters: {
         technos: Array.isArray(parsed.filters?.technos) ? parsed.filters!.technos : [],
         bands: Array.isArray(parsed.filters?.bands) ? parsed.filters!.bands : [],
@@ -107,8 +113,12 @@ export function useSitesLayerState() {
     setDisplay: (key: "beams" | "labels", v: boolean) =>
       setState((s) => ({ ...s, display: { ...s.display, [key]: v } })),
     setBeamDisplay: (key: "beamSize" | "beamIntensity", value: number) =>
-      setState((s) => ({ ...s, display: { ...s.display, [key]: beamPercent(value, key === "beamSize" ? 50 : 28) } })),
-    setTechnos: (technos: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, technos } })),
+      setState((s) => ({
+        ...s,
+        display: { ...s.display, [key]: beamPercent(value, key === "beamSize" ? 50 : 28) },
+      })),
+    setTechnos: (technos: string[]) =>
+      setState((s) => ({ ...s, filters: { ...s.filters, technos } })),
     setBands: (bands: string[]) => setState((s) => ({ ...s, filters: { ...s.filters, bands } })),
     setEnabled: (v: boolean) => setState((s) => ({ ...s, enabled: v })),
     setCellsEnabled: (v: boolean) => setState((s) => ({ ...s, cellsEnabled: v })),
@@ -290,4 +300,3 @@ export function SitesLayerControls({
     </div>
   );
 }
-

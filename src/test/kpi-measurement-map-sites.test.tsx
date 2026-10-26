@@ -118,7 +118,7 @@ function renderMap() {
 describe("KpiMeasurementMap — couche Sites", () => {
   it("affiche le bouton Sites ON/OFF et charge les sites de la bbox visible", async () => {
     window.localStorage.setItem(
-      "bc4.map.sitesLayer.v3",
+      "bc4.map.sitesLayer.v4",
       JSON.stringify({
         enabled: true,
         cellsEnabled: true,

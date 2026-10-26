@@ -1,3 +1,10 @@
+## 1.110.2 (patch) — BC4-FRONT 2026-10-26 — Sites et points RSRP visibles sur Map (Agent BC1)
+
+- La couche Drive RSRP est active par défaut et la page Map choisit la première capture qui possède des positions GPS prouvées au lieu d'ouvrir une capture vide.
+- La carte se cadre sur les 621 points RSRP réels de la capture retenue avec un zoom maximal de 13, afin de conserver les sites voisins dans l'emprise visible.
+- Les préférences Sites passent en `v4` pour réactiver les sites, cellules et filtres par défaut après l'import du référentiel.
+- Aucun point ni site n'est inventé : la sélection automatique inspecte les réponses `/signaling/points`, puis charge la métrique de la même capture.
+
 ## 1.110.1 (patch) — BC4-FRONT 2026-10-26 — Cadrage RSRP de la carte Signaling (Agent BC1)
 
 - La carte Signaling cadre désormais l'emprise des points RSRP réels dès leur chargement, même lorsque la capture contient déjà des marqueurs de signalisation.
