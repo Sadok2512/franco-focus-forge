@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
-import { RSRP_CLASSES, RSRP_SELECTION, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import { RSRP_CLASSES, RSRP_SELECTION, driveRsrpPoints, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -70,20 +70,17 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
   });
   const features = useMemo(
     () =>
-      (analysis.data?.map_points ?? [])
-        .filter((p) => isRsrpPointCode(p.code) && typeof p.value === "number" && Number.isFinite(p.value))
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
-        .map((p) => ({
-          type: "Feature" as const,
-          geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
-          properties: {
-            value: p.value as number,
-            seq: p.seq,
-            capture_id: effectiveCaptureId,
-            unit: "dBm",
-            rsrp_class: rsrpClass(p.value as number),
-          },
-        })),
+      driveRsrpPoints(analysis.data).map((p) => ({
+        type: "Feature" as const,
+        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
+        properties: {
+          value: p.value,
+          seq: p.seq,
+          capture_id: effectiveCaptureId,
+          unit: "dBm",
+          rsrp_class: rsrpClass(p.value),
+        },
+      })),
     [analysis.data, effectiveCaptureId],
   );
 
