@@ -15,9 +15,18 @@ export const RSRP_METRIC = "cell_rsrp";
 /** Metrics-table selection for the PCell RSRP (the API expects `code@cell`). */
 export const RSRP_SELECTION = `${RSRP_METRIC}@0`;
 
-/** True for map points of the PCell RSRP, whether the API echoes the bare code or the selection. */
+/** `cell_rsrp`, `cell_rsrp@0`, `cell_rsrp@3` — the trailing number is the cell index. */
+const RSRP_COLUMN = /^cell_rsrp(?:@(\d+))?$/;
+
+/** Cell index of an RSRP column (`cell_rsrp@2` → 2, bare code → 0); null for any other metric. */
+export function rsrpColumnCell(code: string): number | null {
+  const m = RSRP_COLUMN.exec(code);
+  return m ? Number(m[1] ?? 0) : null;
+}
+
+/** True for map points of the serving-cell RSRP, whatever cell index the API echoes. */
 export function isRsrpPointCode(code: string): boolean {
-  return code === RSRP_METRIC || code === RSRP_SELECTION;
+  return rsrpColumnCell(code) !== null;
 }
 
 export type RsrpClassId = (typeof RSRP_CLASSES)[number]["id"];
@@ -38,7 +47,21 @@ type AnalysisLike = {
   }[];
 };
 
-export type DriveRsrpPoint = { seq: number; lat: number; lng: number; value: number };
+/** Server position of one capture sequence, as supplied by the Signaling points view. */
+export type RsrpPosition = { seq: number; lat: number; lng: number };
+
+export type DriveRsrpPoint = {
+  seq: number;
+  lat: number;
+  lng: number;
+  value: number;
+  cell: number;
+  /**
+   * Where the position came from: an API map point, the row's own GPS, or the
+   * capture's GPS log at the very same sequence. Never a guessed position.
+   */
+  position_source: "map" | "row" | "capture";
+};
 
 const validPos = (lat: unknown, lng: unknown): boolean =>
   typeof lat === "number" &&
@@ -49,20 +72,115 @@ const validPos = (lat: unknown, lng: unknown): boolean =>
   Math.abs(lng) <= 180;
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
 
-/** RSRP points with real GPS: the API `map_points` first; when it carries none,
- * the measurements-table rows that hold both a server GPS position and a
- * measured RSRP value (same response, nothing interpolated or invented). */
-export function driveRsrpPoints(data: AnalysisLike | undefined): DriveRsrpPoint[] {
+/** First sequence → position; the first fix seen for a sequence wins, nothing is interpolated. */
+function positionBySeq(positions: RsrpPosition[] | undefined): Map<number, RsrpPosition> {
+  const m = new Map<number, RsrpPosition>();
+  for (const p of positions ?? []) {
+    if (Number.isFinite(p.seq) && validPos(p.lat, p.lng) && !m.has(p.seq)) m.set(p.seq, p);
+  }
+  return m;
+}
+
+/** Numeric RSRP of a table row, preferring the lowest cell index that carries a measurement. */
+function rowRsrp(values: Record<string, unknown>): { value: number; cell: number } | null {
+  const columns = Object.keys(values)
+    .map((code) => ({ code, cell: rsrpColumnCell(code) }))
+    .filter((c): c is { code: string; cell: number } => c.cell !== null)
+    .sort((a, b) => a.cell - b.cell);
+  for (const c of columns) {
+    const v = values[c.code];
+    if (num(v)) return { value: v, cell: c.cell };
+  }
+  return null;
+}
+
+/**
+ * RSRP points with a real position. The API `map_points` come first; when they
+ * carry none, the measurements-table rows that hold both a server GPS position
+ * and a measured RSRP are used, and rows whose own position is empty are placed
+ * on the capture's GPS log at the exact same sequence (no interpolation, no
+ * nearest-in-time match, nothing invented).
+ */
+export function driveRsrpPoints(
+  data: AnalysisLike | undefined,
+  positions?: RsrpPosition[],
+): DriveRsrpPoint[] {
   if (!data) return [];
   const fromMap = (data.map_points ?? [])
     .filter((p) => isRsrpPointCode(p.code) && num(p.value) && validPos(p.lat, p.lng))
-    .map((p) => ({ seq: p.seq, lat: p.lat, lng: p.lng, value: p.value as number }));
+    .map((p) => ({
+      seq: p.seq,
+      lat: p.lat,
+      lng: p.lng,
+      value: p.value as number,
+      cell: rsrpColumnCell(p.code) ?? 0,
+      position_source: "map" as const,
+    }));
   if (fromMap.length) return fromMap;
+  const gps = positionBySeq(positions);
   return (data.rows ?? []).flatMap((r) => {
-    const value = r.values[RSRP_SELECTION] ?? r.values[RSRP_METRIC];
-    if (!num(value) || !validPos(r.lat, r.lon)) return [];
-    return [{ seq: r.seq_first, lat: r.lat as number, lng: r.lon as number, value }];
+    const rsrp = rowRsrp(r.values);
+    if (!rsrp) return [];
+    if (validPos(r.lat, r.lon))
+      return [
+        {
+          seq: r.seq_first,
+          lat: r.lat as number,
+          lng: r.lon as number,
+          value: rsrp.value,
+          cell: rsrp.cell,
+          position_source: "row" as const,
+        },
+      ];
+    const p = gps.get(r.seq_first);
+    if (!p) return [];
+    return [
+      {
+        seq: r.seq_first,
+        lat: p.lat,
+        lng: p.lng,
+        value: rsrp.value,
+        cell: rsrp.cell,
+        position_source: "capture" as const,
+      },
+    ];
   });
+}
+
+/** What the server actually sent, so an empty map can say which part is missing. */
+export type DriveRsrpDiagnostics = {
+  rows: number;
+  rowsWithRsrp: number;
+  rowsWithGps: number;
+  paired: number;
+  mapPoints: number;
+  rsrpMapPoints: number;
+};
+
+export function driveRsrpDiagnostics(
+  data: AnalysisLike | undefined,
+  positions?: RsrpPosition[],
+): DriveRsrpDiagnostics {
+  const rows = data?.rows ?? [];
+  const mapPoints = data?.map_points ?? [];
+  const gps = positionBySeq(positions);
+  let rowsWithRsrp = 0;
+  let rowsWithGps = 0;
+  let paired = 0;
+  for (const r of rows) {
+    const hasRsrp = rowRsrp(r.values) !== null;
+    if (hasRsrp) rowsWithRsrp++;
+    if (validPos(r.lat, r.lon)) rowsWithGps++;
+    else if (hasRsrp && gps.has(r.seq_first)) paired++;
+  }
+  return {
+    rows: rows.length,
+    rowsWithRsrp,
+    rowsWithGps,
+    paired,
+    mapPoints: mapPoints.length,
+    rsrpMapPoints: mapPoints.filter((p) => isRsrpPointCode(p.code)).length,
+  };
 }
 
 /** First RSRP KPI exposed by the project catalogue (LTE first, available first). */
