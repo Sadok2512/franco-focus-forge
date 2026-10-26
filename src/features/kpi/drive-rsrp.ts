@@ -32,8 +32,8 @@ type AnalysisLike = {
   map_points?: { seq: number; lat: number; lng: number; code: string; value: unknown }[];
   rows?: {
     seq_first: number;
-    lat?: number | null;
-    lon?: number | null;
+    lat?: number | null | undefined;
+    lon?: number | null | undefined;
     values: Record<string, unknown>;
   }[];
 };
