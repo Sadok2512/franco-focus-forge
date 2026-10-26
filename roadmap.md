@@ -1,3 +1,4 @@
+- [x] Points RSRP du drive introuvables : la couche accepte maintenant n'importe quel index de cellule (, la plus basse mesurée d'abord) et place une ligne sans position propre sur le GPS de la capture à la même séquence, sans interpolation ni position inventée ; 15 tests ciblés passent (378 au total), typecheck et build OK. Données réelles non vérifiées (compte de lecture refusé par le serveur), rien publié.
 - [x] RSRP sur la carte Signaling : couche partagée activée initialement pour la capture active, légende et visibilité, sans changement de zoom ni sélection ; 10 tests ciblés passent, compilation OK. Vérification visuelle réelle bloquée par la page de connexion ; rien publié.
 - [x] Taille/intensité des faisceaux de 0 à 100 % sur les cartes partagées : curseurs mémorisés, géométrie et opacité locales sans requête supplémentaire ; 14 tests ciblés passent, carte vérifiée sur fixtures, build OK. Données réelles non vérifiées, rien publié.
 
