@@ -352,15 +352,13 @@ export function DriveRsrpLayer({
     [captureId, diag, analysis.data, features.length, allPositions.length, t],
   );
 
+  const failure = (captures.error ?? analysis.error ?? (needsGps ? gps.error : null)) as
+    | Error
+    | null;
   const status = !prefs.on
     ? null
-    : (captures.isError || analysis.isError || gps.isError)
-      ? String(
-          (captures.error ?? analysis.error ?? gps.error instanceof Error
-            ? (captures.error ?? analysis.error ?? gps.error)
-            : (captures.error ?? analysis.error ?? gps.error)
-          )?.message || "—",
-        )
+    : failure
+      ? String(failure.message || "—")
       : (captures.isLoading || analysis.isLoading || (needsGps && gps.isPending)) &&
           (captures.isFetching || analysis.isFetching || (needsGps && gps.isFetching))
         ? t("common.loadingShort")
