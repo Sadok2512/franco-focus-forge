@@ -914,7 +914,24 @@
     "rsrp_good": "Good",
     "rsrp_fair": "Fair",
     "rsrp_poor": "Poor",
-    "rsrp_bad": "Bad"
+    "rsrp_bad": "Bad",
+    "driveRsrpTitle": "Drive RSRP",
+    "driveRsrpSize": "Point size",
+    "driveRsrpIntensity": "Color intensity",
+    "driveRsrpHelp": "Measured RSRP points along the drive, drawn at the position the server supplied for each measurement.",
+    "driveRsrpRefresh": "Reload points",
+    "driveRsrpNoRows": "No measurement returned for this capture.",
+    "driveRsrpNoValue": "No measured RSRP value in this capture.",
+    "driveRsrpPopupCell": "Cell: {{cell}}",
+    "driveRsrpPopupPosRow": "Position: the measurement's own",
+    "driveRsrpPopupPosCapture": "Position: capture GPS at the same sequence",
+    "driveRsrpClass": {
+      "excellent": "Excellent",
+      "good": "Good",
+      "fair": "Fair",
+      "poor": "Poor",
+      "bad": "Bad"
+    }
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Cell reference detected",
@@ -976,6 +993,10 @@
     "run": "Explain with AI",
     "running": "Analysing…",
     "failed": "AI diagnosis failed.",
-    "disclaimer": "AI-powered suggestions based only on the information above; verify before acting."
+    "disclaimer": "AI-powered suggestions based only on the information above; verify before acting.",
+    "status_rows": "Table rows",
+    "status_rowsWithRsrp": "Rows with RSRP",
+    "status_rowsWithGps": "Rows with GPS",
+    "status_pairedPositions": "Positions matched by sequence"
   }
 }
