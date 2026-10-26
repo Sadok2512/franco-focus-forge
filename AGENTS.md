@@ -28,3 +28,4 @@ No hardcoded UI strings: use `t('key')`. Add each new key to both `src/locales/e
 
 ## Subdirectory rules
 Subdirectories have their own `AGENTS.md` to read before changing files there: `src/features/signaling/`, `src/features/kpi/`, `src/features/dictionary/`, `src/features/assistant/`.
+- AI features call Lovable AI Gateway only from server code (`src/lib/ai/*.server.ts` behind `createServerFn` in `*.functions.ts`); the RSRP diagnosis sends only app-observed status plus technician-entered metadata and the prompt forbids inventing values.
