@@ -17,12 +17,32 @@ import { DecodePanel } from "./DecodePanel";
 //   - les PLMN sont BRUTS (`20801`, `20810`…) tant qu'une table de
 //     référence PLMN→opérateur n'est pas branchée côté back (écart
 //     explicitement déclaré au CHANGELOG 1.5.1).
+import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
 import { getImportReport } from "@/lib/api/client";
 import type { Project } from "@/lib/api/schemas";
 import { toUserMessage } from "@/lib/api/http";
+import { Button } from "@/components/ui/button";
 import { OperatorChip, TechBadge, nd, ndPct, sortByCountDesc } from "./shared";
+
+// Pagination du tableau « Fichiers importés » : 10 lignes par page, navigation
+// précédent/suivant. Le découpage est une fonction pure exportée pour les tests.
+export const IMPORT_FILES_PAGE_SIZE = 10;
+
+export function paginateImportFiles<T>(
+  files: T[],
+  page: number,
+): { page: number; pageCount: number; rows: T[] } {
+  const pageCount = Math.max(1, Math.ceil(files.length / IMPORT_FILES_PAGE_SIZE));
+  const safePage = Math.min(Math.max(0, page), pageCount - 1);
+  return {
+    page: safePage,
+    pageCount,
+    rows: files.slice(safePage * IMPORT_FILES_PAGE_SIZE, (safePage + 1) * IMPORT_FILES_PAGE_SIZE),
+  };
+}
 
 function StatusBadge({ status }: { status: "pending" | "decoding" | "done" | "error" }) {
   const map = {
@@ -51,6 +71,12 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
     enabled: open,
     staleTime: 30_000,
   });
+
+  const { t } = useTranslation();
+  const [filesPage, setFilesPage] = useState(0);
+  // Changement de projet : on repart toujours à la première page.
+  useEffect(() => setFilesPage(0), [project.id]);
+  const filesPaging = paginateImportFiles(q.data?.by_file ?? [], filesPage);
 
   const technosFromProject = sortByCountDesc(project.technos_seen ?? undefined);
   const operatorsFromProject = sortByCountDesc(project.operators_plmn ?? undefined);
@@ -159,7 +185,7 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                 </tr>
               </thead>
               <tbody>
-                {q.data.by_file.map((f) => (
+                {filesPaging.rows.map((f) => (
                   <tr key={f.filename} className="border-t">
                     <td className="max-w-96 truncate px-3 py-2 font-medium" title={f.filename}>
                       {f.filename}
@@ -178,6 +204,48 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                 ))}
               </tbody>
             </table>
+            {q.data.by_file.length > IMPORT_FILES_PAGE_SIZE && (
+              <nav
+                className="flex items-center justify-between gap-2 border-t px-3 py-1.5"
+                aria-label={t("projectImport.filesPagination")}
+              >
+                <span className="text-[11px] text-muted-foreground">
+                  {t("projectImport.showingFiles", {
+                    from: filesPaging.page * IMPORT_FILES_PAGE_SIZE + 1,
+                    to: filesPaging.page * IMPORT_FILES_PAGE_SIZE + filesPaging.rows.length,
+                    total: q.data.by_file.length,
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    aria-label={t("projectImport.previousPage")}
+                    disabled={filesPaging.page === 0}
+                    onClick={() => setFilesPage(filesPaging.page - 1)}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                  <span className="px-1 text-[11px] text-muted-foreground">
+                    {t("projectImport.pageOf", {
+                      page: filesPaging.page + 1,
+                      total: filesPaging.pageCount,
+                    })}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    aria-label={t("projectImport.nextPage")}
+                    disabled={filesPaging.page >= filesPaging.pageCount - 1}
+                    onClick={() => setFilesPage(filesPaging.page + 1)}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </span>
+              </nav>
+            )}
           </div>
         )}
       </div>

@@ -938,5 +938,12 @@
     "tilt": "Tilt méca. / élec.",
     "bandwidth": "Largeur de bande",
     "goToSite": "Aller au site parent →"
+  },
+  "projectImport": {
+    "filesPagination": "Pagination des fichiers importés",
+    "previousPage": "Page précédente",
+    "nextPage": "Page suivante",
+    "pageOf": "Page {{page}} sur {{total}}",
+    "showingFiles": "{{from}}–{{to}} sur {{total}} fichiers"
   }
 }
