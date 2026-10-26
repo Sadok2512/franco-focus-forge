@@ -262,66 +262,63 @@ export function DriveRsrpLayer({
 
   /* --- click popup --- */
   useEffect(() => {
-    const m = mapRef.current;
+    const m = map;
     if (!m) return;
-    const onClick = (e: {
-      point: { x: number; y: number };
-      target: MlMap;
-      originalEvent: MouseEvent;
-    }) => {
-      const ml = (globalThis as { maplibregl?: { Popup: new (o: object) => { setLngLat: (l: [number, number]) => { addTo: (m: MlMap) => { remove: () => void } } } } }).maplibregl;
-      if (!ml) return;
-      const hits = m.queryRenderedFeatures(e.point, { layers: [LAYER] }) as {
-        geometry: { coordinates: [number, number] };
-        properties: Record<string, string | number | null | undefined>;
-      }[];
-      if (!hits.length) return;
-      const p = hits[0]!.properties;
-      const el = document.createElement("div");
-      el.style.cssText = "font:12px/1.55 ui-sans-serif,system-ui;white-space:pre-line";
-      el.textContent =
-        t("mapWorkspace.driveRsrpPopup", {
-          value: p["value"],
-          unit: p["unit"] || "dBm",
-          capture: p["capture_id"],
-          seq: p["seq"],
-        }) +
-        "\n" +
-        t("mapWorkspace.driveRsrpPopupCell", { cell: p["cell"] ?? 0 }) +
-        "\n" +
-        t(
-          p["position_source"] === "capture"
-            ? "mapWorkspace.driveRsrpPopupPosCapture"
-            : "mapWorkspace.driveRsrpPopupPosRow",
-        );
-      const popup = new ml.Popup({ closeButton: false, closeOnClick: true, offset: 8 })
-        .setLngLat(hits[0]!.geometry.coordinates)
-        .setDOMContent(el)
-        .addTo(m);
-      const close = (ev: Event) => {
-        const target = ev.target as HTMLElement | null;
-        if (!target?.closest?.(".maplibregl-popup")) popup.remove();
-        else if (target.getAttribute("data-popup-close-button") !== null) popup.remove();
-      };
-      const onKey = (ev: KeyboardEvent) => {
-        if (ev.key === "Escape") popup.remove();
-      };
-      window.addEventListener("pointerdown", close, true);
-      window.addEventListener("keydown", onKey);
-      const stop = () => {
-        window.removeEventListener("pointerdown", close, true);
-        window.removeEventListener("keydown", onKey);
-      };
-      el.addEventListener("click", (ev) => {
-        ev.stopPropagation();
+    let disposed = false;
+    const onClick = (e: MapMouseEvent) => {
+      void import("maplibre-gl").then((ml) => {
+        if (disposed || !m.getLayer(LAYER)) return;
+        const hits = m.queryRenderedFeatures(e.point, { layers: [LAYER] });
+        const first = hits[0];
+        const p = first?.properties as Record<string, string | number | null | undefined> | undefined;
+        if (!first || !p) return;
+        const el = document.createElement("div");
+        el.style.cssText = "font:12px/1.55 ui-sans-serif,system-ui;white-space:pre-line";
+        el.textContent =
+          t("mapWorkspace.driveRsrpPopup", {
+            value: p["value"],
+            unit: p["unit"] || "dBm",
+            capture: p["capture_id"],
+            seq: p["seq"],
+          }) +
+          "\n" +
+          t("mapWorkspace.driveRsrpPopupCell", { cell: p["cell"] ?? 0 }) +
+          "\n" +
+          t(
+            p["position_source"] === "capture"
+              ? "mapWorkspace.driveRsrpPopupPosCapture"
+              : "mapWorkspace.driveRsrpPopupPosRow",
+          );
+        const popup = new ml.Popup({ closeButton: false, closeOnClick: true, offset: 8 })
+          .setLngLat(first.geometry.coordinates as unknown as [number, number])
+          .setDOMContent(el)
+          .addTo(m);
+        const close = (ev: Event) => {
+          const target = ev.target as HTMLElement | null;
+          if (!target?.closest?.(".maplibregl-popup")) popup.remove();
+          else if (target.getAttribute("data-popup-close-button") !== null) popup.remove();
+        };
+        const onKey = (ev: KeyboardEvent) => {
+          if (ev.key === "Escape") popup.remove();
+        };
+        const stop = () => {
+          window.removeEventListener("pointerdown", close, true);
+          window.removeEventListener("keydown", onKey);
+        };
+        window.addEventListener("pointerdown", close, true);
+        window.addEventListener("keydown", onKey);
+        el.addEventListener("click", (ev) => {
+          ev.stopPropagation();
+        });
+        popup.on("remove", stop);
       });
-      popup.on("remove", stop);
     };
     m.on("click", onClick);
     return () => {
+      disposed = true;
       m.off("click", onClick);
     };
-  }, [t]);
+  }, [map, t]);
 
   const counts = useMemo(() => {
     const c = Object.fromEntries(RSRP_CLASSES.map((k) => [k.id, 0])) as Record<string, number>;
@@ -374,12 +371,13 @@ export function DriveRsrpLayer({
     void analysis.refetch().finally(() => setBusy(false));
   };
 
-  const on = useDebouncedValue(prefs.on, 150);
-  const cell = useDebouncedValue(prefs.cell, 200);
   useEffect(() => {
-    const next = JSON.stringify({ on, cell });
-    if (localStorage.getItem(store) !== next) localStorage.setItem(store, next);
-  }, [on, cell, store]);
+    try {
+      localStorage.setItem(store, JSON.stringify({ on: prefs.on, cell: prefs.cell }));
+    } catch {
+      /* private mode */
+    }
+  }, [prefs.on, prefs.cell, store]);
 
 
   const radius = 1 + (size / 100) * 14;
