@@ -137,7 +137,7 @@ export function driveRsrpPoints(
     }));
   if (fromMap.length) return fromMap;
   const gps = positionBySeq(positions);
-  return (data.rows ?? []).flatMap((r) => {
+  return (data.rows ?? []).flatMap((r): DriveRsrpPoint[] => {
     const rsrp = rowRsrp(r.values);
     if (!rsrp) return [];
     if (validPos(r.lat, r.lon))

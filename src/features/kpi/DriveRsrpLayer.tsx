@@ -102,7 +102,7 @@ export function DriveRsrpLayer({
 
   const captures = useQuery({
     queryKey: ["metric-captures", projectId],
-    queryFn: ({ signal }) => getMetricCaptures(projectId, signal),
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
     enabled: Boolean(projectId) && !embedded,
     staleTime: 60_000,
   });
@@ -214,21 +214,23 @@ export function DriveRsrpLayer({
     const src = m.getSource(SOURCE) as { setData: (d: FeatureCollection) => void } | undefined;
     src?.setData({
       type: "FeatureCollection",
-      features: features.map((p) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
-        properties: {
-          value: p.value,
-          unit: analysis.data?.unit ?? "dBm",
-          capture_id: analysis.data?.capture_id ?? captureId,
-          seq: p.seq,
-          cell: p.cell,
-          rsrp_class: rsrpClass(p.value),
-          position_source: p.position_source,
-        },
-      })),
+      features: prefs.on
+        ? features.map((p) => ({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] },
+            properties: {
+              value: p.value,
+              unit: "dBm",
+              capture_id: analysis.data?.capture_id ?? captureId,
+              seq: p.seq,
+              cell: p.cell,
+              rsrp_class: rsrpClass(p.value),
+              position_source: p.position_source,
+            },
+          }))
+        : [],
     });
-  }, [features, analysis.data, captureId]);
+  }, [features, analysis.data, captureId, prefs.on]);
 
   /* --- frame --- */
   const frame = useCallback(() => {
@@ -290,7 +292,7 @@ export function DriveRsrpLayer({
               : "mapWorkspace.driveRsrpPopupPosRow",
           );
         const popup = new ml.Popup({ closeButton: false, closeOnClick: true, offset: 8 })
-          .setLngLat(first.geometry.coordinates as unknown as [number, number])
+          .setLngLat((first.geometry as { coordinates: number[] }).coordinates as [number, number])
           .setDOMContent(el)
           .addTo(m);
         const close = (ev: Event) => {
@@ -310,7 +312,7 @@ export function DriveRsrpLayer({
         el.addEventListener("click", (ev) => {
           ev.stopPropagation();
         });
-        popup.on("remove", stop);
+        popup.on("close", stop);
       });
     };
     m.on("click", onClick);
