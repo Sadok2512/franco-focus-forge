@@ -6,7 +6,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { RSRP_CLASSES, RSRP_METRIC, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import { RSRP_CLASSES, RSRP_SELECTION, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -131,9 +131,8 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     src?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
   }, [map, features, prefs.on]);
 
-  // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
-  useEffect(() => {
-    if (!autoFrame || !map || !prefs.on || !features.length) return;
+  const frame = () => {
+    if (!map || !features.length) return;
     const xs = features.map((f) => f.geometry.coordinates[0]);
     const ys = features.map((f) => f.geometry.coordinates[1]);
     const minX = Math.min(...xs),
@@ -149,6 +148,12 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
         ],
         { padding: 60, maxZoom: 15, duration: 350 },
       );
+  };
+
+  // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
+  useEffect(() => {
+    if (!autoFrame || !prefs.on) return;
+    frame();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, prefs.on, effectiveCaptureId, features.length, autoFrame]);
 
