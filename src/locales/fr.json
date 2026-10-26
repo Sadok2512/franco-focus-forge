@@ -951,5 +951,31 @@
     "nextPage": "Page suivante",
     "pageOf": "Page {{page}} sur {{total}}",
     "showingFiles": "{{from}}–{{to}} sur {{total}} fichiers"
+  },
+  "rsrpDiagnosis": {
+    "open": "Diagnostic IA",
+    "title": "Pourquoi les points RSRP manquent ?",
+    "description": "Vérifiez le statut observé, ajoutez les métadonnées connues de la capture, et obtenez les causes probables et des vérifications ciblées.",
+    "observed": "Statut observé",
+    "status_capture": "Capture",
+    "status_request": "Requête",
+    "status_mapPoints": "Points carte renvoyés",
+    "status_rsrpPoints": "Points RSRP",
+    "status_numericRsrp": "RSRP avec valeur",
+    "status_displayed": "Points affichés",
+    "status_gpsMarkers": "GPS de la capture",
+    "field_device": "Terminal / UE",
+    "field_tool": "Outil de capture",
+    "field_rat": "Technologie (LTE/NR)",
+    "field_band": "Bande / EARFCN",
+    "field_decoder": "Version du décodeur",
+    "field_decodeMode": "Mode de décodage (Light/Deep)",
+    "field_duration": "Durée",
+    "notes": "Notes",
+    "notesPlaceholder": "Ex. antenne GPS débranchée, test indoor, scanner seul…",
+    "run": "Expliquer avec l'IA",
+    "running": "Analyse…",
+    "failed": "Le diagnostic IA a échoué.",
+    "disclaimer": "Suggestions IA basées uniquement sur les informations ci-dessus ; vérifiez avant d'agir."
   }
 }
