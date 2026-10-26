@@ -15,6 +15,7 @@ const STORE = "bc4.map.driveRsrp.v1";
 
 type Prefs = { on: boolean; opacity: number; hidden: RsrpClassId[] };
 const DEFAULT: Prefs = { on: false, opacity: 90, hidden: [] };
+const LAST_CAPTURE_STORE = "bc4.driveRsrp.lastCapture";
 
 function readPrefs(store: string, defaults: Prefs): Prefs {
   try {
@@ -51,14 +52,20 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
     enabled: prefs.on && !embedded,
   });
+  const lastKey = `${LAST_CAPTURE_STORE}.${projectId}`;
   useEffect(() => {
     if (embedded || captureId || !captures.data?.length) return;
     const fromUrl = new URLSearchParams(window.location.search).get("capture_id");
-    setCaptureId(
-      captures.data.find((c) => c.capture_id === fromUrl)?.capture_id ?? captures.data[0]?.capture_id,
-    );
-  }, [captures.data, captureId, embedded]);
+    const last = localStorage.getItem(lastKey);
+    const has = (id: string | null) => captures.data.find((c) => c.capture_id === id)?.capture_id;
+    setCaptureId(has(fromUrl) ?? has(last) ?? captures.data[0]?.capture_id);
+  }, [captures.data, captureId, embedded, lastKey]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
+  // The capture investigated in Signaling (or picked on Map) is reused by the
+  // other map, so switching pages keeps showing the same drive.
+  useEffect(() => {
+    if (effectiveCaptureId) localStorage.setItem(lastKey, effectiveCaptureId);
+  }, [effectiveCaptureId, lastKey]);
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
