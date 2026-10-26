@@ -16,7 +16,7 @@ Never invent measured values, counts or coordinates; if a fact is missing, say i
 Format: markdown with two sections "Probable causes" and "Targeted checks" (translate headings to the requested language). Be concise.`;
 
 export async function diagnoseRsrp(input: RsrpDiagnosisInput, signal?: AbortSignal): Promise<string> {
-  const apiKey = process.env.LOVABLE_API_KEY;
+  const apiKey = process.env["LOVABLE_API_KEY"];
   if (!apiKey) throw new Error("AI is not configured (missing key).");
   let runId: string | undefined;
   const provider = createOpenAI({
