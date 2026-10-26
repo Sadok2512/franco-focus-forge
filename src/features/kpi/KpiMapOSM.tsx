@@ -234,14 +234,16 @@ export function KpiMapOSM({
 
   // Workspace maps follow the project centre when it resolves after the map
   // is created. Without this, the map stays at the default view and the
-  // project's sites can sit outside the opening viewport.
-  const workspaceCenterRef = useRef(center);
+  // project's sites can sit outside the opening viewport. The flown centre is
+  // remembered instead of the previous prop so a centre that resolves before
+  // the map is ready still flies once the map finishes loading.
+  const flownCenterRef = useRef(center);
   useEffect(() => {
-    const previous = workspaceCenterRef.current;
-    workspaceCenterRef.current = center;
     const instance = map.current;
     if (!workspace || !instance || !ready) return;
-    if (previous[0] === center[0] && previous[1] === center[1]) return;
+    const last = flownCenterRef.current;
+    if (last[0] === center[0] && last[1] === center[1]) return;
+    flownCenterRef.current = center;
     instance.flyTo({ center, zoom: Math.max(MAP_MIN_ZOOM, instance.getZoom()), duration: 900 });
   }, [center, ready, workspace]);
 
