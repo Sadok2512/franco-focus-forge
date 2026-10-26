@@ -1,3 +1,15 @@
+## 1.111.0 (minor) — BC4-FRONT 2026-10-26 — Catalog version visible dans l'en-tête Metrics catalogue (Agent BC3)
+
+Le titre « Metrics catalogue » affiche désormais la version catalog
+release courante en suffixe `V{major}.{minor}` (ex. **V2.53**), lue depuis
+l'enveloppe `/metrics` → `catalog_release.version` déjà exposée par le
+back (0.80.0+). Masqué si `catalog_release` est null (fallback legacy).
+
+Fichier modifié : `src/features/kpi/MetricsCatalogSidebar.tsx` l.383-402.
+
+Pas d'i18n key (format déterministe `V{M}.{m}` indépendant de la langue).
+Le footer `Catalog X.Y.Z · Decoder A.B.C` reste inchangé.
+
 ## 1.110.3 (patch) — BC4-FRONT 2026-10-26 — Chargement Map limité à une capture (Agent BC1)
 
 - La page Map ne parcourt plus les sessions avec `/signaling/points` pour rechercher une capture GPS.

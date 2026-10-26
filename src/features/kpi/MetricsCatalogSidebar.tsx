@@ -383,6 +383,15 @@ export function MetricsCatalogSidebar({
       <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
           <BarChart3 size={16} className="text-primary" /> {t("metrics.498227f2b5c6")}
+          {/* 1.111.0 BC3 — Version du catalog release visible dans le titre
+              (plus seulement dans le footer). Format V{major}.{minor}
+              (ex. V2.53 pour catalog_release 2.53.0). Rien si catalog_release
+              null (fallback legacy). */}
+          {query.data?.catalog_release?.version && (
+            <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
+              V{query.data.catalog_release.version.split(".").slice(0, 2).join(".")}
+            </span>
+          )}
           <span
             className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums cursor-help"
             title={t("metrics.capCountTooltip", { max: MAX_METRICS })}
