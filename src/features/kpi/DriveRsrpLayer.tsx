@@ -2,12 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
+import { getMetricAnalysis, getMetricCaptures, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
-import { RSRP_CLASSES, RSRP_SELECTION, driveRsrpPoints, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import {
+  RSRP_CLASSES,
+  RSRP_SELECTION,
+  driveRsrpDiagnostics,
+  driveRsrpPoints,
+  rsrpClass,
+  rsrpPositionsFrom,
+  type RsrpClassId,
+  type RsrpPosition,
+} from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -26,11 +35,13 @@ function readPrefs(store: string, defaults: Prefs): Prefs {
 }
 
 /** Toggleable drive RSRP points with legend and per-class visibility. */
-export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true }: {
+export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true, positions }: {
   map: MlMap | null;
   projectId: string;
   activeCaptureId?: string;
   autoFrame?: boolean;
+  /** Capture positions the page already holds, used when a row carries no GPS of its own. */
+  positions?: RsrpPosition[];
 }) {
   const { t } = useTranslation();
   const embedded = activeCaptureId !== undefined;
@@ -61,11 +72,6 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     setCaptureId(has(fromUrl) ?? has(last) ?? captures.data[0]?.capture_id);
   }, [captures.data, captureId, embedded, lastKey]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
-  // The capture investigated in Signaling (or picked on Map) is reused by the
-  // other map, so switching pages keeps showing the same drive.
-  useEffect(() => {
-    if (effectiveCaptureId) localStorage.setItem(lastKey, effectiveCaptureId);
-  }, [effectiveCaptureId, lastKey]);
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
@@ -75,9 +81,30 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
   });
+  /** What arrived before any pairing: decides whether the capture's GPS log is even needed. */
+  const bare = useMemo(() => driveRsrpDiagnostics(analysis.data), [analysis.data]);
+  const needsGps =
+    prefs.on && !embedded && !positions?.length && bare.rowsWithRsrp > 0 && bare.rowsWithGps === 0;
+
+  /** Positions the server published for this capture (the same view the Signaling map draws). */
+  const gps = useQuery({
+    queryKey: ["drive-rsrp-gps", projectId, effectiveCaptureId],
+    queryFn: ({ signal }) => {
+      if (!effectiveCaptureId) throw new Error("Missing capture");
+      return getSignaling(projectId, "points", { capture_id: effectiveCaptureId }, signal);
+    },
+    enabled: needsGps,
+    staleTime: 60_000,
+  });
+  const allPositions = useMemo<RsrpPosition[]>(() => {
+    if (positions?.length) return positions;
+    if (!gps.data) return [];
+    return rsrpPositionsFrom(gps.data.points, gps.data.markers);
+  }, [positions, gps.data]);
+
   const features = useMemo(
     () =>
-      driveRsrpPoints(analysis.data).map((p) => ({
+      driveRsrpPoints(analysis.data, allPositions).map((p) => ({
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
         properties: {
@@ -86,10 +113,24 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           capture_id: effectiveCaptureId,
           unit: "dBm",
           rsrp_class: rsrpClass(p.value),
+          cell: p.cell,
+          position_source: p.position_source,
         },
       })),
-    [analysis.data, effectiveCaptureId],
+    [analysis.data, allPositions, effectiveCaptureId],
   );
+
+  const diag = useMemo(
+    () => driveRsrpDiagnostics(analysis.data, allPositions),
+    [analysis.data, allPositions],
+  );
+
+  // The capture investigated in Signaling (or picked on Map) is reused by the
+  // other map, so switching pages keeps showing the same drive — but only when
+  // it really produced points: an empty capture must never come back as default.
+  useEffect(() => {
+    if (effectiveCaptureId && features.length) localStorage.setItem(lastKey, effectiveCaptureId);
+  }, [effectiveCaptureId, features.length, lastKey]);
 
   // Source + layer (added once the style is parsed, kept across basemap changes).
   useEffect(() => {

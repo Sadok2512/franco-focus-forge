@@ -52,10 +52,7 @@ describe("Signaling drive RSRP", () => {
     const view = (id: string) => <QueryClientProvider client={client}>
       <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId={id} autoFrame={false} />
     </QueryClientProvider>;
-    const rendered = render(view(capture));
-    // The layer ships switched off: the technician turns it on.
-    fireEvent.click(screen.getByRole("switch"));
-    return { ...rendered, view };
+    return { ...render(view(capture)), view };
   }
 
   it("loads RSRP for the active Signaling capture without choosing another capture", async () => {
