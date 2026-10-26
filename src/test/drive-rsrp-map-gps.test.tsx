@@ -10,6 +10,9 @@ vi.mock("@/lib/api/client", () => ({
   getMetricCaptures: api.captures,
   getSignaling: api.points,
 }));
+vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
+  RsrpDiagnosisDialog: () => null,
+}));
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
 function mapDouble() {

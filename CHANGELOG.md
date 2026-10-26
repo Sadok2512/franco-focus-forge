@@ -1,3 +1,9 @@
+## 1.110.1 (patch) — BC4-FRONT 2026-10-26 — Cadrage RSRP de la carte Signaling (Agent BC1)
+
+- La carte Signaling cadre désormais l'emprise des points RSRP réels dès leur chargement, même lorsque la capture contient déjà des marqueurs de signalisation.
+- La préférence Signaling RSRP passe en `v2` afin de réactiver par défaut la couche pour les navigateurs ayant conservé l'ancien état désactivé.
+- Aucun point ni aucune coordonnée n'est créé : une capture sans GPS conserve son état explicite sans point cartographique.
+
 ## 1.110.0 (minor) — BC4-FRONT 2026-10-26 — Catalogue 2.52.0 : CAPTURE au top + "1/64" clarifié (Agent BC3)
 
 Back 0.83.0 (Catalogue 2.52.0, nouvelle racine CAPTURE, dédoublonnage

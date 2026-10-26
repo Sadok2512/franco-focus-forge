@@ -45,7 +45,10 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
 }) {
   const { t } = useTranslation();
   const embedded = activeCaptureId !== undefined;
-  const store = embedded ? "bc4.signaling.driveRsrp.v1" : STORE;
+  // v2 deliberately resets the embedded Signaling preference once: older
+  // sessions may have persisted the layer OFF before it became the primary
+  // map measurement. Signaling now opens with real RSRP visible and framed.
+  const store = embedded ? "bc4.signaling.driveRsrp.v2" : STORE;
   const [prefs, setPrefs] = useState<Prefs>({ ...DEFAULT, on: embedded });
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();

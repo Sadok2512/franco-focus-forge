@@ -921,7 +921,7 @@ function SignalMap({
           map={map ?? null}
           projectId={projectId}
           activeCaptureId={captureId}
-          autoFrame={!hasMarkers}
+          autoFrame
           positions={rsrpPositions}
         />
       </KpiMapOSM>

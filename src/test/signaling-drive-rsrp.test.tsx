@@ -1,4 +1,4 @@
-import { render, waitFor, fireEvent, screen } from "@testing-library/react";
+import { render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
@@ -8,6 +8,9 @@ const api = vi.hoisted(() => ({ analysis: vi.fn(), captures: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: api.analysis,
   getMetricCaptures: api.captures,
+}));
+vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
+  RsrpDiagnosisDialog: () => null,
 }));
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
@@ -50,7 +53,7 @@ describe("Signaling drive RSRP", () => {
   function mount(map: ReturnType<typeof mapDouble>, capture: string) {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const view = (id: string) => <QueryClientProvider client={client}>
-      <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId={id} autoFrame={false} />
+      <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId={id} />
     </QueryClientProvider>;
     return { ...render(view(capture)), view };
   }
@@ -74,13 +77,19 @@ describe("Signaling drive RSRP", () => {
     });
   });
 
-  it("never moves the Signaling camera when RSRP loads or visibility changes", async () => {
+  it("frames the Signaling camera on the real RSRP extent", async () => {
     const map = mapDouble();
     mount(map, "1e4e8d879a83");
     await waitFor(() => expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(2));
-    fireEvent.click(screen.getByRole("switch"));
-    await waitFor(() => expect(map.source.setData.mock.calls.at(-1)?.[0].features).toHaveLength(0));
-    expect(map.fitBounds).not.toHaveBeenCalled();
+    await waitFor(() =>
+      expect(map.fitBounds).toHaveBeenCalledWith(
+        [
+          [2.2, 48.9],
+          [2.21, 48.91],
+        ],
+        { padding: 60, maxZoom: 15, duration: 350 },
+      ),
+    );
     expect(map.easeTo).not.toHaveBeenCalled();
   });
 });
