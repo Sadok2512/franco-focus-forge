@@ -89,7 +89,7 @@
 .decoder-value { color: var(--sig-asn-value); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
 
 /* Capture message filtering: sidebar remains fixed, Radix portals the popup. */
-.sig-filters { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:8px; background:var(--card); color:var(--foreground); overflow:hidden; }
+.sig-filters { display:flex; flex-direction:column; border:1px solid var(--border); border-radius:9px; background:var(--card); color:var(--foreground); overflow:hidden; box-shadow: 0 2px 7px color-mix(in srgb, var(--foreground) 4%, transparent); }
 .sig-filters-header { display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:14px 12px 10px; border-bottom:1px solid var(--border); }
 .sig-filters-header h2 { flex:1; font-size:16px; letter-spacing:0; }
 .sig-filters-header p { flex-basis:100%; color:var(--muted-foreground); font-size:11px; }
