@@ -383,8 +383,12 @@ export function MetricsCatalogSidebar({
       <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
           <BarChart3 size={16} className="text-primary" /> {t("metrics.498227f2b5c6")}
-          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
-            {selected.length}/{MAX_METRICS}
+          <span
+            className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums cursor-help"
+            title={t("metrics.capCountTooltip", { max: MAX_METRICS })}
+            aria-label={t("metrics.capCountTooltip", { max: MAX_METRICS })}
+          >
+            {t("metrics.16df3032f7a1", { selected: selected.length, max: MAX_METRICS })}
           </span>
         </h2>
         <label className="relative block mt-2">

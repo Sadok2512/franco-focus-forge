@@ -1,3 +1,32 @@
+## 1.110.0 (minor) — BC4-FRONT 2026-10-26 — Catalogue 2.52.0 : CAPTURE au top + "1/64" clarifié (Agent BC3)
+
+Back 0.83.0 (Catalogue 2.52.0, nouvelle racine CAPTURE, dédoublonnage
+Shared) ; le front consomme la nouvelle hiérarchie `tech_CAPTURE →
+cat_CAPTURE → group → leaf` sans modification de MetricsCatalogSidebar
+(générique sur `node_type` ; `node_type="group"` tombe dans la branche
+« GROUP or METRIC parent » déjà en place).
+
+- **"1/64 selected" → "1 of 64 selected" + tooltip explicatif** :
+  `MetricsCatalogSidebar.tsx` ligne 387, remplace le compteur brut
+  `{selected.length}/{MAX_METRICS}` par un rendu i18n paramétré
+  `t("metrics.16df3032f7a1", { selected, max })` enveloppé d'un
+  `title` + `aria-label` sur la nouvelle clé `metrics.capCountTooltip`.
+  Clé existante `16df3032f7a1` répurposée (valeur "/64 selected"
+  jamais consommée en code) ; nouvelle clé `capCountTooltip` ajoutée
+  dans `en.json` ET `fr.json` dans le même commit (règle i18n).
+- **CAPTURE visible dans l'arbre** sans changement de code : la racine
+  `tech_CAPTURE` (sort_order=0 côté back) remonte en tête du Metrics
+  catalogue naturellement. Les 5 groupes `node_type="group"` et 27
+  feuilles s'affichent via la branche générique "family" du
+  renderer. Les feuilles sont **grises non-selectable** avec la
+  raison exacte posée par le back (`CAPTURE binding WIP — Phase 2`
+  pour File/Script/Task/Device, `Privacy by design — identity fields
+  never exposed by BC4` pour Identity).
+
+Preuve back : commit `[BC3] 0.83.0 — Catalogue 2.52.0 …`,
+`/health` renvoie `catalog_version: "2.52.0"` + sha
+`4f862955247fc6a8f2e532d4da29b6c6847accbad3f161176eca432ec7f8da4f`.
+
 ## 1.109.0 (minor) — BC4-FRONT 2026-10-26 — Lot B UI : colonne Task + fiche capture (Agent BC3)
 
 Back 0.82.3 TableRow Task + endpoint `/captures/{cap}/sheet` déjà en place.
