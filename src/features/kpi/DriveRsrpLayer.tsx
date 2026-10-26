@@ -2,12 +2,21 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
+import { getMetricAnalysis, getMetricCaptures, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
-import { RSRP_CLASSES, RSRP_SELECTION, driveRsrpPoints, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import {
+  RSRP_CLASSES,
+  RSRP_SELECTION,
+  driveRsrpDiagnostics,
+  driveRsrpPoints,
+  rsrpClass,
+  rsrpPositionsFrom,
+  type RsrpClassId,
+  type RsrpPosition,
+} from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -26,11 +35,13 @@ function readPrefs(store: string, defaults: Prefs): Prefs {
 }
 
 /** Toggleable drive RSRP points with legend and per-class visibility. */
-export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true }: {
+export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true, positions }: {
   map: MlMap | null;
   projectId: string;
   activeCaptureId?: string;
   autoFrame?: boolean;
+  /** Capture positions the page already holds, used when a row carries no GPS of its own. */
+  positions?: RsrpPosition[];
 }) {
   const { t } = useTranslation();
   const embedded = activeCaptureId !== undefined;
@@ -61,11 +72,6 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     setCaptureId(has(fromUrl) ?? has(last) ?? captures.data[0]?.capture_id);
   }, [captures.data, captureId, embedded, lastKey]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
-  // The capture investigated in Signaling (or picked on Map) is reused by the
-  // other map, so switching pages keeps showing the same drive.
-  useEffect(() => {
-    if (effectiveCaptureId) localStorage.setItem(lastKey, effectiveCaptureId);
-  }, [effectiveCaptureId, lastKey]);
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
@@ -75,9 +81,30 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
   });
+  /** What arrived before any pairing: decides whether the capture's GPS log is even needed. */
+  const bare = useMemo(() => driveRsrpDiagnostics(analysis.data), [analysis.data]);
+  const needsGps =
+    prefs.on && !embedded && !positions?.length && bare.rowsWithRsrp > 0 && bare.rowsWithGps === 0;
+
+  /** Positions the server published for this capture (the same view the Signaling map draws). */
+  const gps = useQuery({
+    queryKey: ["drive-rsrp-gps", projectId, effectiveCaptureId],
+    queryFn: ({ signal }) => {
+      if (!effectiveCaptureId) throw new Error("Missing capture");
+      return getSignaling(projectId, "points", { capture_id: effectiveCaptureId }, signal);
+    },
+    enabled: needsGps,
+    staleTime: 60_000,
+  });
+  const allPositions = useMemo<RsrpPosition[]>(() => {
+    if (positions?.length) return positions;
+    if (!gps.data) return [];
+    return rsrpPositionsFrom(gps.data.points, gps.data.markers);
+  }, [positions, gps.data]);
+
   const features = useMemo(
     () =>
-      driveRsrpPoints(analysis.data).map((p) => ({
+      driveRsrpPoints(analysis.data, allPositions).map((p) => ({
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
         properties: {
@@ -86,10 +113,24 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           capture_id: effectiveCaptureId,
           unit: "dBm",
           rsrp_class: rsrpClass(p.value),
+          cell: p.cell,
+          position_source: p.position_source,
         },
       })),
-    [analysis.data, effectiveCaptureId],
+    [analysis.data, allPositions, effectiveCaptureId],
   );
+
+  const diag = useMemo(
+    () => driveRsrpDiagnostics(analysis.data, allPositions),
+    [analysis.data, allPositions],
+  );
+
+  // The capture investigated in Signaling (or picked on Map) is reused by the
+  // other map, so switching pages keeps showing the same drive — but only when
+  // it really produced points: an empty capture must never come back as default.
+  useEffect(() => {
+    if (effectiveCaptureId && features.length) localStorage.setItem(lastKey, effectiveCaptureId);
+  }, [effectiveCaptureId, features.length, lastKey]);
 
   // Source + layer (added once the style is parsed, kept across basemap changes).
   useEffect(() => {
@@ -186,12 +227,21 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
       if (disposed) return;
       const el = document.createElement("div");
       el.style.whiteSpace = "pre-line";
-      el.textContent = t("mapWorkspace.driveRsrpPopup", {
-        value: p["value"],
-        unit: p["unit"] || "dBm",
-        capture: p["capture_id"],
-        seq: p["seq"],
-      });
+      el.textContent =
+        t("mapWorkspace.driveRsrpPopup", {
+          value: p["value"],
+          unit: p["unit"] || "dBm",
+          capture: p["capture_id"],
+          seq: p["seq"],
+        }) +
+        "\n" +
+        t("mapWorkspace.driveRsrpPopupCell", { cell: p["cell"] ?? 0 }) +
+        "\n" +
+        t(
+          p["position_source"] === "capture"
+            ? "mapWorkspace.driveRsrpPopupPosCapture"
+            : "mapWorkspace.driveRsrpPopupPosRow",
+        );
       popup?.remove();
       popup = new Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map);
     };
@@ -209,31 +259,38 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     return c;
   }, [features]);
 
-  const diagStatus = useMemo(() => {
-    const pts = analysis.data?.map_points ?? [];
-    const rsrp = pts.filter((p) => isRsrpPointCode(p.code));
-    return {
+  const diagStatus = useMemo(
+    () => ({
       capture: effectiveCaptureId ?? null,
       request: analysis.isError ? "error" : analysis.isLoading ? "loading" : analysis.data ? "ok" : "idle",
-      mapPoints: analysis.data ? pts.length : null,
-      rsrpPoints: analysis.data ? rsrp.length : null,
-      numericRsrp: analysis.data ? rsrp.filter((p) => typeof p.value === "number" && Number.isFinite(p.value)).length : null,
+      rows: analysis.data ? diag.rows : null,
+      rowsWithRsrp: analysis.data ? diag.rowsWithRsrp : null,
+      rowsWithGps: analysis.data ? diag.rowsWithGps : null,
+      pairedPositions: analysis.data ? diag.paired : null,
+      mapPoints: analysis.data ? diag.mapPoints : null,
+      rsrpPoints: analysis.data ? diag.rsrpMapPoints : null,
+      numericRsrp: analysis.data ? driveRsrpPoints(analysis.data).length : null,
       displayed: analysis.data ? features.length : null,
-      gpsMarkers: autoFrame ? "none" : "present",
-    };
-  }, [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, autoFrame]);
+      gpsMarkers: allPositions.length,
+    }),
+    [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, diag, allPositions.length],
+  );
 
   const status = !prefs.on
     ? null
-    : (!embedded && captures.isError) || analysis.isError
+    : (!embedded && captures.isError) || analysis.isError || (needsGps && gps.isError)
       ? t("mapWorkspace.driveRsrpError")
-      : (!embedded && captures.isLoading) || analysis.isLoading
+      : (!embedded && captures.isLoading) || analysis.isLoading || (needsGps && gps.isLoading)
         ? t("mapWorkspace.driveRsrpLoading")
         : !embedded && !captures.data?.length
           ? t("mapWorkspace.driveRsrpNone")
-          : !features.length
-              ? t("mapWorkspace.driveRsrpNoGps")
-              : t("mapWorkspace.driveRsrpCount", { count: features.length });
+          : features.length
+            ? t("mapWorkspace.driveRsrpCount", { count: features.length })
+            : !diag.rows && !diag.rsrpMapPoints
+              ? t("mapWorkspace.driveRsrpNoRows")
+              : !diag.rowsWithRsrp && !diag.rsrpMapPoints
+                ? t("mapWorkspace.driveRsrpNoValue")
+                : t("mapWorkspace.driveRsrpNoGps");
 
   return (
     <div className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}>

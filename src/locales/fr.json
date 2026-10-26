@@ -914,7 +914,24 @@
     "rsrp_good": "Bon",
     "rsrp_fair": "Moyen",
     "rsrp_poor": "Faible",
-    "rsrp_bad": "Mauvais"
+    "rsrp_bad": "Mauvais",
+    "driveRsrpTitle": "RSRP du drive",
+    "driveRsrpSize": "Taille des points",
+    "driveRsrpIntensity": "Intensité des couleurs",
+    "driveRsrpHelp": "Points RSRP mesurés le long du trajet, placés à la position fournie par le serveur pour chaque mesure.",
+    "driveRsrpRefresh": "Recharger les points",
+    "driveRsrpNoRows": "Aucune mesure renvoyée pour cette capture.",
+    "driveRsrpNoValue": "Aucune valeur RSRP mesurée dans cette capture.",
+    "driveRsrpPopupCell": "Cellule : {{cell}}",
+    "driveRsrpPopupPosRow": "Position : celle de la mesure",
+    "driveRsrpPopupPosCapture": "Position : GPS de la capture, même séquence",
+    "driveRsrpClass": {
+      "excellent": "Excellent",
+      "good": "Bon",
+      "fair": "Moyen",
+      "poor": "Faible",
+      "bad": "Mauvais"
+    }
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",
@@ -976,6 +993,10 @@
     "run": "Expliquer avec l'IA",
     "running": "Analyse…",
     "failed": "Le diagnostic IA a échoué.",
-    "disclaimer": "Suggestions IA basées uniquement sur les informations ci-dessus ; vérifiez avant d'agir."
+    "disclaimer": "Suggestions IA basées uniquement sur les informations ci-dessus ; vérifiez avant d'agir.",
+    "status_rows": "Lignes du tableau",
+    "status_rowsWithRsrp": "Lignes avec RSRP",
+    "status_rowsWithGps": "Lignes avec GPS",
+    "status_pairedPositions": "Positions appariées par séquence"
   }
 }

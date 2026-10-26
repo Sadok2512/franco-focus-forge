@@ -18,6 +18,7 @@ import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/ap
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
+import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
@@ -748,6 +749,9 @@ function SignalMap({
   const ready = useCallback((m: MlMap) => setMap(m), []);
   const callback = useRef(onSelect);
   callback.current = onSelect;
+  /** Positions the server already published for this capture, so an RSRP row
+   * without its own GPS can still be drawn at its exact sequence. */
+  const rsrpPositions = useMemo(() => rsrpPositionsFrom(data.points, data.markers), [data]);
   useEffect(() => {
     if (!map) return;
     let disposed = false;
@@ -913,7 +917,13 @@ function SignalMap({
         measurementStatus={null}
         nPoints={data.positioned_count}
       >
-        <DriveRsrpLayer map={map ?? null} projectId={projectId} activeCaptureId={captureId} autoFrame={!hasMarkers} />
+        <DriveRsrpLayer
+          map={map ?? null}
+          projectId={projectId}
+          activeCaptureId={captureId}
+          autoFrame={!hasMarkers}
+          positions={rsrpPositions}
+        />
       </KpiMapOSM>
       {!hasMarkers && (
         <span
