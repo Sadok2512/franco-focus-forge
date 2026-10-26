@@ -58,7 +58,7 @@ describe("Signaling drive RSRP", () => {
   it("loads RSRP for the active Signaling capture without choosing another capture", async () => {
     const map = mapDouble();
     const mounted = mount(map, "1e4e8d879a83");
-    await waitFor(() => expect(api.analysis).toHaveBeenCalledWith("Test_3", "1e4e8d879a83", ["cell_rsrp"], {}, { group_by: "operator", include_map: true }, expect.any(AbortSignal)));
+    await waitFor(() => expect(api.analysis).toHaveBeenCalledWith("Test_3", "1e4e8d879a83", ["cell_rsrp@0"], {}, { group_by: "operator", include_map: true }, expect.any(AbortSignal)));
     expect(api.captures).not.toHaveBeenCalled();
     mounted.rerender(mounted.view("capture-2"));
     await waitFor(() => expect(api.analysis.mock.calls.at(-1)?.[1]).toBe("capture-2"));

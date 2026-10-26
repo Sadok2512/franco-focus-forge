@@ -6,7 +6,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { RSRP_CLASSES, RSRP_METRIC, rsrpClass, type RsrpClassId } from "./drive-rsrp";
+import { RSRP_CLASSES, RSRP_SELECTION, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -61,7 +61,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
       if (!effectiveCaptureId) throw new Error("Missing capture");
-      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_METRIC], {}, { group_by: "operator", include_map: true }, signal);
+      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, { group_by: "operator", include_map: true }, signal);
     },
     enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
@@ -69,7 +69,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
   const features = useMemo(
     () =>
       (analysis.data?.map_points ?? [])
-        .filter((p) => p.code === RSRP_METRIC && typeof p.value === "number" && Number.isFinite(p.value))
+        .filter((p) => isRsrpPointCode(p.code) && typeof p.value === "number" && Number.isFinite(p.value))
         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
         .map((p) => ({
           type: "Feature" as const,
@@ -131,9 +131,8 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     src?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
   }, [map, features, prefs.on]);
 
-  // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
-  useEffect(() => {
-    if (!autoFrame || !map || !prefs.on || !features.length) return;
+  const frame = () => {
+    if (!map || !features.length) return;
     const xs = features.map((f) => f.geometry.coordinates[0]);
     const ys = features.map((f) => f.geometry.coordinates[1]);
     const minX = Math.min(...xs),
@@ -149,6 +148,12 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
         ],
         { padding: 60, maxZoom: 15, duration: 350 },
       );
+  };
+
+  // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
+  useEffect(() => {
+    if (!autoFrame || !prefs.on) return;
+    frame();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, prefs.on, effectiveCaptureId, features.length, autoFrame]);
 
@@ -232,13 +237,20 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           }}
         />
       </div>
+      {status && (
+        <div className="flex items-center justify-between gap-2 border-t px-3 py-1.5">
+          <p role="status" className="text-muted-foreground">
+            {status}
+          </p>
+          {features.length > 0 && (
+            <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={frame}>
+              {t("mapWorkspace.driveRsrpFrame")}
+            </Button>
+          )}
+        </div>
+      )}
       {open && (
         <div className="space-y-2 border-t px-3 py-2">
-          {status && (
-            <p role="status" className="text-muted-foreground">
-              {status}
-            </p>
-          )}
           {prefs.on && !embedded && !!captures.data?.length && (
             <select
               aria-label={t("mapWorkspace.driveRsrpCapture")}

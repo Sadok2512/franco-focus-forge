@@ -25,3 +25,14 @@ describe("drive RSRP classes", () => {
     expect(findRsrpKpi(catalog)?.code).toBe("LTE_RSRP");
   });
 });
+
+import { isRsrpPointCode, RSRP_SELECTION } from "@/features/kpi/drive-rsrp";
+describe("RSRP map point codes", () => {
+  it("requests the PCell selection and accepts the echoed selection code", () => {
+    expect(RSRP_SELECTION).toBe("cell_rsrp@0");
+    expect(isRsrpPointCode("cell_rsrp@0")).toBe(true);
+    expect(isRsrpPointCode("cell_rsrp")).toBe(true);
+    expect(isRsrpPointCode("cell_rsrp@1")).toBe(false);
+    expect(isRsrpPointCode("cell_rsrq@0")).toBe(false);
+  });
+});

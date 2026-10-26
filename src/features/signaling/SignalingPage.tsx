@@ -913,7 +913,7 @@ function SignalMap({
         measurementStatus={null}
         nPoints={data.positioned_count}
       >
-        <DriveRsrpLayer map={map ?? null} projectId={projectId} activeCaptureId={captureId} autoFrame={false} />
+        <DriveRsrpLayer map={map ?? null} projectId={projectId} activeCaptureId={captureId} autoFrame={!hasMarkers} />
       </KpiMapOSM>
       {!hasMarkers && (
         <span
