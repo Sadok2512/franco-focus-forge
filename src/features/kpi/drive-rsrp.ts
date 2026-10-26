@@ -12,6 +12,14 @@ export const RSRP_CLASSES = [
 /** Serving-cell RSRP metric code (same series as the Signaling RF timeline). */
 export const RSRP_METRIC = "cell_rsrp";
 
+/** Metrics-table selection for the PCell RSRP (the API expects `code@cell`). */
+export const RSRP_SELECTION = `${RSRP_METRIC}@0`;
+
+/** True for map points of the PCell RSRP, whether the API echoes the bare code or the selection. */
+export function isRsrpPointCode(code: string): boolean {
+  return code === RSRP_METRIC || code === RSRP_SELECTION;
+}
+
 export type RsrpClassId = (typeof RSRP_CLASSES)[number]["id"];
 
 /** Class of a measured value; null/non-finite stays null (never coerced). */

@@ -61,7 +61,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
       if (!effectiveCaptureId) throw new Error("Missing capture");
-      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_METRIC], {}, { group_by: "operator", include_map: true }, signal);
+      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, { group_by: "operator", include_map: true }, signal);
     },
     enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
@@ -69,7 +69,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
   const features = useMemo(
     () =>
       (analysis.data?.map_points ?? [])
-        .filter((p) => p.code === RSRP_METRIC && typeof p.value === "number" && Number.isFinite(p.value))
+        .filter((p) => isRsrpPointCode(p.code) && typeof p.value === "number" && Number.isFinite(p.value))
         .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
         .map((p) => ({
           type: "Feature" as const,
