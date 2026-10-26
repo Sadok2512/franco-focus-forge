@@ -56,6 +56,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DecoderTree } from "./DecoderTree";
+import { DecodePanel } from "@/features/projects/DecodePanel";
 import { provenStates } from "./state-evidence";
 import {
   COLUMNS,
@@ -2215,12 +2216,15 @@ export function SignalingPage({
                                       <DecodedValues parameters={details.data.parameters} />
                                     </>
                                   ) : (
-                                    <div>
+                                    <div className="space-y-2">
                                       <p>Payload ASN.1 non disponible pour ce message.</p>
-                                      <p className="mt-1 text-muted-foreground">
+                                      <p className="text-muted-foreground">
                                         {details.data.hex_reason ??
                                           "Aucun paramètre décodé fourni par la source."}
                                       </p>
+                                      {/* Capture seulement « light » ? Le décodage
+                                          approfondi peut fournir l'arbre (admins). */}
+                                      <DecodePanel projectId={projectId} captureId={capture} />
                                     </div>
                                   )
                                 ) : inspectorTab === "Hexadécimal" ? (

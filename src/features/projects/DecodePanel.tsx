@@ -25,7 +25,16 @@ export function DecodePanel({
   const wasActive = useRef(false);
   useEffect(() => {
     if (wasActive.current && !active && state.data) {
-      for (const key of ["metrics", "metric-series", "metric-captures", "unknown-metrics"])
+      for (const key of [
+        "metrics",
+        "metric-series",
+        "metric-captures",
+        "unknown-metrics",
+        // Un décodage approfondi terminé peut fournir des arbres ASN.1
+        // qui manquaient : rafraîchir l'inspecteur Signaling.
+        "signaling-details",
+        "signaling-rows",
+      ])
         void client.invalidateQueries({ queryKey: [key, projectId] });
     }
     wasActive.current = !!active;
