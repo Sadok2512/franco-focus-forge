@@ -152,12 +152,12 @@ export function driveRsrpPoints(
         },
       ];
     const p = gps.get(r.seq_first);
-    if (!p) return [];
+    if (!p || !validPos(p.lat, p.lng)) return [];
     return [
       {
         seq: r.seq_first,
-        lat: p.lat,
-        lng: p.lng,
+        lat: p.lat as number,
+        lng: p.lng as number,
         value: rsrp.value,
         cell: rsrp.cell,
         position_source: "capture" as const,

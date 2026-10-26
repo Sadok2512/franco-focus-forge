@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { Map as MlMap } from "maplibre-gl";
+import type { Map as MlMap, MapMouseEvent } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { getMetricAnalysis, getMetricCaptures, getSignaling } from "@/lib/api/client";
-import { getStoredSession } from "@/lib/api/http";
-import { Eye, Layers, LoaderCircle, RefreshCw, X } from "lucide-react";
+import { Eye, Layers, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -17,11 +16,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
-import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import {
   driveRsrpDiagnostics,
   driveRsrpPoints,
-  isRsrpPointCode,
   RSRP_CLASSES,
   RSRP_SELECTION,
   rsrpClass,
@@ -383,6 +380,7 @@ export function DriveRsrpLayer({
     const next = JSON.stringify({ on, cell });
     if (localStorage.getItem(store) !== next) localStorage.setItem(store, next);
   }, [on, cell, store]);
+
 
   const radius = 1 + (size / 100) * 14;
   const stroke = 0.15 + (size / 100) * 1.2;
