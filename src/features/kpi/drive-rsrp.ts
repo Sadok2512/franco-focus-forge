@@ -28,6 +28,43 @@ export function rsrpClass(value: number | null | undefined): RsrpClassId | null 
   return RSRP_CLASSES.find((c) => value >= c.min)!.id;
 }
 
+type AnalysisLike = {
+  map_points?: { seq: number; lat: number; lng: number; code: string; value: unknown }[];
+  rows?: {
+    seq_first: number;
+    lat?: number | null;
+    lon?: number | null;
+    values: Record<string, unknown>;
+  }[];
+};
+
+export type DriveRsrpPoint = { seq: number; lat: number; lng: number; value: number };
+
+const validPos = (lat: unknown, lng: unknown): boolean =>
+  typeof lat === "number" &&
+  typeof lng === "number" &&
+  Number.isFinite(lat) &&
+  Number.isFinite(lng) &&
+  Math.abs(lat) <= 90 &&
+  Math.abs(lng) <= 180;
+const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+/** RSRP points with real GPS: the API `map_points` first; when it carries none,
+ * the measurements-table rows that hold both a server GPS position and a
+ * measured RSRP value (same response, nothing interpolated or invented). */
+export function driveRsrpPoints(data: AnalysisLike | undefined): DriveRsrpPoint[] {
+  if (!data) return [];
+  const fromMap = (data.map_points ?? [])
+    .filter((p) => isRsrpPointCode(p.code) && num(p.value) && validPos(p.lat, p.lng))
+    .map((p) => ({ seq: p.seq, lat: p.lat, lng: p.lng, value: p.value as number }));
+  if (fromMap.length) return fromMap;
+  return (data.rows ?? []).flatMap((r) => {
+    const value = r.values[RSRP_SELECTION] ?? r.values[RSRP_METRIC];
+    if (!num(value) || !validPos(r.lat, r.lon)) return [];
+    return [{ seq: r.seq_first, lat: r.lat as number, lng: r.lon as number, value }];
+  });
+}
+
 /** First RSRP KPI exposed by the project catalogue (LTE first, available first). */
 export function findRsrpKpi(catalog: ProjectKpiCatalog | undefined): KpiCatalogItem | null {
   const items = (catalog?.tree ?? []).flatMap((techno) =>
