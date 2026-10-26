@@ -220,8 +220,13 @@ export function KpiMapOSM({
         const err = e as { error?: { status?: number } };
         if (err?.error?.status) setTileError(true);
       });
+      // Zoom only (no compass): the compass button sat under the Sites
+      // control at top-20 and was hidden/unclickable on KPI map cards.
       if (!workspace)
-        instance.addControl(new maplibregl.NavigationControl({ visualizePitch: false }), "top-right");
+        instance.addControl(
+          new maplibregl.NavigationControl({ showCompass: false, visualizePitch: false }),
+          "top-right",
+        );
     })().catch(() => {
       if (!disposed) setTileError(true);
     });
