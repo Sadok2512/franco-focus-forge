@@ -185,7 +185,7 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                 </tr>
               </thead>
               <tbody>
-                {q.data.by_file.map((f) => (
+                {filesPaging.rows.map((f) => (
                   <tr key={f.filename} className="border-t">
                     <td className="max-w-96 truncate px-3 py-2 font-medium" title={f.filename}>
                       {f.filename}
@@ -204,6 +204,48 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                 ))}
               </tbody>
             </table>
+            {q.data.by_file.length > IMPORT_FILES_PAGE_SIZE && (
+              <nav
+                className="flex items-center justify-between gap-2 border-t px-3 py-1.5"
+                aria-label={t("projectImport.filesPagination")}
+              >
+                <span className="text-[11px] text-muted-foreground">
+                  {t("projectImport.showingFiles", {
+                    from: filesPaging.page * IMPORT_FILES_PAGE_SIZE + 1,
+                    to: filesPaging.page * IMPORT_FILES_PAGE_SIZE + filesPaging.rows.length,
+                    total: q.data.by_file.length,
+                  })}
+                </span>
+                <span className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    aria-label={t("projectImport.previousPage")}
+                    disabled={filesPaging.page === 0}
+                    onClick={() => setFilesPage(filesPaging.page - 1)}
+                  >
+                    <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                  <span className="px-1 text-[11px] text-muted-foreground">
+                    {t("projectImport.pageOf", {
+                      page: filesPaging.page + 1,
+                      total: filesPaging.pageCount,
+                    })}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-6 w-6"
+                    aria-label={t("projectImport.nextPage")}
+                    disabled={filesPaging.page >= filesPaging.pageCount - 1}
+                    onClick={() => setFilesPage(filesPaging.page + 1)}
+                  >
+                    <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                  </Button>
+                </span>
+              </nav>
+            )}
           </div>
         )}
       </div>
