@@ -8,7 +8,7 @@ import {
   type ReferenceImportEntry,
   type UploadProgress,
 } from "@/lib/api/client";
-import type { CellRefUploadReport } from "@/lib/api/reference-schemas";
+import type { ImportReport } from "@/lib/api/reference-schemas";
 import { toUserMessage } from "@/lib/api/http";
 import { Card, Pill, SettingsSection, btnPrimary, fmtDate } from "../shared";
 
@@ -41,10 +41,9 @@ function BreakdownList({
 // 1.19.0 — ReportBlock aligné sur CellRefUploadReport (back 0.47.1).
 // Jamais vert sur 0 ligne : si cells_affected=0, un bandeau rouge
 // "rejected" porte status_reason + ventilation reject_reasons.
-function ReportBlock({ report }: { report: CellRefUploadReport }) {
-  const rejectedEntries = Object.entries(report.reject_reasons ?? {}).sort((a, b) => b[1] - a[1]);
-  const cellsAffected = report.cells_affected ?? report.matched;
-  const isRejected = report.status === "rejected";
+function ReportBlock({ report }: { report: ImportReport }) {
+  const rejectedEntries = Object.entries(report.rejected_by_reason).sort((a, b) => b[1] - a[1]);
+  const isRejected = report.rows_loaded === 0;
   return (
     <div className="space-y-4">
       {isRejected && (
@@ -58,7 +57,7 @@ function ReportBlock({ report }: { report: CellRefUploadReport }) {
               Import rejeté — aucune cellule affectée en base
             </p>
             <p className="text-destructive/90 mt-0.5">
-              Motif : {report.status_reason ?? "(aucune raison fournie)"}
+              Motif : aucune ligne admissible chargée. Consultez les rejets ci-dessous.
             </p>
             {rejectedEntries.length > 0 && (
               <ul className="mt-1 flex flex-wrap gap-1">
@@ -72,44 +71,29 @@ function ReportBlock({ report }: { report: CellRefUploadReport }) {
                 ))}
               </ul>
             )}
-            {report.source_path && (
-              <p className="mt-1 text-[11px] text-muted-foreground">
-                Blob source persisté : <code>{report.source_path}</code>
-              </p>
-            )}
           </div>
         </div>
       )}
       <div className="grid gap-3 sm:grid-cols-4">
         <Card title="Lignes CSV lues">
-          <p className="text-xl font-semibold">{nd(report.processed)}</p>
-          <p className="text-[11px] text-muted-foreground">processed</p>
+          <p className="text-xl font-semibold">{nd(report.rows_read)}</p>
+          <p className="text-[11px] text-muted-foreground">rows_read</p>
         </Card>
         <Card title="Cellules affectées">
-          <p className={`text-xl font-semibold ${cellsAffected > 0 ? "text-sev-good" : "text-destructive"}`}>
-            {nd(cellsAffected)}
+          <p
+            className={`text-xl font-semibold ${report.rows_loaded > 0 ? "text-sev-good" : "text-destructive"}`}
+          >
+            {nd(report.rows_loaded)}
           </p>
-          <p className="text-[11px] text-muted-foreground">
-            inserted {nd(report.inserted)} · updated {nd(report.updated_lines ?? 0)}
-          </p>
+          <p className="text-[11px] text-muted-foreground">rows_loaded</p>
         </Card>
         <Card title="Rejetées / ambiguës / vides">
-          <p className="text-xl font-semibold text-destructive">
-            {nd(report.rejected)}
-            {report.ambiguous !== undefined && ` + ${nd(report.ambiguous)}`}
-            {report.skipped_empty !== undefined && ` + ${nd(report.skipped_empty)}`}
-          </p>
-          <p className="text-[11px] text-muted-foreground">rejected · ambiguous · skipped_empty</p>
+          <p className="text-xl font-semibold text-destructive">{nd(report.rows_rejected)}</p>
+          <p className="text-[11px] text-muted-foreground">rows_rejected</p>
         </Card>
         <Card title="Référence">
-          <p className="text-sm">
-            id&nbsp;: <span className="font-mono text-[11px]">{report.reference_id}</span>
-          </p>
-          {report.source_path && (
-            <p className="text-[11px] text-muted-foreground break-all">
-              <span className="font-mono">{report.source_path}</span>
-            </p>
-          )}
+          <p className="text-sm">{report.snapshot_date ?? "N/D"}</p>
+          <p className="text-[11px] text-muted-foreground">snapshot_date</p>
         </Card>
       </div>
 
@@ -120,17 +104,19 @@ function ReportBlock({ report }: { report: CellRefUploadReport }) {
           </Card>
         </div>
       )}
-      {report.warnings && report.warnings.length > 0 && (
+      {Object.keys(report.bands_unmapped).length > 0 && (
         <div
           role="alert"
           className="flex items-start gap-2 rounded-md border border-sev-warn/40 bg-sev-warn/10 p-3 text-xs text-sev-warn"
         >
           <AlertTriangle className="mt-0.5 h-4 w-4" aria-hidden />
           <div>
-            <p className="font-semibold">Warnings de parsing :</p>
+            <p className="font-semibold">Bandes hors mapping :</p>
             <ul className="list-disc pl-4">
-              {report.warnings.map((w, i) => (
-                <li key={i} className="text-muted-foreground">{w}</li>
+              {Object.entries(report.bands_unmapped).map(([band, count]) => (
+                <li key={band} className="text-muted-foreground">
+                  {band} · {nd(count)}
+                </li>
               ))}
             </ul>
           </div>
@@ -207,7 +193,7 @@ export function CellularReferencePanel() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
-  const [lastReport, setLastReport] = useState<CellRefUploadReport | null>(null);
+  const [lastReport, setLastReport] = useState<ImportReport | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   const importsQ = useQuery({
@@ -219,7 +205,7 @@ export function CellularReferencePanel() {
     queryFn: ({ signal }) => getCellSummary(signal),
   });
 
-  const uploadM = useMutation<CellRefUploadReport, Error, File>({
+  const uploadM = useMutation<ImportReport, Error, File>({
     mutationFn: async (f: File) => {
       setUploadError(null);
       setProgress({ loaded: 0, total: f.size, percent: 0 });
@@ -320,13 +306,12 @@ export function CellularReferencePanel() {
             </div>
           )}
 
-          {uploadM.status === "success" && lastReport && lastReport.status === "ok" && (
+          {uploadM.status === "success" && lastReport && lastReport.rows_loaded > 0 && (
             <div className="mt-4 flex items-center gap-2 rounded-md border border-sev-good/40 bg-sev-good/10 p-3 text-xs text-sev-good">
               <CheckCircle2 className="h-4 w-4" aria-hidden />
               <span>
-                Upload accepté — {nd(lastReport.cells_affected ?? lastReport.matched)} cellule(s) écrite(s)
-                en base ({nd(lastReport.inserted)} insert, {nd(lastReport.updated_lines ?? 0)} update)
-                sur {nd(lastReport.processed)} lignes CSV lues.
+                Upload accepté — {nd(lastReport.rows_loaded)} cellule(s) écrite(s) sur{" "}
+                {nd(lastReport.rows_read)} lignes CSV lues.
               </span>
             </div>
           )}

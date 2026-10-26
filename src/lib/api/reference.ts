@@ -17,11 +17,9 @@ import {
   xhrPayloadOrThrow,
 } from "./http";
 import {
-  CellRefUploadReportSchema,
   CellSummarySchema,
   ImportReportSchema,
   ReferenceImportEntrySchema,
-  type CellRefUploadReport,
   type CellSummary,
   type ImportReport,
   type ReferenceImportEntry,
@@ -35,41 +33,27 @@ export type UploadOptions = {
   onProgress?: (p: UploadProgress) => void;
 };
 
-/** POST /settings/cell-ref/upload (bc4-back 0.47.1) — multipart, progression
- *  XHR en mode api. Retourne le NOUVEAU rapport `CellRefUploadReport` qui
- *  porte `status` ∈ {"ok","rejected"}, `status_reason`, `reject_reasons`,
- *  `processed/matched/inserted/updated_lines/cells_affected/not_found`,
- *  `source_path`. L'ancienne route `/reference/cell/upload` reste en
- *  place côté back pour compat, mais le front n'y touche plus en 1.19.0. */
+/** POST /reference/cell/upload — ingestion complète du référentiel 4G/5G.
+ *
+ * Cette route crée/met à jour les cellules, sites, coordonnées, bandes et
+ * azimuts. `/settings/cell-ref/upload` ne fait qu'enrichir les dimensions
+ * géographiques de cellules déjà présentes et ne peut donc pas alimenter une
+ * base `cell_ref` vide.
+ */
 export async function uploadCellReference(
   file: File,
   opts: UploadOptions = {},
-): Promise<CellRefUploadReport> {
+): Promise<ImportReport> {
   if (!isApiMode()) {
-    // En mode mock le report legacy est transformé grossièrement en
-    // nouveau shape — jamais utilisé en déploiement réel (le dispatch
-    // VITE_BC4_DATA=api est actif en prod).
     opts.onProgress?.({ loaded: file.size, total: file.size, percent: 100 });
-    const legacy = await referenceMock.upload(file.name);
-    const parsed = CellRefUploadReportSchema.safeParse({
-      reference_id: "mock-" + Date.now().toString(36),
-      filename: file.name,
-      status: legacy.rows_loaded > 0 ? "ok" : "rejected",
-      status_reason: legacy.rows_loaded > 0 ? null : "mock : aucune ligne chargée",
-      processed: legacy.rows_read,
-      matched: legacy.rows_loaded,
-      inserted: legacy.rows_loaded,
-      not_found: 0,
-      rejected: legacy.rows_rejected,
-      reject_reasons: legacy.rejected_by_reason,
-    });
+    const parsed = ImportReportSchema.safeParse(await referenceMock.upload(file.name));
     if (!parsed.success) throw new ApiSchemaError("mock upload shape", parsed.error.issues);
     return parsed.data;
   }
 
-  return new Promise<CellRefUploadReport>((resolve, reject) => {
+  return new Promise<ImportReport>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${apiBase()}/settings/cell-ref/upload`, true);
+    xhr.open("POST", `${apiBase()}/reference/cell/upload`, true);
     const s = getSession();
     if (s) {
       xhr.setRequestHeader("Authorization", `Bearer ${s.token}`);
@@ -93,13 +77,13 @@ export async function uploadCellReference(
         reject(e as Error);
         return;
       }
-      const parsed = CellRefUploadReportSchema.safeParse(payload);
+      const parsed = ImportReportSchema.safeParse(payload);
       if (!parsed.success) {
         // eslint-disable-next-line no-console
-        console.error("[cell-ref upload] schema mismatch", parsed.error.issues, payload);
+        console.error("[cell-reference upload] schema mismatch", parsed.error.issues, payload);
         reject(
           new ApiSchemaError(
-            "Réponse d'upload /settings/cell-ref/upload non conforme au schéma Zod",
+            "Réponse d'upload /reference/cell/upload non conforme au schéma Zod",
             parsed.error.issues,
           ),
         );

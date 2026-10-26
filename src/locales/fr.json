@@ -896,6 +896,11 @@
       "satellite": "Satellite"
     }
   },
+  "settingsGeo": {
+    "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",
+    "cellReferenceDetectedBody": "Ce fichier contient des cellules 4G/5G et des coordonnées. Importez-le dans Référence cellulaire ; le mapping Plaque / DR / Département ne s’applique pas.",
+    "openCellReference": "Ouvrir Référence cellulaire"
+  },
   "mapPopup": {
     "siteName": "Nom du site",
     "siteId": "ID site",
