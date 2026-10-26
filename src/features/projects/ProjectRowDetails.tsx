@@ -72,6 +72,12 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
     staleTime: 30_000,
   });
 
+  const { t } = useTranslation();
+  const [filesPage, setFilesPage] = useState(0);
+  // Changement de projet : on repart toujours à la première page.
+  useEffect(() => setFilesPage(0), [project.id]);
+  const filesPaging = paginateImportFiles(q.data?.by_file ?? [], filesPage);
+
   const technosFromProject = sortByCountDesc(project.technos_seen ?? undefined);
   const operatorsFromProject = sortByCountDesc(project.operators_plmn ?? undefined);
 
