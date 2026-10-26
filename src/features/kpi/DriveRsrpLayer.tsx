@@ -6,6 +6,7 @@ import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
 import { RSRP_CLASSES, RSRP_SELECTION, isRsrpPointCode, rsrpClass, type RsrpClassId } from "./drive-rsrp";
 
 const SOURCE = "bc4-drive-rsrp";
@@ -36,6 +37,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
   const [prefs, setPrefs] = useState<Prefs>({ ...DEFAULT, on: embedded });
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
+  const [diagOpen, setDiagOpen] = useState(false);
   useEffect(() => setPrefs(readPrefs(store, { ...DEFAULT, on: embedded })), [store, embedded]);
   const update = (patch: Partial<Prefs>) =>
     setPrefs((p) => {
@@ -203,6 +205,20 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     return c;
   }, [features]);
 
+  const diagStatus = useMemo(() => {
+    const pts = analysis.data?.map_points ?? [];
+    const rsrp = pts.filter((p) => isRsrpPointCode(p.code));
+    return {
+      capture: effectiveCaptureId ?? null,
+      request: analysis.isError ? "error" : analysis.isLoading ? "loading" : analysis.data ? "ok" : "idle",
+      mapPoints: analysis.data ? pts.length : null,
+      rsrpPoints: analysis.data ? rsrp.length : null,
+      numericRsrp: analysis.data ? rsrp.filter((p) => typeof p.value === "number" && Number.isFinite(p.value)).length : null,
+      displayed: analysis.data ? features.length : null,
+      gpsMarkers: autoFrame ? "none" : "present",
+    };
+  }, [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, autoFrame]);
+
   const status = !prefs.on
     ? null
     : (!embedded && captures.isError) || analysis.isError
@@ -242,6 +258,11 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           <p role="status" className="text-muted-foreground">
             {status}
           </p>
+          {!analysis.isLoading && (
+            <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={() => setDiagOpen(true)}>
+              {t("rsrpDiagnosis.open")}
+            </Button>
+          )}
           {features.length > 0 && (
             <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={frame}>
               {t("mapWorkspace.driveRsrpFrame")}
@@ -249,6 +270,7 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           )}
         </div>
       )}
+      <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
       {open && (
         <div className="space-y-2 border-t px-3 py-2">
           {prefs.on && !embedded && !!captures.data?.length && (

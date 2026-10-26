@@ -951,5 +951,31 @@
     "nextPage": "Next page",
     "pageOf": "Page {{page}} of {{total}}",
     "showingFiles": "{{from}}–{{to}} of {{total}} files"
+  },
+  "rsrpDiagnosis": {
+    "open": "AI diagnosis",
+    "title": "Why are RSRP points missing?",
+    "description": "Check the observed status, add the capture metadata you know, and get probable causes and targeted checks.",
+    "observed": "Observed status",
+    "status_capture": "Capture",
+    "status_request": "Request",
+    "status_mapPoints": "Map points returned",
+    "status_rsrpPoints": "RSRP points",
+    "status_numericRsrp": "RSRP with a value",
+    "status_displayed": "Points displayed",
+    "status_gpsMarkers": "Capture GPS",
+    "field_device": "Device / UE",
+    "field_tool": "Capture tool",
+    "field_rat": "Technology (LTE/NR)",
+    "field_band": "Band / EARFCN",
+    "field_decoder": "Decoder version",
+    "field_decodeMode": "Decode mode (Light/Deep)",
+    "field_duration": "Duration",
+    "notes": "Notes",
+    "notesPlaceholder": "E.g. GPS antenna unplugged, indoor test, scanner only…",
+    "run": "Explain with AI",
+    "running": "Analysing…",
+    "failed": "AI diagnosis failed.",
+    "disclaimer": "AI-powered suggestions based only on the information above; verify before acting."
   }
 }
