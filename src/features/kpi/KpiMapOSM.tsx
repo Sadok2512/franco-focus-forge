@@ -232,6 +232,20 @@ export function KpiMapOSM({
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Workspace maps follow the project centre when it resolves after the map
+  // is created. Without this, the map stays at the default view and the
+  // project's sites can sit outside the opening viewport.
+  const workspaceCenterRef = useRef(center);
+  useEffect(() => {
+    const previous = workspaceCenterRef.current;
+    workspaceCenterRef.current = center;
+    const instance = map.current;
+    if (!workspace || !instance || !ready) return;
+    if (previous[0] === center[0] && previous[1] === center[1]) return;
+    instance.flyTo({ center, zoom: Math.max(MAP_MIN_ZOOM, instance.getZoom()), duration: 900 });
+  }, [center, ready, workspace]);
+
+
   useEffect(() => {
     const observer = new ResizeObserver(() => map.current?.resize());
     if (el.current) observer.observe(el.current);
