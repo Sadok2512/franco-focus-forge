@@ -36,3 +36,21 @@ describe("RSRP map point codes", () => {
     expect(isRsrpPointCode("cell_rsrq@0")).toBe(false);
   });
 });
+
+import { driveRsrpPoints } from "@/features/kpi/drive-rsrp";
+describe("drive RSRP points from table rows", () => {
+  const row = (lat: number | null, lon: number | null, v: number | null) => ({
+    seq_first: 1, lat, lon, values: { "cell_rsrp@0": v },
+  });
+  it("uses rows with GPS and RSRP when map_points is empty", () => {
+    const pts = driveRsrpPoints({ map_points: [], rows: [row(50.378, 3.478, -92), row(null, null, -80), row(50.4, 3.5, null)] });
+    expect(pts).toEqual([{ seq: 1, lat: 50.378, lng: 3.478, value: -92 }]);
+  });
+  it("prefers API map_points when present", () => {
+    const pts = driveRsrpPoints({
+      map_points: [{ seq: 9, lat: 1, lng: 2, code: "cell_rsrp@0", value: -70 }],
+      rows: [row(50, 3, -90)],
+    });
+    expect(pts).toEqual([{ seq: 9, lat: 1, lng: 2, value: -70 }]);
+  });
+});
