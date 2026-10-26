@@ -237,13 +237,20 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
           }}
         />
       </div>
+      {status && (
+        <div className="flex items-center justify-between gap-2 border-t px-3 py-1.5">
+          <p role="status" className="text-muted-foreground">
+            {status}
+          </p>
+          {features.length > 0 && (
+            <Button type="button" variant="outline" size="sm" className="h-6 shrink-0 px-2 text-[11px]" onClick={frame}>
+              {t("mapWorkspace.driveRsrpFrame")}
+            </Button>
+          )}
+        </div>
+      )}
       {open && (
         <div className="space-y-2 border-t px-3 py-2">
-          {status && (
-            <p role="status" className="text-muted-foreground">
-              {status}
-            </p>
-          )}
           {prefs.on && !embedded && !!captures.data?.length && (
             <select
               aria-label={t("mapWorkspace.driveRsrpCapture")}

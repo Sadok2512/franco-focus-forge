@@ -901,6 +901,7 @@
     "driveRsrpToggle": "Show drive RSRP points",
     "driveRsrpCapture": "Drive capture",
     "driveRsrpLegend": "RSRP legend",
+    "driveRsrpFrame": "Zoom to points",
     "driveRsrpOpacity": "Point opacity",
     "driveRsrpLoading": "Loading drive points…",
     "driveRsrpError": "Drive points unavailable.",

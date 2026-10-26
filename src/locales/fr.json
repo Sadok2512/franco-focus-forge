@@ -901,6 +901,7 @@
     "driveRsrpToggle": "Afficher les points RSRP du drive",
     "driveRsrpCapture": "Capture du drive",
     "driveRsrpLegend": "Légende RSRP",
+    "driveRsrpFrame": "Voir les points",
     "driveRsrpOpacity": "Opacité des points",
     "driveRsrpLoading": "Chargement des points…",
     "driveRsrpError": "Points du drive indisponibles.",
