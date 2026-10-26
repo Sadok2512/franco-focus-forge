@@ -17,6 +17,7 @@ import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/cl
 import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
+import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
@@ -734,10 +735,14 @@ function SignalMap({
   data,
   onSelect,
   selectedSeq,
+  projectId,
+  captureId,
 }: {
   data: SignalingPoints;
   onSelect: (seq: number) => void;
   selectedSeq: number | undefined;
+  projectId: string;
+  captureId: string;
 }) {
   const [map, setMap] = useState<MlMap>();
   const ready = useCallback((m: MlMap) => setMap(m), []);
@@ -907,7 +912,9 @@ function SignalMap({
         contextLabel="Signalisation"
         measurementStatus={null}
         nPoints={data.positioned_count}
-      />
+      >
+        <DriveRsrpLayer map={map ?? null} projectId={projectId} activeCaptureId={captureId} autoFrame={false} />
+      </KpiMapOSM>
       {!hasMarkers && (
         <span
           role="status"
@@ -1707,7 +1714,7 @@ export function SignalingPage({
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
                       {mapVisible && points.data ? (
-                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} />
+                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} projectId={projectId} captureId={capture ?? ""} />
                       ) : (
                         <p role="status">Chargement des positions…</p>
                       )}

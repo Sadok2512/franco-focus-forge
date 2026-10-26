@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/metrics";
+import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
+import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RSRP_CLASSES, RSRP_METRIC, rsrpClass, type RsrpClassId } from "./drive-rsrp";
@@ -14,71 +15,81 @@ const STORE = "bc4.map.driveRsrp.v1";
 type Prefs = { on: boolean; opacity: number; hidden: RsrpClassId[] };
 const DEFAULT: Prefs = { on: false, opacity: 90, hidden: [] };
 
-function readPrefs(): Prefs {
+function readPrefs(store: string, defaults: Prefs): Prefs {
   try {
-    return { ...DEFAULT, ...JSON.parse(localStorage.getItem(STORE) ?? "{}") };
+    return { ...defaults, ...JSON.parse(localStorage.getItem(store) ?? "{}") };
   } catch {
-    return DEFAULT;
+    return defaults;
   }
 }
 
 /** Toggleable drive RSRP points with legend and per-class visibility. */
-export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectId: string }) {
+export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = true }: {
+  map: MlMap | null;
+  projectId: string;
+  activeCaptureId?: string;
+  autoFrame?: boolean;
+}) {
   const { t } = useTranslation();
-  const [prefs, setPrefs] = useState<Prefs>(DEFAULT);
+  const embedded = activeCaptureId !== undefined;
+  const store = embedded ? "bc4.signaling.driveRsrp.v1" : STORE;
+  const [prefs, setPrefs] = useState<Prefs>({ ...DEFAULT, on: embedded });
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
-  useEffect(() => setPrefs(readPrefs()), []);
+  useEffect(() => setPrefs(readPrefs(store, { ...DEFAULT, on: embedded })), [store, embedded]);
   const update = (patch: Partial<Prefs>) =>
     setPrefs((p) => {
       const next = { ...p, ...patch };
-      localStorage.setItem(STORE, JSON.stringify(next));
+      localStorage.setItem(store, JSON.stringify(next));
       return next;
     });
 
   const captures = useQuery({
     queryKey: ["metric-captures", projectId],
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
-    enabled: prefs.on,
+    enabled: prefs.on && !embedded,
   });
   useEffect(() => {
-    if (captureId || !captures.data?.length) return;
+    if (embedded || captureId || !captures.data?.length) return;
     const fromUrl = new URLSearchParams(window.location.search).get("capture_id");
     setCaptureId(
-      captures.data.find((c) => c.capture_id === fromUrl)?.capture_id ?? captures.data[0]!.capture_id,
+      captures.data.find((c) => c.capture_id === fromUrl)?.capture_id ?? captures.data[0]?.capture_id,
     );
-  }, [captures.data, captureId]);
+  }, [captures.data, captureId, embedded]);
+  const effectiveCaptureId = activeCaptureId ?? captureId;
   const analysis = useQuery({
-    queryKey: ["drive-rsrp", projectId, captureId],
-    queryFn: ({ signal }) =>
-      getMetricAnalysis(projectId, captureId!, [RSRP_METRIC], {}, { group_by: "operator", include_map: true }, signal),
-    enabled: prefs.on && !!captureId,
+    queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
+    queryFn: ({ signal }) => {
+      if (!effectiveCaptureId) throw new Error("Missing capture");
+      return getMetricAnalysis(projectId, effectiveCaptureId, [RSRP_METRIC], {}, { group_by: "operator", include_map: true }, signal);
+    },
+    enabled: prefs.on && !!effectiveCaptureId,
     staleTime: 60_000,
   });
   const features = useMemo(
     () =>
       (analysis.data?.map_points ?? [])
-        .filter((p) => p.code === RSRP_METRIC && typeof p.value === "number")
-        .filter((p) => Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
+        .filter((p) => p.code === RSRP_METRIC && typeof p.value === "number" && Number.isFinite(p.value))
+        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng) && Math.abs(p.lat) <= 90 && Math.abs(p.lng) <= 180)
         .map((p) => ({
           type: "Feature" as const,
           geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
           properties: {
             value: p.value as number,
             seq: p.seq,
-            capture_id: captureId,
+            capture_id: effectiveCaptureId,
             unit: "dBm",
             rsrp_class: rsrpClass(p.value as number),
           },
         })),
-    [analysis.data, captureId],
+    [analysis.data, effectiveCaptureId],
   );
 
   // Source + layer (added once the style is parsed, kept across basemap changes).
   useEffect(() => {
     if (!map) return;
     const add = () => {
-      if (map.getSource(SOURCE)) return;
+      if (!map.getSource(SOURCE)) {
       map.addSource(SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
       const before = map.getStyle()?.layers?.find((l) => l.id.startsWith("bc4-sites"))?.id;
       map.addLayer(
@@ -100,13 +111,20 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
         },
         before,
       );
+      }
+      const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
+      source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
+      if (!map.getLayer(LAYER)) return;
+      map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+      map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+      map.setFilter(LAYER, ["all", ["!=", ["get", "rsrp_class"], null], ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]]]);
     };
     if (map.getStyle?.() || map.isStyleLoaded()) add();
     else map.once("load", add);
     return () => {
       map.off("load", add);
     };
-  }, [map]);
+  }, [map, features, prefs]);
 
   useEffect(() => {
     const src = map?.getSource(SOURCE) as GeoJSONSource | undefined;
@@ -115,7 +133,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
 
   // Zoom auto sur la zone des points RSRP à chaque activation ou changement de capture.
   useEffect(() => {
-    if (!map || !prefs.on || !features.length) return;
+    if (!autoFrame || !map || !prefs.on || !features.length) return;
     const xs = features.map((f) => f.geometry.coordinates[0]);
     const ys = features.map((f) => f.geometry.coordinates[1]);
     const minX = Math.min(...xs),
@@ -132,7 +150,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
         { padding: 60, maxZoom: 15, duration: 350 },
       );
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, prefs.on, captureId, features.length]);
+  }, [map, prefs.on, effectiveCaptureId, features.length, autoFrame]);
 
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
@@ -182,27 +200,29 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
 
   const status = !prefs.on
     ? null
-    : captures.isError || analysis.isError
+    : (!embedded && captures.isError) || analysis.isError
       ? t("mapWorkspace.driveRsrpError")
-      : captures.isLoading || analysis.isLoading
+      : (!embedded && captures.isLoading) || analysis.isLoading
         ? t("mapWorkspace.driveRsrpLoading")
-        : !captures.data?.length
+        : !embedded && !captures.data?.length
           ? t("mapWorkspace.driveRsrpNone")
           : !features.length
               ? t("mapWorkspace.driveRsrpNoGps")
               : t("mapWorkspace.driveRsrpCount", { count: features.length });
 
   return (
-    <div className="absolute bottom-12 right-14 z-20 w-60 rounded-lg border bg-card/95 text-[11px] shadow-md">
+    <div className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}>
       <div className="flex items-center justify-between gap-2 px-3 py-2">
-        <button
+        <Button
           type="button"
-          className="font-semibold text-foreground"
+          variant="ghost"
+          size="sm"
+          className="h-auto px-0 py-0 font-semibold text-foreground"
           aria-expanded={open}
           onClick={() => setOpen((o) => !o)}
         >
           {t("mapWorkspace.driveRsrp")} {open ? "▾" : "▸"}
-        </button>
+        </Button>
         <Switch
           aria-label={t("mapWorkspace.driveRsrpToggle")}
           checked={prefs.on}
@@ -219,7 +239,7 @@ export function DriveRsrpLayer({ map, projectId }: { map: MlMap | null; projectI
               {status}
             </p>
           )}
-          {prefs.on && !!captures.data?.length && (
+          {prefs.on && !embedded && !!captures.data?.length && (
             <select
               aria-label={t("mapWorkspace.driveRsrpCapture")}
               className="w-full rounded border bg-background px-1 py-0.5"
