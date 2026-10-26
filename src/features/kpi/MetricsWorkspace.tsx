@@ -1,4 +1,5 @@
-import { Download, Maximize2, X } from "lucide-react";
+import { Download, Info, Maximize2, X } from "lucide-react";
+import { CaptureSheet } from "./CaptureSheet";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
@@ -347,6 +348,8 @@ export function MetricsWorkspace({
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
   const [search, setSearch] = useState("");
+  // 1.109.0 — Lot B : Fiche capture (Sheet).
+  const [sheetOpen, setSheetOpen] = useState(false);
   const captureQuery = useQuery({
     queryKey: ["metric-captures", projectId, filters],
     queryFn: ({ signal }) => getMetricCaptures(projectId, filters, signal),
@@ -874,6 +877,16 @@ export function MetricsWorkspace({
                 )}
                 <div className="kpi-metrics-table-head">
                   <div className="flex gap-0.5 shrink-0 items-center">
+                    <button
+                      type="button"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-accent"
+                      onClick={() => setSheetOpen(true)}
+                      disabled={!captureId}
+                      data-testid="metrics-capture-sheet-open"
+                      title="Fiche capture : fichier, décodage, SCRIPT, DEVI, trafic"
+                    >
+                      <Info size={14} /> Fiche capture
+                    </button>
                     <WorkspacePanelMenu label={translate("panel.actions")}>
                       <DropdownMenuItem
                         data-testid="metrics-table-export"
@@ -919,6 +932,10 @@ export function MetricsWorkspace({
                         <th className="col-geo numeric">
                           Longitude
                           <small className="block">°</small>
+                        </th>
+                        <th className="col-task" title="CMDREQ → CMDCOMP par (capture_id, seq ≤)">
+                          Task
+                          <small className="block">name [index]</small>
                         </th>
                         {data.columns.map((c) => (
                           <th key={c.code} title={c.code} className="numeric">
@@ -975,6 +992,16 @@ export function MetricsWorkspace({
                               title={gpsTooltip}
                             >
                               {r.lon == null ? "—" : fmtLatLng(r.lon)}
+                            </td>
+                            <td
+                              className={`col-task font-mono text-[11px] ${r.task_name == null ? "text-muted-foreground opacity-60" : ""}`}
+                              title={r.task_name == null ? "hors tâche" : `CMDREQ seq ≤ ${r.seq_last}`}
+                            >
+                              {r.task_name == null
+                                ? "—"
+                                : r.task_index != null
+                                  ? `${r.task_name} [${r.task_index}]`
+                                  : r.task_name}
                             </td>
                             {data.columns.map((c) => (
                               <td
@@ -1065,6 +1092,14 @@ export function MetricsWorkspace({
                 via le tooltip title du row (`seq N–M · t_rel Xs`). */}
           </>
         )
+      )}
+      {captureId && (
+        <CaptureSheet
+          projectId={projectId}
+          captureId={captureId}
+          open={sheetOpen}
+          onOpenChange={setSheetOpen}
+        />
       )}
     </article>
     </ActiveEventsContext.Provider>

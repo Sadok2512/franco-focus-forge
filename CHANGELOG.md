@@ -1,3 +1,29 @@
+## 1.109.0 (minor) — BC4-FRONT 2026-10-26 — Lot B UI : colonne Task + fiche capture (Agent BC3)
+
+Back 0.82.3 TableRow Task + endpoint `/captures/{cap}/sheet` déjà en place.
+
+- **Colonne Task** dans la table Metrics (`MetricsWorkspace`) : affiche
+  `task_name [task_index]` depuis `TableRow` (back) ; grisé `—` si NULL,
+  jamais calculé côté client. Zod schema `metrics-schemas.ts` étendu avec
+  les champs `task_name:string|null`, `task_index:number|null`.
+- **Fiche capture** : composant `CaptureSheet.tsx` (nouveau), panneau
+  latéral `Sheet` déclenché par un bouton `[data-testid=metrics-capture-sheet-open]`
+  dans la toolbar de la table Metrics. Sections : Fichier (nom, taille,
+  sha, FF version), Décodage (niveau, decoder_version, n_records,
+  n_partial, kind), Script (fichier, version, commandes), Device (DEVI
+  batt/temp/voltage min..max), Trafic (DAA/DREQ/DCOMP counts), Identité
+  (ligne unique "masquée (privacy)"). Pas d'identifiant abonné jamais,
+  valeurs absentes grisées `—`. Fetch via `apiFetch` + Zod stricte
+  (`CaptureSheetSchema`).
+- Design : réutilise les composants `Sheet`/`SheetContent`/`SheetHeader`
+  (shadcn/ui) comme le panneau Info des KPI → cohérence visuelle.
+
+Preuve back (déjà en place v 0.82.3) :
+- GET `/projects/{pid}/captures/{cap}/sheet` → fiche JSON (préviously
+  commit 6aead5e).
+- `/metrics/table` TableRow Pydantic : `task_name` + `task_index`
+  (commit ce89c89).
+
 ## 1.108.4 (patch) — BC4-FRONT 2026-10-26 — Import réel du référentiel cellulaire (Agent BC1)
 
 - L’écran « Référence cellulaire » envoie désormais le CSV 4G/5G à

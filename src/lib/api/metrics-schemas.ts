@@ -232,6 +232,11 @@ export const MetricAnalysisSchema = z.object({
       reason: z.string().nullable().optional(),
       values: z.record(scalar.nullable()),
       counts: z.record(z.number()),
+      // 1.109.0 — Task col (back 0.82.3). task_name = action CMDREQ courante
+      // sur (capture_id, seq ≤), task_index = cmd_index si présent. null hors
+      // tâche, jamais calculé côté client.
+      task_name: z.string().nullable().optional(),
+      task_index: z.number().nullable().optional(),
     }),
   ),
   series: MetricSeriesSchema.shape.series,
