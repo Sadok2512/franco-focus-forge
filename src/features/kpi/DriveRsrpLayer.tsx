@@ -227,12 +227,21 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
       if (disposed) return;
       const el = document.createElement("div");
       el.style.whiteSpace = "pre-line";
-      el.textContent = t("mapWorkspace.driveRsrpPopup", {
-        value: p["value"],
-        unit: p["unit"] || "dBm",
-        capture: p["capture_id"],
-        seq: p["seq"],
-      });
+      el.textContent =
+        t("mapWorkspace.driveRsrpPopup", {
+          value: p["value"],
+          unit: p["unit"] || "dBm",
+          capture: p["capture_id"],
+          seq: p["seq"],
+        }) +
+        "\n" +
+        t("mapWorkspace.driveRsrpPopupCell", { cell: p["cell"] ?? 0 }) +
+        "\n" +
+        t(
+          p["position_source"] === "capture"
+            ? "mapWorkspace.driveRsrpPopupPosCapture"
+            : "mapWorkspace.driveRsrpPopupPosRow",
+        );
       popup?.remove();
       popup = new Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map);
     };
@@ -250,31 +259,38 @@ export function DriveRsrpLayer({ map, projectId, activeCaptureId, autoFrame = tr
     return c;
   }, [features]);
 
-  const diagStatus = useMemo(() => {
-    const pts = analysis.data?.map_points ?? [];
-    const rsrp = pts.filter((p) => isRsrpPointCode(p.code));
-    return {
+  const diagStatus = useMemo(
+    () => ({
       capture: effectiveCaptureId ?? null,
       request: analysis.isError ? "error" : analysis.isLoading ? "loading" : analysis.data ? "ok" : "idle",
-      mapPoints: analysis.data ? pts.length : null,
-      rsrpPoints: analysis.data ? rsrp.length : null,
-      numericRsrp: analysis.data ? rsrp.filter((p) => typeof p.value === "number" && Number.isFinite(p.value)).length : null,
+      rows: analysis.data ? diag.rows : null,
+      rowsWithRsrp: analysis.data ? diag.rowsWithRsrp : null,
+      rowsWithGps: analysis.data ? diag.rowsWithGps : null,
+      pairedPositions: analysis.data ? diag.paired : null,
+      mapPoints: analysis.data ? diag.mapPoints : null,
+      rsrpPoints: analysis.data ? diag.rsrpMapPoints : null,
+      numericRsrp: analysis.data ? driveRsrpPoints(analysis.data).length : null,
       displayed: analysis.data ? features.length : null,
-      gpsMarkers: autoFrame ? "none" : "present",
-    };
-  }, [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, autoFrame]);
+      gpsMarkers: allPositions.length,
+    }),
+    [analysis.data, analysis.isError, analysis.isLoading, effectiveCaptureId, features.length, diag, allPositions.length],
+  );
 
   const status = !prefs.on
     ? null
-    : (!embedded && captures.isError) || analysis.isError
+    : (!embedded && captures.isError) || analysis.isError || (needsGps && gps.isError)
       ? t("mapWorkspace.driveRsrpError")
-      : (!embedded && captures.isLoading) || analysis.isLoading
+      : (!embedded && captures.isLoading) || analysis.isLoading || (needsGps && gps.isLoading)
         ? t("mapWorkspace.driveRsrpLoading")
         : !embedded && !captures.data?.length
           ? t("mapWorkspace.driveRsrpNone")
-          : !features.length
-              ? t("mapWorkspace.driveRsrpNoGps")
-              : t("mapWorkspace.driveRsrpCount", { count: features.length });
+          : features.length
+            ? t("mapWorkspace.driveRsrpCount", { count: features.length })
+            : !diag.rows && !diag.rsrpMapPoints
+              ? t("mapWorkspace.driveRsrpNoRows")
+              : !diag.rowsWithRsrp && !diag.rsrpMapPoints
+                ? t("mapWorkspace.driveRsrpNoValue")
+                : t("mapWorkspace.driveRsrpNoGps");
 
   return (
     <div className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}>
