@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Download, FileUp, MapPinOff } from "lucide-react";
 import { lazy, Suspense, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getApiPermissions, getGeoReferences, postGeoImport, validateGeo } from "@/lib/api/client";
 import { GEO_FIELDS, type GeoImportReport, type GeoMapping } from "@/lib/api/settings-schemas";
 import { can } from "@/lib/permissions";
@@ -40,6 +41,7 @@ export function reportCsv(rep: Pick<GeoImportReport, "issues">) {
 }
 
 export function GeographyPanel() {
+  const { t } = useTranslation();
   const actor = useActor();
   const qc = useQueryClient();
   const perms = useQuery({ queryKey: ["settings", "perms"], queryFn: getApiPermissions });
@@ -67,6 +69,14 @@ export function GeographyPanel() {
 
   if (!can(actor.role, "geo.read")) return <Forbidden />;
   const report = table ? validateGeo({ mapping, rows: table.rows }) : null;
+  const normalizedColumns = new Set(table?.columns.map((column) => column.trim().toLowerCase()));
+  const isCellReference = Boolean(
+    normalizedColumns.has("id") &&
+    normalizedColumns.has("rat") &&
+    normalizedColumns.has("latitude") &&
+    normalizedColumns.has("longitude") &&
+    (normalizedColumns.has("sac_ci_eci") || normalizedColumns.has("nci")),
+  );
 
   const onFile = async (f: File | undefined) => {
     setParseErr(null);
@@ -123,7 +133,16 @@ export function GeographyPanel() {
           {done}
         </p>
       )}
-      {table && report && (
+      {table && isCellReference && (
+        <div role="alert" className="rounded-md border border-primary/30 bg-primary/5 p-3 text-xs">
+          <p className="font-semibold">{t("settingsGeo.cellReferenceDetectedTitle")}</p>
+          <p className="mt-1 text-muted-foreground">{t("settingsGeo.cellReferenceDetectedBody")}</p>
+          <a className={`${btnPrimary} mt-3 inline-flex`} href="/settings/cellular-reference">
+            {t("settingsGeo.openCellReference")}
+          </a>
+        </div>
+      )}
+      {table && report && !isCellReference && (
         <>
           <Card title="2. Mapping des colonnes">
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

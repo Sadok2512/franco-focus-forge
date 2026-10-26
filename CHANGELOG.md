@@ -1,3 +1,16 @@
+## 1.108.4 (patch) — BC4-FRONT 2026-10-26 — Import réel du référentiel cellulaire (Agent BC1)
+
+- L’écran « Référence cellulaire » envoie désormais le CSV 4G/5G à
+  `/reference/cell/upload`, l’ingestion complète qui alimente sites,
+  coordonnées, cellules, bandes et azimuts. L’ancienne route
+  `/settings/cell-ref/upload` reste réservée à l’enrichissement géographique
+  de cellules déjà existantes.
+- L’importeur Géographie détecte par ses colonnes un fichier de référence
+  cellulaire et redirige explicitement vers le bon écran au lieu de rejeter
+  toutes ses lignes pour Plaque / DR / Département / Site non mappés.
+- Le rapport affiché reprend directement les compteurs validés du backend :
+  lignes lues, chargées, rejetées et bandes hors mapping.
+
 ## 1.108.3 (patch) — BC4-FRONT 2026-10-25 — Zoom arrière de la carte (Agent BC1)
 
 - Autorise le zoom arrière jusqu'au niveau 6 tout en conservant le zoom initial 11.
