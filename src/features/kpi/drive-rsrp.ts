@@ -48,7 +48,26 @@ type AnalysisLike = {
 };
 
 /** Server position of one capture sequence, as supplied by the Signaling points view. */
-export type RsrpPosition = { seq: number; lat: number; lng: number };
+export type RsrpPosition = {
+  seq: number;
+  lat: number | null | undefined;
+  lng: number | null | undefined;
+};
+
+/**
+ * Positions the server tied to capture sequences: per-observation points first,
+ * then each grouped marker's own sequence list. Only positions the API already
+ * published for this capture — nothing is interpolated or guessed.
+ */
+export function rsrpPositionsFrom(
+  points: readonly { seq: number; lat: number | null; lng: number | null }[],
+  markers: readonly { lat: number | null; lng: number | null; seqs: readonly number[] }[] = [],
+): RsrpPosition[] {
+  const out: RsrpPosition[] = points.map((p) => ({ seq: p.seq, lat: p.lat, lng: p.lng }));
+  for (const m of markers)
+    for (const s of m.seqs) out.push({ seq: s, lat: m.lat, lng: m.lng });
+  return out;
+}
 
 export type DriveRsrpPoint = {
   seq: number;
