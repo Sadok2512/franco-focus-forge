@@ -162,3 +162,4 @@
 .signaling-inspection-expanded > .signaling-separator { display:none !important; }
 .signaling-inspection-expanded > #inspection { flex:1 1 0 !important; min-height:0; }
 .signaling-workspace:has(.signaling-inspection-expanded) { height:calc(100dvh - var(--app-header-offset) - 25px); min-height:0; }
+html.app-header-floating:not(.app-fullscreen) .signaling-workspace:has(.signaling-inspection-expanded) { margin-top:56px; height:calc(100dvh - var(--app-header-offset) - 81px); }
