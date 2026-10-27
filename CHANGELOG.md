@@ -1,21 +1,23 @@
-## Unreleased — minor — Paramètres de parsing projet L3 (Agent BC1)
+## 1.114.0 (minor) — BC4-FRONT 2026-10-27 — Gestion des projets L1–L3 (Agent BC1)
+
+### L3 — Paramètres de parsing projet
 
 - Stocke les choix Light/Deep et binning temps/distance comme défauts projet.
 - Fige le contrat de parsing sur chaque capture et chaque job ; les modifications futures du projet ne réécrivent aucun snapshot.
 - Conserve les données brutes : le contrat `query-binning-v1` réserve l’agrégation aux requêtes.
 
-## Unreleased — minor — Partage nominatif des projets L2 (Agent BC1)
+### L2 — Partage nominatif des projets
 
 - Ajoute la gestion des partages en lecture seule par adresse e-mail exacte depuis chaque ligne projet.
 - N'expose aucun annuaire utilisateur et répercute immédiatement ajout et révocation.
 
-## Unreleased (minor) — BC4-FRONT — Propriété et visibilité des projets L1 (Agent BC1)
+### L1 — Propriété et visibilité des projets
 
 - Rend la visibilité privée/publique obligatoire dans le dialogue de création existant et transmet cette valeur au backend.
 - Ajoute le filtre `Mes projets / Tous les projets` dans la barre existante, sans modifier la structure de la page.
 - Affiche dans l’en-tête le rôle réel de la session au lieu du libellé fixe « Radio Engineer ».
 
-## Unreleased — patch (test) — Garde contrat Metrics obligatoire (Agent BC1)
+### Tests — Garde contrat Metrics obligatoire
 
 - Aligne le garde manuel Metrics sur l'enveloppe `MetricCatalogResponse` introduite par l'API 0.80.0 et vérifie la parité des feuilles avec `catalog_release.n_leaves` au lieu d'un total historique codé en dur.
 - L'absence de `BC2_METRICS_AUDIT` fait désormais échouer explicitement le garde au lieu de le marquer `SKIP`.
