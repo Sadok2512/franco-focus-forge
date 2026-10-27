@@ -67,6 +67,24 @@
       "public": "Public",
       "privateHint": "Only you can access this project.",
       "publicHint": "All authenticated users can view this project."
+    },
+    "decodeLevel": {
+      "label": "Decode level",
+      "light": "Light",
+      "deep": "Deep"
+    },
+    "binningMode": {
+      "label": "Binning mode",
+      "temporal": "Time",
+      "spatial": "Distance"
+    },
+    "temporalResolution": {
+      "label": "Temporal resolution",
+      "native": "Native — log granularity",
+      "native_title": "Native: no aggregation, every record from the log"
+    },
+    "spatialBinM": {
+      "label": "Spatial bin size"
     }
   },
   "metrics": {
