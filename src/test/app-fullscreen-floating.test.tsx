@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { useAppFullscreen } from "@/lib/app-fullscreen";
 
@@ -11,7 +11,7 @@ const setFullscreen = (on: boolean) => {
     configurable: true,
     value: on ? document.documentElement : null,
   });
-  document.dispatchEvent(new Event("fullscreenchange"));
+  act(() => document.dispatchEvent(new Event("fullscreenchange")));
 };
 
 beforeEach(() => {
