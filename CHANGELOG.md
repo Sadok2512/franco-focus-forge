@@ -1,3 +1,8 @@
+## 1.113.4 (patch) — BC4-FRONT 2026-10-27 — Garde contrat Metrics obligatoire (Agent BC1)
+
+- Aligne le garde manuel Metrics sur l'enveloppe `MetricCatalogResponse` introduite par l'API 0.80.0 et vérifie la parité des feuilles avec `catalog_release.n_leaves` au lieu d'un total historique codé en dur.
+- L'absence de `BC2_METRICS_AUDIT` fait désormais échouer explicitement le garde au lieu de le marquer `SKIP`.
+
 ## 1.113.3 (patch) — BC4-FRONT 2026-10-27 — Tooltip cause incomplete + offset toolbar Signaling header flottant (Agent BC3)
 
 E4 Codex67 : PBA/PBC « — ms · incomplete » muet. Cause tracée au
