@@ -541,6 +541,8 @@
   },
   "sigTable": {
     "title": "Signaling messages",
+    "fullscreen": "Messages full screen",
+    "exitFullscreen": "Exit messages full screen",
     "count_one": "{{n}} message",
     "count_other": "{{n}} messages",
     "countPending": "Messages",

@@ -47,10 +47,13 @@ import {
   LogOut,
   MapPin,
   MapPinOff,
+  Maximize,
+  Minimize,
   RadioTower,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
+import { useElementFullscreen } from "@/lib/element-fullscreen";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1135,6 +1138,7 @@ export function SignalingPage({
           isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
         };
   const tableScroll = useRef<HTMLDivElement | null>(null);
+  const messagesFs = useElementFullscreen<HTMLElement>();
   useEffect(() => {
     if (seq === undefined) return;
     const id = requestAnimationFrame(() => {
@@ -1738,6 +1742,7 @@ export function SignalingPage({
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
                   <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
                     <section
+                      ref={messagesFs.ref}
                       className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
                       aria-label={t("sigTable.title")}
                     >
@@ -1929,6 +1934,22 @@ export function SignalingPage({
                           >
                             <FilterX size={14} aria-hidden="true" />
 
+                          </button>
+                          <button
+                            type="button"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
+                            title={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
+                            aria-pressed={messagesFs.active}
+                            disabled={!messagesFs.supported}
+                            data-testid="sig-messages-fullscreen"
+                            onClick={() => void messagesFs.toggle()}
+                          >
+                            {messagesFs.active ? (
+                              <Minimize size={14} aria-hidden="true" />
+                            ) : (
+                              <Maximize size={14} aria-hidden="true" />
+                            )}
                           </button>
                         </div>
                       </header>
