@@ -171,3 +171,11 @@
 .signaling-inspection-expanded > #inspection { flex:1 1 0 !important; min-height:0; }
 .signaling-workspace:has(.signaling-inspection-expanded) { height:calc(100dvh - var(--app-header-offset) - 25px); min-height:0; }
 html.app-header-floating:not(.app-fullscreen) .signaling-workspace:has(.signaling-inspection-expanded) { margin-top:56px; height:calc(100dvh - var(--app-header-offset) - 81px); }
+
+/* Netteté (Signaling uniquement) : textes min 12 px, gris plus foncé, en-tête plein. */
+.signaling-workspace { --muted-foreground: color-mix(in srgb, var(--foreground) 72%, var(--background)); --sig-table-muted: color-mix(in srgb, var(--foreground) 70%, var(--background)); -webkit-font-smoothing: antialiased; }
+.signaling-workspace :is(.text-\[9px\], .text-\[10px\], .text-\[11px\], .text-xs) { font-size: 12px !important; line-height: 1.4; }
+.signaling-workspace :is(.sig-select, .sig-tool, .sig-table thead th) { font-size: 12px; }
+.signaling-workspace .sig-table { font-size: 13px; }
+.signaling-cursor-tooltip, .signaling-rf-readout, .signaling-name-tag { font-size: 12px; }
+html:has(.signaling-workspace) .app-header { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; background: var(--background) !important; }
