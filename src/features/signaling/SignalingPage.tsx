@@ -1935,6 +1935,22 @@ export function SignalingPage({
                             <FilterX size={14} aria-hidden="true" />
 
                           </button>
+                          <button
+                            type="button"
+                            className="sig-tool sig-tool-icon"
+                            aria-label={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
+                            title={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
+                            aria-pressed={messagesFs.active}
+                            disabled={!messagesFs.supported}
+                            data-testid="sig-messages-fullscreen"
+                            onClick={() => void messagesFs.toggle()}
+                          >
+                            {messagesFs.active ? (
+                              <Minimize size={14} aria-hidden="true" />
+                            ) : (
+                              <Maximize size={14} aria-hidden="true" />
+                            )}
+                          </button>
                         </div>
                       </header>
                       <div
