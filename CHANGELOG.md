@@ -1,3 +1,9 @@
+## 1.111.3 (patch) — BC4-FRONT 2026-10-27 — Signaling centré sur les points RSRP (Agent BC1)
+
+- À la première ouverture de Signaling View, la capture déclarée `env=incar` par l'API est sélectionnée avant la première capture générique, sans parcourir ni charger toutes les sessions.
+- La préférence de capture passe en v2 afin d'oublier l'ancienne sélection automatique de la première capture ; les choix explicites suivants restent partagés entre KPI et Signaling.
+- La couche existante conserve son cadrage automatique sur l'emprise des points RSRP réels et n'affiche aucune coordonnée inventée.
+
 ## 1.111.2 (patch) — BC4-FRONT 2026-10-27 — Clé cache /metrics dérivée du sha + garde GL1 (Agent BC3)
 
 Suivi 1.111.1 : le `SCHEMA_PREFIX` manuel était fragile (fallait

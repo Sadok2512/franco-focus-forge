@@ -19,6 +19,7 @@ import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
+import { selectSignalingCapture } from "./capture-selection";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
 import type { PanelImperativeHandle } from "react-resizable-panels";
@@ -1047,10 +1048,7 @@ export function SignalingPage({
     queryKey: ["signaling-captures", projectId],
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
   });
-  const capture =
-    sharedCapture && caps.data?.captures.some((c) => c.capture_id === sharedCapture)
-      ? sharedCapture
-      : caps.data?.captures[0]?.capture_id;
+  const capture = selectSignalingCapture(caps.data?.captures ?? [], sharedCapture);
   const captureRadio = useQuery({
     queryKey: ["signaling-rf-radio", projectId, capture],
     enabled: !!capture,
