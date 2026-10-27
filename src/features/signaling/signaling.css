@@ -1,4 +1,12 @@
 .signaling-workspace { height: calc(100dvh - var(--app-header-offset) - 25px); min-height: 650px; }
+/* 1.113.3 BC3 E5a — en mode header flottant (position: fixed, pas sticky),
+ * la toolbar Signaling démarre à y=0 du workspace et passe SOUS le header
+ * 56px haut. On ajoute un padding-top équivalent au header pour la pousser
+ * sous. Hors mode floating, le header sticky prend sa place normale et le
+ * padding reste 0 (sélecteur :where ciblé sur .app-header-floating).
+ */
+:where(html.app-header-floating) .signaling-workspace > header,
+:where(html.app-header-floating) .signaling-workspace .sig-toolbar { padding-top: calc(var(--app-header-offset) + 4px); }
 .signaling-pane { height: 100%; min-height: 0; min-width: 0; border-radius: 9px; box-shadow: 0 2px 7px color-mix(in srgb, var(--foreground) 4%, transparent); }
 .signaling-separator { flex: 0 0 9px; position: relative; border-radius: 4px; outline-offset: -2px; }
 .signaling-separator:hover, .signaling-separator:focus-visible { background: color-mix(in srgb, var(--primary) 18%, transparent); }

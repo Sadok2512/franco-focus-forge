@@ -1,3 +1,26 @@
+## 1.113.3 (patch) — BC4-FRONT 2026-10-27 — Tooltip cause incomplete + offset toolbar Signaling header flottant (Agent BC3)
+
+E4 Codex67 : PBA/PBC « — ms · incomplete » muet. Cause tracée au
+`nmf_event_pair.outcome='incomplete'` + `cause='missing_terminal_event'`
+quand PBA n'a pas de PBC/PBD terminal (confirmed par SQL direct sur
+seq=37862). Fix : `EventRibbon.tsx:306-311` tooltip SVG expose la
+cause explicite dans le `<title>` existant, format `… · incomplete
+(missing_terminal_event)`. Design conservé, gris jamais muet.
+
+E5a Codex67 : « Filters/Reset » Signaling passent sous la navbar en
+mode header flottant. Fix : `signaling.css:1` règle `:where(html.app-
+header-floating) .signaling-workspace > header, .sig-toolbar { padding
+-top: calc(var(--app-header-offset) + 4px); }`. Padding conditionnel,
+pas de redesign.
+
+E5b (DÉCLARÉ OUVERT, pas livré ici) : stack flex overlays Map
+(DriveRsrpLayer / fullscreen / badge / GPS msg / AI) nécessite wrapper
+flex sur `KpiMapOSM.tsx:460-500`. Reporté pour validation user sur
+stratégie de stacking.
+
+Branche `fix/e4e5-tooltip-cause-overlay-stack` depuis `5753cec`. Pas de
+rebuild sans GO user. Vérifier manuellement à 1920×1080 + 1280×720.
+
 ## 1.113.2 (patch) — BC4-FRONT 2026-10-27 — Récupération automatique des points RSRP Map (Agent BC1)
 
 - La Map abandonne une capture restaurée ou choisie par défaut lorsqu'elle ne produit aucun point RSRP géolocalisé, puis essaie une seule fois la capture `incar` suivante.

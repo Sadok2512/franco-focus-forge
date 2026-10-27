@@ -304,11 +304,14 @@ export function EventRibbon({
               "data-testid": `ribbon-event-${e.id}`,
             };
             if (e.kind === "bar" || t1 > t0) {
+              // 1.113.3 BC3 E4 — tooltip incomplete expose la cause explicite
+              // (missing_terminal_event, capture_clock_regression, …) ; sans
+              // cause → gris muet est interdit, « incomplete » suffit.
               return (
                 <g key={e.id} {...common}>
                   <title>{`${e.label} · lane=${e.lane} · seq=${e.seq}${
                     e.duration_ms != null ? ` · ${e.duration_ms.toFixed(0)} ms` : ""
-                  } · ${e.link_rule}`}</title>
+                  }${e.outcome === "incomplete" ? ` · incomplete${e.cause ? ` (${e.cause})` : ""}` : ""} · ${e.link_rule}`}</title>
                   <rect
                     x={x0}
                     y={y - 7}
