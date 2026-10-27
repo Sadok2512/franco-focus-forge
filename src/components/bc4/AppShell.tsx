@@ -179,7 +179,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-dvh w-full min-w-0 flex-col bg-background">
+    <div className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-clip bg-background">
       {fullscreen && floating && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
       <header
         ref={headerRef}

@@ -307,8 +307,21 @@ html[data-density="comfortable"] body { font-size: 14px; }
  * transpalette translucide au-dessus du contenu. En plein écran elle se
  * replie en plus hors champ et glisse en place quand le pointeur atteint le
  * bord supérieur ou que le clavier y entre. */
-html { --app-header-offset: 56px; }
-html.app-header-floating { --app-header-offset: 0px; }
+html { --app-header-offset: 56px; --project-header-clearance: 0px; }
+html.app-header-floating { --app-header-offset: 0px; --project-header-clearance: 56px; }
+html.app-header-floating.app-fullscreen { --project-header-clearance: 0px; }
+
+/* Flow pages keep their first actions accessible below a visible overlay.
+ * Fullscreen workspaces retain the full height when that overlay retracts. */
+.project-fluid-page {
+  padding-top: calc(var(--project-header-clearance) + 12px);
+}
+@media (min-width: 640px) {
+  .project-fluid-page { padding-top: calc(var(--project-header-clearance) + 20px); }
+}
+@media (min-width: 1024px) {
+  .project-fluid-page { padding-top: calc(var(--project-header-clearance) + 24px); }
+}
 
 html.app-header-floating .app-header {
   position: fixed;

@@ -289,7 +289,7 @@ function ProjectsPage() {
   });
 
   return (
-    <div className="w-full min-w-0 p-3 sm:p-5 lg:p-6">
+    <div className="project-fluid-page w-full min-w-0 p-3 sm:p-5 lg:p-6">
       <div className="min-w-0 space-y-5">
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
           <div className="min-w-0">
