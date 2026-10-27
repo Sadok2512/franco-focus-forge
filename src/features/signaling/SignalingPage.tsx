@@ -8,7 +8,7 @@ import { TimeNavigator } from "./TimeNavigator";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
@@ -1038,7 +1038,7 @@ export function SignalingPage({
     syncOverview(mapVisible, next);
   };
   const syncFromPanel = (
-    ref: React.RefObject<PanelImperativeHandle | null>,
+    ref: RefObject<PanelImperativeHandle | null>,
     current: boolean,
     set: (v: boolean) => void,
   ) => {
@@ -1446,6 +1446,7 @@ export function SignalingPage({
             maxSize={narrow ? "50%" : 360}
             collapsible
             collapsedSize={44}
+            onResize={() => syncFromPanel(filtersPanelRef, !sidebarCollapsed, (open) => setSidebarCollapsed(!open))}
           >
             {sidebarCollapsed ? (
               <aside
@@ -1592,6 +1593,7 @@ export function SignalingPage({
                     minSize={timelineVisible ? 20 : 0}
                     collapsible
                     collapsedSize={0}
+                    onResize={() => syncFromPanel(timelinePanelRef, timelineVisible, setTimelineVisible)}
                     data-testid="signaling-timeline-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
@@ -1744,6 +1746,7 @@ export function SignalingPage({
                     collapsible
                     collapsedSize={0}
                     defaultSize={40}
+                    onResize={() => syncFromPanel(mapPanelRef, mapVisible, setMapVisible)}
                     data-testid="signaling-map-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
