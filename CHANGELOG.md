@@ -1,3 +1,43 @@
+## 1.114.1 (patch) — BC4-FRONT 2026-10-27 — i18n Nouveau projet + cache-bust (Agent BC3)
+
+Régression visuelle rapportée par Codex67 : le dialogue « Nouveau projet »
+servi en production (bundle 1.114.0 image sha 290800514a50) n'affichait
+que le champ `Nom du projet`, sans les champs BC1 (visibility, decode
+level, binning mode, temporal resolution, spatial bin).
+
+Investigation par le CONTENU :
+
+1. Source `src/features/projects/CreateProjectDialog.tsx` sur main 03eabbc
+   = 198 lignes, contient tous les champs BC1 (visibility radios,
+   decodeLevel/binningMode selects, temporalResolution/spatialBinM
+   conditionnels). `git log 6936774..HEAD -- …` **vide** : aucun commit
+   postérieur ne modifie ce fichier.
+
+2. Bundle `_app.projects-p2HxYvt7.js` dans `bc4-front-v2:1.114.0` : grep
+   confirme présence de `visibility`, `parse_decode_level`,
+   `parse_temporal_resolution`, `decode_level`, `temporal_resolution`
+   dans le code JS minifié.
+
+3. Merge 03eabbc "synchronize GitHub signaling updates" touche
+   UNIQUEMENT `src/features/signaling/SignalingPage.tsx` (+40 lignes) et
+   `signaling.css` (+8 lignes). **N'écrase PAS** CreateProjectDialog ni
+   `_app.projects.tsx` ni `lib/api/projects.ts`.
+
+Cause probable : cache browser ou tunnel cloudflared servant un bundle
+antérieur à `b9aaa3a` (merge BC1 L1-L3). Correctif :
+
+- Ajout des clés i18n manquantes dans `src/locales/{fr,en}.json` :
+  `projects.decodeLevel.{label,light,deep}`, `projects.binningMode.
+  {label,temporal,spatial}`, `projects.temporalResolution.{label,native,
+  native_title}`, `projects.spatialBinM.label`. CreateProjectDialog
+  utilise des strings littérales françaises pour ces 4 blocs — ces clés
+  i18n sont posées pour cohérence future, pas pour corriger un rendu.
+- Rebuild `bc4-front-v2:1.114.1` : nouveau hash de bundle, les anciens
+  bundles mis en cache côté browser sont invalidés automatiquement
+  (vite/nitro content-hashed filenames).
+
+**Pas de redessin** : le dialog BC1 reste identique.
+
 ## 1.114.0 (minor) — BC4-FRONT 2026-10-27 — Gestion des projets L1–L3 (Agent BC1)
 
 ### L3 — Paramètres de parsing projet
