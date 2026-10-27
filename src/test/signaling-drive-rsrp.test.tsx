@@ -17,15 +17,21 @@ import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
 function mapDouble() {
   const source = { setData: vi.fn() };
-  let added = false;
+  const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   return {
     source,
-    getSource: vi.fn(() => (added ? source : undefined)),
-    addSource: vi.fn(() => {
-      added = true;
+    getSource: vi.fn((id: string) => sources.get(id)),
+    addSource: vi.fn((id: string) => {
+      sources.set(id, id === "bc4-drive-rsrp" ? source : { setData: vi.fn() });
     }),
     addLayer: vi.fn(),
-    getLayer: vi.fn(() => (added ? {} : undefined)),
+    getLayer: vi.fn((id: string) =>
+      sources.has(
+        id === "bc4-drive-rsrp-points" ? "bc4-drive-rsrp" : "bc4-drive-rsrp-serving-links",
+      )
+        ? {}
+        : undefined,
+    ),
     getStyle: vi.fn(() => ({ layers: [] })),
     isStyleLoaded: vi.fn(() => true),
     setLayoutProperty: vi.fn(),

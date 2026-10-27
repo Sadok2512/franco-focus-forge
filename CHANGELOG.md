@@ -1,3 +1,9 @@
+## 1.113.2 (patch) — BC4-FRONT 2026-10-27 — Récupération automatique des points RSRP Map (Agent BC1)
+
+- La Map abandonne une capture restaurée ou choisie par défaut lorsqu'elle ne produit aucun point RSRP géolocalisé, puis essaie une seule fois la capture `incar` suivante.
+- Une capture imposée par `?capture_id=` ou choisie dans la liste reste strictement sélectionnée, même vide. La capture de remplacement n'est mémorisée que lorsqu'elle fournit réellement des points.
+- Le panneau indique la capture vide écartée et la capture réellement affichée, sans coordonnée ni mesure inventée.
+
 ## 1.113.1 (patch) — BC4-FRONT 2026-10-27 — Tri et signalement des échecs fichiers (Agent BC1)
 
 - Chaque en-tête du tableau des fichiers est triable dans les deux sens ; les valeurs absentes restent en fin de page.

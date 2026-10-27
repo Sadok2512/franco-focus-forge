@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
@@ -63,7 +63,22 @@ export function DriveRsrpLayer({
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
+  const explicitCapture = useRef(false);
+  const automaticRecoveryAttempted = useRef(false);
+  const previousProjectId = useRef(projectId);
+  const [automaticRecovery, setAutomaticRecovery] = useState<{
+    from: string;
+    to: string;
+  }>();
   useEffect(() => setPrefs(readPrefs(store, DEFAULT)), [store]);
+  useEffect(() => {
+    if (previousProjectId.current === projectId) return;
+    previousProjectId.current = projectId;
+    explicitCapture.current = false;
+    automaticRecoveryAttempted.current = false;
+    setAutomaticRecovery(undefined);
+    setCaptureId(undefined);
+  }, [projectId]);
   const update = (patch: Partial<Prefs>) =>
     setPrefs((p) => {
       const next = { ...p, ...patch };
@@ -78,20 +93,26 @@ export function DriveRsrpLayer({
     enabled: prefs.on && !embedded,
   });
   const lastKey = `${LAST_CAPTURE_STORE}.${projectId}`;
-  const preferredCaptureId = useMemo(() => {
+  const preferredCapture = useMemo(() => {
     if (embedded || !captures.data?.length) return undefined;
     const fromUrl = new URLSearchParams(window.location.search).get("capture_id");
     const last = localStorage.getItem(lastKey);
     const has = (id: string | null) => captures.data.find((c) => c.capture_id === id)?.capture_id;
-    return has(fromUrl) ?? has(last);
+    const urlCapture = has(fromUrl);
+    return urlCapture
+      ? { id: urlCapture, explicit: true }
+      : has(last)
+        ? { id: has(last)!, explicit: false }
+        : undefined;
   }, [captures.data, embedded, lastKey]);
   useEffect(() => {
     if (embedded || captureId || !captures.data?.length) return;
     // Environment is source metadata. Prefer one drive capture, then load
     // only that capture's rows; never probe every session for GPS.
     const drive = captures.data.find((capture) => capture.env === "incar")?.capture_id;
-    setCaptureId(preferredCaptureId ?? drive ?? captures.data[0]?.capture_id);
-  }, [captureId, captures.data, embedded, preferredCaptureId]);
+    explicitCapture.current = preferredCapture?.explicit ?? false;
+    setCaptureId(preferredCapture?.id ?? drive ?? captures.data[0]?.capture_id);
+  }, [captureId, captures.data, embedded, preferredCapture]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
   const analysis = useQuery({
     queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
@@ -186,6 +207,43 @@ export function DriveRsrpLayer({
     () => driveRsrpDiagnostics(analysis.data, allPositions),
     [analysis.data, allPositions],
   );
+
+  // A remembered/default capture may be a valid session with no geolocated
+  // RSRP. Try drive captures one at a time until one produces real points.
+  // URL and dropdown choices are explicit and are therefore never replaced.
+  useEffect(() => {
+    if (
+      embedded ||
+      explicitCapture.current ||
+      automaticRecoveryAttempted.current ||
+      !effectiveCaptureId ||
+      !analysis.isSuccess ||
+      (needsGps && !gps.isSuccess) ||
+      features.length > 0
+    )
+      return;
+
+    automaticRecoveryAttempted.current = true;
+    localStorage.removeItem(lastKey);
+    const driveCaptures = captures.data?.filter((capture) => capture.env === "incar") ?? [];
+    const currentIndex = driveCaptures.findIndex(
+      (capture) => capture.capture_id === effectiveCaptureId,
+    );
+    const next = driveCaptures[currentIndex >= 0 ? currentIndex + 1 : 0]?.capture_id;
+    if (!next) return;
+
+    setAutomaticRecovery({ from: effectiveCaptureId, to: next });
+    setCaptureId(next);
+  }, [
+    analysis.isSuccess,
+    captures.data,
+    effectiveCaptureId,
+    embedded,
+    features.length,
+    gps.isSuccess,
+    lastKey,
+    needsGps,
+  ]);
 
   // The capture investigated in Signaling (or picked on Map) is reused by the
   // other map, so switching pages keeps showing the same drive — but only when
@@ -447,35 +505,40 @@ export function DriveRsrpLayer({
         />
       </div>
       {status && (
-        <div className="flex items-center justify-between gap-2 border-t px-3 py-1.5">
-          <p role="status" className="text-muted-foreground">
+        <div className="space-y-1.5 border-t px-3 py-1.5">
+          <p role="status" className="break-words text-muted-foreground">
             {status}
+            {automaticRecovery && features.length > 0
+              ? ` · ${t("mapWorkspace.driveRsrpCaptureRecovered", automaticRecovery)}`
+              : ""}
             {linkFeatures.length > 0
               ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
               : ""}
           </p>
-          {!analysis.isLoading && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-6 shrink-0 px-2 text-[11px]"
-              onClick={() => setDiagOpen(true)}
-            >
-              {t("rsrpDiagnosis.open")}
-            </Button>
-          )}
-          {features.length > 0 && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-6 shrink-0 px-2 text-[11px]"
-              onClick={frame}
-            >
-              {t("mapWorkspace.driveRsrpFrame")}
-            </Button>
-          )}
+          <div className="flex justify-end gap-1.5">
+            {!analysis.isLoading && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 shrink-0 px-2 text-[11px]"
+                onClick={() => setDiagOpen(true)}
+              >
+                {t("rsrpDiagnosis.open")}
+              </Button>
+            )}
+            {features.length > 0 && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-6 shrink-0 px-2 text-[11px]"
+                onClick={frame}
+              >
+                {t("mapWorkspace.driveRsrpFrame")}
+              </Button>
+            )}
+          </div>
         </div>
       )}
       <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
@@ -486,7 +549,11 @@ export function DriveRsrpLayer({
               aria-label={t("mapWorkspace.driveRsrpCapture")}
               className="w-full rounded border bg-background px-1 py-0.5"
               value={captureId ?? ""}
-              onChange={(e) => setCaptureId(e.target.value)}
+              onChange={(e) => {
+                explicitCapture.current = true;
+                setAutomaticRecovery(undefined);
+                setCaptureId(e.target.value);
+              }}
             >
               {captures.data.map((c) => (
                 <option key={c.capture_id} value={c.capture_id}>

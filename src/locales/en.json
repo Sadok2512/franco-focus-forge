@@ -919,6 +919,7 @@
     "driveRsrpError": "Drive points unavailable.",
     "driveRsrpNone": "No RSRP measurements in this project.",
     "driveRsrpNoGps": "RSRP measured but no GPS position.",
+    "driveRsrpCaptureRecovered": "Capture {{from}} has no geolocated point; showing capture {{to}}",
     "driveRsrpCount_one": "{{count}} point shown",
     "driveRsrpCount_other": "{{count}} points shown",
     "driveRsrpPopup": "RSRP: {{value}} {{unit}}\nCapture: {{capture}}\nSeq: {{seq}}",

@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
@@ -24,15 +24,21 @@ import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
 function mapDouble() {
   const source = { setData: vi.fn() };
-  let added = false;
+  const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
   return {
     source,
-    getSource: vi.fn(() => (added ? source : undefined)),
-    addSource: vi.fn(() => {
-      added = true;
+    getSource: vi.fn((id: string) => sources.get(id)),
+    addSource: vi.fn((id: string) => {
+      sources.set(id, id === "bc4-drive-rsrp" ? source : { setData: vi.fn() });
     }),
     addLayer: vi.fn(),
-    getLayer: vi.fn(() => (added ? {} : undefined)),
+    getLayer: vi.fn((id: string) =>
+      sources.has(
+        id === "bc4-drive-rsrp-points" ? "bc4-drive-rsrp" : "bc4-drive-rsrp-serving-links",
+      )
+        ? {}
+        : undefined,
+    ),
     getStyle: vi.fn(() => ({ layers: [] })),
     isStyleLoaded: vi.fn(() => true),
     setLayoutProperty: vi.fn(),
@@ -54,6 +60,7 @@ const rows = (lat: number | null, lon: number | null, v: number | null) => ({
 describe("Map page drive RSRP paired with the capture GPS", () => {
   beforeEach(() => {
     localStorage.clear();
+    window.history.replaceState({}, "", "/map");
     vi.clearAllMocks();
     api.captures.mockResolvedValue({
       captures: [{ capture_id: "cap-1", label: "Drive 1", env: "incar" }],
@@ -142,5 +149,78 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBe("cap-map");
     expect(api.analysis).toHaveBeenCalledTimes(1);
     expect(api.points).not.toHaveBeenCalled();
+  });
+
+  it("replaces a remembered empty capture with the next incar capture", async () => {
+    localStorage.setItem("bc4.driveRsrp.lastCapture.Test_3", "cap-empty");
+    api.captures.mockResolvedValue({
+      captures: [
+        { capture_id: "cap-empty", label: "Empty drive", env: "incar" },
+        { capture_id: "cap-map", label: "Mapped drive", env: "incar" },
+        { capture_id: "cap-third", label: "Third drive", env: "incar" },
+      ],
+    });
+    api.analysis.mockImplementation(async (_project: string, capture: string) =>
+      capture === "cap-map"
+        ? { ...rows(50.378, 3.478, -95), capture_id: capture }
+        : { ...rows(null, null, null), capture_id: capture },
+    );
+
+    const map = mapDouble();
+    mount(map);
+
+    await waitFor(() =>
+      expect(localStorage.getItem("bc4.driveRsrp.lastCapture.Test_3")).toBe("cap-map"),
+    );
+    expect(api.analysis.mock.calls.map((call) => call[1])).toEqual(["cap-empty", "cap-map"]);
+    expect(api.analysis.mock.calls.some((call) => call[1] === "cap-third")).toBe(false);
+  });
+
+  it("never replaces a capture explicitly selected in the URL", async () => {
+    window.history.replaceState({}, "", "/map?capture_id=cap-empty");
+    api.captures.mockResolvedValue({
+      captures: [
+        { capture_id: "cap-empty", label: "Empty drive", env: "incar" },
+        { capture_id: "cap-map", label: "Mapped drive", env: "incar" },
+      ],
+    });
+    api.analysis.mockResolvedValue(rows(null, null, null));
+
+    mount(mapDouble());
+
+    await waitFor(() => expect(api.analysis).toHaveBeenCalledTimes(1));
+    expect(api.analysis).toHaveBeenCalledWith(
+      "Test_3",
+      "cap-empty",
+      expect.anything(),
+      expect.anything(),
+      expect.anything(),
+      expect.any(AbortSignal),
+    );
+  });
+
+  it("keeps an empty capture explicitly selected from the dropdown", async () => {
+    api.captures.mockResolvedValue({
+      captures: [
+        { capture_id: "cap-map", label: "Mapped drive", env: "incar" },
+        { capture_id: "cap-empty", label: "Empty drive", env: "incar" },
+      ],
+    });
+    api.analysis.mockImplementation(async (_project: string, capture: string) =>
+      capture === "cap-map"
+        ? { ...rows(50.378, 3.478, -95), capture_id: capture }
+        : { ...rows(null, null, null), capture_id: capture },
+    );
+
+    mount(mapDouble());
+    const panelButton = await screen.findByRole("button", { name: /Drive RSRP/ });
+    fireEvent.click(panelButton);
+    await waitFor(() => expect(screen.getByLabelText("Drive capture")).toBeInTheDocument());
+    fireEvent.change(screen.getByLabelText("Drive capture"), { target: { value: "cap-empty" } });
+    await waitFor(() =>
+      expect(api.analysis.mock.calls.some((call) => call[1] === "cap-empty")).toBe(true),
+    );
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(api.analysis.mock.calls.map((call) => call[1])).toEqual(["cap-map", "cap-empty"]);
   });
 });
