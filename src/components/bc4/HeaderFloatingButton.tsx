@@ -1,4 +1,4 @@
-import { PanelTop, PanelTopDashed } from "lucide-react";
+import { Pin, PinOff } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { setHeaderFloating, useHeaderFloating } from "@/lib/header-floating";
@@ -25,7 +25,7 @@ export function HeaderFloatingButton() {
       title={`${label} — ${t("common.headerFloatingHint")}`}
       onClick={() => setHeaderFloating(!floating)}
     >
-      {floating ? <PanelTopDashed aria-hidden="true" /> : <PanelTop aria-hidden="true" />}
+      {floating ? <PinOff aria-hidden="true" /> : <Pin aria-hidden="true" />}
     </Button>
   );
 }
