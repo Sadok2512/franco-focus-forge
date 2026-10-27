@@ -47,10 +47,13 @@ import {
   LogOut,
   MapPin,
   MapPinOff,
+  Maximize,
+  Minimize,
   RadioTower,
   Search,
   SlidersHorizontal,
 } from "lucide-react";
+import { useElementFullscreen } from "@/lib/element-fullscreen";
 import {
   DropdownMenu,
   DropdownMenuContent,
