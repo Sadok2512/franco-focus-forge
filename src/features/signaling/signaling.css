@@ -157,3 +157,5 @@
 .sig-tree-chevron { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; color:var(--muted-foreground); }
 .sig-tree-chevron:disabled { opacity:.4; }
 .sig-tree-channel-name { overflow-wrap:anywhere; }
+.sig-messages:fullscreen { border-radius:0; border:none; height:100%; width:100%; }
+.sig-messages:fullscreen .sig-toolbar { padding-inline:12px; }
