@@ -30,6 +30,7 @@ import { UNAUTH_EVENT } from "@/lib/api/http";
 import { getBackHealth } from "@/lib/api/project-kpi";
 import { useActiveProject } from "@/lib/activeProject";
 import { APP_VERSION } from "@/lib/version";
+import { AppFullscreenButton } from "./AppFullscreenButton";
 
 const NAV = [
   { to: "/projects", label: "nav.projects" },
@@ -166,6 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-1">
+          <AppFullscreenButton />
           {activeProject && (
             <div
               aria-label={t("common.activeProject", { name: activeProject.name })}

@@ -61,7 +61,7 @@ function readValidMetricsCache(pid: string): unknown | undefined {
       const k = window.localStorage.key(i);
       if (!k) continue;
       const m = KEY_RE.exec(k);
-      if (!m || m[2] !== pid) continue;
+      if (!m || !m[1] || m[2] !== pid) continue;
       const raw = window.localStorage.getItem(k);
       if (!raw) continue;
       try {
