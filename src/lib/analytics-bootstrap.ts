@@ -7,8 +7,34 @@ import { getMetrics } from "@/lib/api/metrics";
 // silencieux (SWR). Zéro invention : si le back renvoie différent, c'est
 // écrasé. ~900kB par entrée, quota localStorage = 5MB/domaine → OK pour une
 // poignée de projets ouverts dans la session.
+// 1.111.1 BC3 — Préfixe de schéma injecté dans la clé pour **buster**
+// la cache localStorage à chaque bump de forme de payload /metrics.
+// Avant ça, un bump catalog_release (ex. 2.51.1 → 2.53.0 : ajout racine
+// CAPTURE + dédoublonnage Shared) laissait l'ancien arbre v6 persisté
+// côté client — fallback_legacy baked-in indéfiniment. v2 ciblée dans
+// la clé → les anciennes entrées `bc4.cache.*` deviennent orphelines
+// (non lues) et sont écrasées à la prochaine lecture par les nouvelles
+// `bc4.cache.v2.*`. Bumper ce suffixe à chaque changement de schéma.
+const SCHEMA_PREFIX = "v2";
+
+// Purge opportuniste des entrées orphelines (ancien préfixe sans vN).
+// Zéro invention : on supprime uniquement ce que le navigateur sait
+// être du cache BC4 (`bc4.cache.`) qui n'a pas le préfixe `vN.` requis
+// par la version courante.
+if (typeof window !== "undefined") {
+  try {
+    for (let i = window.localStorage.length - 1; i >= 0; i--) {
+      const k = window.localStorage.key(i);
+      if (!k) continue;
+      if (k.startsWith("bc4.cache.") && !k.startsWith(`bc4.cache.${SCHEMA_PREFIX}.`)) {
+        window.localStorage.removeItem(k);
+      }
+    }
+  } catch { /* quota / privacy mode : ignore */ }
+}
+
 function persistedQuery<T>(key: string, fetcher: () => Promise<T>, staleTime: number) {
-  const cacheKey = `bc4.cache.${key}`;
+  const cacheKey = `bc4.cache.${SCHEMA_PREFIX}.${key}`;
   return queryOptions({
     queryKey: [key.split(".")[0], ...key.split(".").slice(1)],
     queryFn: async () => {

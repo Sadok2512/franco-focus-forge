@@ -1,3 +1,31 @@
+## 1.111.1 (patch) — BC4-FRONT 2026-10-27 — Bust localStorage cache /metrics (fallback v6 fantôme) (Agent BC3)
+
+Incident écran utilisateur Test_3, front v1.111.0, Ctrl+F5 : arbre sans
+CAPTURE, sans niveau LTE/NR, doublons `THROUGHPUT PER LAYER ×2` et
+`LINK QUALITY ×2`, pied absent. Serveur OK (`/health` 0.84.1, catalogue
+2.53.0, `/projects/4b7bfd50ddb6/metrics` → `tech_CAPTURE` en 1er, 5
+tech roots, `reason=from_catalog_release`). Cache serveur `metrics_
+catalog_cache` également OK (3 lignes, toutes `cat=2.53.0`).
+
+**Cause** : `src/lib/analytics-bootstrap.ts::persistedQuery` persiste
+chaque réponse `/metrics` dans `localStorage` sous `bc4.cache.project-
+metrics.{pid}` avec un `initialData` qui retourne la cache INSTANTA-
+NÉMENT à la 1re render (avant même le refetch SWR). Un bump
+`catalog_release.is_current` côté back **ne busait pas** cette cache
+locale ; un user qui avait ouvert Test_3 sous catalog 2.51.1 (fallback
+v6 à l'époque) voyait indéfiniment l'arbre v6 malgré Ctrl+F5 (qui vide
+le HTTP cache, pas `localStorage`).
+
+**Fix** :
+- Préfixe de schéma `v2` injecté dans la cacheKey :
+  `bc4.cache.v2.project-metrics.{pid}` ; les anciennes `bc4.cache.*`
+  deviennent orphelines, écrasées à la prochaine lecture.
+- Purge opportuniste au boot : balayage `localStorage` → suppression
+  de tout `bc4.cache.*` sans préfixe `v2.`. Zéro invention, uniquement
+  ce qui est connu BC4.
+- À chaque bump majeur du payload `/metrics` (ex. v4 → v5), bumper
+  `SCHEMA_PREFIX` dans `src/lib/analytics-bootstrap.ts`.
+
 ## 1.111.0 (minor) — BC4-FRONT 2026-10-26 — Catalog version visible dans l'en-tête Metrics catalogue (Agent BC3)
 
 Le titre « Metrics catalogue » affiche désormais la version catalog
