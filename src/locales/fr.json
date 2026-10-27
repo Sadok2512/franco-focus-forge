@@ -56,6 +56,14 @@
     "selectionSummary": "{{count}} sélectionné(s) · {{total}} options"
   },
   "projects": {
+    "backend": {
+      "reconnecting": "Reconnexion au backend…",
+      "loadError": "Impossible de charger les projets."
+    },
+    "metadata": {
+      "unavailable": "N/D",
+      "pending": "Calculé à la fin de l’import, {{done}}/{{total}} fichiers traités."
+    },
     "scope": {
       "label": "Projets",
       "my": "Mes projets",

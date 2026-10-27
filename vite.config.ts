@@ -5,6 +5,8 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import type { ServerResponse } from "node:http";
+import { isTransientUpstreamError } from "./src/lib/upstream-unavailable";
 
 // Backend upstream for the dev proxy. Resolution order :
 //   1. VITE_BC4_API_UPSTREAM si défini (ex: http://api:8000 en compose,
@@ -32,6 +34,25 @@ export default defineConfig({
           timeout: 600_000,
           proxyTimeout: 600_000,
           rewrite: (p: string) => p.replace(/^\/api/, ""),
+          configure: (proxy) => {
+            proxy.on("error", (error, _request, response) => {
+              if (!isTransientUpstreamError(error) || !("writeHead" in response)) return;
+              const serverResponse = response as ServerResponse;
+              if (serverResponse.headersSent) return;
+              serverResponse.writeHead(503, {
+                "Content-Type": "application/json; charset=utf-8",
+                "Retry-After": "3",
+              });
+              serverResponse.end(
+                JSON.stringify({
+                  detail: {
+                    code: "UPSTREAM_UNAVAILABLE",
+                    message: "Reconnexion au backend…",
+                  },
+                }),
+              );
+            });
+          },
         },
         // 1.67.0 — Proxy des tuiles OSM via le dev-server quand le poste
         // utilisateur n'a pas d'accès sortant à tile.openstreetmap.org.

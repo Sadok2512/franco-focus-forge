@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { isTransientUpstreamError, upstreamUnavailableResponse } from "./lib/upstream-unavailable";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -82,7 +83,12 @@ export default {
     try {
       const pathname = new URL(request.url).pathname;
       if (pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`)) {
-        return await proxyApiRequest(request);
+        try {
+          return await proxyApiRequest(request);
+        } catch (error) {
+          if (isTransientUpstreamError(error)) return upstreamUnavailableResponse();
+          throw error;
+        }
       }
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

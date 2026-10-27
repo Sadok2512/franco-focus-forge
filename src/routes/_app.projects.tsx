@@ -40,7 +40,7 @@ import {
 } from "@/features/projects/ProjectRowNmfAction";
 import { ProjectRowDetails } from "@/features/projects/ProjectRowDetails";
 import { ProjectShareDialog } from "@/features/projects/ProjectShareDialog";
-import { getSession } from "@/lib/api/http";
+import { getSession, isUpstreamUnavailable } from "@/lib/api/http";
 import { SuperstreamDialog } from "@/features/projects/SuperstreamDialog";
 import { SuperstreamTree, superstreamsKey } from "@/features/projects/SuperstreamTree";
 import { listSuperstreams, type Superstream } from "@/lib/api/superstreams";
@@ -159,6 +159,8 @@ function ProjectsPage() {
       )
         ? 5000
         : false,
+    retry: (failureCount, error) => isUpstreamUnavailable(error) && failureCount < 4,
+    retryDelay: (attempt) => Math.min(3000 * 2 ** attempt, 12000),
   });
   const [search, setSearch] = useState("");
   const [shareProject, setShareProject] = useState<Project | null>(null);
@@ -172,6 +174,8 @@ function ProjectsPage() {
   // les overlays d'upload.
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
   const { t } = useTranslation();
+  const reconnecting =
+    q.fetchStatus === "fetching" && q.failureCount > 0 && isUpstreamUnavailable(q.error);
   const [ssProject, setSsProject] = useState<Project | null>(null);
   const [ssHighlight, setSsHighlight] = useState<Record<string, string>>({});
   const ssList = useQuery({
@@ -367,14 +371,26 @@ function ProjectsPage() {
         </div>
 
         <div className="w-full min-w-0 overflow-x-auto rounded-md border bg-card">
-          {q.isPending ? (
+          {q.isPending && reconnecting ? (
+            <ErrorState
+              message={t("projects.backend.reconnecting")}
+              onRetry={() => void q.refetch()}
+            />
+          ) : q.isPending ? (
             <div className="space-y-2 p-3">
               {[0, 1, 2].map((i) => (
                 <LoadingSkeleton key={i} className="h-10" />
               ))}
             </div>
           ) : q.isError ? (
-            <ErrorState message="Impossible de charger les projets." onRetry={() => q.refetch()} />
+            <ErrorState
+              message={
+                isUpstreamUnavailable(q.error)
+                  ? t("projects.backend.reconnecting")
+                  : t("projects.backend.loadError")
+              }
+              onRetry={() => void q.refetch()}
+            />
           ) : !rows.length ? (
             <EmptyState title="Aucun projet">Aucun projet ne correspond aux critères.</EmptyState>
           ) : (
@@ -410,6 +426,13 @@ function ProjectsPage() {
                 const activeImport =
                   p.import_job != null &&
                   ["queued", "decoding", "finalizing"].includes(p.import_job.status);
+                const pendingMetadataReason =
+                  activeImport && p.import_job
+                    ? t("projects.metadata.pending", {
+                        done: p.import_job.files_done + p.import_job.files_error,
+                        total: p.import_job.files_total,
+                      })
+                    : undefined;
                 const S = STATUS[effectiveStatus];
                 // Captures : l'overlay (rapport NMF) prime quand il
                 // existe. Jamais 0 par défaut — on retombe sur
@@ -462,11 +485,17 @@ function ProjectsPage() {
                       </td>
                       <td className="px-4 py-3 font-semibold">{p.name}</td>
                       <td className="max-w-48 px-4 py-3 text-xs text-muted-foreground">
-                        {p.geography || "N/D"}
+                        {p.geography || (
+                          <span title={pendingMetadataReason}>
+                            {t("projects.metadata.unavailable")}
+                          </span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-xs">
                         {operatorLabels.length === 0 ? (
-                          <span className="text-muted-foreground">N/D</span>
+                          <span className="text-muted-foreground" title={pendingMetadataReason}>
+                            {t("projects.metadata.unavailable")}
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {operatorLabels.map((label) => (
@@ -477,7 +506,9 @@ function ProjectsPage() {
                       </td>
                       <td className="px-4 py-3 text-xs">
                         {techLabels.length === 0 ? (
-                          <span className="text-muted-foreground">N/D</span>
+                          <span className="text-muted-foreground" title={pendingMetadataReason}>
+                            {t("projects.metadata.unavailable")}
+                          </span>
                         ) : (
                           <div className="flex flex-wrap gap-1">
                             {techLabels.map((label) => (
