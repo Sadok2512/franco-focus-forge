@@ -27,6 +27,12 @@ export const ProjectSchema = z.object({
   id: z.string(),
   owner_id: z.string(),
   visibility: z.enum(["private", "public"]),
+  parse_decode_level: z.enum(["light", "deep"]),
+  parse_binning_mode: z.enum(["temporal", "spatial"]),
+  parse_temporal_resolution: z.enum(["native", "1ms", "10ms", "100ms", "1s"]).nullable(),
+  parse_spatial_bin_m: z
+    .union([z.literal(10), z.literal(25), z.literal(50), z.literal(100)])
+    .nullable(),
   name: z.string(),
   geography: z.string(),
   center: z.tuple([z.number(), z.number()]),

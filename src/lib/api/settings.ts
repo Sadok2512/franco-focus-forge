@@ -23,6 +23,7 @@ import {
   KpiSchema,
   OrganizationSchema,
   UserSchema,
+  UserCreatedSchema,
   UsersResponseSchema,
   type About,
   type Actor,
@@ -90,35 +91,41 @@ export async function getApiPermissions() {
   return { ...API_PERMISSIONS };
 }
 
-export async function createUser(actor: Actor, body: UserCreate): Promise<User> {
-  await wait();
-  guard(actor, "users.write");
-  const login = body.login.trim();
-  if (!/^[a-z0-9._-]{3,40}$/i.test(login))
-    fail(
-      "VALIDATION",
-      "Identifiant invalide (3–40 caractères : lettres, chiffres, . _ -).",
-      "login",
-    );
-  if (S.users.some((u) => u.login.toLowerCase() === login.toLowerCase()))
-    fail("CONFLICT", "Cet identifiant existe déjà.", "login");
-  if (!body.display_name.trim()) fail("VALIDATION", "Nom affiché requis.", "display_name");
-  const pb = passwordProblems(body.password, PASSWORD_POLICY);
-  if (pb.length) fail("VALIDATION", `Mot de passe non conforme : ${pb.join(", ")}.`, "password");
-  if (body.password !== body.password_confirm)
-    fail("VALIDATION", "La confirmation ne correspond pas.", "password_confirm");
-  // The password is validated then discarded: never stored, logged or returned.
-  const u: User = {
-    id: `u${++S.seq}`,
-    login,
-    display_name: body.display_name.trim(),
-    role: body.role,
-    active: true,
-    created_at: now(),
-    last_login_at: null,
-  };
-  S.users.push(u);
-  return UserSchema.parse(commit(u));
+export async function createUser(actor: Actor, body: UserCreate) {
+  return apiOrMock(
+    () =>
+      apiFetch("/settings/users", UserCreatedSchema, {
+        method: "POST",
+        body: JSON.stringify(body),
+      }),
+    async () => {
+      await wait();
+      guard(actor, "users.write");
+      const login = body.login.trim();
+      if (!/^[a-z0-9._-]{3,40}$/i.test(login))
+        fail(
+          "VALIDATION",
+          "Identifiant invalide (3–40 caractères : lettres, chiffres, . _ -).",
+          "login",
+        );
+      if (S.users.some((u) => u.login.toLowerCase() === login.toLowerCase()))
+        fail("CONFLICT", "Cet identifiant existe déjà.", "login");
+      if (!body.display_name.trim()) fail("VALIDATION", "Nom affiché requis.", "display_name");
+      const generated = `Mock-${crypto.randomUUID()}-A1`;
+      const u: User = {
+        id: `u${++S.seq}`,
+        login,
+        display_name: body.display_name.trim(),
+        role: body.role,
+        active: true,
+        created_at: now(),
+        last_login_at: null,
+      };
+      S.users.push(u);
+      return UserCreatedSchema.parse({ ...commit(u), initial_password: generated });
+    },
+    "createUser",
+  );
 }
 
 const activeAdmins = () => S.users.filter((u) => u.active && u.role === "admin");

@@ -102,6 +102,26 @@ export function ProjectPage({ projectId }: { projectId: string }) {
               <dt className="text-muted-foreground">Importé le</dt>
               <dd className="font-mono">{q.data.importedAt}</dd>
             </div>
+            <div>
+              <dt className="text-muted-foreground">Décodage</dt>
+              <dd className="font-medium">
+                {q.data.parse_decode_level === "deep" ? "Deep" : "Light"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Binning</dt>
+              <dd className="font-medium">
+                {q.data.parse_binning_mode === "temporal" ? "Temps" : "Distance"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-muted-foreground">Résolution</dt>
+              <dd className="font-mono">
+                {q.data.parse_binning_mode === "temporal"
+                  ? q.data.parse_temporal_resolution
+                  : `${q.data.parse_spatial_bin_m} m`}
+              </dd>
+            </div>
           </dl>
         </Card>
       ) : null}

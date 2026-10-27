@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  Share2,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createProject, deleteProject, getProjects } from "@/lib/api/client";
 import type { ProjectIngestView } from "@/lib/api/client";
+import type { CreateProjectRequest } from "@/lib/api/project-schemas";
 import { OPERATORS, TECHNOLOGIES, type Project } from "@/lib/api/schemas";
 import { useActiveProject } from "@/lib/activeProject";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
@@ -37,6 +39,8 @@ import {
   type ProjectRowNmfReport,
 } from "@/features/projects/ProjectRowNmfAction";
 import { ProjectRowDetails } from "@/features/projects/ProjectRowDetails";
+import { ProjectShareDialog } from "@/features/projects/ProjectShareDialog";
+import { getSession } from "@/lib/api/http";
 import { SuperstreamDialog } from "@/features/projects/SuperstreamDialog";
 import { SuperstreamTree, superstreamsKey } from "@/features/projects/SuperstreamTree";
 import { listSuperstreams, type Superstream } from "@/lib/api/superstreams";
@@ -139,6 +143,7 @@ function emptyOverlay(): RowOverlay {
 }
 
 function ProjectsPage() {
+  const currentUserId = getSession()?.user.id;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [overlays, setOverlays] = useState<Record<string, RowOverlay>>({});
@@ -156,6 +161,7 @@ function ProjectsPage() {
         : false,
   });
   const [search, setSearch] = useState("");
+  const [shareProject, setShareProject] = useState<Project | null>(null);
   const [status, setStatus] = useState("");
   const [op, setOp] = useState("");
   const [tech, setTech] = useState("");
@@ -196,12 +202,8 @@ function ProjectsPage() {
       return next;
     });
   }, []);
-  const createM = useMutation<
-    ProjectIngestView,
-    Error,
-    { name: string; visibility: "private" | "public" }
-  >({
-    mutationFn: ({ name, visibility }) => createProject(name, visibility),
+  const createM = useMutation<ProjectIngestView, Error, CreateProjectRequest>({
+    mutationFn: (project: CreateProjectRequest) => createProject(project),
     onSuccess: (p) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
       setShowCreate(false);
@@ -557,6 +559,12 @@ function ProjectsPage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
+                              {p.owner_id === currentUserId && (
+                                <DropdownMenuItem onSelect={() => setShareProject(p)}>
+                                  <Share2 className="h-4 w-4" aria-hidden />
+                                  Partager
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onSelect={(e) => {
                                   e.preventDefault();
@@ -633,10 +641,18 @@ function ProjectsPage() {
         onClose={() => {
           if (createM.status !== "pending") setShowCreate(false);
         }}
-        onCreate={(name, visibility) => createM.mutate({ name, visibility })}
+        onCreate={(project) => createM.mutate(project)}
         busy={createM.status === "pending"}
         error={createM.status === "error" ? createM.error : null}
       />
+      {shareProject && (
+        <ProjectShareDialog
+          projectId={shareProject.id}
+          projectName={shareProject.name}
+          open
+          onClose={() => setShareProject(null)}
+        />
+      )}
       {/* 1.6.0 — Dialog de confirmation de suppression. L'instance est
           montée en permanence et pilotée par `pendingDelete` : la
           promesse `onConfirm` RÉSOUT en succès (invalide la liste

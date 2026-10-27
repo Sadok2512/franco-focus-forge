@@ -1,3 +1,14 @@
+## Unreleased — minor — Paramètres de parsing projet L3 (Agent BC1)
+
+- Stocke les choix Light/Deep et binning temps/distance comme défauts projet.
+- Fige le contrat de parsing sur chaque capture et chaque job ; les modifications futures du projet ne réécrivent aucun snapshot.
+- Conserve les données brutes : le contrat `query-binning-v1` réserve l’agrégation aux requêtes.
+
+## Unreleased — minor — Partage nominatif des projets L2 (Agent BC1)
+
+- Ajoute la gestion des partages en lecture seule par adresse e-mail exacte depuis chaque ligne projet.
+- N'expose aucun annuaire utilisateur et répercute immédiatement ajout et révocation.
+
 ## Unreleased (minor) — BC4-FRONT — Propriété et visibilité des projets L1 (Agent BC1)
 
 - Rend la visibilité privée/publique obligatoire dans le dialogue de création existant et transmet cette valeur au backend.
@@ -63,9 +74,11 @@ dérivation automatique de la clé depuis `catalog_release.sha256`
 embarqué dans l'enveloppe `/metrics`.
 
 **Nouvelle clé pour `/metrics`** :
+
 ```
 bc4.cache.sha.{sha10}.project-metrics.{pid}
 ```
+
 où `sha10` = `catalog_release.sha256.slice(0, 10)`. Un nouveau
 catalogue produit **une nouvelle clé** ; les anciennes `bc4.cache.sha.
 {autre_sha}.project-metrics.{pid}` sont purgées **à la fin de chaque
@@ -111,6 +124,7 @@ v6 à l'époque) voyait indéfiniment l'arbre v6 malgré Ctrl+F5 (qui vide
 le HTTP cache, pas `localStorage`).
 
 **Fix** :
+
 - Préfixe de schéma `v2` injecté dans la cacheKey :
   `bc4.cache.v2.project-metrics.{pid}` ; les anciennes `bc4.cache.*`
   deviennent orphelines, écrasées à la prochaine lecture.
@@ -174,7 +188,7 @@ cat_CAPTURE → group → leaf` sans modification de MetricsCatalogSidebar
   renderer. Les feuilles sont **grises non-selectable** avec la
   raison exacte posée par le back (`CAPTURE binding WIP — Phase 2`
   pour File/Script/Task/Device, `Privacy by design — identity fields
-  never exposed by BC4` pour Identity).
+never exposed by BC4` pour Identity).
 
 Preuve back : commit `[BC3] 0.83.0 — Catalogue 2.52.0 …`,
 `/health` renvoie `catalog_version: "2.52.0"` + sha
@@ -201,6 +215,7 @@ Back 0.82.3 TableRow Task + endpoint `/captures/{cap}/sheet` déjà en place.
   (shadcn/ui) comme le panneau Info des KPI → cohérence visuelle.
 
 Preuve back (déjà en place v 0.82.3) :
+
 - GET `/projects/{pid}/captures/{cap}/sheet` → fiche JSON (préviously
   commit 6aead5e).
 - `/metrics/table` TableRow Pydantic : `task_name` + `task_index`
@@ -256,6 +271,7 @@ Preuve back (déjà en place v 0.82.3) :
 Alignement sur le back 0.80.0 (`feat/bc3-metrics-v3`) qui bascule `/metrics` sur le catalogue NFF 2.50.5 (5115 feuilles `displayed=true`, `node_id` unique par position, enveloppe `catalog_release` + `decoder_version` + `reason`).
 
 Livré :
+
 - **Pied `MetricsCatalogSidebar`** piloté par l'enveloppe : affiche `Catalog X.Y.Z · Decoder A.B.C` lu depuis `query.data.catalog_release.version` + `query.data.decoder_version`, JAMAIS en dur. Fallback explicite `legacy ({{reason}})` quand `catalog_release=null` (bootstrap frais / back pré-0.80.0). Keys i18n `metrics.footerCatalogDecoder` + `metrics.footerLegacy`.
 - **Arbre Technology → Catégorie → Métrique → Feuilles cellule** : `MetricCatalogNodeSchema.node_type` accepte désormais `"tech"`, `"category"`, `"group"`, `"metric"`, `"event"`, `"leaf"` (ancien `"group"/"metric"` conservé pour le fallback legacy catalogue_v6). Les `tech` nodes rendent en `kpi-tree-root` ; les `category` sous un tech rendent en `kpi-tree-family`.
 - **Badge PER CELL** (data-testid `per-cell-<node_id>`) dérivé du `metric_id` suffixé `@<cell_type>` : `@0`→PCell, `@199`→PSCell, `@1..31`→SCell N, `@100..131`→SCG SCell. Jamais inventé — le badge n'apparaît que si le suffixe existe.
@@ -264,14 +280,17 @@ Livré :
 - **Schema zod** `MetricCatalogResponseSchema` : `catalogue_version` relâché en `z.string()` (plus de literal `"v6"`), `tech`/`proof` relâchés en string libre (2.50.5 inclut `"documented-2.50"`, `"Shared"`, `"Other"`), `node_type` étendu, `cell` nullable string libre, enveloppe `catalog_release/decoder_version/reason` ajoutée optionnelle avec default.
 
 Hors scope (dette ouverte 3c futur) :
+
 - Pas de pop-in Task column (3c, pas dans ce lot per directive BC3).
 - Les 4329 feuilles `selectable=false` (events hors corpus simple NFF 2.50) attendent 2.2b et la matérialisation des événements complexes/deep dans Light.
 
 ## 1.106.5 (patch) — BC4-FRONT 2026-10-25 — Sites : chaque opérateur à sa couleur
+
 - Le back nomme les opérateurs en clair (« Bouygues ») alors que la légende et les couleurs parlent en codes (BYT) : la couche Sites ne reconnaissait que les codes, donc les sites Bouygues, Orange et Free prenaient le gris « inconnu » et se confondaient avec les sites non identifiés. Une clé canonique unique (code ou libellé) pilote désormais la couleur, la popup et les compteurs.
 - Les bulbes de sites affichent la répartition par opérateur (ex. « Bouygues 12 · SFR 8 ») dès qu'au moins un site est identifié dans le regroupement.
 
 ## 1.106.4 (patch) — BC4-FRONT 2026-10-24 — Carte : sites lisibles
+
 - La couche Sites regroupe les agrégats serveur et les sites en bulles lisibles avec le nombre de sites ; un clic zoome dessus, les sites restent colorés par opérateur au zoom fort.
 - Les compteurs des clusters (sites et points de mesure) s'affichent grâce aux glyphes ajoutés aux styles de carte.
 
@@ -311,6 +330,7 @@ Nouvelle dépendance : `jszip ^3.10.1` (ajoutée à `bun.lock`, bundle lazy).
 Quand une métrique bascule en vue « Map » (⋮ → Carte depuis le MetricGraphCard **ou** depuis le menu catalogue), on referme automatiquement le grand « Measurements table » affiché en bas du workspace. Le besoin UX : « afficher QUE la map », pas une map suivie du tableau.
 
 Fix `MetricsWorkspace.tsx` :
+
 1. `onViewChange` de `MetricGraphCard` : si `next === 'map'`, `setPane('charts')`.
 2. Nouveau useEffect réactif sur `viewsProp` : si au moins une métrique a `view === 'map'` ET `pane === 'table'`, close + marque `tableOnlyDismissed` pour éviter la réouverture auto.
 
@@ -344,22 +364,28 @@ Zéro changement de contrat API ou de state logic.
 - Conserve la barre de rechargement et l’action Réessayer ajoutées en 1.104.1, avec hydratation immédiate depuis le cache local puis actualisation en arrière-plan.
 
 ## 1.105.2
+
 - KPI : les données du tableau des mesures sont centrées dans chaque cellule (en-têtes, heures, coordonnées et valeurs numériques), y compris pour les tableaux des réglages Workspace par défaut (alignement cellule et nombre = centre).
 - KPI : la barre « Axis: Capture time (s) · origin: capture start » avec les boutons Clock (local) / Clock (UTC) / Capture time (s) est supprimée au-dessus des cartes Metrics ; le mode d'axe mémorisé continue de piloter les graduations. Les marqueurs d'événements sont plus petits (bande Events plus compacte).
 
 ## 1.105.1
+
 - KPI : le message « The selected metrics are shown in the measurements table. » et son bouton « Show the measurements table » sont supprimés. Quand il n'y a plus rien à grapher, le tableau des mesures s'ouvre seul et se place en haut du pane ; le refermer n'est pas rouverte tant qu'aucun graphe ne revient.
 
 ## 1.105.0
+
 - KPI : au premier lancement d'un projet, l'espace de travail 1 est **vide**. Un lien qui traîne un ancien `?kpis=`, `?kpi=` ou `?metrics=` ne remplit plus le premier onglet. La reprise d'une session passe par `?tabs=` ou par les onglets mémorisés du projet : les graphes et tableaux ajoutés restent en place après un rechargement.
 
 ## 1.104.1
+
 - KPI : le catalogue Metrics affiche la barre de chargement dès qu'une requête catalogue est en cours (et plus seulement au tout premier chargement), et propose « Réessayer le catalogue » quand la requête échoue, au lieu du seul message d'erreur.
 
 ## 1.104.0
+
 - KPI : clic sur un événement de la barre Events = affiché (ligne verticale 2 px de sa couleur sur tous les graphes de l'onglet, ligne du tableau au temps exact surlignée) ; 2e clic = masqué. Plusieurs événements indépendants, sans rechargement ni changement de zoom.
 
 ## 1.103.0
+
 - Projects : Superstreams. Menu ⋮ du projet → « Create Superstream » / « Manage Superstreams » ; popup (nom unique par projet, recherche, sélection multiple conservée, collage de noms séparés par virgules avec rejet des inconnus/ambigus) ; arbre Superstreams/Logs sous le projet avec Voir, Modifier, Renommer, Supprimer (sans toucher aux logs).
 - Backend attendu : `GET/POST /projects/{id}/superstreams`, `PATCH/DELETE /projects/{id}/superstreams/{ssid}` — non présents côté serveur ; en démo, enregistrement local par projet.
 
@@ -368,11 +394,13 @@ Zéro changement de contrat API ou de state logic.
 « Loading catalogue… » disparaît dès la 2e visite d'un projet. React Query hydrate avec `initialData` depuis `localStorage` et refetch silencieux en arrière-plan (SWR) : UI immédiate, données toujours fraîches.
 
 Fichier central : `src/lib/analytics-bootstrap.ts` — helper `persistedQuery(key, fetcher, staleTime)` qui wrappe `queryOptions` avec :
+
 - `queryFn` : fetch + `localStorage.setItem('bc4.cache.<key>', JSON.stringify(data))`
 - `initialData` : lecture `localStorage` au mount ; `undefined` si vide
 - `initialDataUpdatedAt: 0` : force refetch background à l'ouverture (SWR)
 
 Appliqué à :
+
 - `kpiCatalogQuery` → `bc4.cache.project-kpi.catalog.<id>` (staleTime 5 min)
 - `metricsCatalogQuery` → `bc4.cache.project-metrics.<id>` (staleTime 1 min)
 
@@ -381,6 +409,7 @@ Appliqué à :
 Zéro invention — si le back renvoie du nouveau, localStorage est écrasé. Si le cache ne décode pas, fallback au fetch normal.
 
 Guards :
+
 - `grep "bc4.cache" src/lib/analytics-bootstrap.ts` → 1 occurrence (helper)
 - `docker exec bc4-front-1 bun run typecheck` sur src/features/kpi/* + src/lib/analytics-bootstrap.ts → 0 erreur nouvelle
 - `localStorage.getItem('bc4.cache.project-metrics.<id>')` doit retourner un payload JSON après 1ère visite
@@ -403,6 +432,7 @@ Deux correctifs UX après livraison 1.103.0 :
 2. `SitesLayerControls.tsx` — `DEFAULT_STATE.enabled: false → true` + bump `STORAGE_KEY` v1→v2. Les sites sont désormais affichés dès le premier mount sans action utilisateur (le toggle "Show sites on map" reste disponible pour désactiver). Le bump de clé localStorage force la réinitialisation du state pour les sessions existantes qui avaient `enabled=false`.
 
 Guards :
+
 - `grep -n "h-\[310px\]" src/features/kpi/KpiMapOSM.tsx` → 0 occurrence
 - `grep -n "bc4.map.sitesLayer.v2" src/features/kpi/SitesLayerControls.tsx` → ligne 15
 - `docker exec bc4-front-1 grep '"version"' /app/package.json` → `"version": "1.103.1"`
@@ -443,14 +473,17 @@ Palette BAND_COLORS alignée fréquences (basses=bleu, moyennes=vert/jaune, haut
 - `KpiMapOSM` défaut `sitesLayerEnabled=true` → le panneau Layers apparaît mais toggle OFF par défaut (`enabled: false` dans le state initial).
 
 ## 1.102.3
+
 - KPI : le tableau des mesures s'affiche toujours **sous tous les graphes**, quelle que soit la disposition (1/2/3/Auto) ou l'ordre mémorisé des panneaux. Les panneaux « tableau » d'un KPI descendent eux aussi sous les cartes graphiques, tout en gardant leur ordre relatif entre tableaux.
 - Rappel des deux correctifs non consignés : ajouter un graphe ne ferme plus le tableau des mesures (1.102.1) et ne change plus la vue du tableau (1.102.2).
 
 ## 1.102.0
+
 - KPI : le tableau des mesures a maintenant son propre menu « ⋮ », comme les autres panneaux. Il propose **Exporter CSV** (le fichier renvoyé par l'API), **Plein écran** (le tableau seul) et **Fermer le panneau**. Le bouton ✕ d'affichage rapide reste en place.
 - Le titre du tableau reste dynamique (nom du paramètre et de la cellule renvoyés par l'API) et l'en-tête ne gagne aucune barre supplémentaire.
 
 ## 1.101.0
+
 - KPI : une métrique ajoutée par ⋮ → Tableau n'affiche plus jamais de carte graphique. Elle n'apparaît que dans le tableau des mesures ; les autres métriques gardent leur graphe. La vue choisie est mémorisée par onglet, et le tableau des mesures reste accessible par un bouton quand aucun graphe n'a à être affiché.
 - KPI : le mode du panneau (cartes ou tableau) est désormais signalé au parent à l'ouverture de l'onglet, donc la grille compte exactement les panneaux visibles.
 - KPI : le message « aucune métrique sélectionnée » et l'état « affichées dans le tableau » passent par les clés `metrics.pickFromCatalogue`, `metrics.tableOnlyHint` et `metrics.showTable` (fr + en) au lieu d'un texte en dur.
@@ -462,9 +495,11 @@ Palette BAND_COLORS alignée fréquences (basses=bleu, moyennes=vert/jaune, haut
 - Added a Docker build context ignore list so images are built only from tracked application sources and do not copy local dependencies, build output or audit artifacts.
 
 ## 1.100.1
+
 - KPI : ajouter un paramètre ne fait plus disparaître le tableau des mesures ; il reste affiché sous un voile avec le cercle de chargement (jamais réutilisé si la capture ou les filtres changent).
 
 ## 1.100.0
+
 - KPI : le tableau des mesures s'ajoute à côté des graphes au lieu de les remplacer, avec son propre bouton de fermeture ; état mémorisé par onglet.
 - KPI : cercle de chargement centré dans chaque graphe, Retry en cas d'erreur, texte « Loading measurements… » externe supprimé.
 - KPI : apparition douce des nouveaux panneaux (désactivée si moins d'animations demandées).
@@ -4748,6 +4783,7 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 - Filtres géographie hiérarchique (Plaque > DR > Département > Site) et période : seul le département est filtrable ; période unique affichée.
 - Chargement/erreur de l'arbre partagés LTE/NR (un seul endpoint `dict/tree`) ; l'état vide est bien distinct par branche.
 - Plan indoor : aucune ressource validée → « Plan indoor indisponible ».
+
 ## 1.112.0 — 2026-10-27
 
 ### Added
