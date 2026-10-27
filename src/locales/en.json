@@ -937,6 +937,9 @@
     "driveRsrpPopupCell": "Cell: {{cell}}",
     "driveRsrpPopupPosRow": "Position: the measurement's own",
     "driveRsrpPopupPosCapture": "Position: capture GPS at the same sequence",
+    "driveRsrpPopupServing": "Serving cell: {{cell}} · Site: {{site}} · CHI proof seq {{seq}}",
+    "driveRsrpServingLinks_one": "{{count}} serving-cell link",
+    "driveRsrpServingLinks_other": "{{count}} serving-cell links",
     "driveRsrpClass": {
       "excellent": "Excellent",
       "good": "Good",

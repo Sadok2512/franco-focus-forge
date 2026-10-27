@@ -4697,3 +4697,9 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 - Filtres géographie hiérarchique (Plaque > DR > Département > Site) et période : seul le département est filtrable ; période unique affichée.
 - Chargement/erreur de l'arbre partagés LTE/NR (un seul endpoint `dict/tree`) ; l'état vide est bien distinct par branche.
 - Plan indoor : aucune ressource validée → « Plan indoor indisponible ».
+## 1.112.0 — 2026-10-27
+
+### Added
+
+- The Signaling and Map RSRP layers draw a thin line from each positioned RSRP observation to its serving cell when the API provides an exact CHI-to-ECI reference match.
+- RSRP popups identify the proven serving cell, site, and CHI sequence. Captures without that proof keep their measurement points without a fabricated line.

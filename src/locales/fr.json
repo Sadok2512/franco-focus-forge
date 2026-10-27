@@ -937,6 +937,9 @@
     "driveRsrpPopupCell": "Cellule : {{cell}}",
     "driveRsrpPopupPosRow": "Position : celle de la mesure",
     "driveRsrpPopupPosCapture": "Position : GPS de la capture, même séquence",
+    "driveRsrpPopupServing": "Cellule servante : {{cell}} · Site : {{site}} · preuve CHI seq {{seq}}",
+    "driveRsrpServingLinks_one": "{{count}} liaison cellule servante",
+    "driveRsrpServingLinks_other": "{{count}} liaisons cellule servante",
     "driveRsrpClass": {
       "excellent": "Excellent",
       "good": "Bon",

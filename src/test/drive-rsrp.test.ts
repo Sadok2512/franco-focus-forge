@@ -61,6 +61,54 @@ describe("drive RSRP points from table rows", () => {
     });
     expect(pts).toEqual([{ seq: 9, lat: 1, lng: 2, value: -70, cell: 0, position_source: "map" }]);
   });
+  it("keeps an exact CHI to cell_ref serving-cell proof", () => {
+    const pts = driveRsrpPoints({
+      map_points: [
+        {
+          seq: 9,
+          lat: 50.37,
+          lng: 3.47,
+          code: "cell_rsrp@0",
+          value: -84,
+          serving_cell_id: "11745802",
+          serving_cell_seq: 7,
+          serving_cell_ref_id: "ref-1",
+          serving_site_id: "site-1",
+          serving_site_name: "SITE ONE",
+          serving_cell_lat: 50.38,
+          serving_cell_lng: 3.48,
+          serving_cell_source: "chi_previous_seq_cell_ref_exact",
+        },
+      ],
+    });
+    expect(pts[0]).toMatchObject({
+      serving_cell_id: "11745802",
+      serving_cell_seq: 7,
+      serving_cell_ref_id: "ref-1",
+      serving_site_id: "site-1",
+      serving_site_name: "SITE ONE",
+      serving_cell_lat: 50.38,
+      serving_cell_lng: 3.48,
+      serving_cell_source: "chi_previous_seq_cell_ref_exact",
+    });
+  });
+  it("drops unproved serving coordinates even if coordinates are present", () => {
+    const pts = driveRsrpPoints({
+      map_points: [
+        {
+          seq: 9,
+          lat: 50.37,
+          lng: 3.47,
+          code: "cell_rsrp@0",
+          value: -84,
+          serving_cell_lat: 50.38,
+          serving_cell_lng: 3.48,
+        },
+      ],
+    });
+    expect(pts[0]?.serving_cell_lat).toBeUndefined();
+    expect(pts[0]?.serving_cell_lng).toBeUndefined();
+  });
   it("reads the RSRP of any cell column, lowest cell first", () => {
     const pts = driveRsrpPoints({
       map_points: [],

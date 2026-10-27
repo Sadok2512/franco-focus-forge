@@ -20,6 +20,8 @@ import {
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
+const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
+const LINK_LAYER = "bc4-drive-rsrp-serving-links";
 // v2 enables the measurement layer on first use. The dedicated Map page is
 // expected to open on real radio points rather than on an empty basemap.
 const STORE = "bc4.map.driveRsrp.v2";
@@ -141,9 +143,43 @@ export function DriveRsrpLayer({
           rsrp_class: rsrpClass(p.value),
           cell: p.cell,
           position_source: p.position_source,
+          serving_cell_id: p.serving_cell_id,
+          serving_cell_seq: p.serving_cell_seq,
+          serving_cell_ref_id: p.serving_cell_ref_id,
+          serving_site_id: p.serving_site_id,
+          serving_site_name: p.serving_site_name,
         },
       })),
     [analysis.data, allPositions, effectiveCaptureId],
+  );
+  const linkFeatures = useMemo(
+    () =>
+      driveRsrpPoints(analysis.data, allPositions).flatMap((p) =>
+        typeof p.serving_cell_lat === "number" && typeof p.serving_cell_lng === "number"
+          ? [
+              {
+                type: "Feature" as const,
+                geometry: {
+                  type: "LineString" as const,
+                  coordinates: [
+                    [p.lng, p.lat],
+                    [p.serving_cell_lng, p.serving_cell_lat],
+                  ],
+                },
+                properties: {
+                  seq: p.seq,
+                  serving_cell_id: p.serving_cell_id,
+                  serving_cell_seq: p.serving_cell_seq,
+                  serving_cell_ref_id: p.serving_cell_ref_id,
+                  serving_site_id: p.serving_site_id,
+                  serving_site_name: p.serving_site_name,
+                  proof: p.serving_cell_source,
+                },
+              },
+            ]
+          : [],
+      ),
+    [analysis.data, allPositions],
   );
 
   const diag = useMemo(
@@ -162,6 +198,22 @@ export function DriveRsrpLayer({
   useEffect(() => {
     if (!map) return;
     const add = () => {
+      if (!map.getSource(LINK_SOURCE)) {
+        map.addSource(LINK_SOURCE, {
+          type: "geojson",
+          data: { type: "FeatureCollection", features: [] },
+        });
+        map.addLayer({
+          id: LINK_LAYER,
+          type: "line",
+          source: LINK_SOURCE,
+          paint: {
+            "line-color": "#2563eb",
+            "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.5, 14, 1.25, 18, 2],
+            "line-opacity": 0.32,
+          },
+        });
+      }
       if (!map.getSource(SOURCE)) {
         map.addSource(SOURCE, {
           type: "geojson",
@@ -190,6 +242,13 @@ export function DriveRsrpLayer({
       }
       const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
       source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
+      const linkSource = map.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
+      linkSource?.setData({
+        type: "FeatureCollection",
+        features: prefs.on ? linkFeatures : [],
+      });
+      if (map.getLayer(LINK_LAYER))
+        map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
@@ -204,12 +263,14 @@ export function DriveRsrpLayer({
     return () => {
       map.off("load", add);
     };
-  }, [map, features, prefs]);
+  }, [map, features, linkFeatures, prefs]);
 
   useEffect(() => {
     const src = map?.getSource(SOURCE) as GeoJSONSource | undefined;
     src?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
-  }, [map, features, prefs.on]);
+    const links = map?.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
+    links?.setData({ type: "FeatureCollection", features: prefs.on ? linkFeatures : [] });
+  }, [map, features, linkFeatures, prefs.on]);
 
   const frame = () => {
     if (!map || !features.length) return;
@@ -244,6 +305,8 @@ export function DriveRsrpLayer({
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
     map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+    if (map.getLayer(LINK_LAYER))
+      map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
     map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
     map.setFilter(
       LAYER,
@@ -282,7 +345,15 @@ export function DriveRsrpLayer({
           p["position_source"] === "capture"
             ? "mapWorkspace.driveRsrpPopupPosCapture"
             : "mapWorkspace.driveRsrpPopupPosRow",
-        );
+        ) +
+        (p["serving_cell_id"]
+          ? "\n" +
+            t("mapWorkspace.driveRsrpPopupServing", {
+              cell: p["serving_cell_id"],
+              site: p["serving_site_name"] || p["serving_site_id"] || "—",
+              seq: p["serving_cell_seq"],
+            })
+          : "");
       popup?.remove();
       popup = new Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map);
     };
@@ -320,6 +391,7 @@ export function DriveRsrpLayer({
       rsrpPoints: analysis.data ? diag.rsrpMapPoints : null,
       numericRsrp: analysis.data ? driveRsrpPoints(analysis.data).length : null,
       displayed: analysis.data ? features.length : null,
+      servingLinks: analysis.data ? linkFeatures.length : null,
       gpsMarkers: allPositions.length,
     }),
     [
@@ -328,6 +400,7 @@ export function DriveRsrpLayer({
       analysis.isLoading,
       effectiveCaptureId,
       features.length,
+      linkFeatures.length,
       diag,
       allPositions.length,
     ],
@@ -377,6 +450,9 @@ export function DriveRsrpLayer({
         <div className="flex items-center justify-between gap-2 border-t px-3 py-1.5">
           <p role="status" className="text-muted-foreground">
             {status}
+            {linkFeatures.length > 0
+              ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
+              : ""}
           </p>
           {!analysis.isLoading && (
             <Button

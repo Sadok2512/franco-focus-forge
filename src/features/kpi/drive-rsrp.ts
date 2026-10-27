@@ -38,7 +38,21 @@ export function rsrpClass(value: number | null | undefined): RsrpClassId | null 
 }
 
 type AnalysisLike = {
-  map_points?: { seq: number; lat: number; lng: number; code: string; value: unknown }[];
+  map_points?: {
+    seq: number;
+    lat: number;
+    lng: number;
+    code: string;
+    value: unknown;
+    serving_cell_id?: string | null | undefined;
+    serving_cell_seq?: number | null | undefined;
+    serving_cell_ref_id?: string | null | undefined;
+    serving_site_id?: string | null | undefined;
+    serving_site_name?: string | null | undefined;
+    serving_cell_lat?: number | null | undefined;
+    serving_cell_lng?: number | null | undefined;
+    serving_cell_source?: "chi_previous_seq_cell_ref_exact" | null | undefined;
+  }[];
   rows?: {
     seq_first: number;
     lat?: number | null | undefined;
@@ -75,6 +89,14 @@ export type DriveRsrpPoint = {
   lng: number;
   value: number;
   cell: number;
+  serving_cell_id?: string | undefined;
+  serving_cell_seq?: number | undefined;
+  serving_cell_ref_id?: string | undefined;
+  serving_site_id?: string | undefined;
+  serving_site_name?: string | undefined;
+  serving_cell_lat?: number | undefined;
+  serving_cell_lng?: number | undefined;
+  serving_cell_source?: "chi_previous_seq_cell_ref_exact" | undefined;
   /**
    * Where the position came from: an API map point, the row's own GPS, or the
    * capture's GPS log at the very same sequence. Never a guessed position.
@@ -134,6 +156,19 @@ export function driveRsrpPoints(
       value: p.value as number,
       cell: rsrpColumnCell(p.code) ?? 0,
       position_source: "map" as const,
+      ...(p.serving_cell_source === "chi_previous_seq_cell_ref_exact" &&
+      validPos(p.serving_cell_lat, p.serving_cell_lng)
+        ? {
+            serving_cell_id: p.serving_cell_id ?? undefined,
+            serving_cell_seq: p.serving_cell_seq ?? undefined,
+            serving_cell_ref_id: p.serving_cell_ref_id ?? undefined,
+            serving_site_id: p.serving_site_id ?? undefined,
+            serving_site_name: p.serving_site_name ?? undefined,
+            serving_cell_lat: p.serving_cell_lat as number,
+            serving_cell_lng: p.serving_cell_lng as number,
+            serving_cell_source: p.serving_cell_source,
+          }
+        : {}),
     }));
   if (fromMap.length) return fromMap;
   const gps = positionBySeq(positions);
