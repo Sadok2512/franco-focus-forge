@@ -158,7 +158,7 @@
 .sig-tree-chevron:disabled { opacity:.4; }
 .sig-tree-channel-name { overflow-wrap:anywhere; }
 /* Expand the existing inspection row without unmounting the investigation. */
-.signaling-inspection-expanded > [data-testid=signaling-overview-panel],
+.signaling-inspection-expanded > #overview,
 .signaling-inspection-expanded > .signaling-separator { display:none; }
-.signaling-inspection-expanded > [data-testid=signaling-inspection-panel] { flex:1 1 0 !important; min-height:0; }
+.signaling-inspection-expanded > #inspection { flex:1 1 0 !important; min-height:0; }
 .signaling-workspace:has(.signaling-inspection-expanded) { height:calc(100dvh - var(--app-header-offset) - 25px); min-height:0; }
