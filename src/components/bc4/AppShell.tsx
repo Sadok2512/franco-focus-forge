@@ -179,26 +179,26 @@ export function AppShell({ children }: { children: ReactNode }) {
     .toUpperCase();
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
+    <div className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-clip bg-background">
       {fullscreen && floating && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
       <header
         ref={headerRef}
-        className={`app-header sticky top-0 z-40 flex h-14 items-center gap-6 border-b bg-card px-5 ${headerOpen ? "is-revealed" : ""}`}
+        className={`app-header sticky top-0 z-40 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b bg-card px-3 lg:gap-4 lg:px-5 ${headerOpen ? "is-revealed" : ""}`}
       >
         <Link
           to="/projects"
           search={(s: FilterContext) => s}
-          className="flex items-center gap-2 text-lg"
+          className="flex shrink-0 items-center gap-2 text-lg"
         >
           <Logo />
-          <HeaderVersion />
+          <span className="hidden sm:inline"><HeaderVersion /></span>
           {org?.show_in_header && org.name && (
-            <span className="hidden max-w-40 truncate border-l pl-2 text-xs font-medium text-muted-foreground lg:inline">
+            <span className="hidden max-w-40 truncate border-l pl-2 text-xs font-medium text-muted-foreground 2xl:inline">
               {org.short_name || org.name}
             </span>
           )}
         </Link>
-        <nav aria-label={t("nav.main")} className="flex h-full items-center gap-1 overflow-x-auto">
+        <nav aria-label={t("nav.main")} className="flex h-full min-w-0 items-center gap-1 overflow-x-auto">
           {NAV.map((n) => {
             const active = path.startsWith(n.to);
             return (
@@ -206,7 +206,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={n.to}
                 to={n.to}
                 search={(s: FilterContext) => s}
-                className={`flex h-9 items-center gap-1 whitespace-nowrap rounded-md px-3.5 text-[13px] font-medium transition-colors ${active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
+                className={`flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors xl:px-3.5 ${active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
               >
                 {t(n.label)}
                 {active && n.to === "/projects" && <ChevronDown className="h-3.5 w-3.5" />}
@@ -214,13 +214,13 @@ export function AppShell({ children }: { children: ReactNode }) {
             );
           })}
         </nav>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
           <HeaderFloatingButton />
           <AppFullscreenButton />
           {activeProject && (
             <div
               aria-label={t("common.activeProject", { name: activeProject.name })}
-              className="mr-2 inline-flex h-8 max-w-[260px] items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 pl-3 pr-1 text-xs font-medium text-primary"
+              className="mr-2 hidden h-8 min-w-0 max-w-[180px] items-center gap-1.5 rounded-full border border-primary/40 bg-primary/5 pl-3 pr-1 text-xs font-medium text-primary xl:inline-flex 2xl:max-w-[260px]"
             >
               <span className="truncate">
                 <span className="text-muted-foreground">{t("common.project")}</span>{" "}
@@ -240,19 +240,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           <button
             aria-label={t(dark ? "common.lightTheme" : "common.darkTheme")}
             onClick={toggleTheme}
-            className="rounded-full p-2 text-op-orange hover:bg-muted"
+            className="hidden rounded-full p-2 text-op-orange hover:bg-muted sm:block"
           >
             {dark ? <Moon className="h-[18px] w-[18px]" /> : <Sun className="h-[18px] w-[18px]" />}
           </button>
           <button
             aria-label={t("common.tips")}
-            className="rounded-full p-2 text-op-orange hover:bg-muted"
+            className="hidden rounded-full p-2 text-op-orange hover:bg-muted xl:block"
           >
             <Lightbulb className="h-[18px] w-[18px]" />
           </button>
           <button
             aria-label={t("common.help")}
-            className="rounded-full p-2 text-muted-foreground hover:bg-muted"
+            className="hidden rounded-full p-2 text-muted-foreground hover:bg-muted xl:block"
           >
             <HelpCircle className="h-[18px] w-[18px]" />
           </button>
@@ -266,7 +266,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
                 {initials}
               </span>
-              <span className="hidden text-left leading-tight md:block">
+              <span className="hidden max-w-40 truncate text-left leading-tight 2xl:block">
                 <span className="block text-xs font-semibold">{name}</span>
                 <span className="block text-[11px] text-muted-foreground">
                   {t("common.radioEngineer")}
@@ -320,7 +320,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <main className="flex-1">{children}</main>
+      <main className="w-full min-w-0 flex-1">{children}</main>
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { createProject, deleteProject, getProjects } from "@/lib/api/client";
 import type { ProjectIngestView } from "@/lib/api/client";
 import { OPERATORS, TECHNOLOGIES, type Project } from "@/lib/api/schemas";
@@ -99,13 +100,13 @@ function Select({
   options: { v: string; l: string }[];
 }) {
   return (
-    <label className="block">
+    <label className="block min-w-0">
       <span className="text-[11px] text-muted-foreground">{label}</span>
       <div className="relative mt-0.5">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="h-9 w-48 appearance-none rounded-md border border-input bg-card px-3 text-sm"
+          className="h-9 w-full appearance-none rounded-md border border-input bg-card pl-3 pr-8 text-sm"
         >
           {options.map((o) => (
             <option key={o.v} value={o.v}>
@@ -288,36 +289,36 @@ function ProjectsPage() {
   });
 
   return (
-    <div className="mx-auto max-w-[1600px] p-6">
-      <div className="panel p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Mes projets</h1>
+    <div className="project-fluid-page w-full min-w-0 p-3 sm:p-5 lg:p-6">
+      <div className="min-w-0 space-y-5">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold sm:text-2xl">Mes projets</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Gérez vos campagnes de mesures et accédez à vos analyses.
             </p>
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => {
               createM.reset();
               setShowCreate(true);
             }}
-            className="flex h-10 items-center gap-2 rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            className="h-10 shrink-0 px-3 text-xs font-semibold sm:px-4 sm:text-sm"
           >
             <Plus className="h-4 w-4" /> Nouveau projet
-          </button>
+          </Button>
         </div>
 
-        <div className="mt-5 flex flex-wrap items-end gap-3">
-          <label className="relative">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(240px,2fr)_repeat(3,minmax(140px,1fr))]">
+          <label className="relative block min-w-0">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Rechercher un projet…"
               aria-label="Rechercher un projet"
-              className="h-9 w-72 rounded-md border border-input bg-card pl-9 pr-3 text-sm"
+              className="h-9 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm"
             />
           </label>
           <Select
@@ -345,7 +346,7 @@ function ProjectsPage() {
           />
         </div>
 
-        <div className="mt-5 overflow-x-auto rounded-md border">
+        <div className="w-full min-w-0 overflow-x-auto rounded-md border bg-card">
           {q.isPending ? (
             <div className="space-y-2 p-3">
               {[0, 1, 2].map((i) => (
@@ -578,11 +579,11 @@ function ProjectsPage() {
             </table>
           )}
         </div>
-        <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
-          <span>
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 text-xs text-muted-foreground">
+          <span className="min-w-0">
             Affichage de 1 à {rows.length} sur {rows.length} projets
           </span>
-          <div className="flex items-center gap-1">
+          <div className="flex shrink-0 items-center gap-1">
             <button aria-label="Page précédente" className="p-1.5">
               <ChevronLeft className="h-4 w-4" />
             </button>

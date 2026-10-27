@@ -41,7 +41,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
   }, []);
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-6 p-4 md:p-6">
+    <div className="project-fluid-page w-full min-w-0 space-y-6 p-4 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link
