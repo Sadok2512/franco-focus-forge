@@ -29,8 +29,15 @@ import {
   ProjectIngestViewSchema,
   type ProjectIngestView,
 } from "./project-schemas";
-import { NmfImportJobSchema, type NmfImportJob, NmfImportReportSchema, type NmfFileStatus, type NmfImportReport } from "./nmf-schemas";
+import {
+  NmfImportJobSchema,
+  type NmfImportJob,
+  NmfImportReportSchema,
+  type NmfFileStatus,
+  type NmfImportReport,
+} from "./nmf-schemas";
 import type { Project } from "./schemas";
+import { FileSummaryResponseSchema, type FileSummaryResponse } from "./file-summary-schemas";
 import {
   buildNmfReportMock,
   createProjectMock,
@@ -156,6 +163,20 @@ export async function getImportReport(
       return NmfImportReportSchema.parse(report);
     },
     "getImportReport",
+  );
+}
+
+export async function getFileSummary(
+  projectId: string,
+  offset: number,
+  limit: number,
+  signal?: AbortSignal,
+): Promise<FileSummaryResponse> {
+  const params = new URLSearchParams({ offset: String(offset), limit: String(limit) });
+  return apiFetch(
+    `/projects/${encodeURIComponent(projectId)}/files/summary?${params}`,
+    FileSummaryResponseSchema,
+    { signal },
   );
 }
 
@@ -398,21 +419,33 @@ export async function uploadNmfFiles(
   });
 }
 
-
 export async function waitForNmfJob(
-  projectId: string, initial: unknown, files: File[], opts: NmfUploadOptions,
+  projectId: string,
+  initial: unknown,
+  files: File[],
+  opts: NmfUploadOptions,
 ): Promise<NmfImportReport> {
   let job = NmfImportJobSchema.parse(initial);
   while (true) {
     opts.onJobProgress?.(job);
-    job.by_file.forEach((entry, index) => opts.onFileProgress?.({
-      index, filename: entry.filename, size: files[index]?.size ?? 0,
-      status: entry.status, loaded: files[index]?.size ?? 0, percent: 100,
-      error_msg: entry.error_msg,
-    }));
+    job.by_file.forEach((entry, index) =>
+      opts.onFileProgress?.({
+        index,
+        filename: entry.filename,
+        size: files[index]?.size ?? 0,
+        status: entry.status,
+        loaded: files[index]?.size ?? 0,
+        percent: 100,
+        error_msg: entry.error_msg,
+      }),
+    );
     if (job.status === "done" || job.status === "error") {
       if (job.report) return job.report;
-      throw new ApiHttpError("IMPORT_FAILED", job.error_msg ?? "Échec du traitement de l’import", 422);
+      throw new ApiHttpError(
+        "IMPORT_FAILED",
+        job.error_msg ?? "Échec du traitement de l’import",
+        422,
+      );
     }
     await new Promise<void>((resolve, reject) => {
       const abort = () => {
@@ -428,7 +461,8 @@ export async function waitForNmfJob(
     });
     job = await apiFetch(
       `/projects/${encodeURIComponent(projectId)}/imports/${encodeURIComponent(job.id)}`,
-      NmfImportJobSchema, { signal: opts.signal },
+      NmfImportJobSchema,
+      { signal: opts.signal },
     );
   }
 }

@@ -246,7 +246,13 @@ export * from "./settings";
 export type * from "./settings-schemas";
 export * from "./reference";
 export type * from "./reference-schemas";
-export { createProject, deleteProject, getImportReport, uploadNmfFiles } from "./projects";
+export {
+  createProject,
+  deleteProject,
+  getImportReport,
+  getFileSummary,
+  uploadNmfFiles,
+} from "./projects";
 export type { NmfPerFileProgress, NmfUploadOptions } from "./projects";
 export type * from "./nmf-schemas";
 export type * from "./project-schemas";

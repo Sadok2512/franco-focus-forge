@@ -982,7 +982,70 @@
     "previousPage": "Page précédente",
     "nextPage": "Page suivante",
     "pageOf": "Page {{page}} sur {{total}}",
-    "showingFiles": "{{from}}–{{to}} sur {{total}} fichiers"
+    "showingFiles": "{{from}}–{{to}} sur {{total}} fichiers",
+    "task": {
+      "HTTP_DL": "HTTP DL",
+      "HTTP_UL": "HTTP UL",
+      "VOICE": "Voix",
+      "PING": "Ping",
+      "Scanner": "Scanner"
+    },
+    "summary": {
+      "source": "Source",
+      "max": "Maximum",
+      "task": {
+        "label": "Task",
+        "definition": "Type de commande prouvé entre CMDREQ et son CMDCOMP terminal."
+      },
+      "dl_total": {
+        "label": "DL total",
+        "definition": "Débit descendant applicatif moyen DRATE dans les fenêtres de commande ; maximum dans l’infobulle."
+      },
+      "dl_lte": {
+        "label": "DL LTE",
+        "definition": "Débit descendant LTE moyen PDCPRATED, repli RLCRATE, dans les fenêtres de commande."
+      },
+      "dl_nr": {
+        "label": "DL NR",
+        "definition": "Débit descendant NR moyen PDCPRATED, repli RLCRATE, dans les fenêtres de commande."
+      },
+      "ul_total": {
+        "label": "UL total",
+        "definition": "Débit montant applicatif moyen DRATE dans les fenêtres de commande ; maximum dans l’infobulle."
+      },
+      "ul_lte": {
+        "label": "UL LTE",
+        "definition": "Débit montant LTE moyen PDCPRATEU, repli RLCRATEU, dans les fenêtres de commande."
+      },
+      "ul_nr": {
+        "label": "UL NR",
+        "definition": "Débit montant NR moyen PDCPRATEU, repli RLCRATEU, dans les fenêtres de commande."
+      },
+      "mos": {
+        "label": "MOS",
+        "definition": "MOS AQDL moyen dans les fenêtres de commande voix prouvées ; maximum dans l’infobulle."
+      },
+      "rach_fail": {
+        "label": "Échec RACH",
+        "definition": "Résultats RACHI en échec / tentatives RACHI dans les fenêtres de commande."
+      },
+      "call_setup_fail": {
+        "label": "Échec appel",
+        "definition": "Échecs CAF / tentatives d’appel CAA dans les fenêtres de commande."
+      },
+      "voice_drop": {
+        "label": "Coupure voix",
+        "definition": "Déconnexions CAD / tentatives d’appel CAA dans les fenêtres de commande."
+      },
+      "session_fail": {
+        "label": "Échec session",
+        "definition": "Échecs DAF / tentatives de données DAA dans les fenêtres de commande."
+      },
+      "latency": {
+        "label": "Latence",
+        "definition": "RTT moyen dans les fenêtres de commande, en millisecondes ; maximum dans l’infobulle."
+      }
+    }
   },
   "rsrpDiagnosis": {
     "open": "Diagnostic IA",

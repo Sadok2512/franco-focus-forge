@@ -20,16 +20,98 @@ import { DecodePanel } from "./DecodePanel";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { getImportReport } from "@/lib/api/client";
+import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Clock, Info } from "lucide-react";
+import { getFileSummary, getImportReport } from "@/lib/api/client";
+import type { FileSummaryCell } from "@/lib/api/file-summary-schemas";
 import type { Project } from "@/lib/api/schemas";
 import { toUserMessage } from "@/lib/api/http";
 import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OperatorChip, TechBadge, nd, ndPct, sortByCountDesc } from "./shared";
 
 // Pagination du tableau « Fichiers importés » : 10 lignes par page, navigation
 // précédent/suivant. Le découpage est une fonction pure exportée pour les tests.
 export const IMPORT_FILES_PAGE_SIZE = 10;
+
+const SUMMARY_COLUMNS = [
+  "task",
+  "dl_total",
+  "dl_lte",
+  "dl_nr",
+  "ul_total",
+  "ul_lte",
+  "ul_nr",
+  "mos",
+  "rach_fail",
+  "call_setup_fail",
+  "voice_drop",
+  "session_fail",
+  "latency",
+] as const;
+
+function SummaryHeader({ code }: { code: (typeof SUMMARY_COLUMNS)[number] }) {
+  const { t } = useTranslation();
+  return (
+    <span className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
+      {t(`projectImport.summary.${code}.label`)}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            className="rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label={t(`projectImport.summary.${code}.definition`)}
+          >
+            <Info className="h-3 w-3" aria-hidden />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-72 normal-case tracking-normal">
+          {t(`projectImport.summary.${code}.definition`)}
+        </TooltipContent>
+      </Tooltip>
+    </span>
+  );
+}
+
+function SummaryValue({
+  code,
+  cell,
+}: {
+  code: (typeof SUMMARY_COLUMNS)[number];
+  cell: FileSummaryCell | undefined;
+}) {
+  const { t, i18n } = useTranslation();
+  if (!cell || cell.value == null) {
+    return (
+      <span className="text-muted-foreground" title={cell?.reason ?? undefined}>
+        —
+      </span>
+    );
+  }
+  let rendered: string;
+  if (code === "task")
+    rendered = t(`projectImport.task.${String(cell.value)}`, { defaultValue: String(cell.value) });
+  else if (["rach_fail", "call_setup_fail", "voice_drop", "session_fail"].includes(code))
+    rendered = `${cell.value} / ${cell.n}`;
+  else
+    rendered = Number(cell.value).toLocaleString(i18n.language, {
+      maximumFractionDigits: code === "mos" ? 2 : 1,
+    });
+  const details = [
+    `${t("projectImport.summary.source")}: ${cell.source_event}`,
+    cell.n == null ? null : `n = ${cell.n}`,
+    cell.max == null
+      ? null
+      : `${t("projectImport.summary.max")}: ${cell.max.toLocaleString(i18n.language, { maximumFractionDigits: 2 })} ${cell.unit ?? ""}`,
+    `query_id: ${cell.query_id}`,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <span className="whitespace-nowrap font-mono tabular-nums" title={details}>
+      {rendered}
+    </span>
+  );
+}
 
 export function paginateImportFiles<T>(
   files: T[],
@@ -77,6 +159,19 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
   // Changement de projet : on repart toujours à la première page.
   useEffect(() => setFilesPage(0), [project.id]);
   const filesPaging = paginateImportFiles(q.data?.by_file ?? [], filesPage);
+  const summary = useQuery({
+    queryKey: ["project", project.id, "files-summary", filesPaging.page],
+    queryFn: ({ signal }) =>
+      getFileSummary(
+        project.id,
+        filesPaging.page * IMPORT_FILES_PAGE_SIZE,
+        IMPORT_FILES_PAGE_SIZE,
+        signal,
+      ),
+    enabled: open,
+    staleTime: 30_000,
+  });
+  const summaryByFilename = new Map(summary.data?.files.map((file) => [file.filename, file]) ?? []);
 
   const technosFromProject = sortByCountDesc(project.technos_seen ?? undefined);
   const operatorsFromProject = sortByCountDesc(project.operators_plmn ?? undefined);
@@ -171,82 +266,113 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
             Aucun fichier d&apos;ingestion n&apos;est référencé pour ce projet.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-md border bg-background">
-            <table className="w-full border-collapse text-xs">
-              <thead className="bg-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2">Fichier</th>
-                  <th className="px-3 py-2">Statut</th>
-                  <th className="px-3 py-2 text-right">Captures</th>
-                  <th className="px-3 py-2 text-right">Événements</th>
-                  <th className="px-3 py-2 text-right">GPS</th>
-                  <th className="px-3 py-2">Décodeur</th>
-                  <th className="px-3 py-2">Erreur</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filesPaging.rows.map((f) => (
-                  <tr key={f.filename} className="border-t">
-                    <td className="max-w-96 truncate px-3 py-2 font-medium" title={f.filename}>
-                      {f.filename}
-                    </td>
-                    <td className="px-3 py-2">
-                      <StatusBadge status={f.status} />
-                    </td>
-                    <td className="px-3 py-2 text-right font-mono">{nd(f.n_captures)}</td>
-                    <td className="px-3 py-2 text-right font-mono">{nd(f.n_events)}</td>
-                    <td className="px-3 py-2 text-right font-mono">{nd(f.n_gps)}</td>
-                    <td className="px-3 py-2 text-muted-foreground">
-                      {f.decoder_version ?? "N/D"}
-                    </td>
-                    <td className="px-3 py-2 font-mono text-destructive">{f.error_msg ?? "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {q.data.by_file.length > IMPORT_FILES_PAGE_SIZE && (
-              <nav
-                className="flex items-center justify-between gap-2 border-t px-3 py-1.5"
-                aria-label={t("projectImport.filesPagination")}
-              >
-                <span className="text-[11px] text-muted-foreground">
-                  {t("projectImport.showingFiles", {
-                    from: filesPaging.page * IMPORT_FILES_PAGE_SIZE + 1,
-                    to: filesPaging.page * IMPORT_FILES_PAGE_SIZE + filesPaging.rows.length,
-                    total: q.data.by_file.length,
-                  })}
-                </span>
-                <span className="flex items-center gap-1">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-6 w-6"
-                    aria-label={t("projectImport.previousPage")}
-                    disabled={filesPaging.page === 0}
-                    onClick={() => setFilesPage(filesPaging.page - 1)}
-                  >
-                    <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
-                  </Button>
-                  <span className="px-1 text-[11px] text-muted-foreground">
-                    {t("projectImport.pageOf", {
-                      page: filesPaging.page + 1,
-                      total: filesPaging.pageCount,
+          <TooltipProvider delayDuration={150}>
+            <div>
+              {summary.isError && (
+                <p role="alert" className="mb-1 text-xs text-destructive">
+                  {toUserMessage(summary.error)}
+                </p>
+              )}
+              <div className="overflow-x-auto rounded-md border bg-background">
+                <table className="w-full border-collapse text-xs">
+                  <thead className="bg-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
+                    <tr>
+                      <th className="px-3 py-2">Fichier</th>
+                      <th className="px-3 py-2">Statut</th>
+                      <th className="px-3 py-2 text-right">Captures</th>
+                      <th className="px-3 py-2 text-right">Événements</th>
+                      <th className="px-3 py-2 text-right">GPS</th>
+                      <th className="px-3 py-2">Décodeur</th>
+                      {SUMMARY_COLUMNS.map((code) => (
+                        <th key={code} className="px-3 py-2 text-right">
+                          <SummaryHeader code={code} />
+                        </th>
+                      ))}
+                      <th className="px-3 py-2">Erreur</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filesPaging.rows.map((f) => {
+                      const fileSummary = summaryByFilename.get(f.filename);
+                      return (
+                        <tr key={f.filename} className="border-t hover:bg-muted/30">
+                          <td
+                            className="max-w-96 truncate px-3 py-2 font-medium"
+                            title={f.filename}
+                          >
+                            {f.filename}
+                          </td>
+                          <td className="px-3 py-2">
+                            <StatusBadge status={f.status} />
+                          </td>
+                          <td className="px-3 py-2 text-right font-mono">{nd(f.n_captures)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{nd(f.n_events)}</td>
+                          <td className="px-3 py-2 text-right font-mono">{nd(f.n_gps)}</td>
+                          <td className="px-3 py-2 text-muted-foreground">
+                            {f.decoder_version ?? "N/D"}
+                          </td>
+                          {SUMMARY_COLUMNS.map((code) => (
+                            <td key={code} className="px-3 py-2 text-right">
+                              {summary.isPending ? (
+                                <span className="text-muted-foreground">…</span>
+                              ) : (
+                                <SummaryValue code={code} cell={fileSummary?.cells[code]} />
+                              )}
+                            </td>
+                          ))}
+                          <td className="px-3 py-2 font-mono text-destructive">
+                            {f.error_msg ?? "—"}
+                          </td>
+                        </tr>
+                      );
                     })}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-6 w-6"
-                    aria-label={t("projectImport.nextPage")}
-                    disabled={filesPaging.page >= filesPaging.pageCount - 1}
-                    onClick={() => setFilesPage(filesPaging.page + 1)}
+                  </tbody>
+                </table>
+                {q.data.by_file.length > IMPORT_FILES_PAGE_SIZE && (
+                  <nav
+                    className="flex items-center justify-between gap-2 border-t px-3 py-1.5"
+                    aria-label={t("projectImport.filesPagination")}
                   >
-                    <ChevronRight className="h-3.5 w-3.5" aria-hidden />
-                  </Button>
-                </span>
-              </nav>
-            )}
-          </div>
+                    <span className="text-[11px] text-muted-foreground">
+                      {t("projectImport.showingFiles", {
+                        from: filesPaging.page * IMPORT_FILES_PAGE_SIZE + 1,
+                        to: filesPaging.page * IMPORT_FILES_PAGE_SIZE + filesPaging.rows.length,
+                        total: q.data.by_file.length,
+                      })}
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6"
+                        aria-label={t("projectImport.previousPage")}
+                        disabled={filesPaging.page === 0}
+                        onClick={() => setFilesPage(filesPaging.page - 1)}
+                      >
+                        <ChevronLeft className="h-3.5 w-3.5" aria-hidden />
+                      </Button>
+                      <span className="px-1 text-[11px] text-muted-foreground">
+                        {t("projectImport.pageOf", {
+                          page: filesPaging.page + 1,
+                          total: filesPaging.pageCount,
+                        })}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-6 w-6"
+                        aria-label={t("projectImport.nextPage")}
+                        disabled={filesPaging.page >= filesPaging.pageCount - 1}
+                        onClick={() => setFilesPage(filesPaging.page + 1)}
+                      >
+                        <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                      </Button>
+                    </span>
+                  </nav>
+                )}
+              </div>
+            </div>
+          </TooltipProvider>
         )}
       </div>
     </div>

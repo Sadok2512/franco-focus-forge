@@ -1,3 +1,9 @@
+## 1.113.0 (minor) — BC4-FRONT 2026-10-27 — File summary Projects (Agent BC1)
+
+- Le tableau des fichiers Projects ajoute après Décodeur : Task, DL/UL total, LTE et NR, MOS, RACH fail, Call setup fail, Voice drop, Session fail et Latency.
+- Les résumés sont chargés par page de 10 fichiers; chaque en-tête possède une définition et chaque valeur conserve sa source, son effectif, son maximum et son `query_id` dans l’infobulle.
+- Les compteurs distinguent `0 / tentatives` d’un test absent (`—`). Les scanners n’affichent que `Task = Scanner`; les événements absents conservent leur raison sans valeur inventée.
+
 ## 1.111.3 (patch) — BC4-FRONT 2026-10-27 — Signaling centré sur les points RSRP (Agent BC1)
 
 - À la première ouverture de Signaling View, la capture déclarée `env=incar` par l'API est sélectionnée avant la première capture générique, sans parcourir ni charger toutes les sessions.

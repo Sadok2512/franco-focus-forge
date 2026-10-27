@@ -982,7 +982,70 @@
     "previousPage": "Previous page",
     "nextPage": "Next page",
     "pageOf": "Page {{page}} of {{total}}",
-    "showingFiles": "{{from}}–{{to}} of {{total}} files"
+    "showingFiles": "{{from}}–{{to}} of {{total}} files",
+    "task": {
+      "HTTP_DL": "HTTP DL",
+      "HTTP_UL": "HTTP UL",
+      "VOICE": "Voice",
+      "PING": "Ping",
+      "Scanner": "Scanner"
+    },
+    "summary": {
+      "source": "Source",
+      "max": "Maximum",
+      "task": {
+        "label": "Task",
+        "definition": "Command type proven between CMDREQ and its terminal CMDCOMP."
+      },
+      "dl_total": {
+        "label": "DL total",
+        "definition": "Mean application download bitrate from DRATE inside command windows; maximum in tooltip."
+      },
+      "dl_lte": {
+        "label": "DL LTE",
+        "definition": "Mean LTE downlink bitrate from PDCPRATED, with RLCRATE fallback, inside command windows."
+      },
+      "dl_nr": {
+        "label": "DL NR",
+        "definition": "Mean NR downlink bitrate from PDCPRATED, with RLCRATE fallback, inside command windows."
+      },
+      "ul_total": {
+        "label": "UL total",
+        "definition": "Mean application upload bitrate from DRATE inside command windows; maximum in tooltip."
+      },
+      "ul_lte": {
+        "label": "UL LTE",
+        "definition": "Mean LTE uplink bitrate from PDCPRATEU, with RLCRATEU fallback, inside command windows."
+      },
+      "ul_nr": {
+        "label": "UL NR",
+        "definition": "Mean NR uplink bitrate from PDCPRATEU, with RLCRATEU fallback, inside command windows."
+      },
+      "mos": {
+        "label": "MOS",
+        "definition": "Mean AQDL MOS inside proven voice command windows; maximum in tooltip."
+      },
+      "rach_fail": {
+        "label": "RACH fail",
+        "definition": "Failed RACHI results / RACHI attempts inside command windows."
+      },
+      "call_setup_fail": {
+        "label": "Call setup fail",
+        "definition": "CAF failures / CAA call attempts inside command windows."
+      },
+      "voice_drop": {
+        "label": "Voice drop",
+        "definition": "CAD disconnect events / CAA call attempts inside command windows."
+      },
+      "session_fail": {
+        "label": "Session fail",
+        "definition": "DAF failures / DAA data attempts inside command windows."
+      },
+      "latency": {
+        "label": "Latency",
+        "definition": "Mean RTT inside command windows, in milliseconds; maximum in tooltip."
+      }
+    }
   },
   "rsrpDiagnosis": {
     "open": "AI diagnosis",
