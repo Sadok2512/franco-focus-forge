@@ -21,10 +21,18 @@ import {
   updateSuperstream,
   type Superstream,
 } from "@/lib/api/superstreams";
-import { mergeSelection, normalizeName, parsePastedFilenames, validateName } from "./superstream-model";
+import { isLogSelectable, mergeSelection, normalizeName, parsePastedFilenames, validateName } from "./superstream-model";
 
 const PAGE = 50;
-const nd = (n: number | null) => (n == null ? "N/D" : n.toLocaleString());
+const nd = (n: number | null | undefined) => (n == null ? "N/D" : n.toLocaleString());
+const fmtDate = (iso: string | null | undefined) => {
+  if (!iso) return "N/D";
+  try {
+    return new Date(iso).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" });
+  } catch {
+    return iso;
+  }
+};
 
 export function SuperstreamDialog({
   open,
@@ -179,12 +187,21 @@ export function SuperstreamDialog({
                 type="button"
                 variant="outline"
                 size="sm"
-                disabled={filtered.length === 0}
-                onClick={() => setChecked((prev) => new Set([...prev, ...filtered.map((l) => l.id)]))}
+                disabled={filtered.filter(isLogSelectable).length === 0}
+                onClick={() =>
+                  setChecked((prev) =>
+                    new Set([
+                      ...prev,
+                      // NMFHE2 — "Select all" ne prend que les captures `done`.
+                      // Fichiers en cours d'import exclus (status pending/decoding/error).
+                      ...filtered.filter(isLogSelectable).map((l) => l.id),
+                    ])
+                  )
+                }
               >
                 {search.trim()
-                  ? t("superstream.selectFiltered", { count: filtered.length })
-                  : t("superstream.selectAll", { count: filtered.length })}
+                  ? t("superstream.selectFiltered", { count: filtered.filter(isLogSelectable).length })
+                  : t("superstream.selectAll", { count: filtered.filter(isLogSelectable).length })}
               </Button>
               <Button type="button" variant="ghost" size="sm" disabled={checked.size === 0} onClick={() => setChecked(new Set())}>
                 {t("superstream.clear")}
@@ -213,36 +230,69 @@ export function SuperstreamDialog({
                     </th>
                     <th className="px-3 py-2">{t("superstream.col.filename")}</th>
                     <th className="px-3 py-2 text-right">{t("superstream.col.captures")}</th>
-                    <th className="px-3 py-2 text-right">{t("superstream.col.events")}</th>
+                    {/* NMFHE2 — EVENTS renommé "L3 messages" avec tooltip explicite
+                        de ce qu'il compte (RRCSM/SIPSM/L3SM). */}
+                    <th
+                      className="px-3 py-2 text-right"
+                      title={t("superstream.col.l3MessagesHint")}
+                    >
+                      {t("superstream.col.l3Messages")}
+                    </th>
+                    {/* NMFHE2 — Records: ajouté (nmf_capture.n_records cumulé). */}
+                    <th
+                      className="px-3 py-2 text-right"
+                      title={t("superstream.col.recordsHint")}
+                    >
+                      {t("superstream.col.records")}
+                    </th>
                     <th className="px-3 py-2 text-right">{t("superstream.col.gps")}</th>
                     <th className="px-3 py-2">{t("superstream.col.imported")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logsQ.isPending ? (
-                    <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">{t("superstream.loadingLogs")}</td></tr>
+                    <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">{t("superstream.loadingLogs")}</td></tr>
                   ) : logsQ.isError ? (
-                    <tr><td colSpan={6} className="px-3 py-6 text-center text-destructive" role="alert">{toUserMessage(logsQ.error)}</td></tr>
+                    <tr><td colSpan={7} className="px-3 py-6 text-center text-destructive" role="alert">{toUserMessage(logsQ.error)}</td></tr>
                   ) : pageRows.length === 0 ? (
-                    <tr><td colSpan={6} className="px-3 py-6 text-center text-muted-foreground">{t("superstream.noLogs")}</td></tr>
+                    <tr><td colSpan={7} className="px-3 py-6 text-center text-muted-foreground">{t("superstream.noLogs")}</td></tr>
                   ) : (
                     pageRows.map((l) => {
-                      const on = checked.has(l.id) || pasted.ids.includes(l.id);
+                      const selectable = isLogSelectable(l);
+                      const on = selectable && (checked.has(l.id) || pasted.ids.includes(l.id));
+                      // NMFHE2 — tooltip "fichier en cours d'import, non sélectionnable".
+                      const rowTitle = selectable
+                        ? l.filename
+                        : t("superstream.notSelectable", { status: l.status ?? "unknown" });
                       return (
                         <tr
                           key={l.id}
                           data-selected={on || undefined}
-                          className={`h-9 cursor-pointer border-t ${on ? "bg-primary/5" : "hover:bg-muted/50"}`}
-                          onClick={() => toggle(l.id)}
+                          data-disabled={!selectable || undefined}
+                          className={`h-9 border-t ${
+                            !selectable
+                              ? "cursor-not-allowed bg-muted/30 text-muted-foreground"
+                              : on
+                                ? "cursor-pointer bg-primary/5"
+                                : "cursor-pointer hover:bg-muted/50"
+                          }`}
+                          title={rowTitle}
+                          onClick={() => { if (selectable) toggle(l.id); }}
                         >
                           <td className="px-3" onClick={(e) => e.stopPropagation()}>
-                            <Checkbox checked={on} onCheckedChange={() => toggle(l.id)} aria-label={l.filename} />
+                            <Checkbox
+                              checked={on}
+                              disabled={!selectable}
+                              onCheckedChange={() => { if (selectable) toggle(l.id); }}
+                              aria-label={l.filename}
+                            />
                           </td>
                           <td className="max-w-80 truncate px-3 font-medium" title={l.filename}>{l.filename}</td>
                           <td className="px-3 text-right font-mono">{nd(l.n_captures)}</td>
                           <td className="px-3 text-right font-mono">{nd(l.n_events)}</td>
+                          <td className="px-3 text-right font-mono">{nd(l.n_records)}</td>
                           <td className="px-3 text-right font-mono">{nd(l.n_gps)}</td>
-                          <td className="px-3 text-muted-foreground">{l.imported_at ?? "N/D"}</td>
+                          <td className="px-3 text-muted-foreground">{fmtDate(l.imported_at)}</td>
                         </tr>
                       );
                     })

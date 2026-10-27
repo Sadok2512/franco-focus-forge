@@ -834,7 +834,11 @@
       "captures": "Captures",
       "events": "Events",
       "gps": "GPS",
-      "imported": "Imported"
+      "imported": "Imported",
+      "l3Messages": "L3 messages",
+      "l3MessagesHint": "Decoded L3 messages (RRC, SIP, NAS) — not every raw record in the file.",
+      "records": "Records",
+      "recordsHint": "Total raw records in the capture (all categories)."
     },
     "loadingLogs": "Loading logs…",
     "noLogs": "No logs match.",
@@ -857,7 +861,9 @@
     "rename": "Rename",
     "delete": "Delete Superstream",
     "deleteConfirm": "Delete this Superstream? The original project logs will not be deleted.",
-    "manage": "Manage Superstreams"
+    "manage": "Manage Superstreams",
+    "notSelectable": "File still importing ({{status}}) — not selectable.",
+    "backendError": "Could not load superstreams — check the backend connection."
   },
   "mapSites": {
     "controls": "Site and cell layers",

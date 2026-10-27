@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { mergeSelection, parsePastedFilenames, validateName, type SuperstreamLog } from "@/features/projects/superstream-model";
 
 const log = (id: string, filename = id): SuperstreamLog => ({
-  id, filename, n_captures: 1, n_events: 1, n_gps: null, imported_at: null,
+  id, filename, n_captures: 1, n_events: 1, n_gps: null, n_records: null, imported_at: null,
 });
 const logs = [log("a.nmf"), log("b.nmf"), log("dup.nmf"), log("dup.nmf#1", "dup.nmf")];
 
