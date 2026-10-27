@@ -543,6 +543,8 @@
     "title": "Signaling messages",
     "fullscreen": "Messages full screen",
     "exitFullscreen": "Exit messages full screen",
+    "expandInspection": "Expand messages and payload",
+    "restoreInspection": "Restore map and timeline",
     "count_one": "{{n}} message",
     "count_other": "{{n}} messages",
     "countPending": "Messages",

@@ -543,6 +543,8 @@
     "title": "Messages de signalisation",
     "fullscreen": "Messages en plein écran",
     "exitFullscreen": "Quitter le plein écran des messages",
+    "expandInspection": "Agrandir les messages et le payload",
+    "restoreInspection": "Rétablir la carte et la timeline",
     "count_one": "{{n}} message",
     "count_other": "{{n}} messages",
     "countPending": "Messages",

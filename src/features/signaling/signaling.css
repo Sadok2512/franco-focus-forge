@@ -157,5 +157,9 @@
 .sig-tree-chevron { display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; border-radius:4px; color:var(--muted-foreground); }
 .sig-tree-chevron:disabled { opacity:.4; }
 .sig-tree-channel-name { overflow-wrap:anywhere; }
-.sig-messages:fullscreen { border-radius:0; border:none; height:100%; width:100%; }
-.sig-messages:fullscreen .sig-toolbar { padding-inline:12px; }
+/* Expand the existing inspection row without unmounting the investigation. */
+.signaling-inspection-expanded > #overview,
+.signaling-inspection-expanded > .signaling-separator { display:none !important; }
+.signaling-inspection-expanded > #inspection { flex:1 1 0 !important; min-height:0; }
+.signaling-workspace:has(.signaling-inspection-expanded) { height:calc(100dvh - var(--app-header-offset) - 25px); min-height:0; }
+html.app-header-floating:not(.app-fullscreen) .signaling-workspace:has(.signaling-inspection-expanded) { margin-top:56px; height:calc(100dvh - var(--app-header-offset) - 81px); }

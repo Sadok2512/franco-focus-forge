@@ -53,7 +53,6 @@ import {
   Search,
   SlidersHorizontal,
 } from "lucide-react";
-import { useElementFullscreen } from "@/lib/element-fullscreen";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -999,6 +998,19 @@ export function SignalingPage({
   // le bug react-resizable-panels de remount dynamique.
   const [mapVisible, setMapVisible] = useState(true);
   const [timelineVisible, setTimelineVisible] = useState(true);
+  const [inspectionExpanded, setInspectionExpanded] = useState(false);
+  useEffect(() => {
+    if (!inspectionExpanded) return;
+    const restoreInspection = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !event.defaultPrevented) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        setInspectionExpanded(false);
+      }
+    };
+    window.addEventListener("keydown", restoreInspection, true);
+    return () => window.removeEventListener("keydown", restoreInspection, true);
+  }, [inspectionExpanded]);
   const mapPanelRef = useRef<PanelImperativeHandle>(null);
   const timelinePanelRef = useRef<PanelImperativeHandle>(null);
   const overviewPanelRef = useRef<PanelImperativeHandle>(null);
@@ -1138,7 +1150,6 @@ export function SignalingPage({
           isFetching: messageSelection.length > 0 && selectedPopulation.isFetching,
         };
   const tableScroll = useRef<HTMLDivElement | null>(null);
-  const messagesFs = useElementFullscreen<HTMLElement>();
   useEffect(() => {
     if (seq === undefined) return;
     const id = requestAnimationFrame(() => {
@@ -1552,7 +1563,11 @@ export function SignalingPage({
           </Panel>
           <Separator className="signaling-separator" aria-label="Largeur des filtres" />
           <Panel id="workspace" minSize="55%">
-            <Group orientation="vertical" id="signaling-rows">
+            <Group
+              orientation="vertical"
+              id="signaling-rows"
+              className={inspectionExpanded ? "signaling-inspection-expanded" : undefined}
+            >
               <Panel
                 id="overview"
                 panelRef={overviewPanelRef}
@@ -1738,11 +1753,10 @@ export function SignalingPage({
                 className="signaling-separator"
                 aria-label="Hauteur de la vue d’ensemble"
               />
-              <Panel id="inspection" minSize={300}>
+              <Panel id="inspection" minSize={300} data-testid="signaling-inspection-panel">
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
                   <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
                     <section
-                      ref={messagesFs.ref}
                       className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
                       aria-label={t("sigTable.title")}
                     >
@@ -1935,22 +1949,23 @@ export function SignalingPage({
                             <FilterX size={14} aria-hidden="true" />
 
                           </button>
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
+                            size="icon"
                             className="sig-tool sig-tool-icon"
-                            aria-label={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
-                            title={t(messagesFs.active ? "sigTable.exitFullscreen" : "sigTable.fullscreen")}
-                            aria-pressed={messagesFs.active}
-                            disabled={!messagesFs.supported}
+                            aria-label={t(inspectionExpanded ? "sigTable.restoreInspection" : "sigTable.expandInspection")}
+                            title={t(inspectionExpanded ? "sigTable.restoreInspection" : "sigTable.expandInspection")}
+                            aria-pressed={inspectionExpanded}
                             data-testid="sig-messages-fullscreen"
-                            onClick={() => void messagesFs.toggle()}
+                            onClick={() => setInspectionExpanded((expanded) => !expanded)}
                           >
-                            {messagesFs.active ? (
+                            {inspectionExpanded ? (
                               <Minimize size={14} aria-hidden="true" />
                             ) : (
                               <Maximize size={14} aria-hidden="true" />
                             )}
-                          </button>
+                          </Button>
                         </div>
                       </header>
                       <div
