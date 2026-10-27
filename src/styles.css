@@ -299,3 +299,47 @@ html[data-density="comfortable"] body { font-size: 14px; }
 .bc4-pop-cells tr[role="button"] { cursor: pointer; }
 .bc4-pop-cells tr[role="button"]:hover td { background: var(--muted); }
 .bc4-pop-link { margin-top: 6px; color: var(--primary); font-weight: 600; font-size: 11px; }
+
+/* ---- Plein écran de l'application : la barre du haut devient flottante ----
+ * Hors plein écran elle occupe 56px dans la page (--app-header-offset, utilisé
+ * par les hauteurs de workspace). En plein écran elle ne prend plus aucune
+ * place : elle est collée en haut, translucide, repliée hors champ, et glisse
+ * en place quand le pointeur atteint le bord supérieur ou que le clavier y
+ * entre. Les pages repassent donc en 100dvh pleins. */
+html { --app-header-offset: 56px; }
+html.app-fullscreen { --app-header-offset: 0px; }
+
+html.app-fullscreen .app-header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  border-bottom: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  background: color-mix(in oklab, var(--card) 84%, transparent);
+  backdrop-filter: blur(14px) saturate(1.35);
+  -webkit-backdrop-filter: blur(14px) saturate(1.35);
+  box-shadow: 0 12px 28px -20px color-mix(in oklab, var(--foreground) 60%, transparent);
+  transform: translateY(-104%);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: transform 190ms ease, opacity 190ms ease, visibility 190ms;
+}
+html.app-fullscreen .app-header.is-revealed {
+  transform: none;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+/* Lamelle rappelant que la barre est repliée sous le bord supérieur. */
+.app-header-hotzone {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 45;
+  height: 3px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 60%, transparent) 30%, color-mix(in oklab, var(--primary) 60%, transparent) 70%, transparent);
+}
+@media (prefers-reduced-motion: reduce) {
+  html.app-fullscreen .app-header { transition: none; }
+}

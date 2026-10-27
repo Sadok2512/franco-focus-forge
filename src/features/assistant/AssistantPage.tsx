@@ -463,7 +463,7 @@ export function AssistantPage({
   );
 
   return (
-    <div className={`${full ? "fixed inset-0 z-40 bg-background" : "h-[calc(100vh-3.5rem)]"} p-3`}>
+    <div className={`${full ? "fixed inset-0 z-40 bg-background" : "h-[calc(100vh-var(--app-header-offset))]"} p-3`}>
       {width >= 1280 ? (
         <ResizablePanelGroup orientation="horizontal" className="h-full">
           <ResizablePanel defaultSize="19%" minSize="14%">

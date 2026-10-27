@@ -331,7 +331,7 @@
   flex-direction: column;
   gap: 8px;
   padding: 12px;
-  height: calc(100dvh - 56px);
+  height: calc(100dvh - var(--app-header-offset));
   min-height: 0;
   min-width: 0;
   overflow: hidden;

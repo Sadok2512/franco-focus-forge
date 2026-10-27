@@ -2,7 +2,7 @@
   background: #f5f7fb;
   color: #17263e;
   padding: 12px 16px;
-  height: calc(100dvh - 58px);
+  height: calc(100dvh - var(--app-header-offset) - 2px);
   min-height: 560px;
   display: flex;
   flex-direction: column;
@@ -794,7 +794,7 @@
   .kpi-workspace {
     padding: 8px;
     height: auto;
-    min-height: calc(100dvh - 58px);
+    min-height: calc(100dvh - var(--app-header-offset) - 2px);
   }
   .kpi-workspace-panels {
     display: block !important;

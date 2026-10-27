@@ -1,34 +1,25 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Maximize, Minimize } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import {
+  isAppFullscreenSupported,
+  setAppFullscreen,
+  useAppFullscreen,
+} from "@/lib/app-fullscreen";
 
 export function AppFullscreenButton() {
   const { t } = useTranslation();
-  const [active, setActive] = useState(false);
-  const [supported, setSupported] = useState(false);
+  const active = useAppFullscreen();
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
-
-  useEffect(() => {
-    setSupported(Boolean(document.fullscreenEnabled && document.documentElement.requestFullscreen));
-    const sync = () => setActive(Boolean(document.fullscreenElement));
-    sync();
-    document.addEventListener("fullscreenchange", sync);
-    return () => document.removeEventListener("fullscreenchange", sync);
-  }, []);
+  const supported = isAppFullscreenSupported();
 
   const toggle = async () => {
     setPending(true);
     setFailed(false);
-    try {
-      if (document.fullscreenElement) await document.exitFullscreen();
-      else await document.documentElement.requestFullscreen();
-    } catch {
-      setFailed(true);
-    } finally {
-      setPending(false);
-    }
+    if (!(await setAppFullscreen(!active))) setFailed(true);
+    setPending(false);
   };
 
   const label = t(active ? "common.exitAppFullscreen" : "common.appFullscreen");
