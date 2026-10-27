@@ -163,7 +163,7 @@ export function SignalingPage() {
   const tipPosition = hoverCur ?? selectedTip;
 
   return (
-    <div className="signaling-workspace flex h-[calc(100dvh-3.5rem)] min-h-0 w-full min-w-0 flex-col overflow-hidden">
+    <div className="signaling-workspace flex h-[calc(100dvh-var(--app-header-offset))] min-h-0 w-full min-w-0 flex-col overflow-hidden">
       {/* En-tête : technologie, capture, nombre de messages, durée */}
       <header className="flex flex-wrap items-center gap-x-3 gap-y-1 border-b bg-card px-4 py-2">
         <Button variant="ghost" size="sm"
