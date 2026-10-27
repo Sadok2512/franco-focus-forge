@@ -1,18 +1,34 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { MetricCatalogResponseSchema, MetricAnalysisSchema } from "@/lib/api/metrics-schemas";
-// Optional manual guard against captured live TEST2 responses; no synthetic RF values.
+// Mandatory manual guard against captured live TEST2 responses; no synthetic RF values.
 const audit = process.env["BC2_METRICS_AUDIT"];
-describe.skipIf(!audit)("Metrics v3 live contract", () => {
-  it("validates catalog, preserves proof gaps and server cell choices", () => {
+if (!audit) {
+  throw new Error("BC2_METRICS_AUDIT is required; run this guard against captured live responses");
+}
+
+describe("Metrics v3 live contract", () => {
+  it("validates the current catalog envelope and release leaf parity", () => {
     const response = MetricCatalogResponseSchema.parse(
       JSON.parse(readFileSync(`${audit}/catalog-live.json`, "utf8")),
     );
-    const rows = response.metrics;
-    expect(rows.find((r) => r.code === "plaid_mcs0")?.cells).toContain(1);
-    expect(rows.find((r) => r.code === "cell_rsrp")?.cell_scoped).toBe(true);
-    expect(response.nodes).toHaveLength(1034);
-    expect(rows.filter((r) => r.code.startsWith("unk_")).every((r) => !r.available)).toBe(true);
+    const release = response.catalog_release;
+    expect(release).toBeDefined();
+    expect(release).not.toBeNull();
+    if (!release) throw new Error("catalog_release is required in the current catalog contract");
+    expect(response.catalogue_version).toBe(release.version);
+    expect(response.nodes.filter((node) => node.node_type === "leaf")).toHaveLength(
+      release.n_leaves,
+    );
+    expect(new Set(response.nodes.map((node) => node.node_id)).size).toBe(response.nodes.length);
+    expect(new Set(response.metrics.map((metric) => metric.code)).size).toBe(
+      response.metrics.length,
+    );
+    expect(
+      response.nodes
+        .filter((node) => node.node_type === "leaf" && !node.selectable)
+        .every((node) => node.reason !== null),
+    ).toBe(true);
   });
   it("validates table and preserves the witnessed event presence", () => {
     const data = MetricAnalysisSchema.parse(

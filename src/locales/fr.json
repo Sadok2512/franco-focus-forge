@@ -27,6 +27,11 @@
     "tips": "Astuces",
     "help": "Aide",
     "radioEngineer": "Ingénieur Radio",
+    "role": {
+      "admin": "Administrateur",
+      "editor": "Ingénieur Radio",
+      "viewer": "Lecteur"
+    },
     "settings": "Paramètres",
     "logout": "Se déconnecter",
     "language": "Langue",
@@ -49,6 +54,20 @@
     "allCount": "Tous ({{count}})",
     "searchLabel": "Rechercher {{label}}",
     "selectionSummary": "{{count}} sélectionné(s) · {{total}} options"
+  },
+  "projects": {
+    "scope": {
+      "label": "Projets",
+      "my": "Mes projets",
+      "all": "Tous les projets"
+    },
+    "visibility": {
+      "label": "Visibilité",
+      "private": "Privé",
+      "public": "Public",
+      "privateHint": "Vous seul pouvez accéder à ce projet.",
+      "publicHint": "Tous les utilisateurs authentifiés peuvent voir ce projet."
+    }
   },
   "metrics": {
     "a78f2051e6c9": "Export CSV",

@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { KeyRound, Pencil, Plus, Power, Search } from "lucide-react";
 import { useState } from "react";
-import { createUser, getUsers, passwordProblems, patchUser, resetPassword } from "@/lib/api/client";
+import { createUser, getUsers, patchUser, resetPassword } from "@/lib/api/client";
 import {
   ROLE_LABEL,
   RoleSchema,
@@ -224,7 +224,7 @@ export function UsersPanel() {
 
 function UserForm({
   user,
-  policy,
+  policy: _policy,
   onClose,
   onDone,
 }: {
@@ -238,8 +238,6 @@ function UserForm({
     login: user?.login ?? "",
     display_name: user?.display_name ?? "",
     role: (user?.role ?? "viewer") as Role,
-    password: "",
-    password_confirm: "",
   });
   const [err, setErr] = useState<{ field: string | null; message: string } | null>(null);
   const m = useMutation({
@@ -248,16 +246,14 @@ function UserForm({
         ? patchUser(actor, user.id, { display_name: f.display_name, role: f.role })
         : createUser(actor, f),
     onSuccess: (u) => {
-      setF((x) => ({ ...x, password: "", password_confirm: "" }));
       onDone(
         user
           ? `${u.login} mis à jour.`
-          : `Compte ${u.login} créé (simulation, mot de passe non conservé).`,
+          : `Compte ${u.login} créé. Mot de passe initial : ${"initial_password" in u ? (u.initial_password ?? "transmis séparément") : "transmis séparément"}`,
       );
     },
     onError: (e) => setErr({ field: errField(e), message: errMsg(e) }),
   });
-  const pb = !user && f.password ? passwordProblems(f.password, policy) : [];
   const e = (k: string) => (err?.field === k ? err.message : null);
   return (
     <Modal title={user ? `Modifier ${user.login}` : "Ajouter un utilisateur"} onClose={onClose}>
@@ -304,44 +300,9 @@ function UserForm({
           </select>
         </Field>
         {!user && (
-          <>
-            <Field
-              label="Mot de passe initial"
-              htmlFor="u-pw"
-              error={e("password") ?? (pb.length ? `Requis : ${pb.join(", ")}` : null)}
-              hint={`Politique : ${policy.min_length} caractères min.${policy.require_digit ? ", un chiffre" : ""}${policy.require_upper ? ", une majuscule" : ""}.`}
-            >
-              <input
-                id="u-pw"
-                type="password"
-                autoComplete="new-password"
-                className={inputCls}
-                value={f.password}
-                onChange={(x) => setF({ ...f, password: x.target.value })}
-                required
-              />
-            </Field>
-            <Field
-              label="Confirmation"
-              htmlFor="u-pw2"
-              error={
-                e("password_confirm") ??
-                (f.password_confirm && f.password_confirm !== f.password
-                  ? "La confirmation ne correspond pas."
-                  : null)
-              }
-            >
-              <input
-                id="u-pw2"
-                type="password"
-                autoComplete="new-password"
-                className={inputCls}
-                value={f.password_confirm}
-                onChange={(x) => setF({ ...f, password_confirm: x.target.value })}
-                required
-              />
-            </Field>
-          </>
+          <p className="text-xs text-muted-foreground">
+            Un mot de passe initial fort sera généré et affiché une seule fois après la création.
+          </p>
         )}
         {err && !err.field && (
           <p role="alert" className="text-xs text-destructive">

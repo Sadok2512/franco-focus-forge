@@ -22,6 +22,8 @@ export const UserSchema = z.object({
   last_login_at: z.string().nullable(),
 });
 export type User = z.infer<typeof UserSchema>;
+export const UserCreatedSchema = UserSchema.extend({ initial_password: z.string().nullable() });
+export type UserCreated = z.infer<typeof UserCreatedSchema>;
 export const PasswordPolicySchema = z.object({
   min_length: z.number().int(),
   require_digit: z.boolean(),
@@ -43,8 +45,8 @@ export type UserCreate = {
   login: string;
   display_name: string;
   role: Role;
-  password: string;
-  password_confirm: string;
+  password?: string;
+  password_confirm?: string;
 };
 export type UserPatch = Partial<Pick<User, "display_name" | "role" | "active">>;
 

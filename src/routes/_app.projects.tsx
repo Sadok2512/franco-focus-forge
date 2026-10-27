@@ -13,6 +13,7 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  Share2,
   Trash2,
   XCircle,
 } from "lucide-react";
@@ -21,6 +22,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { createProject, deleteProject, getProjects } from "@/lib/api/client";
 import type { ProjectIngestView } from "@/lib/api/client";
+import type { CreateProjectRequest } from "@/lib/api/project-schemas";
 import { OPERATORS, TECHNOLOGIES, type Project } from "@/lib/api/schemas";
 import { useActiveProject } from "@/lib/activeProject";
 import { EmptyState, ErrorState, LoadingSkeleton } from "@/components/bc4/States";
@@ -37,6 +39,8 @@ import {
   type ProjectRowNmfReport,
 } from "@/features/projects/ProjectRowNmfAction";
 import { ProjectRowDetails } from "@/features/projects/ProjectRowDetails";
+import { ProjectShareDialog } from "@/features/projects/ProjectShareDialog";
+import { getSession } from "@/lib/api/http";
 import { SuperstreamDialog } from "@/features/projects/SuperstreamDialog";
 import { SuperstreamTree, superstreamsKey } from "@/features/projects/SuperstreamTree";
 import { listSuperstreams, type Superstream } from "@/lib/api/superstreams";
@@ -139,20 +143,25 @@ function emptyOverlay(): RowOverlay {
 }
 
 function ProjectsPage() {
+  const currentUserId = getSession()?.user.id;
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [overlays, setOverlays] = useState<Record<string, RowOverlay>>({});
+  const [projectScope, setProjectScope] = useState<"my" | "all">("my");
   const q = useQuery({
-    queryKey: ["projects"],
-    queryFn: ({ signal }) => getProjects(signal),
+    queryKey: ["projects", projectScope],
+    queryFn: ({ signal }) => getProjects(signal, projectScope),
     // Le serveur peut continuer après une coupure de la requête d'import.
     refetchInterval: (query) =>
       Object.values(overlays).some((overlay) => overlay.status === "processing") ||
-      query.state.data?.some((p) => p.status === "processing" && ((p.n_files ?? 0) > 0 || p.import_job != null))
+      query.state.data?.some(
+        (p) => p.status === "processing" && ((p.n_files ?? 0) > 0 || p.import_job != null),
+      )
         ? 5000
         : false,
   });
   const [search, setSearch] = useState("");
+  const [shareProject, setShareProject] = useState<Project | null>(null);
   const [status, setStatus] = useState("");
   const [op, setOp] = useState("");
   const [tech, setTech] = useState("");
@@ -167,7 +176,8 @@ function ProjectsPage() {
   const [ssHighlight, setSsHighlight] = useState<Record<string, string>>({});
   const ssList = useQuery({
     queryKey: ssProject ? superstreamsKey(ssProject.id) : ["superstreams-none"],
-    queryFn: ({ signal }) => (ssProject ? listSuperstreams(ssProject.id, signal) : Promise.resolve([] as Superstream[])),
+    queryFn: ({ signal }) =>
+      ssProject ? listSuperstreams(ssProject.id, signal) : Promise.resolve([] as Superstream[]),
     enabled: ssProject !== null,
   });
   // Notification discrète (succès suppression). Pas de dépendance
@@ -192,8 +202,8 @@ function ProjectsPage() {
       return next;
     });
   }, []);
-  const createM = useMutation<ProjectIngestView, Error, string>({
-    mutationFn: (name: string) => createProject(name),
+  const createM = useMutation<ProjectIngestView, Error, CreateProjectRequest>({
+    mutationFn: (project: CreateProjectRequest) => createProject(project),
     onSuccess: (p) => {
       qc.invalidateQueries({ queryKey: ["projects"] });
       setShowCreate(false);
@@ -234,7 +244,8 @@ function ProjectsPage() {
   const open = (p: Project) => {
     setActiveProject({ id: p.id, name: p.name });
     toast.success(`Projet « ${p.name} » chargé`, {
-      description: "Les pages Dictionnaire, Assistant, Vue d'ensemble et KPI utilisent désormais ce projet.",
+      description:
+        "Les pages Dictionnaire, Assistant, Vue d'ensemble et KPI utilisent désormais ce projet.",
     });
   };
 
@@ -310,7 +321,7 @@ function ProjectsPage() {
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(240px,2fr)_repeat(3,minmax(140px,1fr))]">
+        <div className="grid grid-cols-1 items-end gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(240px,2fr)_repeat(4,minmax(130px,1fr))]">
           <label className="relative block min-w-0">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
@@ -321,6 +332,15 @@ function ProjectsPage() {
               className="h-9 w-full rounded-md border border-input bg-card pl-9 pr-3 text-sm"
             />
           </label>
+          <Select
+            label={t("projects.scope.label")}
+            value={projectScope}
+            onChange={(value) => setProjectScope(value as "my" | "all")}
+            options={[
+              { v: "my", l: t("projects.scope.my") },
+              { v: "all", l: t("projects.scope.all") },
+            ]}
+          />
           <Select
             label="Statut"
             value={status}
@@ -387,7 +407,9 @@ function ProjectsPage() {
                 const isActive = activeProject?.id === p.id;
                 const ov = overlays[p.id] ?? emptyOverlay();
                 const effectiveStatus = p.import_job ? p.status : (ov.status ?? p.status);
-                const activeImport = p.import_job != null && ["queued", "decoding", "finalizing"].includes(p.import_job.status);
+                const activeImport =
+                  p.import_job != null &&
+                  ["queued", "decoding", "finalizing"].includes(p.import_job.status);
                 const S = STATUS[effectiveStatus];
                 // Captures : l'overlay (rapport NMF) prime quand il
                 // existe. Jamais 0 par défaut — on retombe sur
@@ -487,7 +509,9 @@ function ProjectsPage() {
                             </span>
                           )}
                           {p.import_job?.error_msg && (
-                            <span className="text-xs text-destructive">{p.import_job.error_msg}</span>
+                            <span className="text-xs text-destructive">
+                              {p.import_job.error_msg}
+                            </span>
                           )}
                           {ov.errorMsg && (
                             <span
@@ -505,10 +529,16 @@ function ProjectsPage() {
                           <button
                             type="button"
                             aria-pressed={isActive}
-                            onClick={() => { if (!isActive) open(p); }}
+                            onClick={() => {
+                              if (!isActive) open(p);
+                            }}
                             className={`flex h-8 items-center gap-1.5 whitespace-nowrap rounded-md border px-3 text-xs font-semibold transition-colors ${isActive ? "border-green-700 bg-green-700 text-white hover:bg-green-800 dark:border-green-600 dark:bg-green-600 dark:hover:bg-green-700" : "border-primary text-primary hover:bg-accent"}`}
                           >
-                            {isActive ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> : <FolderOpen className="h-3.5 w-3.5" aria-hidden />}
+                            {isActive ? (
+                              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+                            ) : (
+                              <FolderOpen className="h-3.5 w-3.5" aria-hidden />
+                            )}
                             {isActive ? "Projet actif" : "Ouvrir"}
                           </button>
                           <ProjectRowNmfAction
@@ -529,6 +559,12 @@ function ProjectsPage() {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-56">
+                              {p.owner_id === currentUserId && (
+                                <DropdownMenuItem onSelect={() => setShareProject(p)}>
+                                  <Share2 className="h-4 w-4" aria-hidden />
+                                  Partager
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onSelect={(e) => {
                                   e.preventDefault();
@@ -567,7 +603,11 @@ function ProjectsPage() {
                       <tr id={`project-row-details-${p.id}`} className="border-t">
                         <td colSpan={10} className="p-0">
                           <div className="bg-muted/30 px-4 pt-4">
-                            <SuperstreamTree projectId={p.id} projectName={p.name} highlightId={ssHighlight[p.id] ?? null} />
+                            <SuperstreamTree
+                              projectId={p.id}
+                              projectName={p.name}
+                              highlightId={ssHighlight[p.id] ?? null}
+                            />
                           </div>
                           <ProjectRowDetails project={p} open={isOpen} />
                         </td>
@@ -601,10 +641,18 @@ function ProjectsPage() {
         onClose={() => {
           if (createM.status !== "pending") setShowCreate(false);
         }}
-        onCreate={(name) => createM.mutate(name)}
+        onCreate={(project) => createM.mutate(project)}
         busy={createM.status === "pending"}
         error={createM.status === "error" ? createM.error : null}
       />
+      {shareProject && (
+        <ProjectShareDialog
+          projectId={shareProject.id}
+          projectName={shareProject.name}
+          open
+          onClose={() => setShareProject(null)}
+        />
+      )}
       {/* 1.6.0 — Dialog de confirmation de suppression. L'instance est
           montée en permanence et pilotée par `pendingDelete` : la
           promesse `onConfirm` RÉSOUT en succès (invalide la liste

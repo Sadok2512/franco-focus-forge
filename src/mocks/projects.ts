@@ -260,7 +260,22 @@ export function listProjectsMock(): Project[] {
 }
 
 /** Fabrique un Project "vide" prêt pour l'écran de projet. */
-export function createProjectMock(name: string): Project {
+export function createProjectMock(
+  name: string,
+  visibility: "private" | "public",
+  parsing: Pick<
+    Project,
+    | "parse_decode_level"
+    | "parse_binning_mode"
+    | "parse_temporal_resolution"
+    | "parse_spatial_bin_m"
+  > = {
+    parse_decode_level: "light" as const,
+    parse_binning_mode: "temporal" as const,
+    parse_temporal_resolution: "native" as const,
+    parse_spatial_bin_m: null,
+  },
+): Project {
   const trimmed = name.trim();
   if (!trimmed) {
     throw Object.assign(new Error("Le nom du projet est obligatoire."), {
@@ -280,6 +295,9 @@ export function createProjectMock(name: string): Project {
   const iso = now.toISOString().slice(0, 10);
   const project: Project = {
     id,
+    owner_id: "mock-current-user",
+    visibility,
+    ...parsing,
     name: trimmed,
     geography: "À définir après le premier import NMF",
     center: [2.35, 46.8],

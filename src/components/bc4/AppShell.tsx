@@ -171,6 +171,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [fullscreen, floating]);
 
   const name = session?.displayName ?? t("common.user");
+  const roleLabel = t(`common.role.${session?.role ?? "viewer"}`);
   const initials = name
     .split(" ")
     .map((w) => w[0])
@@ -180,7 +181,9 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-clip bg-background">
-      {fullscreen && floating && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
+      {fullscreen && floating && !headerOpen && (
+        <div className="app-header-hotzone" aria-hidden="true" />
+      )}
       <header
         ref={headerRef}
         className={`app-header sticky top-0 z-40 grid h-14 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 border-b bg-card px-3 lg:gap-4 lg:px-5 ${headerOpen ? "is-revealed" : ""}`}
@@ -191,14 +194,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           className="flex shrink-0 items-center gap-2 text-lg"
         >
           <Logo />
-          <span className="hidden sm:inline"><HeaderVersion /></span>
+          <span className="hidden sm:inline">
+            <HeaderVersion />
+          </span>
           {org?.show_in_header && org.name && (
             <span className="hidden max-w-40 truncate border-l pl-2 text-xs font-medium text-muted-foreground 2xl:inline">
               {org.short_name || org.name}
             </span>
           )}
         </Link>
-        <nav aria-label={t("nav.main")} className="flex h-full min-w-0 items-center gap-1 overflow-x-auto">
+        <nav
+          aria-label={t("nav.main")}
+          className="flex h-full min-w-0 items-center gap-1 overflow-x-auto"
+        >
           {NAV.map((n) => {
             const active = path.startsWith(n.to);
             return (
@@ -268,9 +276,7 @@ export function AppShell({ children }: { children: ReactNode }) {
               </span>
               <span className="hidden max-w-40 truncate text-left leading-tight 2xl:block">
                 <span className="block text-xs font-semibold">{name}</span>
-                <span className="block text-[11px] text-muted-foreground">
-                  {t("common.radioEngineer")}
-                </span>
+                <span className="block text-[11px] text-muted-foreground">{roleLabel}</span>
               </span>
             </button>
             {menu && (
