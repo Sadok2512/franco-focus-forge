@@ -15,7 +15,7 @@ import {
   Sun,
   X,
 } from "lucide-react";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { getAppearance, getOrganization } from "@/lib/api/client";
 import {
   applyAppearance,
@@ -31,6 +31,7 @@ import { getBackHealth } from "@/lib/api/project-kpi";
 import { useActiveProject } from "@/lib/activeProject";
 import { APP_VERSION } from "@/lib/version";
 import { AppFullscreenButton } from "./AppFullscreenButton";
+import { useAppFullscreen } from "@/lib/app-fullscreen";
 
 const NAV = [
   { to: "/projects", label: "nav.projects" },
@@ -126,6 +127,46 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(UNAUTH_EVENT, onUnauth);
   }, [navigate]);
 
+  // Plein écran : la barre du haut ne prend plus de place, elle flotte au
+  //-dessus du contenu et se replie d'elle-même. Elle revient quand le pointeur
+  // atteint le bord supérieur, quand le clavier y entre, et brièvement au
+  // moment du passage en plein écran pour signaler qu'elle est toujours là.
+  const fullscreen = useAppFullscreen();
+  const headerRef = useRef<HTMLElement>(null);
+  const [headerOpen, setHeaderOpen] = useState(false);
+  const headerOpenRef = useRef(false);
+  const showHeader = (v: boolean) => {
+    headerOpenRef.current = v;
+    setHeaderOpen(v);
+  };
+  useEffect(() => {
+    if (!fullscreen) {
+      showHeader(false);
+      return;
+    }
+    showHeader(true);
+    const grace = window.setTimeout(() => showHeader(false), 1600);
+    const onMove = (e: PointerEvent) => {
+      const h = headerRef.current?.offsetHeight ?? 56;
+      if (e.clientY <= 12) showHeader(true);
+      else if (headerOpenRef.current && e.clientY > h + 20) showHeader(false);
+    };
+    const onDown = (e: PointerEvent) => {
+      if (e.clientY <= 16) showHeader(true);
+    };
+    const onFocus = (e: FocusEvent) =>
+      showHeader(headerRef.current?.contains(e.target as Node) ?? false);
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerdown", onDown, { passive: true });
+    window.addEventListener("focusin", onFocus);
+    return () => {
+      window.clearTimeout(grace);
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("focusin", onFocus);
+    };
+  }, [fullscreen]);
+
   const name = session?.displayName ?? t("common.user");
   const initials = name
     .split(" ")
@@ -136,7 +177,11 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-40 flex h-14 items-center gap-6 border-b bg-card px-5">
+      {fullscreen && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
+      <header
+        ref={headerRef}
+        className={`app-header sticky top-0 z-40 flex h-14 items-center gap-6 border-b bg-card px-5 ${headerOpen ? "is-revealed" : ""}`}
+      >
         <Link
           to="/projects"
           search={(s: FilterContext) => s}
