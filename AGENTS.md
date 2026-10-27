@@ -10,7 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
-- App-wide fullscreen targets document.documentElement through the shared header control and follows fullscreenchange, so navigation and Escape preserve accurate state. In that mode the header floats over the content instead of reserving space (shared state and the `app-fullscreen` hook live in `src/lib/app-fullscreen.ts`), so page heights must derive from `var(--app-header-offset)` rather than a hardcoded header height.
+- App-wide fullscreen targets document.documentElement through the shared header control and follows fullscreenchange, so navigation and Escape preserve accurate state. Whether the header floats over the content or reserves its own space is a user preference kept in `src/lib/header-floating.ts` (class `app-header-floating` on `<html>`, floating by default), so page heights must derive from `var(--app-header-offset)` rather than a hardcoded header height.
 - Signaling reuses DriveRsrpLayer with a controlled active capture and separate visibility preferences; it auto-frames only when the capture has no GPS markers (fallback view), so coverage never switches captures or moves an investigation camera that is already on the trajectory. Drive RSRP requests the `cell_rsrp@0` selection because the metrics table expects `code@cell`.
 - Remember-me selects localStorage versus sessionStorage through the HTTP auth adapter and remembers only the username; never persist passwords or extend the VM-issued token expiry. Login redirects valid existing sessions to projects.
 - UI reads data only through `src/lib/api/client.ts` (typed mock adapter, Zod schemas in `schemas.ts`); fixtures stay isolated in `fixtures.ts` so a real backend can replace them without touching components.
