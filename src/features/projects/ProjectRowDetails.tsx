@@ -20,7 +20,17 @@ import { DecodePanel } from "./DecodePanel";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, ChevronLeft, ChevronRight, Clock, Info } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Info,
+} from "lucide-react";
 import { getFileSummary, getImportReport } from "@/lib/api/client";
 import type { FileSummaryCell } from "@/lib/api/file-summary-schemas";
 import type { Project } from "@/lib/api/schemas";
@@ -28,6 +38,11 @@ import { toUserMessage } from "@/lib/api/http";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { OperatorChip, TechBadge, nd, ndPct, sortByCountDesc } from "./shared";
+import {
+  compareFileSummaryValues,
+  isPositiveFailure,
+  type FileSummarySortDirection,
+} from "./file-summary-table";
 
 // Pagination du tableau « Fichiers importés » : 10 lignes par page, navigation
 // précédent/suivant. Le découpage est une fonction pure exportée pour les tests.
@@ -49,11 +64,76 @@ const SUMMARY_COLUMNS = [
   "latency",
 ] as const;
 
-function SummaryHeader({ code }: { code: (typeof SUMMARY_COLUMNS)[number] }) {
+type SummaryColumn = (typeof SUMMARY_COLUMNS)[number];
+type FileSortKey =
+  | "filename"
+  | "status"
+  | "n_captures"
+  | "n_events"
+  | "n_gps"
+  | "decoder_version"
+  | SummaryColumn
+  | "error_msg";
+
+function SortIcon({ active, direction }: { active: boolean; direction: FileSummarySortDirection }) {
+  if (!active) return <ArrowUpDown className="h-3 w-3" aria-hidden />;
+  return direction === "asc" ? (
+    <ArrowUp className="h-3 w-3" aria-hidden />
+  ) : (
+    <ArrowDown className="h-3 w-3" aria-hidden />
+  );
+}
+
+function SortButton({
+  column,
+  label,
+  activeColumn,
+  direction,
+  onSort,
+}: {
+  column: FileSortKey;
+  label: string;
+  activeColumn: FileSortKey;
+  direction: FileSummarySortDirection;
+  onSort: (column: FileSortKey) => void;
+}) {
   const { t } = useTranslation();
+  const active = activeColumn === column;
+  return (
+    <button
+      type="button"
+      onClick={() => onSort(column)}
+      className="inline-flex items-center gap-1 whitespace-nowrap rounded hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      aria-label={t("projectImport.sortColumn", { column: label })}
+    >
+      {label}
+      <SortIcon active={active} direction={direction} />
+    </button>
+  );
+}
+
+function SummaryHeader({
+  code,
+  activeColumn,
+  direction,
+  onSort,
+}: {
+  code: SummaryColumn;
+  activeColumn: FileSortKey;
+  direction: FileSummarySortDirection;
+  onSort: (column: FileSortKey) => void;
+}) {
+  const { t } = useTranslation();
+  const label = t(`projectImport.summary.${code}.label`);
   return (
     <span className="inline-flex items-center justify-end gap-1 whitespace-nowrap">
-      {t(`projectImport.summary.${code}.label`)}
+      <SortButton
+        column={code}
+        label={label}
+        activeColumn={activeColumn}
+        direction={direction}
+        onSort={onSort}
+      />
       <Tooltip>
         <TooltipTrigger asChild>
           <button
@@ -156,6 +236,8 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
 
   const { t } = useTranslation();
   const [filesPage, setFilesPage] = useState(0);
+  const [sortColumn, setSortColumn] = useState<FileSortKey>("filename");
+  const [sortDirection, setSortDirection] = useState<FileSummarySortDirection>("asc");
   // Changement de projet : on repart toujours à la première page.
   useEffect(() => setFilesPage(0), [project.id]);
   const filesPaging = paginateImportFiles(q.data?.by_file ?? [], filesPage);
@@ -172,6 +254,38 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
     staleTime: 30_000,
   });
   const summaryByFilename = new Map(summary.data?.files.map((file) => [file.filename, file]) ?? []);
+  const handleSort = (column: FileSortKey) => {
+    if (column === sortColumn) setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+    else {
+      setSortColumn(column);
+      setSortDirection("asc");
+    }
+  };
+  const sortableValue = (file: (typeof filesPaging.rows)[number]): string | number | null => {
+    if ((SUMMARY_COLUMNS as readonly string[]).includes(sortColumn))
+      return summaryByFilename.get(file.filename)?.cells[sortColumn]?.value ?? null;
+    switch (sortColumn) {
+      case "filename":
+        return file.filename;
+      case "status":
+        return file.status;
+      case "n_captures":
+        return file.n_captures;
+      case "n_events":
+        return file.n_events;
+      case "n_gps":
+        return file.n_gps;
+      case "decoder_version":
+        return file.decoder_version;
+      case "error_msg":
+        return file.error_msg;
+      default:
+        return null;
+    }
+  };
+  const sortedRows = [...filesPaging.rows].sort((left, right) =>
+    compareFileSummaryValues(sortableValue(left), sortableValue(right), sortDirection),
+  );
 
   const technosFromProject = sortByCountDesc(project.technos_seen ?? undefined);
   const operatorsFromProject = sortByCountDesc(project.operators_plmn ?? undefined);
@@ -277,22 +391,47 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                 <table className="w-full border-collapse text-xs">
                   <thead className="bg-muted text-left text-[11px] uppercase tracking-wide text-muted-foreground">
                     <tr>
-                      <th className="px-3 py-2">Fichier</th>
-                      <th className="px-3 py-2">Statut</th>
-                      <th className="px-3 py-2 text-right">Captures</th>
-                      <th className="px-3 py-2 text-right">Événements</th>
-                      <th className="px-3 py-2 text-right">GPS</th>
-                      <th className="px-3 py-2">Décodeur</th>
-                      {SUMMARY_COLUMNS.map((code) => (
-                        <th key={code} className="px-3 py-2 text-right">
-                          <SummaryHeader code={code} />
+                      {[
+                        ["filename", "Fichier"],
+                        ["status", "Statut"],
+                        ["n_captures", "Captures"],
+                        ["n_events", "Événements"],
+                        ["n_gps", "GPS"],
+                        ["decoder_version", "Décodeur"],
+                      ].map(([column, label]) => (
+                        <th key={column} className="px-3 py-2">
+                          <SortButton
+                            column={column as FileSortKey}
+                            label={label!}
+                            activeColumn={sortColumn}
+                            direction={sortDirection}
+                            onSort={handleSort}
+                          />
                         </th>
                       ))}
-                      <th className="px-3 py-2">Erreur</th>
+                      {SUMMARY_COLUMNS.map((code) => (
+                        <th key={code} className="px-3 py-2 text-right">
+                          <SummaryHeader
+                            code={code}
+                            activeColumn={sortColumn}
+                            direction={sortDirection}
+                            onSort={handleSort}
+                          />
+                        </th>
+                      ))}
+                      <th className="px-3 py-2">
+                        <SortButton
+                          column="error_msg"
+                          label="Erreur"
+                          activeColumn={sortColumn}
+                          direction={sortDirection}
+                          onSort={handleSort}
+                        />
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filesPaging.rows.map((f) => {
+                    {sortedRows.map((f) => {
                       const fileSummary = summaryByFilename.get(f.filename);
                       return (
                         <tr key={f.filename} className="border-t hover:bg-muted/30">
@@ -311,15 +450,27 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                           <td className="px-3 py-2 text-muted-foreground">
                             {f.decoder_version ?? "N/D"}
                           </td>
-                          {SUMMARY_COLUMNS.map((code) => (
-                            <td key={code} className="px-3 py-2 text-right">
-                              {summary.isPending ? (
-                                <span className="text-muted-foreground">…</span>
-                              ) : (
-                                <SummaryValue code={code} cell={fileSummary?.cells[code]} />
-                              )}
-                            </td>
-                          ))}
+                          {SUMMARY_COLUMNS.map((code) => {
+                            const failure = isPositiveFailure(code, fileSummary?.cells[code]);
+                            return (
+                              <td
+                                key={code}
+                                data-failure={failure || undefined}
+                                aria-label={
+                                  failure
+                                    ? `${t("projectImport.failureDetected")}: ${fileSummary?.cells[code]?.value} / ${fileSummary?.cells[code]?.n}`
+                                    : undefined
+                                }
+                                className={`px-3 py-2 text-right ${failure ? "bg-destructive/10 text-destructive" : ""}`}
+                              >
+                                {summary.isPending ? (
+                                  <span className="text-muted-foreground">…</span>
+                                ) : (
+                                  <SummaryValue code={code} cell={fileSummary?.cells[code]} />
+                                )}
+                              </td>
+                            );
+                          })}
                           <td className="px-3 py-2 font-mono text-destructive">
                             {f.error_msg ?? "—"}
                           </td>

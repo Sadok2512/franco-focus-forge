@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { FileSummaryResponseSchema } from "@/lib/api/file-summary-schemas";
+import {
+  compareFileSummaryValues,
+  isPositiveFailure,
+} from "@/features/projects/file-summary-table";
 
 describe("file summary contract", () => {
   it("preserves a proven zero and the query id", () => {
@@ -50,5 +54,38 @@ describe("file summary contract", () => {
       files: [{ file_id: "f", filename: "f.nmf", cells: { latency: cell } }],
     });
     expect(result.success).toBe(true);
+  });
+});
+
+describe("file summary table behavior", () => {
+  it("colors only proven positive failure counters", () => {
+    const cell = {
+      value: 2,
+      n: 10,
+      max: null,
+      unit: "count",
+      source_event: "DAF",
+      reason: null,
+      query_id: "q",
+    };
+    expect(isPositiveFailure("session_fail", cell)).toBe(true);
+    expect(isPositiveFailure("session_fail", { ...cell, value: 0 })).toBe(false);
+    expect(isPositiveFailure("dl_total", cell)).toBe(false);
+  });
+
+  it("sorts values while keeping unavailable cells last", () => {
+    const values = [null, 10, 2, 30];
+    expect([...values].sort((a, b) => compareFileSummaryValues(a, b, "asc"))).toEqual([
+      2,
+      10,
+      30,
+      null,
+    ]);
+    expect([...values].sort((a, b) => compareFileSummaryValues(a, b, "desc"))).toEqual([
+      30,
+      10,
+      2,
+      null,
+    ]);
   });
 });

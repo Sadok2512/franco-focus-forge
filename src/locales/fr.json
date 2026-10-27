@@ -978,6 +978,8 @@
     "goToSite": "Aller au site parent →"
   },
   "projectImport": {
+    "sortColumn": "Trier par {{column}}",
+    "failureDetected": "Un ou plusieurs échecs prouvés",
     "filesPagination": "Pagination des fichiers importés",
     "previousPage": "Page précédente",
     "nextPage": "Page suivante",

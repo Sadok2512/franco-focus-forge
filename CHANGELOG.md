@@ -1,3 +1,8 @@
+## 1.113.1 (patch) — BC4-FRONT 2026-10-27 — Tri et signalement des échecs fichiers (Agent BC1)
+
+- Chaque en-tête du tableau des fichiers est triable dans les deux sens ; les valeurs absentes restent en fin de page.
+- Les compteurs RACH, appel, coupure voix et session sont signalés en rouge uniquement lorsque leur numérateur prouvé est strictement positif. Un zéro réel conserve son rendu normal et `—` reste une absence de mesure.
+
 ## 1.113.0 (minor) — BC4-FRONT 2026-10-27 — File summary Projects (Agent BC1)
 
 - Le tableau des fichiers Projects ajoute après Décodeur : Task, DL/UL total, LTE et NR, MOS, RACH fail, Call setup fail, Voice drop, Session fail et Latency.

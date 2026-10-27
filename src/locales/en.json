@@ -978,6 +978,8 @@
     "goToSite": "Go to parent site →"
   },
   "projectImport": {
+    "sortColumn": "Sort by {{column}}",
+    "failureDetected": "One or more proven failures",
     "filesPagination": "Imported files pagination",
     "previousPage": "Previous page",
     "nextPage": "Next page",
