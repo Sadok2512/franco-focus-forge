@@ -307,7 +307,7 @@ html[data-density="comfortable"] body { font-size: 14px; }
  * transpalette translucide au-dessus du contenu. En plein écran elle se
  * replie en plus hors champ et glisse en place quand le pointeur atteint le
  * bord supérieur ou que le clavier y entre. */
-html { --app-header-offset: 56px; --project-header-clearance: 0px; overflow-x: clip; }
+html { --app-header-offset: 56px; --project-header-clearance: 0px; overflow-x: hidden; }
 html.app-header-floating { --app-header-offset: 0px; --project-header-clearance: 56px; }
 html.app-header-floating.app-fullscreen { --project-header-clearance: 0px; }
 
