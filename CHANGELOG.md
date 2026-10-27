@@ -1,3 +1,40 @@
+## 1.111.2 (patch) — BC4-FRONT 2026-10-27 — Clé cache /metrics dérivée du sha + garde GL1 (Agent BC3)
+
+Suivi 1.111.1 : le `SCHEMA_PREFIX` manuel était fragile (fallait
+bumper à la main à chaque changement de forme). Remplacé par une
+dérivation automatique de la clé depuis `catalog_release.sha256`
+embarqué dans l'enveloppe `/metrics`.
+
+**Nouvelle clé pour `/metrics`** :
+```
+bc4.cache.sha.{sha10}.project-metrics.{pid}
+```
+où `sha10` = `catalog_release.sha256.slice(0, 10)`. Un nouveau
+catalogue produit **une nouvelle clé** ; les anciennes `bc4.cache.sha.
+{autre_sha}.project-metrics.{pid}` sont purgées **à la fin de chaque
+fetch** (fonction `purgeStaleMetricsCache`).
+
+**Garde GL1** (`readValidMetricsCache`) : à chaque `initialData`, on
+scanne les entrées pour le pid, et pour chacune on vérifie que le sha
+dans la clé matche le préfixe de `catalog_release.sha256` embarqué
+dans l'enveloppe. Si mismatch (corruption / tampering / schema
+inconsistent) → **supprimée + ignorée**. Zéro invention : si la
+cache est corrompue, on refetch.
+
+Si `catalog_release` est null (fallback_legacy), on **ne persiste
+rien** (pas de sha → pas de clé déterministe) — mieux vaut refetch
+que servir une ancienne forme non reproductible.
+
+Au boot, purge des entrées legacy (`bc4.cache.project-metrics.*`,
+`bc4.cache.v2.project-metrics.*`) : la nouvelle clé `bc4.cache.sha.*`
+rend obsolètes les anciennes.
+
+Les autres queries persistantes (`kpiCatalogQuery`) gardent l'ancien
+préfixe `v2` (pas de sha dans leur enveloppe).
+
+Fichier : `src/lib/analytics-bootstrap.ts` — `shaKeyedMetricsQuery`
+nouvelle fonction, remplace `persistedQuery` pour `metricsCatalogQuery`.
+
 ## 1.111.1 (patch) — BC4-FRONT 2026-10-27 — Bust localStorage cache /metrics (fallback v6 fantôme) (Agent BC3)
 
 Incident écran utilisateur Test_3, front v1.111.0, Ctrl+F5 : arbre sans
