@@ -12,6 +12,7 @@ export const CreateProjectRequestSchema = z.object({
     .string()
     .min(1, "Le nom du projet est obligatoire.")
     .max(200, "Nom trop long (max 200 caractères)."),
+  visibility: z.enum(["private", "public"]),
 });
 export type CreateProjectRequest = z.infer<typeof CreateProjectRequestSchema>;
 
@@ -20,6 +21,8 @@ export type ProjectIngestStatus = z.infer<typeof ProjectIngestStatusSchema>;
 
 export const ProjectIngestViewSchema = z.object({
   id: z.string(),
+  owner_id: z.string(),
+  visibility: z.enum(["private", "public"]),
   name: z.string(),
   created_at: z.string().nullable(),
   actor: z.string().nullable(),

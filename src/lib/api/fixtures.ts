@@ -14,6 +14,8 @@ function mulberry32(seed: number) {
 export const PROJECTS: Project[] = [
   {
     id: "idf-t3-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Paris 2026 Q1",
     geography: "Île-de-France (Paris + Petite Couronne)",
     center: [2.35, 48.86],
@@ -30,6 +32,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: "lyon-drive-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Lyon Métropole",
     geography: "Auvergne-Rhône-Alpes",
     center: [4.84, 45.76],
@@ -46,6 +50,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: "marseille-5g-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Marseille 5G",
     geography: "PACA",
     center: [5.37, 43.296],
@@ -62,6 +68,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: "rennes-lte-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Rennes LTE (sans NR)",
     geography: "Bretagne",
     center: [-1.68, 48.11],
@@ -78,6 +86,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: "lille-indoor-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Tests Indoor",
     geography: "Bâtiment Orange Village",
     center: [2.24, 48.83],
@@ -94,6 +104,8 @@ export const PROJECTS: Project[] = [
   },
   {
     id: "national-2026",
+    owner_id: "mock-current-user",
+    visibility: "private",
     name: "Benchmark National",
     geography: "France entière",
     center: [2.35, 46.8],

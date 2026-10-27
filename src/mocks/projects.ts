@@ -260,7 +260,7 @@ export function listProjectsMock(): Project[] {
 }
 
 /** Fabrique un Project "vide" prêt pour l'écran de projet. */
-export function createProjectMock(name: string): Project {
+export function createProjectMock(name: string, visibility: "private" | "public"): Project {
   const trimmed = name.trim();
   if (!trimmed) {
     throw Object.assign(new Error("Le nom du projet est obligatoire."), {
@@ -280,6 +280,8 @@ export function createProjectMock(name: string): Project {
   const iso = now.toISOString().slice(0, 10);
   const project: Project = {
     id,
+    owner_id: "mock-current-user",
+    visibility,
     name: trimmed,
     geography: "À définir après le premier import NMF",
     center: [2.35, 46.8],

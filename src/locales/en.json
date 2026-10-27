@@ -27,6 +27,11 @@
     "tips": "Tips",
     "help": "Help",
     "radioEngineer": "Radio Engineer",
+    "role": {
+      "admin": "Administrator",
+      "editor": "Radio Engineer",
+      "viewer": "Reader"
+    },
     "settings": "Settings",
     "logout": "Sign out",
     "language": "Language",
@@ -49,6 +54,20 @@
     "allCount": "All ({{count}})",
     "searchLabel": "Search {{label}}",
     "selectionSummary": "{{count}} selected · {{total}} options"
+  },
+  "projects": {
+    "scope": {
+      "label": "Projects",
+      "my": "My projects",
+      "all": "All projects"
+    },
+    "visibility": {
+      "label": "Visibility",
+      "private": "Private",
+      "public": "Public",
+      "privateHint": "Only you can access this project.",
+      "publicHint": "All authenticated users can view this project."
+    }
   },
   "metrics": {
     "a78f2051e6c9": "Export CSV",

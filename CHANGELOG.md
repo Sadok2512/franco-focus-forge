@@ -1,3 +1,9 @@
+## Unreleased (minor) — BC4-FRONT — Propriété et visibilité des projets L1 (Agent BC1)
+
+- Rend la visibilité privée/publique obligatoire dans le dialogue de création existant et transmet cette valeur au backend.
+- Ajoute le filtre `Mes projets / Tous les projets` dans la barre existante, sans modifier la structure de la page.
+- Affiche dans l’en-tête le rôle réel de la session au lieu du libellé fixe « Radio Engineer ».
+
 ## 1.113.4 (patch) — BC4-FRONT 2026-10-27 — Garde contrat Metrics obligatoire (Agent BC1)
 
 - Aligne le garde manuel Metrics sur l'enveloppe `MetricCatalogResponse` introduite par l'API 0.80.0 et vérifie la parité des feuilles avec `catalog_release.n_leaves` au lieu d'un total historique codé en dur.

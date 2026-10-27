@@ -28,9 +28,12 @@ const delay = (ms: number, signal?: AbortSignal) =>
     });
   });
 
-export async function getProjects(signal?: AbortSignal): Promise<Project[]> {
+export async function getProjects(
+  signal?: AbortSignal,
+  scope: "my" | "all" = "my",
+): Promise<Project[]> {
   return apiOrMock(
-    () => apiFetch("/projects", ProjectSchema.array(), { signal }),
+    () => apiFetch(`/projects?scope=${scope}`, ProjectSchema.array(), { signal }),
     async () => {
       await delay(250, signal);
       // Fusionne les créations mock (localStorage) devant les seeds.

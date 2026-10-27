@@ -54,9 +54,10 @@ import {
  *  contrat « null → N/D »). */
 export async function createProject(
   name: string,
+  visibility: "private" | "public",
   signal?: AbortSignal,
 ): Promise<ProjectIngestView> {
-  const body = CreateProjectRequestSchema.parse({ name });
+  const body = CreateProjectRequestSchema.parse({ name, visibility });
   return apiOrMock(
     () =>
       apiFetch("/projects", ProjectIngestViewSchema, {
@@ -66,11 +67,13 @@ export async function createProject(
       }),
     async () => {
       await new Promise((r) => setTimeout(r, 120));
-      const p = createProjectMock(body.name);
+      const p = createProjectMock(body.name, body.visibility);
       // Projection vers la vue "ingestion" : résumés null tant qu'aucun
       // NMF n'a été ingéré (jamais 0, règle dure du lot).
       return ProjectIngestViewSchema.parse({
         id: p.id,
+        owner_id: p.owner_id,
+        visibility: p.visibility,
         name: p.name,
         created_at: new Date().toISOString(),
         actor: null,

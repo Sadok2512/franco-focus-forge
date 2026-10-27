@@ -25,6 +25,8 @@ export type Service = z.infer<typeof ServiceSchema>;
 // le back peut renvoyer `UMTS` (hors enum front historique).
 export const ProjectSchema = z.object({
   id: z.string(),
+  owner_id: z.string(),
+  visibility: z.enum(["private", "public"]),
   name: z.string(),
   geography: z.string(),
   center: z.tuple([z.number(), z.number()]),
