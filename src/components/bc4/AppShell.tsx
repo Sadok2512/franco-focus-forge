@@ -31,7 +31,9 @@ import { getBackHealth } from "@/lib/api/project-kpi";
 import { useActiveProject } from "@/lib/activeProject";
 import { APP_VERSION } from "@/lib/version";
 import { AppFullscreenButton } from "./AppFullscreenButton";
+import { HeaderFloatingButton } from "./HeaderFloatingButton";
 import { useAppFullscreen } from "@/lib/app-fullscreen";
+import { useHeaderFloating } from "@/lib/header-floating";
 
 const NAV = [
   { to: "/projects", label: "nav.projects" },
@@ -132,6 +134,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   // atteint le bord supérieur, quand le clavier y entre, et brièvement au
   // moment du passage en plein écran pour signaler qu'elle est toujours là.
   const fullscreen = useAppFullscreen();
+  const floating = useHeaderFloating();
   const headerRef = useRef<HTMLElement>(null);
   const [headerOpen, setHeaderOpen] = useState(false);
   const headerOpenRef = useRef(false);
@@ -140,7 +143,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     setHeaderOpen(v);
   };
   useEffect(() => {
-    if (!fullscreen) {
+    if (!fullscreen || !floating) {
       showHeader(false);
       return;
     }
@@ -165,7 +168,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       window.removeEventListener("pointerdown", onDown);
       window.removeEventListener("focusin", onFocus);
     };
-  }, [fullscreen]);
+  }, [fullscreen, floating]);
 
   const name = session?.displayName ?? t("common.user");
   const initials = name
@@ -177,7 +180,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      {fullscreen && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
+      {fullscreen && floating && !headerOpen && <div className="app-header-hotzone" aria-hidden="true" />}
       <header
         ref={headerRef}
         className={`app-header sticky top-0 z-40 flex h-14 items-center gap-6 border-b bg-card px-5 ${headerOpen ? "is-revealed" : ""}`}
@@ -212,6 +215,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           })}
         </nav>
         <div className="ml-auto flex items-center gap-1">
+          <HeaderFloatingButton />
           <AppFullscreenButton />
           {activeProject && (
             <div
