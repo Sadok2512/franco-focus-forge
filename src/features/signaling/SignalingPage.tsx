@@ -1016,27 +1016,34 @@ export function SignalingPage({
   const overviewPanelRef = useRef<PanelImperativeHandle>(null);
   // Si les deux (timeline + map) sont OFF, on replie aussi la rangée
   // « overview » entière pour libérer verticalement l'espace à l'inspecteur.
+  // Toggles compute the next state outside React updaters (no side effects
+  // inside setState) and panels report back via onResize, so a section
+  // collapsed by dragging and its button always stay coherent.
   const syncOverview = (nextMap: boolean, nextTimeline: boolean) => {
     if (!nextMap && !nextTimeline) overviewPanelRef.current?.collapse();
     else overviewPanelRef.current?.expand();
   };
   const toggleMap = () => {
-    setMapVisible((prev) => {
-      const next = !prev;
-      if (next) mapPanelRef.current?.expand();
-      else mapPanelRef.current?.collapse();
-      syncOverview(next, timelineVisible);
-      return next;
-    });
+    const next = !mapVisible;
+    setMapVisible(next);
+    if (next) mapPanelRef.current?.expand();
+    else mapPanelRef.current?.collapse();
+    syncOverview(next, timelineVisible);
   };
   const toggleTimeline = () => {
-    setTimelineVisible((prev) => {
-      const next = !prev;
-      if (next) timelinePanelRef.current?.expand();
-      else timelinePanelRef.current?.collapse();
-      syncOverview(mapVisible, next);
-      return next;
-    });
+    const next = !timelineVisible;
+    setTimelineVisible(next);
+    if (next) timelinePanelRef.current?.expand();
+    else timelinePanelRef.current?.collapse();
+    syncOverview(mapVisible, next);
+  };
+  const syncFromPanel = (
+    ref: React.RefObject<PanelImperativeHandle | null>,
+    current: boolean,
+    set: (v: boolean) => void,
+  ) => {
+    const collapsed = ref.current?.isCollapsed() ?? false;
+    if (collapsed === current) set(!collapsed);
   };
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
   const [protocols, setProtocols] = useState(layers),
