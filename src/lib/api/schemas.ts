@@ -12,6 +12,25 @@ export type Operator = z.infer<typeof OperatorSchema>;
 export type Tech = z.infer<typeof TechSchema>;
 export type Service = z.infer<typeof ServiceSchema>;
 
+// Helpers de reconnaissance catalogue. Un NMF réel peut exposer un PLMN,
+// une techno ou un service hors catalogue (ex. `PLMN 208-08`). Le back ne
+// renomme ni ne supprime la valeur, et le front doit l'afficher telle
+// quelle en gris, avec un tooltip explicitant la non-présence au catalogue.
+export const isKnownOperator = (value: string): value is Operator =>
+  (OPERATORS as readonly string[]).includes(value);
+export const isKnownTech = (value: string): value is Tech =>
+  (TECHNOLOGIES as readonly string[]).includes(value);
+export const isKnownService = (value: string): value is Service =>
+  (SERVICES as readonly string[]).includes(value);
+
+// Tooltip déterministe pour les valeurs non cataloguées. Format figé pour
+// permettre les tests de non-régression. Le libellé passe tel quel (ex.
+// "PLMN 208-08" déjà formaté par l'ingest).
+export const uncatalogedTooltip = (kind: "operator" | "tech" | "service", value: string): string => {
+  const catalog = kind === "operator" ? "opérateurs" : kind === "tech" ? "technologies" : "services";
+  return `${value} détecté dans les logs, non présent dans le catalogue des ${catalog}`;
+};
+
 // Champs d'ingestion ajoutés en 1.5.1 : exposés par le back sur `/projects`
 // et `/projects/{id}` lorsqu'un NMF a été ingéré. Tous sont `.optional()`
 // pour rester compatibles avec les fixtures héritées B0 qui ne les ont
@@ -36,9 +55,13 @@ export const ProjectSchema = z.object({
   name: z.string(),
   geography: z.string(),
   center: z.tuple([z.number(), z.number()]),
-  operators: z.array(OperatorSchema),
-  technologies: z.array(TechSchema),
-  services: z.array(ServiceSchema),
+  // Alimentés par l'ingestion : un NMF peut contenir un PLMN non catalogué,
+  // une techno ou un service hors liste. On accepte la chaîne brute ici ;
+  // la composante d'affichage utilise `isKnownOperator`/`isKnownTech`/
+  // `isKnownService` pour la griser avec `uncatalogedTooltip`.
+  operators: z.array(z.string()),
+  technologies: z.array(z.string()),
+  services: z.array(z.string()),
   bands: z.array(z.string()),
   departements: z.array(z.string()),
   periodStart: z.string(),
@@ -62,7 +85,9 @@ export const FilterContextSchema = z.object({
   rrc_message: z.string().optional(),
   project: z.string().optional(),
   op: z.array(z.string()).optional(),
-  tech: z.array(TechSchema).optional(),
+  // tech relâché à `string[]` (même règle que `op` et `svc`) pour accepter
+  // les technos non cataloguées remontées par l'ingestion.
+  tech: z.array(z.string()).optional(),
   // bc4-front 1.16.0 — `svc` est relâché à `string[]` pour accepter les
   // valeurs service_type réelles exposées par bc4-back 0.35.0+
   // (`HTTP_DOWNLOAD`, `HTTP_UPLOAD`, `VOICE_CALL`, …) en plus des 3
@@ -112,9 +137,10 @@ export const MeasurementPointSchema = z.object({
   id: z.string(),
   lat: z.number(),
   lng: z.number(),
-  operator: OperatorSchema,
-  tech: TechSchema,
-  service: ServiceSchema,
+  // Alimentés par l'ingestion → `string` ouvert (cf. Project.operators).
+  operator: z.string(),
+  tech: z.string(),
+  service: z.string(),
   band: z.string(),
   dep: z.string(),
   site: z.string(),
@@ -135,9 +161,9 @@ export type MeasurementPoint = z.infer<typeof MeasurementPointSchema>;
 export const OverviewPointSchema = MeasurementPointSchema.extend({
   lat: z.number().nullable(),
   lng: z.number().nullable(),
-  operator: OperatorSchema.nullable(),
-  tech: TechSchema.nullable(),
-  service: ServiceSchema.nullable(),
+  operator: z.string().nullable(),
+  tech: z.string().nullable(),
+  service: z.string().nullable(),
   band: z.string().nullable(),
   dep: z.string().nullable(),
   site: z.string().nullable(),

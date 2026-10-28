@@ -1,3 +1,24 @@
+## 1.114.2 (patch) — BC4-FRONT 2026-10-28 — PLMN non catalogué toléré + chip grisée (Agent BC3)
+
+Hotfix couplé au bc4-back 0.90.3 (ProjectSchema avec `str` au lieu de
+`Literal` sur les champs alimentés par l'ingestion). Côté front :
+
+- `src/lib/api/schemas.ts` : `ProjectSchema.operators` / `technologies` /
+  `services` et `MeasurementPointSchema.operator` / `tech` / `service`
+  (+ `OverviewPointSchema`) passent de `z.enum(...)` à `z.string()`. Le
+  payload du back avec un PLMN non catalogué n'est plus rejeté par Zod.
+  `FilterContextSchema.tech` relâché à `z.array(z.string())` par symétrie
+  avec `op` et `svc` (déjà `string[]` depuis 1.16.0).
+- Nouveaux helpers `isKnownOperator`, `isKnownTech`, `isKnownService`
+  et `uncatalogedTooltip(kind, value)` — tooltip déterministe
+  `"${value} détecté dans les logs, non présent dans le catalogue des
+  opérateurs"` (ou technologies/services selon le kind).
+- `OperatorChip` et `TechBadge` (ajout `ServiceBadge`) : les valeurs
+  hors catalogue sont rendues en gris (`bg-slate-*`) avec le tooltip
+  explicite + attribut `data-uncataloged`. Les 4 opérateurs, les 3
+  technos et les 3 services connus gardent leur couleur et leur
+  tooltip neutre. Aucun libellé n'est renommé ni masqué.
+
 ## 1.114.1 (patch) — BC4-FRONT 2026-10-27 — i18n Nouveau projet + cache-bust (Agent BC3)
 
 Régression visuelle rapportée par Codex67 : le dialogue « Nouveau projet »
