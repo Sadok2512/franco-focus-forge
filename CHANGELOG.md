@@ -19,6 +19,16 @@ Hotfix couplé au bc4-back 0.90.3 (ProjectSchema avec `str` au lieu de
   technos et les 3 services connus gardent leur couleur et leur
   tooltip neutre. Aucun libellé n'est renommé ni masqué.
 
+## Resilience : projects upstream recovery and import metadata (Agent BC1, mergée dans 1.115.0)
+
+- Maps transient proxy DNS/connection failures to a typed `503
+  UPSTREAM_UNAVAILABLE` response with `Retry-After`, and automatically retries
+  the Projects query while presenting "Reconnexion au backend…" and a manual
+  retry action.
+- Explains unavailable perimeter, operator and technology metadata during an
+  active import with the real processed/total file counts.
+- Covers the bilingual visibility wording used by the existing project dialog.
+
 ## 1.114.1 (patch) — BC4-FRONT 2026-10-27 — i18n Nouveau projet + cache-bust (Agent BC3)
 
 Régression visuelle rapportée par Codex67 : le dialogue « Nouveau projet »

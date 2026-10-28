@@ -64,7 +64,9 @@ const SessionSchema = z.object({
 function readSession(): Session | null {
   if (typeof window === "undefined") return null;
   try {
-    const storage = window.sessionStorage.getItem(LS_SESSION) ? window.sessionStorage : window.localStorage;
+    const storage = window.sessionStorage.getItem(LS_SESSION)
+      ? window.sessionStorage
+      : window.localStorage;
     const raw = storage.getItem(LS_SESSION);
     if (!raw) return null;
     const parsed = SessionSchema.safeParse(JSON.parse(raw));
@@ -88,7 +90,8 @@ export function setSession(s: Session | null, remember = true): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(LS_SESSION);
   window.sessionStorage.removeItem(LS_SESSION);
-  if (s) (remember ? window.localStorage : window.sessionStorage).setItem(LS_SESSION, JSON.stringify(s));
+  if (s)
+    (remember ? window.localStorage : window.sessionStorage).setItem(LS_SESSION, JSON.stringify(s));
 }
 
 export function getSession(): Session | null {
@@ -154,6 +157,13 @@ export class ApiNetworkError extends ApiHttpError {
   constructor(message: string) {
     super("NETWORK_ERROR", message, 0);
   }
+}
+
+export function isUpstreamUnavailable(err: unknown): boolean {
+  return (
+    err instanceof ApiNetworkError ||
+    (err instanceof ApiHttpError && err.status === 503 && err.code === "UPSTREAM_UNAVAILABLE")
+  );
 }
 
 /** Erreur schéma Zod : réponse 2xx mais forme non attendue. */

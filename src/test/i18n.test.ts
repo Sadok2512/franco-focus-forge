@@ -39,4 +39,12 @@ describe("UI language", () => {
     await expect(setLanguage("fr")).resolves.toBeUndefined();
     expect(i18n.t("nav.projects")).toBe("Projets");
   });
+  it("keeps the project creation visibility wording in both languages", async () => {
+    await setLanguage("fr");
+    expect(i18n.t("projects.visibility.label")).toBe("Visibilité");
+    expect(i18n.t("projects.visibility.privateHint")).toBe("Vous seul pouvez accéder à ce projet.");
+    await setLanguage("en");
+    expect(i18n.t("projects.visibility.label")).toBe("Visibility");
+    expect(i18n.t("projects.visibility.privateHint")).toBe("Only you can access this project.");
+  });
 });
