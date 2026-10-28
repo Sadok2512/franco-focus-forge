@@ -1,3 +1,26 @@
+## 1.115.0 (minor) — BC4-FRONT 2026-10-28 — Release groupée : superstream UI + resilience i18n + PLMN tolérant (Agent BC3)
+
+Compagne du bc4-back 0.91.0 (déploiement groupé). Trois branches mergées
+sur main :
+
+- **hotfix/1.114.2-plmn-uncatalogued** — Zod ouvert (`z.string()`) pour
+  `operators`/`technologies`/`services` sur `ProjectSchema`,
+  `MeasurementPointSchema`, `OverviewPointSchema`, `FilterContextSchema`.
+  `OperatorChip`/`TechBadge`/`ServiceBadge` : valeur hors catalogue en
+  gris (`bg-slate-*`) avec tooltip `"<value> détecté dans les logs, non
+  présent dans le catalogue des opérateurs"` et `data-uncataloged`.
+- **bc1/projects-resilience-i18n** — `503 UPSTREAM_UNAVAILABLE` typé +
+  `Retry-After`, retry automatique de la query Projects avec
+  « Reconnexion au backend… » et bouton retry manuel. Métadonnées
+  perimeter/operator/technology indisponibles pendant un import actif
+  → libellé réel `processed/total files`. Visibility bilingue dans le
+  dialogue projet.
+- **feat/superstream-front-wiring** — `SuperstreamDialog`,
+  `SuperstreamTree`, modèle, API client reliés aux vraies routes back
+  (`/projects/{id}/superstreams/{ss}/stream` qui déclare
+  `parse_snapshots_distinct`). Colonnes L3 / Records dans la vue par
+  capture. Les captures non-`done` sont grisées (pas sélectionnables).
+
 ## 1.114.2 (patch) — BC4-FRONT 2026-10-28 — PLMN non catalogué toléré + chip grisée (Agent BC3)
 
 Hotfix couplé au bc4-back 0.90.3 (ProjectSchema avec `str` au lieu de
