@@ -842,7 +842,11 @@
       "captures": "Captures",
       "events": "Événements",
       "gps": "GPS",
-      "imported": "Importé"
+      "imported": "Importé",
+      "l3Messages": "Messages L3",
+      "l3MessagesHint": "Messages L3 décodés (RRC, SIP, NAS) — pas tous les records bruts du fichier.",
+      "records": "Records",
+      "recordsHint": "Nombre total de records bruts dans la capture (toutes catégories)."
     },
     "loadingLogs": "Chargement des logs…",
     "noLogs": "Aucun log ne correspond.",
@@ -865,7 +869,9 @@
     "rename": "Renommer",
     "delete": "Supprimer le Superstream",
     "deleteConfirm": "Supprimer ce Superstream ? Les logs d'origine du projet ne seront pas supprimés.",
-    "manage": "Gérer les Superstreams"
+    "manage": "Gérer les Superstreams",
+    "notSelectable": "Fichier en cours d'import ({{status}}) — non sélectionnable.",
+    "backendError": "Impossible de charger les superstreams — vérifier la connexion back."
   },
   "mapSites": {
     "controls": "Couches sites et cellules",

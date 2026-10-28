@@ -19,12 +19,17 @@ export const NmfFileReportSchema = z.object({
   filename: z.string(),
   status: NmfFileStatusSchema,
   n_captures: z.number().int(),
-  n_events: z.number().int(),
-  n_gps: z.number().int(),
+  n_events: z.number().int(),             // L3 messages décodés (RRCSM/SIPSM/L3SM)
+  n_gps: z.number().int(),                // COUNT(event_code='GPS')
   // Le back permet un décodeur "unknown" tant que l'erreur frappe très tôt :
   // la valeur peut être `null`. On n'invente pas de version factice.
   decoder_version: z.string().nullable(),
   error_msg: z.string().nullable(),
+  // NMFHE2 — champs additifs. `imported_at` = `nmf_file.uploaded_at` ;
+  // `n_records` = somme `nmf_capture.n_records` pour ce fichier.
+  // Nullable + optional : rétro-compat si back pas encore à jour.
+  imported_at: z.string().nullable().optional(),
+  n_records: z.number().int().nullable().optional(),
 });
 export type NmfFileReport = z.infer<typeof NmfFileReportSchema>;
 export const NmfFileEntrySchema = NmfFileReportSchema;

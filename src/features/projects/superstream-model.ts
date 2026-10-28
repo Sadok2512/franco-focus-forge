@@ -2,11 +2,22 @@
 export type SuperstreamLog = {
   id: string;
   filename: string;
+  status?: string;              // NMFHE2 — 'done' | 'decoding' | 'pending' | 'error'
   n_captures: number | null;
-  n_events: number | null;
-  n_gps: number | null;
-  imported_at: string | null;
+  n_events: number | null;      // L3 messages décodés (RRCSM/SIPSM/L3SM)
+  n_gps: number | null;         // COUNT(event_code='GPS')
+  n_records: number | null;     // NMFHE2 — records bruts (nmf_capture.n_records)
+  imported_at: string | null;   // NMFHE2 — nmf_file.uploaded_at
 };
+
+/** Un log est sélectionnable comme membre d'un superstream ssi son
+ *  import est terminé (`status === 'done'`). Les autres statuts
+ *  (decoding/pending/error) sont grisés avec tooltip. */
+export function isLogSelectable(log: SuperstreamLog): boolean {
+  return log.status === "done" || log.status === undefined;
+  // `undefined` conservé pour compat anciens projets dont l'import_report
+  // ne pose pas encore `status` ; le back actuel l'alimente toujours.
+}
 
 export type NameError = "required" | "invalid" | "duplicate" | null;
 

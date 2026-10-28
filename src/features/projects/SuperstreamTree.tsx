@@ -20,7 +20,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toUserMessage } from "@/lib/api/http";
-import { deleteSuperstream, getProjectLogs, listSuperstreams, type Superstream } from "@/lib/api/superstreams";
+import {
+  clearSuperstreamsLocalStorageMock,
+  deleteSuperstream,
+  getProjectLogs,
+  listSuperstreams,
+  type Superstream,
+} from "@/lib/api/superstreams";
 import { SuperstreamDialog } from "./SuperstreamDialog";
 
 const EXP_KEY = "bc4.superstreams.expanded";
@@ -52,6 +58,9 @@ export function SuperstreamTree({
   });
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   useEffect(() => setExpanded(readExpanded()), []);
+  // NMFHE2 — purge les clés `bc4.superstreams.<pid>` écrites par la version
+  // simulée (localStorage mock) : le back est désormais la seule source.
+  useEffect(() => { clearSuperstreamsLocalStorageMock(); }, []);
   const toggle = (key: string, force?: boolean) =>
     setExpanded((prev) => {
       const next = new Set(prev);

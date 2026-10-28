@@ -1,17 +1,29 @@
-// Superstream adapter. A Superstream only groups existing project logs by id:
-// it never copies, decodes or deletes logs. Real backend routes
-// (/projects/{id}/superstreams) are used in API mode; the mock store keeps
-// the same contract in localStorage, isolated per project.
+// Superstream API client — NMFHE2.
+//
+// Un superstream groupe par ID des logs EXISTANTS d'un projet : il ne
+// copie, ne décode, ni ne supprime aucune donnée. 100% back
+// (`/projects/{id}/superstreams`) — plus de simulation localStorage.
+// Une erreur back s'affiche comme une erreur (toUserMessage), jamais
+// comme un succès silencieux.
+//
+// Nettoyage des clés `bc4.superstreams.<pid>` écrites par la version
+// précédente mocked : `clearSuperstreamsLocalStorageMock()` est appelé
+// par `src/features/projects/SuperstreamTree.tsx` à l'`useEffect` initial.
 import { z } from "zod";
-import { ApiHttpError, apiFetch, apiOrMock } from "./http";
+import { apiFetch } from "./http";
 import { getImportReport } from "./projects";
 import type { SuperstreamLog } from "@/features/projects/superstream-model";
 
+// Shape renvoyée par le back. captureIds et positions sont des champs
+// additifs (NMFHE2) ; ignorés par le dialog actuel, utilisés par le
+// consommateur `GET /stream` (lot ultérieur Signaling/Metrics).
 export const SuperstreamSchema = z.object({
   id: z.string(),
   projectId: z.string(),
   name: z.string(),
   logIds: z.array(z.string()),
+  captureIds: z.array(z.string()).optional(),
+  positions: z.array(z.number()).optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
@@ -20,8 +32,8 @@ const ListSchema = z.array(SuperstreamSchema);
 
 export type SuperstreamInput = { name: string; logIds: string[] };
 
-/** Project logs from the existing import report. The report has no log id
- *  or import date, so the filename (+ occurrence index if repeated) is the id. */
+/** Project logs from the existing import report. `imported_at` et
+ *  `n_records` sont alimentés depuis NmfFileEntry (NMFHE2). */
 export async function getProjectLogs(projectId: string, signal?: AbortSignal): Promise<SuperstreamLog[]> {
   const report = await getImportReport(projectId, signal);
   const seen = new Map<string, number>();
@@ -31,101 +43,56 @@ export async function getProjectLogs(projectId: string, signal?: AbortSignal): P
     return {
       id: n === 0 ? f.filename : `${f.filename}#${n}`,
       filename: f.filename,
+      status: f.status,
       n_captures: f.n_captures,
       n_events: f.n_events,
       n_gps: f.n_gps,
-      imported_at: null,
+      n_records: f.n_records ?? null,
+      imported_at: f.imported_at ?? null,
     };
   });
 }
 
-const LS = (projectId: string) => `bc4.superstreams.${projectId}`;
-function readMock(projectId: string): Superstream[] {
-  try {
-    const parsed = ListSchema.safeParse(JSON.parse(localStorage.getItem(LS(projectId)) ?? "[]"));
-    return parsed.success ? parsed.data : [];
-  } catch {
-    return [];
+/** Nettoie les clés `bc4.superstreams.<pid>` écrites par la version
+ *  précédente simulée. Idempotent, aucun effet si rien à nettoyer. */
+export function clearSuperstreamsLocalStorageMock(): number {
+  if (typeof window === "undefined") return 0;
+  let removed = 0;
+  for (let i = window.localStorage.length - 1; i >= 0; i--) {
+    const k = window.localStorage.key(i);
+    if (k && k.startsWith("bc4.superstreams.")) {
+      window.localStorage.removeItem(k);
+      removed += 1;
+    }
   }
+  return removed;
 }
-function writeMock(projectId: string, list: Superstream[]) {
-  localStorage.setItem(LS(projectId), JSON.stringify(list));
-}
-function assertUnique(list: Superstream[], name: string, selfId?: string) {
-  const lower = name.trim().toLowerCase();
-  if (list.some((s) => s.id !== selfId && s.name.toLowerCase() === lower)) {
-    throw new ApiHttpError("CONFLICT", "A Superstream with this name already exists in this project.", 409);
-  }
-}
+
 const base = (projectId: string) => `/projects/${encodeURIComponent(projectId)}/superstreams`;
-const delay = () => new Promise((r) => setTimeout(r, 150));
 
 export function listSuperstreams(projectId: string, signal?: AbortSignal): Promise<Superstream[]> {
-  return apiOrMock(
-    () => apiFetch(base(projectId), ListSchema, { signal }),
-    async () => {
-      await delay();
-      return readMock(projectId);
-    },
-    "listSuperstreams",
-  );
+  return apiFetch(base(projectId), ListSchema, { signal });
 }
 
 export function createSuperstream(projectId: string, input: SuperstreamInput): Promise<Superstream> {
   const body = { name: input.name.trim(), logIds: [...new Set(input.logIds)] };
-  return apiOrMock(
-    () => apiFetch(base(projectId), SuperstreamSchema, { method: "POST", body: JSON.stringify(body) }),
-    async () => {
-      await delay();
-      const list = readMock(projectId);
-      assertUnique(list, body.name);
-      const now = new Date().toISOString();
-      const s: Superstream = {
-        id: `ss_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
-        projectId,
-        ...body,
-        createdAt: now,
-        updatedAt: now,
-      };
-      writeMock(projectId, [...list, s]);
-      return s;
-    },
-    "createSuperstream",
-  );
+  return apiFetch(base(projectId), SuperstreamSchema, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function updateSuperstream(projectId: string, id: string, input: SuperstreamInput): Promise<Superstream> {
   const body = { name: input.name.trim(), logIds: [...new Set(input.logIds)] };
-  return apiOrMock(
-    () =>
-      apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, SuperstreamSchema, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      }),
-    async () => {
-      await delay();
-      const list = readMock(projectId);
-      const cur = list.find((s) => s.id === id);
-      if (!cur) throw new ApiHttpError("NOT_FOUND", "Superstream not found", 404);
-      assertUnique(list, body.name, id);
-      const next = { ...cur, ...body, updatedAt: new Date().toISOString() };
-      writeMock(projectId, list.map((s) => (s.id === id ? next : s)));
-      return next;
-    },
-    "updateSuperstream",
-  );
+  return apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, SuperstreamSchema, {
+    method: "PUT",
+    body: JSON.stringify(body),
+  });
 }
 
 /** Removes only the grouping; logs and their data are untouched. */
-export function deleteSuperstream(projectId: string, id: string): Promise<void> {
-  return apiOrMock(
-    async () => {
-      await apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, z.unknown(), { method: "DELETE" });
-    },
-    async () => {
-      await delay();
-      writeMock(projectId, readMock(projectId).filter((s) => s.id !== id));
-    },
-    "deleteSuperstream",
-  );
+export async function deleteSuperstream(projectId: string, id: string): Promise<void> {
+  await apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, z.unknown(), {
+    method: "DELETE",
+  });
 }
