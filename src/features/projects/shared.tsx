@@ -13,6 +13,7 @@
 // d'inventer.
 import type { ReactNode } from "react";
 import type { Operator } from "@/lib/api/schemas";
+import { isKnownOperator, isKnownTech, isKnownService, uncatalogedTooltip } from "@/lib/api/schemas";
 
 /** `null` → « N/D ». Pas de 0 par défaut, pas de pourcentage inventé. */
 export const nd = (v: number | null | undefined, fractionDigits = 0): string =>
@@ -106,20 +107,21 @@ const OP_CHIP_CLS: Record<Operator, string> = {
   Bouygues: "bg-op-bouygues text-white",
   Free: "bg-op-free text-white",
 };
-const KNOWN_OPS = new Set<string>(["Orange", "SFR", "Bouygues", "Free"]);
 
-/** Pastille colorée pour un opérateur. Le libellé est rendu TEL QUEL : si
- *  l'appelant passe un PLMN brut (`20801`), on affiche `20801` en neutre
- *  — on ne devine jamais la couleur ni le libellé. */
+/** Pastille colorée pour un opérateur. Les 4 opérateurs catalogues portent
+ *  leur couleur ; une valeur hors catalogue (PLMN non résolu renvoyé tel
+ *  quel par le back, ex. "PLMN 208-08") est rendue en gris avec un tooltip
+ *  explicite — jamais renommée, jamais devinée. */
 export function OperatorChip({ label }: { label: string }) {
-  const known = KNOWN_OPS.has(label);
+  const known = isKnownOperator(label);
   const cls = known
     ? OP_CHIP_CLS[label as Operator]
     : "bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-100";
   return (
     <span
       className={`inline-flex h-5 items-center rounded-full px-2 text-[11px] font-semibold ${cls}`}
-      title={known ? label : `${label} (libellé non résolu)`}
+      title={known ? label : uncatalogedTooltip("operator", label)}
+      data-uncataloged={known ? undefined : "operator"}
     >
       {label}
     </span>
@@ -138,10 +140,35 @@ const TECH_CLS: Record<string, string> = {
 };
 
 export function TechBadge({ label }: { label: string }) {
-  const cls = TECH_CLS[label] ?? "border-muted-foreground/30 bg-muted text-foreground";
+  const known = isKnownTech(label);
+  const uncatalogued = !known && !(label in TECH_CLS); // UMTS/GSM sont connus par style même si hors enum
+  const cls = TECH_CLS[label] ?? (uncatalogued
+    ? "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
+    : "border-muted-foreground/30 bg-muted text-foreground");
   return (
     <span
       className={`inline-flex h-5 items-center rounded border px-1.5 text-[10px] font-semibold ${cls}`}
+      title={uncatalogued ? uncatalogedTooltip("tech", label) : label}
+      data-uncataloged={uncatalogued ? "tech" : undefined}
+    >
+      {label}
+    </span>
+  );
+}
+
+/** Badge gris pour un service hors catalogue. Les services connus sont
+ *  "Data" / "SMS" / "Voice" ; tout autre libellé est affiché tel quel en
+ *  gris avec tooltip, sans invention. */
+export function ServiceBadge({ label }: { label: string }) {
+  const known = isKnownService(label);
+  const cls = known
+    ? "border-primary/60 bg-primary/10 text-primary"
+    : "border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100";
+  return (
+    <span
+      className={`inline-flex h-5 items-center rounded border px-1.5 text-[10px] font-semibold ${cls}`}
+      title={known ? label : uncatalogedTooltip("service", label)}
+      data-uncataloged={known ? undefined : "service"}
     >
       {label}
     </span>
