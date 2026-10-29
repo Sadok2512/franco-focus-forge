@@ -96,6 +96,9 @@
     }
   },
   "metrics": {
+    "tableColumns": {"time_local": "Time", "cell": "Cell", "time_utc": "Time UTC", "task": "Task", "lat": "Latitude", "lon": "Longitude"},
+    "cellTechnicalHint": "Internal index (technical):",
+    "tableShowing": "Showing {{from}}–{{to}} of {{total}} rows",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Fullscreen",
     "captureLabel": "Capture",

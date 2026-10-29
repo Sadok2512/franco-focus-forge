@@ -68,11 +68,11 @@ export const getMetricAnalysis = (
   capture: string,
   codes: string[],
   filters: KpiQueryFilters,
-  options: { group_by: string; include_map: boolean; x?: string },
+  options: { group_by: string; include_map: boolean; x?: string; page?: number; page_size?: number; table_only?: boolean },
   signal?: AbortSignal,
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/table?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), ...(options.x ? { x: options.x } : {}) })])}`,
+    `/projects/${encodeURIComponent(p)}/metrics/table?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}) })])}`,
     MetricAnalysisSchema,
     signal,
   );

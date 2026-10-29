@@ -1,4 +1,4 @@
-import { Download, Info, Maximize2, X } from "lucide-react";
+import { Columns3, Download, Info, Maximize2, X } from "lucide-react";
 import { CaptureSheet } from "./CaptureSheet";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
@@ -17,6 +17,7 @@ import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
 import {
   DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
@@ -348,6 +349,31 @@ export function MetricsWorkspace({
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
   const [search, setSearch] = useState("");
+  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
+  const [page, setPage] = useState(1);
+  const paginationScopeKey = JSON.stringify([captureId, selections, filters, groupBy]);
+  useEffect(() => setPage(1), [paginationScopeKey]);
+  type LeanColumn = "time_local" | "cell" | "time_utc" | "task" | "lat" | "lon";
+  const columnViewKey = `${_workspaceId ?? "metrics"}:${captureId ?? ""}:${selections.join(",")}`;
+  const [visibleLeanColumns, setVisibleLeanColumns] = useState<Set<LeanColumn>>(
+    () => new Set(["time_local", "cell"]),
+  );
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(`bc4.metrics.columns.${columnViewKey}`);
+      setVisibleLeanColumns(new Set(raw ? JSON.parse(raw) as LeanColumn[] : ["time_local", "cell"]));
+    } catch {
+      setVisibleLeanColumns(new Set(["time_local", "cell"]));
+    }
+  }, [columnViewKey]);
+  const toggleLeanColumn = (column: LeanColumn) => {
+    setVisibleLeanColumns((current) => {
+      const next = new Set(current);
+      if (next.has(column)) next.delete(column); else next.add(column);
+      try { localStorage.setItem(`bc4.metrics.columns.${columnViewKey}`, JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
+  };
   // 1.109.0 — Lot B : Fiche capture (Sheet).
   const [sheetOpen, setSheetOpen] = useState(false);
   const captureQuery = useQuery({
@@ -364,6 +390,8 @@ export function MetricsWorkspace({
       groupBy,
       view === "map",
       view === "scatter" ? x : "",
+      page,
+      pageSize,
     ],
     queryFn: ({ signal }) =>
       getMetricAnalysis(
@@ -374,6 +402,9 @@ export function MetricsWorkspace({
         {
           group_by: groupBy,
           include_map: view === "map",
+          table_only: view === "table",
+          page,
+          page_size: pageSize,
           ...(view === "scatter" && x ? { x } : {}),
         },
         signal,
@@ -605,9 +636,7 @@ export function MetricsWorkspace({
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   type MetricPane = "charts" | "table" | "overlay";
-  // V3 §8 : pagination Table 25/50/100 (défaut 25)
-  const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
-  const [page, setPage] = useState(1);
+  // Pagination effectuée par /metrics/table ; le navigateur ne reçoit que la page.
   // 1.102.0 — le menu ⋮ du tableau des mesures (export, plein écran, fermeture).
   const tablePanelRef = useRef<HTMLDivElement>(null);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
@@ -888,6 +917,17 @@ export function MetricsWorkspace({
                       <Info size={14} /> Fiche capture
                     </button>
                     <WorkspacePanelMenu label={translate("panel.actions")}>
+                      {(["time_local", "cell", "time_utc", "task", "lat", "lon"] as LeanColumn[]).map((column) => (
+                        <DropdownMenuCheckboxItem
+                          key={column}
+                          checked={visibleLeanColumns.has(column)}
+                          onSelect={(event) => event.preventDefault()}
+                          onCheckedChange={() => toggleLeanColumn(column)}
+                        >
+                          <Columns3 size={14} /> {translate(`metrics.tableColumns.${column}`)}
+                        </DropdownMenuCheckboxItem>
+                      ))}
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         data-testid="metrics-table-export"
                         disabled={!data.csv}
@@ -912,31 +952,32 @@ export function MetricsWorkspace({
                   <table>
                     <thead>
                       <tr>
-                        <th className="col-time">
-                          Time local
+                        {visibleLeanColumns.has("time_local") && <th className="col-time">
+                          {translate("metrics.tableColumns.time_local")}
                           <small className="block">{captureDate ?? "—"} · hh:mm:ss.sss</small>
-                        </th>
-                        <th className="col-time">
-                          Time UTC
+                        </th>}
+                        {visibleLeanColumns.has("cell") && <th>{translate("metrics.tableColumns.cell")}</th>}
+                        {visibleLeanColumns.has("time_utc") && <th className="col-time">
+                          {translate("metrics.tableColumns.time_utc")}
                           <small className="block">
                             {captureDate ?? "—"}
                             {data.utc_offset_min != null
                               ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h`
                               : " · offset —"}
                           </small>
-                        </th>
-                        <th className="col-geo numeric">
-                          Latitude
+                        </th>}
+                        {visibleLeanColumns.has("lat") && <th className="col-geo numeric">
+                          {translate("metrics.tableColumns.lat")}
                           <small className="block">°</small>
-                        </th>
-                        <th className="col-geo numeric">
-                          Longitude
+                        </th>}
+                        {visibleLeanColumns.has("lon") && <th className="col-geo numeric">
+                          {translate("metrics.tableColumns.lon")}
                           <small className="block">°</small>
-                        </th>
-                        <th className="col-task" title="CMDREQ → CMDCOMP par (capture_id, seq ≤)">
-                          Task
+                        </th>}
+                        {visibleLeanColumns.has("task") && <th className="col-task" title="CMDREQ → CMDCOMP par (capture_id, seq ≤)">
+                          {translate("metrics.tableColumns.task")}
                           <small className="block">name [index]</small>
-                        </th>
+                        </th>}
                         {data.columns.map((c) => (
                           <th key={c.code} title={c.code} className="numeric">
                             {c.label}
@@ -946,7 +987,7 @@ export function MetricsWorkspace({
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rows.slice((page - 1) * pageSize, page * pageSize).map((r) => {
+                      {data.rows.map((r) => {
                         const rowReason = reasonLabel(r.reason);
                         const utcMissing = r.time_utc == null;
                         const utcTooltip =
@@ -969,31 +1010,38 @@ export function MetricsWorkspace({
                             title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
                             style={hit ? { boxShadow: `inset 3px 0 0 ${hit.color}`, background: `color-mix(in srgb, ${hit.color} 9%, transparent)` } : undefined}
                           >
-                            <td
+                            {visibleLeanColumns.has("time_local") && <td
                               className="col-time font-mono text-[11px]"
                               title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
                             >
                               {r.time_local ?? r.time_label}
-                            </td>
-                            <td
+                            </td>}
+                            {visibleLeanColumns.has("cell") && <td
+                              title={`${translate("metrics.cellTechnicalHint")} ${r.cell_internal_index ?? data.columns[0]?.cell_internal_index ?? "—"}`}
+                            >
+                              {[r.cell_label ?? data.columns[0]?.cell_label, r.cell_system ?? data.columns[0]?.cell_system,
+                                r.cell_pci != null ? `PCI ${r.cell_pci}` : null,
+                                r.cell_arfcn != null ? `ARFCN ${r.cell_arfcn}` : null].filter(Boolean).join(" · ") || "—"}
+                            </td>}
+                            {visibleLeanColumns.has("time_utc") && <td
                               className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
                               title={utcTooltip}
                             >
                               {r.time_utc ?? "—"}
-                            </td>
-                            <td
+                            </td>}
+                            {visibleLeanColumns.has("lat") && <td
                               className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
                               title={gpsTooltip}
                             >
                               {r.lat == null ? "—" : fmtLatLng(r.lat)}
-                            </td>
-                            <td
+                            </td>}
+                            {visibleLeanColumns.has("lon") && <td
                               className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
                               title={gpsTooltip}
                             >
                               {r.lon == null ? "—" : fmtLatLng(r.lon)}
-                            </td>
-                            <td
+                            </td>}
+                            {visibleLeanColumns.has("task") && <td
                               className={`col-task font-mono text-[11px] ${r.task_name == null ? "text-muted-foreground opacity-60" : ""}`}
                               title={r.task_name == null ? "hors tâche" : `CMDREQ seq ≤ ${r.seq_last}`}
                             >
@@ -1002,7 +1050,7 @@ export function MetricsWorkspace({
                                 : r.task_index != null
                                   ? `${r.task_name} [${r.task_index}]`
                                   : r.task_name}
-                            </td>
+                            </td>}
                             {data.columns.map((c) => (
                               <td
                                 className="numeric"
@@ -1041,8 +1089,7 @@ export function MetricsWorkspace({
                     </select>
                   </label>
                   <span>
-                    Showing {Math.min((page - 1) * pageSize + 1, data.rows.length)}–
-                    {Math.min(page * pageSize, data.rows.length)} of {data.rows.length} rows
+                    {translate("metrics.tableShowing", { from: Math.min((page - 1) * pageSize + 1, data.total_rows), to: Math.min(page * pageSize, data.total_rows), total: data.total_rows })}
                   </span>
                   <span className="pager-nav">
                     <button
@@ -1054,7 +1101,7 @@ export function MetricsWorkspace({
                     </button>
                     <button
                       className="kpi-button"
-                      disabled={page * pageSize >= data.rows.length}
+                      disabled={page >= data.total_pages}
                       onClick={() => setPage((p) => p + 1)}
                     >
                       Next
