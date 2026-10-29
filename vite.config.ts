@@ -22,6 +22,15 @@ export default defineConfig({
     // nitro/vite builds from this
     server: { entry: "server" },
   },
+  // 1.117.2 (audit perf 2026-10-29) : compression gzip + brotli des assets
+  // publics AU BUILD TIME. Avant : bundle 662 KB uncompressed (24 chunks),
+  // Nitro ne compressait pas les réponses. Après : chaque fichier
+  // /assets/*.js|css est aussi émis en .gz et .br, Nitro sert la variante
+  // selon Accept-Encoding du client (gain ~70 % : 662 KB → ~200 KB gzip,
+  // ~170 KB br). Compression statique faite au build, zéro CPU runtime.
+  nitro: {
+    compressPublicAssets: { gzip: true, brotli: true },
+  },
   vite: {
     optimizeDeps: { exclude: ["maplibre-gl"] },
     server: {

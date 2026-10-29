@@ -1,3 +1,17 @@
+## 1.117.2 (patch) — BC4-FRONT 2026-10-29 — Perf : compression gzip + brotli des assets publics (Agent BC3)
+
+Compression au build time des bundles JS/CSS Nitro. Zéro CPU runtime,
+gain bande passante ~70 %.
+
+- `vite.config.ts` : `nitro.compressPublicAssets: { gzip: true, brotli: true }`.
+- Avant : bundle 662 KB uncompressed sur 24 chunks `/assets/*.js|css`,
+  Nitro servait sans `Content-Encoding`.
+- Après : chaque fichier existe aussi en `.gz` et `.br`, Nitro sert la
+  variante selon `Accept-Encoding` du client. Mesures type :
+  index JS 360 KB → ~120 KB gzip, ~100 KB brotli ;
+  styles CSS 121 KB → ~22 KB gzip, ~18 KB brotli.
+- Compagnon du back `0.97.4` (GZipMiddleware FastAPI pour l'API JSON).
+
 ## 1.117.1 (patch) — BC4-FRONT 2026-10-29 — Cellules physiques dans la table KPI (Agent BC1, numérotation BC3)
 
 - L'arbre et le tableau n'affichent plus l'index interne du décodeur, y
