@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
+import { API_LEAN_STALE_MS, metricCapturesKey, metricTableKey } from "./query-keys";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
@@ -381,12 +382,14 @@ export function MetricsWorkspace({
   // 1.109.0 — Lot B : Fiche capture (Sheet).
   const [sheetOpen, setSheetOpen] = useState(false);
   const captureQuery = useQuery({
-    queryKey: ["metric-captures", projectId, filters],
+    queryKey: metricCapturesKey(projectId, filters),
     queryFn: ({ signal }) => getMetricCaptures(projectId, filters, signal),
+    staleTime: API_LEAN_STALE_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const query = useQuery({
-    queryKey: [
-      "metrics-v3",
+    queryKey: metricTableKey([
       projectId,
       captureId,
       selections,
@@ -398,7 +401,7 @@ export function MetricsWorkspace({
       pageSize,
       parsedCellPci,
       parsedCellArfcn,
-    ],
+    ]),
     queryFn: ({ signal }) =>
       getMetricAnalysis(
         projectId,
@@ -419,6 +422,9 @@ export function MetricsWorkspace({
       ),
     enabled: !!captureId && selections.length > 0,
     staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retryOnMount: false,
     // Adding/removing a parameter keeps the current table on screen (veiled)
     // instead of blanking it; a capture or filter change never reuses old rows.
     placeholderData: (prev, prevQuery) =>

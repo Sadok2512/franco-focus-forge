@@ -36,6 +36,7 @@ import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import { getMetricCaptures } from "@/lib/api/client";
+import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { MetricView } from "./MetricGraphCard";
 import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
 
@@ -252,8 +253,11 @@ function Workspace({
   // 1.92.0 — captureKind depuis /metrics/captures (back 0.76.1) pour badge
   // "Scanner" + désactivation UE cell_scoped metrics dans le catalogue.
   const metricsCapturesQuery = useQuery({
-    queryKey: ["metric-captures", projectId, {}],
+    queryKey: metricCapturesKey(projectId),
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    staleTime: API_LEAN_STALE_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const captureKind =
     metricsCapturesQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;

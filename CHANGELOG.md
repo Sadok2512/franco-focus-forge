@@ -1,3 +1,11 @@
+## 1.118.1 (patch, proposé) — BC1 2026-10-29 — Déduplication API Metrics
+
+- Les consommateurs de `/metrics/captures` partagent une clé React Query
+  canonique et un `staleTime` commun de cinq minutes.
+- La table Metrics conserve sa réponse pendant les remounts et ne relance
+  plus les mêmes appels lors d'une cascade de changement de capture.
+- Type SemVer proposé : **patch** (`1.118.1`) ; numérotation finale par BC3.
+
 ## 1.118.0 (minor) — BC4-FRONT 2026-10-29 — Signaling progressif (Agent BC1, numérotation BC3)
 
 Companion back `0.98.0`. Résout l'écart « matérialisation serveur 15 MB ».
