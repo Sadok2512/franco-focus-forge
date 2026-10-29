@@ -3,6 +3,7 @@ import {
   kpiFiltersQuery,
   metricsCatalogQuery,
   analyticsProjectQuery,
+  dictTreeQuery,
 } from "@/lib/analytics-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
@@ -11,17 +12,10 @@ import { defaultConfig, type ChartConfig, type VisualizationType } from "./visua
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import {
-  BarChart3,
-  Download,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Plus,
-  RefreshCw,
-} from "lucide-react";
+import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { getProjectKpi } from "@/lib/api/client";
+import { getDictV2Distribution, getMetricCaptures, getProjectKpi } from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
@@ -39,6 +33,16 @@ import { getMetricCaptures } from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { MetricView } from "./MetricGraphCard";
 import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
+import { TreePanel, type TreePanelView } from "@/features/dict-v2/TreePanel";
+import { ValueExplorer } from "@/features/dict-v2/ValueExplorer";
+import { SelectedParameterInfo } from "@/features/dict-v2/SelectedParameterInfo";
+import {
+  identifyTrees,
+  selectedParameter,
+  selectionId,
+} from "@/features/dict-v2/parameter-identity";
+import { toggleCatalogSelection } from "@/features/dict-v2/catalog-model";
+import type { DictLeaf, GroupByMode } from "@/lib/api/dict-v2";
 
 import { KpiFilters } from "./KpiFilters";
 import { KpiGraphCard } from "./KpiGraphCard";
@@ -50,6 +54,7 @@ import {
   appliedPayload,
   analyticRows,
   catalogEntries,
+  classifyKpiCatalog,
   chosenStatistic,
   exportRows,
   fromSearch,
@@ -138,6 +143,7 @@ function Workspace({
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
+  const classifiedCatalogs = useMemo(() => classifyKpiCatalog(catalog), [catalog]);
   const cataloguePanel = useRef<PanelImperativeHandle>(null);
   const [catalogueCollapsed, setCatalogueCollapsed] = useState(false);
   // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
@@ -264,7 +270,11 @@ function Workspace({
   // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
   // /projects/{p}/metrics. Sélections distinctes des KPI (store propre
   // dans l'URL `metrics=[]`), rendues ensemble dans le panneau de droite.
-  const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics">("kpi");
+  const [activeCatalog, setActiveCatalog] = useState<"kpi" | "metrics" | "parameters">("kpi");
+  const [parameterTreeView, setParameterTreeView] = useState<TreePanelView>("catalog");
+  const [parameterSelection, setParameterSelection] = useState<DictLeaf[]>([]);
+  const [parameterGroupBy, setParameterGroupBy] = useState<GroupByMode>("operator");
+  const [parameterResetTick, setParameterResetTick] = useState(0);
   const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
   const selectedMetrics = currentTab.metricCodes ?? [];
   const setSelectedMetrics = (next: string[]) =>
@@ -309,14 +319,9 @@ function Workspace({
     setViewsState({ tabId: tabsState.activeTabId, views: next });
     writeMetricViews(tabsState.activeTabId, next);
   };
-  const graphMetricCount = selectedMetrics.filter(
-    (code) => metricViews[code] !== "table",
-  ).length;
+  const graphMetricCount = selectedMetrics.filter((code) => metricViews[code] !== "table").length;
   const tableOnlyWorkspace =
-    selectedMetrics.length > 0 &&
-    graphMetricCount === 0 &&
-    codes.length === 0 &&
-    metricsTablePane;
+    selectedMetrics.length > 0 && graphMetricCount === 0 && codes.length === 0 && metricsTablePane;
   const [cardViewRequest, setCardViewRequest] = useState<
     { code: string; view: MetricView; n: number } | undefined
   >();
@@ -350,12 +355,87 @@ function Workspace({
     }),
     [urlDraft, dimensions, captureId],
   );
+  const parameterTechnology: "LTE" | "NR" | "LTE+NR" =
+    applied.rat?.length === 1 && (applied.rat[0] === "LTE" || applied.rat[0] === "NR")
+      ? applied.rat[0]
+      : "LTE+NR";
+  const parameterCatalogQ = useQuery({
+    ...dictTreeQuery(projectId, "catalog"),
+    enabled: activeCatalog === "parameters",
+  });
+  const parameterRawQ = useQuery({
+    ...dictTreeQuery(projectId, "raw"),
+    enabled: activeCatalog === "parameters" && parameterTreeView === "raw",
+  });
+  const parameterTrees = useMemo(
+    () => identifyTrees(parameterCatalogQ.data ?? null, parameterRawQ.data ?? null),
+    [parameterCatalogQ.data, parameterRawQ.data],
+  );
+  const selectedParameterKeys = useMemo(
+    () =>
+      [
+        ...new Set(
+          parameterSelection
+            .filter(
+              (leaf) =>
+                !leaf["mapping_error"] &&
+                (parameterTechnology === "LTE+NR" || leaf["technology"] === parameterTechnology),
+            )
+            .map((leaf) => leaf.param_key),
+        ),
+      ].sort(),
+    [parameterSelection, parameterTechnology],
+  );
+  const parameterGeo = useMemo(
+    () => ({
+      ...(applied.dor?.length ? { dor: applied.dor } : {}),
+      ...(applied.plaque?.length ? { plaque: applied.plaque } : {}),
+      ...(applied.arcep?.length ? { arcep_zone: applied.arcep } : {}),
+    }),
+    [applied.arcep, applied.dor, applied.plaque],
+  );
+  const parameterDistributionQ = useQuery({
+    queryKey: [
+      "dict-v2",
+      "distribution",
+      projectId,
+      selectedParameterKeys,
+      parameterGroupBy,
+      parameterTechnology,
+      parameterGeo,
+    ],
+    queryFn: ({ signal }) =>
+      getDictV2Distribution(
+        projectId,
+        selectedParameterKeys,
+        parameterGroupBy,
+        signal,
+        parameterGeo,
+        parameterTechnology,
+      ),
+    enabled: selectedParameterKeys.length > 0,
+    staleTime: Infinity,
+    retry: false,
+  });
+  const parameterSelectedSet = useMemo(
+    () => new Set(parameterSelection.map(selectionId)),
+    [parameterSelection],
+  );
+  const toggleParameter = (leaf: DictLeaf) => {
+    const resolved = selectedParameter(leaf);
+    setParameterSelection((previous) =>
+      previous.some((item) => selectionId(item) === selectionId(resolved))
+        ? previous.filter((item) => selectionId(item) !== selectionId(resolved))
+        : [...previous, resolved],
+    );
+  };
   const draftPayload = appliedPayload(draft, dimensions);
   const dirty =
     JSON.stringify(draftPayload) !== JSON.stringify(appliedPayload(urlDraft, dimensions));
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [limitMessage, setLimitMessage] = useState("");
   const catalogSearch = useRef<HTMLInputElement>(null);
+  const measuredCatalogSearch = useRef<HTMLInputElement>(null);
   const effectiveActive = codes.includes(active ?? "") ? active : (codes[0] ?? null);
   const visibleCodes = codes;
   const queries = useQueries({
@@ -511,8 +591,8 @@ function Workspace({
               <button
                 role="tab"
                 aria-selected={activeCatalog === "kpi"}
-                title={`${translate("kpi.3ad34a87a145")} · ${codes.length}`}
-                aria-label={`${translate("kpi.3ad34a87a145")} · ${codes.length}`}
+                title={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
+                aria-label={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
                 className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("kpi")}
                 style={{
@@ -528,13 +608,13 @@ function Workspace({
                   fontWeight: activeCatalog === "kpi" ? 600 : 400,
                 }}
               >
-                {translate("kpi.3ad34a87a145")}
+                {translate("kpi.catalogTabKpi")}
               </button>
               <button
                 role="tab"
                 aria-selected={activeCatalog === "metrics"}
-                title={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
-                aria-label={`${translate("metrics.498227f2b5c6")} · ${selectedMetrics.length}`}
+                title={`${translate("kpi.catalogTabMetrics")} · ${selectedMetrics.length}`}
+                aria-label={`${translate("kpi.catalogTabMetrics")} · ${selectedMetrics.length}`}
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
@@ -550,7 +630,29 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("metrics.498227f2b5c6")}
+                {translate("kpi.catalogTabMetrics")}
+              </button>
+              <button
+                role="tab"
+                aria-selected={activeCatalog === "parameters"}
+                title={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
+                aria-label={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
+                className={`kpi-button ${activeCatalog === "parameters" ? "primary" : ""}`}
+                onClick={() => setActiveCatalog("parameters")}
+                style={{
+                  color: "var(--foreground)",
+                  padding: "6px 12px",
+                  borderRadius: "4px 4px 0 0",
+                  border: "none",
+                  background: "transparent",
+                  borderBottom:
+                    activeCatalog === "parameters"
+                      ? "2px solid var(--primary, #1b5fd6)"
+                      : "2px solid transparent",
+                  fontWeight: activeCatalog === "parameters" ? 600 : 400,
+                }}
+              >
+                {translate("kpi.catalogTabParameters")}
               </button>
               <Button
                 variant="ghost"
@@ -566,21 +668,67 @@ function Workspace({
             </div>
             {activeCatalog === "kpi" ? (
               <KpiCatalogSidebar
-                catalog={catalog}
+                catalog={classifiedCatalogs.kpi}
                 selected={codes}
                 active={effectiveActive}
                 onToggle={onCatalogToggle}
                 onVisualization={visualize}
                 searchRef={catalogSearch}
               />
+            ) : activeCatalog === "metrics" ? (
+              <div className="flex h-full min-h-0 flex-col overflow-hidden">
+                <div className="min-h-0 basis-[42%] border-b">
+                  <KpiCatalogSidebar
+                    catalog={classifiedCatalogs.metrics}
+                    selected={codes}
+                    active={effectiveActive}
+                    onToggle={onCatalogToggle}
+                    onVisualization={visualize}
+                    searchRef={measuredCatalogSearch}
+                    title={translate("kpi.catalogTabMetrics")}
+                  />
+                </div>
+                <div className="min-h-0 basis-[58%]">
+                  <MetricsCatalogSidebar
+                    projectId={projectId}
+                    selected={selectedMetrics}
+                    onToggle={toggleMetric}
+                    onVisualization={visualizeMetric}
+                    searchRef={catalogSearch}
+                    captureKind={captureKind}
+                  />
+                </div>
+              </div>
             ) : (
-              <MetricsCatalogSidebar
-                projectId={projectId}
-                selected={selectedMetrics}
-                onToggle={toggleMetric}
-                onVisualization={visualizeMetric}
-                searchRef={catalogSearch}
-                captureKind={captureKind}
+              <TreePanel
+                techno={parameterTechnology}
+                catalog={parameterTrees.catalog}
+                raw={parameterTrees.raw}
+                selected={parameterSelectedSet}
+                onToggle={toggleParameter}
+                onToggleCatalog={(parameter, technology, origin, leaf) =>
+                  setParameterSelection((previous) =>
+                    toggleCatalogSelection(previous, parameter, technology, origin, leaf),
+                  )
+                }
+                onInfo={(leaf) => {
+                  if (!parameterSelectedSet.has(selectionId(selectedParameter(leaf)))) {
+                    toggleParameter(leaf);
+                  }
+                }}
+                onReset={() => {
+                  setParameterSelection([]);
+                  setParameterResetTick((tick) => tick + 1);
+                }}
+                resetTick={parameterResetTick}
+                categories={[]}
+                onTemplateLeaf={() => undefined}
+                onCategory={() => undefined}
+                templatesLoading={false}
+                templatesError={false}
+                templateCatalog={parameterTrees.catalog}
+                onViewChange={setParameterTreeView}
+                showTemplates={false}
               />
             )}
           </div>
@@ -594,6 +742,36 @@ function Workspace({
           <div
             className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
           >
+            {activeCatalog === "parameters" && (
+              <div className="m-2 space-y-3" data-testid="kpi-parameters-workspace">
+                {!!(applied.operator?.length || applied.band?.length) && (
+                  <p role="status" className="rrc-context-notice">
+                    {translate("kpi.parametersUnsupportedFilters")}
+                  </p>
+                )}
+                <ValueExplorer
+                  catalog={parameterCatalogQ.data ?? null}
+                  distribution={parameterDistributionQ.data ?? null}
+                  groupBy={parameterGroupBy}
+                  onGroupByChange={setParameterGroupBy}
+                  isLoading={parameterDistributionQ.isPending}
+                  error={parameterDistributionQ.error}
+                  selectedKeys={selectedParameterKeys}
+                  filtered={Object.keys(parameterGeo).length > 0}
+                  onRetry={() => void parameterDistributionQ.refetch()}
+                />
+                {parameterSelection.length > 0 && (
+                  <SelectedParameterInfo
+                    projectId={projectId}
+                    selected={parameterSelection}
+                    catalog={parameterCatalogQ.data ?? null}
+                    distribution={parameterDistributionQ.data ?? null}
+                    refreshing={parameterDistributionQ.isFetching}
+                    locallyFiltered={Object.keys(parameterGeo).length > 0}
+                  />
+                )}
+              </div>
+            )}
             {limitMessage && (
               <p role="status" className="text-xs text-amber-700">
                 {limitMessage}
@@ -607,13 +785,11 @@ function Workspace({
                 className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
                 data-testid="scanner-capture-banner"
               >
-                <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA,
-                throughput per layer) not available in scanner mode — Ibflex-Scanner
-                captures only expose <code>SCANCONFIG / STARTSCAN / CELLSCAN /
-                OFDMSCAN</code> events. UE cell leaves in the catalogue are
-                disabled with tooltip "no UE cell metrics in scanner capture"
-                (never hidden). Future "Scanner view" lot open — see CHANGELOG
-                back 0.76.1.
+                <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput per layer)
+                not available in scanner mode — Ibflex-Scanner captures only expose{" "}
+                <code>SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code> events. UE cell leaves in
+                the catalogue are disabled with tooltip "no UE cell metrics in scanner capture"
+                (never hidden). Future "Scanner view" lot open — see CHANGELOG back 0.76.1.
               </div>
             )}
             {currentTab.overlay && panels.length >= 2 ? (
@@ -724,7 +900,7 @@ function Workspace({
                 )}
               </TableSettingsWorkspaceContext.Provider>
             </WorkspaceGrid>
-            {!panels.length && !selectedMetrics.length && (
+            {activeCatalog !== "parameters" && !panels.length && !selectedMetrics.length && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
                 <h2>{translate("kpi.97f764ab0b74")}</h2>

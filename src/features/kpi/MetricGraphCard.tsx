@@ -182,7 +182,15 @@ export function MetricGraphCard({
           appliedFilters={appliedFilters}
         />
       ) : view === "graph" ? (
-        <MetricTimePlot projectId={projectId} code={code} label={label} unit={unit} syncId={syncId} timeAxisMode={timeAxisMode} eventsCaptureId={eventsCaptureId} />
+        <MetricTimePlot
+          projectId={projectId}
+          code={code}
+          label={label}
+          unit={unit}
+          syncId={syncId}
+          timeAxisMode={timeAxisMode}
+          eventsCaptureId={eventsCaptureId}
+        />
       ) : view === "table" ? (
         <MetricAggregateTable
           projectId={projectId}
@@ -318,9 +326,7 @@ function MetricAggregatePlot({
   }, [option]);
 
   if (query.isPending) {
-    return (
-      <ChartSpinner label={translate("metrics.fc725ec040f4")} />
-    );
+    return <ChartSpinner label={translate("metrics.fc725ec040f4")} />;
   }
   if (query.isError) {
     return (
@@ -378,10 +384,7 @@ function MetricAggregateTable({
       getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
     retry: false,
   });
-  if (query.isPending)
-    return (
-      <ChartSpinner label={translate("metrics.fc725ec040f4")} />
-    );
+  if (query.isPending) return <ChartSpinner label={translate("metrics.fc725ec040f4")} />;
   if (query.isError)
     return (
       <QueryErrorState
@@ -572,10 +575,7 @@ function MetricTimePlot({
       </div>
     );
   }
-  if (series.isPending)
-    return (
-      <ChartSpinner label={translate("metrics.d90f3037b488")} />
-    );
+  if (series.isPending) return <ChartSpinner label={translate("metrics.d90f3037b488")} />;
   if (series.isError)
     return (
       <QueryErrorState
@@ -645,7 +645,10 @@ function MetricTimePlot({
             isAnimationActive={false}
           />
           {activeEvents
-            .filter((e) => e.captureId === captureId && (!eventsCaptureId || e.captureId === eventsCaptureId))
+            .filter(
+              (e) =>
+                e.captureId === captureId && (!eventsCaptureId || e.captureId === eventsCaptureId),
+            )
             .map((e) => (
               <ReferenceLine
                 key={e.id}

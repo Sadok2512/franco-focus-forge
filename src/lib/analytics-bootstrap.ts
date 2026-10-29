@@ -1,5 +1,10 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { getProject, getProjectKpiCatalog, getProjectKpiFilters } from "@/lib/api/client";
+import {
+  getDictV2Tree,
+  getProject,
+  getProjectKpiCatalog,
+  getProjectKpiFilters,
+} from "@/lib/api/client";
 import { getMetrics } from "@/lib/api/metrics";
 
 // 1.103.3 — Persist large project-scoped catalogues in localStorage so the
@@ -39,7 +44,9 @@ if (typeof window !== "undefined") {
       // tout le reste = orphelin : supprimer
       window.localStorage.removeItem(k);
     }
-  } catch { /* quota / privacy mode : ignore */ }
+  } catch {
+    /* quota / privacy mode : ignore */
+  }
 }
 
 /** Résout la clé de cache /metrics pour (pid, sha256). */
@@ -53,9 +60,13 @@ function metricsCacheKey(pid: string, sha256: string): string {
  *  non-valides sont supprimées en passant. */
 function readValidMetricsCache(pid: string): unknown | undefined {
   if (typeof window === "undefined") return undefined;
-  const found: Array<{ key: string; keySha: string; data: {
-    catalog_release?: { sha256?: string | null } | null;
-  } }> = [];
+  const found: Array<{
+    key: string;
+    keySha: string;
+    data: {
+      catalog_release?: { sha256?: string | null } | null;
+    };
+  }> = [];
   try {
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
@@ -71,14 +82,20 @@ function readValidMetricsCache(pid: string): unknown | undefined {
         window.localStorage.removeItem(k);
       }
     }
-  } catch { return undefined; }
+  } catch {
+    return undefined;
+  }
   for (const entry of found) {
     const payloadSha = entry.data?.catalog_release?.sha256;
     // GL1 : key.sha doit matcher le sha embarqué dans l'enveloppe
     // (préfixe 10 chars). Sinon → corruption / tampering / vieille
     // forme → delete + skip.
     if (!payloadSha || typeof payloadSha !== "string" || !payloadSha.startsWith(entry.keySha)) {
-      try { window.localStorage.removeItem(entry.key); } catch { /* ignore */ }
+      try {
+        window.localStorage.removeItem(entry.key);
+      } catch {
+        /* ignore */
+      }
       continue;
     }
     return entry.data;
@@ -98,7 +115,9 @@ function purgeStaleMetricsCache(pid: string, freshSha: string): void {
       if (!m || m[2] !== pid) continue;
       if (k !== liveKey) window.localStorage.removeItem(k);
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 }
 
 /** `queryOptions` dédié `/metrics` : clé dérivée du sha du
@@ -120,7 +139,9 @@ function shaKeyedMetricsQuery(pid: string) {
           // Si catalog_release null (fallback_legacy), on ne persiste pas
           // (pas de sha → pas de clé déterministe) ; refetch à chaque fois.
         }
-      } catch { /* quota ignored */ }
+      } catch {
+        /* quota ignored */
+      }
       return data;
     },
     initialData: () => readValidMetricsCache(pid) as never,
@@ -142,7 +163,9 @@ function persistedQuery<T>(key: string, fetcher: () => Promise<T>, staleTime: nu
         if (typeof window !== "undefined") {
           window.localStorage.setItem(cacheKey, JSON.stringify(data));
         }
-      } catch { /* quota ignored */ }
+      } catch {
+        /* quota ignored */
+      }
       return data;
     },
     initialData: () => {
@@ -150,7 +173,9 @@ function persistedQuery<T>(key: string, fetcher: () => Promise<T>, staleTime: nu
       try {
         const raw = window.localStorage.getItem(cacheKey);
         return raw ? (JSON.parse(raw) as T) : undefined;
-      } catch { return undefined; }
+      } catch {
+        return undefined;
+      }
     },
     initialDataUpdatedAt: 0,
     staleTime,
@@ -161,7 +186,11 @@ function persistedQuery<T>(key: string, fetcher: () => Promise<T>, staleTime: nu
 // No draft filters or capture data: these are project-level catalogues only.
 export const kpiCatalogQuery = (projectId: string) =>
   queryOptions({
-    ...persistedQuery(`project-kpi.catalog.${projectId}`, () => getProjectKpiCatalog(projectId), 300_000),
+    ...persistedQuery(
+      `project-kpi.catalog.${projectId}`,
+      () => getProjectKpiCatalog(projectId),
+      300_000,
+    ),
     queryKey: ["project-kpi", "catalog", projectId],
   });
 export const kpiFiltersQuery = (projectId: string) =>
@@ -176,6 +205,17 @@ export const analyticsProjectQuery = (projectId: string) =>
     queryKey: ["project", projectId],
     queryFn: () => getProject(projectId),
     staleTime: 60_000,
+  });
+
+/** Shared by KPI Analytics and RRC Dictionary. Identical keys join both
+ * in-flight requests and cached responses, so navigation never doubles a
+ * `/dict/v2/tree` call. */
+export const dictTreeQuery = (projectId: string, view: "catalog" | "raw", message = "") =>
+  queryOptions({
+    queryKey: ["dict-v2", "tree", projectId, view, view === "catalog" ? message : ""],
+    queryFn: ({ signal }) =>
+      getDictV2Tree(projectId, view, signal, view === "catalog" ? message || undefined : undefined),
+    staleTime: Infinity,
   });
 
 export function useAnalyticsBootstrap(projectId: string | undefined) {

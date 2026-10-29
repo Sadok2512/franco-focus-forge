@@ -30,12 +30,14 @@ export const getMetricAggregate = (
 export const getMetricCaptures = (p: string, f: KpiQueryFilters, signal?: AbortSignal) =>
   kpiFetch(
     `/projects/${encodeURIComponent(p)}/metrics/captures${taskQuery(f)}`,
-    z.array(z.object({
-      capture_id: z.string(),
-      label: z.string(),
-      // 1.92.0 — kind back 0.76.1 : 'ue'|'scanner'|null.
-      kind: z.enum(["ue", "scanner"]).nullable().optional(),
-    })),
+    z.array(
+      z.object({
+        capture_id: z.string(),
+        label: z.string(),
+        // 1.92.0 — kind back 0.76.1 : 'ue'|'scanner'|null.
+        kind: z.enum(["ue", "scanner"]).nullable().optional(),
+      }),
+    ),
     signal,
   );
 export const getMetricSeries = (
@@ -47,7 +49,7 @@ export const getMetricSeries = (
   filters: KpiQueryFilters = {},
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })])}`,
+    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), max_points: "2000", ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })])}`,
     MetricSeriesSchema,
     signal,
   );

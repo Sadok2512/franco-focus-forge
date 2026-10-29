@@ -39,6 +39,7 @@ export function TreePanel({
   templatesError,
   templateCatalog,
   onViewChange,
+  showTemplates = true,
 }: {
   onToggleCatalog: (
     parameter: DictParameterNode,
@@ -47,6 +48,8 @@ export function TreePanel({
     leaf?: DictLeaf,
   ) => void;
   onViewChange: (view: TreePanelView) => void;
+  /** KPI Analytics reuses this tree without changing RRC Dictionary. */
+  showTemplates?: boolean;
   categories: TemplateCategory[];
   onTemplateLeaf: (leaf: DictLeaf, category: TemplateCategory, technology: string) => void;
   onCategory: (category: TemplateCategory, technology: string, toggle?: boolean) => void;
@@ -100,42 +103,44 @@ export function TreePanel({
             ["raw", "Raw parameter"],
             ["templates", "Templates"],
           ] as const
-        ).map(([view, label], index, tabs) => (
-          <button
-            key={view}
-            id={`rrc-tab-${view}`}
-            type="button"
-            role="tab"
-            aria-selected={tab === view}
-            aria-controls={`rrc-panel-${view}`}
-            tabIndex={tab === view ? 0 : -1}
-            onClick={() => {
-              setTab(view);
-              onViewChange(view);
-            }}
-            onKeyDown={(event) => {
-              const next =
-                event.key === "ArrowRight"
-                  ? (index + 1) % tabs.length
-                  : event.key === "ArrowLeft"
-                    ? (index + tabs.length - 1) % tabs.length
-                    : event.key === "Home"
-                      ? 0
-                      : event.key === "End"
-                        ? tabs.length - 1
-                        : null;
-              if (next === null) return;
-              event.preventDefault();
-              const nextView = tabs[next]![0];
-              setTab(nextView);
-              onViewChange(nextView);
-              document.getElementById(`rrc-tab-${nextView}`)?.focus();
-            }}
-            className={`min-w-0 flex-1 whitespace-nowrap border-b-2 px-1 py-2 text-xs font-medium ${tab === view ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
-          >
-            {label}
-          </button>
-        ))}
+        )
+          .filter(([view]) => showTemplates || view !== "templates")
+          .map(([view, label], index, tabs) => (
+            <button
+              key={view}
+              id={`rrc-tab-${view}`}
+              type="button"
+              role="tab"
+              aria-selected={tab === view}
+              aria-controls={`rrc-panel-${view}`}
+              tabIndex={tab === view ? 0 : -1}
+              onClick={() => {
+                setTab(view);
+                onViewChange(view);
+              }}
+              onKeyDown={(event) => {
+                const next =
+                  event.key === "ArrowRight"
+                    ? (index + 1) % tabs.length
+                    : event.key === "ArrowLeft"
+                      ? (index + tabs.length - 1) % tabs.length
+                      : event.key === "Home"
+                        ? 0
+                        : event.key === "End"
+                          ? tabs.length - 1
+                          : null;
+                if (next === null) return;
+                event.preventDefault();
+                const nextView = tabs[next]![0];
+                setTab(nextView);
+                onViewChange(nextView);
+                document.getElementById(`rrc-tab-${nextView}`)?.focus();
+              }}
+              className={`min-w-0 flex-1 whitespace-nowrap border-b-2 px-1 py-2 text-xs font-medium ${tab === view ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground"}`}
+            >
+              {label}
+            </button>
+          ))}
       </div>
       {tab === "templates" && (
         <section

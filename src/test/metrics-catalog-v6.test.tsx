@@ -30,6 +30,7 @@ const node = (
   note: null,
   source: null,
   node_type: parent_id ? "leaf" : "category",
+  analytics_tab: parent_id ? "metrics" : null,
   metric_id: null,
   selection: null,
   event: null,

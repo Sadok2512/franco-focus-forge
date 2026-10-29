@@ -4,6 +4,7 @@ import { templateLeaves, templateRows } from "./template-model";
 import { TemplateTable } from "./TemplateTable";
 import { retryRrcRequest, rrcRetryDelay } from "./request-recovery";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { dictTreeQuery } from "@/lib/analytics-bootstrap";
 import { Check, Folder, Info, PanelLeftClose, PanelLeftOpen, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { FilterSelect as MultiSelect } from "./FilterSelect";
@@ -34,7 +35,6 @@ import { dictQ } from "@/features/dictionary/shared";
 import {
   getDictV2Distribution as getDictDistribution,
   getDictV2FilterOptions,
-  getDictV2Tree as getDictTree,
 } from "@/lib/api/client";
 import { TreePanel, type TreePanelView } from "./TreePanel";
 import { ValueExplorer } from "./ValueExplorer";
@@ -510,17 +510,12 @@ export function DictionaryPage({
 
   // Deux arbres : catalog (défaut, onglet Paramètres) + raw (onglet Raw).
   const catalogQ = useQuery({
-    queryKey: ["dict-v2", "tree", projectId, "catalog", appliedFilters.message ?? ""],
-    // Metadata is project-keyed: let an in-flight load populate the cache across navigation.
-    queryFn: () => getDictTree(projectId, "catalog", undefined, appliedFilters.message),
+    ...dictTreeQuery(projectId, "catalog", appliedFilters.message ?? ""),
     enabled: !!projectId,
-    staleTime: Infinity,
   });
   const rawQ = useQuery({
-    queryKey: ["dict-v2", "tree", projectId, "raw"],
-    queryFn: () => getDictTree(projectId, "raw"),
+    ...dictTreeQuery(projectId, "raw"),
     enabled: !!projectId && treeView === "raw",
-    staleTime: Infinity,
   });
 
   const identified = useMemo(
