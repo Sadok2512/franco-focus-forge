@@ -19,8 +19,8 @@ export const NmfFileReportSchema = z.object({
   filename: z.string(),
   status: NmfFileStatusSchema,
   n_captures: z.number().int(),
-  n_events: z.number().int(),             // L3 messages décodés (RRCSM/SIPSM/L3SM)
-  n_gps: z.number().int(),                // COUNT(event_code='GPS')
+  n_events: z.number().int(), // L3 messages décodés (RRCSM/SIPSM/L3SM)
+  n_gps: z.number().int(), // COUNT(event_code='GPS')
   // Le back permet un décodeur "unknown" tant que l'erreur frappe très tôt :
   // la valeur peut être `null`. On n'invente pas de version factice.
   decoder_version: z.string().nullable(),
@@ -30,6 +30,9 @@ export const NmfFileReportSchema = z.object({
   // Nullable + optional : rétro-compat si back pas encore à jour.
   imported_at: z.string().nullable().optional(),
   n_records: z.number().int().nullable().optional(),
+  // Clés applicatives réelles : toute suppression utilise
+  // (project_id, capture_id), jamais le nom ou l'horodatage du fichier.
+  capture_ids: z.array(z.string()).optional(),
 });
 export type NmfFileReport = z.infer<typeof NmfFileReportSchema>;
 export const NmfFileEntrySchema = NmfFileReportSchema;

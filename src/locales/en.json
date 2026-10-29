@@ -1037,6 +1037,19 @@
     "nextPage": "Next page",
     "pageOf": "Page {{page}} of {{total}}",
     "showingFiles": "{{from}}–{{to}} of {{total}} files",
+    "deleteCapture": {
+      "column": "Actions",
+      "action": "Delete",
+      "forCapture": "Delete capture {{captureId}}",
+      "title": "Delete this capture?",
+      "confirm": "This permanently deletes capture {{captureId}} from {{filename}} and recalculates the project. Other projects are not affected.",
+      "reason": "Reason",
+      "reasonPlaceholder": "Why should this capture be deleted?",
+      "reasonHelp": "Required for the audit log (at least 10 characters).",
+      "cancel": "Cancel",
+      "deleting": "Deleting…",
+      "deleted": "Capture deleted from {{filename}}"
+    },
     "task": {
       "HTTP_DL": "HTTP DL",
       "HTTP_UL": "HTTP UL",
