@@ -1037,6 +1037,19 @@
     "nextPage": "Page suivante",
     "pageOf": "Page {{page}} sur {{total}}",
     "showingFiles": "{{from}}–{{to}} sur {{total}} fichiers",
+    "deleteCapture": {
+      "column": "Actions",
+      "action": "Supprimer",
+      "forCapture": "Supprimer la capture {{captureId}}",
+      "title": "Supprimer cette capture ?",
+      "confirm": "Cette action supprime définitivement la capture {{captureId}} du fichier {{filename}} et recalcule le projet. Les autres projets ne sont pas touchés.",
+      "reason": "Motif",
+      "reasonPlaceholder": "Pourquoi cette capture doit-elle être supprimée ?",
+      "reasonHelp": "Obligatoire pour le journal d’audit (10 caractères minimum).",
+      "cancel": "Annuler",
+      "deleting": "Suppression…",
+      "deleted": "Capture supprimée du fichier {{filename}}"
+    },
     "task": {
       "HTTP_DL": "HTTP DL",
       "HTTP_UL": "HTTP UL",

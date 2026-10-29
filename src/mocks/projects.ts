@@ -369,6 +369,23 @@ export function deleteProjectMock(id: string): boolean {
   return false;
 }
 
+function mockCaptureId(projectId: string, filename: string): string {
+  return `TEST-MOCK-${projectId}-${filename}`;
+}
+
+export function deleteCaptureMock(projectId: string, captureId: string): boolean {
+  const overlay = INGEST_OVERLAYS[projectId];
+  if (!overlay) return false;
+  const index = overlay.files.findIndex(
+    (file) => mockCaptureId(projectId, file.filename) === captureId,
+  );
+  if (index < 0) return false;
+  overlay.files.splice(index, 1);
+  overlay.n_captures_ingest = overlay.files.reduce((sum, file) => sum + file.n_captures, 0);
+  overlay.n_events_ingest = overlay.files.reduce((sum, file) => sum + file.n_events, 0);
+  return true;
+}
+
 /** Lookup pour `getImportReport(id)` côté mock : construit un rapport
  *  cohérent avec l'overlay d'ingestion. Les totaux (n_captures / n_events
  *  / gps_coverage_pct) sont RECALCULÉS depuis `by_file[]` — la UI exerce
@@ -376,7 +393,10 @@ export function deleteProjectMock(id: string): boolean {
 export function findImportReportMock(id: string): NmfImportReport | null {
   const ov = INGEST_OVERLAYS[id];
   if (!ov) return null;
-  const by_file: NmfFileReport[] = ov.files.map((f) => ({ ...f }));
+  const by_file: NmfFileReport[] = ov.files.map((f) => ({
+    ...f,
+    capture_ids: [mockCaptureId(id, f.filename)],
+  }));
   const files_done = by_file.filter((f) => f.status === "done").length;
   const files_error = by_file.filter((f) => f.status === "error").length;
   // Agrégats dérivés — on remonte les comptes au niveau du PROJET pour
@@ -414,6 +434,7 @@ export function buildNmfReportMock(filenames: string[]): NmfImportReport {
         n_gps: 0,
         decoder_version: "nmf-decoder-0.3.0",
         error_msg: "ASN.1: footer tronqué (checksum invalide)",
+        capture_ids: [],
       };
     }
     const n_captures = 1800 + ((idx * 173) % 2400);
@@ -432,6 +453,7 @@ export function buildNmfReportMock(filenames: string[]): NmfImportReport {
       n_gps,
       decoder_version: "nmf-decoder-0.3.0",
       error_msg: null,
+      capture_ids: [`TEST-MOCK-UPLOAD-${idx}`],
     };
   });
 

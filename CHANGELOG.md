@@ -1,3 +1,15 @@
+## Unreleased (minor) — BC4-FRONT 2026-10-29 — Suppression confirmée d'une capture (Agent BC1, numérotation BC3)
+
+- La ligne fichier existante affiche une action `Supprimer` par `capture_id`
+  réel renvoyé par le backend ; un fichier multi-captures reste donc non
+  ambigu et aucune identité n'est déduite du nom ou d'un horodatage.
+- La confirmation demande un motif de dix caractères minimum, affiche les
+  erreurs HTTP sans les masquer, puis invalide les rapports fichier et projet
+  après le `204`.
+- Les nouveaux textes sont fournis en français et en anglais. Le schéma
+  `capture_ids` reste additif/optionnel pour tolérer un backend antérieur.
+- Type SemVer : `minor`. BC3 attribue le numéro de release au merge.
+
 ## 1.115.0 (minor) — BC4-FRONT 2026-10-28 — Release groupée : superstream UI + resilience i18n + PLMN tolérant (Agent BC3)
 
 Compagne du bc4-back 0.91.0 (déploiement groupé). Trois branches mergées

@@ -42,6 +42,7 @@ import { FileSummaryResponseSchema, type FileSummaryResponse } from "./file-summ
 import {
   buildNmfReportMock,
   createProjectMock,
+  deleteCaptureMock,
   deleteProjectMock,
   findImportReportMock,
   findProjectMock,
@@ -129,6 +130,40 @@ export async function deleteProject(projectId: string, signal?: AbortSignal): Pr
       }
     },
     "deleteProject",
+  );
+}
+
+/** DELETE /projects/{project_id}/captures/{capture_id}.
+ * La justification est journalisée par le backend ; la clé reste toujours
+ * le couple projet/capture exposé dans le rapport d'import. */
+export async function deleteCapture(
+  projectId: string,
+  captureId: string,
+  reason: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  const pid = projectId.trim();
+  const cap = captureId.trim();
+  const why = reason.trim();
+  if (!pid || !cap || why.length < 10) {
+    throw Object.assign(new Error("Invalid capture deletion request."), { code: "VALIDATION" });
+  }
+  return apiOrMock(
+    async () => {
+      const query = new URLSearchParams({ reason: why });
+      await apiFetch(
+        `/projects/${encodeURIComponent(pid)}/captures/${encodeURIComponent(cap)}?${query}`,
+        z.unknown(),
+        { method: "DELETE", signal },
+      );
+    },
+    async () => {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      if (!deleteCaptureMock(pid, cap)) {
+        throw new ApiHttpError("NOT_FOUND", "Capture introuvable", 404);
+      }
+    },
+    "deleteCapture",
   );
 }
 

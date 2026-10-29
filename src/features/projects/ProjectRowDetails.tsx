@@ -19,7 +19,7 @@ import { DecodePanel } from "./DecodePanel";
 //     explicitement déclaré au CHANGELOG 1.5.1).
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowDown,
@@ -30,8 +30,10 @@ import {
   ChevronRight,
   Clock,
   Info,
+  Trash2,
 } from "lucide-react";
-import { getFileSummary, getImportReport } from "@/lib/api/client";
+import { toast } from "sonner";
+import { deleteCapture, getFileSummary, getImportReport } from "@/lib/api/client";
 import type { FileSummaryCell } from "@/lib/api/file-summary-schemas";
 import type { Project } from "@/lib/api/schemas";
 import { toUserMessage } from "@/lib/api/http";
@@ -43,6 +45,7 @@ import {
   isPositiveFailure,
   type FileSummarySortDirection,
 } from "./file-summary-table";
+import { DeleteCaptureDialog } from "./DeleteCaptureDialog";
 
 // Pagination du tableau « Fichiers importés » : 10 lignes par page, navigation
 // précédent/suivant. Le découpage est une fonction pure exportée pour les tests.
@@ -235,6 +238,27 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
   });
 
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [pendingDelete, setPendingDelete] = useState<{
+    filename: string;
+    captureId: string;
+  } | null>(null);
+  const deleteMutation = useMutation({
+    mutationFn: ({ captureId, reason }: { captureId: string; reason: string }) =>
+      deleteCapture(project.id, captureId, reason),
+    onSuccess: async () => {
+      const deleted = pendingDelete;
+      setPendingDelete(null);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["project", project.id, "import"] }),
+        queryClient.invalidateQueries({ queryKey: ["project", project.id, "files-summary"] }),
+        queryClient.invalidateQueries({ queryKey: ["projects"] }),
+      ]);
+      toast.success(
+        t("projectImport.deleteCapture.deleted", { filename: deleted?.filename ?? "" }),
+      );
+    },
+  });
   const [filesPage, setFilesPage] = useState(0);
   const [sortColumn, setSortColumn] = useState<FileSortKey>("filename");
   const [sortDirection, setSortDirection] = useState<FileSummarySortDirection>("asc");
@@ -428,6 +452,7 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                           onSort={handleSort}
                         />
                       </th>
+                      <th className="px-3 py-2">{t("projectImport.deleteCapture.column")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -473,6 +498,29 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
                           })}
                           <td className="px-3 py-2 font-mono text-destructive">
                             {f.error_msg ?? "—"}
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex flex-wrap gap-1">
+                              {(f.capture_ids ?? []).map((captureId) => (
+                                <Button
+                                  key={captureId}
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-7 gap-1 text-destructive hover:text-destructive"
+                                  aria-label={t("projectImport.deleteCapture.forCapture", {
+                                    captureId,
+                                  })}
+                                  onClick={() => {
+                                    deleteMutation.reset();
+                                    setPendingDelete({ filename: f.filename, captureId });
+                                  }}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5" aria-hidden />
+                                  {t("projectImport.deleteCapture.action")}
+                                </Button>
+                              ))}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -526,6 +574,22 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
           </TooltipProvider>
         )}
       </div>
+      <DeleteCaptureDialog
+        open={pendingDelete !== null}
+        filename={pendingDelete?.filename ?? ""}
+        captureId={pendingDelete?.captureId ?? ""}
+        busy={deleteMutation.isPending}
+        error={deleteMutation.error}
+        onClose={() => {
+          setPendingDelete(null);
+          deleteMutation.reset();
+        }}
+        onConfirm={(reason) => {
+          if (pendingDelete) {
+            deleteMutation.mutate({ captureId: pendingDelete.captureId, reason });
+          }
+        }}
+      />
     </div>
   );
 }

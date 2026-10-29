@@ -251,6 +251,7 @@ export * from "./reference";
 export type * from "./reference-schemas";
 export {
   createProject,
+  deleteCapture,
   deleteProject,
   getImportReport,
   getFileSummary,
