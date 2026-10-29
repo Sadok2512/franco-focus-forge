@@ -115,8 +115,31 @@ export function RfTimeline({
   const chart = useRef<ECharts | undefined>(undefined);
   const callbacks = useRef({ onSelect, onRange });
   callbacks.current = { onSelect, onRange };
+  const summary = useQuery({
+    queryKey: ["signaling-rf-summary", projectId, captureId],
+    queryFn: ({ signal }) =>
+      getSignaling(projectId, "eventSummary", { capture_id: captureId }, signal),
+    staleTime: 60000,
+  });
+  const radio = useQuery({
+    queryKey: ["signaling-rf-radio", projectId, captureId],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal),
+    staleTime: 60000,
+  });
+  const duration = radio.data?.duration_s ?? summary.data?.t_rel_end_s ?? 0;
+  const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
+  const visibleWindow = timeWindow ?? localWindow.window;
+  const changeWindow = onWindow ?? localWindow.setWindow;
   const events = useQuery({
-    queryKey: ["signaling-rf", projectId, captureId, technology, direction, search],
+    queryKey: [
+      "signaling-rf",
+      projectId,
+      captureId,
+      technology,
+      direction,
+      search,
+      visibleWindow,
+    ],
     queryFn: ({ signal }) =>
       getSignaling(
         projectId,
@@ -127,14 +150,12 @@ export function RfTimeline({
           technology: technology || undefined,
           direction: direction || undefined,
           q: search || undefined,
+          from_s: visibleWindow[0],
+          to_s: visibleWindow[1],
+          limit: 2000,
         },
         signal,
       ),
-    staleTime: 60000,
-  });
-  const radio = useQuery({
-    queryKey: ["signaling-rf-radio", projectId, captureId],
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal),
     staleTime: 60000,
   });
   const detailed = useQuery({
@@ -161,9 +182,6 @@ export function RfTimeline({
     () => (stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : []),
     [stateTracksV2, events.data, captureId],
   );
-  const duration =
-    radio.data?.duration_s ??
-    Math.max(0, ...eligibleEvents.flatMap((e) => [e.t_rel_s ?? 0, e.t_rel_end_s ?? 0]));
   const rrcSegments = useMemo(
     () => (stateTracksV2 ? rrcStateSegments(states, duration) : []),
     [stateTracksV2, states, duration],
@@ -212,9 +230,6 @@ export function RfTimeline({
       ),
     [displayed, stateTracksV2],
   );
-  const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
-  const visibleWindow = timeWindow ?? localWindow.window;
-  const changeWindow = onWindow ?? localWindow.setWindow;
   const zoom: [number, number] =
     duration > 0
       ? [(visibleWindow[0] / duration) * 100, (visibleWindow[1] / duration) * 100]
@@ -956,7 +971,7 @@ export function RfTimeline({
           </div>
         </details>
       </div>
-      {(events.isPending || radio.isPending) && <p role="status">{t("rfTimeline.loading")}</p>}
+      {summary.isPending && <p role="status">{t("rfTimeline.loading")}</p>}
       {[events, radio, detailed]
         .filter((q) => q.isError)
         .map((q, i) => (

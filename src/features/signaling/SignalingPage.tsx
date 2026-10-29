@@ -1071,6 +1071,13 @@ export function SignalingPage({
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
   });
   const capture = selectSignalingCapture(caps.data?.captures ?? [], sharedCapture);
+  const signalingSummary = useQuery({
+    queryKey: ["signaling-rf-summary", projectId, capture],
+    enabled: !!capture,
+    queryFn: ({ signal }) =>
+      getSignaling(projectId, "eventSummary", { capture_id: capture }, signal),
+    staleTime: 60000,
+  });
   const captureRadio = useQuery({
     queryKey: ["signaling-rf-radio", projectId, capture],
     enabled: !!capture,
@@ -1080,7 +1087,7 @@ export function SignalingPage({
     },
     staleTime: 60000,
   });
-  const captureDuration = captureRadio.data?.duration_s ?? 0;
+  const captureDuration = signalingSummary.data?.t_rel_end_s ?? captureRadio.data?.duration_s ?? 0;
   const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(
     capture,
     captureDuration,
@@ -1177,9 +1184,15 @@ export function SignalingPage({
     queryFn: ({ signal }) => getSignaling(projectId, "procedures", { capture_id: capture }, signal),
   });
   const points = useQuery({
-    queryKey: ["signaling-points", projectId, filtered],
+    queryKey: ["signaling-points", projectId, filtered, timeWindow],
     enabled: !!capture,
-    queryFn: ({ signal }) => getSignaling(projectId, "points", filtered, signal),
+    queryFn: ({ signal }) =>
+      getSignaling(
+        projectId,
+        "points",
+        { ...filtered, from_s: timeWindow[0], to_s: timeWindow[1], limit: 5000 },
+        signal,
+      ),
   });
   const context = useQuery({
     queryKey: ["signaling-context", projectId, capture, seq],
@@ -1225,7 +1238,7 @@ export function SignalingPage({
   // Same key and params as RfTimeline: one cached request feeds both the
   // timeline bands and the RRC State column (no extra API call).
   const stateEvents = useQuery({
-    queryKey: ["signaling-rf", projectId, capture, technology, direction, search],
+    queryKey: ["signaling-rf", projectId, capture, technology, direction, search, timeWindow],
     enabled: !!capture,
     queryFn: ({ signal }) =>
       getSignaling(
@@ -1237,6 +1250,9 @@ export function SignalingPage({
           technology: technology || undefined,
           direction: direction || undefined,
           q: search || undefined,
+          from_s: timeWindow[0],
+          to_s: timeWindow[1],
+          limit: 2000,
         },
         signal,
       ),
@@ -2046,6 +2062,7 @@ export function SignalingPage({
                               const procHover = r.procedure_ids.some((id) => hover.includes(id));
                               return (
                                 <tr
+                                  className="sig-virtual-row"
                                   key={r.seq}
                                   data-seq={r.seq}
                                   aria-selected={r.seq === seq}

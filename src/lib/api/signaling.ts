@@ -143,6 +143,19 @@ export const signalingSchemas = {
     rule_version: z.string().nullable(),
     unavailable: z.record(z.string()),
     missing_time: z.number(),
+    returned: z.number().nullable().optional(),
+    truncated: z.boolean().optional(),
+    next_seq: z.number().nullable().optional(),
+  }),
+  eventSummary: z.object({
+    ...envelope,
+    tracks: z.array(z.string()),
+    counts: z.record(z.number()),
+    total: z.number(),
+    seq_start: z.number().nullable(),
+    seq_end: z.number().nullable(),
+    t_rel_start_s: z.number(),
+    t_rel_end_s: z.number().nullable(),
   }),
   timeline: z.object({
     ...envelope,
@@ -159,6 +172,9 @@ export const signalingSchemas = {
     indoor: z.boolean(),
     floorplan_id: z.string().nullable(),
     reason: z.string().nullable(),
+    total: z.number().nullable().optional(),
+    returned: z.number().nullable().optional(),
+    truncated: z.boolean().optional(),
   }),
   context: z.object({
     ...envelope,
@@ -213,7 +229,8 @@ export function getSignaling<K extends keyof typeof signalingSchemas>(
 ): Promise<z.infer<(typeof signalingSchemas)[K]>> {
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined) query.set(k, String(v));
-  const path = `/projects/${encodeURIComponent(projectId)}/signaling${kind === "rows" ? "" : "/" + kind}?${query}`;
+  const suffix = kind === "rows" ? "" : kind === "eventSummary" ? "/events/summary" : "/" + kind;
+  const path = `/projects/${encodeURIComponent(projectId)}/signaling${suffix}?${query}`;
   return apiFetch(path, signalingSchemas[kind] as z.ZodTypeAny, { signal }) as Promise<
     z.infer<(typeof signalingSchemas)[K]>
   >;

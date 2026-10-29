@@ -1,3 +1,17 @@
+## 1.118.0 (minor) — BC4-FRONT 2026-10-29 — Signaling progressif (Agent BC1, numérotation BC3)
+
+Companion back `0.98.0`. Résout l'écart « matérialisation serveur 15 MB ».
+
+- Le résumé RF charge d'abord les pistes, comptages et bornes ; les
+  événements et positions arrivent ensuite pour la fenêtre temporelle
+  visible.
+- Les appels de détail sont bornés et suivent les déplacements du
+  navigateur temporel sans changer le design de la page.
+- La liste paginée des messages utilise la virtualisation native du
+  navigateur (`content-visibility`) afin que les lignes hors écran ne
+  soient pas peintes.
+- Numéro `1.118.0` attribué par BC3 (minor pour nouveau pattern UI).
+
 ## 1.117.2 (patch) — BC4-FRONT 2026-10-29 — Perf : compression gzip + brotli des assets publics (Agent BC3)
 
 Compression au build time des bundles JS/CSS Nitro. Zéro CPU runtime,
