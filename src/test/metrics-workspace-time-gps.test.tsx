@@ -93,6 +93,7 @@ describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 446215
     expect(screen.queryByRole("columnheader", { name: /Time UTC/ })).toBeNull();
     expect(screen.queryByRole("columnheader", { name: /Latitude/ })).toBeNull();
     expect(screen.getAllByText("Serving · LTE").length).toBeGreaterThan(0);
+    expect(screen.queryByTitle(/Internal index/)).toBeNull();
 
     // First row (second=0): time_local=10:33:20.980, time_utc=08:33:20.980
     // from the live backend response, lat/lon null → "—" cells grayed with reason tooltip.
@@ -105,5 +106,12 @@ describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 446215
     await waitFor(() => expect(screen.getByText("08:33:20.980")).toBeVisible());
     expect(window.localStorage.getItem("bc4.metrics.columns.metrics:44621571bccc:cell_rsrp@0"))
       .toContain("time_utc");
+
+    const pciFilter = await screen.findByTestId("metrics-cell-pci-filter");
+    const arfcnFilter = screen.getByTestId("metrics-cell-arfcn-filter");
+    fireEvent.change(pciFilter, { target: { value: "196" } });
+    fireEvent.change(arfcnFilter, { target: { value: "1675" } });
+    expect(pciFilter).toHaveValue("196");
+    expect(arfcnFilter).toHaveValue("1675");
   });
 });

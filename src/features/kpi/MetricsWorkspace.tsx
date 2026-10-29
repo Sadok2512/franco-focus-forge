@@ -351,7 +351,11 @@ export function MetricsWorkspace({
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
-  const paginationScopeKey = JSON.stringify([captureId, selections, filters, groupBy]);
+  const [cellPciFilter, setCellPciFilter] = useState("");
+  const [cellArfcnFilter, setCellArfcnFilter] = useState("");
+  const parsedCellPci = /^\d+$/.test(cellPciFilter) ? Number(cellPciFilter) : undefined;
+  const parsedCellArfcn = /^\d+$/.test(cellArfcnFilter) ? Number(cellArfcnFilter) : undefined;
+  const paginationScopeKey = JSON.stringify([captureId, selections, filters, groupBy, parsedCellPci, parsedCellArfcn]);
   useEffect(() => setPage(1), [paginationScopeKey]);
   type LeanColumn = "time_local" | "cell" | "time_utc" | "task" | "lat" | "lon";
   const columnViewKey = `${_workspaceId ?? "metrics"}:${captureId ?? ""}:${selections.join(",")}`;
@@ -392,6 +396,8 @@ export function MetricsWorkspace({
       view === "scatter" ? x : "",
       page,
       pageSize,
+      parsedCellPci,
+      parsedCellArfcn,
     ],
     queryFn: ({ signal }) =>
       getMetricAnalysis(
@@ -405,6 +411,8 @@ export function MetricsWorkspace({
           table_only: view === "table",
           page,
           page_size: pageSize,
+          ...(parsedCellPci != null ? { cell_pci: parsedCellPci } : {}),
+          ...(parsedCellArfcn != null ? { cell_arfcn: parsedCellArfcn } : {}),
           ...(view === "scatter" && x ? { x } : {}),
         },
         signal,
@@ -770,9 +778,8 @@ export function MetricsWorkspace({
           data-testid="metrics-charts-grid"
         >
           {graphSelections.map((s, i) => {
-            const info = metricInfoByCode.get(s.code);
-            const cellLabel = info?.cell_options?.find((c) => c.cell === s.cell)?.label ?? s.cell;
-            const title = info ? `${info.label} · ${cellLabel}` : s.full;
+            const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
+            const title = info?.label ?? s.code;
             const metricView = viewsProp?.[s.full] ?? "graph";
             const remove = () => {
               const next = selections.filter((x) => x !== s.full);
@@ -928,6 +935,31 @@ export function MetricsWorkspace({
                         </DropdownMenuCheckboxItem>
                       ))}
                       <DropdownMenuSeparator />
+                      <div className="grid grid-cols-2 gap-2 px-2 py-1.5" onKeyDown={(event) => event.stopPropagation()}>
+                        <label className="text-[10px] text-muted-foreground">
+                          {translate("metrics.cellFilters.pci")}
+                          <input
+                            className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
+                            inputMode="numeric"
+                            value={cellPciFilter}
+                            onChange={(event) => setCellPciFilter(event.target.value.replace(/\D/g, ""))}
+                            onClick={(event) => event.stopPropagation()}
+                            data-testid="metrics-cell-pci-filter"
+                          />
+                        </label>
+                        <label className="text-[10px] text-muted-foreground">
+                          {translate("metrics.cellFilters.arfcn")}
+                          <input
+                            className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
+                            inputMode="numeric"
+                            value={cellArfcnFilter}
+                            onChange={(event) => setCellArfcnFilter(event.target.value.replace(/\D/g, ""))}
+                            onClick={(event) => event.stopPropagation()}
+                            data-testid="metrics-cell-arfcn-filter"
+                          />
+                        </label>
+                      </div>
+                      <DropdownMenuSeparator />
                       <DropdownMenuItem
                         data-testid="metrics-table-export"
                         disabled={!data.csv}
@@ -979,7 +1011,7 @@ export function MetricsWorkspace({
                           <small className="block">name [index]</small>
                         </th>}
                         {data.columns.map((c) => (
-                          <th key={c.code} title={c.code} className="numeric">
+                          <th key={c.code} title={c.label} className="numeric">
                             {c.label}
                             <small className="block">{c.unit || "—"}</small>
                           </th>
@@ -1004,7 +1036,7 @@ export function MetricsWorkspace({
                         const hit = rowEvents[0];
                         return (
                           <tr
-                            key={r.second}
+                            key={`${r.seq_first}:${r.cell_arfcn ?? ""}:${r.cell_pci ?? ""}`}
                             data-second={r.second}
                             data-event-active={hit ? rowEvents.map((e) => e.id).join(" ") : undefined}
                             title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
@@ -1016,9 +1048,7 @@ export function MetricsWorkspace({
                             >
                               {r.time_local ?? r.time_label}
                             </td>}
-                            {visibleLeanColumns.has("cell") && <td
-                              title={`${translate("metrics.cellTechnicalHint")} ${r.cell_internal_index ?? data.columns[0]?.cell_internal_index ?? "—"}`}
-                            >
+                            {visibleLeanColumns.has("cell") && <td>
                               {[r.cell_label ?? data.columns[0]?.cell_label, r.cell_system ?? data.columns[0]?.cell_system,
                                 r.cell_pci != null ? `PCI ${r.cell_pci}` : null,
                                 r.cell_arfcn != null ? `ARFCN ${r.cell_arfcn}` : null].filter(Boolean).join(" · ") || "—"}

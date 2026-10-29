@@ -165,6 +165,7 @@ export function MetricsCatalogSidebar({
     if (at < 0) return null;
     const suffix = mid.slice(at + 1);
     if (!suffix) return null;
+    if (/^(lte|nr)-type-\d+$/.test(suffix)) return null;
     // Mapping lisible pour les cell_type NFF 2.50 fréquents.
     if (suffix === "0") return "PCell";
     if (suffix === "199") return "PSCell";
@@ -309,7 +310,7 @@ export function MetricsCatalogSidebar({
               </span>
               {search && (
                 <span className="text-[10px] text-muted-foreground">
-                  {node.source ?? node.metric_id ?? ""}
+                  {node.source ?? (/@(lte|nr)-type-\d+$/.test(node.metric_id ?? "") ? "" : node.metric_id) ?? ""}
                 </span>
               )}
             </span>
