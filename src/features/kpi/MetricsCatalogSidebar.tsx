@@ -40,6 +40,7 @@ import type { MetricView } from "./MetricGraphCard";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
+import { toUserMessage } from "@/lib/api/http";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -82,7 +83,7 @@ export function MetricsCatalogSidebar({
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
-  const query = useQuery(metricsCatalogQuery(projectId));
+  const query = useQuery({ ...metricsCatalogQuery(projectId), retry: false });
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
     for (const node of query.data?.nodes ?? []) {
@@ -443,7 +444,7 @@ export function MetricsCatalogSidebar({
       )}
       {query.isError && (
         <div role="alert" className="space-y-2 p-3">
-          <p className="text-xs text-destructive">{query.error.message}</p>
+          <p className="text-xs text-destructive">{toUserMessage(query.error)}</p>
           <button className="kpi-button" onClick={() => void query.refetch()}>
             <RefreshCw size={14} /> {t("kpi.d61cacf6ec3e")}
           </button>

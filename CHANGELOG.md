@@ -1,3 +1,17 @@
+## Non publié (patch) — KPI Analytics : retours de chargement et export (Agent BC1, numérotation BC3)
+
+- Les chargements de graphique et de table conservent le design existant ; les
+  animations déclarent explicitement leur origine et leur couche de transformation.
+- Une réponse 401/500 arrête immédiatement le chargement, affiche le statut lisible
+  et propose `Réessayer` sans répétitions automatiques en arrière-plan.
+- L'export CSV attache temporairement son lien au DOM pour fonctionner de façon
+  fiable dans les navigateurs qui refusent le clic sur un lien détaché.
+- La série expose une mesure séparée réseau/rendu dans la console de diagnostic.
+- Écart back déclaré : `cell_rsrp@lte-type-0` renvoie 4 935 points et 794 974 octets
+  sur Test_6 ; un lot séparé doit sous-échantillonner min/max par pixel. L'écart
+  `dci_ul_grants@lte-type-1` répond aussi HTTP 500 avant tout export et relève du back.
+- Type SemVer proposé : **patch**. Numéro final attribué par BC3.
+
 ## 1.118.1 (patch) — BC4-FRONT 2026-10-29 — Déduplication API Metrics (Agent BC1, numérotation BC3)
 
 Companion back `0.98.1`. Supprime les doublons `/metrics/captures` et

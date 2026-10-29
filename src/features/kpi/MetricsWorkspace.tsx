@@ -1,6 +1,5 @@
 import { Columns3, Download, Info, Maximize2, X } from "lucide-react";
 import { CaptureSheet } from "./CaptureSheet";
-import { Button } from "@/components/ui/button";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -24,6 +23,7 @@ import {
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { PanelShell } from "./PanelShell";
 import { downloadCsv } from "./workspace-model";
+import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   isClockAvailable,
@@ -269,6 +269,7 @@ function MetricMapCard({ projectId, captureId, selection, title, filters, onRemo
     queryKey: ["metric-map", projectId, captureId, selection, filters],
     queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { group_by: "operator", include_map: true }, signal),
     staleTime: 60_000,
+    retry: false,
   });
   return (
     <article ref={panelRef} className="kpi-graph-card" data-metric-code={selection} data-view="map">
@@ -290,10 +291,11 @@ function MetricMapCard({ projectId, captureId, selection, title, filters, onRemo
       </header>
       {query.isPending ? <div className="kpi-measurements-loading" aria-busy="true">
         <div className="kpi-measurements-progress" role="progressbar" aria-label={t("metrics.eb724a908f1f")}><span /></div>
-      </div> : query.isError ? <div className="kpi-chart-state" role="alert">
-        <p>{query.error.message}</p>
-        <Button variant="outline" size="sm" onClick={() => void query.refetch()}>{t("kpi.af273d956b5b")}</Button>
-      </div> : query.data ? <MetricMap data={query.data} /> : null}
+      </div> : query.isError ? <QueryErrorState
+        error={query.error}
+        title={t("metrics.f1d7675032b2")}
+        onRetry={() => void query.refetch()}
+      /> : query.data ? <MetricMap data={query.data} /> : null}
     </article>
   );
 }
@@ -387,6 +389,7 @@ export function MetricsWorkspace({
     staleTime: API_LEAN_STALE_MS,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: false,
   });
   const query = useQuery({
     queryKey: metricTableKey([
@@ -425,6 +428,7 @@ export function MetricsWorkspace({
     refetchOnMount: false,
     refetchOnWindowFocus: false,
     retryOnMount: false,
+    retry: false,
     // Adding/removing a parameter keeps the current table on screen (veiled)
     // instead of blanking it; a capture or filter change never reuses old rows.
     placeholderData: (prev, prevQuery) =>
@@ -854,7 +858,13 @@ export function MetricsWorkspace({
         // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
         // un petit loader discret au lieu du prompt "Select capture". Prompt
         // visible uniquement si captures vraiment vides (projet jamais ingéré).
-        captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
+        captureQuery.isError ? (
+          <QueryErrorState
+            error={captureQuery.error}
+            title={translate("metrics.d854ce90120a")}
+            onRetry={() => void captureQuery.refetch()}
+          />
+        ) : captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
           <div className="kpi-chart-state" role="status" aria-busy="true">
             <span className="kpi-measurements-progress" aria-label={translate("metrics.eb724a908f1f")}>
               <span />
@@ -876,12 +886,12 @@ export function MetricsWorkspace({
           </div>
         </div>
       ) : query.isError ? (
-        <div
-          className="kpi-chart-state"
-          role="alert"
-          style={{ order: TABLE_PANEL_ORDER }}
-        >
-          {query.error.message}
+        <div style={{ order: TABLE_PANEL_ORDER }}>
+          <QueryErrorState
+            error={query.error}
+            title={translate("metrics.f1d7675032b2")}
+            onRetry={() => void query.refetch()}
+          />
         </div>
       ) : (
         data && (
