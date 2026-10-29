@@ -41,6 +41,7 @@
 
 /* V10 premium messages table + inspector */
 .sig-messages, .sig-inspector { color: var(--sig-table-text); font-family: var(--font-sans); }
+.sig-virtual-row { content-visibility:auto; contain-intrinsic-block-size:32px; }
 .sig-count { font-size: 13px; font-weight: 650; white-space: nowrap; font-variant-numeric: tabular-nums; flex: 0 0 auto; }
 .sig-search { display: inline-flex; align-items: center; gap: 6px; height: 32px; min-width: 130px; max-width: 220px; flex: 1 1 150px; padding: 0 10px; border: 1px solid var(--sig-table-border); border-radius: 7px; background: var(--background); color: var(--sig-table-muted); }
 

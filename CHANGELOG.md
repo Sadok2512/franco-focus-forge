@@ -1,3 +1,13 @@
+## 1.118.0 (minor, proposé) — BC1 2026-10-29 — Signaling progressif
+
+- Le résumé RF charge d'abord les pistes, comptages et bornes ; les événements
+  et positions arrivent ensuite pour la fenêtre temporelle visible.
+- Les appels de détail sont bornés et suivent les déplacements du navigateur
+  temporel sans changer le design de la page.
+- La liste paginée des messages utilise la virtualisation native du navigateur
+  (`content-visibility`) afin que les lignes hors écran ne soient pas peintes.
+- Type SemVer proposé : **minor** (`1.118.0`) ; numérotation finale par BC3.
+
 ## 1.117.1 (patch) — BC4-FRONT 2026-10-29 — Cellules physiques dans la table KPI (Agent BC1, numérotation BC3)
 
 - L'arbre et le tableau n'affichent plus l'index interne du décodeur, y
