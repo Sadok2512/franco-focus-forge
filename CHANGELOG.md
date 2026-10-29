@@ -1,3 +1,14 @@
+## 1.118.1 (patch) — BC4-FRONT 2026-10-29 — Déduplication API Metrics (Agent BC1, numérotation BC3)
+
+Companion back `0.98.1`. Supprime les doublons `/metrics/captures` et
+`/metrics/table` observés dans l'audit perf 2026-10-29.
+
+- Clés React Query canoniques dans `src/features/kpi/query-keys.ts`.
+- `staleTime` commun 5 min : la table Metrics conserve sa réponse
+  pendant les remounts et ne relance plus les mêmes appels lors d'une
+  cascade de changement de capture.
+- Numéro `1.118.1` attribué par BC3.
+
 ## 1.118.0 (minor) — BC4-FRONT 2026-10-29 — Signaling progressif (Agent BC1, numérotation BC3)
 
 Companion back `0.98.0`. Résout l'écart « matérialisation serveur 15 MB ».

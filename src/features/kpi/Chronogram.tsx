@@ -18,6 +18,7 @@ import {
   getUnknownMetrics,
   getProjectTasks,
 } from "@/lib/api/client";
+import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { ChronogramData, ChronogramEvents } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { toUserMessage } from "@/lib/api/http";
@@ -345,9 +346,12 @@ export const Chronogram = forwardRef<
     queryFn: ({ signal }) => getProjectTasks(projectId, filters, signal),
   });
   const captures = useQuery({
-    queryKey: ["metric-captures", projectId, filters],
+    queryKey: metricCapturesKey(projectId, filters),
     queryFn: ({ signal }) =>
       getMetricCaptures(projectId, { ...filters, capture_id: undefined }, signal),
+    staleTime: API_LEAN_STALE_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const cap = selectedCapture ?? captures.data?.[0]?.capture_id;
   useEffect(() => {

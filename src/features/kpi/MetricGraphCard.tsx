@@ -26,6 +26,7 @@ import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { useActiveEvents } from "./active-events";
 import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
+import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { operatorColor } from "./workspace-model";
 import {
@@ -474,8 +475,11 @@ function MetricTimePlot({
   const { t: translate } = useTranslation();
   const { active: activeEvents } = useActiveEvents();
   const captures = useQuery({
-    queryKey: ["metric-captures", projectId],
+    queryKey: metricCapturesKey(projectId),
     queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    staleTime: API_LEAN_STALE_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
   const captureId = captures.data?.[0]?.capture_id;
   const series = useQuery({
