@@ -1,11 +1,11 @@
-## 1.117.1 (patch, proposé) — BC1 2026-10-29 — Cellules physiques dans la table KPI
+## 1.117.1 (patch) — BC4-FRONT 2026-10-29 — Cellules physiques dans la table KPI (Agent BC1, numérotation BC3)
 
 - L'arbre et le tableau n'affichent plus l'index interne du décodeur, y
   compris dans le sous-titre de recherche et le tooltip cellule.
 - La colonne Cell conserve le libellé enum, le système, le PCI et l'ARFCN.
 - Deux filtres PCI/ARFCN sont ajoutés dans le menu de colonnes existant ; la
-  pagination reste effectuée côté serveur.
-- Type SemVer proposé : **patch** (`1.117.1`) ; numérotation finale par BC3.
+  pagination reste effectuée côté serveur. Compagnon du back `0.97.3` +
+  catalog `2.56.2`.
 
 ## 1.117.0 (minor) — BC4-FRONT 2026-10-29 — Tableau KPI allégé (Agent BC1, numérotation BC3)
 
