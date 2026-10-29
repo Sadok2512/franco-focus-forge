@@ -1,3 +1,13 @@
+## 1.117.0 (minor, proposé) — BC1 2026-10-29 — Tableau KPI allégé
+
+- Colonnes visibles par défaut : heure locale, cellule exacte et métrique ;
+  heure UTC, tâche, latitude et longitude restent activables dans le menu ⋮.
+- Le choix est mémorisé par vue (workspace, capture et sélection).
+- La cellule affiche le libellé NFF, LTE/NR, puis PCI/ARFCN disponibles ;
+  l'index interne reste limité au tooltip technique.
+- La table consomme la pagination serveur (25/50/100 lignes).
+- Type SemVer : **minor**. Numéro proposé ; BC3 attribue le numéro final.
+
 ## 1.116.0 (minor) — BC4-FRONT 2026-10-29 — Suppression confirmée d'une capture (Agent BC1, numérotation BC3)
 
 - La ligne fichier existante affiche une action `Supprimer` par `capture_id`

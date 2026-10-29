@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import type { MetricInfo } from "@/lib/api/metrics-schemas";
@@ -16,6 +16,12 @@ import "@/lib/i18n";
 const { fixture } = vi.hoisted(() => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const fx = require("./fixtures/metrics-analysis-44621571bccc.json");
+  fx.columns[0].cell_label = "Serving";
+  fx.columns[0].cell_system = "LTE";
+  fx.columns[0].cell_internal_index = 1003;
+  fx.page = 1; fx.page_size = 25; fx.total_rows = fx.rows.length;
+  fx.total_pages = Math.ceil(fx.rows.length / 25);
+  fx.rows = fx.rows.slice(0, 25);
   return { fixture: fx };
 });
 
@@ -62,7 +68,7 @@ const catalog: MetricInfo[] = [
 ];
 
 describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 44621571bccc)", () => {
-  it("renders 4 time/GPS columns in Table view with backend values (no_gps_in_capture)", async () => {
+  it("defaults to Time / Cell / metric and keeps optional columns in the ⋮ menu", async () => {
     // MetricsWorkspace lit `bc3.metrics.pane` depuis localStorage pour choisir
     // le pane initial ("charts" par défaut). On force "table" pour que le test
     // cible la vue Table où les colonnes Time/Lat/Lon sont rendues.
@@ -81,25 +87,23 @@ describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 446215
       </QueryClientProvider>,
     );
 
-    // Headers.
-    await waitFor(() => expect(screen.getByText("Time local")).toBeVisible(), { timeout: 3000 });
-    expect(screen.getByText("Time UTC")).toBeVisible();
-    expect(screen.getByText("Latitude")).toBeVisible();
-    expect(screen.getByText("Longitude")).toBeVisible();
-
-    // Header subtitles reflect fixture: capture_date=2026-06-23, offset UTC+2h.
-    const latHeader = screen.getByText("Latitude").closest("th");
-    expect(latHeader).toBeTruthy();
-    expect(screen.getAllByText(/2026-06-23 · UTC\+2h/).length).toBeGreaterThan(0);
+    await waitFor(() => expect(screen.getByRole("columnheader", { name: /Time/ })).toBeVisible(), { timeout: 3000 });
+    expect(screen.getByRole("columnheader", { name: "Cell" })).toBeVisible();
+    expect(screen.getByRole("columnheader", { name: /RSRP/ })).toBeVisible();
+    expect(screen.queryByRole("columnheader", { name: /Time UTC/ })).toBeNull();
+    expect(screen.queryByRole("columnheader", { name: /Latitude/ })).toBeNull();
+    expect(screen.getAllByText("Serving · LTE").length).toBeGreaterThan(0);
 
     // First row (second=0): time_local=10:33:20.980, time_utc=08:33:20.980
     // from the live backend response, lat/lon null → "—" cells grayed with reason tooltip.
     expect(screen.getByText("10:33:20.980")).toBeVisible();
-    expect(screen.getByText("08:33:20.980")).toBeVisible();
+    expect(screen.queryByText("08:33:20.980")).toBeNull();
 
-    // Null GPS → multiple "—" cells with reason tooltip "no_gps_in_capture"
-    // (i18n `metrics.reason.no_gps_in_capture` : "No GPS fix in this capture" en défaut).
-    const dashCells = screen.getAllByTitle("No GPS fix in this capture");
-    expect(dashCells.length).toBeGreaterThan(0);
+    const panel = screen.getByTestId("metrics-table-panel");
+    fireEvent.keyDown(within(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
+    fireEvent.click(await screen.findByText("Time UTC"));
+    await waitFor(() => expect(screen.getByText("08:33:20.980")).toBeVisible());
+    expect(window.localStorage.getItem("bc4.metrics.columns.metrics:44621571bccc:cell_rsrp@0"))
+      .toContain("time_utc");
   });
 });

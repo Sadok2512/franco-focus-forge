@@ -213,6 +213,9 @@ export const MetricAnalysisSchema = z.object({
       unit: z.string(),
       kind: z.enum(["numeric", "categorical", "event"]),
       cell: z.string(),
+      cell_label: z.string().nullable().optional(),
+      cell_system: z.enum(["LTE", "NR"]).nullable().optional(),
+      cell_internal_index: z.number().int().nullable().optional(),
     }),
   ),
   rows: z.array(
@@ -229,6 +232,11 @@ export const MetricAnalysisSchema = z.object({
       lon: z.number().nullable().optional(),
       gps_source: z.enum(["exact", "previous_fix"]).nullable().optional(),
       gps_age_s: z.number().nullable().optional(),
+      cell_label: z.string().nullable().optional(),
+      cell_system: z.enum(["LTE", "NR"]).nullable().optional(),
+      cell_pci: z.number().nullable().optional(),
+      cell_arfcn: z.number().nullable().optional(),
+      cell_internal_index: z.number().int().nullable().optional(),
       reason: z.string().nullable().optional(),
       values: z.record(scalar.nullable()),
       counts: z.record(z.number()),
@@ -239,6 +247,10 @@ export const MetricAnalysisSchema = z.object({
       task_index: z.number().nullable().optional(),
     }),
   ),
+  page: z.number().int(),
+  page_size: z.number().int(),
+  total_rows: z.number().int(),
+  total_pages: z.number().int(),
   series: MetricSeriesSchema.shape.series,
   histogram: z.array(
     z.object({
