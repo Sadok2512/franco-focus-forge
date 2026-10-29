@@ -97,7 +97,8 @@
   },
   "metrics": {
     "tableColumns": {"time_local": "Heure", "cell": "Cellule", "time_utc": "Heure UTC", "task": "Tâche", "lat": "Latitude", "lon": "Longitude"},
-    "cellTechnicalHint": "Index interne (technique) :",
+    "cellTechnicalHint": "Détail technique de cellule",
+    "cellFilters": {"pci": "Filtrer PCI", "arfcn": "Filtrer ARFCN"},
     "tableShowing": "Lignes {{from}}–{{to}} sur {{total}}",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Plein écran",
