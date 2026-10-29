@@ -1,4 +1,4 @@
-## Unreleased (minor) — BC4-FRONT 2026-10-29 — Suppression confirmée d'une capture (Agent BC1, numérotation BC3)
+## 1.116.0 (minor) — BC4-FRONT 2026-10-29 — Suppression confirmée d'une capture (Agent BC1, numérotation BC3)
 
 - La ligne fichier existante affiche une action `Supprimer` par `capture_id`
   réel renvoyé par le backend ; un fichier multi-captures reste donc non
