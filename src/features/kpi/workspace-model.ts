@@ -320,6 +320,9 @@ export function downloadCsv(text: string, name: string) {
   const anchor = document.createElement("a");
   anchor.href = url;
   anchor.download = `${name}.csv`;
+  anchor.hidden = true;
+  document.body.appendChild(anchor);
   anchor.click();
+  anchor.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

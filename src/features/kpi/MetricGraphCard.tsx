@@ -23,6 +23,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { QueryErrorState } from "./QueryErrorState";
 import { useActiveEvents } from "./active-events";
 import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
@@ -218,6 +219,7 @@ function MetricAggregatePlot({
     queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
     queryFn: ({ signal }) =>
       getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+    retry: false,
   });
 
   const host = useRef<HTMLDivElement>(null);
@@ -319,13 +321,11 @@ function MetricAggregatePlot({
   }
   if (query.isError) {
     return (
-      <div className="kpi-chart-state" role="alert">
-        <strong>{translate("metrics.f82af3f196cf")}</strong>
-        <p>{query.error.message}</p>
-        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
-          {translate("kpi.af273d956b5b")}
-        </button>
-      </div>
+      <QueryErrorState
+        error={query.error}
+        title={translate("metrics.f82af3f196cf")}
+        onRetry={() => void query.refetch()}
+      />
     );
   }
   if (!query.data?.groups.length) {
@@ -373,6 +373,7 @@ function MetricAggregateTable({
     queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
     queryFn: ({ signal }) =>
       getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+    retry: false,
   });
   if (query.isPending)
     return (
@@ -380,13 +381,11 @@ function MetricAggregateTable({
     );
   if (query.isError)
     return (
-      <div className="kpi-chart-state" role="alert">
-        <strong>{translate("metrics.f82af3f196cf")}</strong>
-        <p>{query.error.message}</p>
-        <button type="button" className="kpi-button" onClick={() => void query.refetch()}>
-          {translate("kpi.af273d956b5b")}
-        </button>
-      </div>
+      <QueryErrorState
+        error={query.error}
+        title={translate("metrics.f82af3f196cf")}
+        onRetry={() => void query.refetch()}
+      />
     );
   const groups = query.data?.groups ?? [];
   if (!groups.length)
@@ -480,13 +479,21 @@ function MetricTimePlot({
     staleTime: API_LEAN_STALE_MS,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
+    retry: false,
   });
   const captureId = captures.data?.[0]?.capture_id;
   const series = useQuery({
     queryKey: ["metric-series", projectId, captureId, code],
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, [code], signal),
     enabled: !!captureId,
+    retry: false,
   });
+
+  const plotRef = useRef<HTMLDivElement>(null);
+  const renderProbe = useRef({ updateAt: 0, startedAt: 0 });
+  if (series.dataUpdatedAt && renderProbe.current.updateAt !== series.dataUpdatedAt) {
+    renderProbe.current = { updateAt: series.dataUpdatedAt, startedAt: performance.now() };
+  }
 
   const points = useMemo(() => {
     const s = series.data?.series?.[0];
@@ -505,10 +512,53 @@ function MetricTimePlot({
     : undefined;
   const mode: TimeAxisMode = timeAxisMode ?? "capture";
 
+  useEffect(() => {
+    if (!series.data || !plotRef.current || !renderProbe.current.startedAt) return;
+    const element = plotRef.current;
+    const updateAt = series.dataUpdatedAt;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (!element.isConnected || renderProbe.current.updateAt !== updateAt) return;
+        const renderMs = performance.now() - renderProbe.current.startedAt;
+        const pointCount = series.data.series.reduce((sum, item) => sum + item.points.length, 0);
+        const resource = performance
+          .getEntriesByType("resource")
+          .filter((entry) =>
+            entry.name.includes("/metrics/series?") &&
+            entry.name.includes(`capture_id=${encodeURIComponent(series.data.capture_id)}`),
+          )
+          .map((entry) => entry as PerformanceResourceTiming)
+          .at(-1);
+        const responseBytes =
+          resource?.encodedBodySize || new Blob([JSON.stringify(series.data)]).size;
+        element.dataset["renderMs"] = renderMs.toFixed(1);
+        element.dataset["responseBytes"] = String(responseBytes);
+        console.info("[bc4:kpi-series-render]", {
+          project_id: projectId,
+          capture_id: captureId,
+          metric: code,
+          points: pointCount,
+          response_bytes: responseBytes,
+          network_ms: resource ? Number(resource.duration.toFixed(1)) : null,
+          render_ms: Number(renderMs.toFixed(1)),
+        });
+      });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [captureId, code, projectId, series.data, series.dataUpdatedAt]);
+
   if (!captureId) {
     if (captures.isPending)
       return (
         <ChartSpinner label={translate("metrics.de3b78444032")} />
+      );
+    if (captures.isError)
+      return (
+        <QueryErrorState
+          error={captures.error}
+          title={translate("metrics.d854ce90120a")}
+          onRetry={() => void captures.refetch()}
+        />
       );
     return (
       <div className="kpi-chart-state" role="status">
@@ -523,13 +573,11 @@ function MetricTimePlot({
     );
   if (series.isError)
     return (
-      <div className="kpi-chart-state" role="alert">
-        <strong>{translate("metrics.a0f3fe3387b3")}</strong>
-        <p>{series.error.message}</p>
-        <button type="button" className="kpi-button" onClick={() => void series.refetch()}>
-          {translate("kpi.af273d956b5b")}
-        </button>
-      </div>
+      <QueryErrorState
+        error={series.error}
+        title={translate("metrics.a0f3fe3387b3")}
+        onRetry={() => void series.refetch()}
+      />
     );
   if (!points.length)
     return (
@@ -541,6 +589,7 @@ function MetricTimePlot({
 
   return (
     <div
+      ref={plotRef}
       className="w-full"
       style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
       data-testid="metric-time-plot"
