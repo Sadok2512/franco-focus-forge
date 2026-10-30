@@ -1,7 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
+import {
+  installMetricMapSource,
+  metricMapFeatures,
+  metricMapNumericExtent,
+  MetricsWorkspace,
+} from "@/features/kpi/MetricsWorkspace";
 import { getMetricAnalysis } from "@/lib/api/client";
 import { readMetricViews, writeMetricViews } from "@/features/kpi/metric-views";
 import "@/lib/i18n";
@@ -16,7 +22,7 @@ vi.mock("@/features/kpi/MetricGraphCard", async (original) => {
 });
 vi.mock("@/features/kpi/KpiMapOSM", () => ({ KpiMapOSM: (props: unknown) => {
   renderers.map(props);
-  return null;
+  return <div data-testid="metric-map-mock">{(props as { children?: ReactNode }).children}</div>;
 } }));
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
@@ -50,6 +56,62 @@ describe("Map selection keeps its own panel", () => {
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
     await waitFor(() => expect(screen.queryByTestId("metrics-table-panel")).toBeNull());
     expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("charts");
+  });
+
+  it("renders 4,935 coloured raw points, the metric legend and the overlay menu", async () => {
+    renderers.map.mockClear();
+    const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
+    const points = Array.from({ length: 4_935 }, (_, index) => ({
+      seq: index + 1,
+      lat: 48.8 + index * 0.000001,
+      lng: 2.3 + index * 0.000001,
+      code: "cell_rsrp@0",
+      value: -115 + (index % 55),
+      t_rel_s: index / 10,
+      tooltip: `RSRP ${-115 + (index % 55)} dBm`,
+    }));
+    vi.mocked(getMetricAnalysis).mockResolvedValueOnce({ ...fixture, map_points: points } as never);
+    writeMetricViews("map-raw-points", { "cell_rsrp@0": "map" });
+    const close = vi.fn();
+    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <MetricsWorkspace
+        workspaceId="map-raw-points" projectId="project-a" captureId="44621571bccc"
+        selections={["cell_rsrp@0"]} views={readMetricViews("map-raw-points")}
+        catalog={[{ code: "cell_rsrp@0", label: "RSRP (LTE) @ Serving", unit: "dBm" } as never]}
+        filters={{}} onClear={close} onCaptureChange={() => {}}
+        mapFillsAvailable
+      />
+    </QueryClientProvider>);
+
+    await waitFor(() => expect(renderers.map).toHaveBeenCalled());
+    const map = {
+      getSource: vi.fn(), addSource: vi.fn(), addLayer: vi.fn(), fitBounds: vi.fn(),
+      on: vi.fn(), off: vi.fn(), getCanvas: vi.fn(() => ({ style: {} })),
+    };
+    const analysis = { ...fixture, map_points: points } as never;
+    const features = metricMapFeatures(analysis);
+    const [min, max] = metricMapNumericExtent(analysis);
+    installMetricMapSource(map as never, features, min, max);
+
+    const source = map.addSource.mock.calls[0]?.[1] as { cluster?: boolean; data: { features: unknown[] } };
+    expect(source.cluster).toBeUndefined();
+    expect(source.data.features).toHaveLength(4_935);
+    expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual(["metrics-v3"]);
+    expect(map.addLayer.mock.calls[0]?.[0].paint["circle-color"][0]).toBe("interpolate");
+
+    expect(screen.getByTestId("metric-map-legend")).toHaveTextContent("RSRP (LTE) @ Serving · dBm");
+    expect(screen.getByTestId("metric-map-legend").closest('[data-view="map"]')).toHaveAttribute(
+      "data-point-count",
+      "4935",
+    );
+    expect(screen.queryByRole("heading", { name: /1\. RSRP/ })).toBeNull();
+    expect(screen.queryByText(/3k|887/)).toBeNull();
+    const menu = screen.getByRole("button", { name: "RSRP (LTE) @ Serving · actions" });
+    fireEvent.keyDown(menu, { key: "Enter" });
+    const content = await screen.findByTestId("workspace-panel-menu-content");
+    expect(within(content).getByText("Paramètres")).toBeVisible();
+    fireEvent.click(within(content).getByText("Fermer"));
+    expect(close).toHaveBeenCalledOnce();
   });
 
   // 1.106.2 — ouvrir le tableau explicitement (⋮ → Tableau, paneRequest)

@@ -7,11 +7,13 @@ export function WorkspaceGrid({
   layout,
   count,
   hidden,
+  fillAvailable = false,
   children,
 }: {
   layout: WorkspaceLayout;
   count: number;
   hidden?: boolean;
+  fillAvailable?: boolean;
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -27,7 +29,7 @@ export function WorkspaceGrid({
   }, []);
   const cols = workspaceColumns(layout, width, count);
   return (
-    <div ref={ref} className="kpi-workspace-grid-viewport" hidden={hidden}>
+    <div ref={ref} className={`kpi-workspace-grid-viewport${fillAvailable ? " is-map-only" : ""}`} hidden={hidden}>
       <div
         className="kpi-graph-grid"
         data-layout={layout}

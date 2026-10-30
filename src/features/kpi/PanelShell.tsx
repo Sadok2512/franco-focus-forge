@@ -24,6 +24,7 @@ export function PanelShell({
   fullRow,
   perRow,
   onDuplicate,
+  bare = false,
   children,
 }: {
   workspaceId: string;
@@ -33,6 +34,7 @@ export function PanelShell({
   fullRow?: boolean;
   perRow?: 1 | 2 | 3;
   onDuplicate?: (() => void) | undefined;
+  bare?: boolean;
   children: (title: string) => ReactNode;
 }) {
   const { t } = useTranslation();
@@ -84,7 +86,7 @@ export function PanelShell({
         if ((e.target as HTMLElement).closest("h3")) setEditing(true);
       }}
     >
-      <div className="kpi-panel-tools">
+      {!bare && <div className="kpi-panel-tools">
         <span
           draggable
           className="kpi-panel-grip"
@@ -132,8 +134,8 @@ export function PanelShell({
         >
           {collapsed ? <ChevronDown size={11} /> : <ChevronUp size={11} />}
         </button>
-      </div>
-      {editing && (
+      </div>}
+      {!bare && editing && (
         <input
           autoFocus
           className="kpi-panel-rename"
@@ -156,7 +158,7 @@ export function PanelShell({
         />
       )}
       {children(title)}
-      {!collapsed && (
+      {!bare && !collapsed && (
         <span
           className="kpi-panel-resize"
           title={t("panel.resize")}

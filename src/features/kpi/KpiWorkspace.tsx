@@ -328,6 +328,11 @@ function Workspace({
   const graphMetricCount = selectedMetrics.filter((code) => metricViews[code] !== "table").length;
   const tableOnlyWorkspace =
     selectedMetrics.length > 0 && graphMetricCount === 0 && codes.length === 0 && metricsTablePane;
+  const mapOnlyWorkspace =
+    codes.length === 0 &&
+    selectedMetrics.length === 1 &&
+    metricViews[selectedMetrics[0]!] === "map" &&
+    !metricsTablePane;
   const [cardViewRequest, setCardViewRequest] = useState<
     { code: string; view: MetricView; n: number } | undefined
   >();
@@ -746,7 +751,7 @@ function Workspace({
         />
         <ResizablePanel id="kpi-analysis-panel" minSize="300px">
           <div
-            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}`}
+            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}${mapOnlyWorkspace ? " kpi-analysis-map-only" : ""}`}
           >
             {activeCatalog === "parameters" && (
               <div className="m-2 space-y-3" data-testid="kpi-parameters-workspace">
@@ -810,6 +815,7 @@ function Workspace({
               count={panels.length + graphMetricCount + (metricsTablePane ? 1 : 0)}
               layout={currentTab.layout}
               hidden={currentTab.overlay && panels.length >= 2}
+              fillAvailable={mapOnlyWorkspace}
             >
               <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
                 {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
@@ -894,6 +900,7 @@ function Workspace({
                     onTablePaneChange={setMetricsTablePane}
                     views={metricViews}
                     onVisualization={visualizeMetric}
+                    mapFillsAvailable={mapOnlyWorkspace}
                     workspaceId={tabsState.activeTabId}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}

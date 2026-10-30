@@ -169,6 +169,12 @@
   scrollbar-gutter: stable;
   container-type: inline-size;
 }
+.kpi-analysis-scroll.kpi-analysis-map-only {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+}
 .kpi-catalog-toggle { width: 28px; height: 28px; flex-shrink: 0; }
 .kpi-catalog-rail { display: flex; justify-content: center; padding-top: 4px; height: 100%; background: var(--card); border-right: 1px solid var(--border); }
 .kpi-sidebar-tabs[hidden] { display: none; }
@@ -387,6 +393,24 @@
 }
 .kpi-workspace-grid-viewport[hidden] {
   display: none;
+}
+.kpi-workspace-grid-viewport.is-map-only {
+  display: flex;
+  min-height: 0;
+  padding: 0;
+}
+.kpi-workspace-grid-viewport.is-map-only > .kpi-graph-grid {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  align-items: stretch;
+  grid-template-rows: auto minmax(0, 1fr);
+  row-gap: 4px;
+}
+.kpi-workspace-grid-viewport.is-map-only .kpi-panel-shell,
+.kpi-workspace-grid-viewport.is-map-only .kpi-metric-map-card {
+  height: 100%;
+  min-height: 0;
 }
 /* 1.75.0 (BC3) — Spec v2 G4 : bottom tab bar fixée sous le workspace.
    NE PAS afficher au-dessus des graphiques — toujours au bas de .kpi-workspace. */
@@ -637,6 +661,66 @@
   font-size: 10px;
   color: #7c8aa0;
   padding-top: 5px;
+}
+.kpi-metric-map-card {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: transparent;
+}
+.kpi-metric-map-menu {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+}
+.kpi-metric-map-menu .kpi-icon {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d8e1ec;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 14%);
+}
+.kpi-metric-map-legend {
+  position: absolute;
+  bottom: 24px;
+  left: 8px;
+  z-index: 20;
+  min-width: 220px;
+  max-width: min(360px, calc(100% - 16px));
+  padding: 7px 9px;
+  border: 1px solid #d8e1ec;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  box-shadow: 0 1px 4px rgb(15 23 42 / 14%);
+  color: var(--foreground);
+  font-size: 10px;
+}
+.kpi-metric-map-legend strong {
+  display: block;
+  margin-bottom: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+}
+.kpi-metric-map-scale {
+  display: block;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b91c1c, #f97316, #facc15, #84cc16, #15803d);
+}
+.kpi-metric-map-scale-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 2px;
+  color: #475569;
+  font-variant-numeric: tabular-nums;
 }
 .kpi-order {
   font-size: 10px;

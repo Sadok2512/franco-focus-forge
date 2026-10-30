@@ -1,3 +1,14 @@
+## Prochaine version (minor) — KPI Analytics : panneau carte métrique (Agent BC4, numérotation BC3)
+
+- Une carte seule occupe toute la surface disponible du workspace, sous le
+  bandeau Events, sans en-tête ni cadre intermédiaire.
+- La légende embarque le libellé de la métrique, son unité et son échelle de
+  couleurs ; chaque mesure géolocalisée est rendue individuellement selon sa
+  valeur, sans cluster ni bulle de comptage.
+- Le menu `…` est superposé à la carte et propose `Paramètres` (réservé) et
+  `Fermer`. Les sites restent une couche séparée.
+- SemVer front : **MINOR** (numéro attribué par BC3).
+
 ## 1.123.0 (minor) — BC4-FRONT 2026-10-30 — voisines Metrics par cellule radio réelle (Agent BC4, numérotation BC3)
 
 Compagnon front du back `0.112.0`.

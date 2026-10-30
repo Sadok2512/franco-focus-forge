@@ -130,6 +130,7 @@ export function KpiMapOSM({
   onRecenter,
   children,
   measurementStatus,
+  flush = false,
   // 2.0.0 (SA2–SA4) — Site layer MapLibre lazy par bbox + contrôles UI.
   // Toujours disponible via le panneau "Layers" en haut à droite, OFF
   // par défaut. Utilisateur active + filtre techno/band/operator.
@@ -148,6 +149,7 @@ export function KpiMapOSM({
   onRecenter?: (() => void) | undefined;
   children?: ReactNode;
   measurementStatus?: string | null;
+  flush?: boolean;
   sitesLayerEnabled?: boolean;
   workspace?: boolean;
 }) {
@@ -287,7 +289,9 @@ export function KpiMapOSM({
           ? "fixed inset-0 z-[60] bg-background"
           : workspace
             ? "relative h-full min-h-[280px] w-full overflow-hidden rounded-xl border"
-            : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
+            : flush
+              ? "relative h-full min-h-[310px] w-full overflow-hidden"
+              : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"
       }
     >
       <div
