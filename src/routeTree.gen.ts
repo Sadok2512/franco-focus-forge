@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
+import { Route as AppChangePasswordRouteImport } from './routes/_app.change-password'
 import { Route as AppKpiRouteImport } from './routes/_app.kpi'
 import { Route as AppMapRouteImport } from './routes/_app.map'
 import { Route as AppOverviewRouteImport } from './routes/_app.overview'
@@ -52,6 +53,11 @@ const LoginRoute = LoginRouteImport.update({
 const AppAssistantRoute = AppAssistantRouteImport.update({
   id: '/assistant',
   path: '/assistant',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppChangePasswordRoute = AppChangePasswordRouteImport.update({
+  id: '/change-password',
+  path: '/change-password',
   getParentRoute: () => AppRoute,
 } as any)
 const AppKpiRoute = AppKpiRouteImport.update({
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/assistant': typeof AppAssistantRoute
+  '/change-password': typeof AppChangePasswordRoute
   '/kpi': typeof AppKpiRoute
   '/map': typeof AppMapRoute
   '/overview': typeof AppOverviewRoute
@@ -192,6 +199,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/assistant': typeof AppAssistantRoute
+  '/change-password': typeof AppChangePasswordRoute
   '/kpi': typeof AppKpiRoute
   '/map': typeof AppMapRoute
   '/overview': typeof AppOverviewRoute
@@ -219,6 +227,7 @@ export interface FileRoutesById {
   '/_app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/_app/assistant': typeof AppAssistantRoute
+  '/_app/change-password': typeof AppChangePasswordRoute
   '/_app/kpi': typeof AppKpiRoute
   '/_app/map': typeof AppMapRoute
   '/_app/overview': typeof AppOverviewRoute
@@ -247,6 +256,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/assistant'
+    | '/change-password'
     | '/kpi'
     | '/map'
     | '/overview'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/assistant'
+    | '/change-password'
     | '/kpi'
     | '/map'
     | '/overview'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/_app'
     | '/login'
     | '/_app/assistant'
+    | '/_app/change-password'
     | '/_app/kpi'
     | '/_app/map'
     | '/_app/overview'
@@ -356,6 +368,13 @@ declare module '@tanstack/react-router' {
       path: '/assistant'
       fullPath: '/assistant'
       preLoaderRoute: typeof AppAssistantRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/change-password': {
+      id: '/_app/change-password'
+      path: '/change-password'
+      fullPath: '/change-password'
+      preLoaderRoute: typeof AppChangePasswordRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/kpi': {
@@ -552,6 +571,7 @@ const AppSettingsRouteWithChildren = AppSettingsRoute._addFileChildren(
 
 interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
+  AppChangePasswordRoute: typeof AppChangePasswordRoute
   AppKpiRoute: typeof AppKpiRoute
   AppMapRoute: typeof AppMapRoute
   AppOverviewRoute: typeof AppOverviewRoute
@@ -566,6 +586,7 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
+  AppChangePasswordRoute: AppChangePasswordRoute,
   AppKpiRoute: AppKpiRoute,
   AppMapRoute: AppMapRoute,
   AppOverviewRoute: AppOverviewRoute,

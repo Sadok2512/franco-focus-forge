@@ -2,11 +2,22 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { getSession, login, rememberedLogin, setSession, type Session } from "@/lib/api/http";
 
 const session: Session = {
-  token: "test-session-not-a-real-token", token_type: "Bearer",
+  token: "test-session-not-a-real-token",
+  token_type: "Bearer",
   expires_at: "2099-01-01T00:00:00Z",
-  user: { id: "test", email: "test@example.invalid", role: "lecteur", active: true, created_at: "2026-01-01T00:00:00Z" },
+  user: {
+    id: "test",
+    email: "test@example.invalid",
+    role: "lecteur",
+    active: true,
+    created_at: "2026-01-01T00:00:00Z",
+    must_change_password: false,
+  },
 };
-beforeEach(() => { localStorage.clear(); sessionStorage.clear(); });
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 describe("Remember me", () => {
   it("keeps checked sessions after tab storage is cleared", () => {
     setSession(session, true);

@@ -12,6 +12,7 @@ import {
   Moon,
   Radio,
   Settings,
+  KeyRound,
   Sun,
   X,
 } from "lucide-react";
@@ -300,6 +301,17 @@ export function AppShell({ children }: { children: ReactNode }) {
                     </option>
                   </select>
                 </label>
+                <button
+                  role="menuitem"
+                  onClick={() => {
+                    setMenu(false);
+                    navigate({ to: "/change-password" });
+                  }}
+                  className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-xs hover:bg-muted"
+                >
+                  <KeyRound className="h-3.5 w-3.5" /> {t("common.changePassword")}
+                </button>
+
                 <button
                   role="menuitem"
                   onClick={() => {

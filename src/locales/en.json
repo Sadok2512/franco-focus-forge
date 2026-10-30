@@ -1,4 +1,16 @@
 {
+  "passwordChange": {
+    "title": "Change my password",
+    "description": "Choose a new password with at least 12 characters.",
+    "current": "Current password",
+    "new": "New password",
+    "confirm": "Confirm new password",
+    "tooShort": "The new password must contain at least 12 characters.",
+    "mismatch": "The new passwords do not match.",
+    "show": "Show passwords",
+    "hide": "Hide passwords",
+    "submit": "Save new password"
+  },
   "nav": {
     "projects": "Projects",
     "overview": "Overview",
@@ -34,6 +46,7 @@
     },
     "settings": "Settings",
     "logout": "Sign out",
+    "changePassword": "Change my password",
     "language": "Language",
     "pending": "Module planned for phase {{phase}}.",
     "notFound": "Page not found",
@@ -96,9 +109,16 @@
     }
   },
   "metrics": {
-    "tableColumns": {"time_local": "Time", "cell": "Cell", "time_utc": "Time UTC", "task": "Task", "lat": "Latitude", "lon": "Longitude"},
+    "tableColumns": {
+      "time_local": "Time",
+      "cell": "Cell",
+      "time_utc": "Time UTC",
+      "task": "Task",
+      "lat": "Latitude",
+      "lon": "Longitude"
+    },
     "cellTechnicalHint": "Technical cell detail",
-    "cellFilters": {"pci": "Filter PCI", "arfcn": "Filter ARFCN"},
+    "cellFilters": { "pci": "Filter PCI", "arfcn": "Filter ARFCN" },
     "tableShowing": "Showing {{from}}–{{to}} of {{total}} rows",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Fullscreen",
