@@ -1,3 +1,9 @@
+## Unreleased — KPI series render diagnostic guard
+
+- Front (**patch**) : le diagnostic console `[bc4:kpi-series-render]` est
+  désactivé par défaut et ne peut être activé au build qu'avec
+  `VITE_KPI_SERIES_RENDER_DEBUG=1`.
+
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.

@@ -37,6 +37,9 @@ import {
   type TimeAxisMode,
 } from "./time-axis";
 
+const KPI_SERIES_RENDER_DEBUG =
+  import.meta.env.VITE_KPI_SERIES_RENDER_DEBUG === "1";
+
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *
  *  Quatre visualisations alignées sur le menu KPI :
@@ -533,15 +536,17 @@ function MetricTimePlot({
           resource?.encodedBodySize || new Blob([JSON.stringify(series.data)]).size;
         element.dataset["renderMs"] = renderMs.toFixed(1);
         element.dataset["responseBytes"] = String(responseBytes);
-        console.info("[bc4:kpi-series-render]", {
-          project_id: projectId,
-          capture_id: captureId,
-          metric: code,
-          points: pointCount,
-          response_bytes: responseBytes,
-          network_ms: resource ? Number(resource.duration.toFixed(1)) : null,
-          render_ms: Number(renderMs.toFixed(1)),
-        });
+        if (KPI_SERIES_RENDER_DEBUG) {
+          console.info("[bc4:kpi-series-render]", {
+            project_id: projectId,
+            capture_id: captureId,
+            metric: code,
+            points: pointCount,
+            response_bytes: responseBytes,
+            network_ms: resource ? Number(resource.duration.toFixed(1)) : null,
+            render_ms: Number(renderMs.toFixed(1)),
+          });
+        }
       });
     });
     return () => cancelAnimationFrame(frame);
