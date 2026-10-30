@@ -178,7 +178,10 @@ export function MetricsCatalogSidebar({
   // vers "pcell"/"scell*".
   const perCellBadge = (node: MetricCatalogNode): string | null => {
     if (node.node_type !== "leaf") return null;
-    const mid = node.metric_id ?? "";
+    // A physical neighbour appends ``!ARFCN:PCI`` to the semantic selector.
+    // That identity is already the leaf label and must never leak into the
+    // legacy PER CELL badge (nor be mistaken for an internal cell index).
+    const mid = (node.metric_id ?? "").split("!", 1)[0] ?? "";
     const at = mid.lastIndexOf("@");
     if (at < 0) return null;
     const suffix = mid.slice(at + 1);
