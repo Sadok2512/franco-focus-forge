@@ -5,6 +5,7 @@ const base = process.env.BC4_FRONT_BASE ?? "http://127.0.0.1:5175";
 const apiContainer = process.env.BC4_API_CONTAINER ?? "bc4a4-api";
 const projectId = process.env.BC4_PROJECT_ID ?? "43e81a34a073";
 const captureId = process.env.BC4_CAPTURE_ID ?? "a4b0c321c52e";
+const auditEmail = process.env.BC4_AUDIT_EMAIL ?? "bc4a4-test@local.invalid";
 const output =
   process.argv[2] ?? "audit/bc4-kpi-parameters-tab/metrics-leaves-max-points-2000.json";
 const token = execFileSync(
@@ -14,7 +15,7 @@ const token = execFileSync(
     apiContainer,
     "python",
     "-c",
-    "from app.config import settings; from app.services.auth import create_token; print(create_token(user_id='adm-be45f070eba8',role='admin',ttl_min=30,secret=settings.jwt_secret)[0])",
+    `from app.config import settings; from app.db import SessionLocal; from app.models import AppUser; from app.services.auth import create_token; db=SessionLocal(); u=db.query(AppUser).filter(AppUser.email=='${auditEmail}').one(); print(create_token(user_id=u.id,role=u.role,ttl_min=30,secret=settings.jwt_secret)[0]); db.close()`,
   ],
   { encoding: "utf8" },
 ).trim();
@@ -69,6 +70,7 @@ const report = {
   projectId,
   captureId,
   max_points: 2000,
+  catalog_release: catalog.catalog_release?.version ?? null,
   displayed_selectable_leaf_nodes: displayedSelectableLeaves.length,
   unique_codes_tested: results.length,
   statusCounts,

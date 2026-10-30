@@ -224,6 +224,7 @@
     "pickFromCatalogue": "Aucune métrique sélectionnée. Choisissez-en une dans le catalogue.",
     "7f626224ba1f": "Aucune métrique ne correspond à cette recherche.",
     "activeOnly": "Actifs uniquement",
+    "showUnavailable": "Afficher les non disponibles",
     "footerCatalogDecoder": "Catalogue {{catalog}} · Décodeur {{decoder}}",
     "footerLegacy": "Catalogue métriques — legacy ({{reason}})"
   },
