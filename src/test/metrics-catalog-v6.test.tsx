@@ -176,4 +176,46 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     fireEvent.click(screen.getByRole("button", { name: /Retry catalogue/ }));
     expect(getMetrics).toHaveBeenCalledTimes(2);
   });
+
+  it("renders a physical neighbour identity without leaking its selector as a badge", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "2.60.0",
+      title: "Nemo metrics",
+      header: "",
+      decoder_version: "1.8.2",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("lte", null, "LTE", 0, { node_type: "category" }),
+        node("detected", "lte", "RSRP @ Detected LTE neighbour", 0, {
+          metric_id: "cell_rsrp@lte-type-2",
+        }),
+        node("physical", "detected", "ARFCN 1675 · PCI 196", 0, {
+          metric_id: "cell_rsrp@lte-type-2!1675:196",
+          selection: "cell_rsrp@lte-type-2!1675:196",
+          event: "CELLMEAS",
+          source_column: "cell_rsrp",
+          n: 1465,
+          proof: "physical-cell-identity",
+          selectable: true,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "LTE" }));
+    fireEvent.click(screen.getByRole("button", { name: /RSRP @ Detected/ }));
+    expect(screen.getByText("ARFCN 1675 · PCI 196")).toBeVisible();
+    expect(screen.queryByText("LTE-TYPE-2!1675:196")).toBeNull();
+    expect(screen.queryByTestId("per-cell-physical")).toBeNull();
+  });
 });
