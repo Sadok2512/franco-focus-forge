@@ -1,3 +1,8 @@
+## 1.118.4 (patch) — BC4-FRONT 2026-10-30 — retire console.log debug KPI (Agent BC1, numérotation BC3)
+
+Supprime les traces `[bc4:kpi-series-render]` oubliées par BC4 dans
+`MetricGraphCard.tsx` (pollution console navigateur).
+
 ## 1.118.3 (patch) — BC4-FRONT 2026-10-30 — consomme /signaling/points compact-v1 (Agent BC1, numérotation BC3)
 
 Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
@@ -7,7 +12,6 @@ Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
   reconstruit le contrat objet existant avant le rendu. Chaque point, sa
   position et son protocole sont conservés ; aucun composant ni design ne
   change.
-
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.
