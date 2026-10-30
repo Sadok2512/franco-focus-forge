@@ -20,7 +20,9 @@ import { rememberedLogin } from "@/lib/api/http";
 export const Route = createFileRoute("/login")({
   ssr: false,
   beforeLoad: () => {
-    if (getSession()) throw redirect({ to: "/projects" });
+    const session = getSession();
+    if (session?.mustChangePassword) throw redirect({ to: "/change-password" });
+    if (session) throw redirect({ to: "/projects" });
   },
   head: () => ({
     meta: [
@@ -64,8 +66,8 @@ function LoginPage() {
     setErr(null);
     setBusy(true);
     try {
-      await login(id, pw, remember);
-      navigate({ to: "/projects" });
+      const session = await login(id, pw, remember);
+      navigate({ to: session.mustChangePassword ? "/change-password" : "/projects" });
     } catch (x) {
       setErr((x as Error).message);
     } finally {
@@ -206,8 +208,8 @@ function LoginPage() {
             SSO Orange (à venir)
           </button>
           <p className="mt-6 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-            Les identifiants d&apos;administration sont provisionnés côté
-            serveur via les variables d&apos;environnement
+            Les identifiants d&apos;administration sont provisionnés côté serveur via les variables
+            d&apos;environnement
             <code className="mx-1 font-mono text-foreground">BC4_ADMIN_EMAIL</code> /
             <code className="mx-1 font-mono text-foreground">BC4_ADMIN_PASSWORD</code>
             (seed idempotent au démarrage de l&apos;API).

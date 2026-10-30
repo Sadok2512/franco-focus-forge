@@ -414,6 +414,7 @@ export async function login(email: string, password: string, remember = true): P
         role: "admin",
         active: true,
         created_at: new Date().toISOString(),
+        must_change_password: false,
       },
     };
     saveLogin(s);
@@ -451,4 +452,16 @@ export async function logout(): Promise<void> {
 /** GET /auth/me — rafraîchit le profil courant depuis le serveur. */
 export async function fetchMe(): Promise<PublicUser> {
   return apiFetch("/auth/me", PublicUserSchema);
+}
+
+/** Remplace le mot de passe et la session en une seule opération atomique. */
+export async function changePassword(oldPassword: string, newPassword: string): Promise<Session> {
+  const remember =
+    typeof window !== "undefined" && window.localStorage.getItem(LS_SESSION) !== null;
+  const res = await apiFetch("/auth/change-password", LoginResponseSchema, {
+    method: "POST",
+    body: JSON.stringify({ old_password: oldPassword, new_password: newPassword }),
+  });
+  setSession(res, remember);
+  return res;
 }

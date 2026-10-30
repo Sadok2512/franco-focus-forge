@@ -1,3 +1,9 @@
+## Prochaine version (minor) — écran de changement du mot de passe (Agent BC1, numéro BC3)
+
+- Ajoute l'action au menu du compte et force la redirection vers le changement
+  lorsque le serveur marque la session `must_change_password`.
+- SemVer front : **MINOR** (nouvel écran et nouveau parcours d'authentification).
+
 ## 1.121.0 (minor) — BC4-FRONT 2026-10-30 — Metrics : feuilles disponibles par défaut (Agent BC4, numérotation BC3)
 
 Compagnon front du back `0.108.0` + catalogue `2.59.0`.

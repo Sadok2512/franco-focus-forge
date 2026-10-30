@@ -22,6 +22,7 @@ export type Session = {
   displayName: string;
   expiresAt: number;
   role?: Role;
+  mustChangePassword: boolean;
 };
 
 const ROLE_FR_TO_ZOD: Record<AppUserRole, Role> = {
@@ -43,6 +44,7 @@ export async function login(email: string, password: string, remember = true): P
     displayName: s.user.email,
     role,
     expiresAt: Date.parse(s.expires_at),
+    mustChangePassword: s.user.must_change_password,
   };
 }
 
@@ -54,6 +56,7 @@ export function getSession(): Session | null {
     displayName: s.user.email,
     role: ROLE_FR_TO_ZOD[s.user.role],
     expiresAt: Date.parse(s.expires_at),
+    mustChangePassword: s.user.must_change_password,
   };
 }
 

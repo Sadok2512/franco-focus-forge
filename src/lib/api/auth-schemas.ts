@@ -15,6 +15,7 @@ export const PublicUserSchema = z.object({
   role: AppUserRoleSchema,
   active: z.boolean(),
   created_at: z.string(),
+  must_change_password: z.boolean(),
 });
 export type PublicUser = z.infer<typeof PublicUserSchema>;
 
@@ -31,3 +32,8 @@ export const LoginResponseSchema = z.object({
   user: PublicUserSchema,
 });
 export type AuthLoginResponse = z.infer<typeof LoginResponseSchema>;
+
+export const ChangePasswordRequestSchema = z.object({
+  old_password: z.string().min(1),
+  new_password: z.string().min(12),
+});
