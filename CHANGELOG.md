@@ -12,29 +12,60 @@
   `BC4_FRONT_BASE=http://127.0.0.1:9183 node scripts/map_defaults_evidence.mjs`.
 - SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
 
-## Next (patch) — BC4-FRONT 2026-10-30 — chargement carte KPI en un appel (Agent BC4, numérotation BC3)
+## 1.126.3 (patch) — BC4-FRONT 2026-10-30 — cellules visibles dès ouverture + overlay « Zoomez pour voir » (BC3)
+
+Les cartes s'ouvraient à `zoom=11`, sous le seuil `CELLS_VISIBLE_ZOOM=13`.
+Même avec `cellsEnabled=true` par défaut, aucune requête `/sites?zoom=15`
+n'était émise, donc aucune cellule ne s'affichait sans action utilisateur.
+Codex67 ne voyait rien et attribuait l'écart à un défaut du nouveau
+référentiel (cf. tour 22:50Z où le réimport 0.115.1 avait pourtant
+rendu 26 399 cellules exploitables).
+
+- `src/features/kpi/SitesLayer.tsx:34` : `MAP_INITIAL_ZOOM` remonté de
+  **11 → 13**. Les cartes ouvrent désormais directement au seuil où
+  `/sites?zoom=15` renvoie des cellules individuelles. L'utilisateur
+  zoome en 1-2 clics vers 15 pour voir les secteurs détaillés.
+- `src/features/map/MapWorkspacePage.tsx:32` : la prop `zoom={11}`
+  hardcodée est retirée, laisse `MAP_INITIAL_ZOOM` s'appliquer.
+- `src/features/kpi/NetworkMapChrome.tsx:293-302` : overlay centré
+  « Zoomez pour voir les cellules » (fr) / « Zoom in to see cells » (en)
+  visible dès que `cellsEnabled && !cellsAvailable`. Plus discret
+  qu'un modal, pas en tooltip. Clé i18n `mapSites.zoomToSeeCells`.
+- `DEFAULT_STATE.cellsEnabled = true` (SitesLayerControls.tsx:32) reste
+  inchangé — la case était déjà cochée par défaut, seul le zoom
+  initial empêchait le rendu.
+- SemVer front : **PATCH 1.126.3**.
+
+## 1.126.2 (patch) — BC4-FRONT 2026-10-30 — carte KPI en un seul appel `/metrics/map` (Agent BC4, numérotation BC3)
+
+Merge `bc4/kpi-map-single-call` (`837174b`). Consomme la route lean
+back `0.115.0` depuis la carte KPI.
 
 - La carte KPI charge désormais tous ses points via la route légère
-  `GET /projects/{pid}/metrics/map`, en un seul appel partagé entre les
-  panneaux, au lieu d'une sonde suivie de cinq pages parallèles
+  `GET /projects/{pid}/metrics/map`, en **un seul appel partagé entre
+  les panneaux**, au lieu d'une sonde suivie de cinq pages parallèles
   `/metrics/table`.
-- Le fond cartographique reste indépendant du chargement des mesures ; le
-  contrat des 4 935 points, des cellules servantes et des liens radio est
-  inchangé.
-- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+- Le fond cartographique reste indépendant du chargement des mesures ;
+  le contrat des 4 935 points, des cellules servantes et des liens
+  radio est inchangé.
+- SemVer front : **PATCH 1.126.2**.
 
-## Next (patch) — BC4-FRONT 2026-10-30 — Parameters et catalogue KPI (Agent BC4, numérotation BC3)
+## 1.126.1 (patch) — BC4-FRONT 2026-10-30 — Parameters alignés + catalogue KPI restauré (Agent BC4, numérotation BC3)
 
-- KPI Analytics aligne les en-têtes opérateurs du tableau Parameters sur
-  leurs valeurs et compacte chaque famille/paramètre sur une seule ligne
-  tronquée avec infobulle. Le composant RRC Dictionary garde son rendu.
-- Le catalogue KPI affiche séparément le nombre de feuilles disponibles et
-  le nombre sélectionné ; une recherche vide conserve toutes les feuilles
-  classées `analytics_tab=kpi` par l'API.
-- Les requêtes `/metrics/series` et `/metrics/table` n'émettent plus deux
-  occurrences de `capture_id`. La sonde console distingue les avertissements
-  WebGL applicatifs de ceux provoqués par la capture d'écran Chromium.
-- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+Merge `bc4/parameters-kpi-fix` (`209bf4a`). Fix alignement opérateurs
+dans le tableau Parameters + catalogue KPI restauré (recherche vide).
+
+- KPI Analytics aligne les en-têtes opérateurs du tableau Parameters
+  sur leurs valeurs et compacte chaque famille/paramètre sur une seule
+  ligne tronquée avec infobulle. RRC Dictionary garde son rendu.
+- Le catalogue KPI affiche séparément le nombre de feuilles
+  disponibles et le nombre sélectionné ; une recherche vide conserve
+  toutes les feuilles classées `analytics_tab=kpi` par l'API.
+- Les requêtes `/metrics/series` et `/metrics/table` n'émettent plus
+  deux occurrences de `capture_id`. La sonde console distingue les
+  avertissements WebGL applicatifs de ceux provoqués par la capture
+  d'écran Chromium.
+- SemVer front : **PATCH 1.126.1**.
 
 ## 1.126.0 (minor) — BC4-FRONT 2026-10-30 — cartes KPI / Map / Signaling partagées (Agent BC4, numérotation BC3)
 

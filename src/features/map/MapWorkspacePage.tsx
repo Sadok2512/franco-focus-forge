@@ -31,7 +31,6 @@ export function MapWorkspacePage() {
     <section className="h-[calc(100dvh-var(--app-header-offset))] min-h-[520px] overflow-hidden bg-background p-1.5">
       <KpiMapOSM
         center={center}
-        zoom={11}
         workspace
         showOperatorLegend={false}
         measurementStatus={null}

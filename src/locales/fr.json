@@ -924,6 +924,7 @@
     "showSites": "Afficher les sites",
     "showCells": "Afficher les beams cellules",
     "cellsFromZoom": "Beams cellules à partir du zoom 13",
+    "zoomToSeeCells": "Zoomez pour voir les cellules",
     "technology": "Technologie",
     "lteBands": "Bandes LTE",
     "nrBands": "Bandes NR",
