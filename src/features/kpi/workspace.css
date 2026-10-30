@@ -1317,7 +1317,12 @@
 .kpi-chart-spinner-box { height: var(--kpi-panel-chart-height, 235px); display: flex; align-items: center; justify-content: center; }
 .kpi-chart-spinner { width: 40px; height: 40px; border-radius: 9999px; border: 4px solid var(--border); border-top-color: var(--primary); transform-origin: center; will-change: transform; animation: kpi-spin 800ms linear infinite; }
 @keyframes kpi-spin { to { transform: rotate(360deg); } }
-@media (prefers-reduced-motion: reduce) { .kpi-chart-spinner { animation-duration: 2s; } }
+/* Loading feedback remains observable when the OS requests reduced motion.
+   The global stylesheet uses `animation: none !important`; a slower, local
+   exception avoids a frozen loader without restoring decorative motion. */
+@media (prefers-reduced-motion: reduce) {
+  .kpi-chart-spinner { animation: kpi-spin 2s linear infinite !important; }
+}
 
 /* New panels appear with a short fade/scale; reduced-motion disables it. */
 .kpi-panel-enter { animation: kpi-panel-in 180ms ease-out both; }
@@ -1347,4 +1352,9 @@
 .kpi-measurements-progress span { position: absolute; inset-block: 0; left: 0; width: 35%; border-radius: inherit; background: var(--primary); will-change: transform; animation: kpi-measurements-progress 1.6s cubic-bezier(.4, 0, .2, 1) infinite; }
 .kpi-measurements-progress-overlay { position: absolute; inset: 0 0 auto; }
 @keyframes kpi-measurements-progress { from { transform: translateX(-110%); } to { transform: translateX(300%); } }
-@media (prefers-reduced-motion: reduce) { .kpi-measurements-progress span { animation: none; left: 32.5%; } }
+@media (prefers-reduced-motion: reduce) {
+  .kpi-measurements-progress span {
+    left: 0;
+    animation: kpi-measurements-progress 3.2s cubic-bezier(.4, 0, .2, 1) infinite !important;
+  }
+}

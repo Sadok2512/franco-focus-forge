@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
+import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
 
 import { QueryErrorState } from "@/features/kpi/QueryErrorState";
@@ -7,6 +8,17 @@ import { ApiHttpError, ApiUnauthenticatedError } from "@/lib/api/http";
 import "@/lib/i18n";
 
 describe("KPI UX feedback", () => {
+  it("keeps both functional loading indicators animated under reduced motion", () => {
+    const css = readFileSync("src/features/kpi/workspace.css", "utf8");
+
+    expect(css).toMatch(
+      /\.kpi-chart-spinner\s*\{\s*animation:\s*kpi-spin 2s linear infinite !important;/,
+    );
+    expect(css).toMatch(
+      /\.kpi-measurements-progress span\s*\{[\s\S]*?animation:\s*kpi-measurements-progress 3\.2s[\s\S]*?!important;/,
+    );
+  });
+
   it("affiche le statut HTTP et permet de réessayer après un 500", () => {
     const retry = vi.fn();
     render(

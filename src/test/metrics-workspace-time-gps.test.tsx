@@ -19,8 +19,8 @@ const { fixture } = vi.hoisted(() => {
   fx.columns[0].cell_label = "Serving";
   fx.columns[0].cell_system = "LTE";
   fx.columns[0].cell_internal_index = 1003;
-  fx.page = 1; fx.page_size = 25; fx.total_rows = fx.rows.length;
-  fx.total_pages = Math.ceil(fx.rows.length / 25);
+  fx.page = 1; fx.page_size = 25; fx.total_rows = 4935;
+  fx.total_pages = Math.ceil(fx.total_rows / 25);
   fx.rows = fx.rows.slice(0, 25);
   return { fixture: fx };
 });
@@ -101,6 +101,9 @@ describe("MetricsWorkspace — Time local / Time UTC / Lat / Lon (fixture 446215
     expect(screen.queryByText("08:33:20.980")).toBeNull();
 
     const panel = screen.getByTestId("metrics-table-panel");
+    expect(screen.getByTestId("metrics-v3-workspace")).toHaveAttribute("data-pane", "table");
+    expect(panel.querySelectorAll("tbody tr")).toHaveLength(25);
+    expect(screen.getByText(/1–25.*4935|1-25.*4935/)).toBeVisible();
     fireEvent.keyDown(within(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
     fireEvent.click(await screen.findByText("Time UTC"));
     await waitFor(() => expect(screen.getByText("08:33:20.980")).toBeVisible());

@@ -772,6 +772,7 @@ export function MetricsWorkspace({
     <ActiveEventsContext.Provider value={activeEvents}>
     <article
       className="kpi-metrics-table-premium kpi-unified-contents"
+      data-pane={pane}
       data-testid="metrics-v3-workspace"
     >
       {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
