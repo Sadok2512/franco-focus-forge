@@ -18,7 +18,79 @@ function apiUpstream(): string {
   ).replace(/\/+$/, "");
 }
 
-async function proxyApiRequest(request: Request): Promise<Response> {
+export function acceptsGzip(value: string | null): boolean {
+  if (!value) return false;
+  let gzipQuality: number | undefined;
+  let wildcardQuality: number | undefined;
+  for (const item of value.split(",")) {
+    const [rawEncoding, ...parameters] = item.trim().split(";");
+    const encoding = rawEncoding?.trim().toLowerCase();
+    if (encoding !== "gzip" && encoding !== "*") continue;
+    let quality = 1;
+    for (const parameter of parameters) {
+      const match = /^\s*q\s*=\s*([0-9.]+)\s*$/i.exec(parameter);
+      if (match) {
+        const parsed = Number(match[1]);
+        quality = Number.isFinite(parsed) && parsed >= 0 && parsed <= 1 ? parsed : 0;
+      }
+    }
+    if (encoding === "gzip") gzipQuality = quality;
+    else wildcardQuality = quality;
+  }
+  return (gzipQuality ?? wildcardQuality ?? 0) > 0;
+}
+
+function appendVaryAcceptEncoding(headers: Headers): void {
+  const values = (headers.get("vary") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (!values.some((value) => value.toLowerCase() === "accept-encoding")) {
+    values.push("Accept-Encoding");
+  }
+  headers.set("vary", values.join(", "));
+}
+
+function hasResponseBody(request: Request, response: Response): boolean {
+  return (
+    request.method !== "HEAD" &&
+    response.body !== null &&
+    response.status !== 204 &&
+    response.status !== 205 &&
+    response.status !== 304
+  );
+}
+
+function proxyResponse(request: Request, upstream: Response): Response {
+  const headers = new Headers(upstream.headers);
+  const staleUpstreamEncoding = headers.has("content-encoding");
+  headers.delete("content-encoding");
+  headers.delete("transfer-encoding");
+  appendVaryAcceptEncoding(headers);
+
+  const compress =
+    hasResponseBody(request, upstream) && acceptsGzip(request.headers.get("accept-encoding"));
+  if (compress) {
+    headers.delete("content-length");
+    headers.set("content-encoding", "gzip");
+    return new Response(upstream.body!.pipeThrough(new CompressionStream("gzip")), {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers,
+    });
+  }
+
+  // `fetch` implementations may transparently decode an encoded upstream
+  // response while retaining its wire length. Never forward that stale pair.
+  if (staleUpstreamEncoding) headers.delete("content-length");
+  return new Response(upstream.body, {
+    status: upstream.status,
+    statusText: upstream.statusText,
+    headers,
+  });
+}
+
+export async function proxyApiRequest(request: Request): Promise<Response> {
   const source = new URL(request.url);
   const path = source.pathname.slice(API_PREFIX.length) || "/";
   const target = `${apiUpstream()}${path}${source.search}`;
@@ -28,6 +100,9 @@ async function proxyApiRequest(request: Request): Promise<Response> {
   // Host/Origin would make the backend apply CORS to an internal hop.
   headers.delete("host");
   headers.delete("origin");
+  // One compression layer only. The internal hop is always identity; this
+  // proxy negotiates and emits the browser-facing representation itself.
+  headers.set("accept-encoding", "identity");
 
   const init: RequestInit & { duplex?: "half" } = {
     method: request.method,
@@ -38,7 +113,8 @@ async function proxyApiRequest(request: Request): Promise<Response> {
     init.body = request.body;
     init.duplex = "half";
   }
-  return fetch(target, init);
+  const upstream = await fetch(target, init);
+  return proxyResponse(request, upstream);
 }
 
 let serverEntryPromise: Promise<ServerEntry> | undefined;

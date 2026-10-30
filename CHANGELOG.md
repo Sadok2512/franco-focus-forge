@@ -1,3 +1,10 @@
+## Unreleased — API proxy compression
+
+- Front (**patch**) : le proxy Nitro demande une réponse interne `identity`,
+  puis applique une unique couche gzip lorsque le navigateur l'accepte. Les
+  en-têtes `Content-Encoding`, `Content-Length` et `Vary` décrivent désormais
+  exactement le corps transmis ; sans `Accept-Encoding`, le JSON reste en clair.
+
 ## 1.118.4 (patch) — BC4-FRONT 2026-10-30 — retire console.log debug KPI (Agent BC1, numérotation BC3)
 
 Supprime les traces `[bc4:kpi-series-render]` oubliées par BC4 dans
@@ -12,6 +19,7 @@ Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
   reconstruit le contrat objet existant avant le rendu. Chaque point, sa
   position et son protocole sont conservés ; aucun composant ni design ne
   change.
+
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.
