@@ -37,8 +37,7 @@ import {
   type TimeAxisMode,
 } from "./time-axis";
 
-const KPI_SERIES_RENDER_DEBUG =
-  import.meta.env.VITE_KPI_SERIES_RENDER_DEBUG === "1";
+const KPI_SERIES_RENDER_DEBUG = import.meta.env.VITE_KPI_SERIES_RENDER_DEBUG === "1";
 
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *
@@ -529,9 +528,10 @@ function MetricTimePlot({
         const pointCount = series.data.series.reduce((sum, item) => sum + item.points.length, 0);
         const resource = performance
           .getEntriesByType("resource")
-          .filter((entry) =>
-            entry.name.includes("/metrics/series?") &&
-            entry.name.includes(`capture_id=${encodeURIComponent(series.data.capture_id)}`),
+          .filter(
+            (entry) =>
+              entry.name.includes("/metrics/series?") &&
+              entry.name.includes(`capture_id=${encodeURIComponent(series.data.capture_id)}`),
           )
           .map((entry) => entry as PerformanceResourceTiming)
           .at(-1);
@@ -556,10 +556,7 @@ function MetricTimePlot({
   }, [captureId, code, projectId, series.data, series.dataUpdatedAt]);
 
   if (!captureId) {
-    if (captures.isPending)
-      return (
-        <ChartSpinner label={translate("metrics.de3b78444032")} />
-      );
+    if (captures.isPending) return <ChartSpinner label={translate("metrics.de3b78444032")} />;
     if (captures.isError)
       return (
         <QueryErrorState
