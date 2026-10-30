@@ -85,7 +85,7 @@ export type DictCategoryNode = z.infer<typeof DictCategoryNodeSchema>;
 const DictOriginBucketSchema = z
   .object({
     origin: OriginSchema,
-    messages: z.array(DictMessageBucketSchema),
+    messages: z.array(DictMessageBucketSchema).default([]),
     categories: z.array(DictCategoryNodeSchema).optional(),
   })
   .passthrough();

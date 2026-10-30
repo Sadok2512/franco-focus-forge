@@ -1,3 +1,19 @@
+## 1.120.2 (patch) — BC4-FRONT 2026-10-30 — Parameters KPI Analytics : zod accepte `origin.messages` absent (BC3)
+
+L'onglet Parameters restait sur « Chargement… » parce que la réponse
+`/dict/v2/tree?view=catalog` contient des origins `network_config`
+sans clé `messages` (seulement `categories`). Le schéma Zod rejetait
+toute la réponse → `parameterCatalogQ.data` restait `undefined`.
+
+- `DictOriginBucketSchema.messages` : `.default([])` au lieu de requis.
+  Les origins `network_config` reçoivent une liste vide côté client, les
+  autres (`ue_capability`, `ue_report`) restent inchangées. Pas de
+  rupture pour RRC Dictionary (même parsing, mêmes données).
+- Pas de changement côté code consommateur (TreePanel, parameter-identity,
+  catalog-model) — tous itèrent `o.messages` qui est désormais toujours
+  un tableau après Zod.
+- SemVer : **PATCH** (fix contrat de validation côté client).
+
 ## 1.120.1 (patch) — BC4-FRONT 2026-10-30 — Parameters KPI Analytics : masque groupBy + empty prompt (BC3)
 
 - `ValueExplorer` accepte deux nouvelles props optionnelles `hideGroupBy`
