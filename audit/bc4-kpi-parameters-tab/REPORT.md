@@ -204,6 +204,98 @@ f27578b fix(catalog): remove unsupported Analytics series
 
 L'activation de 2.57.0 en production reste exclusivement à BC3.
 
+## Audit complet de la page KPI Analytics
+
+Périmètre vérifié par le rendu servi sur `:5174` : état initial de l'onglet
+KPI, sélection métrique en vue Carte, appels réseau, console navigateur et
+temps jusqu'à la légende puis au canvas. Les preuves brutes sont :
+
+- `maps-audit/kpi-complete-audit.json` : appels, requêtes pendantes, console,
+  erreurs de page et état DOM après une fenêtre de trente secondes ;
+- `maps-audit/kpi-map-timing.json` : chronométrage focalisé jusqu'au premier
+  affichage réel ;
+- `maps-audit/kpi-empty.png` et `maps-audit/kpi-map-30s.png` : états visuels.
+
+Commande de synthèse du JSON :
+
+```bash
+node - <<'JS'
+const d=require('./audit/bc4-kpi-parameters-tab/maps-audit/kpi-complete-audit.json');
+const api=d.calls.filter(x=>x.url.includes('/api/'));
+console.log({fetch_xhr:d.calls.length,api:api.length,other:d.calls.length-api.length,
+  http_non_200:api.filter(x=>x.status!==null&&x.status!==200).length,
+  pending:d.pending.length,console:d.console.length,page_errors:d.page_errors.length});
+JS
+```
+
+```text
+fetch_xhr=69  api=21  other=48  http_non_200=0
+pending=2     console=4  page_errors=0
+```
+
+Les deux requêtes encore marquées pendantes appartiennent au premier document
+abandonné lors de la navigation vers le workspace Carte ; aucune réponse HTTP
+en échec n'a été observée. Les quatre entrées console sont le même avertissement
+WebGL/Chromium `GPU stall due to ReadPixels`; il n'y a aucune exception
+JavaScript (`page_errors=0`).
+
+Le `0/8` de l'onglet KPI est le compteur **sélectionnées / maximum**, pas un
+compteur de KPI disponibles. La commande Playwright relève :
+
+```text
+initial.ready_ms=995
+initial.empty_visible=true
+initial.kpi_counter=["0/8"]
+initial.workspace_text="Choose your metrics … Add a chart"
+```
+
+Le catalogue contient bien des KPI disponibles, mais aucun n'est sélectionné
+par défaut : la page ouvre donc sur un workspace vide avec seulement l'état
+d'aide. Ce n'est pas une perte de catalogue ; c'est un défaut d'entrée dans la
+page et un libellé ambigu.
+
+Chronométrage exact de la carte (`timeout 60s node --input-type=module
+<sonde Playwright>`, sortie `VERDICT_RC=0`) :
+
+```text
+DOMContentLoaded             175 ms
+/metrics/table include_map   14 315 ms après départ
+légende visible              14 915 ms
+canvas MapLibre visible      15 014 ms
+```
+
+La même sonde observe le tableau `include_map=false` à 2 074 ms et la réponse
+`include_map=true` à 14 315 ms. Le temps est donc dominé par la construction
+back des `map_points`, puis le rendu front ajoute moins d'une seconde. L'URL
+émise contient par ailleurs deux fois `capture_id=a4b0c321c52e`.
+
+### Défauts numérotés de KPI Analytics
+
+1. **KPI-01 — Haute — ouverture vide et `0/8` ambigu.** Aucun KPI n'est
+   sélectionné par défaut ; `0/8` peut être lu comme « aucun KPI disponible »
+   alors qu'il signifie « aucune sélection sur huit autorisées ».
+2. **KPI-02 — Critique — première carte à plus de quinze secondes.** La requête
+   `include_map=true` termine à 14 315 ms et le canvas à 15 014 ms ; la page
+   paraît figée alors que le calcul se fait côté serveur.
+3. **KPI-03 — Haute — carte entièrement masquée pendant le chargement.** Le
+   composant monte `MetricMap` seulement après la réponse : fond, sites,
+   cellules, légende et outils sont tous absents pendant l'attente.
+4. **KPI-04 — Moyenne — contrat de requête bruité.** `capture_id` est envoyé
+   deux fois sur `/metrics/table`; le back le tolère mais le contrat n'est pas
+   propre et complique les empreintes et caches.
+5. **KPI-05 — Haute — outils cartographiques non alignés.** La carte KPI
+   n'active pas `NetworkMapChrome`, contrairement à Map et Signaling ; détails
+   dans la matrice ci-dessous.
+6. **KPI-06 — Haute — liens radio perdus côté front.** Le back fournit déjà
+   les champs `serving_cell_*`, mais `metricMapFeatures()` ne les transporte
+   pas dans la couche KPI et aucun lien serving n'est rendu.
+7. **KPI-07 — Faible — avertissements WebGL.** Quatre avertissements GPU
+   identiques sont présents ; aucune erreur applicative ou HTTP non-200 n'est
+   mesurée. À surveiller, sans preuve actuelle d'un défaut fonctionnel.
+
+**VERDICT : audit complet.** Les cinq axes demandés sont couverts : onglet KPI
+vide, cycle de chargement Carte, appels réseau, console et temps d'affichage.
+
 ## Audit cartes — cohérence Map / Signaling / KPI Analytics
 
 Audit de lecture réalisé sur le front servi en `1.124.0`, projet Test_6

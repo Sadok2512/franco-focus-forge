@@ -1,0 +1,981 @@
+{
+  "at": "2026-10-30T17:18:53.812Z",
+  "base": "http://127.0.0.1:5174",
+  "project": "43e81a34a073",
+  "capture": "a4b0c321c52e",
+  "initial": {
+    "ready_ms": 995,
+    "empty_visible": true,
+    "tabs": [
+      "KPI",
+      "Metrics (0)",
+      "Parameters",
+      "1Workspace"
+    ],
+    "kpi_counter": [
+      "0/8"
+    ],
+    "workspace_text": "Choose your metrics\n\nSelect one or more KPIs in the catalogue to start analysing.\n\nAdd a chart",
+    "calls_end": 8
+  },
+  "map": {
+    "elapsed_ms": 30121,
+    "card_count": 1,
+    "busy_count": 0,
+    "legend_count": 1,
+    "canvas_count": 1,
+    "calls_start": 8,
+    "calls_end": 69
+  },
+  "calls": [
+    {
+      "url": "http://127.0.0.1:5174/api/health",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 265,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/catalog",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 84,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "duration_ms": null,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 51,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/appearance",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 51,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/organization",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 50,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "method": "GET",
+      "status": null,
+      "duration_ms": null,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/captures",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 51,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/health",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 48,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/captures",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 47,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 1410,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 1467,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 45,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/appearance",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 43,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/organization",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 43,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 456,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=true&table_only=false&page=1&page_size=25",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 13156,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false&table_only=true&page=1&page_size=25",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 803,
+      "content_length": null
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8327/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 29,
+      "content_length": "24107"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8326/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 64,
+      "content_length": "14301"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8327/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 43,
+      "content_length": "34161"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8326/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 25,
+      "content_length": "28965"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8327/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 56,
+      "content_length": "13983"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8328/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 57,
+      "content_length": "7778"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8326/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 38,
+      "content_length": "8180"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8328/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 8,
+      "content_length": "17361"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8328/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 57,
+      "content_length": "9980"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8325/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 57,
+      "content_length": "20748"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8327/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 56,
+      "content_length": "28948"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8325/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 57,
+      "content_length": "30457"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8326/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 61,
+      "content_length": "36771"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8325/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 37,
+      "content_length": "8495"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8328/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 60,
+      "content_length": "31796"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8329/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 52,
+      "content_length": "14425"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8329/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 174,
+      "content_length": "21320"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8325/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 168,
+      "content_length": "35401"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8329/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 168,
+      "content_length": "15485"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8324/5528.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 156,
+      "content_length": "30149"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8324/5527.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 155,
+      "content_length": "33966"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8329/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 158,
+      "content_length": "28664"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8324/5529.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 158,
+      "content_length": "17564"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/14/8324/5526.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 158,
+      "content_length": "34862"
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/sites?bbox=2.91707465885068%2C50.3747351455265%2C3.025822141150627%2C50.41910827054585&zoom=12",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 62,
+      "content_length": null
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/sites?bbox=2.91707465885068%2C50.3747351455265%2C3.025822141150627%2C50.41910827054585&zoom=15",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 61,
+      "content_length": null
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4164/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 14,
+      "content_length": "16386"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4164/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 30,
+      "content_length": "14419"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4163/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 6,
+      "content_length": "17163"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4163/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 6,
+      "content_length": "16906"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4165/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 7,
+      "content_length": "26597"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4165/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 21,
+      "content_length": "27975"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4164/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 7,
+      "content_length": "21571"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4164/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 6,
+      "content_length": "26785"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4163/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 63,
+      "content_length": "17318"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4163/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 21,
+      "content_length": "32726"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4162/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 7,
+      "content_length": "12015"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4162/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 8,
+      "content_length": "21871"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4165/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 9,
+      "content_length": "24745"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4165/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 6,
+      "content_length": "26477"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4162/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 9,
+      "content_length": "15300"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4162/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 21,
+      "content_length": "35769"
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/sites?bbox=2.8831256853943046%2C50.32681738853648%2C3.110544314604738%2C50.41965919502826&zoom=12",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 70,
+      "content_length": null
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4166/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 211,
+      "content_length": "31475"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4166/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 209,
+      "content_length": "30670"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4161/2765.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 205,
+      "content_length": "16017"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4161/2764.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 207,
+      "content_length": "16994"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4166/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 207,
+      "content_length": "17965"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4166/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 199,
+      "content_length": "26554"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4161/2766.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 199,
+      "content_length": "12701"
+    },
+    {
+      "url": "https://tile.openstreetmap.org/13/4161/2763.png",
+      "method": "GET",
+      "status": 200,
+      "duration_ms": 199,
+      "content_length": "32956"
+    }
+  ],
+  "pending": [
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "method": "GET",
+      "status": null,
+      "duration_ms": null,
+      "content_length": null,
+      "elapsed_ms": 31309
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "method": "GET",
+      "status": null,
+      "duration_ms": null,
+      "content_length": null,
+      "elapsed_ms": 31308
+    }
+  ],
+  "resources": [
+    {
+      "name": "http://127.0.0.1:5174/api/health",
+      "duration_ms": 85,
+      "response_end_ms": 487,
+      "encoded_bytes": 177,
+      "decoded_bytes": 301
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/captures",
+      "duration_ms": 60,
+      "response_end_ms": 475,
+      "encoded_bytes": 144,
+      "decoded_bytes": 239
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "duration_ms": 1721,
+      "response_end_ms": 2141,
+      "encoded_bytes": 303860,
+      "decoded_bytes": 6197026
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "duration_ms": 1494,
+      "response_end_ms": 1917,
+      "encoded_bytes": 497,
+      "decoded_bytes": 2173
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073",
+      "duration_ms": 68,
+      "response_end_ms": 495,
+      "encoded_bytes": 953,
+      "decoded_bytes": 3052
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/settings/appearance",
+      "duration_ms": 33,
+      "response_end_ms": 463,
+      "encoded_bytes": 44,
+      "decoded_bytes": 24
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/settings/organization",
+      "duration_ms": 42,
+      "response_end_ms": 475,
+      "encoded_bytes": 170,
+      "decoded_bytes": 246
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+      "duration_ms": 491,
+      "response_end_ms": 1095,
+      "encoded_bytes": 7969,
+      "decoded_bytes": 63975
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=true&table_only=false&page=1&page_size=25",
+      "duration_ms": 13232,
+      "response_end_ms": 13840,
+      "encoded_bytes": 266323,
+      "decoded_bytes": 3079711
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false&table_only=true&page=1&page_size=25",
+      "duration_ms": 527,
+      "response_end_ms": 1138,
+      "encoded_bytes": 699,
+      "decoded_bytes": 1234
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8327/5528.png",
+      "duration_ms": 91,
+      "response_end_ms": 14287,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8326/5528.png",
+      "duration_ms": 123,
+      "response_end_ms": 14320,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8327/5527.png",
+      "duration_ms": 116,
+      "response_end_ms": 14313,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8326/5527.png",
+      "duration_ms": 101,
+      "response_end_ms": 14298,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8327/5529.png",
+      "duration_ms": 117,
+      "response_end_ms": 14315,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8328/5528.png",
+      "duration_ms": 122,
+      "response_end_ms": 14320,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8326/5529.png",
+      "duration_ms": 102,
+      "response_end_ms": 14301,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8328/5527.png",
+      "duration_ms": 84,
+      "response_end_ms": 14283,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8328/5529.png",
+      "duration_ms": 140,
+      "response_end_ms": 14339,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8325/5528.png",
+      "duration_ms": 140,
+      "response_end_ms": 14339,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8327/5526.png",
+      "duration_ms": 124,
+      "response_end_ms": 14324,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8325/5527.png",
+      "duration_ms": 141,
+      "response_end_ms": 14341,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8326/5526.png",
+      "duration_ms": 141,
+      "response_end_ms": 14341,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8325/5529.png",
+      "duration_ms": 101,
+      "response_end_ms": 14302,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8328/5526.png",
+      "duration_ms": 141,
+      "response_end_ms": 14342,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8329/5528.png",
+      "duration_ms": 113,
+      "response_end_ms": 14314,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8329/5527.png",
+      "duration_ms": 34,
+      "response_end_ms": 14569,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8325/5526.png",
+      "duration_ms": 28,
+      "response_end_ms": 14566,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8329/5529.png",
+      "duration_ms": 25,
+      "response_end_ms": 14564,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8324/5528.png",
+      "duration_ms": 30,
+      "response_end_ms": 14570,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8324/5527.png",
+      "duration_ms": 27,
+      "response_end_ms": 14568,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8329/5526.png",
+      "duration_ms": 34,
+      "response_end_ms": 14576,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8324/5529.png",
+      "duration_ms": 26,
+      "response_end_ms": 14574,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/14/8324/5526.png",
+      "duration_ms": 28,
+      "response_end_ms": 14577,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/sites?bbox=2.91707465885068%2C50.3747351455265%2C3.025822141150627%2C50.41910827054585&zoom=12",
+      "duration_ms": 27,
+      "response_end_ms": 15094,
+      "encoded_bytes": 960,
+      "decoded_bytes": 5650
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/sites?bbox=2.91707465885068%2C50.3747351455265%2C3.025822141150627%2C50.41910827054585&zoom=15",
+      "duration_ms": 42,
+      "response_end_ms": 15111,
+      "encoded_bytes": 4603,
+      "decoded_bytes": 115311
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4164/2765.png",
+      "duration_ms": 64,
+      "response_end_ms": 15190,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4164/2764.png",
+      "duration_ms": 65,
+      "response_end_ms": 15192,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4163/2765.png",
+      "duration_ms": 91,
+      "response_end_ms": 15218,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4163/2764.png",
+      "duration_ms": 29,
+      "response_end_ms": 15156,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4165/2765.png",
+      "duration_ms": 92,
+      "response_end_ms": 15219,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4165/2764.png",
+      "duration_ms": 96,
+      "response_end_ms": 15224,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4164/2766.png",
+      "duration_ms": 92,
+      "response_end_ms": 15220,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4164/2763.png",
+      "duration_ms": 87,
+      "response_end_ms": 15216,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4163/2766.png",
+      "duration_ms": 88,
+      "response_end_ms": 15216,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4163/2763.png",
+      "duration_ms": 96,
+      "response_end_ms": 15225,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4162/2765.png",
+      "duration_ms": 60,
+      "response_end_ms": 15189,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4162/2764.png",
+      "duration_ms": 91,
+      "response_end_ms": 15221,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4165/2766.png",
+      "duration_ms": 94,
+      "response_end_ms": 15224,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4165/2763.png",
+      "duration_ms": 93,
+      "response_end_ms": 15223,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4162/2766.png",
+      "duration_ms": 84,
+      "response_end_ms": 15215,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4162/2763.png",
+      "duration_ms": 92,
+      "response_end_ms": 15222,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "http://127.0.0.1:5174/api/sites?bbox=2.8831256853943046%2C50.32681738853648%2C3.110544314604738%2C50.41965919502826&zoom=12",
+      "duration_ms": 44,
+      "response_end_ms": 15451,
+      "encoded_bytes": 2709,
+      "decoded_bytes": 22142
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4166/2765.png",
+      "duration_ms": 40,
+      "response_end_ms": 15574,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4166/2764.png",
+      "duration_ms": 29,
+      "response_end_ms": 15566,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4161/2765.png",
+      "duration_ms": 26,
+      "response_end_ms": 15564,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4161/2764.png",
+      "duration_ms": 25,
+      "response_end_ms": 15564,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4166/2766.png",
+      "duration_ms": 28,
+      "response_end_ms": 15568,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4166/2763.png",
+      "duration_ms": 45,
+      "response_end_ms": 15585,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4161/2766.png",
+      "duration_ms": 42,
+      "response_end_ms": 15582,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    },
+    {
+      "name": "https://tile.openstreetmap.org/13/4161/2763.png",
+      "duration_ms": 42,
+      "response_end_ms": 15583,
+      "encoded_bytes": 0,
+      "decoded_bytes": 0
+    }
+  ],
+  "console": [
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x59c01bb2000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x59c01bb2000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x59c01bb2000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels"
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x59c01bb2000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)"
+    }
+  ],
+  "page_errors": []
+}

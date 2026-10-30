@@ -1,0 +1,63 @@
+{
+  "dom_ms": 175,
+  "legend_ms": 14915,
+  "canvas_ms": 15014,
+  "calls": [
+    {
+      "url": "http://127.0.0.1:5174/api/settings/appearance",
+      "status": 200,
+      "at_ms": 631
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/organization",
+      "status": 200,
+      "at_ms": 632
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/catalog",
+      "status": 200,
+      "at_ms": 667
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073",
+      "status": 200,
+      "at_ms": 687
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/health",
+      "status": 200,
+      "at_ms": 841
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "status": 200,
+      "at_ms": 1071
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/captures",
+      "status": 200,
+      "at_ms": 1542
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "status": 200,
+      "at_ms": 1584
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false&table_only=true&page=1&page_size=25",
+      "status": 200,
+      "at_ms": 2074
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+      "status": 200,
+      "at_ms": 2076
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=true&table_only=false&page=1&page_size=25",
+      "status": 200,
+      "at_ms": 14315
+    }
+  ],
+  "page_errors": []
+}
