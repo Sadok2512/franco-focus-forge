@@ -1,0 +1,56 @@
+{
+  "command": "BC4_FRONT_BASE=http://127.0.0.1:9183 BC4_API_CONTAINER=bc4a4-api node scripts/parameters_kpi_fix_evidence.mjs before",
+  "base": "http://127.0.0.1:9183",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "kpiText": "KPI catalogue\n0/8\nLTE\n43 · 5 AVAIL\nAccessibility\n10\nLTE EPS Attach Success Rate\nLTE RACH Access Success Rate\nLTE RACH Attempts\nLTE RACH Failures\nLTE RACH Success\nLTE RRC Connection Attempts\nLTE RRC Connection Failures\nLTE RRC Setup Count\nLTE RRC Setup Success Rate\nLTE RRC Connection Success\nRetainability\n3\nMobility\n16\nDL\n3\nUL\n3\nData\n2\nBearers\n4\nVoice\n2\nNR\n41 · 0 AVAIL\nEN-DC\n16 · 0 AVAIL\nAGGREGATED KPIS\n5 · 3 AVAIL\n· Active project catalogue",
+  "metricRequests": [
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/series?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&max_points=2000",
+      "captureIdOccurrences": 1
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false&table_only=true&page=1&page_size=25",
+      "captureIdOccurrences": 2
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=true&table_only=true&page=1&page_size=25",
+      "captureIdOccurrences": 2
+    }
+  ],
+  "warningsBeforeScreenshot": 0,
+  "webglWarningsBeforeMapScreenshot": 4,
+  "webglWarningsAfterMapScreenshot": 4,
+  "parameterLayout": null,
+  "consoleEntries": [
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x192c023cb000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "at": 1793390254709
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x192c023cb000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "at": 1793390254715
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x192c023cb000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels",
+      "at": 1793390254763
+    },
+    {
+      "type": "warning",
+      "text": "[.WebGL-0x192c023cb000]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat)",
+      "at": 1793390254988
+    }
+  ],
+  "rrcSignature": {
+    "title": "Dictionnaire RRC LTE + NR — BC4",
+    "tabs": [
+      "Paramètres",
+      "Raw parameter",
+      "Templates"
+    ],
+    "searchPlaceholder": "Rechercher un paramètre…"
+  }
+}

@@ -20,9 +20,11 @@ const EMPTY_CLOSED = new Set<string>();
 const ValueCells = memo(function ValueCells({
   row,
   columns,
+  compactHierarchy = false,
 }: {
   row: ValueRow;
   columns: Column[];
+  compactHierarchy?: boolean;
 }) {
   return (
     <>
@@ -38,7 +40,7 @@ const ValueCells = memo(function ValueCells({
         return (
           <td
             key={column.id}
-            className="rrc-number"
+            className={`rrc-number${compactHierarchy ? " !text-right" : ""}`}
             title={`${cell.denominator === null ? "Pourcentage et dénominateur non exposés par l’API. " : ""}${row.parameter} · ${column.label} : ${cell.count ?? "—"} / ${cell.denominator ?? "—"} · ${cell.percentage === null ? "—" : percent(cell.percentage)}`}
           >
             {cell.count === null ? (
@@ -74,10 +76,12 @@ export function GroupedValueTable({
   blocks,
   groupBy,
   catalog,
+  compactHierarchy = false,
 }: {
   blocks: DistributionBlock[];
   groupBy: GroupByMode;
   catalog?: DictTreeResponse | null;
+  compactHierarchy?: boolean;
 }) {
   const model = useMemo(
     () => buildGroupedTable(blocks, groupBy, catalog),
@@ -156,7 +160,10 @@ export function GroupedValueTable({
     }
   }
   return (
-    <section className="rrc-results rrc-grouped rrc-hierarchy" aria-label="Tableau des valeurs">
+    <section
+      className={`rrc-results rrc-grouped rrc-hierarchy${compactHierarchy ? " rrc-kpi-parameters" : ""}`}
+      aria-label="Tableau des valeurs"
+    >
       <header className="flex flex-wrap items-center justify-between gap-3 border-b px-4 py-3">
         <div>
           <h3 className="text-sm font-semibold">
@@ -317,7 +324,9 @@ export function GroupedValueTable({
                 <th
                   key={column.id}
                   scope="col"
-                  className={index === 0 ? "text-left" : "text-center"}
+                  className={
+                    index === 0 ? "text-left" : compactHierarchy ? "text-right" : "text-center"
+                  }
                   aria-sort={
                     sort.key === column.id ? (sort.desc ? "descending" : "ascending") : "none"
                   }
@@ -326,7 +335,7 @@ export function GroupedValueTable({
                     className={
                       index === 0
                         ? "inline-flex items-center gap-1"
-                        : "flex w-full items-center justify-center gap-1"
+                        : `flex w-full items-center gap-1 ${compactHierarchy ? "justify-end" : "justify-center"}`
                     }
                     onClick={() =>
                       setSort({
@@ -367,7 +376,11 @@ export function GroupedValueTable({
                     data-parameter-id={node.row.parameterId}
                     aria-rowindex={start + index + 2}
                   >
-                    <ValueCells row={node.row} columns={visible} />
+                    <ValueCells
+                      row={node.row}
+                      columns={visible}
+                      compactHierarchy={compactHierarchy}
+                    />
                   </tr>
                 );
               const family = node.kind === "family";
@@ -378,6 +391,7 @@ export function GroupedValueTable({
               const label = family
                 ? `paramètre${count > 1 ? "s" : ""}`
                 : `valeur${count > 1 ? "s" : ""}`;
+              const inlineLabel = `${name}${!family && node.parameter.technology ? ` · ${node.parameter.technology}` : ""} · ${count} ${label}`;
               return (
                 <tr
                   key={node.id}
@@ -387,25 +401,43 @@ export function GroupedValueTable({
                 >
                   <th scope="row" colSpan={headers.length} className="text-left">
                     <button
-                      className="rrc-hierarchy-toggle"
+                      className={`rrc-hierarchy-toggle${compactHierarchy ? " !flex min-w-0 items-center gap-2" : ""}`}
                       aria-expanded={node.open}
                       aria-label={`${node.open ? "Réduire" : "Développer"} ${family ? "la famille" : "le paramètre"} ${name}`}
-                      title={family ? name : node.parameter.path}
+                      title={compactHierarchy ? inlineLabel : family ? name : node.parameter.path}
                       onClick={() => toggle(node.id)}
                     >
                       {node.open ? (
-                        <ChevronDown size={15} aria-hidden="true" />
+                        <ChevronDown
+                          size={15}
+                          className={compactHierarchy ? "shrink-0" : undefined}
+                          aria-hidden="true"
+                        />
                       ) : (
-                        <ChevronRight size={15} aria-hidden="true" />
+                        <ChevronRight
+                          size={15}
+                          className={compactHierarchy ? "shrink-0" : undefined}
+                          aria-hidden="true"
+                        />
                       )}
                       {family &&
                         (node.open ? (
-                          <FolderOpen size={16} aria-hidden="true" />
+                          <FolderOpen
+                            size={16}
+                            className={compactHierarchy ? "shrink-0" : undefined}
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <Folder size={16} aria-hidden="true" />
+                          <Folder
+                            size={16}
+                            className={compactHierarchy ? "shrink-0" : undefined}
+                            aria-hidden="true"
+                          />
                         ))}
-                      <span className="rrc-hierarchy-name">{name}</span>
-                      {!family && node.parameter.technology && (
+                      <span className="rrc-hierarchy-name">
+                        {compactHierarchy ? inlineLabel : name}
+                      </span>
+                      {!compactHierarchy && !family && node.parameter.technology && (
                         <span
                           className="rrc-tech-label"
                           data-technology={node.parameter.technology}
@@ -413,9 +445,11 @@ export function GroupedValueTable({
                           {node.parameter.technology}
                         </span>
                       )}
-                      <span className="rrc-hierarchy-count">
-                        {count} {label}
-                      </span>
+                      {!compactHierarchy && (
+                        <span className="rrc-hierarchy-count">
+                          {count} {label}
+                        </span>
+                      )}
                     </button>
                   </th>
                 </tr>

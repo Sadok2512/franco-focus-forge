@@ -81,6 +81,12 @@ export function KpiCatalogSidebar({
       technology.families.reduce((familyCount, family) => familyCount + family.kpis.length, 0),
     0,
   );
+  const availableCount = catalog.tree.reduce(
+    (technologyCount, technology) =>
+      technologyCount +
+      technology.families.reduce((familyCount, family) => familyCount + family.kpis.length, 0),
+    0,
+  );
   useEffect(() => onVisibleCountChange?.(visibleCount), [onVisibleCountChange, visibleCount]);
   const treeContent = (
     <>
@@ -199,8 +205,11 @@ export function KpiCatalogSidebar({
       <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
           <BarChart3 size={16} className="text-primary" /> {heading}
-          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
-            {selected.length}/{MAX_GRAPHS}
+          <span
+            className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums"
+            title={`${availableCount} KPI disponibles · ${selected.length} sélectionnés sur ${MAX_GRAPHS}`}
+          >
+            {availableCount} · {selected.length}/{MAX_GRAPHS} sélectionnés
           </span>
         </h2>
         <label className="relative block mt-2">

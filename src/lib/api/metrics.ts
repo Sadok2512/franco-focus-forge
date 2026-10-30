@@ -40,6 +40,22 @@ export const getMetricCaptures = (p: string, f: KpiQueryFilters, signal?: AbortS
     ),
     signal,
   );
+
+/** Build a metric request query with a single authoritative capture id.
+ * `taskQuery` also carries the workspace capture filter; using `set` here
+ * prevents the same key being emitted twice when an endpoint requires it as
+ * an explicit argument. */
+export function metricRequestQuery(
+  capture: string,
+  filters: KpiQueryFilters,
+  values: Record<string, string>,
+) {
+  const query = new URLSearchParams(taskQuery(filters));
+  query.set("capture_id", capture);
+  for (const [key, value] of Object.entries(values)) query.set(key, value);
+  return query;
+}
+
 export const getMetricSeries = (
   p: string,
   capture: string,
@@ -49,7 +65,7 @@ export const getMetricSeries = (
   filters: KpiQueryFilters = {},
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/series?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), max_points: "2000", ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })])}`,
+    `/projects/${encodeURIComponent(p)}/metrics/series?${metricRequestQuery(capture, filters, { codes: codes.join(","), max_points: "2000", ...(range ? { from_seq: String(range.from_seq), to_seq: String(range.to_seq) } : {}) })}`,
     MetricSeriesSchema,
     signal,
   );
@@ -70,11 +86,20 @@ export const getMetricAnalysis = (
   capture: string,
   codes: string[],
   filters: KpiQueryFilters,
-  options: { group_by: string; include_map: boolean; x?: string; page?: number; page_size?: number; table_only?: boolean; cell_pci?: number; cell_arfcn?: number },
+  options: {
+    group_by: string;
+    include_map: boolean;
+    x?: string;
+    page?: number;
+    page_size?: number;
+    table_only?: boolean;
+    cell_pci?: number;
+    cell_arfcn?: number;
+  },
   signal?: AbortSignal,
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/table?${new URLSearchParams([...new URLSearchParams(taskQuery(filters)), ...Object.entries({ capture_id: capture, codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}), ...(options.cell_pci != null ? { cell_pci: String(options.cell_pci) } : {}), ...(options.cell_arfcn != null ? { cell_arfcn: String(options.cell_arfcn) } : {}) })])}`,
+    `/projects/${encodeURIComponent(p)}/metrics/table?${metricRequestQuery(capture, filters, { codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}), ...(options.cell_pci != null ? { cell_pci: String(options.cell_pci) } : {}), ...(options.cell_arfcn != null ? { cell_arfcn: String(options.cell_arfcn) } : {}) })}`,
     MetricAnalysisSchema,
     signal,
   );
