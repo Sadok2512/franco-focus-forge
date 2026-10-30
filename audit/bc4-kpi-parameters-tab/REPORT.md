@@ -146,6 +146,41 @@ ESLint ciblé     PASS
 git diff --check PASS
 ```
 
+## Rebase post-0.104.0
+
+Le lot a été rebasé sans `--skip` sur les deux `main` courants :
+
+```text
+back  aa7b08e  (inclut ec39f82 / garde catalogue 0.104.0)
+front a4c3255  (post bc1/proxy-compression)
+```
+
+La CLI fusionnée conserve intégralement le chemin protégé par
+`guard_bc3_deploy_lock` et ajoute les alias `--from/--to` aux options
+`--from-version/--version`. Le mode par défaut et `--prepare-only` ne créent
+aucune session SQL. `prepare_analytics_minor` ne produit que l'artefact disque.
+
+Preuves sur le réseau et la base jetables `bc4a4-kpi-net` / `bc4a4-db` :
+
+```text
+sans DEPLOY_LOCK       exit 1, rows 1 -> 1, version active 0.0.0  PASS
+holder=BC4             exit 1, rows 1 -> 1, version active 0.0.0  PASS
+holder=BC3 --activate  exit 0, rows 1 -> 2, version active 2.57.0 PASS
+--from/--to prepare    exit 0, rows 2 -> 2                       PASS
+tests garde            7/7                                      PASS
+tests back ciblés      12/12                                    PASS
+tests front ciblés      8/8                                     PASS
+```
+
+La régénération de 2.57.0 conserve le SHA-256 pré-rebase :
+
+```text
+6e26c529d20253f1998e0687f7e3b9bbabd36b9d24f762cca51478a509d76c7f
+```
+
+La pile `bc4a4-*` a ensuite été détruite. Aucun réseau, port, DSN, secret ou
+conteneur de production n'a été utilisé.
+
 Les contrôles globaux restent non verts pour des dettes hors lot, sans SKIP :
 `typecheck` exit 2 (10 erreurs opérateurs/fixtures existantes) et ESLint
 global exit 1 (2 839 erreurs historiques, principalement anciens audits).
@@ -153,17 +188,18 @@ global exit 1 (2 839 erreurs historiques, principalement anciens audits).
 ## Commits back
 
 ```text
-8391386 feat(catalog): classify KPI Analytics leaves
-9f43e72 fix(catalog): support ordered Analytics rollout
-a99f649 fix(catalog): enrich cached Analytics leaves
-8d452b1 fix(catalog): remove unsupported Analytics series
+c278c98 feat(catalog): classify KPI Analytics leaves
+f1c43eb fix(catalog): support ordered Analytics rollout
+18c4777 fix(catalog): enrich cached Analytics leaves
+f27578b fix(catalog): remove unsupported Analytics series
 ```
 
-- `8391386` introduit le contrat `analytics_tab` et la préparation 2.57.0.
-- `9f43e72` permet le déploiement du code avant activation du catalogue.
-- `a99f649` enrichit en mémoire les payloads cache anciens, sans écriture
+- `c278c98` introduit le contrat `analytics_tab`, la préparation 2.57.0 et la
+  CLI fusionnée avec le garde 0.104.0.
+- `f1c43eb` permet le déploiement du code avant activation du catalogue.
+- `18c4777` enrichit en mémoire les payloads cache anciens, sans écriture
   persistée.
-- `8d452b1` encode les 61 décisions `visible=false`, la règle de contenu et
+- `f27578b` encode les 61 décisions `visible=false`, la règle de contenu et
   le garde d'exposition des feuilles.
 
 L'activation de 2.57.0 en production reste exclusivement à BC3.
