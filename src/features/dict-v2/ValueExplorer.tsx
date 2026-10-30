@@ -28,6 +28,8 @@ export function ValueExplorer({
   catalog,
   filtered = false,
   onRetry,
+  hideGroupBy = false,
+  hideEmptyPrompt = false,
 }: {
   distribution: DictDistributionResponse | null;
   groupBy: GroupByMode;
@@ -38,6 +40,8 @@ export function ValueExplorer({
   catalog?: DictTreeResponse | null;
   filtered?: boolean;
   onRetry?: () => void;
+  hideGroupBy?: boolean;
+  hideEmptyPrompt?: boolean;
 }) {
   const blocks = distribution?.blocks ?? [];
   const metadata = useMemo(() => {
@@ -66,9 +70,11 @@ export function ValueExplorer({
 
   return (
     <section className="flex min-w-0 flex-col gap-3 p-1" data-testid="dict-value-explorer">
-      <header className="flex flex-wrap items-start justify-end gap-3">
-        <SegGroupBy value={groupBy} onChange={onGroupByChange} />
-      </header>
+      {!hideGroupBy && (
+        <header className="flex flex-wrap items-start justify-end gap-3">
+          <SegGroupBy value={groupBy} onChange={onGroupByChange} />
+        </header>
+      )}
 
       {error ? (
         <div className="rounded-md border border-sev-bad/40 bg-sev-bad/10 p-3 text-xs text-sev-bad">
@@ -85,7 +91,7 @@ export function ValueExplorer({
         </div>
       ) : null}
 
-      {!selectedKeys.length && (
+      {!selectedKeys.length && !hideEmptyPrompt && (
         <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
           Cochez un paramètre dans l'arbre pour voir la distribution de ses valeurs.
         </div>

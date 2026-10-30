@@ -1,3 +1,13 @@
+## 1.120.1 (patch) — BC4-FRONT 2026-10-30 — Parameters KPI Analytics : masque groupBy + empty prompt (BC3)
+
+- `ValueExplorer` accepte deux nouvelles props optionnelles `hideGroupBy`
+  et `hideEmptyPrompt`. Appliquées dans `KpiWorkspace` sur l'onglet
+  Parameters : plus de segmenté `Opérateur | Bande | Les deux` ni de
+  message « Cochez un paramètre … » dans ce contexte.
+- RRC Dictionary (`DictV2Page`) inchangé : les deux éléments restent
+  présents (défauts `false`).
+- SemVer : **PATCH** (feature flag en option, aucun chemin existant modifié).
+
 ## 1.120.0 (minor) — BC4-FRONT 2026-10-30 — marqueurs métriques catégoriels (Agent BC1, numérotation BC3)
 
 Compagnon front du back `0.106.0`. 61 feuilles différées (catalogue 2.57.0)

@@ -758,6 +758,8 @@ function Workspace({
                   selectedKeys={selectedParameterKeys}
                   filtered={Object.keys(parameterGeo).length > 0}
                   onRetry={() => void parameterDistributionQ.refetch()}
+                  hideGroupBy
+                  hideEmptyPrompt
                 />
                 {parameterSelection.length > 0 && (
                   <SelectedParameterInfo
