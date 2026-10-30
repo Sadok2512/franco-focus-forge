@@ -42,6 +42,94 @@ const point = z.object({
   gps_seq: z.number().nullable(),
   seq_gap: z.number().nullable(),
 });
+const pointsMetadata = {
+  ...envelope,
+  positioned_count: z.number(),
+  indoor: z.boolean(),
+  floorplan_id: z.string().nullable(),
+  reason: z.string().nullable(),
+  total: z.number().nullable().optional(),
+  returned: z.number().nullable().optional(),
+  truncated: z.boolean().optional(),
+};
+const legacyPoints = z.object({
+  ...pointsMetadata,
+  points: z.array(point),
+  markers: z.array(point.extend({ counts: z.record(z.number()), seqs: z.array(z.number()) })),
+});
+const compactPoint = z.tuple([
+  z.number(),
+  z.number().nullable(),
+  z.number().nullable(),
+  z.number().nullable(),
+  z.number().int().nonnegative(),
+  z.number().nullable(),
+  z.number().nullable(),
+]);
+const compactMarker = z.tuple([
+  z.number(),
+  z.number().nullable(),
+  z.number(),
+  z.number(),
+  z.number().int().nonnegative(),
+  z.array(z.number().int().nonnegative()),
+]);
+const compactPoints = z
+  .object({
+    ...pointsMetadata,
+    format: z.literal("compact-v1"),
+    point_fields: z.tuple([
+      z.literal("seq"),
+      z.literal("t_rel_s"),
+      z.literal("lat"),
+      z.literal("lng"),
+      z.literal("protocol_index"),
+      z.literal("gps_seq"),
+      z.literal("seq_gap"),
+    ]),
+    marker_fields: z.tuple([
+      z.literal("seq"),
+      z.literal("t_rel_s"),
+      z.literal("lat"),
+      z.literal("lng"),
+      z.literal("protocol_index"),
+      z.literal("counts"),
+    ]),
+    protocols: z.array(z.string()),
+    points: z.array(compactPoint),
+    markers: z.array(compactMarker),
+  })
+  .transform(
+    ({
+      protocols,
+      point_fields: _pointFields,
+      marker_fields: _markerFields,
+      format: _format,
+      ...env
+    }) => ({
+      ...env,
+      points: env.points.map((row) => ({
+        seq: row[0],
+        t_rel_s: row[1],
+        lat: row[2],
+        lng: row[3],
+        protocol: protocols[row[4]]!,
+        gps_seq: row[5],
+        seq_gap: row[6],
+      })),
+      markers: env.markers.map((row) => ({
+        seq: row[0],
+        t_rel_s: row[1],
+        lat: row[2],
+        lng: row[3],
+        protocol: protocols[row[4]]!,
+        gps_seq: null,
+        seq_gap: null,
+        seqs: [],
+        counts: Object.fromEntries(protocols.map((name, index) => [name, row[5][index] ?? 0])),
+      })),
+    }),
+  );
 export const signalingSchemas = {
   captures: z.object({
     project_id: z.string(),
@@ -164,18 +252,7 @@ export const signalingSchemas = {
     total: z.number(),
     missing_time: z.number(),
   }),
-  points: z.object({
-    ...envelope,
-    points: z.array(point),
-    positioned_count: z.number(),
-    markers: z.array(point.extend({ counts: z.record(z.number()), seqs: z.array(z.number()) })),
-    indoor: z.boolean(),
-    floorplan_id: z.string().nullable(),
-    reason: z.string().nullable(),
-    total: z.number().nullable().optional(),
-    returned: z.number().nullable().optional(),
-    truncated: z.boolean().optional(),
-  }),
+  points: z.union([legacyPoints, compactPoints]),
   context: z.object({
     ...envelope,
     seq: z.number(),
@@ -229,6 +306,7 @@ export function getSignaling<K extends keyof typeof signalingSchemas>(
 ): Promise<z.infer<(typeof signalingSchemas)[K]>> {
   const query = new URLSearchParams();
   for (const [k, v] of Object.entries(params)) if (v !== undefined) query.set(k, String(v));
+  if (kind === "points" && !query.has("compact")) query.set("compact", "true");
   const suffix = kind === "rows" ? "" : kind === "eventSummary" ? "/events/summary" : "/" + kind;
   const path = `/projects/${encodeURIComponent(projectId)}/signaling${suffix}?${query}`;
   return apiFetch(path, signalingSchemas[kind] as z.ZodTypeAny, { signal }) as Promise<

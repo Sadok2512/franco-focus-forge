@@ -1,3 +1,10 @@
+## Unreleased — Signaling points compact
+
+- **Patch proposé** (numéro final BC3) : le client demande `compact=true` et
+  reconstruit le contrat objet existant avant le rendu. Chaque point, sa
+  position et son protocole sont conservés ; aucun composant ni design ne
+  change.
+
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.
