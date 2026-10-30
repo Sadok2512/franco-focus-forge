@@ -29,7 +29,6 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
-import { getMetricCaptures } from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { MetricView } from "./MetricGraphCard";
 import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
