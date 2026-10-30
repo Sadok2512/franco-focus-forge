@@ -1,3 +1,8 @@
+## Unreleased (minor) — categorical metric markers (Agent BC1)
+
+- KPI Analytics renders categorical/event values as labeled time-axis markers
+  and keeps the existing Measurements table (Time, Cell, value) contract.
+
 ## 1.119.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : KPI / Metrics / Parameters (Agent BC4, numérotation BC3)
 
 Compagnon front du lot back `0.105.0` + catalogue `2.57.0`.

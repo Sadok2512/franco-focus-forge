@@ -197,24 +197,24 @@ function Plot({
     }));
     const bands = categories.map((s, i) => ({
       name: s.label,
-      type: "line" as const,
+      type: "scatter" as const,
       xAxisIndex: panels.length + i,
       yAxisIndex: numericAxes.length + i,
-      data: [],
-      markArea: {
-        label: { show: true, color: "#f8fafc", fontSize: 10, position: "inside" },
-        data: s.segments.map((seg) => [
-          {
-            name: `${s.label}: ${seg.value}`,
-            xAxis: seg.start_s,
-            itemStyle: {
-              color: palette[s.states.indexOf(seg.value) % palette.length],
-              opacity: 0.55,
-            },
-          },
-          { xAxis: seg.end_s },
-        ]),
+      symbol: "diamond",
+      symbolSize: 8,
+      label: {
+        show: true,
+        formatter: (params: { data?: { label?: string } }) => params.data?.label ?? "",
+        position: "top" as const,
+        fontSize: 9,
+        color: "#f8fafc",
       },
+      data: s.points.map((point) => ({
+        value: [point.t_rel_s, 0.5],
+        label: point.label ?? String(point.value),
+        tooltipText: point.tooltip,
+        itemStyle: { color: palette[s.states.indexOf(String(point.value)) % palette.length] },
+      })),
     }));
     chart.current.setOption(
       {
