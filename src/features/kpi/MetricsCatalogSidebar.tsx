@@ -6,9 +6,8 @@
 //     cellule, hérités du JSON 2.50.5 avec `node_type` ∈ {tech, category,
 //     event, leaf} ;
 //   - badge "PER CELL" dérivé du `metric_id` suffixé `@<cell_type>` ;
-//   - case "Active only" (défaut OFF) qui replie les feuilles n=0 sans
-//     JAMAIS cacher les feuilles non-sélectionnables (grisage + tooltip
-//     `reason` préservés).
+//   - interrupteur opt-in pour les feuilles non-sélectionnables ; leur
+//     grisage et leur tooltip `reason` sont préservés quand elles sont montrées.
 // 1.78.0 (BC3 héritage) — Metrics tree aligned strictement sur KPI tree.
 // Arbre dérivé de /metrics back (jamais hardcodé). Même style que
 // KpiCatalogSidebar : header p-2, pas d'eyebrow, pas d'Expand/Collapse,
@@ -76,9 +75,10 @@ export function MetricsCatalogSidebar({
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
-  // 1.107.0 — "Active only" filtre les feuilles n=0 ; les feuilles
-  // non-sélectionnables (hors colonne décodeur, par ex.) restent affichées
-  // en grisé avec tooltip reason, JAMAIS cachées même avec filtre ON.
+  // "Afficher les non disponibles" est volontairement OFF au chargement :
+  // l'arbre nominal ne contient que les feuilles consommables. L'option les
+  // réintroduit sans changer leur rendu grisé ni leur tooltip de cause.
+  const [showUnavailable, setShowUnavailable] = useState(false);
   const [activeOnly, setActiveOnly] = useState(false);
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
@@ -93,6 +93,21 @@ export function MetricsCatalogSidebar({
     for (const children of result.values()) children.sort((a, b) => a.order - b.order);
     return result;
   }, [query.data]);
+  const availableTree = useMemo(() => {
+    if (showUnavailable) return null;
+    const nodes = query.data?.nodes ?? [];
+    const byId = new Map(nodes.map((node) => [node.node_id, node]));
+    const visible = new Set<string>();
+    for (const leaf of nodes) {
+      if (leaf.node_type !== "leaf" || !leaf.selectable) continue;
+      let current: MetricCatalogNode | undefined = leaf;
+      while (current && !visible.has(current.node_id)) {
+        visible.add(current.node_id);
+        current = current.parent_id ? byId.get(current.parent_id) : undefined;
+      }
+    }
+    return visible;
+  }, [query.data, showUnavailable]);
   const matching = useMemo(() => {
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
@@ -142,7 +157,9 @@ export function MetricsCatalogSidebar({
     const values = descendantSelections.get(node.node_id) ?? [];
     const remove = values.length > 0 && values.every((value) => selected.includes(value));
     const candidates = values.filter((value) => remove === selected.includes(value));
-    const permitted = remove ? candidates : candidates.slice(0, Math.max(0, MAX_METRICS - selected.length));
+    const permitted = remove
+      ? candidates
+      : candidates.slice(0, Math.max(0, MAX_METRICS - selected.length));
     for (const value of permitted) onToggle(value);
   };
   const copyToClipboard = async (text: string, id: string) => {
@@ -176,15 +193,13 @@ export function MetricsCatalogSidebar({
   };
 
   const renderNode = (node: MetricCatalogNode): ReactNode => {
+    if (availableTree && !availableTree.has(node.node_id)) return null;
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
     const expanded = Boolean(matching) || open.has(node.node_id);
-    // 1.107.0 — Active only : masque les feuilles sélectionnables à n=0.
-    // Les non-sélectionnables (!selectable) restent toujours affichées en
-    // grisé (contrat produit : feuilles jamais cachées, tooltip reason).
-    if (
-      activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0
-    ) {
+    // Active only complète le filtre de disponibilité pour les rares feuilles
+    // sélectionnables dont le compteur peut être nul après un refetch.
+    if (activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0) {
       return null;
     }
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
@@ -197,9 +212,9 @@ export function MetricsCatalogSidebar({
     const scannerTooltip = scannerBlocked ? "no UE cell metrics in scanner capture" : null;
     const label = cleanLabel(node.label);
     const isSelected = node.selectable && selected.includes(node.selection ?? "");
-    const canToggle = (node.selectable && node.selection
-      ? isSelected || selected.length < MAX_METRICS
-      : false) && !scannerBlocked;
+    const canToggle =
+      (node.selectable && node.selection ? isSelected || selected.length < MAX_METRICS : false) &&
+      !scannerBlocked;
     const statusClass =
       node.selectable && node.n > 0
         ? "status-available"
@@ -311,7 +326,9 @@ export function MetricsCatalogSidebar({
               </span>
               {search && (
                 <span className="text-[10px] text-muted-foreground">
-                  {node.source ?? (/@(lte|nr)-type-\d+$/.test(node.metric_id ?? "") ? "" : node.metric_id) ?? ""}
+                  {node.source ??
+                    (/@(lte|nr)-type-\d+$/.test(node.metric_id ?? "") ? "" : node.metric_id) ??
+                    ""}
                 </span>
               )}
             </span>
@@ -363,7 +380,9 @@ export function MetricsCatalogSidebar({
                 </DropdownMenuItem>
                 <DropdownMenuItem onSelect={() => void copyToClipboard(copyPayload, node.node_id)}>
                   <Copy size={13} />{" "}
-                  {copied === node.node_id ? t("metrics.catalogCopyIdOk") : t("metrics.catalogCopyId")}
+                  {copied === node.node_id
+                    ? t("metrics.catalogCopyIdOk")
+                    : t("metrics.catalogCopyId")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -413,10 +432,21 @@ export function MetricsCatalogSidebar({
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
-        {/* 1.107.0 — Case "Active only" : replie les feuilles n=0, laisse les
-            non-sélectionnables toujours grisées (jamais cachées). Défaut OFF. */}
         <label
           className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground"
+          data-testid="metrics-show-unavailable"
+        >
+          <input
+            type="checkbox"
+            role="switch"
+            checked={showUnavailable}
+            onChange={(event) => setShowUnavailable(event.target.checked)}
+            className="h-3 w-3"
+          />
+          {t("metrics.showUnavailable")}
+        </label>
+        <label
+          className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground"
           data-testid="metrics-active-only"
         >
           <input
@@ -494,9 +524,7 @@ export function MetricsCatalogSidebar({
             onClick={(e) => e.stopPropagation()}
             data-testid="metric-info-dialog"
           >
-            <h3 className="mb-2 text-sm font-semibold">
-              {cleanLabel(info.label)}
-            </h3>
+            <h3 className="mb-2 text-sm font-semibold">{cleanLabel(info.label)}</h3>
             <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
               {info.source && (
                 <>

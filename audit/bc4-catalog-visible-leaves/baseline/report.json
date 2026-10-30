@@ -1,0 +1,60 @@
+{
+  "base": "http://127.0.0.1:9185",
+  "mode": "baseline",
+  "rrcContract": {
+    "heading": "Paramètres RRC",
+    "tabs": [
+      "Paramètres",
+      "Raw parameter",
+      "Templates"
+    ],
+    "searchPlaceholder": "Rechercher un paramètre…",
+    "templatesTabCount": 1
+  },
+  "calls": [
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/settings/appearance",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/dict",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/settings/organization",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/dict/v2/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/kpi/catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/metrics",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/kpi/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9185/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+      "status": 200
+    }
+  ]
+}

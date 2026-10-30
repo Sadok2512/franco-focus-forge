@@ -275,6 +275,13 @@ function Workspace({
   const [parameterGroupBy, setParameterGroupBy] = useState<GroupByMode>("operator");
   const [parameterResetTick, setParameterResetTick] = useState(0);
   const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
+  const selectableMetricCount = useMemo(
+    () =>
+      (metricsCatalog.data?.nodes ?? []).filter(
+        (node) => node.node_type === "leaf" && node.selectable,
+      ).length,
+    [metricsCatalog.data],
+  );
   const selectedMetrics = currentTab.metricCodes ?? [];
   const setSelectedMetrics = (next: string[]) =>
     persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricCodes: next }));
@@ -612,8 +619,8 @@ function Workspace({
               <button
                 role="tab"
                 aria-selected={activeCatalog === "metrics"}
-                title={`${translate("kpi.catalogTabMetrics")} · ${selectedMetrics.length}`}
-                aria-label={`${translate("kpi.catalogTabMetrics")} · ${selectedMetrics.length}`}
+                title={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
+                aria-label={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
                 className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
                 onClick={() => setActiveCatalog("metrics")}
                 style={{
@@ -629,7 +636,7 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("kpi.catalogTabMetrics")}
+                {translate("kpi.catalogTabMetrics")} ({selectableMetricCount})
               </button>
               <button
                 role="tab"

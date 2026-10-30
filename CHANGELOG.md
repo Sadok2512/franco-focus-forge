@@ -5010,3 +5010,13 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 
 - The Signaling and Map RSRP layers draw a thin line from each positioned RSRP observation to its serving cell when the API provides an exact CHI-to-ECI reference match.
 - RSRP popups identify the proven serving cell, site, and CHI sequence. Captures without that proof keep their measurement points without a fabricated line.
+## Unreleased (minor) — Metrics : feuilles disponibles par défaut (Agent BC4, numérotation BC3)
+
+- L'onglet Metrics masque par défaut les feuilles dont `selectable=false` et
+  conserve seulement leurs ancêtres utiles ; aucun code ni libellé n'est
+  utilisé comme règle de disponibilité côté front.
+- L'interrupteur « Afficher les non disponibles » restaure ces feuilles avec
+  le rendu grisé et la raison déjà servis par le back.
+- Le compteur visible de l'onglet Metrics compte les feuilles sélectionnables
+  de la réponse projet.
+- SemVer front : **MINOR** ; numéro attribué par BC3.

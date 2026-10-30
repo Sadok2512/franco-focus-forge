@@ -224,6 +224,7 @@
     "pickFromCatalogue": "No metric selected. Pick one from the catalogue.",
     "7f626224ba1f": "No metrics match this search.",
     "activeOnly": "Active only",
+    "showUnavailable": "Show unavailable",
     "footerCatalogDecoder": "Catalog {{catalog}} · Decoder {{decoder}}",
     "footerLegacy": "Metrics catalogue — legacy ({{reason}})"
   },

@@ -1,0 +1,95 @@
+{
+  "base": "http://127.0.0.1:9183",
+  "mode": "current",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "catalogRelease": "2.59.0",
+  "tabName": "Metrics · 297",
+  "toggleDefaultChecked": false,
+  "toggleEnabledChecked": true,
+  "supportedLeaf": {
+    "selection": "rachi_rach_result",
+    "event": "RACHI",
+    "selectable": true
+  },
+  "rrcContract": {
+    "heading": "Paramètres RRC",
+    "tabs": [
+      "Paramètres",
+      "Raw parameter",
+      "Templates"
+    ],
+    "searchPlaceholder": "Rechercher un paramètre…",
+    "templatesTabCount": 1
+  },
+  "calls": [
+    {
+      "url": "http://127.0.0.1:9183/api/settings/appearance",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/dict",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/settings/organization",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/dict/v2/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/kpi/catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/kpi/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/settings/appearance",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/settings/organization",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/captures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/kpi/filters",
+      "status": 200
+    }
+  ]
+}

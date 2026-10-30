@@ -49,7 +49,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
   // persistedQuery met le catalogue en cache localStorage : chaque test
   // repart d'un cache vide pour rester indépendant de l'ordre d'exécution.
   beforeEach(() => window.localStorage.clear());
-  it("expands category + family via chevron bar, selects leaf via Select button, keeps P4 leaves disabled with status dot", async () => {
+  it("shows only selectable leaves by default and reveals unavailable leaves disabled", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",
       title: "Nemo metrics",
@@ -108,8 +108,12 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     fireEvent.click(rsrpFam);
     expect(rsrpFam).toHaveAttribute("aria-expanded", "true");
 
-    // Leaves visible : PCell + PSCell.
+    // Default tree contains only the selectable leaf.
     expect(screen.getByText("RSRP — PCell")).toBeVisible();
+    expect(screen.queryByText("RSRP — PSCell")).toBeNull();
+
+    // The existing grey rendering is restored by the opt-in switch.
+    fireEvent.click(screen.getByRole("switch", { name: "Show unavailable" }));
     expect(screen.getByText("RSRP — PSCell")).toBeVisible();
 
     // P4 (open-proof) leaf still visible but visually disabled.
