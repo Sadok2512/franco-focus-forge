@@ -174,6 +174,8 @@ export const MetricSeriesSchema = z.object({
           seq: z.number(),
           t_rel_s: z.number(),
           value: z.union([z.number(), z.string()]),
+          label: z.string().optional(),
+          cell: z.string().nullable().optional(),
           tooltip: z.string(),
         }),
       ),

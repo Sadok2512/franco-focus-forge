@@ -10,8 +10,11 @@ import {
   CartesianGrid,
   Line,
   LineChart,
+  LabelList,
   ReferenceLine,
   ResponsiveContainer,
+  Scatter,
+  ScatterChart,
   Tooltip,
   XAxis,
   YAxis,
@@ -500,12 +503,23 @@ function MetricTimePlot({
     renderProbe.current = { updateAt: series.dataUpdatedAt, startedAt: performance.now() };
   }
 
+  const selectedSeries = series.data?.series?.[0];
   const points = useMemo(() => {
     const s = series.data?.series?.[0];
     if (!s) return [];
     return (s.points ?? [])
       .filter((p) => typeof p.value === "number")
       .map((p) => ({ t_rel_s: p.t_rel_s, value: p.value as number, seq: p.seq }));
+  }, [series.data]);
+  const categoricalPoints = useMemo(() => {
+    const s = series.data?.series?.[0];
+    if (!s || s.kind !== "categorical") return [];
+    return (s.points ?? []).map((point) => ({
+      t_rel_s: point.t_rel_s,
+      value: String(point.value),
+      label: point.label ?? String(point.value),
+      seq: point.seq,
+    }));
   }, [series.data]);
   const timeMeta: TimeAxisMeta | undefined = series.data
     ? {
@@ -581,11 +595,56 @@ function MetricTimePlot({
         onRetry={() => void series.refetch()}
       />
     );
-  if (!points.length)
+  if (!points.length && !categoricalPoints.length)
     return (
       <div className="kpi-chart-state" role="status">
         {" "}
         {translate("metrics.fab2de7753e5")}{" "}
+      </div>
+    );
+
+  if (selectedSeries?.kind === "categorical")
+    return (
+      <div
+        ref={plotRef}
+        className="w-full"
+        style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
+        data-testid="metric-categorical-plot"
+        data-capture-id={captureId}
+        data-n-points={categoricalPoints.length}
+      >
+        <ResponsiveContainer width="100%" height="100%">
+          <ScatterChart margin={{ top: 24, right: 14, left: 4, bottom: 24 }}>
+            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+            <XAxis
+              type="number"
+              dataKey="t_rel_s"
+              domain={[0, "dataMax"]}
+              tickCount={6}
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              tickFormatter={(v: number) =>
+                typeof v === "number" ? formatTimeTick(v, mode, timeMeta) : String(v)
+              }
+            />
+            <YAxis
+              type="category"
+              dataKey="value"
+              width={70}
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              allowDuplicatedCategory={false}
+            />
+            <Tooltip
+              cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
+              formatter={(_value, _name, item) => [
+                `${item.payload.label} · seq ${item.payload.seq}`,
+                label,
+              ]}
+            />
+            <Scatter data={categoricalPoints} fill="#2563eb" shape="diamond">
+              <LabelList dataKey="label" position="top" fontSize={9} fill="#334155" />
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
       </div>
     );
 

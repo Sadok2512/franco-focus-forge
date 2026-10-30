@@ -582,7 +582,17 @@ export function MetricsWorkspace({
       yAxisIndex: units.length || 1,
       symbol: "rect",
       symbolSize: [7, 14],
-      data: s.points.map((p) => [p.t_rel_s, String(p.value)]),
+      label: {
+        show: true,
+        formatter: (params: { data?: { label?: string } }) => params.data?.label ?? "",
+        position: "top" as const,
+        fontSize: 9,
+      },
+      data: s.points.map((p) => ({
+        value: [p.t_rel_s, String(p.value)],
+        label: p.label ?? String(p.value),
+        tooltipText: p.tooltip,
+      })),
     }));
     if (cats.length)
       (yAxes as object[]).push({
