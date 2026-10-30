@@ -36,7 +36,7 @@ export function MetricVsTimeChart({
   onCaptureChange,
   code,
   unit,
-  maxPoints = 5000,
+  maxPoints = 2000,
   height = 235,
   curveType = "line",
 }: {
@@ -89,9 +89,9 @@ export function MetricVsTimeChart({
         <div className="kpi-chart-state" role="alert">
           <strong>{translate("metrics.d854ce90120a")}</strong>
           <p>{toUserMessage(captures.error)}</p>
-        <button type="button" className="kpi-button" onClick={() => void captures.refetch()}>
-          {translate("kpi.af273d956b5b")}
-        </button>
+          <button type="button" className="kpi-button" onClick={() => void captures.refetch()}>
+            {translate("kpi.af273d956b5b")}
+          </button>
         </div>
       );
     }
@@ -103,15 +103,11 @@ export function MetricVsTimeChart({
         </div>
       );
     }
-    return (
-      <ChartSpinner label={translate("metrics.de3b78444032")} />
-    );
+    return <ChartSpinner label={translate("metrics.de3b78444032")} />;
   }
 
   if (query.isPending) {
-    return (
-      <ChartSpinner label={translate("metrics.705a2156c1b4")} />
-    );
+    return <ChartSpinner label={translate("metrics.705a2156c1b4")} />;
   }
   if (query.isError) {
     return (

@@ -21,6 +21,7 @@ export function KpiCatalogSidebar({
   onToggle,
   onVisualization,
   searchRef,
+  title,
 }: {
   catalog: ProjectKpiCatalog;
   selected: string[];
@@ -28,8 +29,10 @@ export function KpiCatalogSidebar({
   onToggle: (code: string) => void;
   onVisualization: (code: string, mode: VisualizationType) => void;
   searchRef: RefObject<HTMLInputElement | null>;
+  title?: string;
 }) {
   const { t: translate } = useTranslation();
+  const heading = title ?? translate("kpi.3ad34a87a145");
   const [search, setSearch] = useState("");
   const initial =
     catalog.tree.find((t) => t.families.some((f) => f.kpis.some((k) => k.code === active))) ??
@@ -66,10 +69,10 @@ export function KpiCatalogSidebar({
     }))
     .filter((t) => t.families.length);
   return (
-    <aside className="kpi-catalog" aria-label={translate("kpi.3ad34a87a145")}>
+    <aside className="kpi-catalog" aria-label={heading}>
       <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
-          <BarChart3 size={16} className="text-primary" /> {translate("kpi.3ad34a87a145")}
+          <BarChart3 size={16} className="text-primary" /> {heading}
           <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
             {selected.length}/{MAX_GRAPHS}
           </span>
@@ -128,55 +131,56 @@ export function KpiCatalogSidebar({
                           const isSelected = selected.includes(item.code);
                           const canAdd = isSelected || selected.length < MAX_GRAPHS;
                           return (
-                          <div
-                            key={item.code}
-                            title={`${t.techno} / ${f.family} / ${item.code}${item.reason ? ` — ${item.reason}` : ""}`}
-                            className={`kpi-tree-leaf ${active === item.code ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canAdd ? "is-disabled" : ""}`}
-                          >
-                            <button
-                              type="button"
-                              className="flex min-w-0 flex-1 items-center gap-2 text-left bg-transparent border-0 p-0"
-                              onClick={() => canAdd && onToggle(item.code)}
-                              disabled={!canAdd}
-                              aria-pressed={isSelected}
-                              aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
+                            <div
+                              key={item.code}
+                              title={`${t.techno} / ${f.family} / ${item.code}${item.reason ? ` — ${item.reason}` : ""}`}
+                              className={`kpi-tree-leaf ${active === item.code ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canAdd ? "is-disabled" : ""}`}
                             >
-                              <span
-                                className={`kpi-status-dot status-${item.status.toLowerCase()}`}
-                                title={item.status}
-                              />
-                              <span className="min-w-0">
-                                <span className="block truncate">{item.name}</span>
-                                {search && (
-                                  <span className="text-[10px] text-muted-foreground">
-                                    {techLabel(t.techno)} / {f.family} · {item.code}
-                                  </span>
-                                )}
-                              </span>
-                            </button>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <button
-                                  className="kpi-icon kpi-leaf-menu"
-                                  aria-label={`Visualisation ${item.name}`}
-                                  disabled={
-                                    !selected.includes(item.code) && selected.length >= MAX_GRAPHS
-                                  }
-                                >
-                                  <MoreVertical size={15} />
-                                </button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start">
-                                <DropdownMenuLabel>
-                                  {translate("kpi.af3aaf87ff99")}
-                                </DropdownMenuLabel>
-                                <VisualizationItems excludeGraph
-                                  throughput={item.unit === "Mbit/s"}
-                                  onChange={(mode) => onVisualization(item.code, mode)}
+                              <button
+                                type="button"
+                                className="flex min-w-0 flex-1 items-center gap-2 text-left bg-transparent border-0 p-0"
+                                onClick={() => canAdd && onToggle(item.code)}
+                                disabled={!canAdd}
+                                aria-pressed={isSelected}
+                                aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
+                              >
+                                <span
+                                  className={`kpi-status-dot status-${item.status.toLowerCase()}`}
+                                  title={item.status}
                                 />
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
+                                <span className="min-w-0">
+                                  <span className="block truncate">{item.name}</span>
+                                  {search && (
+                                    <span className="text-[10px] text-muted-foreground">
+                                      {techLabel(t.techno)} / {f.family} · {item.code}
+                                    </span>
+                                  )}
+                                </span>
+                              </button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="kpi-icon kpi-leaf-menu"
+                                    aria-label={`Visualisation ${item.name}`}
+                                    disabled={
+                                      !selected.includes(item.code) && selected.length >= MAX_GRAPHS
+                                    }
+                                  >
+                                    <MoreVertical size={15} />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="start">
+                                  <DropdownMenuLabel>
+                                    {translate("kpi.af3aaf87ff99")}
+                                  </DropdownMenuLabel>
+                                  <VisualizationItems
+                                    excludeGraph
+                                    throughput={item.unit === "Mbit/s"}
+                                    onChange={(mode) => onVisualization(item.code, mode)}
+                                  />
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           );
                         })}
                     </div>

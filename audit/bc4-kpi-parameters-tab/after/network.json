@@ -1,0 +1,95 @@
+{
+  "base": "http://127.0.0.1:5175",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "tabNetwork": {
+    "KPI": {
+      "requests": [
+        "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+        "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures"
+      ],
+      "responses": [
+        {
+          "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+          "status": 200
+        }
+      ]
+    },
+    "Metrics": {
+      "requests": [],
+      "responses": []
+    },
+    "Parameters": {
+      "requests": [],
+      "responses": []
+    },
+    "Raw parameter": {
+      "requests": [
+        "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/tree?view=raw"
+      ]
+    }
+  },
+  "requests": [
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/kpi/LTE_RRC_SUCCESS?group_by=none",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures?capture_id=a4b0c321c52e",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/kpi/LTE_RRC_SUCCESS?capture_id=a4b0c321c52e&group_by=none",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/series?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&max_points=2000",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/param/dict22%3AeyJjYXRlZ29yeSI6InRpbWVycy1ybGYiLCJkaXNjcmltaW5hdG9ycyI6e30sIm1lc3NhZ2UiOiJTeXN0ZW1JbmZvcm1hdGlvbiAtIFNJQjIiLCJuYW1lIjoidDMwMCIsInN1YmNhdGVnb3J5IjoidGltZXJzLXJsZi5jb25uZWN0aW9uIiwidGVjaCI6IkxURSIsInVuaXQiOm51bGx9",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/distribution?keys=dict22%3AeyJjYXRlZ29yeSI6InRpbWVycy1ybGYiLCJkaXNjcmltaW5hdG9ycyI6e30sIm1lc3NhZ2UiOiJTeXN0ZW1JbmZvcm1hdGlvbiAtIFNJQjIiLCJuYW1lIjoidDMwMCIsInN1YmNhdGVnb3J5IjoidGltZXJzLXJsZi5jb25uZWN0aW9uIiwidGVjaCI6IkxURSIsInVuaXQiOm51bGx9&group_by=operator",
+    "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/tree?view=raw"
+  ],
+  "responses": [
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/kpi/LTE_RRC_SUCCESS?group_by=none",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures?capture_id=a4b0c321c52e",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/captures",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/kpi/LTE_RRC_SUCCESS?capture_id=a4b0c321c52e&group_by=none",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/captures/a4b0c321c52e/events?types=task,ho,rlf,rrc&capture_id=a4b0c321c52e",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/metrics/series?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&max_points=2000",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/param/dict22%3AeyJjYXRlZ29yeSI6InRpbWVycy1ybGYiLCJkaXNjcmltaW5hdG9ycyI6e30sIm1lc3NhZ2UiOiJTeXN0ZW1JbmZvcm1hdGlvbiAtIFNJQjIiLCJuYW1lIjoidDMwMCIsInN1YmNhdGVnb3J5IjoidGltZXJzLXJsZi5jb25uZWN0aW9uIiwidGVjaCI6IkxURSIsInVuaXQiOm51bGx9",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/distribution?keys=dict22%3AeyJjYXRlZ29yeSI6InRpbWVycy1ybGYiLCJkaXNjcmltaW5hdG9ycyI6e30sIm1lc3NhZ2UiOiJTeXN0ZW1JbmZvcm1hdGlvbiAtIFNJQjIiLCJuYW1lIjoidDMwMCIsInN1YmNhdGVnb3J5IjoidGltZXJzLXJsZi5jb25uZWN0aW9uIiwidGVjaCI6IkxURSIsInVuaXQiOm51bGx9&group_by=operator",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5175/api/projects/43e81a34a073/dict/v2/tree?view=raw",
+      "status": 200
+    }
+  ]
+}

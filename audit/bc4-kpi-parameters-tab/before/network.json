@@ -1,0 +1,59 @@
+{
+  "base": "http://127.0.0.1:5174",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "requests": [
+    "http://127.0.0.1:5174/api/health",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/dict/v2/filters",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/dict",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+    "http://127.0.0.1:5174/api/settings/appearance",
+    "http://127.0.0.1:5174/api/settings/organization",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/catalog",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+    "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics"
+  ],
+  "responses": [
+    {
+      "url": "http://127.0.0.1:5174/api/health",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/dict",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/appearance",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/settings/organization",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/dict/v2/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/catalog",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/kpi/filters",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/metrics",
+      "status": 200
+    },
+    {
+      "url": "http://127.0.0.1:5174/api/projects/43e81a34a073/dict/v2/tree?view=catalog",
+      "status": 200
+    }
+  ]
+}

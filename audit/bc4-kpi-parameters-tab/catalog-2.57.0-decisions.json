@@ -1,0 +1,474 @@
+{
+  "catalog_version": "2.57.0",
+  "classification_counts": {
+    "ambiguous_defaults_to_metrics": 27,
+    "message_measurement": 7686
+  },
+  "command": "python3 scripts/catalog/audit_analytics_release.py --version 2.57.0",
+  "leaf_count": 7713,
+  "missing_analytics_tab": [],
+  "residual_ambiguous": [
+    "lf_capture_device_battery_charge",
+    "lf_capture_device_battery_status",
+    "lf_capture_device_battery_temperature",
+    "lf_capture_device_device_battery_current",
+    "lf_capture_device_device_battery_voltage",
+    "lf_capture_device_device_cpu_temperature",
+    "lf_capture_file_decode_level",
+    "lf_capture_file_decoder_version",
+    "lf_capture_file_device_name",
+    "lf_capture_file_file_format_version",
+    "lf_capture_file_file_size",
+    "lf_capture_file_log_file_name",
+    "lf_capture_file_measurement_id",
+    "lf_capture_file_measurement_start",
+    "lf_capture_file_project_id",
+    "lf_capture_file_session_id",
+    "lf_capture_file_unit_id",
+    "lf_capture_identity_subscriber_identity",
+    "lf_capture_script_number_of_commands_in_test_script",
+    "lf_capture_script_test_script_file",
+    "lf_capture_script_test_script_repeats",
+    "lf_capture_script_test_script_version",
+    "lf_capture_task_command_duration",
+    "lf_capture_task_test_script_command_arguments",
+    "lf_capture_task_test_script_command_index",
+    "lf_capture_task_test_script_command_name",
+    "lf_capture_task_test_script_command_result"
+  ],
+  "series_decisions": [
+    {
+      "code": "cell_ch@lte-type-2",
+      "decision": "removed_until_series_supported",
+      "event": "CELLMEAS",
+      "reason": "categorical_transitions_exceed_max_points:required=5449:max_points=2000",
+      "visible": false
+    },
+    {
+      "code": "cell_pci@lte-type-2",
+      "decision": "removed_until_series_supported",
+      "event": "CELLMEAS",
+      "reason": "categorical_transitions_exceed_max_points:required=19957:max_points=2000",
+      "visible": false
+    },
+    {
+      "code": "cell_pci@nr-type-1000",
+      "decision": "removed_until_series_supported",
+      "event": "CELLMEAS",
+      "reason": "categorical_transitions_exceed_max_points:required=9540:max_points=2000",
+      "visible": false
+    },
+    {
+      "code": "cqi_n_params@lte-type-0",
+      "decision": "removed_until_series_supported",
+      "event": "CQI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "cqi_n_params@lte-type-1",
+      "decision": "removed_until_series_supported",
+      "event": "CQI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "cqi_n_params@lte-type-2",
+      "decision": "removed_until_series_supported",
+      "event": "CQI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "cqi_n_params@lte-type-3",
+      "decision": "removed_until_series_supported",
+      "event": "CQI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "cqi_n_params@lte-type-4",
+      "decision": "removed_until_series_supported",
+      "event": "CQI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_band",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_cell_id",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_new_tac",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_old_band",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_old_cell_id",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_old_system",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_old_tac",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "crel_params",
+      "decision": "removed_until_series_supported",
+      "event": "CREL",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dad_application_protocol",
+      "decision": "removed_until_series_supported",
+      "event": "DAD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dad_data_disc_status",
+      "decision": "removed_until_series_supported",
+      "event": "DAD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dcomp_application_protocol",
+      "decision": "removed_until_series_supported",
+      "event": "DCOMP",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dcomp_transf_status",
+      "decision": "removed_until_series_supported",
+      "event": "DCOMP",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dreq_application_protocol",
+      "decision": "removed_until_series_supported",
+      "event": "DREQ",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "dreq_transf_dir",
+      "decision": "removed_until_series_supported",
+      "event": "DREQ",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "gad_detach_cause",
+      "decision": "removed_until_series_supported",
+      "event": "GAD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "gad_detach_status",
+      "decision": "removed_until_series_supported",
+      "event": "GAD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "gad_detach_time",
+      "decision": "removed_until_series_supported",
+      "event": "GAD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_att_band",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_att_ch",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_att_pci",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_band",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_ch_number",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_current_system",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_hoa_type",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoa_pci",
+      "decision": "removed_until_series_supported",
+      "event": "HOA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoi_ho_duration",
+      "decision": "removed_until_series_supported",
+      "event": "HOI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "hoi_ho_u_plane",
+      "decision": "removed_until_series_supported",
+      "event": "HOI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "lock_band",
+      "decision": "removed_until_series_supported",
+      "event": "LOCK",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "lock_forcings",
+      "decision": "removed_until_series_supported",
+      "event": "LOCK",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "lock_params",
+      "decision": "removed_until_series_supported",
+      "event": "LOCK",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "mei_measurement_event",
+      "decision": "removed_until_series_supported",
+      "event": "MEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "mei_measurement_id",
+      "decision": "removed_until_series_supported",
+      "event": "MEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "pba_pb_type",
+      "decision": "removed_until_series_supported",
+      "event": "PBA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "pbc_pb_id",
+      "decision": "removed_until_series_supported",
+      "event": "PBC",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_access_delay",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_init_tx_power",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_pathloss",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_preamble_step",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_preambles",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_pusch_power",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_rach_preamble_index",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_rach_reason",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_rach_result",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rachi_rach_type",
+      "decision": "removed_until_series_supported",
+      "event": "RACHI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "roam_roaming_status",
+      "decision": "removed_until_series_supported",
+      "event": "ROAM",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rra_est_cause",
+      "decision": "removed_until_series_supported",
+      "event": "RRA",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rrd_rrc_rel_cause",
+      "decision": "removed_until_series_supported",
+      "event": "RRD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "rrd_rrc_rel_status",
+      "decision": "removed_until_series_supported",
+      "event": "RRD",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "sei_mcc",
+      "decision": "removed_until_series_supported",
+      "event": "SEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "sei_mme_code",
+      "decision": "removed_until_series_supported",
+      "event": "SEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "sei_mme_group",
+      "decision": "removed_until_series_supported",
+      "event": "SEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "sei_mnc",
+      "decision": "removed_until_series_supported",
+      "event": "SEI",
+      "reason": "unknown_metric",
+      "visible": false
+    },
+    {
+      "code": "sei_service_status",
+      "decision": "removed_until_series_supported",
+      "event": "SEI",
+      "reason": "unknown_metric",
+      "visible": false
+    }
+  ],
+  "series_decisions_count": 61,
+  "series_decisions_unique": 61,
+  "tab_counts": {
+    "metrics": 7713
+  },
+  "verdict": "PASS"
+}

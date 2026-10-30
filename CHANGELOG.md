@@ -1,3 +1,16 @@
+## Unreleased (minor) — KPI Analytics : KPI / Metrics / Parameters (Agent BC4, numérotation BC3)
+
+- Le catalogue gauche expose trois onglets sans redessiner les composants :
+  `KPI`, `Metrics`, `Parameters`. La partition lit exclusivement le champ API
+  `analytics_tab`, livré d'abord par le catalogue back MINOR.
+- `Parameters` réutilise `TreePanel`, `CatalogTree`, `RawTreeView`,
+  `ValueExplorer` et `SelectedParameterInfo` de RRC Dictionary ; seul
+  `Templates` est masqué dans cette vue.
+- RRC Dictionary et KPI Analytics partagent les mêmes clés React Query pour
+  `/dict/v2/tree`, sans second appel lors d'une navigation entre pages.
+- Les séries ouvertes depuis les feuilles demandent `max_points=2000` et une
+  réponse 422 est affichée sans retry automatique.
+
 ## 1.118.5 (patch) — BC4-FRONT 2026-10-30 — Nitro proxy compresse /api + nettoie content-encoding (Agent BC1, numérotation BC3)
 
 Compagnon de l'incident back `0.99.1` (GZipMiddleware retiré après
@@ -107,7 +120,6 @@ gain bande passante ~70 %.
 - Les nouveaux textes sont fournis en français et en anglais. Le schéma
   `capture_ids` reste additif/optionnel pour tolérer un backend antérieur.
 - Type SemVer : `minor`. BC3 attribue le numéro de release au merge.
-
 ## 1.115.0 (minor) — BC4-FRONT 2026-10-28 — Release groupée : superstream UI + resilience i18n + PLMN tolérant (Agent BC3)
 
 Compagne du bc4-back 0.91.0 (déploiement groupé). Trois branches mergées

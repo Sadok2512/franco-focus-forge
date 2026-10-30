@@ -1,0 +1,41 @@
+{
+  "command": "BC4_FRONT_BASE=http://127.0.0.1:5174 node scripts/kpi_parameters_audit.mjs <output.json>",
+  "projectId": "43e81a34a073",
+  "catalogVersions": {
+    "kpi": "2.0.0-bc2-nmf-2026-10-20-bc2-f4-events-2026-10-20",
+    "metrics": "2.57.0"
+  },
+  "oldLeaves": {
+    "kpi": 197,
+    "metrics": 7790,
+    "namespacedUnion": 7987,
+    "uniqueNamespacedIds": 7987,
+    "uniqueMetricNodeIds": 7790
+  },
+  "kpiNatureAudit": {
+    "Calculated KPI": 47,
+    "Counter": 58,
+    "Measured metric": 92
+  },
+  "expectedPartitionAfterCatalogField": {
+    "kpi": 105,
+    "metrics": 7882
+  },
+  "actualCatalogPartition": {
+    "kpi": 105,
+    "metrics": 7882,
+    "union": 7987,
+    "unique": 7987,
+    "missing": 0,
+    "duplicates": 0
+  },
+  "missingAnalyticsTab": 0,
+  "ambiguous": [],
+  "dictionary": {
+    "catalogParameters": 579,
+    "catalogMessageLeaves": 799,
+    "rawLeaves": 6564,
+    "catalogDistinctParamKeys": 1101,
+    "rawDistinctParamKeys": 1101
+  }
+}

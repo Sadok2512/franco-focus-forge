@@ -13,6 +13,50 @@ export const MAX_GRAPHS = Math.max(
   Math.min(16, Number(import.meta.env["VITE_KPI_MAX_GRAPHS"]) || 8),
 );
 export type Entry = { techno: string; family: string; item: KpiCatalogItem };
+
+/** Partition owned by the API catalog. Labels, codes, families and units never
+ * decide an Analytics tab. The Zod contract rejects missing values first. */
+export function classifyKpiCatalog(catalog: ProjectKpiCatalog) {
+  const pick = (tab: "kpi" | "metrics"): ProjectKpiCatalog => {
+    const tree = catalog.tree
+      .map((technology) => ({
+        ...technology,
+        families: technology.families
+          .map((family) => ({
+            ...family,
+            kpis: family.kpis.filter((item) => item.analytics_tab === tab),
+          }))
+          .filter((family) => family.kpis.length > 0),
+      }))
+      .filter((technology) => technology.families.length > 0);
+    const items = tree.flatMap((technology) =>
+      technology.families.flatMap((family) => family.kpis),
+    );
+    const statuses = [...new Set(items.map((item) => item.status))];
+    return {
+      ...catalog,
+      tree,
+      counts_by_status: Object.fromEntries(
+        statuses.map((status) => [status, items.filter((item) => item.status === status).length]),
+      ),
+      counts_by_techno: Object.fromEntries(
+        tree.map((technology) => {
+          const technologyItems = technology.families.flatMap((family) => family.kpis);
+          return [
+            technology.techno,
+            Object.fromEntries(
+              statuses.map((status) => [
+                status,
+                technologyItems.filter((item) => item.status === status).length,
+              ]),
+            ),
+          ];
+        }),
+      ),
+    };
+  };
+  return { kpi: pick("kpi"), metrics: pick("metrics") };
+}
 export type Statistic = "value" | "p10" | "p50" | "p90";
 export const STAT_LABELS: Record<Statistic, string> = {
   get value() {

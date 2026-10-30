@@ -38,6 +38,7 @@ export const KpiCatalogItemSchema = z
     code: z.string(),
     name: z.string(),
     nature: z.string(),
+    analytics_tab: z.enum(["kpi", "metrics"]),
     // nullable (patch 1.16.2) : certains KPI calculés ont `unit=null`.
     unit: z.string().nullable(),
     source: z.string().nullable(),

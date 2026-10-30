@@ -49,32 +49,43 @@ export const MetricSchema = z.object({
   // 0.64.0 (F1 back) — champ YAML `category` du décodeur (14 catégories).
   category: z.string().nullable().optional(),
 });
-export const MetricCatalogNodeSchema = z.object({
-  node_id: z.string(),
-  parent_id: z.string().nullable(),
-  order: z.number().int(),
-  label: z.string(),
-  note: z.string().nullable(),
-  source: z.string().nullable(),
-  // 1.107.0 — ajout "tech" (racine Technology) et "event" (NFF event,
-  // parent des feuilles cellule). "group"/"metric" conservés pour le
-  // fallback legacy catalogue_v6.
-  node_type: z.enum(["tech", "category", "group", "metric", "event", "leaf"]),
-  metric_id: z.string().nullable(),
-  selection: z.string().nullable(),
-  event: z.string().nullable(),
-  field_idx: z.number().int().nullable(),
-  source_column: z.string().nullable(),
-  unit: z.string(),
-  // 1.107.0 — cell en string libre nullable : 2.50.5 ne mappe pas encore
-  // vers "pcell"/"scell*"/"pscell" ; le badge PER CELL est dérivé par le
-  // sidebar depuis `metric_id` (suffixe `@<cell_type>`).
-  cell: z.string().nullable(),
-  n: z.number().int(),
-  proof: z.string(),
-  selectable: z.boolean(),
-  reason: z.string().nullable(),
-});
+export const MetricCatalogNodeSchema = z
+  .object({
+    node_id: z.string(),
+    parent_id: z.string().nullable(),
+    order: z.number().int(),
+    label: z.string(),
+    note: z.string().nullable(),
+    source: z.string().nullable(),
+    // 1.107.0 — ajout "tech" (racine Technology) et "event" (NFF event,
+    // parent des feuilles cellule). "group"/"metric" conservés pour le
+    // fallback legacy catalogue_v6.
+    node_type: z.enum(["tech", "category", "group", "metric", "event", "leaf"]),
+    analytics_tab: z.enum(["metrics"]).nullable(),
+    metric_id: z.string().nullable(),
+    selection: z.string().nullable(),
+    event: z.string().nullable(),
+    field_idx: z.number().int().nullable(),
+    source_column: z.string().nullable(),
+    unit: z.string(),
+    // 1.107.0 — cell en string libre nullable : 2.50.5 ne mappe pas encore
+    // vers "pcell"/"scell*"/"pscell" ; le badge PER CELL est dérivé par le
+    // sidebar depuis `metric_id` (suffixe `@<cell_type>`).
+    cell: z.string().nullable(),
+    n: z.number().int(),
+    proof: z.string(),
+    selectable: z.boolean(),
+    reason: z.string().nullable(),
+  })
+  .superRefine((node, context) => {
+    if (node.node_type === "leaf" && node.analytics_tab !== "metrics") {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["analytics_tab"],
+        message: "metric catalog leaf missing analytics_tab=metrics",
+      });
+    }
+  });
 export const CatalogReleaseInfoSchema = z.object({
   version: z.string(),
   spec_version: z.string(),
