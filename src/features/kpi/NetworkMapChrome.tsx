@@ -303,10 +303,9 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           <button
             type="button"
             aria-pressed={cellsEnabled}
-            disabled={!cellsAvailable}
             title={cellsAvailable ? t("mapSites.showCells") : t("mapSites.cellsFromZoom")}
             onClick={() => onToggleCells(!cellsEnabled)}
-            className={pill(cellsEnabled && cellsAvailable)}
+            className={pill(cellsEnabled)}
           >
             <Antenna className="h-3.5 w-3.5" /> {t("mapWorkspace.cells")}
           </button>
@@ -409,7 +408,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         <button type="button" className={railBtn()} aria-label={t("mapWorkspace.zoomOut")} onClick={() => map?.zoomOut()}>
           <Minus className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn()} aria-label={t("mapWorkspace.center")} onClick={props.onRecenter}>
+        <button type="button" className={railBtn()} aria-label={t("mapWorkspace.centerRoute")} title={t("mapWorkspace.centerRoute")} onClick={props.onRecenter}>
           <LocateFixed className="h-4 w-4" />
         </button>
         <button type="button" className={railBtn(mode === "distance")} aria-pressed={mode === "distance"} aria-label={t("mapWorkspace.distance")} onClick={() => startMeasure("distance")}>
@@ -501,7 +500,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <MenuItem onClick={() => startMeasure("distance")}>{t("mapWorkspace.distance")}</MenuItem>
             <MenuItem onClick={() => startMeasure("area")}>{t("mapWorkspace.area")}</MenuItem>
             <MenuItem onClick={() => { setPoints([]); setMode("none"); setMenu(null); }}>{t("mapWorkspace.clearMeasure")}</MenuItem>
-            <MenuItem onClick={() => { props.onRecenter?.(); setMenu(null); }}>{t("mapWorkspace.center")}</MenuItem>
+            <MenuItem onClick={() => { props.onRecenter?.(); setMenu(null); }}>{t("mapWorkspace.centerRoute")}</MenuItem>
           </Dropdown>
         </div>
         {!compact && <span className="w-0 shrink" />}

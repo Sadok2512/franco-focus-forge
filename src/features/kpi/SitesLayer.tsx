@@ -32,7 +32,11 @@ const SITE_LABEL_LAYER_ID = "bc4-sites-label";
 export type SitesLayerDisplay = { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 export const MAP_MIN_ZOOM = 6;
 export const MAP_INITIAL_ZOOM = 11;
-export const CELLS_VISIBLE_ZOOM = 13;
+// Capture routes commonly frame around Z11–12 once the Layers panel and
+// workspace margins are accounted for. Keeping cells above that made the
+// shared maps open with an active-but-empty Cells layer; the API cap still
+// bounds every viewport request.
+export const CELLS_VISIBLE_ZOOM = 11;
 
 const OPERATOR_COLORS = {
   ORF: "#FF7900",

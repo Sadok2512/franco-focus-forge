@@ -137,6 +137,7 @@ export function KpiMapOSM({
   onFullscreenChange,
   onMapReady,
   onRecenter,
+  routeCoordinates = [],
   children,
   measurementStatus,
   flush = false,
@@ -156,6 +157,9 @@ export function KpiMapOSM({
   onFullscreenChange?: (value: boolean) => void;
   onMapReady?: (map: MlMap) => void;
   onRecenter?: (() => void) | undefined;
+  /** GPS route of the selected capture. It owns the opening frame and the
+   * shared toolbar recenter action; an empty route falls back to `center`. */
+  routeCoordinates?: Array<[number, number]>;
   children?: ReactNode;
   measurementStatus?: string | null;
   flush?: boolean;
@@ -176,6 +180,33 @@ export function KpiMapOSM({
   const [tileError, setTileError] = useState(false);
   const [localFull, setLocalFull] = useState(false);
   const full = fullscreen ?? localFull;
+  const routeSignature = useMemo(() => {
+    if (!routeCoordinates.length) return "";
+    const first = routeCoordinates[0]!;
+    const last = routeCoordinates[routeCoordinates.length - 1]!;
+    return `${routeCoordinates.length}:${first[0]}:${first[1]}:${last[0]}:${last[1]}`;
+  }, [routeCoordinates]);
+  const recenterMap = useCallback(() => {
+    const instance = map.current;
+    if (!instance) return;
+    if (routeCoordinates.length === 1) {
+      instance.easeTo({ center: routeCoordinates[0]!, zoom: 14, duration: 350 });
+      return;
+    }
+    if (routeCoordinates.length > 1) {
+      const lngs = routeCoordinates.map(([lng]) => lng);
+      const lats = routeCoordinates.map(([, lat]) => lat);
+      instance.fitBounds(
+        [
+          [Math.min(...lngs), Math.min(...lats)],
+          [Math.max(...lngs), Math.max(...lats)],
+        ],
+        { padding: 60, maxZoom: 14, duration: 350 },
+      );
+      return;
+    }
+    instance.flyTo({ center, zoom, duration: 350 });
+  }, [center, routeCoordinates, zoom]);
   const setFull = useCallback(
     (value: boolean) => {
       setLocalFull(value);
@@ -260,6 +291,15 @@ export function KpiMapOSM({
     flownCenterRef.current = center;
     instance.flyTo({ center, zoom: Math.max(MAP_MIN_ZOOM, instance.getZoom()), duration: 900 });
   }, [center, ready, workspace]);
+
+  // The GPS route can arrive after the basemap. Framing it separately keeps
+  // first tiles unblocked and gives every workspace map the same opening view.
+  const framedRouteRef = useRef("");
+  useEffect(() => {
+    if (!ready || !routeSignature || framedRouteRef.current === routeSignature) return;
+    framedRouteRef.current = routeSignature;
+    recenterMap();
+  }, [ready, recenterMap, routeSignature]);
 
 
   useEffect(() => {
@@ -437,7 +477,7 @@ export function KpiMapOSM({
           workspace={workspace}
           fullscreen={full}
           onToggleFullscreen={() => setFull(!full)}
-          onRecenter={() => (onRecenter ? onRecenter() : map.current?.flyTo({ center, zoom }))}
+          onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
         />
       )}
       {/* Compact empty-measurement status; attribution remains on the map. */}

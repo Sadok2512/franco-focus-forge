@@ -14,6 +14,7 @@ const getSites = vi.fn().mockResolvedValue({
   n_total_in_bbox: 0,
   reason: null,
 });
+const fitBounds = vi.fn();
 vi.mock("@/lib/api/sites", () => ({ getSites: (...a: unknown[]) => getSites(...a) }));
 
 vi.mock("@/lib/api/kpi-timeseries", () => ({
@@ -37,7 +38,7 @@ vi.mock("maplibre-gl", () => {
     removeSource() {}
     setFilter() {}
     setFeatureState() {}
-    fitBounds() {}
+    fitBounds(...args: unknown[]) { fitBounds(...args); }
     resize() {}
     remove() {}
     isStyleLoaded() {
@@ -99,6 +100,7 @@ class RO {
 (globalThis as unknown as { ResizeObserver: typeof RO }).ResizeObserver ??= RO;
 
 import { KpiMeasurementMap } from "@/features/kpi/KpiMeasurementMap";
+import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 
 function renderMap() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -134,6 +136,25 @@ describe("KpiMeasurementMap — couche Sites", () => {
       expect.arrayContaining([
         expect.objectContaining({ bbox: [2.2, 48.89, 2.24, 48.91], zoom: 12 }),
       ]),
+    );
+  });
+
+  it("cadre le parcours fourni et expose le recentrage dans la barre commune", async () => {
+    fitBounds.mockClear();
+    render(
+      <KpiMapOSM
+        workspace
+        routeCoordinates={[[2.2, 48.8], [2.3, 48.9]]}
+        measurementStatus={null}
+      />,
+    );
+    const center = await screen.findByRole("button", { name: "Center on route" });
+    await waitFor(() => expect(fitBounds).toHaveBeenCalled());
+    fitBounds.mockClear();
+    center.click();
+    expect(fitBounds).toHaveBeenCalledWith(
+      [[2.2, 48.8], [2.3, 48.9]],
+      expect.objectContaining({ padding: 60 }),
     );
   });
 });

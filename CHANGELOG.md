@@ -1,3 +1,17 @@
+## Next (patch) — BC4-FRONT 2026-10-30 — valeurs initiales et cadrage des cartes (Agent BC4, numérotation BC3)
+
+- Les cellules sont actives par défaut sur Map, Signaling et KPI Analytics ;
+  un choix utilisateur explicite reste mémorisé et partagé par les cartes.
+- Les trois cartes cadrent le parcours GPS de la capture sélectionnée avec
+  marge, ou le centre du projet sans capture. La barre commune propose
+  désormais « Centrer sur le parcours ».
+- Le bandeau des filtres KPI reste sous la navigation aux largeurs usuelles.
+- Pendant le chargement ou une reconnexion, les catalogues KPI/Metrics
+  affichent un état dédié et ne présentent plus de compteurs à zéro trompeurs.
+- Preuves jetables :
+  `BC4_FRONT_BASE=http://127.0.0.1:9183 node scripts/map_defaults_evidence.mjs`.
+- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+
 ## Next (patch) — BC4-FRONT 2026-10-30 — chargement carte KPI en un appel (Agent BC4, numérotation BC3)
 
 - La carte KPI charge désormais tous ses points via la route légère

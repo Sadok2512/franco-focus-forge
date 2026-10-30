@@ -45,6 +45,7 @@ export function DriveRsrpLayer({
   activeCaptureId,
   autoFrame = true,
   positions,
+  onRouteChange,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -52,6 +53,7 @@ export function DriveRsrpLayer({
   autoFrame?: boolean;
   /** Capture positions the page already holds, used when a row carries no GPS of its own. */
   positions?: RsrpPosition[];
+  onRouteChange?: (coordinates: Array<[number, number]>) => void;
 }) {
   const { t } = useTranslation();
   const embedded = activeCaptureId !== undefined;
@@ -90,7 +92,7 @@ export function DriveRsrpLayer({
     queryKey: ["map-captures", projectId],
     queryFn: ({ signal }) =>
       getSignaling(projectId, "captures", {}, signal).then((response) => response.captures),
-    enabled: prefs.on && !embedded,
+    enabled: !embedded && (prefs.on || Boolean(onRouteChange)),
   });
   const lastKey = `${LAST_CAPTURE_STORE}.${projectId}`;
   const preferredCapture = useMemo(() => {
@@ -142,7 +144,9 @@ export function DriveRsrpLayer({
       if (!effectiveCaptureId) throw new Error("Missing capture");
       return getSignaling(projectId, "points", { capture_id: effectiveCaptureId }, signal);
     },
-    enabled: needsGps,
+    // The shared map framing needs the selected capture route even when the
+    // metric rows already carry coordinates (or contain no RSRP at all).
+    enabled: !!effectiveCaptureId && (needsGps || Boolean(onRouteChange)),
     staleTime: 60_000,
   });
   const allPositions = useMemo<RsrpPosition[]>(() => {
@@ -150,7 +154,6 @@ export function DriveRsrpLayer({
     if (!gps.data) return [];
     return rsrpPositionsFrom(gps.data.points, gps.data.markers);
   }, [positions, gps.data]);
-
   const features = useMemo(
     () =>
       driveRsrpPoints(analysis.data, allPositions).map((p) => ({
@@ -173,6 +176,23 @@ export function DriveRsrpLayer({
       })),
     [analysis.data, allPositions, effectiveCaptureId],
   );
+  useEffect(() => {
+    const routePositions = gps.data?.markers?.length ? gps.data.markers : allPositions;
+    const captureRoute = routePositions
+      .filter(
+        (point): point is RsrpPosition & { lng: number; lat: number } =>
+          typeof point.lng === "number" &&
+          Number.isFinite(point.lng) &&
+          typeof point.lat === "number" &&
+          Number.isFinite(point.lat),
+      )
+      .map((point) => [point.lng, point.lat] as [number, number]);
+    onRouteChange?.(
+      captureRoute.length
+        ? captureRoute
+        : features.map((feature) => feature.geometry.coordinates),
+    );
+  }, [allPositions, features, gps.data?.markers, onRouteChange]);
   const linkFeatures = useMemo(
     () =>
       driveRsrpPoints(analysis.data, allPositions).flatMap((p) =>

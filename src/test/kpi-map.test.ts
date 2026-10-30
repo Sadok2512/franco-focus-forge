@@ -38,7 +38,7 @@ describe("KPI geographic observations", () => {
   it("uses the approved site/cell zoom thresholds", () => {
     expect(MAP_MIN_ZOOM).toBe(6);
     expect(MAP_INITIAL_ZOOM).toBe(11);
-    expect(CELLS_VISIBLE_ZOOM).toBe(13);
+    expect(CELLS_VISIBLE_ZOOM).toBe(11);
   });
   it("keeps proven zero coordinates and values, rejects missing/invalid GPS, retains evidence", () => {
     const before = JSON.stringify(data);

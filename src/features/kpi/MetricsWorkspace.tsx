@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures, getMetricMap } from "@/lib/api/client";
+import { getMetricAnalysis, getMetricCaptures, getMetricMap, getSignaling } from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } from "./query-keys";
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -331,6 +331,7 @@ function MetricMap({
   loading,
   error,
   onRetry,
+  routeCoordinates = [],
 }: {
   data?: MetricMapData | undefined;
   label: string;
@@ -341,6 +342,7 @@ function MetricMap({
   loading: boolean;
   error?: Error | null | undefined;
   onRetry: () => void;
+  routeCoordinates?: Array<[number, number]> | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
@@ -350,6 +352,10 @@ function MetricMap({
     [data],
   );
   const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  const metricCoordinates = useMemo(
+    () => features.map((feature) => feature.geometry.coordinates),
+    [features],
+  );
   const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
   const links = useMemo(
     () => allLinks.filter((feature) => preferences.links[feature.properties.link_type]),
@@ -382,23 +388,6 @@ function MetricMap({
       );
     }
   }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
-  useEffect(() => {
-    if (!map) return;
-    // Cadrer une fois sur l'étendue réelle des points (et non la France
-    // entière). Modifier la palette, la taille ou les liens ne déplace pas la
-    // vue choisie par l'utilisateur.
-    if (features.length) {
-      const lngs = features.map((f) => f.geometry.coordinates[0]);
-      const lats = features.map((f) => f.geometry.coordinates[1]);
-      map.fitBounds(
-        [
-          [Math.min(...lngs), Math.min(...lats)],
-          [Math.max(...lngs), Math.max(...lats)],
-        ],
-        { padding: 48, maxZoom: 14, duration: 0 },
-      );
-    }
-  }, [map, features]);
   useEffect(() => {
     if (!map) return;
     let popup: import("maplibre-gl").Popup | undefined;
@@ -446,6 +435,7 @@ function MetricMap({
       workspace
       contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
+      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
       measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
     >
       <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
@@ -552,6 +542,7 @@ function MetricMapCard({
   onRemove,
   workspaceId,
   projectCenter,
+  routeCoordinates,
 }: {
   selection: string;
   title: string;
@@ -563,6 +554,7 @@ function MetricMapCard({
   onRemove: () => void;
   workspaceId: string;
   projectCenter?: [number, number] | undefined;
+  routeCoordinates?: Array<[number, number]> | undefined;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const [preferences, setPreferences] = useState(() =>
@@ -613,6 +605,7 @@ function MetricMapCard({
         loading={loading}
         error={error}
         onRetry={onRetry}
+        routeCoordinates={routeCoordinates}
       />
     </article>
   );
@@ -694,6 +687,21 @@ export function MetricsWorkspace({
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
   const mapSelections = selections.filter((selection) => viewsProp?.[selection] === "map");
   const onlyMapSelections = selections.length > 0 && mapSelections.length === selections.length;
+  const captureRouteQuery = useQuery({
+    queryKey: ["metrics-map-route", projectId, captureId],
+    queryFn: ({ signal }) => getSignaling(projectId, "points", { capture_id: captureId! }, signal),
+    enabled: Boolean(captureId) && (mapSelections.length > 0 || view === "map"),
+    staleTime: 60_000,
+  });
+  const captureRouteCoordinates = useMemo(
+    () =>
+      captureRouteQuery.data
+        ? captureRouteQuery.data.markers
+            .filter((point) => point.lng !== null && point.lat !== null)
+            .map((point) => [point.lng!, point.lat!] as [number, number])
+        : [],
+    [captureRouteQuery.data],
+  );
   const parsedCellPci = /^\d+$/.test(cellPciFilter) ? Number(cellPciFilter) : undefined;
   const parsedCellArfcn = /^\d+$/.test(cellArfcnFilter) ? Number(cellArfcnFilter) : undefined;
   const paginationScopeKey = JSON.stringify([
@@ -1196,6 +1204,7 @@ export function MetricsWorkspace({
                         onRemove={remove}
                         workspaceId={_workspaceId ?? "metrics"}
                         projectCenter={projectCenter}
+                        routeCoordinates={captureRouteCoordinates}
                       />
                     ) : (
                       <MetricGraphCard
@@ -1629,6 +1638,7 @@ export function MetricsWorkspace({
                   onPreferences={setLegacyMapPreferences}
                   loading={false}
                   onRetry={() => void query.refetch()}
+                  routeCoordinates={captureRouteCoordinates}
                 />
               ) : (
                 <Plot
