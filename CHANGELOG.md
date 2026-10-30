@@ -1,11 +1,14 @@
-## Unreleased (patch) — KPI Analytics regressions (Agent BC1)
+## 1.123.1 (patch) — BC4-FRONT 2026-10-30 — KPI Analytics regressions : tableau mesures + loaders (Agent BC1, numérotation BC3)
 
-- The measurements workspace restores its `data-pane` state contract, so the
-  existing full-row table CSS applies after the unified-workspace merges; a
-  25-row/4,935-total regression fixture now locks the rendered body rows.
-- KPI chart spinners and measurement-table progress bars remain visibly
-  animated at a slower rate when reduced motion is enabled, instead of being
-  frozen by the global animation override.
+Compagnon front du back `0.113.1`.
+
+- `MetricsWorkspace` restaure le contrat `data-pane` : le CSS table
+  pleine ligne s'applique à nouveau après les merges unified-workspace.
+  Fixture 25 lignes / 4 935 total verrouille les rows rendues.
+- Spinners KPI + barres de progression du tableau mesures restent
+  animés (ralenti) sous `prefers-reduced-motion` au lieu d'être gelés
+  par l'override d'animation globale.
+- SemVer front : **PATCH 1.123.1**.
 
 ## 1.123.0 (minor) — BC4-FRONT 2026-10-30 — voisines Metrics par cellule radio réelle (Agent BC4, numérotation BC3)
 
