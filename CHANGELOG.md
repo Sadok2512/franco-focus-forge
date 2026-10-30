@@ -1,4 +1,6 @@
-## Unreleased (minor) — KPI Analytics : KPI / Metrics / Parameters (Agent BC4, numérotation BC3)
+## 1.119.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : KPI / Metrics / Parameters (Agent BC4, numérotation BC3)
+
+Compagnon front du lot back `0.105.0` + catalogue `2.57.0`.
 
 - Le catalogue gauche expose trois onglets sans redessiner les composants :
   `KPI`, `Metrics`, `Parameters`. La partition lit exclusivement le champ API
