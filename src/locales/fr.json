@@ -1159,6 +1159,10 @@
       }
     }
   },
+  "settingsCellRef": {
+    "sending": "Envoi : {{loaded}} / {{total}}",
+    "processing": "Fichier transmis — import du référentiel en cours…"
+  },
   "rsrpDiagnosis": {
     "open": "Diagnostic IA",
     "title": "Pourquoi les points RSRP manquent ?",

@@ -1159,6 +1159,10 @@
       }
     }
   },
+  "settingsCellRef": {
+    "sending": "Uploading: {{loaded}} / {{total}}",
+    "processing": "File uploaded — cell-reference import in progress…"
+  },
   "rsrpDiagnosis": {
     "open": "AI diagnosis",
     "title": "Why are RSRP points missing?",

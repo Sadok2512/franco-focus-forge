@@ -1,3 +1,13 @@
+## Unreleased (patch) — upload du référentiel cellulaire fiable (Agent BC1, numérotation BC3)
+
+- Le proxy Bun transmet toujours le multipart en flux et porte à une heure son
+  délai d'attente, uniquement pour les deux routes d'import du référentiel ;
+  la limite serveur reste fixée à 256 Mio.
+- Une coupure du proxy renvoie une erreur 504 structurée et lisible dans
+  l'interface. La progression distingue l'envoi du traitement serveur, puis
+  l'historique et le résumé sont rechargés avant de déclarer l'import terminé.
+- SemVer front : **PATCH** (numéro attribué par BC3).
+
 ## 1.126.4 (patch) — BC4-FRONT 2026-10-30 — valeurs initiales + cadrage sur parcours capture (Agent BC4, numérotation BC3)
 
 Merge `bc4/map-defaults` (`269ef56`). Finalise l'ergonomie carte en

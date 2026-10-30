@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { acceptsGzip, proxyApiRequest } from "@/server";
+import { acceptsGzip, isCellReferenceUpload, proxyApiRequest } from "@/server";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -76,5 +76,53 @@ describe("production API proxy compression", () => {
 
     expect(response.headers.get("content-encoding")).toBeNull();
     await expect(response.json()).resolves.toEqual(payload);
+  });
+
+  it.each(["/api/reference/cell/upload", "/api/settings/cell-ref/upload"])(
+    "streams %s with a route-only one-hour idle timeout",
+    async (pathname) => {
+      let forwardedBody: BodyInit | null | undefined;
+      let timeout: unknown;
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(async (_target: string, init: RequestInit & { timeout?: number }) => {
+          forwardedBody = init.body;
+          timeout = init.timeout;
+          return Response.json({ status: "completed" });
+        }),
+      );
+      const source = new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode("multipart bytes"));
+          controller.close();
+        },
+      });
+      const request = new Request(`http://front.test${pathname}`, {
+        method: "POST",
+        body: source,
+        duplex: "half",
+      } as RequestInit & { duplex: "half" });
+
+      await proxyApiRequest(request);
+
+      expect(isCellReferenceUpload(pathname, "POST")).toBe(true);
+      expect(forwardedBody).toBe(request.body);
+      expect(timeout).toBe(60 * 60 * 1000);
+    },
+  );
+
+  it("does not extend ordinary API calls", async () => {
+    let timeout: unknown = "unset";
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_target: string, init: RequestInit & { timeout?: number }) => {
+        timeout = init.timeout;
+        return Response.json({ status: "ok" });
+      }),
+    );
+
+    await proxyApiRequest(new Request("http://front.test/api/projects"));
+
+    expect(timeout).toBeUndefined();
   });
 });
