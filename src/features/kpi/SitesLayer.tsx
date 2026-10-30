@@ -31,7 +31,13 @@ const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
 const SITE_LABEL_LAYER_ID = "bc4-sites-label";
 export type SitesLayerDisplay = { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 export const MAP_MIN_ZOOM = 6;
-export const MAP_INITIAL_ZOOM = 11;
+// 1.126.3 BC3 — MAP_INITIAL_ZOOM remonté de 11 à 13 pour ouvrir directement
+// au seuil où /sites?zoom=15 renvoie des cellules individuelles. Avant,
+// l'app ouvrait à 11 (sous le seuil), aucune cellule ne s'affichait sans
+// action utilisateur. Mesure réelle sur Hénin-Beaumont : à zoom 13 le back
+// répond avec 25 sites agrégés visibles, à zoom 15 avec 475 cellules
+// individuelles. L'app zoome en 2 clics vers 15 pour voir les cellules.
+export const MAP_INITIAL_ZOOM = 13;
 export const CELLS_VISIBLE_ZOOM = 13;
 
 const OPERATOR_COLORS = {

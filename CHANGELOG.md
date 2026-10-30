@@ -1,3 +1,27 @@
+## 1.126.3 (patch) — BC4-FRONT 2026-10-30 — cellules visibles dès ouverture + overlay « Zoomez pour voir » (BC3)
+
+Les cartes s'ouvraient à `zoom=11`, sous le seuil `CELLS_VISIBLE_ZOOM=13`.
+Même avec `cellsEnabled=true` par défaut, aucune requête `/sites?zoom=15`
+n'était émise, donc aucune cellule ne s'affichait sans action utilisateur.
+Codex67 ne voyait rien et attribuait l'écart à un défaut du nouveau
+référentiel (cf. tour 22:50Z où le réimport 0.115.1 avait pourtant
+rendu 26 399 cellules exploitables).
+
+- `src/features/kpi/SitesLayer.tsx:34` : `MAP_INITIAL_ZOOM` remonté de
+  **11 → 13**. Les cartes ouvrent désormais directement au seuil où
+  `/sites?zoom=15` renvoie des cellules individuelles. L'utilisateur
+  zoome en 1-2 clics vers 15 pour voir les secteurs détaillés.
+- `src/features/map/MapWorkspacePage.tsx:32` : la prop `zoom={11}`
+  hardcodée est retirée, laisse `MAP_INITIAL_ZOOM` s'appliquer.
+- `src/features/kpi/NetworkMapChrome.tsx:293-302` : overlay centré
+  « Zoomez pour voir les cellules » (fr) / « Zoom in to see cells » (en)
+  visible dès que `cellsEnabled && !cellsAvailable`. Plus discret
+  qu'un modal, pas en tooltip. Clé i18n `mapSites.zoomToSeeCells`.
+- `DEFAULT_STATE.cellsEnabled = true` (SitesLayerControls.tsx:32) reste
+  inchangé — la case était déjà cochée par défaut, seul le zoom
+  initial empêchait le rendu.
+- SemVer front : **PATCH 1.126.3**.
+
 ## 1.126.2 (patch) — BC4-FRONT 2026-10-30 — carte KPI en un seul appel `/metrics/map` (Agent BC4, numérotation BC3)
 
 Merge `bc4/kpi-map-single-call` (`837174b`). Consomme la route lean
