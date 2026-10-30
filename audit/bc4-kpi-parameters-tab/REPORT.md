@@ -91,9 +91,10 @@ BC4_FRONT_BASE=http://127.0.0.1:5175 \
   audit/bc4-kpi-parameters-tab/metrics-leaves-max-points-2000.json
 ```
 
-Exit 0, VERDICT PASS : 283 feuilles testées, 222 réponses 200, 61 réponses
-422 admises, 0 autre statut et 0 échec. Le JSON joint contient chaque URL
-logique, statut et résultat.
+Ce replay historique a trouvé 283 codes : 222 réponses 200 et 61 réponses
+422. Ces 61 réponses ne sont plus admises. La correction et son replay final
+sont documentés dans `CORRECTION.md` : 222 codes encore affichés, tous en 200,
+aucun 422.
 
 ## Validation
 

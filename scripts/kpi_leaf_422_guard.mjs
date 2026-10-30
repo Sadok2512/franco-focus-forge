@@ -21,7 +21,10 @@ const headers = { Authorization: `Bearer ${token}` };
 const catalogResponse = await fetch(`${base}/api/projects/${projectId}/metrics`, { headers });
 if (!catalogResponse.ok) throw new Error(`catalog HTTP ${catalogResponse.status}`);
 const catalog = await catalogResponse.json();
-const codes = [...new Set(catalog.metrics.map((metric) => metric.code))].sort();
+const displayedSelectableLeaves = catalog.nodes.filter(
+  (node) => node.node_type === "leaf" && node.selectable && node.selection,
+);
+const codes = [...new Set(displayedSelectableLeaves.map((leaf) => leaf.selection))].sort();
 
 async function probe(code) {
   const query = new URLSearchParams({ capture_id: captureId, codes: code, max_points: "2000" });
@@ -59,15 +62,16 @@ const statusCounts = Object.fromEntries(
     .sort((a, b) => a - b)
     .map((status) => [status, results.filter((result) => result.status === status).length]),
 );
-const failures = results.filter((result) => ![200, 422].includes(result.status));
+const failures = results.filter((result) => result.status !== 200);
 const report = {
   command: `BC4_FRONT_BASE=${base} node scripts/kpi_leaf_422_guard.mjs ${output}`,
   projectId,
   captureId,
   max_points: 2000,
-  leaves_tested: results.length,
+  displayed_selectable_leaf_nodes: displayedSelectableLeaves.length,
+  unique_codes_tested: results.length,
   statusCounts,
-  accepted: [200, 422],
+  accepted: [200],
   failures,
   results,
   verdict: failures.length ? "FAIL" : "PASS",

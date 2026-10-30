@@ -1,0 +1,1350 @@
+{
+  "command": "BC4_FRONT_BASE=http://127.0.0.1:5174 node scripts/kpi_leaf_422_guard.mjs audit/bc4-kpi-parameters-tab/metrics-leaves-after-correction-5174.json",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "max_points": 2000,
+  "displayed_selectable_leaf_nodes": 225,
+  "unique_codes_tested": 222,
+  "statusCounts": {
+    "200": 222
+  },
+  "accepted": [
+    200
+  ],
+  "failures": [],
+  "results": [
+    {
+      "code": "cap_device_battery_charge",
+      "status": 200,
+      "elapsed_ms": 952,
+      "detail": null
+    },
+    {
+      "code": "cap_device_battery_status",
+      "status": 200,
+      "elapsed_ms": 1126,
+      "detail": null
+    },
+    {
+      "code": "cap_device_battery_temperature",
+      "status": 200,
+      "elapsed_ms": 1418,
+      "detail": null
+    },
+    {
+      "code": "cap_device_device_battery_current",
+      "status": 200,
+      "elapsed_ms": 1287,
+      "detail": null
+    },
+    {
+      "code": "cap_device_device_battery_voltage",
+      "status": 200,
+      "elapsed_ms": 689,
+      "detail": null
+    },
+    {
+      "code": "cap_device_device_cpu_temperature",
+      "status": 200,
+      "elapsed_ms": 340,
+      "detail": null
+    },
+    {
+      "code": "cap_file_decode_level",
+      "status": 200,
+      "elapsed_ms": 206,
+      "detail": null
+    },
+    {
+      "code": "cap_file_decoder_version",
+      "status": 200,
+      "elapsed_ms": 79,
+      "detail": null
+    },
+    {
+      "code": "cap_file_device_name",
+      "status": 200,
+      "elapsed_ms": 39,
+      "detail": null
+    },
+    {
+      "code": "cap_file_file_format_version",
+      "status": 200,
+      "elapsed_ms": 64,
+      "detail": null
+    },
+    {
+      "code": "cap_file_file_size",
+      "status": 200,
+      "elapsed_ms": 145,
+      "detail": null
+    },
+    {
+      "code": "cap_file_log_file_name",
+      "status": 200,
+      "elapsed_ms": 106,
+      "detail": null
+    },
+    {
+      "code": "cap_file_measurement_id",
+      "status": 200,
+      "elapsed_ms": 120,
+      "detail": null
+    },
+    {
+      "code": "cap_file_measurement_start",
+      "status": 200,
+      "elapsed_ms": 83,
+      "detail": null
+    },
+    {
+      "code": "cap_file_project_id",
+      "status": 200,
+      "elapsed_ms": 44,
+      "detail": null
+    },
+    {
+      "code": "cap_file_session_id",
+      "status": 200,
+      "elapsed_ms": 49,
+      "detail": null
+    },
+    {
+      "code": "cap_file_unit_id",
+      "status": 200,
+      "elapsed_ms": 53,
+      "detail": null
+    },
+    {
+      "code": "cap_script_number_of_commands_in_test_script",
+      "status": 200,
+      "elapsed_ms": 59,
+      "detail": null
+    },
+    {
+      "code": "cap_script_test_script_file",
+      "status": 200,
+      "elapsed_ms": 53,
+      "detail": null
+    },
+    {
+      "code": "cap_script_test_script_repeats",
+      "status": 200,
+      "elapsed_ms": 52,
+      "detail": null
+    },
+    {
+      "code": "cap_script_test_script_version",
+      "status": 200,
+      "elapsed_ms": 52,
+      "detail": null
+    },
+    {
+      "code": "cap_task_command_duration",
+      "status": 200,
+      "elapsed_ms": 98,
+      "detail": null
+    },
+    {
+      "code": "cap_task_test_script_command_arguments",
+      "status": 200,
+      "elapsed_ms": 161,
+      "detail": null
+    },
+    {
+      "code": "cap_task_test_script_command_index",
+      "status": 200,
+      "elapsed_ms": 102,
+      "detail": null
+    },
+    {
+      "code": "cap_task_test_script_command_name",
+      "status": 200,
+      "elapsed_ms": 185,
+      "detail": null
+    },
+    {
+      "code": "cap_task_test_script_command_result",
+      "status": 200,
+      "elapsed_ms": 131,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 907,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 518,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@lte-type-10",
+      "status": 200,
+      "elapsed_ms": 795,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@lte-type-11",
+      "status": 200,
+      "elapsed_ms": 576,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@lte-type-12",
+      "status": 200,
+      "elapsed_ms": 547,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@nr-type-0",
+      "status": 200,
+      "elapsed_ms": 373,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@nr-type-1000",
+      "status": 200,
+      "elapsed_ms": 1613,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@nr-type-117",
+      "status": 200,
+      "elapsed_ms": 204,
+      "detail": null
+    },
+    {
+      "code": "cell_ch@nr-type-199",
+      "status": 200,
+      "elapsed_ms": 1271,
+      "detail": null
+    },
+    {
+      "code": "cell_pathloss@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1337,
+      "detail": null
+    },
+    {
+      "code": "cell_pathloss@lte-type-10",
+      "status": 200,
+      "elapsed_ms": 1008,
+      "detail": null
+    },
+    {
+      "code": "cell_pathloss@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 449,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1208,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 428,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@lte-type-10",
+      "status": 200,
+      "elapsed_ms": 1028,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@lte-type-11",
+      "status": 200,
+      "elapsed_ms": 1023,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@lte-type-12",
+      "status": 200,
+      "elapsed_ms": 769,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@nr-type-0",
+      "status": 200,
+      "elapsed_ms": 443,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@nr-type-117",
+      "status": 200,
+      "elapsed_ms": 116,
+      "detail": null
+    },
+    {
+      "code": "cell_pci@nr-type-199",
+      "status": 200,
+      "elapsed_ms": 1004,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 947,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 639,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-10",
+      "status": 200,
+      "elapsed_ms": 1047,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-11",
+      "status": 200,
+      "elapsed_ms": 693,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-12",
+      "status": 200,
+      "elapsed_ms": 474,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 2797,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@nr-type-0",
+      "status": 200,
+      "elapsed_ms": 654,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@nr-type-1000",
+      "status": 200,
+      "elapsed_ms": 2180,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@nr-type-117",
+      "status": 200,
+      "elapsed_ms": 43,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrp@nr-type-199",
+      "status": 200,
+      "elapsed_ms": 1417,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 2384,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 950,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-10",
+      "status": 200,
+      "elapsed_ms": 1105,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-11",
+      "status": 200,
+      "elapsed_ms": 876,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-12",
+      "status": 200,
+      "elapsed_ms": 704,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 3110,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@nr-type-0",
+      "status": 200,
+      "elapsed_ms": 266,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@nr-type-1000",
+      "status": 200,
+      "elapsed_ms": 1717,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@nr-type-117",
+      "status": 200,
+      "elapsed_ms": 35,
+      "detail": null
+    },
+    {
+      "code": "cell_rsrq@nr-type-199",
+      "status": 200,
+      "elapsed_ms": 1402,
+      "detail": null
+    },
+    {
+      "code": "ci_port@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1653,
+      "detail": null
+    },
+    {
+      "code": "ci_port@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1276,
+      "detail": null
+    },
+    {
+      "code": "ci_port@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 948,
+      "detail": null
+    },
+    {
+      "code": "ci_port@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 815,
+      "detail": null
+    },
+    {
+      "code": "cqi_req_rate@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 678,
+      "detail": null
+    },
+    {
+      "code": "cqi_req_rate@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1140,
+      "detail": null
+    },
+    {
+      "code": "cqi_req_rate@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 934,
+      "detail": null
+    },
+    {
+      "code": "cqi_req_rate@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1016,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_0@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 922,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_0@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1435,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_0@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1151,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_0@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1134,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_1@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1325,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_1@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1382,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_1@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1248,
+      "detail": null
+    },
+    {
+      "code": "cqi_sb_cqi_1@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1251,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_0@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1250,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_0@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1853,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_0@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1382,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_0@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1281,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_1@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1547,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_1@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1756,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_1@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1516,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_cqi_1@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1379,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_pmi@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1314,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_pmi@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1448,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_pmi@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1534,
+      "detail": null
+    },
+    {
+      "code": "cqi_wb_pmi@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1268,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_count@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1191,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_count@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 900,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_count@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 525,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_count@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1250,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_count@lte-type-6",
+      "status": 200,
+      "elapsed_ms": 534,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_format@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1343,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_format@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1274,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_format@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 598,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_format@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 2303,
+      "detail": null
+    },
+    {
+      "code": "dci_dci_format@lte-type-6",
+      "status": 200,
+      "elapsed_ms": 689,
+      "detail": null
+    },
+    {
+      "code": "dci_dl_grants@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1604,
+      "detail": null
+    },
+    {
+      "code": "dci_dl_grants@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1204,
+      "detail": null
+    },
+    {
+      "code": "dci_dl_grants@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1045,
+      "detail": null
+    },
+    {
+      "code": "dci_dl_grants@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 2163,
+      "detail": null
+    },
+    {
+      "code": "dci_dl_grants@lte-type-6",
+      "status": 200,
+      "elapsed_ms": 1013,
+      "detail": null
+    },
+    {
+      "code": "dci_ul_grants@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1435,
+      "detail": null
+    },
+    {
+      "code": "dci_ul_grants@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1383,
+      "detail": null
+    },
+    {
+      "code": "dci_ul_grants@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1360,
+      "detail": null
+    },
+    {
+      "code": "dci_ul_grants@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1841,
+      "detail": null
+    },
+    {
+      "code": "dci_ul_grants@lte-type-6",
+      "status": 200,
+      "elapsed_ms": 957,
+      "detail": null
+    },
+    {
+      "code": "lua_lau_type",
+      "status": 200,
+      "elapsed_ms": 1229,
+      "detail": null
+    },
+    {
+      "code": "luf_luf_status",
+      "status": 200,
+      "elapsed_ms": 1031,
+      "detail": null
+    },
+    {
+      "code": "luf_old_lac",
+      "status": 200,
+      "elapsed_ms": 1155,
+      "detail": null
+    },
+    {
+      "code": "lus_lac",
+      "status": 200,
+      "elapsed_ms": 1041,
+      "detail": null
+    },
+    {
+      "code": "lus_mcc",
+      "status": 200,
+      "elapsed_ms": 1073,
+      "detail": null
+    },
+    {
+      "code": "lus_mnc",
+      "status": 200,
+      "elapsed_ms": 1256,
+      "detail": null
+    },
+    {
+      "code": "lus_old_lac",
+      "status": 200,
+      "elapsed_ms": 954,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_1st@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1574,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_1st@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1128,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_1st@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1379,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_1st@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1201,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_2nd@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1249,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_2nd@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1223,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_2nd@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1238,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_2nd@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1282,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_3rd@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1602,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_3rd@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1432,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_3rd@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1319,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler_3rd@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1251,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1969,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1468,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1368,
+      "detail": null
+    },
+    {
+      "code": "mac_dl_bler@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1010,
+      "detail": null
+    },
+    {
+      "code": "maci_cell_state",
+      "status": 200,
+      "elapsed_ms": 1574,
+      "detail": null
+    },
+    {
+      "code": "maci_cell_type",
+      "status": 200,
+      "elapsed_ms": 1447,
+      "detail": null
+    },
+    {
+      "code": "pbch_bler@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1661,
+      "detail": null
+    },
+    {
+      "code": "pbch_block_rate@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1711,
+      "detail": null
+    },
+    {
+      "code": "pdsch_bler@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 2058,
+      "detail": null
+    },
+    {
+      "code": "pdsch_bler@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 988,
+      "detail": null
+    },
+    {
+      "code": "pdsch_bler@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1546,
+      "detail": null
+    },
+    {
+      "code": "pdsch_bler@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1555,
+      "detail": null
+    },
+    {
+      "code": "pdsch_block_rate@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1574,
+      "detail": null
+    },
+    {
+      "code": "pdsch_block_rate@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 2204,
+      "detail": null
+    },
+    {
+      "code": "pdsch_block_rate@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 2168,
+      "detail": null
+    },
+    {
+      "code": "pdsch_block_rate@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 2003,
+      "detail": null
+    },
+    {
+      "code": "pdsch_block_rate@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 649,
+      "detail": null
+    },
+    {
+      "code": "phrate_pdsch_sch_bitrate@nr-type-0",
+      "status": 200,
+      "elapsed_ms": 919,
+      "detail": null
+    },
+    {
+      "code": "phrate_pdsch_sch_bitrate@nr-type-199",
+      "status": 200,
+      "elapsed_ms": 1100,
+      "detail": null
+    },
+    {
+      "code": "plaid_percentage@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1601,
+      "detail": null
+    },
+    {
+      "code": "plaid_percentage@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1347,
+      "detail": null
+    },
+    {
+      "code": "plaid_percentage@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1394,
+      "detail": null
+    },
+    {
+      "code": "plaid_percentage@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 950,
+      "detail": null
+    },
+    {
+      "code": "plaid_percentage@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 350,
+      "detail": null
+    },
+    {
+      "code": "plaid_prbs@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1375,
+      "detail": null
+    },
+    {
+      "code": "plaid_prbs@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1423,
+      "detail": null
+    },
+    {
+      "code": "plaid_prbs@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1201,
+      "detail": null
+    },
+    {
+      "code": "plaid_prbs@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1130,
+      "detail": null
+    },
+    {
+      "code": "plaid_prbs@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 417,
+      "detail": null
+    },
+    {
+      "code": "plaid_rank@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1671,
+      "detail": null
+    },
+    {
+      "code": "plaid_rank@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1373,
+      "detail": null
+    },
+    {
+      "code": "plaid_rank@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1515,
+      "detail": null
+    },
+    {
+      "code": "plaid_rank@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1370,
+      "detail": null
+    },
+    {
+      "code": "plaid_rank@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 814,
+      "detail": null
+    },
+    {
+      "code": "plaid_sample_duration@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1216,
+      "detail": null
+    },
+    {
+      "code": "plaid_sample_duration@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1774,
+      "detail": null
+    },
+    {
+      "code": "plaid_sample_duration@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1062,
+      "detail": null
+    },
+    {
+      "code": "plaid_sample_duration@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1481,
+      "detail": null
+    },
+    {
+      "code": "plaid_sample_duration@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 728,
+      "detail": null
+    },
+    {
+      "code": "plaisum_total_prb_usage",
+      "status": 200,
+      "elapsed_ms": 1602,
+      "detail": null
+    },
+    {
+      "code": "plaisum_total_prb_utilization",
+      "status": 200,
+      "elapsed_ms": 1569,
+      "detail": null
+    },
+    {
+      "code": "plaiu_percentage@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1422,
+      "detail": null
+    },
+    {
+      "code": "plaiu_percentage@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1395,
+      "detail": null
+    },
+    {
+      "code": "plaiu_percentage@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 676,
+      "detail": null
+    },
+    {
+      "code": "plaiu_prbs@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1374,
+      "detail": null
+    },
+    {
+      "code": "plaiu_prbs@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1153,
+      "detail": null
+    },
+    {
+      "code": "plaiu_prbs@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1160,
+      "detail": null
+    },
+    {
+      "code": "plaiu_rank@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1116,
+      "detail": null
+    },
+    {
+      "code": "plaiu_rank@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 2095,
+      "detail": null
+    },
+    {
+      "code": "plaiu_rank@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 636,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1921,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 2469,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 1509,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 1315,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 612,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-5",
+      "status": 200,
+      "elapsed_ms": 547,
+      "detail": null
+    },
+    {
+      "code": "plaiu_sample_duration@lte-type-6",
+      "status": 200,
+      "elapsed_ms": 804,
+      "detail": null
+    },
+    {
+      "code": "psmi_edrx_cycle",
+      "status": 200,
+      "elapsed_ms": 943,
+      "detail": null
+    },
+    {
+      "code": "psmi_ptw",
+      "status": 200,
+      "elapsed_ms": 1276,
+      "detail": null
+    },
+    {
+      "code": "psmi_t3324",
+      "status": 200,
+      "elapsed_ms": 1031,
+      "detail": null
+    },
+    {
+      "code": "psmi_t3412",
+      "status": 200,
+      "elapsed_ms": 1252,
+      "detail": null
+    },
+    {
+      "code": "psmr_req_edrx_cycle",
+      "status": 200,
+      "elapsed_ms": 1381,
+      "detail": null
+    },
+    {
+      "code": "psmr_req_ptw",
+      "status": 200,
+      "elapsed_ms": 1094,
+      "detail": null
+    },
+    {
+      "code": "psmr_req_t3324",
+      "status": 200,
+      "elapsed_ms": 1547,
+      "detail": null
+    },
+    {
+      "code": "rlc_dl_bitrate_rb",
+      "status": 200,
+      "elapsed_ms": 2650,
+      "detail": null
+    },
+    {
+      "code": "rlc_dl_bler",
+      "status": 200,
+      "elapsed_ms": 2391,
+      "detail": null
+    },
+    {
+      "code": "rlc_dl_bler_rb",
+      "status": 200,
+      "elapsed_ms": 2051,
+      "detail": null
+    },
+    {
+      "code": "rlc_dl_block_rate",
+      "status": 200,
+      "elapsed_ms": 2563,
+      "detail": null
+    },
+    {
+      "code": "rlc_ul_bitrate_rb",
+      "status": 200,
+      "elapsed_ms": 1571,
+      "detail": null
+    },
+    {
+      "code": "rlc_ul_block_rate",
+      "status": 200,
+      "elapsed_ms": 1522,
+      "detail": null
+    },
+    {
+      "code": "rrre_re_est_cause",
+      "status": 200,
+      "elapsed_ms": 1330,
+      "detail": null
+    },
+    {
+      "code": "rrre_re_est_status",
+      "status": 200,
+      "elapsed_ms": 1031,
+      "detail": null
+    },
+    {
+      "code": "tua_tau_type",
+      "status": 200,
+      "elapsed_ms": 1571,
+      "detail": null
+    },
+    {
+      "code": "tuf_emm_cause",
+      "status": 200,
+      "elapsed_ms": 1047,
+      "detail": null
+    },
+    {
+      "code": "tus_mcc",
+      "status": 200,
+      "elapsed_ms": 1165,
+      "detail": null
+    },
+    {
+      "code": "tus_mnc",
+      "status": 200,
+      "elapsed_ms": 1428,
+      "detail": null
+    },
+    {
+      "code": "tus_tac",
+      "status": 200,
+      "elapsed_ms": 1237,
+      "detail": null
+    },
+    {
+      "code": "txpc_f_i@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1441,
+      "detail": null
+    },
+    {
+      "code": "txpc_f_i@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1149,
+      "detail": null
+    },
+    {
+      "code": "txpc_g_i@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 969,
+      "detail": null
+    },
+    {
+      "code": "txpc_n_pusch_tpcs@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1482,
+      "detail": null
+    },
+    {
+      "code": "txpc_n_pusch_tpcs@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 1110,
+      "detail": null
+    },
+    {
+      "code": "txpc_n_pusch_tpcs@lte-type-2",
+      "status": 200,
+      "elapsed_ms": 925,
+      "detail": null
+    },
+    {
+      "code": "txpc_n_pusch_tpcs@lte-type-3",
+      "status": 200,
+      "elapsed_ms": 906,
+      "detail": null
+    },
+    {
+      "code": "txpc_n_pusch_tpcs@lte-type-4",
+      "status": 200,
+      "elapsed_ms": 428,
+      "detail": null
+    },
+    {
+      "code": "txpc_pucch_tpc@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 998,
+      "detail": null
+    },
+    {
+      "code": "txpc_pucch_tx_power@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1200,
+      "detail": null
+    },
+    {
+      "code": "txpc_pusch_tx_power@lte-type-0",
+      "status": 200,
+      "elapsed_ms": 1041,
+      "detail": null
+    },
+    {
+      "code": "txpc_pusch_tx_power@lte-type-1",
+      "status": 200,
+      "elapsed_ms": 791,
+      "detail": null
+    }
+  ],
+  "verdict": "PASS"
+}
