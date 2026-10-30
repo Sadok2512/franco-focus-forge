@@ -17,6 +17,15 @@ import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 import { NetworkMapChrome } from "./NetworkMapChrome";
 import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
+// Start the map runtime as soon as the KPI map module is evaluated. Waiting
+// for the card effect added a full parse/evaluation turn before the first OSM
+// tile request on a cold workspace.
+const maplibreRuntime = Promise.all([
+  import("maplibre-gl"),
+  import("maplibre-gl/dist/maplibre-gl.css"),
+  import("maplibre-gl/dist/maplibre-gl-worker.mjs?url"),
+]);
+
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
   { op: "Orange", hex: "#FF7900" },
@@ -178,12 +187,10 @@ export function KpiMapOSM({
   useEffect(() => {
     let disposed = false;
     (async () => {
-      const maplibregl = await import("maplibre-gl");
-      await import("maplibre-gl/dist/maplibre-gl.css");
+      const [maplibregl, , worker] = await maplibreRuntime;
       // 1.106.2 — MapLibre v6 : le worker calculé par Vite échoue
       // (« Worker failed to load »), la carte restait blanche. Même
       // correctif que SignalingMap/AssistantMap : worker bundlé explicite.
-      const worker = await import("maplibre-gl/dist/maplibre-gl-worker.mjs?url");
       maplibregl.setWorkerUrl(worker.default);
       if (disposed || !el.current) return;
       const instance = new maplibregl.Map({

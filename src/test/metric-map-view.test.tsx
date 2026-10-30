@@ -51,7 +51,10 @@ describe("Map selection keeps its own panel", () => {
     /></QueryClientProvider>);
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
     expect(getMetricAnalysis).toHaveBeenCalledWith("project-a", "44621571bccc",
-      ["cell_rsrp@0"], {}, { group_by: "operator", include_map: true }, expect.any(AbortSignal));
+      ["cell_rsrp@0"], {}, {
+        group_by: "operator", include_map: true, table_only: true, page: 1, page_size: 25,
+      }, expect.any(AbortSignal));
+    expect(vi.mocked(getMetricAnalysis).mock.calls.filter((call) => call[4].include_map)).toHaveLength(1);
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
@@ -71,7 +74,9 @@ describe("Map selection keeps its own panel", () => {
       t_rel_s: index / 10,
       tooltip: `RSRP ${-115 + (index % 55)} dBm`,
     }));
-    vi.mocked(getMetricAnalysis).mockResolvedValueOnce({ ...fixture, map_points: points } as never);
+    vi.mocked(getMetricAnalysis).mockImplementation(async (...args) =>
+      (args[4].include_map ? { ...fixture, map_points: points } : fixture) as never,
+    );
     writeMetricViews("map-raw-points", { "cell_rsrp@0": "map" });
     const close = vi.fn();
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -138,14 +143,14 @@ describe("Map selection keeps its own panel", () => {
           serving_cell_lng: 2.31,
           serving_cell_source: "chi_previous_seq_cell_ref_exact",
           neighbour_links: [{
-            system: "LTE", arfcn: 1300, pci: 215, cell_type: 2,
+            system: "LTE", arfcn: 1300, reference_channel: 1800, pci: 215, cell_type: 2,
             cell_ref_id: "neighbour", lat: 48.82, lng: 2.32, distance_m: 12,
-            candidate_count: 1, confidence: "exact_radio_unique",
+            max_distance_m: 25_000, candidate_count: 1, confidence: "radio_band_pci_unique",
           }],
           nr_anchor_link: {
-            system: "NR", arfcn: 640000, pci: 7, cell_type: 199,
+            system: "NR", arfcn: 640000, reference_channel: 3500, pci: 7, cell_type: 199,
             cell_ref_id: "anchor", lat: 48.83, lng: 2.33, distance_m: 18,
-            candidate_count: 1, confidence: "exact_radio_unique",
+            max_distance_m: 25_000, candidate_count: 1, confidence: "radio_band_pci_unique",
           },
         },
       ],
@@ -155,7 +160,9 @@ describe("Map selection keeps its own panel", () => {
       "neighbour",
       "nr_anchor",
     ]);
-    vi.mocked(getMetricAnalysis).mockResolvedValueOnce(data);
+    vi.mocked(getMetricAnalysis).mockImplementation(async (...args) =>
+      (args[4].include_map ? data : fixture) as never,
+    );
     writeMetricViews("map-links", { "cell_rsrp@0": "map" });
     render(
       <QueryClientProvider

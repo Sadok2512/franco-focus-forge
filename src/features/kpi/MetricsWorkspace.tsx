@@ -81,6 +81,60 @@ const fmt = (v: unknown) =>
           maximumFractionDigits: 3,
         })
       : String(v);
+
+const MAP_PAGE_TARGET = 5;
+const MAP_PROBE_PAGE_SIZE = 25;
+
+async function getMetricMapPages(
+  projectId: string,
+  captureId: string,
+  selections: string[],
+  filters: KpiQueryFilters,
+  signal: AbortSignal,
+): Promise<MetricAnalysis> {
+  const loadSelection = async (selection: string) => {
+    const loadPage = (page: number, pageSize: number) =>
+      getMetricAnalysis(
+        projectId,
+        captureId,
+        [selection],
+        filters,
+        {
+          group_by: "operator",
+          include_map: true,
+          table_only: true,
+          page,
+          page_size: pageSize,
+        },
+        signal,
+      ) as Promise<MetricAnalysis>;
+    const probe = await loadPage(1, MAP_PROBE_PAGE_SIZE);
+    // Older fixtures/servers without pagination metadata already return the
+    // complete map response; preserve that compatible contract.
+    if (!Number.isFinite(probe.total_rows)) return probe;
+    if (probe.total_rows <= MAP_PROBE_PAGE_SIZE) return probe;
+    const pageSize = Math.max(
+      MAP_PROBE_PAGE_SIZE,
+      Math.ceil(probe.total_rows / MAP_PAGE_TARGET),
+    );
+    const pageCount = Math.ceil(probe.total_rows / pageSize);
+    const pages = await Promise.all(
+      Array.from({ length: pageCount }, (_, index) => loadPage(index + 1, pageSize)),
+    );
+    return {
+      ...pages[0]!,
+      map_points: pages.flatMap((page) => page.map_points),
+    };
+  };
+  const responses = await Promise.all(selections.map(loadSelection));
+  const first = responses[0];
+  if (!first) throw new Error("metric_map_without_selection");
+  return {
+    ...first,
+    map_points: responses.flatMap((response) => response.map_points),
+  };
+}
+
 function Plot({ option, label }: { option: EChartsOption; label: string }) {
   useTranslation();
   const host = useRef<HTMLDivElement>(null);
@@ -539,22 +593,24 @@ function MetricMap({
   );
 }
 function MetricMapCard({
-  projectId,
-  captureId,
   selection,
   title,
   unit,
-  filters,
+  data,
+  loading,
+  error,
+  onRetry,
   onRemove,
   workspaceId,
   projectCenter,
 }: {
-  projectId: string;
-  captureId: string;
   selection: string;
   title: string;
   unit: string;
-  filters: KpiQueryFilters;
+  data?: MetricAnalysis | undefined;
+  loading: boolean;
+  error: Error | null;
+  onRetry: () => void;
   onRemove: () => void;
   workspaceId: string;
   projectCenter?: [number, number] | undefined;
@@ -573,27 +629,20 @@ function MetricMapCard({
       /* storage unavailable */
     }
   }, [preferences, selection, workspaceId]);
-  const query = useQuery({
-    queryKey: ["metric-map", projectId, captureId, selection, filters],
-    queryFn: ({ signal }) =>
-      getMetricAnalysis(
-        projectId,
-        captureId,
-        [selection],
-        filters,
-        { group_by: "operator", include_map: true },
-        signal,
-      ),
-    staleTime: 60_000,
-    retry: false,
-  });
+  const metricData = useMemo(
+    () =>
+      data
+        ? { ...data, map_points: data.map_points.filter((point) => point.code === selection) }
+        : undefined,
+    [data, selection],
+  );
   return (
     <article
       ref={panelRef}
       className="kpi-graph-card kpi-metric-map-card"
       data-metric-code={selection}
       data-view="map"
-      data-point-count={query.data?.map_points.length ?? 0}
+      data-point-count={metricData?.map_points.length ?? 0}
     >
       <div className="kpi-metric-map-menu">
         <WorkspacePanelMenu label={`${title} · actions`}>
@@ -606,15 +655,15 @@ function MetricMapCard({
         </WorkspacePanelMenu>
       </div>
       <MetricMap
-        data={query.data}
+        data={metricData}
         label={title}
         unit={unit}
         center={projectCenter}
         preferences={preferences}
         onPreferences={setPreferences}
-        loading={query.isPending}
-        error={query.isError ? query.error : null}
-        onRetry={() => void query.refetch()}
+        loading={loading}
+        error={error}
+        onRetry={onRetry}
       />
     </article>
   );
@@ -694,6 +743,8 @@ export function MetricsWorkspace({
   const [page, setPage] = useState(1);
   const [cellPciFilter, setCellPciFilter] = useState("");
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
+  const mapSelections = selections.filter((selection) => viewsProp?.[selection] === "map");
+  const onlyMapSelections = selections.length > 0 && mapSelections.length === selections.length;
   const parsedCellPci = /^\d+$/.test(cellPciFilter) ? Number(cellPciFilter) : undefined;
   const parsedCellArfcn = /^\d+$/.test(cellArfcnFilter) ? Number(cellArfcnFilter) : undefined;
   const paginationScopeKey = JSON.stringify([
@@ -743,6 +794,19 @@ export function MetricsWorkspace({
     refetchOnWindowFocus: false,
     retry: false,
   });
+  // One shared geographic response feeds every map card. Keeping this query
+  // at workspace level prevents cards from refetching data that has already
+  // arrived and lets the map chrome mount independently while points load.
+  const mapQuery = useQuery({
+    queryKey: ["metric-map", projectId, captureId, mapSelections, filters],
+    queryFn: ({ signal }) =>
+      getMetricMapPages(projectId, captureId!, mapSelections, filters, signal),
+    enabled: !!captureId && mapSelections.length > 0,
+    staleTime: 60_000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
   const query = useQuery({
     queryKey: metricTableKey([
       projectId,
@@ -775,7 +839,10 @@ export function MetricsWorkspace({
         },
         signal,
       ),
-    enabled: !!captureId && selections.length > 0,
+    // A map-only workspace already has everything it needs in mapQuery. Keep
+    // the table request dormant unless the user explicitly opens that pane.
+    enabled:
+      !!captureId && selections.length > 0 && (!onlyMapSelections || (paneRequest ?? 0) > 0),
     staleTime: 60_000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -1171,12 +1238,13 @@ export function MetricsWorkspace({
                   {(panelTitle) =>
                     metricView === "map" ? (
                       <MetricMapCard
-                        projectId={projectId}
-                        captureId={captureId}
                         selection={s.full}
                         title={title}
                         unit={info?.unit ?? ""}
-                        filters={filters}
+                        data={mapQuery.data as MetricAnalysis | undefined}
+                        loading={mapQuery.isPending}
+                        error={mapQuery.isError ? mapQuery.error : null}
+                        onRetry={() => void mapQuery.refetch()}
                         onRemove={remove}
                         workspaceId={_workspaceId ?? "metrics"}
                         projectCenter={projectCenter}

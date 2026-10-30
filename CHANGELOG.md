@@ -7,6 +7,11 @@
 - Le fond, les cellules et les outils se montent sans attendre `/metrics` ; les
   points ont un état de chargement animé et une erreur réessayable superposés à
   la carte déjà utilisable.
+- La requête des 4 935 points utilise le chemin CELLMEAS lean
+  (`table_only=true`) : une sonde légère fixe la pagination, puis au plus cinq
+  pages équilibrées sont chargées en parallèle et injectées dans MapLibre.
+  Les sites/cellules restent chargés uniquement par la
+  bbox visible avec un plafond front explicite de 2 000 entités par requête.
 - La légende propose une palette et une taille de points mémorisées par panneau,
   ainsi que trois liens activables séparément : cellule servante, voisines et
   ancre NR. Aucun lien n'est inventé : géométrie et provenance API sont requises.
