@@ -13,7 +13,7 @@
 // KpiCatalogSidebar : header p-2, pas d'eyebrow, pas d'Expand/Collapse,
 // chevron intégré dans la row, status dot, ⋮ menu MoreVertical.
 import { useTranslation } from "react-i18next";
-import { useMemo, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -58,6 +58,11 @@ export function MetricsCatalogSidebar({
   onToggle,
   onVisualization,
   searchRef,
+  search: controlledSearch,
+  onSearchChange,
+  selectionCount,
+  measuredTree,
+  onVisibleCountChange,
   // 1.92.0 — captureKind : si 'scanner', les métriques UE cell_scoped sont
   // désactivées + tooltip "no UE cell metrics in scanner capture". Jamais
   // cachées. 'ue' ou null = comportement nominal.
@@ -68,10 +73,16 @@ export function MetricsCatalogSidebar({
   onToggle: (code: string) => void;
   onVisualization?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
+  search?: string;
+  onSearchChange?: (value: string) => void;
+  selectionCount?: number;
+  measuredTree?: ReactNode;
+  onVisibleCountChange?: (count: number) => void;
   captureKind?: "ue" | "scanner" | null;
 }) {
   const { t, i18n } = useTranslation();
-  const [search, setSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+  const search = controlledSearch ?? localSearch;
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
@@ -131,6 +142,22 @@ export function MetricsCatalogSidebar({
     }
     return visible;
   }, [query.data, search]);
+  const visibleSelectableCount = useMemo(
+    () =>
+      (query.data?.nodes ?? []).filter(
+        (node) =>
+          node.node_type === "leaf" &&
+          node.selectable &&
+          (!availableTree || availableTree.has(node.node_id)) &&
+          (!matching || matching.has(node.node_id)) &&
+          (!activeOnly || node.n > 0),
+      ).length,
+    [activeOnly, availableTree, matching, query.data],
+  );
+  useEffect(
+    () => onVisibleCountChange?.(visibleSelectableCount),
+    [onVisibleCountChange, visibleSelectableCount],
+  );
   const descendantSelections = useMemo(() => {
     const cache = new Map<string, string[]>();
     const collect = (id: string): string[] => {
@@ -417,11 +444,10 @@ export function MetricsCatalogSidebar({
             </span>
           )}
           <span
-            className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums cursor-help"
-            title={t("metrics.capCountTooltip", { max: MAX_METRICS })}
-            aria-label={t("metrics.capCountTooltip", { max: MAX_METRICS })}
+            className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums"
+            data-testid="metrics-unified-selection-count"
           >
-            {t("metrics.16df3032f7a1", { selected: selected.length, max: MAX_METRICS })}
+            {t("metrics.unifiedSelected", { count: selectionCount ?? selected.length })}
           </span>
         </h2>
         <label className="relative block mt-2">
@@ -429,7 +455,10 @@ export function MetricsCatalogSidebar({
           <input
             ref={searchRef}
             value={search}
-            onChange={(event) => setSearch(event.target.value)}
+            onChange={(event) => {
+              setLocalSearch(event.target.value);
+              onSearchChange?.(event.target.value);
+            }}
             placeholder={t("metrics.433e83817682")}
             aria-label={t("metrics.bf6a6c500977")}
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
@@ -483,12 +512,10 @@ export function MetricsCatalogSidebar({
           </button>
         </div>
       )}
-      <ul className="kpi-tree p-2 space-y-1">
-        {tree.map((node) => renderNode(node))}
-        {!tree.length && !query.isPending && !(query.isFetching && !query.data) && (
-          <li className="p-4 text-xs text-muted-foreground">{t("metrics.7f626224ba1f") || "—"}</li>
-        )}
-      </ul>
+      <div className="kpi-tree" data-testid="unified-metrics-tree">
+        {measuredTree}
+        <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
+      </div>
       {/* 1.107.0 — Footer lit l'enveloppe `catalog_release` + `decoder_version`
           du back 0.80.0. Jamais en dur. Fallback explicite "legacy" quand
           catalog_release=null (bootstrap frais / fallback_legacy). */}

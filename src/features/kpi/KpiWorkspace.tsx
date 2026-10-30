@@ -9,7 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
 import { VisualizationItems } from "./VisualizationMenu";
 import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw } from "lucide-react";
@@ -275,13 +275,33 @@ function Workspace({
   const [parameterGroupBy, setParameterGroupBy] = useState<GroupByMode>("operator");
   const [parameterResetTick, setParameterResetTick] = useState(0);
   const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
-  const selectableMetricCount = useMemo(
+  const catalogSelectableMetricCount = useMemo(
     () =>
       (metricsCatalog.data?.nodes ?? []).filter(
         (node) => node.node_type === "leaf" && node.selectable,
       ).length,
     [metricsCatalog.data],
   );
+  const measuredMetricCodes = useMemo(
+    () => new Set(catalogEntries(classifiedCatalogs.metrics).map((entry) => entry.item.code)),
+    [classifiedCatalogs.metrics],
+  );
+  const [metricsSearch, setMetricsSearch] = useState("");
+  const [visibleMeasuredMetricCount, setVisibleMeasuredMetricCount] = useState(
+    measuredMetricCodes.size,
+  );
+  const [visibleCatalogMetricCount, setVisibleCatalogMetricCount] = useState(
+    catalogSelectableMetricCount,
+  );
+  const updateVisibleMeasuredMetricCount = useCallback(
+    (count: number) => setVisibleMeasuredMetricCount(count),
+    [],
+  );
+  const updateVisibleCatalogMetricCount = useCallback(
+    (count: number) => setVisibleCatalogMetricCount(count),
+    [],
+  );
+  const selectableMetricCount = visibleMeasuredMetricCount + visibleCatalogMetricCount;
   const selectedMetrics = currentTab.metricCodes ?? [];
   const setSelectedMetrics = (next: string[]) =>
     persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricCodes: next }));
@@ -446,7 +466,6 @@ function Workspace({
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [limitMessage, setLimitMessage] = useState("");
   const catalogSearch = useRef<HTMLInputElement>(null);
-  const measuredCatalogSearch = useRef<HTMLInputElement>(null);
   const effectiveActive = codes.includes(active ?? "") ? active : (codes[0] ?? null);
   const visibleCodes = codes;
   const queries = useQueries({
@@ -687,29 +706,34 @@ function Workspace({
                 searchRef={catalogSearch}
               />
             ) : activeCatalog === "metrics" ? (
-              <div className="flex h-full min-h-0 flex-col overflow-hidden">
-                <div className="min-h-0 basis-[42%] border-b">
+              <MetricsCatalogSidebar
+                projectId={projectId}
+                selected={selectedMetrics}
+                onToggle={toggleMetric}
+                onVisualization={visualizeMetric}
+                searchRef={catalogSearch}
+                search={metricsSearch}
+                onSearchChange={setMetricsSearch}
+                selectionCount={
+                  selectedMetrics.length +
+                  codes.filter((code) => measuredMetricCodes.has(code)).length
+                }
+                onVisibleCountChange={updateVisibleCatalogMetricCount}
+                measuredTree={
                   <KpiCatalogSidebar
                     catalog={classifiedCatalogs.metrics}
                     selected={codes}
                     active={effectiveActive}
                     onToggle={onCatalogToggle}
                     onVisualization={visualize}
-                    searchRef={measuredCatalogSearch}
-                    title={translate("kpi.catalogTabMetrics")}
-                  />
-                </div>
-                <div className="min-h-0 basis-[58%]">
-                  <MetricsCatalogSidebar
-                    projectId={projectId}
-                    selected={selectedMetrics}
-                    onToggle={toggleMetric}
-                    onVisualization={visualizeMetric}
                     searchRef={catalogSearch}
-                    captureKind={captureKind}
+                    searchValue={metricsSearch}
+                    embedded
+                    onVisibleCountChange={updateVisibleMeasuredMetricCount}
                   />
-                </div>
-              </div>
+                }
+                captureKind={captureKind}
+              />
             ) : (
               <TreePanel
                 techno={parameterTechnology}

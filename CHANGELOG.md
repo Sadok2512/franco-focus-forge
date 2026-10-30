@@ -1,3 +1,19 @@
+## 1.125.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : panneau Metrics unifié (Agent BC4, numérotation BC3)
+
+Merge `bc4/metrics-unified-panel` (`e540ea5`). Un seul panneau pour
+l'onglet Metrics.
+
+- Les métriques mesurées de `/kpi/catalog` et les feuilles du catalogue
+  sont réunies dans un seul panneau défilant, avec une seule recherche
+  commune.
+- Le compteur de l'onglet reflète les feuilles sélectionnables
+  affichées ; l'en-tête affiche le nombre total de sélections.
+  `Afficher les non disponibles` et `Actifs uniquement` restent sous la
+  recherche.
+- Onglets Parameters et KPI conservent leur contenu existant ; un
+  workspace neuf reste sans sélection KPI.
+- SemVer front : **MINOR 1.125.0**.
+
 ## 1.124.2 (patch) — BC4-FRONT 2026-10-30 — Frise Signaling progressive (Agent BC1, numérotation BC3)
 
 Compagnon front du back `0.114.1`.

@@ -186,6 +186,7 @@
     "498227f2b5c6": "Metrics catalogue",
     "f05f8e96265b": "★ cell · ⚑ event ·",
     "16df3032f7a1": "{{selected}} of {{max}} selected",
+    "unifiedSelected": "{{count}} selected",
     "capCountTooltip": "UI cap: up to {{max}} metrics can be displayed simultaneously, for chart readability and query performance. Deselect one to add another.",
     "433e83817682": "Search metrics…",
     "bf6a6c500977": "Search metrics",
