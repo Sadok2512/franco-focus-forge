@@ -14,7 +14,12 @@ import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/client";
-import type { SignalingTimeline, SignalingPoints, SignalingLine } from "@/lib/api/signaling";
+import {
+  getAllSignalingEvents,
+  type SignalingTimeline,
+  type SignalingPoints,
+  type SignalingLine,
+} from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
@@ -1241,9 +1246,8 @@ export function SignalingPage({
     queryKey: ["signaling-rf", projectId, capture, technology, direction, search, timeWindow],
     enabled: !!capture,
     queryFn: ({ signal }) =>
-      getSignaling(
+      getAllSignalingEvents(
         projectId,
-        "events",
         {
           capture_id: capture,
           view: "rf",

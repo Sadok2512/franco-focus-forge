@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ECharts, EChartsOption, CustomSeriesRenderItem } from "echarts";
 import { getSignaling, getMetricSeries } from "@/lib/api/client";
-import type { RfEvent } from "@/lib/api/signaling";
+import { getAllSignalingEvents, type RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
@@ -141,9 +141,8 @@ export function RfTimeline({
       visibleWindow,
     ],
     queryFn: ({ signal }) =>
-      getSignaling(
+      getAllSignalingEvents(
         projectId,
-        "events",
         {
           capture_id: captureId,
           view: "rf",

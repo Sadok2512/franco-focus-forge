@@ -1,4 +1,5 @@
 import type { ProjectKpiCatalog, KpiCatalogItem } from "@/lib/api/project-kpi-schemas";
+import { parseMetricSelection } from "./metric-selection";
 
 /** RSRP coverage classes (dBm, lower bound inclusive). Presentation only. */
 export const RSRP_CLASSES = [
@@ -12,16 +13,17 @@ export const RSRP_CLASSES = [
 /** Serving-cell RSRP metric code (same series as the Signaling RF timeline). */
 export const RSRP_METRIC = "cell_rsrp";
 
-/** Metrics-table selection for the PCell RSRP (the API expects `code@cell`). */
-export const RSRP_SELECTION = `${RSRP_METRIC}@0`;
-
-/** `cell_rsrp`, `cell_rsrp@0`, `cell_rsrp@3` — the trailing number is the cell index. */
-const RSRP_COLUMN = /^cell_rsrp(?:@(\d+))?$/;
+/** Metrics selection for LTE Serving in the semantic catalogue contract. */
+export const RSRP_SELECTION = `${RSRP_METRIC}@lte-type-0`;
 
 /** Cell index of an RSRP column (`cell_rsrp@2` → 2, bare code → 0); null for any other metric. */
 export function rsrpColumnCell(code: string): number | null {
-  const m = RSRP_COLUMN.exec(code);
-  return m ? Number(m[1] ?? 0) : null;
+  const selection = parseMetricSelection(code);
+  if (!selection || selection.code !== RSRP_METRIC) return null;
+  // Bare/legacy codes remain readable for old captures. Semantic codes are
+  // accepted only for LTE; NR RSRP is a different radio contract.
+  if (selection.system === "NR") return null;
+  return selection.cellType ?? 0;
 }
 
 /** True for map points of the serving-cell RSRP, whatever cell index the API echoes. */

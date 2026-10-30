@@ -317,4 +317,61 @@ export function getSignaling<K extends keyof typeof signalingSchemas>(
 export type RfEvents = z.infer<typeof signalingSchemas.events>;
 export type RfEvent = RfEvents["events"][number];
 
+type EventParams = Record<string, string | number | undefined>;
+type EventPageFetcher = (
+  projectId: string,
+  kind: "events",
+  params: EventParams,
+  signal?: AbortSignal,
+) => Promise<RfEvents>;
+
+/** Read every page in one capture-local RF window using the server seq cursor. */
+export async function getAllSignalingEvents(
+  projectId: string,
+  params: EventParams,
+  signal?: AbortSignal,
+  fetchPage: EventPageFetcher = (p, _kind, q, s) => getSignaling(p, "events", q, s),
+): Promise<RfEvents> {
+  const limit = Number(params["limit"] ?? 2000);
+  let afterSeq = params["after_seq"] === undefined ? undefined : Number(params["after_seq"]);
+  let first: RfEvents | undefined;
+  const events: RfEvent[] = [];
+  for (;;) {
+    const page = await fetchPage(
+      projectId,
+      "events",
+      { ...params, limit, after_seq: afterSeq },
+      signal,
+    );
+    first ??= page;
+    events.push(...page.events);
+    if (!page.truncated) break;
+    const next = page.next_seq;
+    if (next == null || (afterSeq != null && next <= afterSeq)) {
+      throw new Error("signaling_events_cursor_did_not_advance");
+    }
+    afterSeq = next;
+  }
+  if (!first) throw new Error("signaling_events_empty_pagination");
+  const countsByLane = events.reduce<Record<string, number>>((counts, event) => {
+    counts[event.lane] = (counts[event.lane] ?? 0) + 1;
+    return counts;
+  }, {});
+  const linkRuleCounts = events.reduce<Record<string, number>>((counts, event) => {
+    counts[event.link_rule] = (counts[event.link_rule] ?? 0) + 1;
+    return counts;
+  }, {});
+  return {
+    ...first,
+    events,
+    lanes: Object.keys(countsByLane).sort(),
+    counts_by_lane: countsByLane,
+    link_rule_counts: linkRuleCounts,
+    returned: events.length,
+    truncated: false,
+    next_seq: null,
+    missing_time: events.reduce((count, event) => count + (event.t_rel_s === null ? 1 : 0), 0),
+  };
+}
+
 export type SignalingContext = z.infer<typeof signalingSchemas.context>;
