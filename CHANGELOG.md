@@ -1,3 +1,12 @@
+## Unreleased (patch) — KPI Analytics regressions (Agent BC1)
+
+- The measurements workspace restores its `data-pane` state contract, so the
+  existing full-row table CSS applies after the unified-workspace merges; a
+  25-row/4,935-total regression fixture now locks the rendered body rows.
+- KPI chart spinners and measurement-table progress bars remain visibly
+  animated at a slower rate when reduced motion is enabled, instead of being
+  frozen by the global animation override.
+
 ## 1.123.0 (minor) — BC4-FRONT 2026-10-30 — voisines Metrics par cellule radio réelle (Agent BC4, numérotation BC3)
 
 Compagnon front du back `0.112.0`.
