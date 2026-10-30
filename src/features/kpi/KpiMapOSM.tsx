@@ -288,7 +288,9 @@ export function KpiMapOSM({
         full
           ? "fixed inset-0 z-[60] bg-background"
           : workspace
-            ? "relative h-full min-h-[280px] w-full overflow-hidden rounded-xl border"
+            ? flush
+              ? "relative h-full min-h-[280px] w-full overflow-hidden"
+              : "relative h-full min-h-[280px] w-full overflow-hidden rounded-xl border"
             : flush
               ? "relative h-full min-h-[310px] w-full overflow-hidden"
               : "relative h-full min-h-[310px] w-full overflow-hidden rounded-md border border-[#E2E8F0]"

@@ -1,11 +1,11 @@
-import { Columns3, Download, Info, Maximize2, X } from "lucide-react";
+import { Columns3, Download, Info, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
 import { CaptureSheet } from "./CaptureSheet";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
-import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
+import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
 import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricTableKey } from "./query-keys";
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
@@ -122,7 +122,51 @@ function Plot({ option, label }: { option: EChartsOption; label: string }) {
     />
   );
 }
-const MAP_SCALE_COLORS = ["#b91c1c", "#f97316", "#facc15", "#84cc16", "#15803d"] as const;
+const MAP_PALETTES = {
+  coverage: ["#b91c1c", "#f97316", "#facc15", "#84cc16", "#15803d"],
+  viridis: ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"],
+  ocean: ["#172554", "#1e40af", "#0284c7", "#06b6d4", "#a7f3d0"],
+} as const;
+type MetricMapPalette = keyof typeof MAP_PALETTES;
+type MetricLinkKind = "serving" | "neighbour" | "nr_anchor";
+type MetricMapPreferences = {
+  palette: MetricMapPalette;
+  pointSize: number;
+  links: Record<MetricLinkKind, boolean>;
+};
+const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
+  palette: "coverage",
+  pointSize: 3,
+  links: { serving: true, neighbour: true, nr_anchor: true },
+};
+const METRIC_LINK_COLORS: Record<MetricLinkKind, string> = {
+  serving: "#2563eb",
+  neighbour: "#f59e0b",
+  nr_anchor: "#9333ea",
+};
+
+function metricMapPreferenceKey(workspaceId: string, selection: string) {
+  return `bc4.metric-map.v1.${workspaceId}.${selection}`;
+}
+
+function readMetricMapPreferences(workspaceId: string, selection: string): MetricMapPreferences {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(metricMapPreferenceKey(workspaceId, selection)) ?? "null",
+    ) as Partial<MetricMapPreferences> | null;
+    const palette =
+      value?.palette && value.palette in MAP_PALETTES
+        ? value.palette
+        : DEFAULT_MAP_PREFERENCES.palette;
+    const pointSize =
+      typeof value?.pointSize === "number" && value.pointSize >= 1 && value.pointSize <= 10
+        ? value.pointSize
+        : DEFAULT_MAP_PREFERENCES.pointSize;
+    return { palette, pointSize, links: { ...DEFAULT_MAP_PREFERENCES.links, ...value?.links } };
+  } catch {
+    return DEFAULT_MAP_PREFERENCES;
+  }
+}
 
 export function metricMapNumericExtent(data: MetricAnalysis): [number, number] {
   const values = data.map_points
@@ -144,6 +188,12 @@ export function metricMapFeatures(data: MetricAnalysis) {
     properties: {
       tooltip: point.tooltip,
       code: point.code,
+      seq: point.seq,
+      serving_cell_id: point.serving_cell_id,
+      serving_cell_ref_id: point.serving_cell_ref_id,
+      serving_site_id: point.serving_site_id,
+      serving_site_name: point.serving_site_name,
+      serving_cell_source: point.serving_cell_source,
       ...(typeof point.value === "number" && Number.isFinite(point.value)
         ? { value: point.value }
         : {}),
@@ -151,11 +201,81 @@ export function metricMapFeatures(data: MetricAnalysis) {
   }));
 }
 
+export function metricMapLinkFeatures(data: MetricAnalysis) {
+  return data.map_points.flatMap((point) => {
+    const links: Array<{ kind: MetricLinkKind; lat: number; lng: number; source: string }> = [];
+    if (
+      point.serving_cell_source === "chi_previous_seq_cell_ref_exact" &&
+      typeof point.serving_cell_lat === "number" &&
+      Number.isFinite(point.serving_cell_lat) &&
+      typeof point.serving_cell_lng === "number" &&
+      Number.isFinite(point.serving_cell_lng)
+    ) {
+      links.push({
+        kind: "serving",
+        lat: point.serving_cell_lat,
+        lng: point.serving_cell_lng,
+        source: point.serving_cell_source,
+      });
+    }
+    for (const link of point.neighbour_links ?? []) {
+      if (Number.isFinite(link.lat) && Number.isFinite(link.lng) && link.confidence) {
+        links.push({
+          kind: "neighbour",
+          lat: link.lat,
+          lng: link.lng,
+          source: link.confidence,
+        });
+      }
+    }
+    const anchor = point.nr_anchor_link;
+    if (anchor && Number.isFinite(anchor.lat) && Number.isFinite(anchor.lng) && anchor.confidence) {
+      links.push({ kind: "nr_anchor", lat: anchor.lat, lng: anchor.lng, source: anchor.confidence });
+    }
+    return links.map((link) => ({
+      type: "Feature" as const,
+      geometry: {
+        type: "LineString" as const,
+        coordinates: [
+          [point.lng, point.lat],
+          [link.lng, link.lat],
+        ],
+      },
+      properties: { link_type: link.kind, source: link.source, seq: point.seq },
+    }));
+  });
+}
+
+function metricColorExpression(
+  minValue: number,
+  maxValue: number,
+  palette: MetricMapPalette,
+): ExpressionSpecification {
+  const colors = MAP_PALETTES[palette];
+  return [
+    "interpolate",
+    ["linear"],
+    ["to-number", ["get", "value"], minValue],
+    minValue,
+    colors[0],
+    minValue + (maxValue - minValue) * 0.25,
+    colors[1],
+    minValue + (maxValue - minValue) * 0.5,
+    colors[2],
+    minValue + (maxValue - minValue) * 0.75,
+    colors[3],
+    maxValue,
+    colors[4],
+  ] as ExpressionSpecification;
+}
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
   minValue: number,
   maxValue: number,
+  palette: MetricMapPalette = "coverage",
+  pointSize = 3,
 ) {
   const geo = { type: "FeatureCollection" as const, features };
   map.addSource("metrics-v3", { type: "geojson", data: geo });
@@ -164,43 +284,106 @@ export function installMetricMapSource(
     type: "circle",
     source: "metrics-v3",
     paint: {
-      "circle-radius": 3,
+      "circle-radius": pointSize,
       "circle-opacity": 0.86,
-      "circle-color": [
-        "interpolate", ["linear"], ["to-number", ["get", "value"], minValue],
-        minValue, MAP_SCALE_COLORS[0],
-        minValue + (maxValue - minValue) * 0.25, MAP_SCALE_COLORS[1],
-        minValue + (maxValue - minValue) * 0.5, MAP_SCALE_COLORS[2],
-        minValue + (maxValue - minValue) * 0.75, MAP_SCALE_COLORS[3],
-        maxValue, MAP_SCALE_COLORS[4],
-      ],
+      "circle-color": metricColorExpression(minValue, maxValue, palette),
     },
   });
 }
 
-function MetricMap({ data, label, unit }: { data: MetricAnalysis; label: string; unit: string }) {
+function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricMapLinkFeatures>) {
+  map.addSource("metric-cell-links-v1", {
+    type: "geojson",
+    data: { type: "FeatureCollection", features },
+  });
+  map.addLayer({
+    id: "metric-cell-links-v1",
+    type: "line",
+    source: "metric-cell-links-v1",
+    paint: {
+      "line-color": [
+        "match",
+        ["get", "link_type"],
+        "serving",
+        METRIC_LINK_COLORS.serving,
+        "neighbour",
+        METRIC_LINK_COLORS.neighbour,
+        "nr_anchor",
+        METRIC_LINK_COLORS.nr_anchor,
+        "#64748b",
+      ],
+      "line-width": 1.5,
+      "line-opacity": 0.55,
+    },
+  });
+}
+
+function MetricMap({
+  data,
+  label,
+  unit,
+  center,
+  preferences,
+  onPreferences,
+  loading,
+  error,
+  onRetry,
+}: {
+  data?: MetricAnalysis | undefined;
+  label: string;
+  unit: string;
+  center?: [number, number] | undefined;
+  preferences: MetricMapPreferences;
+  onPreferences: (next: MetricMapPreferences) => void;
+  loading: boolean;
+  error?: Error | null | undefined;
+  onRetry: () => void;
+}) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
-  const [minValue, maxValue] = useMemo(() => metricMapNumericExtent(data), [data]);
-  const features = useMemo(() => metricMapFeatures(data), [data]);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [minValue, maxValue] = useMemo(
+    () => (data ? metricMapNumericExtent(data) : [0, 1]),
+    [data],
+  );
+  const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
+  const links = useMemo(
+    () => allLinks.filter((feature) => preferences.links[feature.properties.link_type]),
+    [allLinks, preferences.links],
+  );
   useEffect(() => {
     if (!map) return;
     const geo = { type: "FeatureCollection" as const, features };
+    const linkGeo = { type: "FeatureCollection" as const, features: links };
+    const linkSource = map.getSource("metric-cell-links-v1") as GeoJSONSource | undefined;
+    if (linkSource) linkSource.setData(linkGeo);
+    else installMetricLinkSource(map, links);
     const source = map.getSource("metrics-v3") as GeoJSONSource | undefined;
     if (source) {
       source.setData(geo);
-      map.setPaintProperty("metrics-v3", "circle-color", [
-        "interpolate", ["linear"], ["to-number", ["get", "value"], minValue],
-        minValue, MAP_SCALE_COLORS[0],
-        minValue + (maxValue - minValue) * 0.25, MAP_SCALE_COLORS[1],
-        minValue + (maxValue - minValue) * 0.5, MAP_SCALE_COLORS[2],
-        minValue + (maxValue - minValue) * 0.75, MAP_SCALE_COLORS[3],
-        maxValue, MAP_SCALE_COLORS[4],
-      ]);
+      map.setPaintProperty(
+        "metrics-v3",
+        "circle-color",
+        metricColorExpression(minValue, maxValue, preferences.palette),
+      );
+      map.setPaintProperty("metrics-v3", "circle-radius", preferences.pointSize);
     } else {
-      installMetricMapSource(map, features, minValue, maxValue);
+      installMetricMapSource(
+        map,
+        features,
+        minValue,
+        maxValue,
+        preferences.palette,
+        preferences.pointSize,
+      );
     }
-    // Cadrer sur l'étendue réelle des points (et non la France entière).
+  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
+  useEffect(() => {
+    if (!map) return;
+    // Cadrer une fois sur l'étendue réelle des points (et non la France
+    // entière). Modifier la palette, la taille ou les liens ne déplace pas la
+    // vue choisie par l'utilisateur.
     if (features.length) {
       const lngs = features.map((f) => f.geometry.coordinates[0]);
       const lats = features.map((f) => f.geometry.coordinates[1]);
@@ -212,7 +395,7 @@ function MetricMap({ data, label, unit }: { data: MetricAnalysis; label: string;
         { padding: 48, maxZoom: 14, duration: 0 },
       );
     }
-  }, [map, features, minValue, maxValue]);
+  }, [map, features]);
   useEffect(() => {
     if (!map) return;
     let popup: import("maplibre-gl").Popup | undefined;
@@ -242,29 +425,130 @@ function MetricMap({ data, label, unit }: { data: MetricAnalysis; label: string;
       popup?.remove();
     };
   }, [map]);
-  const first = data.map_points[0];
+  const first = data?.map_points[0];
+  const palette = MAP_PALETTES[preferences.palette];
+  const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
+    (counts, feature) => ({
+      ...counts,
+      [feature.properties.link_type]: counts[feature.properties.link_type] + 1,
+    }),
+    { serving: 0, neighbour: 0, nr_anchor: 0 },
+  );
   return (
     <KpiMapOSM
-      key={data.capture_id}
-      {...(first ? { center: [first.lng, first.lat] as [number, number] } : {})}
+      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
       zoom={first ? 13 : 5}
       showOperatorLegend={false}
       flush
+      workspace
       contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
-      measurementStatus={first ? null : translate("metrics.59d5ea1eb6a5")}
+      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
     >
       <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
-        <strong>{label}{unit ? ` · ${unit}` : ""}</strong>
-        <span className="kpi-metric-map-scale" aria-hidden="true" />
+        <div className="kpi-metric-map-legend-title">
+          <strong>
+            {label}
+            {unit ? ` · ${unit}` : ""}
+          </strong>
+          <button
+            type="button"
+            aria-label={translate("metrics.mapSettings")}
+            aria-expanded={settingsOpen}
+            onClick={() => setSettingsOpen((open) => !open)}
+          >
+            <Settings2 size={14} />
+          </button>
+        </div>
+        <span
+          className="kpi-metric-map-scale"
+          aria-hidden="true"
+          style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+        />
         <span className="kpi-metric-map-scale-labels">
-          <span>{fmt(minValue)}</span><span>{fmt(maxValue)}</span>
+          <span>{fmt(minValue)}</span>
+          <span>{fmt(maxValue)}</span>
         </span>
+        {settingsOpen && (
+          <div className="kpi-metric-map-settings" data-testid="metric-map-settings">
+            <label>
+              {translate("metrics.mapPalette")}
+              <select
+                value={preferences.palette}
+                onChange={(event) =>
+                  onPreferences({ ...preferences, palette: event.target.value as MetricMapPalette })
+                }
+              >
+                <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
+                <option value="viridis">Viridis</option>
+                <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
+              </select>
+            </label>
+            <label>
+              {translate("metrics.mapPointSize")} · {preferences.pointSize}px
+              <input
+                type="range"
+                min="1"
+                max="10"
+                step="1"
+                value={preferences.pointSize}
+                onChange={(event) =>
+                  onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+                }
+              />
+            </label>
+            <fieldset>
+              <legend>{translate("metrics.mapCellLinks")}</legend>
+              {(["serving", "neighbour", "nr_anchor"] as const).map((kind) => (
+                <label key={kind}>
+                  <input
+                    type="checkbox"
+                    checked={preferences.links[kind]}
+                    onChange={(event) =>
+                      onPreferences({
+                        ...preferences,
+                        links: { ...preferences.links, [kind]: event.target.checked },
+                      })
+                    }
+                  />
+                  <span
+                    className="kpi-metric-map-link-swatch"
+                    style={{ backgroundColor: METRIC_LINK_COLORS[kind] }}
+                  />
+                  {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        )}
       </div>
+      {loading && (
+        <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
+          <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}
+        </div>
+      )}
+      {error && (
+        <div className="kpi-metric-map-status is-error" role="alert">
+          <span>{translate("metrics.mapLoadError")}</span>
+          <button type="button" onClick={onRetry}>
+            {translate("common.retry")}
+          </button>
+        </div>
+      )}
     </KpiMapOSM>
   );
 }
-function MetricMapCard({ projectId, captureId, selection, title, unit, filters, onRemove }: {
+function MetricMapCard({
+  projectId,
+  captureId,
+  selection,
+  title,
+  unit,
+  filters,
+  onRemove,
+  workspaceId,
+  projectCenter,
+}: {
   projectId: string;
   captureId: string;
   selection: string;
@@ -272,31 +556,66 @@ function MetricMapCard({ projectId, captureId, selection, title, unit, filters, 
   unit: string;
   filters: KpiQueryFilters;
   onRemove: () => void;
+  workspaceId: string;
+  projectCenter?: [number, number] | undefined;
 }) {
-  const { t } = useTranslation();
   const panelRef = useRef<HTMLElement>(null);
+  const [preferences, setPreferences] = useState(() =>
+    readMetricMapPreferences(workspaceId, selection),
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        metricMapPreferenceKey(workspaceId, selection),
+        JSON.stringify(preferences),
+      );
+    } catch {
+      /* storage unavailable */
+    }
+  }, [preferences, selection, workspaceId]);
   const query = useQuery({
     queryKey: ["metric-map", projectId, captureId, selection, filters],
-    queryFn: ({ signal }) => getMetricAnalysis(projectId, captureId, [selection], filters, { group_by: "operator", include_map: true }, signal),
+    queryFn: ({ signal }) =>
+      getMetricAnalysis(
+        projectId,
+        captureId,
+        [selection],
+        filters,
+        { group_by: "operator", include_map: true },
+        signal,
+      ),
     staleTime: 60_000,
     retry: false,
   });
   return (
-    <article ref={panelRef} className="kpi-graph-card kpi-metric-map-card" data-metric-code={selection} data-view="map" data-point-count={query.data?.map_points.length ?? 0}>
+    <article
+      ref={panelRef}
+      className="kpi-graph-card kpi-metric-map-card"
+      data-metric-code={selection}
+      data-view="map"
+      data-point-count={query.data?.map_points.length ?? 0}
+    >
       <div className="kpi-metric-map-menu">
         <WorkspacePanelMenu label={`${title} · actions`}>
           <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={onRemove}><X size={14} />Fermer</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onRemove}>
+            <X size={14} />
+            Fermer
+          </DropdownMenuItem>
         </WorkspacePanelMenu>
       </div>
-      {query.isPending ? <div className="kpi-measurements-loading" aria-busy="true">
-        <div className="kpi-measurements-progress" role="progressbar" aria-label={t("metrics.eb724a908f1f")}><span /></div>
-      </div> : query.isError ? <QueryErrorState
-        error={query.error}
-        title={t("metrics.f1d7675032b2")}
+      <MetricMap
+        data={query.data}
+        label={title}
+        unit={unit}
+        center={projectCenter}
+        preferences={preferences}
+        onPreferences={setPreferences}
+        loading={query.isPending}
+        error={query.isError ? query.error : null}
         onRetry={() => void query.refetch()}
-      /> : query.data ? <MetricMap data={query.data} label={title} unit={unit} /> : null}
+      />
     </article>
   );
 }
@@ -318,6 +637,7 @@ export function MetricsWorkspace({
   onTablePaneChange,
   views: viewsProp,
   workspaceId: _workspaceId,
+  projectCenter,
   onColumnsChange: _onColumnsChange,
   paneRequest,
   cardViewRequest,
@@ -337,6 +657,7 @@ export function MetricsWorkspace({
   onTablePaneChange?: ((open: boolean) => void) | undefined;
   views?: MetricViews | undefined;
   workspaceId?: string;
+  projectCenter?: [number, number] | undefined;
   onColumnsChange?: unknown;
   paneRequest?: number;
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
@@ -346,6 +667,20 @@ export function MetricsWorkspace({
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
+  const legacyMapSelection = selections[0] ?? "metric";
+  const [legacyMapPreferences, setLegacyMapPreferences] = useState(() =>
+    readMetricMapPreferences(_workspaceId ?? "metrics", legacyMapSelection),
+  );
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        metricMapPreferenceKey(_workspaceId ?? "metrics", legacyMapSelection),
+        JSON.stringify(legacyMapPreferences),
+      );
+    } catch {
+      /* storage unavailable */
+    }
+  }, [_workspaceId, legacyMapPreferences, legacyMapSelection]);
   const [internalView, setInternalView] = useState<View>("table");
   const view = externalView ?? internalView;
   const setView = (v: View) => {
@@ -361,7 +696,14 @@ export function MetricsWorkspace({
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
   const parsedCellPci = /^\d+$/.test(cellPciFilter) ? Number(cellPciFilter) : undefined;
   const parsedCellArfcn = /^\d+$/.test(cellArfcnFilter) ? Number(cellArfcnFilter) : undefined;
-  const paginationScopeKey = JSON.stringify([captureId, selections, filters, groupBy, parsedCellPci, parsedCellArfcn]);
+  const paginationScopeKey = JSON.stringify([
+    captureId,
+    selections,
+    filters,
+    groupBy,
+    parsedCellPci,
+    parsedCellArfcn,
+  ]);
   useEffect(() => setPage(1), [paginationScopeKey]);
   type LeanColumn = "time_local" | "cell" | "time_utc" | "task" | "lat" | "lon";
   const columnViewKey = `${_workspaceId ?? "metrics"}:${captureId ?? ""}:${selections.join(",")}`;
@@ -371,7 +713,9 @@ export function MetricsWorkspace({
   useEffect(() => {
     try {
       const raw = localStorage.getItem(`bc4.metrics.columns.${columnViewKey}`);
-      setVisibleLeanColumns(new Set(raw ? JSON.parse(raw) as LeanColumn[] : ["time_local", "cell"]));
+      setVisibleLeanColumns(
+        new Set(raw ? (JSON.parse(raw) as LeanColumn[]) : ["time_local", "cell"]),
+      );
     } catch {
       setVisibleLeanColumns(new Set(["time_local", "cell"]));
     }
@@ -379,8 +723,13 @@ export function MetricsWorkspace({
   const toggleLeanColumn = (column: LeanColumn) => {
     setVisibleLeanColumns((current) => {
       const next = new Set(current);
-      if (next.has(column)) next.delete(column); else next.add(column);
-      try { localStorage.setItem(`bc4.metrics.columns.${columnViewKey}`, JSON.stringify([...next])); } catch { /* ignore */ }
+      if (next.has(column)) next.delete(column);
+      else next.add(column);
+      try {
+        localStorage.setItem(`bc4.metrics.columns.${columnViewKey}`, JSON.stringify([...next]));
+      } catch {
+        /* ignore */
+      }
       return next;
     });
   };
@@ -672,7 +1021,9 @@ export function MetricsWorkspace({
   const tablePanelRef = useRef<HTMLDivElement>(null);
   const [pane, setPaneRaw] = useState<MetricPane>(() => {
     try {
-      const stored = localStorage.getItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"));
+      const stored = localStorage.getItem(
+        _workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane",
+      );
       if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
     } catch {
       /* ignore */
@@ -690,7 +1041,10 @@ export function MetricsWorkspace({
     if (p !== "table") tableOnlyDismissed.current = true;
     setPaneRaw(p);
     try {
-      localStorage.setItem((_workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane"), p);
+      localStorage.setItem(
+        _workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane",
+        p,
+      );
     } catch {
       /* ignore */
     }
@@ -770,448 +1124,534 @@ export function MetricsWorkspace({
   const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
     <ActiveEventsContext.Provider value={activeEvents}>
-    <article
-      className="kpi-metrics-table-premium kpi-unified-contents"
-      data-pane={pane}
-      data-testid="metrics-v3-workspace"
-    >
-      {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
+      <article
+        className="kpi-metrics-table-premium kpi-unified-contents"
+        data-pane={pane}
+        data-testid="metrics-v3-workspace"
+      >
+        {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
           Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
           continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
-      {captureId && parsedSelections.length > 0 && (
-        <MetricsEventsRibbon
-          projectId={projectId}
-          captureId={captureId}
-          filters={filters}
-          syncId={`metrics-charts-${captureId}`}
-          timeAxisMode={effectiveTimeAxisMode}
-          timeMeta={timeMeta}
-        />
-      )}
-      {captureId && parsedSelections.length === 0 && (
-        <p className="kpi-chart-state" data-testid="metrics-no-selection">
-          {translate("metrics.pickFromCatalogue")}
-        </p>
-      )}
-      {captureId && graphSelections.length > 0 && (
-        <section
-          className="kpi-metrics-charts-grid"
-          data-testid="metrics-charts-grid"
-        >
-          {graphSelections.map((s, i) => {
-            const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
-            const title = info?.label ?? s.code;
-            const metricView = viewsProp?.[s.full] ?? "graph";
-            const remove = () => {
-              const next = selections.filter((x) => x !== s.full);
-              if (!next.length) onClear();
-              else onRemove?.(s.full);
-            };
-            return (
-              <PanelShell
-                key={s.full}
-                workspaceId={_workspaceId ?? "metrics"}
-                id={`metric:${s.full}`}
-                natural={100 + i}
-                defaultTitle={`${i + 1}. ${title}`}
-                fullRow={mapFillsAvailable && metricView === "map"}
-                bare={metricView === "map"}
-              >
-                {(panelTitle) => metricView === "map" ? <MetricMapCard
-                  projectId={projectId}
-                  captureId={captureId}
-                  selection={s.full}
-                  title={title}
-                  unit={info?.unit ?? ""}
-                  filters={filters}
-                  onRemove={remove}
-                /> : <MetricGraphCard
-                projectId={projectId}
-                code={s.full}
-                label={panelTitle}
-                unit={info?.unit ?? ""}
-                tech={info?.tech ?? ""}
-                category={info?.category_label ?? null}
-                eventCode={info?.event_code ?? s.code}
-                appliedFilters={filters}
-                onRemove={remove}
-                view={metricView}
-                onViewChange={(next) => {
-                  onVisualization?.(s.full, next);
-                  // 1.105.8 — Quand l'utilisateur bascule une carte en vue Map,
-                  // on referme le grand Measurements table (le besoin UX est
-                  // d'afficher UNIQUEMENT la map). L'utilisateur peut rouvrir
-                  // le tableau via ⋮ → Tableau.
-                  if (next === "map") setPane("charts");
-                }}
-                syncId={captureId ? `metrics-charts-${captureId}` : undefined}
-                timeAxisMode={effectiveTimeAxisMode}
-                eventsCaptureId={captureId}
-              />}
-              </PanelShell>
-            );
-          })}
-        </section>
-      )}
-      {isScannerCapture && (
-        <div
-          role="alert"
-          className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-          data-testid="metrics-scanner-banner"
-        >
-          <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche)
-          not available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
-          <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
-          sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
-          RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
-        </div>
-      )}
-      {!captureId ? (
-        // 1.105.4 — Si captureQuery pending ou >=1 capture dispo, l'auto-select
-        // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
-        // un petit loader discret au lieu du prompt "Select capture". Prompt
-        // visible uniquement si captures vraiment vides (projet jamais ingéré).
-        captureQuery.isError ? (
-          <QueryErrorState
-            error={captureQuery.error}
-            title={translate("metrics.d854ce90120a")}
-            onRetry={() => void captureQuery.refetch()}
+        {captureId && parsedSelections.length > 0 && (
+          <MetricsEventsRibbon
+            projectId={projectId}
+            captureId={captureId}
+            filters={filters}
+            syncId={`metrics-charts-${captureId}`}
+            timeAxisMode={effectiveTimeAxisMode}
+            timeMeta={timeMeta}
           />
-        ) : captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
-          <div className="kpi-chart-state" role="status" aria-busy="true">
-            <span className="kpi-measurements-progress" aria-label={translate("metrics.eb724a908f1f")}>
+        )}
+        {captureId && parsedSelections.length === 0 && (
+          <p className="kpi-chart-state" data-testid="metrics-no-selection">
+            {translate("metrics.pickFromCatalogue")}
+          </p>
+        )}
+        {captureId && graphSelections.length > 0 && (
+          <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
+            {graphSelections.map((s, i) => {
+              const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
+              const title = info?.label ?? s.code;
+              const metricView = viewsProp?.[s.full] ?? "graph";
+              const remove = () => {
+                const next = selections.filter((x) => x !== s.full);
+                if (!next.length) onClear();
+                else onRemove?.(s.full);
+              };
+              return (
+                <PanelShell
+                  key={s.full}
+                  workspaceId={_workspaceId ?? "metrics"}
+                  id={`metric:${s.full}`}
+                  natural={100 + i}
+                  defaultTitle={`${i + 1}. ${title}`}
+                  fullRow={mapFillsAvailable && metricView === "map"}
+                  bare={metricView === "map"}
+                >
+                  {(panelTitle) =>
+                    metricView === "map" ? (
+                      <MetricMapCard
+                        projectId={projectId}
+                        captureId={captureId}
+                        selection={s.full}
+                        title={title}
+                        unit={info?.unit ?? ""}
+                        filters={filters}
+                        onRemove={remove}
+                        workspaceId={_workspaceId ?? "metrics"}
+                        projectCenter={projectCenter}
+                      />
+                    ) : (
+                      <MetricGraphCard
+                        projectId={projectId}
+                        code={s.full}
+                        label={panelTitle}
+                        unit={info?.unit ?? ""}
+                        tech={info?.tech ?? ""}
+                        category={info?.category_label ?? null}
+                        eventCode={info?.event_code ?? s.code}
+                        appliedFilters={filters}
+                        onRemove={remove}
+                        view={metricView}
+                        onViewChange={(next) => {
+                          onVisualization?.(s.full, next);
+                          // 1.105.8 — Quand l'utilisateur bascule une carte en vue Map,
+                          // on referme le grand Measurements table (le besoin UX est
+                          // d'afficher UNIQUEMENT la map). L'utilisateur peut rouvrir
+                          // le tableau via ⋮ → Tableau.
+                          if (next === "map") setPane("charts");
+                        }}
+                        syncId={captureId ? `metrics-charts-${captureId}` : undefined}
+                        timeAxisMode={effectiveTimeAxisMode}
+                        eventsCaptureId={captureId}
+                      />
+                    )
+                  }
+                </PanelShell>
+              );
+            })}
+          </section>
+        )}
+        {isScannerCapture && (
+          <div
+            role="alert"
+            className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+            data-testid="metrics-scanner-banner"
+          >
+            <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche) not
+            available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
+            <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
+            sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
+            RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
+          </div>
+        )}
+        {!captureId ? (
+          // 1.105.4 — Si captureQuery pending ou >=1 capture dispo, l'auto-select
+          // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
+          // un petit loader discret au lieu du prompt "Select capture". Prompt
+          // visible uniquement si captures vraiment vides (projet jamais ingéré).
+          captureQuery.isError ? (
+            <QueryErrorState
+              error={captureQuery.error}
+              title={translate("metrics.d854ce90120a")}
+              onRetry={() => void captureQuery.refetch()}
+            />
+          ) : captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
+            <div className="kpi-chart-state" role="status" aria-busy="true">
+              <span
+                className="kpi-measurements-progress"
+                aria-label={translate("metrics.eb724a908f1f")}
+              >
+                <span />
+              </span>
+            </div>
+          ) : (
+            <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+          )
+        ) : pane !== "table" ? null : query.isPending ? (
+          <div
+            className="kpi-measurements-loading"
+            aria-busy="true"
+            style={{ order: TABLE_PANEL_ORDER }}
+          >
+            <h3>{translate("metrics.tablePanel")}</h3>
+            <div
+              className="kpi-measurements-progress"
+              role="progressbar"
+              aria-label={translate("metrics.eb724a908f1f")}
+            >
               <span />
-            </span>
+            </div>
+          </div>
+        ) : query.isError ? (
+          <div style={{ order: TABLE_PANEL_ORDER }}>
+            <QueryErrorState
+              error={query.error}
+              title={translate("metrics.f1d7675032b2")}
+              onRetry={() => void query.refetch()}
+            />
           </div>
         ) : (
-          <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
-        )
-      ) : pane !== "table" ? null : query.isPending ? (
-        <div
-          className="kpi-measurements-loading"
-          aria-busy="true"
-          style={{ order: TABLE_PANEL_ORDER }}
-        >
-          <h3>{translate("metrics.tablePanel")}</h3>
-          <div className="kpi-measurements-progress" role="progressbar"
-            aria-label={translate("metrics.eb724a908f1f")}>
-            <span />
-          </div>
-        </div>
-      ) : query.isError ? (
-        <div style={{ order: TABLE_PANEL_ORDER }}>
-          <QueryErrorState
-            error={query.error}
-            title={translate("metrics.f1d7675032b2")}
-            onRetry={() => void query.refetch()}
-          />
-        </div>
-      ) : (
-        data && (
-          <>
-            {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
+          data && (
+            <>
+              {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
                 la réponse back est valide (200 Zod) mais vide. On remonte
                 la raison si fournie par le back (connected_reason) sinon
                 un fallback générique traçable. Jamais vide muet. */}
-            {data.columns.length > 0 && data.rows.length === 0 && (
-              <div
-                role="alert"
-                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-                data-testid="metrics-empty-banner"
-                style={{ order: TABLE_PANEL_ORDER }}
-              >
-                <strong>Aucune donnée pour cette sélection.</strong>{" "}
-                {data.connected_reason
-                  ? `Raison : ${data.connected_reason}.`
-                  : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
-                <br />
-                <span className="font-mono text-[10px] text-amber-700">
-                  capture_id={data.capture_id} · result_id={String(data.result_id).slice(0, 8)}
-                </span>
-              </div>
-            )}
-            {view === "table" ? (
-              <div className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative" data-testid="metrics-table-panel" aria-busy={refreshing} ref={tablePanelRef} style={{ order: TABLE_PANEL_ORDER }}>
-                {refreshing && (
-                  <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
-                    <div className="kpi-measurements-progress kpi-measurements-progress-overlay"
-                      role="progressbar" aria-label={translate("metrics.eb724a908f1f")}>
-                      <span />
+              {data.columns.length > 0 && data.rows.length === 0 && (
+                <div
+                  role="alert"
+                  className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                  data-testid="metrics-empty-banner"
+                  style={{ order: TABLE_PANEL_ORDER }}
+                >
+                  <strong>Aucune donnée pour cette sélection.</strong>{" "}
+                  {data.connected_reason
+                    ? `Raison : ${data.connected_reason}.`
+                    : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
+                  <br />
+                  <span className="font-mono text-[10px] text-amber-700">
+                    capture_id={data.capture_id} · result_id={String(data.result_id).slice(0, 8)}
+                  </span>
+                </div>
+              )}
+              {view === "table" ? (
+                <div
+                  className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative"
+                  data-testid="metrics-table-panel"
+                  aria-busy={refreshing}
+                  ref={tablePanelRef}
+                  style={{ order: TABLE_PANEL_ORDER }}
+                >
+                  {refreshing && (
+                    <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
+                      <div
+                        className="kpi-measurements-progress kpi-measurements-progress-overlay"
+                        role="progressbar"
+                        aria-label={translate("metrics.eb724a908f1f")}
+                      >
+                        <span />
+                      </div>
+                    </div>
+                  )}
+                  <div className="kpi-metrics-table-head">
+                    <div className="flex gap-0.5 shrink-0 items-center">
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-accent"
+                        onClick={() => setSheetOpen(true)}
+                        disabled={!captureId}
+                        data-testid="metrics-capture-sheet-open"
+                        title="Fiche capture : fichier, décodage, SCRIPT, DEVI, trafic"
+                      >
+                        <Info size={14} /> Fiche capture
+                      </button>
+                      <WorkspacePanelMenu label={translate("panel.actions")}>
+                        {(
+                          ["time_local", "cell", "time_utc", "task", "lat", "lon"] as LeanColumn[]
+                        ).map((column) => (
+                          <DropdownMenuCheckboxItem
+                            key={column}
+                            checked={visibleLeanColumns.has(column)}
+                            onSelect={(event) => event.preventDefault()}
+                            onCheckedChange={() => toggleLeanColumn(column)}
+                          >
+                            <Columns3 size={14} /> {translate(`metrics.tableColumns.${column}`)}
+                          </DropdownMenuCheckboxItem>
+                        ))}
+                        <DropdownMenuSeparator />
+                        <div
+                          className="grid grid-cols-2 gap-2 px-2 py-1.5"
+                          onKeyDown={(event) => event.stopPropagation()}
+                        >
+                          <label className="text-[10px] text-muted-foreground">
+                            {translate("metrics.cellFilters.pci")}
+                            <input
+                              className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
+                              inputMode="numeric"
+                              value={cellPciFilter}
+                              onChange={(event) =>
+                                setCellPciFilter(event.target.value.replace(/\D/g, ""))
+                              }
+                              onClick={(event) => event.stopPropagation()}
+                              data-testid="metrics-cell-pci-filter"
+                            />
+                          </label>
+                          <label className="text-[10px] text-muted-foreground">
+                            {translate("metrics.cellFilters.arfcn")}
+                            <input
+                              className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
+                              inputMode="numeric"
+                              value={cellArfcnFilter}
+                              onChange={(event) =>
+                                setCellArfcnFilter(event.target.value.replace(/\D/g, ""))
+                              }
+                              onClick={(event) => event.stopPropagation()}
+                              data-testid="metrics-cell-arfcn-filter"
+                            />
+                          </label>
+                        </div>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          data-testid="metrics-table-export"
+                          disabled={!data.csv}
+                          onSelect={() => downloadCsv(data.csv, `metrics_${data.capture_id}`)}
+                        >
+                          <Download size={14} /> {translate("panel.export_csv")}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          data-testid="metrics-table-fullscreen"
+                          onSelect={() => void tablePanelRef.current?.requestFullscreen?.()}
+                        >
+                          <Maximize2 size={14} /> {translate("panel.fullscreen")}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          data-testid="metrics-table-remove"
+                          onSelect={() => setPane("charts")}
+                        >
+                          <X size={14} /> {translate("panel.remove")}
+                        </DropdownMenuItem>
+                      </WorkspacePanelMenu>
                     </div>
                   </div>
-                )}
-                <div className="kpi-metrics-table-head">
-                  <div className="flex gap-0.5 shrink-0 items-center">
-                    <button
-                      type="button"
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-accent"
-                      onClick={() => setSheetOpen(true)}
-                      disabled={!captureId}
-                      data-testid="metrics-capture-sheet-open"
-                      title="Fiche capture : fichier, décodage, SCRIPT, DEVI, trafic"
-                    >
-                      <Info size={14} /> Fiche capture
-                    </button>
-                    <WorkspacePanelMenu label={translate("panel.actions")}>
-                      {(["time_local", "cell", "time_utc", "task", "lat", "lon"] as LeanColumn[]).map((column) => (
-                        <DropdownMenuCheckboxItem
-                          key={column}
-                          checked={visibleLeanColumns.has(column)}
-                          onSelect={(event) => event.preventDefault()}
-                          onCheckedChange={() => toggleLeanColumn(column)}
-                        >
-                          <Columns3 size={14} /> {translate(`metrics.tableColumns.${column}`)}
-                        </DropdownMenuCheckboxItem>
-                      ))}
-                      <DropdownMenuSeparator />
-                      <div className="grid grid-cols-2 gap-2 px-2 py-1.5" onKeyDown={(event) => event.stopPropagation()}>
-                        <label className="text-[10px] text-muted-foreground">
-                          {translate("metrics.cellFilters.pci")}
-                          <input
-                            className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
-                            inputMode="numeric"
-                            value={cellPciFilter}
-                            onChange={(event) => setCellPciFilter(event.target.value.replace(/\D/g, ""))}
-                            onClick={(event) => event.stopPropagation()}
-                            data-testid="metrics-cell-pci-filter"
-                          />
-                        </label>
-                        <label className="text-[10px] text-muted-foreground">
-                          {translate("metrics.cellFilters.arfcn")}
-                          <input
-                            className="mt-1 w-full rounded border bg-background px-1.5 py-1 text-xs text-foreground"
-                            inputMode="numeric"
-                            value={cellArfcnFilter}
-                            onChange={(event) => setCellArfcnFilter(event.target.value.replace(/\D/g, ""))}
-                            onClick={(event) => event.stopPropagation()}
-                            data-testid="metrics-cell-arfcn-filter"
-                          />
-                        </label>
-                      </div>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        data-testid="metrics-table-export"
-                        disabled={!data.csv}
-                        onSelect={() => downloadCsv(data.csv, `metrics_${data.capture_id}`)}
+                  <div className="kpi-table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          {visibleLeanColumns.has("time_local") && (
+                            <th className="col-time">
+                              {translate("metrics.tableColumns.time_local")}
+                              <small className="block">{captureDate ?? "—"} · hh:mm:ss.sss</small>
+                            </th>
+                          )}
+                          {visibleLeanColumns.has("cell") && (
+                            <th>{translate("metrics.tableColumns.cell")}</th>
+                          )}
+                          {visibleLeanColumns.has("time_utc") && (
+                            <th className="col-time">
+                              {translate("metrics.tableColumns.time_utc")}
+                              <small className="block">
+                                {captureDate ?? "—"}
+                                {data.utc_offset_min != null
+                                  ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h`
+                                  : " · offset —"}
+                              </small>
+                            </th>
+                          )}
+                          {visibleLeanColumns.has("lat") && (
+                            <th className="col-geo numeric">
+                              {translate("metrics.tableColumns.lat")}
+                              <small className="block">°</small>
+                            </th>
+                          )}
+                          {visibleLeanColumns.has("lon") && (
+                            <th className="col-geo numeric">
+                              {translate("metrics.tableColumns.lon")}
+                              <small className="block">°</small>
+                            </th>
+                          )}
+                          {visibleLeanColumns.has("task") && (
+                            <th
+                              className="col-task"
+                              title="CMDREQ → CMDCOMP par (capture_id, seq ≤)"
+                            >
+                              {translate("metrics.tableColumns.task")}
+                              <small className="block">name [index]</small>
+                            </th>
+                          )}
+                          {data.columns.map((c) => (
+                            <th key={c.code} title={c.label} className="numeric">
+                              {c.label}
+                              <small className="block">{c.unit || "—"}</small>
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {data.rows.map((r) => {
+                          const rowReason = reasonLabel(r.reason);
+                          const utcMissing = r.time_utc == null;
+                          const utcTooltip =
+                            utcMissing && rowReason
+                              ? rowReason
+                              : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
+                          const gpsTooltip =
+                            r.lat == null
+                              ? (rowReason ?? "—")
+                              : r.gps_source === "previous_fix" && r.gps_age_s != null
+                                ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
+                                : "exact fix";
+                          const rowEvents = eventsAt(activeEvents.active, captureId, r.t_rel_s);
+                          const hit = rowEvents[0];
+                          return (
+                            <tr
+                              key={`${r.seq_first}:${r.cell_arfcn ?? ""}:${r.cell_pci ?? ""}`}
+                              data-second={r.second}
+                              data-event-active={
+                                hit ? rowEvents.map((e) => e.id).join(" ") : undefined
+                              }
+                              title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
+                              style={
+                                hit
+                                  ? {
+                                      boxShadow: `inset 3px 0 0 ${hit.color}`,
+                                      background: `color-mix(in srgb, ${hit.color} 9%, transparent)`,
+                                    }
+                                  : undefined
+                              }
+                            >
+                              {visibleLeanColumns.has("time_local") && (
+                                <td
+                                  className="col-time font-mono text-[11px]"
+                                  title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
+                                >
+                                  {r.time_local ?? r.time_label}
+                                </td>
+                              )}
+                              {visibleLeanColumns.has("cell") && (
+                                <td>
+                                  {[
+                                    r.cell_label ?? data.columns[0]?.cell_label,
+                                    r.cell_system ?? data.columns[0]?.cell_system,
+                                    r.cell_pci != null ? `PCI ${r.cell_pci}` : null,
+                                    r.cell_arfcn != null ? `ARFCN ${r.cell_arfcn}` : null,
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" · ") || "—"}
+                                </td>
+                              )}
+                              {visibleLeanColumns.has("time_utc") && (
+                                <td
+                                  className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
+                                  title={utcTooltip}
+                                >
+                                  {r.time_utc ?? "—"}
+                                </td>
+                              )}
+                              {visibleLeanColumns.has("lat") && (
+                                <td
+                                  className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
+                                  title={gpsTooltip}
+                                >
+                                  {r.lat == null ? "—" : fmtLatLng(r.lat)}
+                                </td>
+                              )}
+                              {visibleLeanColumns.has("lon") && (
+                                <td
+                                  className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
+                                  title={gpsTooltip}
+                                >
+                                  {r.lon == null ? "—" : fmtLatLng(r.lon)}
+                                </td>
+                              )}
+                              {visibleLeanColumns.has("task") && (
+                                <td
+                                  className={`col-task font-mono text-[11px] ${r.task_name == null ? "text-muted-foreground opacity-60" : ""}`}
+                                  title={
+                                    r.task_name == null
+                                      ? "hors tâche"
+                                      : `CMDREQ seq ≤ ${r.seq_last}`
+                                  }
+                                >
+                                  {r.task_name == null
+                                    ? "—"
+                                    : r.task_index != null
+                                      ? `${r.task_name} [${r.task_index}]`
+                                      : r.task_name}
+                                </td>
+                              )}
+                              {data.columns.map((c) => (
+                                <td
+                                  className="numeric"
+                                  key={c.code}
+                                  title={`n = ${r.counts[c.code] ?? "—"}`}
+                                >
+                                  {c.kind === "event"
+                                    ? r.values[c.code] === 1
+                                      ? "1"
+                                      : ""
+                                    : r.values[c.code] == null
+                                      ? "—"
+                                      : fmt(r.values[c.code])}
+                                </td>
+                              ))}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                  {/* V3 §8 : pagination 25/50/100 + "Showing X-Y of N rows" */}
+                  <div className="kpi-metrics-table-pager" data-testid="metrics-table-pager">
+                    <label>
+                      Rows per page
+                      <select
+                        value={pageSize}
+                        onChange={(e) => {
+                          setPageSize(Number(e.target.value) as 25 | 50 | 100);
+                          setPage(1);
+                        }}
                       >
-                        <Download size={14} /> {translate("panel.export_csv")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        data-testid="metrics-table-fullscreen"
-                        onSelect={() => void tablePanelRef.current?.requestFullscreen?.()}
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                    </label>
+                    <span>
+                      {translate("metrics.tableShowing", {
+                        from: Math.min((page - 1) * pageSize + 1, data.total_rows),
+                        to: Math.min(page * pageSize, data.total_rows),
+                        total: data.total_rows,
+                      })}
+                    </span>
+                    <span className="pager-nav">
+                      <button
+                        className="kpi-button"
+                        disabled={page <= 1}
+                        onClick={() => setPage((p) => Math.max(1, p - 1))}
                       >
-                        <Maximize2 size={14} /> {translate("panel.fullscreen")}
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem data-testid="metrics-table-remove" onSelect={() => setPane("charts")}>
-                        <X size={14} /> {translate("panel.remove")}
-                      </DropdownMenuItem>
-                    </WorkspacePanelMenu>
+                        Prev
+                      </button>
+                      <button
+                        className="kpi-button"
+                        disabled={page >= data.total_pages}
+                        onClick={() => setPage((p) => p + 1)}
+                      >
+                        Next
+                      </button>
+                    </span>
                   </div>
                 </div>
-                <div className="kpi-table-scroll">
-                  <table>
-                    <thead>
-                      <tr>
-                        {visibleLeanColumns.has("time_local") && <th className="col-time">
-                          {translate("metrics.tableColumns.time_local")}
-                          <small className="block">{captureDate ?? "—"} · hh:mm:ss.sss</small>
-                        </th>}
-                        {visibleLeanColumns.has("cell") && <th>{translate("metrics.tableColumns.cell")}</th>}
-                        {visibleLeanColumns.has("time_utc") && <th className="col-time">
-                          {translate("metrics.tableColumns.time_utc")}
-                          <small className="block">
-                            {captureDate ?? "—"}
-                            {data.utc_offset_min != null
-                              ? ` · UTC${data.utc_offset_min >= 0 ? "+" : "−"}${Math.abs(data.utc_offset_min / 60)}h`
-                              : " · offset —"}
-                          </small>
-                        </th>}
-                        {visibleLeanColumns.has("lat") && <th className="col-geo numeric">
-                          {translate("metrics.tableColumns.lat")}
-                          <small className="block">°</small>
-                        </th>}
-                        {visibleLeanColumns.has("lon") && <th className="col-geo numeric">
-                          {translate("metrics.tableColumns.lon")}
-                          <small className="block">°</small>
-                        </th>}
-                        {visibleLeanColumns.has("task") && <th className="col-task" title="CMDREQ → CMDCOMP par (capture_id, seq ≤)">
-                          {translate("metrics.tableColumns.task")}
-                          <small className="block">name [index]</small>
-                        </th>}
-                        {data.columns.map((c) => (
-                          <th key={c.code} title={c.label} className="numeric">
-                            {c.label}
-                            <small className="block">{c.unit || "—"}</small>
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {data.rows.map((r) => {
-                        const rowReason = reasonLabel(r.reason);
-                        const utcMissing = r.time_utc == null;
-                        const utcTooltip =
-                          utcMissing && rowReason
-                            ? rowReason
-                            : `seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`;
-                        const gpsTooltip =
-                          r.lat == null
-                            ? (rowReason ?? "—")
-                            : r.gps_source === "previous_fix" && r.gps_age_s != null
-                              ? `previous fix · Δt ${r.gps_age_s.toFixed(1)}s`
-                              : "exact fix";
-                        const rowEvents = eventsAt(activeEvents.active, captureId, r.t_rel_s);
-                        const hit = rowEvents[0];
-                        return (
-                          <tr
-                            key={`${r.seq_first}:${r.cell_arfcn ?? ""}:${r.cell_pci ?? ""}`}
-                            data-second={r.second}
-                            data-event-active={hit ? rowEvents.map((e) => e.id).join(" ") : undefined}
-                            title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
-                            style={hit ? { boxShadow: `inset 3px 0 0 ${hit.color}`, background: `color-mix(in srgb, ${hit.color} 9%, transparent)` } : undefined}
-                          >
-                            {visibleLeanColumns.has("time_local") && <td
-                              className="col-time font-mono text-[11px]"
-                              title={`seq ${r.seq_first}–${r.seq_last} · t_rel ${r.t_rel_s}s`}
-                            >
-                              {r.time_local ?? r.time_label}
-                            </td>}
-                            {visibleLeanColumns.has("cell") && <td>
-                              {[r.cell_label ?? data.columns[0]?.cell_label, r.cell_system ?? data.columns[0]?.cell_system,
-                                r.cell_pci != null ? `PCI ${r.cell_pci}` : null,
-                                r.cell_arfcn != null ? `ARFCN ${r.cell_arfcn}` : null].filter(Boolean).join(" · ") || "—"}
-                            </td>}
-                            {visibleLeanColumns.has("time_utc") && <td
-                              className={`col-time font-mono text-[11px] ${utcMissing ? "text-muted-foreground opacity-60" : ""}`}
-                              title={utcTooltip}
-                            >
-                              {r.time_utc ?? "—"}
-                            </td>}
-                            {visibleLeanColumns.has("lat") && <td
-                              className={`col-geo numeric font-mono text-[11px] ${r.lat == null ? "text-muted-foreground opacity-60" : ""}`}
-                              title={gpsTooltip}
-                            >
-                              {r.lat == null ? "—" : fmtLatLng(r.lat)}
-                            </td>}
-                            {visibleLeanColumns.has("lon") && <td
-                              className={`col-geo numeric font-mono text-[11px] ${r.lon == null ? "text-muted-foreground opacity-60" : ""}`}
-                              title={gpsTooltip}
-                            >
-                              {r.lon == null ? "—" : fmtLatLng(r.lon)}
-                            </td>}
-                            {visibleLeanColumns.has("task") && <td
-                              className={`col-task font-mono text-[11px] ${r.task_name == null ? "text-muted-foreground opacity-60" : ""}`}
-                              title={r.task_name == null ? "hors tâche" : `CMDREQ seq ≤ ${r.seq_last}`}
-                            >
-                              {r.task_name == null
-                                ? "—"
-                                : r.task_index != null
-                                  ? `${r.task_name} [${r.task_index}]`
-                                  : r.task_name}
-                            </td>}
-                            {data.columns.map((c) => (
-                              <td
-                                className="numeric"
-                                key={c.code}
-                                title={`n = ${r.counts[c.code] ?? "—"}`}
-                              >
-                                {c.kind === "event"
-                                  ? r.values[c.code] === 1
-                                    ? "1"
-                                    : ""
-                                  : r.values[c.code] == null
-                                    ? "—"
-                                    : fmt(r.values[c.code])}
-                              </td>
-                            ))}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-                {/* V3 §8 : pagination 25/50/100 + "Showing X-Y of N rows" */}
-                <div className="kpi-metrics-table-pager" data-testid="metrics-table-pager">
-                  <label>
-                    Rows per page
-                    <select
-                      value={pageSize}
-                      onChange={(e) => {
-                        setPageSize(Number(e.target.value) as 25 | 50 | 100);
-                        setPage(1);
-                      }}
-                    >
-                      <option value={25}>25</option>
-                      <option value={50}>50</option>
-                      <option value={100}>100</option>
-                    </select>
-                  </label>
-                  <span>
-                    {translate("metrics.tableShowing", { from: Math.min((page - 1) * pageSize + 1, data.total_rows), to: Math.min(page * pageSize, data.total_rows), total: data.total_rows })}
-                  </span>
-                  <span className="pager-nav">
-                    <button
-                      className="kpi-button"
-                      disabled={page <= 1}
-                      onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    >
-                      Prev
-                    </button>
-                    <button
-                      className="kpi-button"
-                      disabled={page >= data.total_pages}
-                      onClick={() => setPage((p) => p + 1)}
-                    >
-                      Next
-                    </button>
-                  </span>
-                </div>
-              </div>
-            ) : view === "map" ? (
-              <MetricMap
-                data={data}
-                label={data.columns[0]?.label ?? selections[0] ?? "Metric"}
-                unit={data.columns[0]?.unit ?? ""}
-              />
-            ) : (
-              <Plot
-                option={option}
-                label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
-              />
-            )}
-            {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
-              <div className="p-3 text-xs">
-                <p>
-                  {" "}
-                  {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
-                  {data.connected_reason}
-                </p>
-                {data.pair_rates.map((p) => (
-                  <p key={p.type}>
-                    {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
-                    {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
+              ) : view === "map" ? (
+                <MetricMap
+                  data={data}
+                  label={data.columns[0]?.label ?? selections[0] ?? "Metric"}
+                  unit={data.columns[0]?.unit ?? ""}
+                  center={projectCenter}
+                  preferences={legacyMapPreferences}
+                  onPreferences={setLegacyMapPreferences}
+                  loading={false}
+                  onRetry={() => void query.refetch()}
+                />
+              ) : (
+                <Plot
+                  option={option}
+                  label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
+                />
+              )}
+              {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
+                <div className="p-3 text-xs">
+                  <p>
+                    {" "}
+                    {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
+                    {data.connected_reason}
                   </p>
-                ))}
-              </div>
-            )}
-            {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
+                  {data.pair_rates.map((p) => (
+                    <p key={p.type}>
+                      {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
+                      {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
+                    </p>
+                  ))}
+                </div>
+              )}
+              {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
                 Table, Overlay). Les métadonnées (result_id, aggregation,
                 time_policy, pairing, decoder_version, decode_level, gaps)
                 restent accessibles côté API /metrics/table response et
                 via le tooltip title du row (`seq N–M · t_rel Xs`). */}
-          </>
-        )
-      )}
-      {captureId && (
-        <CaptureSheet
-          projectId={projectId}
-          captureId={captureId}
-          open={sheetOpen}
-          onOpenChange={setSheetOpen}
-        />
-      )}
-    </article>
+            </>
+          )
+        )}
+        {captureId && (
+          <CaptureSheet
+            projectId={projectId}
+            captureId={captureId}
+            open={sheetOpen}
+            onOpenChange={setSheetOpen}
+          />
+        )}
+      </article>
     </ActiveEventsContext.Provider>
   );
 }

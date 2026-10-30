@@ -195,6 +195,18 @@
     "a7947fb8c07b": "Chronogram",
     "388e3e33d196": "Scatter plot",
     "b7ef3d32472c": "Metrics · recorded exact positions",
+    "mapSettings": "Metric map settings",
+    "mapPalette": "Colour palette",
+    "mapPaletteCoverage": "Coverage",
+    "mapPaletteOcean": "Ocean",
+    "mapPointSize": "Point size",
+    "mapCellLinks": "Point → cell links",
+    "mapLink": {
+      "serving": "Serving cell",
+      "neighbour": "Neighbour cells",
+      "nr_anchor": "NR anchor"
+    },
+    "mapLoadError": "Measurement points could not be loaded.",
     "59d5ea1eb6a5": "No proven GPS position for the selected observations",
     "4e1802024d49": "Events / connected hour",
     "ba86c69725e4": "Metrics · cells and events",

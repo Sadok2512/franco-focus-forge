@@ -308,6 +308,24 @@ export const MetricAnalysisSchema = z.object({
       serving_cell_lat: z.number().nullable().optional(),
       serving_cell_lng: z.number().nullable().optional(),
       serving_cell_source: z.literal("chi_previous_seq_cell_ref_exact").nullable().optional(),
+      // Exact optional contract prepared by bc1/map-cell-links. Geometry is
+      // accepted only with the API's radio-identity confidence.
+      neighbour_links: z.array(z.object({
+        system: z.enum(["LTE", "NR"]), arfcn: z.number().int(), pci: z.number().int(),
+        cell_type: z.number().int(), cell_ref_id: z.string(),
+        site_id: z.string().nullable().optional(), site_name: z.string().nullable().optional(),
+        lat: z.number(), lng: z.number(), distance_m: z.number(),
+        candidate_count: z.number().int(),
+        confidence: z.enum(["exact_radio_unique", "nearest_within_25000m"]),
+      })).optional().default([]),
+      nr_anchor_link: z.object({
+        system: z.enum(["LTE", "NR"]), arfcn: z.number().int(), pci: z.number().int(),
+        cell_type: z.number().int(), cell_ref_id: z.string(),
+        site_id: z.string().nullable().optional(), site_name: z.string().nullable().optional(),
+        lat: z.number(), lng: z.number(), distance_m: z.number(),
+        candidate_count: z.number().int(),
+        confidence: z.enum(["exact_radio_unique", "nearest_within_25000m"]),
+      }).nullable().optional(),
     }),
   ),
   connected_seconds: z.number().nullable(),

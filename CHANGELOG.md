@@ -1,3 +1,20 @@
+## Prochaine version (minor) — cartes KPI / Map / Signaling partagées (Agent BC4, numérotation BC3)
+
+- La carte d'une métrique KPI utilise désormais `KpiMapOSM` en mode
+  `workspace` et sa `NetworkMapChrome`, exactement comme les pages Map et
+  Signaling : sites, cellules, filtres radio, recherche et outils cartographiques
+  restent une chrome commune ; seules les couches métier diffèrent.
+- Le fond, les cellules et les outils se montent sans attendre `/metrics` ; les
+  points ont un état de chargement animé et une erreur réessayable superposés à
+  la carte déjà utilisable.
+- La légende propose une palette et une taille de points mémorisées par panneau,
+  ainsi que trois liens activables séparément : cellule servante, voisines et
+  ancre NR. Aucun lien n'est inventé : géométrie et provenance API sont requises.
+- Les champs `serving_*` existants restent compatibles. Le contrat exact
+  `neighbour_links[]` / `nr_anchor_link` de `bc1/map-cell-links` est préparé
+  avec trois couleurs distinctes.
+- SemVer front : **MINOR** (numéro attribué par BC3).
+
 ## Prochaine version (minor) — KPI Analytics : panneau Metrics unifié (Agent BC4, numérotation BC3)
 
 - Les métriques mesurées de `/kpi/catalog` et les feuilles du catalogue sont

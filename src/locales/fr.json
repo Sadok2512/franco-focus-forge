@@ -195,6 +195,18 @@
     "a7947fb8c07b": "Chronogramme",
     "388e3e33d196": "Nuage",
     "b7ef3d32472c": "Métriques · positions exactes enregistrées",
+    "mapSettings": "Réglages de la carte métrique",
+    "mapPalette": "Palette de couleurs",
+    "mapPaletteCoverage": "Couverture",
+    "mapPaletteOcean": "Océan",
+    "mapPointSize": "Taille des points",
+    "mapCellLinks": "Liens point → cellule",
+    "mapLink": {
+      "serving": "Cellule servante",
+      "neighbour": "Cellules voisines",
+      "nr_anchor": "Ancre NR"
+    },
+    "mapLoadError": "Les points de mesure n’ont pas pu être chargés.",
     "59d5ea1eb6a5": "Aucune position GPS prouvée pour les observations sélectionnées",
     "4e1802024d49": "Événements / h connectée",
     "ba86c69725e4": "Métriques · cellules et événements",

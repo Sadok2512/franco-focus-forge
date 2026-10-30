@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   installMetricMapSource,
   metricMapFeatures,
+  metricMapLinkFeatures,
   metricMapNumericExtent,
   MetricsWorkspace,
 } from "@/features/kpi/MetricsWorkspace";
@@ -100,10 +101,15 @@ describe("Map selection keeps its own panel", () => {
     expect(map.addLayer.mock.calls[0]?.[0].paint["circle-color"][0]).toBe("interpolate");
 
     expect(screen.getByTestId("metric-map-legend")).toHaveTextContent("RSRP (LTE) @ Serving · dBm");
-    expect(screen.getByTestId("metric-map-legend").closest('[data-view="map"]')).toHaveAttribute(
-      "data-point-count",
-      "4935",
+    await waitFor(() =>
+      expect(screen.getByTestId("metric-map-legend").closest('[data-view="map"]')).toHaveAttribute(
+        "data-point-count",
+        "4935",
+      ),
     );
+    expect(
+      renderers.map.mock.calls.some(([props]) => (props as { workspace?: boolean }).workspace),
+    ).toBe(true);
     expect(screen.queryByRole("heading", { name: /1\. RSRP/ })).toBeNull();
     expect(screen.queryByText(/3k|887/)).toBeNull();
     const menu = screen.getByRole("button", { name: "RSRP (LTE) @ Serving · actions" });
@@ -112,6 +118,75 @@ describe("Map selection keeps its own panel", () => {
     expect(within(content).getByText("Paramètres")).toBeVisible();
     fireEvent.click(within(content).getByText("Fermer"));
     expect(close).toHaveBeenCalledOnce();
+  });
+
+  it("keeps only API-proven cell links and exposes three independent link controls", async () => {
+    renderers.map.mockClear();
+    const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
+    const data = {
+      ...fixture,
+      map_points: [
+        {
+          seq: 7,
+          lat: 48.8,
+          lng: 2.3,
+          code: "cell_rsrp@0",
+          value: -91,
+          t_rel_s: 1,
+          tooltip: "RSRP -91 dBm",
+          serving_cell_lat: 48.81,
+          serving_cell_lng: 2.31,
+          serving_cell_source: "chi_previous_seq_cell_ref_exact",
+          neighbour_links: [{
+            system: "LTE", arfcn: 1300, pci: 215, cell_type: 2,
+            cell_ref_id: "neighbour", lat: 48.82, lng: 2.32, distance_m: 12,
+            candidate_count: 1, confidence: "exact_radio_unique",
+          }],
+          nr_anchor_link: {
+            system: "NR", arfcn: 640000, pci: 7, cell_type: 199,
+            cell_ref_id: "anchor", lat: 48.83, lng: 2.33, distance_m: 18,
+            candidate_count: 1, confidence: "exact_radio_unique",
+          },
+        },
+      ],
+    } as never;
+    expect(metricMapLinkFeatures(data).map((feature) => feature.properties.link_type)).toEqual([
+      "serving",
+      "neighbour",
+      "nr_anchor",
+    ]);
+    vi.mocked(getMetricAnalysis).mockResolvedValueOnce(data);
+    writeMetricViews("map-links", { "cell_rsrp@0": "map" });
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MetricsWorkspace
+          workspaceId="map-links"
+          projectId="project-a"
+          captureId="44621571bccc"
+          selections={["cell_rsrp@0"]}
+          views={readMetricViews("map-links")}
+          catalog={[{ code: "cell_rsrp@0", label: "RSRP", unit: "dBm" } as never]}
+          filters={{}}
+          onClear={() => {}}
+          onCaptureChange={() => {}}
+          mapFillsAvailable
+        />
+      </QueryClientProvider>,
+    );
+    const settings = await screen.findByRole("button", {
+      name: /Metric map settings|Réglages de la carte métrique/,
+    });
+    fireEvent.click(settings);
+    const panel = screen.getByTestId("metric-map-settings");
+    for (const label of [
+      /Serving cell|Cellule servante/,
+      /Neighbour cells|Cellules voisines/,
+      /NR anchor|Ancre NR/,
+    ]) {
+      expect(within(panel).getByLabelText(label)).toBeChecked();
+    }
   });
 
   // 1.106.2 — ouvrir le tableau explicitement (⋮ → Tableau, paneRequest)
