@@ -30,6 +30,7 @@ export function ValueExplorer({
   onRetry,
   hideGroupBy = false,
   hideEmptyPrompt = false,
+  compactHierarchy = false,
 }: {
   distribution: DictDistributionResponse | null;
   groupBy: GroupByMode;
@@ -42,6 +43,7 @@ export function ValueExplorer({
   onRetry?: () => void;
   hideGroupBy?: boolean;
   hideEmptyPrompt?: boolean;
+  compactHierarchy?: boolean;
 }) {
   const blocks = distribution?.blocks ?? [];
   const metadata = useMemo(() => {
@@ -129,7 +131,12 @@ export function ValueExplorer({
         )}
 
         {blocks.length > 0 && (
-          <GroupedValueTable blocks={blocks} groupBy={groupBy} catalog={catalog ?? null} />
+          <GroupedValueTable
+            blocks={blocks}
+            groupBy={groupBy}
+            catalog={catalog ?? null}
+            compactHierarchy={compactHierarchy}
+          />
         )}
       </div>
     </section>

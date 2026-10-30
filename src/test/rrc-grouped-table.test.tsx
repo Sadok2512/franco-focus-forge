@@ -174,6 +174,71 @@ describe("RRC grouped values", () => {
 });
 
 describe("RRC V3 hierarchy", () => {
+  it("uses the compact KPI hierarchy without changing the shared dictionary rendering", () => {
+    const compactBlock = { ...block, display_name: "dl-Bandwidth" };
+    const compactCatalog: DictTreeResponse = {
+      ...catalog,
+      tree: [
+        {
+          ...catalog.tree[0]!,
+          origins: [
+            {
+              ...catalog.tree[0]!.origins[0]!,
+              messages: [
+                {
+                  ...catalog.tree[0]!.origins[0]!.messages[0]!,
+                  groups: [
+                    {
+                      name: "PHY",
+                      kpis: [
+                        {
+                          param_key: compactBlock.param_key,
+                          display_name: compactBlock.display_name,
+                          n: compactBlock.n_total,
+                        },
+                      ],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+    const compact = render(
+      <GroupedValueTable
+        blocks={[compactBlock]}
+        groupBy="operator"
+        catalog={compactCatalog}
+        compactHierarchy
+      />,
+    );
+    expect(
+      compact.container.querySelector("[data-row-kind=family] .rrc-hierarchy-name"),
+    ).toHaveTextContent("PHY · 1 paramètre");
+    expect(
+      compact.container.querySelector("[data-row-kind=parameter] .rrc-hierarchy-name"),
+    ).toHaveTextContent("dl-Bandwidth · LTE · 3 valeurs");
+    expect(compact.container.querySelectorAll(".rrc-hierarchy-count")).toHaveLength(0);
+    expect(
+      compact.container.querySelector("[data-row-kind=family] .rrc-hierarchy-toggle"),
+    ).toHaveClass("!flex", "items-center");
+    expect(screen.getByRole("columnheader", { name: /Orange/ })).toHaveClass("text-right");
+    expect(compact.container.querySelector(".rrc-number")).toHaveClass("!text-right");
+    compact.unmount();
+
+    const dictionary = render(
+      <GroupedValueTable blocks={[compactBlock]} groupBy="operator" catalog={compactCatalog} />,
+    );
+    expect(
+      dictionary.container.querySelector("[data-row-kind=family] .rrc-hierarchy-name"),
+    ).toHaveTextContent("PHY");
+    expect(
+      dictionary.container.querySelector("[data-row-kind=family] .rrc-hierarchy-count"),
+    ).toHaveTextContent("1 paramètre");
+  });
+
   it("keeps distinct paths and technologies apart despite identical names", () => {
     const blocks = [
       { ...block, technology: "LTE", asn1_path: "SIB2/path-a" },

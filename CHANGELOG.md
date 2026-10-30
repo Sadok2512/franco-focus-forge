@@ -1,3 +1,16 @@
+## Next (patch) — BC4-FRONT 2026-10-30 — Parameters et catalogue KPI (Agent BC4, numérotation BC3)
+
+- KPI Analytics aligne les en-têtes opérateurs du tableau Parameters sur
+  leurs valeurs et compacte chaque famille/paramètre sur une seule ligne
+  tronquée avec infobulle. Le composant RRC Dictionary garde son rendu.
+- Le catalogue KPI affiche séparément le nombre de feuilles disponibles et
+  le nombre sélectionné ; une recherche vide conserve toutes les feuilles
+  classées `analytics_tab=kpi` par l'API.
+- Les requêtes `/metrics/series` et `/metrics/table` n'émettent plus deux
+  occurrences de `capture_id`. La sonde console distingue les avertissements
+  WebGL applicatifs de ceux provoqués par la capture d'écran Chromium.
+- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+
 ## 1.126.0 (minor) — BC4-FRONT 2026-10-30 — cartes KPI / Map / Signaling partagées (Agent BC4, numérotation BC3)
 
 Merge `bc4/kpi-shared-map` (`b342b2d` + `a5ae32a`, rebasé sur 1.125.0).

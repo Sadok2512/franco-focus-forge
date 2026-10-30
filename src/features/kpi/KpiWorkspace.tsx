@@ -799,6 +799,7 @@ function Workspace({
                   onRetry={() => void parameterDistributionQ.refetch()}
                   hideGroupBy
                   hideEmptyPrompt
+                  compactHierarchy
                 />
                 {parameterSelection.length > 0 && (
                   <SelectedParameterInfo

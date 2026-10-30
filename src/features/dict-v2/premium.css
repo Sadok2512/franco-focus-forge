@@ -265,6 +265,17 @@
 .rrc-hierarchy .rrc-percentage {
   color: var(--muted-foreground);
 }
+.rrc-kpi-parameters .rrc-hierarchy-toggle {
+  min-width: 0;
+}
+.rrc-kpi-parameters .rrc-hierarchy-name {
+  min-width: 0;
+  max-width: calc(100% - 48px);
+}
+.rrc-kpi-parameters thead th:not(:first-child),
+.rrc-kpi-parameters thead th:not(:first-child) button {
+  text-align: right;
+}
 .rrc-operator-dot {
   display: inline-block;
   width: 8px;
