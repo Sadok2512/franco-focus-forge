@@ -79,34 +79,34 @@ lf_capture_task_test_script_command_name
 lf_capture_task_test_script_command_result
 ```
 
-## Preuves Test_6 par `:5174`
+## Preuves Test_6 sur pile jetable `bc4a4-*`
 
 ```bash
-BC4_FRONT_BASE=http://127.0.0.1:5174 \
+BC4_FRONT_BASE=http://127.0.0.1:9183 BC4_API_CONTAINER=bc4a4-api \
   node scripts/kpi_parameters_audit.mjs \
-  audit/bc4-kpi-parameters-tab/audit-after-correction-5174.json
+  audit/bc4-kpi-parameters-tab/audit-bc4a4-9183.json
 ```
 
 Exit 0 : KPI 105, Metrics 7 882, union 7 987, uniques 7 987, champ manquant
 0, ambiguïté d'API 0.
 
 ```bash
-BC4_FRONT_BASE=http://127.0.0.1:5174 \
+BC4_FRONT_BASE=http://127.0.0.1:9183 BC4_API_CONTAINER=bc4a4-api \
   node scripts/kpi_leaf_422_guard.mjs \
-  audit/bc4-kpi-parameters-tab/metrics-leaves-after-correction-5174.json
+  audit/bc4-kpi-parameters-tab/metrics-leaves-bc4a4-9183.json
 ```
 
-Exit 0, VERDICT PASS : 225 feuilles affichées et sélectionnables, 222 codes
-uniques testés, 222 réponses 200, 0 réponse 422 et 0 échec. Le script énumère
+Exit 0, VERDICT PASS : 222 codes affichés et sélectionnables testés,
+222 réponses 200, 0 réponse 422 et 0 échec. Le script énumère
 désormais directement `nodes[]` et n'accepte plus que 200.
 
 ```bash
-BC4_FRONT_BASE=http://127.0.0.1:5174 \
-  node scripts/kpi_parameters_evidence.mjs after-correction-5174
+BC4_FRONT_BASE=http://127.0.0.1:9183 BC4_API_CONTAINER=bc4a4-api \
+  node scripts/kpi_parameters_evidence.mjs bc4a4-after
 ```
 
 Les captures des trois onglets et d'une feuille par onglet sont jointes sous
-`after-correction-5174/`. `network.json` prouve notamment la série
+`bc4a4-after/`. `network.json` prouve notamment la série
 `cell_rsrp@lte-type-0` en 200 avec `max_points=2000`.
 
 ## SemVer back et commits existants

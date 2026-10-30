@@ -2,6 +2,7 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const base = process.env.BC4_FRONT_BASE ?? "http://127.0.0.1:5175";
+const apiContainer = process.env.BC4_API_CONTAINER ?? "bc4a4-api";
 const projectId = process.env.BC4_PROJECT_ID ?? "43e81a34a073";
 const captureId = process.env.BC4_CAPTURE_ID ?? "a4b0c321c52e";
 const output =
@@ -10,7 +11,7 @@ const token = execFileSync(
   "docker",
   [
     "exec",
-    "bc4-api-1",
+    apiContainer,
     "python",
     "-c",
     "from app.config import settings; from app.services.auth import create_token; print(create_token(user_id='adm-be45f070eba8',role='admin',ttl_min=30,secret=settings.jwt_secret)[0])",

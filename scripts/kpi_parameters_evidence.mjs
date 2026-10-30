@@ -3,8 +3,9 @@ import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
 
 const base = process.env.BC4_FRONT_BASE ?? "http://127.0.0.1:5175";
-const projectId = "43e81a34a073";
-const captureId = "a4b0c321c52e";
+const apiContainer = process.env.BC4_API_CONTAINER ?? "bc4a4-api";
+const projectId = process.env.BC4_PROJECT_ID ?? "43e81a34a073";
+const captureId = process.env.BC4_CAPTURE_ID ?? "a4b0c321c52e";
 const mode = process.argv[2] ?? "after";
 const out = new URL(`../audit/bc4-kpi-parameters-tab/${mode}/`, import.meta.url).pathname;
 await mkdir(out, { recursive: true });
@@ -13,7 +14,7 @@ const token = execFileSync(
   "docker",
   [
     "exec",
-    "bc4-api-1",
+    apiContainer,
     "python",
     "-c",
     "from app.config import settings; from app.services.auth import create_token; print(create_token(user_id='adm-be45f070eba8',role='admin',ttl_min=30,secret=settings.jwt_secret)[0])",
@@ -61,10 +62,16 @@ page.on("response", (response) => {
   }
 });
 
-await page.goto(`${base}/rrc`, { waitUntil: "networkidle", timeout: 120_000 });
+await page.goto(`${base}/rrc`, { waitUntil: "domcontentloaded", timeout: 120_000 });
+await page.getByTestId("dict-tree-search").waitFor({ state: "visible", timeout: 120_000 });
+await page
+  .getByTestId("dict-tree-scroll")
+  .first()
+  .getByText("Chargement…", { exact: true })
+  .waitFor({ state: "hidden", timeout: 120_000 });
 await page.screenshot({ path: `${out}rrc.png`, fullPage: true });
 
-if (mode === "before") {
+if (mode.startsWith("before")) {
   await writeFile(
     `${out}network.json`,
     `${JSON.stringify({ base, projectId, captureId, requests, responses }, null, 2)}\n`,
@@ -78,7 +85,7 @@ requests.length = 0;
 responses.length = 0;
 await page.getByText("KPI Analytics", { exact: true }).click();
 await page.waitForURL(/\/kpi(?:\?|$)/, { timeout: 120_000 });
-await page.waitForLoadState("networkidle");
+await page.getByRole("tab", { name: /^KPI(?: ·|$)/ }).waitFor({ timeout: 120_000 });
 const tabNetwork = {};
 for (const tab of ["KPI", "Metrics", "Parameters"]) {
   const requestStart = requests.length;
@@ -117,7 +124,11 @@ await page.screenshot({ path: `${out}leaf-parameters.png`, fullPage: true });
 
 const rawStart = requests.length;
 await page.getByRole("tab", { name: "Raw parameter" }).click();
-await page.getByText("Chargement…", { exact: true }).waitFor({ state: "hidden", timeout: 120_000 });
+await page
+  .getByTestId("dict-tree-scroll")
+  .last()
+  .getByText("Chargement…", { exact: true })
+  .waitFor({ state: "hidden", timeout: 120_000 });
 await page.screenshot({ path: `${out}parameters-raw.png`, fullPage: true });
 tabNetwork["Raw parameter"] = { requests: requests.slice(rawStart) };
 

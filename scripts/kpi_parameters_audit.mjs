@@ -1,14 +1,18 @@
 import { execFileSync } from "node:child_process";
 import { mkdir, writeFile } from "node:fs/promises";
+import { Agent, setGlobalDispatcher } from "undici";
+
+setGlobalDispatcher(new Agent({ headersTimeout: 1_800_000, bodyTimeout: 1_800_000 }));
 
 const base = process.env.BC4_FRONT_BASE ?? "http://127.0.0.1:5174";
+const apiContainer = process.env.BC4_API_CONTAINER ?? "bc4a4-api";
 const projectId = process.env.BC4_PROJECT_ID ?? "43e81a34a073";
 const output = process.argv[2];
 const token = execFileSync(
   "docker",
   [
     "exec",
-    "bc4-api-1",
+    apiContainer,
     "python",
     "-c",
     "from app.config import settings; from app.services.auth import create_token; print(create_token(user_id='adm-be45f070eba8',role='admin',ttl_min=5,secret=settings.jwt_secret)[0])",
@@ -24,12 +28,12 @@ async function get(path) {
   return response.json();
 }
 
-const [kpi, metrics, catalog, raw] = await Promise.all([
-  get(`/projects/${projectId}/kpi/catalog`),
-  get(`/projects/${projectId}/metrics`),
-  get(`/projects/${projectId}/dict/v2/tree?view=catalog`),
-  get(`/projects/${projectId}/dict/v2/tree?view=raw`),
-]);
+// Keep cold-catalog proofs deterministic on disposable databases: KPI and
+// Metrics both perform substantial first-run work and must not compete.
+const kpi = await get(`/projects/${projectId}/kpi/catalog`);
+const metrics = await get(`/projects/${projectId}/metrics`);
+const catalog = await get(`/projects/${projectId}/dict/v2/tree?view=catalog`);
+const raw = await get(`/projects/${projectId}/dict/v2/tree?view=raw`);
 const kpiLeaves = kpi.tree.flatMap((technology) =>
   technology.families.flatMap((family) => family.kpis),
 );

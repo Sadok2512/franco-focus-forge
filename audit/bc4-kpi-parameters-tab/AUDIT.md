@@ -1,5 +1,9 @@
 # Audit avant implémentation — KPI / Metrics / Parameters
 
+> Historique de l'audit initial 2.56.2. Ne pas rejouer la commande ci-dessous
+> sur 5174. Les preuves finales entièrement jetables sont dans `REPORT.md`,
+> `audit-bc4a4-9183.json` et les dossiers `before-bc4a4/` / `bc4a4-after/`.
+
 Projet : Test_6 (`43e81a34a073`). La commande ne journalise jamais le JWT :
 
 ```bash
