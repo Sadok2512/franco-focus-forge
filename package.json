@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit",
     "format": "prettier --write .",
     "test": "vitest run",
+    "test:g55": "vitest run src/test/G55-front-contract.test.ts",
     "test:watch": "vitest",
     "contract:check": "bun run scripts/contract_check.ts",
     "shot": "bun run scripts/shot_flow.ts",

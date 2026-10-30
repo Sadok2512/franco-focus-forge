@@ -32,6 +32,7 @@ import {
   type TimeAxisMeta,
   type TimeAxisMode,
 } from "./time-axis";
+import { parseMetricSelection } from "./metric-selection";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -723,10 +724,7 @@ export function MetricsWorkspace({
   // Décoder chaque selection "code@cell" en { code, cell }
   const parsedSelections = useMemo(
     () =>
-      selections.map((s) => {
-        const [code, cell = "all"] = s.split("@");
-        return { full: s, code: code ?? "", cell };
-      }),
+      selections.map((s) => parseMetricSelection(s) ?? { full: s, code: "", cell: "all" }),
     [selections],
   );
   const metricInfoByCode = useMemo(() => {

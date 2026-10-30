@@ -36,13 +36,27 @@ describe("drive RSRP classes", () => {
 
 describe("RSRP map point codes", () => {
   it("requests the PCell selection and accepts any cell index the API echoes", () => {
-    expect(RSRP_SELECTION).toBe("cell_rsrp@0");
+    expect(RSRP_SELECTION).toBe("cell_rsrp@lte-type-0");
     expect(isRsrpPointCode("cell_rsrp@0")).toBe(true);
     expect(isRsrpPointCode("cell_rsrp")).toBe(true);
     expect(isRsrpPointCode("cell_rsrp@1")).toBe(true);
     expect(isRsrpPointCode("cell_rsrp@12")).toBe(true);
+    expect(isRsrpPointCode("cell_rsrp@lte-type-0")).toBe(true);
+    expect(isRsrpPointCode("cell_rsrp@lte-type-2!1300:215")).toBe(true);
+    expect(isRsrpPointCode("cell_rsrp@nr-type-0")).toBe(false);
     expect(isRsrpPointCode("cell_rsrq@0")).toBe(false);
     expect(isRsrpPointCode("srs_rsrp@0")).toBe(false);
+  });
+
+  it("keeps the complete Test_6 serving population under the semantic selector", () => {
+    const map_points = Array.from({ length: 4935 }, (_, seq) => ({
+      seq,
+      lat: 50.396927,
+      lng: 2.971448,
+      code: "cell_rsrp@lte-type-0",
+      value: -90,
+    }));
+    expect(driveRsrpPoints({ map_points })).toHaveLength(4935);
   });
 });
 

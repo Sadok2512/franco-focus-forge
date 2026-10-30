@@ -76,7 +76,7 @@ describe("Signaling drive RSRP", () => {
       expect(api.analysis).toHaveBeenCalledWith(
         "Test_3",
         "1e4e8d879a83",
-        ["cell_rsrp@0"],
+        ["cell_rsrp@lte-type-0"],
         {},
         { group_by: "operator", include_map: true },
         expect.any(AbortSignal),
