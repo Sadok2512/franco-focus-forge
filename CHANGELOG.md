@@ -1,8 +1,15 @@
-## Prochaine version (minor) — écran de changement du mot de passe (Agent BC1, numéro BC3)
+## 1.122.0 (minor) — BC4-FRONT 2026-10-30 — écran « Changer mon mot de passe » (Agent BC1, numérotation BC3)
 
-- Ajoute l'action au menu du compte et force la redirection vers le changement
-  lorsque le serveur marque la session `must_change_password`.
-- SemVer front : **MINOR** (nouvel écran et nouveau parcours d'authentification).
+Compagnon front du back `0.111.0`.
+
+- Entrée « Changer mon mot de passe » dans le menu du compte (AppShell).
+- Nouvelle route `_app.change-password.tsx` : formulaire ancien + nouveau
+  mot de passe, POST `/auth/change-password`, affichage du nouveau token
+  renvoyé.
+- Redirection forcée vers l'écran si `user.must_change_password === true`
+  à la connexion.
+- SemVer front : **MINOR 1.122.0** (nouvel écran + nouveau parcours
+  d'auth, contrat Zod `PublicUser.must_change_password` ajouté).
 
 ## 1.121.0 (minor) — BC4-FRONT 2026-10-30 — Metrics : feuilles disponibles par défaut (Agent BC4, numérotation BC3)
 
