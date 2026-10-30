@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Map as MlMap } from "maplibre-gl";
 import { useQuery } from "@tanstack/react-query";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
@@ -16,6 +16,8 @@ export function MapWorkspacePage() {
   const { t } = useTranslation();
   const { activeProject } = useActiveProject();
   const [map, setMap] = useState<MlMap | null>(null);
+  const [route, setRoute] = useState<Array<[number, number]>>([]);
+  const updateRoute = useCallback((coordinates: Array<[number, number]>) => setRoute(coordinates), []);
   const projectQuery = useQuery({
     queryKey: ["project", activeProject?.id],
     queryFn: ({ signal }) => getProject(activeProject!.id, signal),
@@ -34,8 +36,9 @@ export function MapWorkspacePage() {
         measurementStatus={null}
         contextLabel={activeProject.name}
         onMapReady={setMap}
+        routeCoordinates={route}
       >
-        <DriveRsrpLayer map={map} projectId={activeProject.id} />
+        <DriveRsrpLayer map={map} projectId={activeProject.id} autoFrame={false} onRouteChange={updateRoute} />
         {projectQuery.isError && (
           <span
             role="status"

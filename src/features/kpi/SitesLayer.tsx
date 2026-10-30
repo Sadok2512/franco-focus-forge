@@ -31,14 +31,16 @@ const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
 const SITE_LABEL_LAYER_ID = "bc4-sites-label";
 export type SitesLayerDisplay = { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 export const MAP_MIN_ZOOM = 6;
-// 1.126.3 BC3 — MAP_INITIAL_ZOOM remonté de 11 à 13 pour ouvrir directement
-// au seuil où /sites?zoom=15 renvoie des cellules individuelles. Avant,
-// l'app ouvrait à 11 (sous le seuil), aucune cellule ne s'affichait sans
-// action utilisateur. Mesure réelle sur Hénin-Beaumont : à zoom 13 le back
-// répond avec 25 sites agrégés visibles, à zoom 15 avec 475 cellules
-// individuelles. L'app zoome en 2 clics vers 15 pour voir les cellules.
-export const MAP_INITIAL_ZOOM = 13;
-export const CELLS_VISIBLE_ZOOM = 13;
+// 1.126.4 BC4 — MAP_INITIAL_ZOOM reste à 11 ; MapWorkspacePage frame
+// automatiquement la vue sur le route de la capture (DriveRsrpLayer
+// autoFrame + route callback). Les parcours de capture s'affichent
+// typiquement à Z11-12 une fois le panneau Layers et les marges
+// workspace retirés. CELLS_VISIBLE_ZOOM descendu à 11 pour que les
+// cells apparaissent dès l'ouverture ; le cap API `MAX_VIEWPORT_FEATURES`
+// (2000) protège contre les frames trop larges. Remplace mon 1.126.3
+// (zoom 13 + cells 13) qui ouvrait zoomé mais hors zone capture.
+export const MAP_INITIAL_ZOOM = 11;
+export const CELLS_VISIBLE_ZOOM = 11;
 
 const OPERATOR_COLORS = {
   ORF: "#FF7900",

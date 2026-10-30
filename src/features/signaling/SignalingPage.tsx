@@ -13,7 +13,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/client";
+import { getSignaling, getAllSignalingRows, getMetricSeries, getProject } from "@/lib/api/client";
 import {
   type RfEvent,
   type SignalingTimeline,
@@ -24,6 +24,7 @@ import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
+import { resolveNetworkMapCenter } from "@/features/map/map-center";
 import { selectSignalingCapture } from "./capture-selection";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
@@ -746,12 +747,14 @@ function SignalMap({
   selectedSeq,
   projectId,
   captureId,
+  projectCenter,
 }: {
   data: SignalingPoints;
   onSelect: (seq: number) => void;
   selectedSeq: number | undefined;
   projectId: string;
   captureId: string;
+  projectCenter: [number, number];
 }) {
   const [map, setMap] = useState<MlMap>();
   const ready = useCallback((m: MlMap) => setMap(m), []);
@@ -763,8 +766,7 @@ function SignalMap({
   useEffect(() => {
     if (!map) return;
     let disposed = false;
-    const render = async () => {
-      const ml = await import("maplibre-gl");
+    const render = () => {
       if (disposed || !map.isStyleLoaded()) return;
       const features: FeatureCollection = {
         type: "FeatureCollection",
@@ -826,12 +828,6 @@ function SignalMap({
             "circle-color": ["get", "color"],
           },
         });
-      }
-      const coordinates = data.markers.filter((p) => p.lat !== null && p.lng !== null);
-      if (coordinates.length) {
-        const bounds = new ml.LngLatBounds();
-        coordinates.forEach((p) => bounds.extend([p.lng!, p.lat!]));
-        map.fitBounds(bounds, { padding: 35, maxZoom: 16, duration: 0 });
       }
     };
     if (map.isStyleLoaded()) void render();
@@ -904,7 +900,7 @@ function SignalMap({
   // moyen, visuellement vide).
   const center: [number, number] = hasMarkers
     ? [data.markers[0]!.lng!, data.markers[0]!.lat!]
-    : [2.35, 48.85];
+    : projectCenter;
   const zoom = hasMarkers ? 13 : 10;
   // 1.66.0 — key force le remount de KpiMapOSM quand le centre/zoom change.
   // Sans ça, le composant garde la position de la capture précédente car son
@@ -924,6 +920,9 @@ function SignalMap({
         contextLabel="Signalisation"
         measurementStatus={null}
         nPoints={data.positioned_count}
+        routeCoordinates={data.markers
+          .filter((point) => point.lng !== null && point.lat !== null)
+          .map((point) => [point.lng!, point.lat!])}
       >
         <DriveRsrpLayer
           map={map ?? null}
@@ -957,6 +956,12 @@ export function SignalingPage({
   stateTracksV2?: boolean;
 }) {
   const { t } = useTranslation();
+  const projectQuery = useQuery({
+    queryKey: ["project", projectId],
+    queryFn: ({ signal }) => getProject(projectId, signal),
+    staleTime: 60_000,
+  });
+  const projectCenter = resolveNetworkMapCenter(projectQuery.data?.center);
   const [compact, setCompact] = useState(false);
   // 1.72.0 (BC3) — Vue timeline : ribbon (BC3 lanes), rf (BC2), compact (histogram).
   // Défaut = ribbon (addendum spec signaling_timeline.html).
@@ -1779,7 +1784,14 @@ export function SignalingPage({
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
                       {mapVisible && points.data ? (
-                        <SignalMap data={points.data} onSelect={chooseSeq} selectedSeq={seq} projectId={projectId} captureId={capture ?? ""} />
+                        <SignalMap
+                          data={points.data}
+                          onSelect={chooseSeq}
+                          selectedSeq={seq}
+                          projectId={projectId}
+                          captureId={capture ?? ""}
+                          projectCenter={projectCenter}
+                        />
                       ) : (
                         <p role="status">Chargement des positions…</p>
                       )}

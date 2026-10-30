@@ -1,3 +1,29 @@
+## 1.126.4 (patch) — BC4-FRONT 2026-10-30 — valeurs initiales + cadrage sur parcours capture (Agent BC4, numérotation BC3)
+
+Merge `bc4/map-defaults` (`269ef56`). Finalise l'ergonomie carte en
+reposant sur ma correction `1.126.3` : cellules visibles **sans action
+utilisateur**, cadrage automatique sur le parcours GPS, bandeau filtres
+sans chevauchement.
+
+- Cellules actives par défaut sur Map, Signaling et KPI Analytics ;
+  un choix utilisateur explicite reste mémorisé et partagé par les
+  cartes.
+- Trois cartes cadrent le parcours GPS de la capture sélectionnée avec
+  marge, ou le centre du projet sans capture. La barre commune propose
+  désormais « Centrer sur le parcours ».
+- `SitesLayer.tsx:34` : `MAP_INITIAL_ZOOM=11`, `CELLS_VISIBLE_ZOOM=11`
+  (vs 13/13 en 1.126.3). Les parcours tiennent typiquement à Z11-12
+  une fois le panneau Layers déduit des marges workspace ; le cap API
+  `MAX_VIEWPORT_FEATURES=2000` protège les frames larges. Remplace mon
+  seuil 13 qui ouvrait zoomé hors zone capture.
+- Le bandeau des filtres KPI reste sous la navigation aux largeurs
+  usuelles (1440, 1920 px).
+- Pendant chargement/reconnexion, les catalogues KPI/Metrics affichent
+  un état dédié (plus de compteurs à zéro trompeurs).
+- Preuves jetables :
+  `BC4_FRONT_BASE=http://127.0.0.1:9183 node scripts/map_defaults_evidence.mjs`.
+- SemVer front : **PATCH 1.126.4**.
+
 ## 1.126.3 (patch) — BC4-FRONT 2026-10-30 — cellules visibles dès ouverture + overlay « Zoomez pour voir » (BC3)
 
 Les cartes s'ouvraient à `zoom=11`, sous le seuil `CELLS_VISIBLE_ZOOM=13`.

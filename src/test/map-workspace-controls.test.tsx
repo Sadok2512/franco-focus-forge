@@ -42,7 +42,7 @@ describe("Map workspace chrome", () => {
     expect(toggleTechno).toHaveBeenCalledWith("LTE");
   });
 
-  it("disables the cell layer below zoom 13", () => {
+  it("keeps the persisted cell layer active below its data zoom while data waits", () => {
     render(
       <SitesMapWorkspaceControls
         enabled
@@ -57,6 +57,7 @@ describe("Map workspace chrome", () => {
         status={{ loading: false, error: null, zoom: 12, n_sites: 25 }}
       />,
     );
-    expect(screen.getByRole("button", { name: "Cells" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cells" })).not.toBeDisabled();
+    expect(screen.getByRole("button", { name: "Cells" })).toHaveAttribute("aria-pressed", "true");
   });
 });

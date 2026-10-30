@@ -150,7 +150,7 @@ describe("SignalingMap — couche Sites", () => {
     expect(getSites).not.toHaveBeenCalled();
   });
 
-  it("au zoom 12 charge les sites individuels sans demander les cellules", async () => {
+  it("au zoom 12 charge les sites et les cellules du parcours", async () => {
     getSites.mockClear();
     fakeMapState.zoom = 12;
     window.localStorage.setItem(
@@ -166,7 +166,7 @@ describe("SignalingMap — couche Sites", () => {
     await waitFor(() => expect(getSites).toHaveBeenCalled());
     const requestedZooms = getSites.mock.calls.map((call) => (call[0] as { zoom: number }).zoom);
     expect(requestedZooms).toContain(12);
-    expect(requestedZooms).not.toContain(15);
+    expect(requestedZooms).toContain(15);
   });
 
   it("au zoom 10 ne charge ni n'affiche aucun site (trajet GPS lisible)", async () => {

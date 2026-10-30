@@ -1,0 +1,59 @@
+{
+  "base": "http://127.0.0.1:9183",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "maps": {
+    "map-open": {
+      "cellsPressed": "true",
+      "visibleCells": "1,620",
+      "centerOnRouteVisible": true
+    },
+    "signaling-open": {
+      "cellsPressed": "true",
+      "visibleCells": "132",
+      "centerOnRouteVisible": true
+    },
+    "kpi-open": {
+      "cellsPressed": "true",
+      "visibleCells": "1,940",
+      "centerOnRouteVisible": true
+    }
+  },
+  "filters": {
+    "1440": {
+      "filterBox": {
+        "x": 12,
+        "y": 68,
+        "width": 1416,
+        "height": 42
+      },
+      "navBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1440,
+        "height": 56
+      },
+      "clear": true
+    },
+    "1920": {
+      "filterBox": {
+        "x": 16,
+        "y": 68,
+        "width": 1888,
+        "height": 42
+      },
+      "navBox": {
+        "x": 0,
+        "y": 0,
+        "width": 1920,
+        "height": 56
+      },
+      "clear": true
+    }
+  },
+  "reconnect": {
+    "text": "Loading / reconnecting",
+    "containsZero": false
+  },
+  "verdict": "PASS"
+}

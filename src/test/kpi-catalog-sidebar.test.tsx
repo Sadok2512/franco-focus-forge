@@ -61,4 +61,20 @@ describe("KPI catalogue sidebar", () => {
     expect(screen.getByText("2 · 0/8 sélectionnés")).toBeVisible();
     expect(screen.queryByText(/No KPIs match this search/i)).not.toBeInTheDocument();
   });
+
+  it("never presents zero catalogue counts while the backend is reconnecting", () => {
+    render(
+      <KpiCatalogSidebar
+        catalog={{ ...catalog, tree: [] }}
+        selected={[]}
+        active={null}
+        onToggle={vi.fn()}
+        onVisualization={vi.fn()}
+        searchRef={createRef<HTMLInputElement>()}
+        loading
+      />,
+    );
+    expect(screen.getByText(/(?:Chargement \/ reconnexion|Loading \/ reconnecting)/)).toBeVisible();
+    expect(screen.queryByText(/0 · 0\/8/)).not.toBeInTheDocument();
+  });
 });

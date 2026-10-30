@@ -47,6 +47,10 @@ export function KpiMeasurementMap({
     enabled: allowed && !!captureId,
   });
   const features = useMemo(() => (allowed ? mapFeatures(query.data) : []), [allowed, query.data]);
+  const routeCoordinates = useMemo(
+    () => features.map((feature) => feature.geometry.coordinates),
+    [features],
+  );
   const [map, setMap] = useState<MlMap | null>(null);
   const recenter = () => {
     if (!map || !features.length) return;
@@ -221,6 +225,7 @@ export function KpiMeasurementMap({
         measurementStatus={null}
         onMapReady={setMap}
         onRecenter={recenter}
+        routeCoordinates={routeCoordinates}
       >
         <div
           role="status"

@@ -97,7 +97,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
     return (
       <p className="p-6" role="status">
         {" "}
-        {translate("kpi.3b735c01e192")}{" "}
+        {translate("kpi.catalogReconnecting")}{" "}
       </p>
     );
   if (catalog.isError)
@@ -112,6 +112,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
   return (
     <Workspace
       catalog={catalog.data}
+      catalogLoading={catalog.isFetching && catalog.data.tree.length === 0}
       projectId={projectId}
       dimensions={dimensions.data}
       dimensionsLoading={dimensions.isPending}
@@ -128,6 +129,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
 }
 function Workspace({
   catalog,
+  catalogLoading,
   projectId,
   dimensions,
   dimensionsLoading,
@@ -137,6 +139,7 @@ function Workspace({
   projectCenter,
 }: {
   catalog: ProjectKpiCatalog;
+  catalogLoading: boolean;
   projectId: string;
   dimensions?: ProjectKpiFilters | undefined;
   dimensionsLoading: boolean;
@@ -310,6 +313,7 @@ function Workspace({
     [],
   );
   const selectableMetricCount = visibleMeasuredMetricCount + visibleCatalogMetricCount;
+  const metricsCatalogLoading = metricsCatalog.isPending && !metricsCatalog.data;
   const selectedMetrics = currentTab.metricCodes ?? [];
   const setSelectedMetrics = (next: string[]) =>
     persistTabs(updateTab(tabsState, tabsState.activeTabId, { metricCodes: next }));
@@ -686,7 +690,7 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("kpi.catalogTabMetrics")} ({selectableMetricCount})
+                {translate("kpi.catalogTabMetrics")} ({metricsCatalogLoading ? translate("kpi.catalogReconnecting") : selectableMetricCount})
               </button>
               <button
                 role="tab"
@@ -730,6 +734,7 @@ function Workspace({
                 onToggle={onCatalogToggle}
                 onVisualization={visualize}
                 searchRef={catalogSearch}
+                loading={catalogLoading || (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)}
               />
             ) : activeCatalog === "metrics" ? (
               <MetricsCatalogSidebar

@@ -25,6 +25,7 @@ export function KpiCatalogSidebar({
   searchValue,
   embedded = false,
   onVisibleCountChange,
+  loading = false,
 }: {
   catalog: ProjectKpiCatalog;
   selected: string[];
@@ -36,6 +37,7 @@ export function KpiCatalogSidebar({
   searchValue?: string;
   embedded?: boolean;
   onVisibleCountChange?: (count: number) => void;
+  loading?: boolean;
 }) {
   const { t: translate } = useTranslation();
   const heading = title ?? translate("kpi.3ad34a87a145");
@@ -209,7 +211,7 @@ export function KpiCatalogSidebar({
             className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums"
             title={`${availableCount} KPI disponibles · ${selected.length} sélectionnés sur ${MAX_GRAPHS}`}
           >
-            {availableCount} · {selected.length}/{MAX_GRAPHS} sélectionnés
+            {loading ? translate("kpi.catalogReconnecting") : `${availableCount} · ${selected.length}/${MAX_GRAPHS} sélectionnés`}
           </span>
         </h2>
         <label className="relative block mt-2">

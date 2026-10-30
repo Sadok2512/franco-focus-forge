@@ -11,6 +11,11 @@
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
+/* The floating application navigation is an overlay. Reserve its full height
+   inside KPI Analytics so the first filter row can never render underneath it. */
+html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
+  padding-top: calc(var(--project-header-clearance) + 12px);
+}
 .kpi-page-header {
   display: flex;
   align-items: center;

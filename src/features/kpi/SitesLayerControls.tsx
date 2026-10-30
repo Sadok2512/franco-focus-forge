@@ -74,7 +74,9 @@ function readState(): State {
     if (!raw) return DEFAULT_STATE;
     const parsed = JSON.parse(raw) as Partial<State>;
     return {
-      enabled: Boolean(parsed.enabled),
+      // Missing fields from an older persisted shape inherit the ON defaults;
+      // an explicit false remains the user's remembered choice.
+      enabled: parsed.enabled !== false,
       cellsEnabled: parsed.cellsEnabled !== false,
       display: {
         beams: parsed.display?.beams !== false,
@@ -208,7 +210,6 @@ export function SitesLayerControls({
             <input
               type="checkbox"
               checked={cellsEnabled}
-              disabled={!cellsAvailable}
               onChange={(e) => onToggleCells(e.target.checked)}
             />
             <strong>
