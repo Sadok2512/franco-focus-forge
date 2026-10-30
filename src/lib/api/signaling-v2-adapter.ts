@@ -20,6 +20,7 @@
 //     reconstruits côté back ; les events lane=connexion sont des marks ponctuels)
 //
 import { apiFetch } from "./http";
+import { signalingSchemas } from "./signaling";
 import {
   SigCaptureMetaSchema,
   SigCaptureSchema,
@@ -109,18 +110,7 @@ const BcEventsEnvelopeSchema = z.object({
   counts_by_lane: z.record(z.number()),
   missing_time: z.number(),
 });
-const BcPointSchema = z.object({
-  seq: z.number(),
-  t_rel_s: z.number().nullable(),
-  lat: z.number().nullable(),
-  lng: z.number().nullable(),
-  gps_seq: z.number().nullable(),
-  seq_gap: z.number().nullable(),
-});
-const BcPointsEnvelopeSchema = z.object({
-  points: z.array(BcPointSchema),
-  positioned_count: z.number(),
-});
+const BcPointsEnvelopeSchema = signalingSchemas.points;
 const BcDetailsSchema = z.object({
   seq: z.number(),
   tree: z.record(z.unknown()),
@@ -162,8 +152,18 @@ function extractCapturedAt(label: string): string {
   const m = label.match(/_(\d{2})([A-Za-z]{3})(\d{2})_(\d{2})(\d{2})(\d{2})/);
   if (!m) return label;
   const months: Record<string, string> = {
-    Jan: "01", Feb: "02", Mar: "03", Apr: "04", May: "05", Jun: "06",
-    Jul: "07", Aug: "08", Sep: "09", Oct: "10", Nov: "11", Dec: "12",
+    Jan: "01",
+    Feb: "02",
+    Mar: "03",
+    Apr: "04",
+    May: "05",
+    Jun: "06",
+    Jul: "07",
+    Aug: "08",
+    Sep: "09",
+    Oct: "10",
+    Nov: "11",
+    Dec: "12",
   };
   const [, d, monAbbr, yy, hh, mm, ss] = m;
   const mon = months[monAbbr!] ?? "01";
@@ -192,10 +192,7 @@ function toSigEvent(e: z.infer<typeof BcEventSchema>): SigEvent {
     id: e.id,
     t: e.t_rel_s ?? 0,
     name: e.label,
-    tech:
-      typeof e.attrs["technology"] === "string"
-        ? (e.attrs["technology"] as string)
-        : null,
+    tech: typeof e.attrs["technology"] === "string" ? (e.attrs["technology"] as string) : null,
     severity: kindOutcomeToSeverity(e.kind, e.outcome),
     message_index: null, // Phase D : seq→index lookup via seqByCapture
     ecgi: null,
@@ -221,7 +218,9 @@ function toSigMobility(e: z.infer<typeof BcEventSchema>): SigMobilityEvent {
   };
 }
 
-function toSigTrackPoint(p: z.infer<typeof BcPointSchema>): SigTrackPoint {
+function toSigTrackPoint(
+  p: z.infer<typeof signalingSchemas.points>["points"][number],
+): SigTrackPoint {
   return { t: p.t_rel_s ?? 0, lat: p.lat as number, lng: p.lng as number };
 }
 
@@ -276,7 +275,9 @@ export async function getSignalingCapture(id: string, signal?: AbortSignal): Pro
   const [rowsEnv, eventsEnv, pointsEnv] = await Promise.all([
     apiFetch(`${base}?${q}&page=1&size=1`, BcRowsEnvelopeSchema, { signal }),
     apiFetch(`${base}/events?${q}`, BcEventsEnvelopeSchema, { signal }),
-    apiFetch(`${base}/points?${q}`, BcPointsEnvelopeSchema, { signal }),
+    apiFetch(`${base}/points?${q}&compact=true`, BcPointsEnvelopeSchema as z.ZodTypeAny, {
+      signal,
+    }) as Promise<z.infer<typeof BcPointsEnvelopeSchema>>,
   ]);
   const totalMessages = rowsEnv.total;
   const maxT = Math.max(
@@ -290,9 +291,7 @@ export async function getSignalingCapture(id: string, signal?: AbortSignal): Pro
   const sigEvents = eventsEnv.events
     .filter((e) => ["acces", "services", "contexte"].includes(e.lane))
     .map(toSigEvent);
-  const sigMobility = eventsEnv.events
-    .filter((e) => e.lane === "mobilite")
-    .map(toSigMobility);
+  const sigMobility = eventsEnv.events.filter((e) => e.lane === "mobilite").map(toSigMobility);
   const track = pointsEnv.points.filter((p) => p.lat != null && p.lng != null).map(toSigTrackPoint);
   const capture: SigCapture = {
     id,
@@ -315,16 +314,17 @@ export async function getSignalingCapture(id: string, signal?: AbortSignal): Pro
   return SigCaptureSchema.parse(capture);
 }
 
-export async function getSignalingMessages(id: string, signal?: AbortSignal): Promise<SigMessage[]> {
+export async function getSignalingMessages(
+  id: string,
+  signal?: AbortSignal,
+): Promise<SigMessage[]> {
   const projectId = requireProject();
   const base = `/projects/${encodeURIComponent(projectId)}/signaling`;
   const q = `capture_id=${encodeURIComponent(id)}`;
   const pageSize = 500;
-  const first = await apiFetch(
-    `${base}?${q}&page=1&size=${pageSize}`,
-    BcRowsEnvelopeSchema,
-    { signal },
-  );
+  const first = await apiFetch(`${base}?${q}&page=1&size=${pageSize}`, BcRowsEnvelopeSchema, {
+    signal,
+  });
   const allRows = [...first.rows];
   const totalPages = first.pages;
   if (totalPages > 1) {
@@ -342,10 +342,7 @@ export async function getSignalingMessages(id: string, signal?: AbortSignal): Pr
     allRows.map((r) => r.seq),
   );
   const messages: SigMessage[] = allRows.map((r, index) => {
-    const dir: "UL" | "DL" =
-      r.direction === "UL" || r.direction === "DL"
-        ? r.direction
-        : "DL"; // Fallback documenté : BC4 null direction (event state) → DL par défaut
+    const dir: "UL" | "DL" = r.direction === "UL" || r.direction === "DL" ? r.direction : "DL"; // Fallback documenté : BC4 null direction (event state) → DL par défaut
     return {
       index,
       t: r.t_rel_s ?? 0,
