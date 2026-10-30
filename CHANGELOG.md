@@ -1,3 +1,14 @@
+## Prochaine version (minor) — KPI Analytics : panneau Metrics unifié (Agent BC4, numérotation BC3)
+
+- Les métriques mesurées de `/kpi/catalog` et les feuilles du catalogue sont
+  réunies dans un seul panneau défilant, avec une seule recherche commune.
+- Le compteur de l'onglet reflète les feuilles sélectionnables affichées et
+  l'en-tête affiche le nombre total de sélections. `Afficher les non
+  disponibles` et `Actifs uniquement` restent sous la recherche.
+- Les onglets Parameters et KPI conservent leur contenu existant ; un
+  workspace neuf reste sans sélection KPI.
+- SemVer front : **MINOR** (numéro attribué par BC3).
+
 ## 1.124.1 (patch) — BC4-FRONT 2026-10-30 — Signaling front contracts : Drive RSRP + frise RRC/UE State (Agent BC1, numérotation BC3)
 
 Merge `bc1/signaling-front-contract` (`1c1fa54`). Correctif des deux

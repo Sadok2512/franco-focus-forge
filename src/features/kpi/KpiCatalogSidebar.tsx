@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
-import { useState, type RefObject } from "react";
+import { useEffect, useState, type RefObject } from "react";
 import { BarChart3, ChevronDown, ChevronRight, Search, MoreVertical } from "lucide-react";
 import type { ProjectKpiCatalog } from "@/lib/api/project-kpi-schemas";
 import { APP_VERSION } from "@/lib/version";
@@ -22,6 +22,9 @@ export function KpiCatalogSidebar({
   onVisualization,
   searchRef,
   title,
+  searchValue,
+  embedded = false,
+  onVisibleCountChange,
 }: {
   catalog: ProjectKpiCatalog;
   selected: string[];
@@ -30,10 +33,14 @@ export function KpiCatalogSidebar({
   onVisualization: (code: string, mode: VisualizationType) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   title?: string;
+  searchValue?: string;
+  embedded?: boolean;
+  onVisibleCountChange?: (count: number) => void;
 }) {
   const { t: translate } = useTranslation();
   const heading = title ?? translate("kpi.3ad34a87a145");
-  const [search, setSearch] = useState("");
+  const [localSearch, setLocalSearch] = useState("");
+  const search = searchValue ?? localSearch;
   const initial =
     catalog.tree.find((t) => t.families.some((f) => f.kpis.some((k) => k.code === active))) ??
     catalog.tree[0];
@@ -68,28 +75,19 @@ export function KpiCatalogSidebar({
         .filter((f) => f.kpis.length),
     }))
     .filter((t) => t.families.length);
-  return (
-    <aside className="kpi-catalog" aria-label={heading}>
-      <header className="p-2 border-b">
-        <h2 className="flex items-center gap-2 font-semibold text-sm">
-          <BarChart3 size={16} className="text-primary" /> {heading}
-          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
-            {selected.length}/{MAX_GRAPHS}
-          </span>
-        </h2>
-        <label className="relative block mt-2">
-          <Search size={14} className="absolute left-2.5 top-3 text-muted-foreground" />
-          <input
-            ref={searchRef}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={translate("kpi.cee7b35d8aa1")}
-            aria-label={translate("kpi.a3a628e99080")}
-            className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
-          />
-        </label>
-      </header>
-      <ul className="kpi-tree p-2 space-y-1">
+  const visibleCount = tree.reduce(
+    (technologyCount, technology) =>
+      technologyCount +
+      technology.families.reduce((familyCount, family) => familyCount + family.kpis.length, 0),
+    0,
+  );
+  useEffect(() => onVisibleCountChange?.(visibleCount), [onVisibleCountChange, visibleCount]);
+  const treeContent = (
+    <>
+      <ul
+        className={embedded ? "p-2 pb-0 space-y-1" : "kpi-tree p-2 space-y-1"}
+        data-testid={embedded ? "measured-metrics-tree" : undefined}
+      >
         {tree.map((t) => {
           const expanded = Boolean(search) || open.has(t.techno);
           const counts = catalog.counts_by_techno?.[t.techno];
@@ -189,10 +187,35 @@ export function KpiCatalogSidebar({
             </li>
           );
         })}
-        {!tree.length && (
+        {!tree.length && !embedded && search.trim() && (
           <li className="p-4 text-xs text-muted-foreground"> {translate("kpi.7f626224ba1f")} </li>
         )}
       </ul>
+    </>
+  );
+  if (embedded) return treeContent;
+  return (
+    <aside className="kpi-catalog" aria-label={heading}>
+      <header className="p-2 border-b">
+        <h2 className="flex items-center gap-2 font-semibold text-sm">
+          <BarChart3 size={16} className="text-primary" /> {heading}
+          <span className="ml-auto text-[10px] font-normal text-muted-foreground tabular-nums">
+            {selected.length}/{MAX_GRAPHS}
+          </span>
+        </h2>
+        <label className="relative block mt-2">
+          <Search size={14} className="absolute left-2.5 top-3 text-muted-foreground" />
+          <input
+            ref={searchRef}
+            value={search}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            placeholder={translate("kpi.cee7b35d8aa1")}
+            aria-label={translate("kpi.a3a628e99080")}
+            className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
+          />
+        </label>
+      </header>
+      {treeContent}
       <footer
         className="border-t p-2 text-[10px] text-muted-foreground"
         title={`front v${APP_VERSION} · ${translate("kpi.daee2b836d5a")}`}
