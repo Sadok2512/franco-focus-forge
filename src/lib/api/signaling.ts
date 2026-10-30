@@ -247,10 +247,18 @@ export const signalingSchemas = {
   }),
   timeline: z.object({
     ...envelope,
-    buckets: z.array(z.object({ t_rel_s: z.number(), counts: z.record(z.number()) })),
+    buckets: z.array(
+      z.object({
+        t_rel_s: z.number(),
+        counts: z.record(z.number()),
+        lane_counts: z.record(z.number()).optional(),
+      }),
+    ),
+    state_events: z.array(z.record(z.unknown())).optional(),
     bucket_s: z.number(),
     total: z.number(),
     missing_time: z.number(),
+    t_rel_end_s: z.number().nullable().optional(),
   }),
   points: z.union([legacyPoints, compactPoints]),
   context: z.object({

@@ -15,7 +15,7 @@ import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
 import { getSignaling, getAllSignalingRows, getMetricSeries } from "@/lib/api/client";
 import {
-  getAllSignalingEvents,
+  type RfEvent,
   type SignalingTimeline,
   type SignalingPoints,
   type SignalingLine,
@@ -1083,6 +1083,24 @@ export function SignalingPage({
       getSignaling(projectId, "eventSummary", { capture_id: capture }, signal),
     staleTime: 60000,
   });
+  const signalingOverview = useQuery({
+    queryKey: ["signaling-rf-overview", projectId, capture, technology, direction, search],
+    enabled: !!capture,
+    queryFn: ({ signal }) =>
+      getSignaling(
+        projectId,
+        "timeline",
+        {
+          capture_id: capture,
+          bucket_s: 10,
+          technology: technology || undefined,
+          direction: direction || undefined,
+          q: search || undefined,
+        },
+        signal,
+      ),
+    staleTime: 60000,
+  });
   const captureRadio = useQuery({
     queryKey: ["signaling-rf-radio", projectId, capture],
     enabled: !!capture,
@@ -1092,11 +1110,15 @@ export function SignalingPage({
     },
     staleTime: 60000,
   });
-  const captureDuration = signalingSummary.data?.t_rel_end_s ?? captureRadio.data?.duration_s ?? 0;
+  const captureDuration =
+    signalingOverview.data?.t_rel_end_s ??
+    signalingSummary.data?.t_rel_end_s ??
+    captureRadio.data?.duration_s ??
+    0;
   const { window: timeWindow, setWindow: setTimeWindow } = useTimeWindow(
     capture,
     captureDuration,
-    stateTracksV2 ? 30 : FULL_CAPTURE_S,
+    FULL_CAPTURE_S,
   );
   useEffect(() => {
     if (initialCapture) setCaptureContext(projectId, initialCapture);
@@ -1242,29 +1264,15 @@ export function SignalingPage({
   const position = points.data?.points.find((p) => p.seq === seq);
   // Same key and params as RfTimeline: one cached request feeds both the
   // timeline bands and the RRC State column (no extra API call).
-  const stateEvents = useQuery({
-    queryKey: ["signaling-rf", projectId, capture, technology, direction, search, timeWindow],
-    enabled: !!capture,
-    queryFn: ({ signal }) =>
-      getAllSignalingEvents(
-        projectId,
-        {
-          capture_id: capture,
-          view: "rf",
-          technology: technology || undefined,
-          direction: direction || undefined,
-          q: search || undefined,
-          from_s: timeWindow[0],
-          to_s: timeWindow[1],
-          limit: 2000,
-        },
-        signal,
-      ),
-    staleTime: 60000,
-  });
   const provenRrc = useMemo(
-    () => (capture ? provenStates(stateEvents.data?.events ?? [], capture) : []),
-    [stateEvents.data, capture],
+    () =>
+      capture
+        ? provenStates(
+            (signalingOverview.data?.state_events ?? []) as unknown as RfEvent[],
+            capture,
+          )
+        : [],
+    [signalingOverview.data?.state_events, capture],
   );
   const radioSeries = useMemo(() => {
     const byCode = (code: string) =>
