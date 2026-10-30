@@ -117,6 +117,7 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
           ? `${project.data.periodStart} — ${project.data.periodEnd}`
           : null
       }
+      projectCenter={project.data?.center}
     />
   );
 }
@@ -128,6 +129,7 @@ function Workspace({
   dimensionsError,
   retryDimensions,
   period,
+  projectCenter,
 }: {
   catalog: ProjectKpiCatalog;
   projectId: string;
@@ -136,6 +138,7 @@ function Workspace({
   dimensionsError: boolean;
   retryDimensions: () => void;
   period: string | null;
+  projectCenter?: [number, number] | undefined;
 }) {
   const { t: translate } = useTranslation();
   const search = useSearch({ strict: false }) as Record<string, unknown>;
@@ -926,6 +929,7 @@ function Workspace({
                     onVisualization={visualizeMetric}
                     mapFillsAvailable={mapOnlyWorkspace}
                     workspaceId={tabsState.activeTabId}
+                    projectCenter={projectCenter}
                     onColumnsChange={setTableColumns}
                     paneRequest={metricsPaneRequest.n}
                     cardViewRequest={cardViewRequest}

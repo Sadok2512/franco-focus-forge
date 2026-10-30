@@ -21,6 +21,8 @@ const CELL_SOURCE_ID = "bc4-cells";
 const SITE_LAYER_ID = "bc4-sites-site";
 /** Safety cap: never push more raw site features than this into the map. */
 export const MAX_SITE_FEATURES = 3000;
+/** API hard cap, applied to every viewport request (sites and raw cells). */
+export const MAX_VIEWPORT_FEATURES = 2000;
 /** Glyphs URL required by every symbol (count label) layer. */
 export const MAP_GLYPHS = "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf";
 const CELL_POINT_LAYER_ID = "bc4-sites-cell";
@@ -133,6 +135,7 @@ export function useSitesLayer(
     const ne = bounds.getNorthEast();
     const common = {
       bbox: [sw.lng, sw.lat, ne.lng, ne.lat] as [number, number, number, number],
+      limit: MAX_VIEWPORT_FEATURES,
       ...(filters.technos.length ? { technos: filters.technos } : {}),
       ...(filters.bands.length ? { bands: filters.bands } : {}),
       ...(filters.operators.length ? { operators: filters.operators } : {}),

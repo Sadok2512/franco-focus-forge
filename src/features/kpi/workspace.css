@@ -671,9 +671,9 @@
 }
 .kpi-metric-map-menu {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 20;
+  top: 12px;
+  right: 56px;
+  z-index: 30;
 }
 .kpi-metric-map-menu .kpi-icon {
   display: inline-flex;
@@ -688,9 +688,9 @@
 }
 .kpi-metric-map-legend {
   position: absolute;
-  bottom: 24px;
-  left: 8px;
-  z-index: 20;
+  right: 56px;
+  bottom: 76px;
+  z-index: 30;
   min-width: 220px;
   max-width: min(360px, calc(100% - 16px));
   padding: 7px 9px;
@@ -703,11 +703,34 @@
 }
 .kpi-metric-map-legend strong {
   display: block;
-  margin-bottom: 5px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 11px;
+}
+.kpi-metric-map-legend-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.kpi-metric-map-legend-title strong {
+  min-width: 0;
+}
+.kpi-metric-map-legend-title button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+}
+.kpi-metric-map-legend-title button:hover,
+.kpi-metric-map-legend-title button[aria-expanded="true"] {
+  background: var(--muted);
 }
 .kpi-metric-map-scale {
   display: block;
@@ -721,6 +744,76 @@
   margin-top: 2px;
   color: #475569;
   font-variant-numeric: tabular-nums;
+}
+.kpi-metric-map-settings {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+.kpi-metric-map-settings > label {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) minmax(100px, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+.kpi-metric-map-settings select {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--background);
+  padding: 3px 5px;
+}
+.kpi-metric-map-settings fieldset {
+  display: grid;
+  gap: 4px;
+}
+.kpi-metric-map-settings legend {
+  margin-bottom: 3px;
+  font-weight: 650;
+}
+.kpi-metric-map-settings fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.kpi-metric-map-settings fieldset label > span:last-child {
+  margin-left: auto;
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+.kpi-metric-map-link-swatch {
+  width: 18px;
+  height: 2px;
+  border-radius: 999px;
+}
+.kpi-metric-map-status {
+  position: absolute;
+  left: 50%;
+  top: 60px;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transform: translateX(-50%);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  box-shadow: 0 1px 5px rgb(15 23 42 / 14%);
+  padding: 7px 10px;
+  color: var(--foreground);
+  font-size: 11px;
+}
+.kpi-metric-map-status.is-error {
+  border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
+}
+.kpi-metric-map-status button {
+  border-radius: 5px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  padding: 3px 7px;
+  font-weight: 650;
 }
 .kpi-order {
   font-size: 10px;

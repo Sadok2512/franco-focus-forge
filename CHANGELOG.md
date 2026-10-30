@@ -1,3 +1,30 @@
+## 1.126.0 (minor) — BC4-FRONT 2026-10-30 — cartes KPI / Map / Signaling partagées (Agent BC4, numérotation BC3)
+
+Merge `bc4/kpi-shared-map` (`b342b2d` + `a5ae32a`, rebasé sur 1.125.0).
+Chrome cartographique unifié entre KPI Analytics, Map et Signaling.
+
+- La carte d'une métrique KPI utilise désormais `KpiMapOSM` en mode
+  `workspace` et sa `NetworkMapChrome`, exactement comme les pages Map
+  et Signaling : sites, cellules, filtres radio, recherche et outils
+  cartographiques restent une chrome commune ; seules les couches
+  métier diffèrent.
+- Fond, cellules et outils se montent **sans attendre `/metrics`** ;
+  les points ont un état de chargement animé et une erreur réessayable
+  superposés à la carte déjà utilisable.
+- La requête des 4 935 points utilise le chemin CELLMEAS lean
+  (`table_only=true`) : une sonde légère fixe la pagination, puis au
+  plus cinq pages équilibrées sont chargées en parallèle et injectées
+  dans MapLibre. Les sites/cellules restent chargés uniquement par la
+  bbox visible avec un plafond front explicite de 2 000 entités par
+  requête.
+- Légende : palette et taille de points mémorisées par panneau +
+  trois liens activables séparément (cellule servante, voisines, ancre
+  NR). Aucun lien inventé : géométrie et provenance API requises.
+- Compatibilité `serving_*` existante. Le contrat exact
+  `neighbour_links[]` / `nr_anchor_link` du back 0.114.0 (`bc1/map-cell-links`)
+  est préparé avec trois couleurs distinctes.
+- SemVer front : **MINOR 1.126.0**.
+
 ## 1.125.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : panneau Metrics unifié (Agent BC4, numérotation BC3)
 
 Merge `bc4/metrics-unified-panel` (`e540ea5`). Un seul panneau pour
