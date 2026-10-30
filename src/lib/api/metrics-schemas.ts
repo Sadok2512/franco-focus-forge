@@ -346,3 +346,14 @@ export const MetricAnalysisSchema = z.object({
   csv: z.string(),
 });
 export type MetricAnalysis = z.infer<typeof MetricAnalysisSchema>;
+
+/** Lean geographic response returned by GET /projects/{pid}/metrics/map. */
+export const MetricMapResponseSchema = z.object({
+  project_id: z.string(),
+  capture_id: z.string(),
+  result_id: z.string(),
+  decoder_version: z.string(),
+  total_points: z.number().int(),
+  map_points: MetricAnalysisSchema.shape.map_points,
+});
+export type MetricMapResponse = z.infer<typeof MetricMapResponseSchema>;

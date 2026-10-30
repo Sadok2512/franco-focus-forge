@@ -12,4 +12,11 @@ export const metricCapturesKey = (projectId: string, filters: KpiQueryFilters = 
 
 export const metricTableKey = (scope: readonly unknown[]) => ["metrics-v3", ...scope] as const;
 
+export const metricMapKey = (
+  projectId: string,
+  captureId: string | null,
+  selections: string[],
+  filters: KpiQueryFilters,
+) => ["metric-map", projectId, captureId, selections, filters] as const;
+
 export const API_LEAN_STALE_MS = 300_000;

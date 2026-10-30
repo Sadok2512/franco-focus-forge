@@ -9,7 +9,7 @@ import {
   metricMapNumericExtent,
   MetricsWorkspace,
 } from "@/features/kpi/MetricsWorkspace";
-import { getMetricAnalysis } from "@/lib/api/client";
+import { getMetricAnalysis, getMetricMap } from "@/lib/api/client";
 import { readMetricViews, writeMetricViews } from "@/features/kpi/metric-views";
 import "@/lib/i18n";
 
@@ -29,6 +29,11 @@ vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
   return {
     getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
+    getMetricMap: vi.fn().mockResolvedValue({
+      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
+      decoder_version: "test", total_points: fixture.map_points.length,
+      map_points: fixture.map_points,
+    }),
     getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "Demo" }]),
     getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
   };
@@ -50,11 +55,11 @@ describe("Map selection keeps its own panel", () => {
       onClear={() => {}} onCaptureChange={() => {}}
     /></QueryClientProvider>);
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
-    expect(getMetricAnalysis).toHaveBeenCalledWith("project-a", "44621571bccc",
-      ["cell_rsrp@0"], {}, {
-        group_by: "operator", include_map: true, table_only: true, page: 1, page_size: 25,
-      }, expect.any(AbortSignal));
-    expect(vi.mocked(getMetricAnalysis).mock.calls.filter((call) => call[4].include_map)).toHaveLength(1);
+    expect(getMetricMap).toHaveBeenCalledTimes(1);
+    expect(getMetricMap).toHaveBeenCalledWith(
+      "project-a", "44621571bccc", ["cell_rsrp@0"], {}, expect.any(AbortSignal),
+    );
+    expect(vi.mocked(getMetricAnalysis).mock.calls.every((call) => !call[4].include_map)).toBe(true);
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
@@ -74,9 +79,10 @@ describe("Map selection keeps its own panel", () => {
       t_rel_s: index / 10,
       tooltip: `RSRP ${-115 + (index % 55)} dBm`,
     }));
-    vi.mocked(getMetricAnalysis).mockImplementation(async (...args) =>
-      (args[4].include_map ? { ...fixture, map_points: points } : fixture) as never,
-    );
+    vi.mocked(getMetricMap).mockResolvedValue({
+      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
+      decoder_version: "test", total_points: points.length, map_points: points,
+    } as never);
     writeMetricViews("map-raw-points", { "cell_rsrp@0": "map" });
     const close = vi.fn();
     render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -160,9 +166,11 @@ describe("Map selection keeps its own panel", () => {
       "neighbour",
       "nr_anchor",
     ]);
-    vi.mocked(getMetricAnalysis).mockImplementation(async (...args) =>
-      (args[4].include_map ? data : fixture) as never,
-    );
+    vi.mocked(getMetricMap).mockResolvedValue({
+      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
+      decoder_version: "test", total_points: data.map_points.length,
+      map_points: data.map_points,
+    } as never);
     writeMetricViews("map-links", { "cell_rsrp@0": "map" });
     render(
       <QueryClientProvider

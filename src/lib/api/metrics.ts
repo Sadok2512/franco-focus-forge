@@ -6,6 +6,7 @@ import {
   MetricSchema,
   MetricCatalogResponseSchema,
   MetricAnalysisSchema,
+  MetricMapResponseSchema,
   MetricSeriesSchema,
   EventsSchema,
   MetricAggregateSchema,
@@ -101,5 +102,19 @@ export const getMetricAnalysis = (
   kpiFetch(
     `/projects/${encodeURIComponent(p)}/metrics/table?${metricRequestQuery(capture, filters, { codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}), ...(options.cell_pci != null ? { cell_pci: String(options.cell_pci) } : {}), ...(options.cell_arfcn != null ? { cell_arfcn: String(options.cell_arfcn) } : {}) })}`,
     MetricAnalysisSchema,
+    signal,
+  );
+
+/** Load every geolocated point without running table, histogram or CSV work. */
+export const getMetricMap = (
+  p: string,
+  capture: string,
+  codes: string[],
+  filters: KpiQueryFilters,
+  signal?: AbortSignal,
+) =>
+  kpiFetch(
+    `/projects/${encodeURIComponent(p)}/metrics/map?${metricRequestQuery(capture, filters, { codes: codes.join(",") })}`,
+    MetricMapResponseSchema,
     signal,
   );

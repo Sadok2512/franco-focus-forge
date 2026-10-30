@@ -15,7 +15,12 @@ import { useNavigate, useSearch } from "@tanstack/react-router";
 import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
-import { getDictV2Distribution, getMetricCaptures, getProjectKpi } from "@/lib/api/client";
+import {
+  getDictV2Distribution,
+  getMetricCaptures,
+  getMetricMap,
+  getProjectKpi,
+} from "@/lib/api/client";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
@@ -29,7 +34,7 @@ import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
 import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
-import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
+import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey } from "./query-keys";
 import type { MetricView } from "./MetricGraphCard";
 import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
 import { TreePanel, type TreePanelView } from "@/features/dict-v2/TreePanel";
@@ -359,11 +364,29 @@ function Workspace({
   const [cardViewRequest, setCardViewRequest] = useState<
     { code: string; view: MetricView; n: number } | undefined
   >();
+  const prefetchMetricMap = (code: string) => {
+    if (!captureId) return;
+    const nextViews = { ...metricViews, [code]: "map" as const };
+    const nextSelected = selectedMetrics.includes(code)
+      ? selectedMetrics
+      : [...selectedMetrics, code];
+    const mapSelections = nextSelected.filter((selection) => nextViews[selection] === "map");
+    void queryClient.prefetchQuery({
+      queryKey: metricMapKey(projectId, captureId, mapSelections, applied),
+      queryFn: ({ signal }) => getMetricMap(projectId, captureId, mapSelections, applied, signal),
+      staleTime: 60_000,
+    });
+  };
   const visualizeMetric = (code: string, view: MetricView) => {
-    writeViews({ ...metricViews, [code]: view });
-    if (!selectedMetrics.includes(code)) {
-      setSelectedMetrics([...selectedMetrics, code]);
-    }
+    const nextViews = { ...metricViews, [code]: view };
+    const nextSelected = selectedMetrics.includes(code)
+      ? selectedMetrics
+      : [...selectedMetrics, code];
+    // Start the lean request in the menu event, before MapLibre's workspace
+    // mounts. useQuery below adopts the same in-flight promise by key.
+    if (view === "map") prefetchMetricMap(code);
+    writeViews(nextViews);
+    if (!selectedMetrics.includes(code)) setSelectedMetrics(nextSelected);
     if (view === "table") {
       // 1.91.0 — ⋮ → Tableau ouvre le grand tableau des métriques (avec les
       // colonnes de paramètres). 1.101.0 — cette métrique ne reçoit aucune
@@ -714,6 +737,9 @@ function Workspace({
                 selected={selectedMetrics}
                 onToggle={toggleMetric}
                 onVisualization={visualizeMetric}
+                onVisualizationIntent={(code, view) => {
+                  if (view === "map") prefetchMetricMap(code);
+                }}
                 searchRef={catalogSearch}
                 search={metricsSearch}
                 onSearchChange={setMetricsSearch}

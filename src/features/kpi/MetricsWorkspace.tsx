@@ -6,9 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures } from "@/lib/api/client";
-import { API_LEAN_STALE_MS, metricCapturesKey, metricTableKey } from "./query-keys";
-import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
+import { getMetricAnalysis, getMetricCaptures, getMetricMap } from "@/lib/api/client";
+import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } from "./query-keys";
+import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
@@ -82,58 +82,7 @@ const fmt = (v: unknown) =>
         })
       : String(v);
 
-const MAP_PAGE_TARGET = 5;
-const MAP_PROBE_PAGE_SIZE = 25;
-
-async function getMetricMapPages(
-  projectId: string,
-  captureId: string,
-  selections: string[],
-  filters: KpiQueryFilters,
-  signal: AbortSignal,
-): Promise<MetricAnalysis> {
-  const loadSelection = async (selection: string) => {
-    const loadPage = (page: number, pageSize: number) =>
-      getMetricAnalysis(
-        projectId,
-        captureId,
-        [selection],
-        filters,
-        {
-          group_by: "operator",
-          include_map: true,
-          table_only: true,
-          page,
-          page_size: pageSize,
-        },
-        signal,
-      ) as Promise<MetricAnalysis>;
-    const probe = await loadPage(1, MAP_PROBE_PAGE_SIZE);
-    // Older fixtures/servers without pagination metadata already return the
-    // complete map response; preserve that compatible contract.
-    if (!Number.isFinite(probe.total_rows)) return probe;
-    if (probe.total_rows <= MAP_PROBE_PAGE_SIZE) return probe;
-    const pageSize = Math.max(
-      MAP_PROBE_PAGE_SIZE,
-      Math.ceil(probe.total_rows / MAP_PAGE_TARGET),
-    );
-    const pageCount = Math.ceil(probe.total_rows / pageSize);
-    const pages = await Promise.all(
-      Array.from({ length: pageCount }, (_, index) => loadPage(index + 1, pageSize)),
-    );
-    return {
-      ...pages[0]!,
-      map_points: pages.flatMap((page) => page.map_points),
-    };
-  };
-  const responses = await Promise.all(selections.map(loadSelection));
-  const first = responses[0];
-  if (!first) throw new Error("metric_map_without_selection");
-  return {
-    ...first,
-    map_points: responses.flatMap((response) => response.map_points),
-  };
-}
+type MetricMapData = Pick<MetricMapResponse, "map_points">;
 
 function Plot({ option, label }: { option: EChartsOption; label: string }) {
   useTranslation();
@@ -222,7 +171,7 @@ function readMetricMapPreferences(workspaceId: string, selection: string): Metri
   }
 }
 
-export function metricMapNumericExtent(data: MetricAnalysis): [number, number] {
+export function metricMapNumericExtent(data: MetricMapData): [number, number] {
   const values = data.map_points
     .map((point) => point.value)
     .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
@@ -232,7 +181,7 @@ export function metricMapNumericExtent(data: MetricAnalysis): [number, number] {
   return min === max ? [min - 1, max + 1] : [min, max];
 }
 
-export function metricMapFeatures(data: MetricAnalysis) {
+export function metricMapFeatures(data: MetricMapData) {
   return data.map_points.map((point) => ({
     type: "Feature" as const,
     geometry: {
@@ -255,7 +204,7 @@ export function metricMapFeatures(data: MetricAnalysis) {
   }));
 }
 
-export function metricMapLinkFeatures(data: MetricAnalysis) {
+export function metricMapLinkFeatures(data: MetricMapData) {
   return data.map_points.flatMap((point) => {
     const links: Array<{ kind: MetricLinkKind; lat: number; lng: number; source: string }> = [];
     if (
@@ -383,7 +332,7 @@ function MetricMap({
   error,
   onRetry,
 }: {
-  data?: MetricAnalysis | undefined;
+  data?: MetricMapData | undefined;
   label: string;
   unit: string;
   center?: [number, number] | undefined;
@@ -607,7 +556,7 @@ function MetricMapCard({
   selection: string;
   title: string;
   unit: string;
-  data?: MetricAnalysis | undefined;
+  data?: MetricMapData | undefined;
   loading: boolean;
   error: Error | null;
   onRetry: () => void;
@@ -794,13 +743,12 @@ export function MetricsWorkspace({
     refetchOnWindowFocus: false,
     retry: false,
   });
-  // One shared geographic response feeds every map card. Keeping this query
-  // at workspace level prevents cards from refetching data that has already
-  // arrived and lets the map chrome mount independently while points load.
+  // One lean geographic response feeds every map card. The map chrome mounts
+  // independently while the dedicated endpoint loads all points at once.
   const mapQuery = useQuery({
-    queryKey: ["metric-map", projectId, captureId, mapSelections, filters],
+    queryKey: metricMapKey(projectId, captureId, mapSelections, filters),
     queryFn: ({ signal }) =>
-      getMetricMapPages(projectId, captureId!, mapSelections, filters, signal),
+      getMetricMap(projectId, captureId!, mapSelections, filters, signal),
     enabled: !!captureId && mapSelections.length > 0,
     staleTime: 60_000,
     refetchOnMount: false,
@@ -1241,7 +1189,7 @@ export function MetricsWorkspace({
                         selection={s.full}
                         title={title}
                         unit={info?.unit ?? ""}
-                        data={mapQuery.data as MetricAnalysis | undefined}
+                        data={mapQuery.data}
                         loading={mapQuery.isPending}
                         error={mapQuery.isError ? mapQuery.error : null}
                         onRetry={() => void mapQuery.refetch()}

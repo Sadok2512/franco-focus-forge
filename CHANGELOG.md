@@ -1,3 +1,17 @@
+## 1.126.2 (patch) — BC4-FRONT 2026-10-30 — carte KPI en un seul appel `/metrics/map` (Agent BC4, numérotation BC3)
+
+Merge `bc4/kpi-map-single-call` (`837174b`). Consomme la route lean
+back `0.115.0` depuis la carte KPI.
+
+- La carte KPI charge désormais tous ses points via la route légère
+  `GET /projects/{pid}/metrics/map`, en **un seul appel partagé entre
+  les panneaux**, au lieu d'une sonde suivie de cinq pages parallèles
+  `/metrics/table`.
+- Le fond cartographique reste indépendant du chargement des mesures ;
+  le contrat des 4 935 points, des cellules servantes et des liens
+  radio est inchangé.
+- SemVer front : **PATCH 1.126.2**.
+
 ## 1.126.1 (patch) — BC4-FRONT 2026-10-30 — Parameters alignés + catalogue KPI restauré (Agent BC4, numérotation BC3)
 
 Merge `bc4/parameters-kpi-fix` (`209bf4a`). Fix alignement opérateurs
