@@ -1,3 +1,11 @@
+## 1.118.5 (patch) — BC4-FRONT 2026-10-30 — Nitro proxy compresse /api + nettoie content-encoding (Agent BC1, numérotation BC3)
+
+Compagnon de l'incident back `0.99.1` (GZipMiddleware retiré après
+double décodage proxy). Désormais le proxy Nitro `src/server.ts`
+compresse lui-même les réponses `/api/*` en respectant
+`Accept-Encoding` du client et en nettoyant `content-encoding` +
+`content-length` upstream.
+
 ## 1.118.4 (patch) — BC4-FRONT 2026-10-30 — retire console.log debug KPI (Agent BC1, numérotation BC3)
 
 Supprime les traces `[bc4:kpi-series-render]` oubliées par BC4 dans
@@ -12,6 +20,7 @@ Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
   reconstruit le contrat objet existant avant le rendu. Chaque point, sa
   position et son protocole sont conservés ; aucun composant ni design ne
   change.
+
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.
