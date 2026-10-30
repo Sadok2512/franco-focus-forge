@@ -1,10 +1,12 @@
-## À numéroter (minor) — BC4-FRONT — voisines Metrics par cellule radio réelle
+## 1.123.0 (minor) — BC4-FRONT 2026-10-30 — voisines Metrics par cellule radio réelle (Agent BC4, numérotation BC3)
+
+Compagnon front du back `0.112.0`.
 
 - Les feuilles voisines servies par le back s'ouvrent avec leur sélection
   `(system, ARFCN, PCI)` dans le workspace actif, sans changement de design.
 - Le suffixe technique `!ARFCN:PCI` n'est jamais rendu comme badge cellule ;
   l'arbre et le titre de carte montrent uniquement l'identité radio lisible.
-- SemVer front : **MINOR**, numéro attribué par BC3.
+- SemVer front : **MINOR 1.123.0**.
 
 ## 1.122.0 (minor) — BC4-FRONT 2026-10-30 — écran « Changer mon mot de passe » (Agent BC1, numérotation BC3)
 
