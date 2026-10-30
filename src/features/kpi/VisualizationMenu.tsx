@@ -13,6 +13,7 @@ const icons = {
 };
 export function VisualizationItems({
   onChange,
+  onIntent,
   throughput = false,
   seriesAvailable = false,
   excludeGraph = false,
@@ -21,6 +22,7 @@ export function VisualizationItems({
   seriesAvailable?: boolean;
   excludeGraph?: boolean;
   onChange: (mode: VisualizationType) => void;
+  onIntent?: (mode: VisualizationType) => void;
 }) {
   const { t: translate } = useTranslation();
   return (
@@ -28,7 +30,9 @@ export function VisualizationItems({
       {(Object.keys(VISUALIZATIONS) as VisualizationType[])
         // 1.79.0 — Spec v2 §2 : "Graph" supprimé du menu KPI (mode exclusif
         // sur chronogram/histogram/table/map/series). Appel via excludeGraph.
-        .filter((mode) => (mode !== "task_scatter" || throughput) && !(excludeGraph && mode === "graph"))
+        .filter(
+          (mode) => (mode !== "task_scatter" || throughput) && !(excludeGraph && mode === "graph"),
+        )
         .map((mode) => {
           const Icon = icons[mode];
           // Task Time needs a series; the scatter plot needs an axis catalogue
@@ -41,7 +45,11 @@ export function VisualizationItems({
             : undefined;
           return (
             <span key={mode} title={title}>
-              <DropdownMenuItem disabled={disabled} onSelect={() => onChange(mode)}>
+              <DropdownMenuItem
+                disabled={disabled}
+                onPointerDown={() => onIntent?.(mode)}
+                onSelect={() => onChange(mode)}
+              >
                 <Icon size={14} />
                 {VISUALIZATIONS[mode]}
               </DropdownMenuItem>

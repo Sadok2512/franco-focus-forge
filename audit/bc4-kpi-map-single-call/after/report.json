@@ -1,0 +1,21 @@
+{
+  "mode": "after",
+  "base": "http://127.0.0.1:9183",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "panelToRenderedMs": 579,
+  "renderedPoints": 4935,
+  "mapRequestCount": 1,
+  "contentPointCount": 4935,
+  "contentSha256": "92ad2b4d59bf6ba09544b0e9101b18c8a27c9755d944879d71fcd75fbd336979",
+  "requests": [
+    {
+      "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0",
+      "status": 200,
+      "relativeStartMs": null,
+      "bytes": 2665709,
+      "durationMs": 1170,
+      "points": 4935
+    }
+  ]
+}

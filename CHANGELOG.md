@@ -1,3 +1,14 @@
+## Next (patch) — BC4-FRONT 2026-10-30 — chargement carte KPI en un appel (Agent BC4, numérotation BC3)
+
+- La carte KPI charge désormais tous ses points via la route légère
+  `GET /projects/{pid}/metrics/map`, en un seul appel partagé entre les
+  panneaux, au lieu d'une sonde suivie de cinq pages parallèles
+  `/metrics/table`.
+- Le fond cartographique reste indépendant du chargement des mesures ; le
+  contrat des 4 935 points, des cellules servantes et des liens radio est
+  inchangé.
+- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+
 ## Next (patch) — BC4-FRONT 2026-10-30 — Parameters et catalogue KPI (Agent BC4, numérotation BC3)
 
 - KPI Analytics aligne les en-têtes opérateurs du tableau Parameters sur

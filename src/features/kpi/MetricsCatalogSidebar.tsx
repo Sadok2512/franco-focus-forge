@@ -57,6 +57,7 @@ export function MetricsCatalogSidebar({
   selected,
   onToggle,
   onVisualization,
+  onVisualizationIntent,
   searchRef,
   search: controlledSearch,
   onSearchChange,
@@ -72,6 +73,7 @@ export function MetricsCatalogSidebar({
   selected: string[];
   onToggle: (code: string) => void;
   onVisualization?: (code: string, view: MetricView) => void;
+  onVisualizationIntent?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   search?: string;
   onSearchChange?: (value: string) => void;
@@ -391,6 +393,9 @@ export function MetricsCatalogSidebar({
                         (demande user). KPI menu reste sans Graph (spec v2). */}
                     <VisualizationItems
                       throughput={node.unit === "Mbit/s" || node.unit === "Mbps"}
+                      onIntent={(mode: VisualizationType) => {
+                        if (mode === "map") onVisualizationIntent?.(node.selection!, "map");
+                      }}
                       onChange={(mode: VisualizationType) => {
                         if (
                           mode === "histogram" ||
