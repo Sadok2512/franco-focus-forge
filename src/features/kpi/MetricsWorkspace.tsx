@@ -11,7 +11,7 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricTableKey } from "./query-ke
 import type { MetricAnalysis, MetricInfo } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { MetricGraphCard, METRIC_VIEW_ICONS, METRIC_VIEW_LABELS, type MetricView } from "./MetricGraphCard";
+import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
@@ -121,67 +121,83 @@ function Plot({ option, label }: { option: EChartsOption; label: string }) {
     />
   );
 }
-function MetricMap({ data }: { data: MetricAnalysis }) {
+const MAP_SCALE_COLORS = ["#b91c1c", "#f97316", "#facc15", "#84cc16", "#15803d"] as const;
+
+export function metricMapNumericExtent(data: MetricAnalysis): [number, number] {
+  const values = data.map_points
+    .map((point) => point.value)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (!values.length) return [0, 1];
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  return min === max ? [min - 1, max + 1] : [min, max];
+}
+
+export function metricMapFeatures(data: MetricAnalysis) {
+  return data.map_points.map((point) => ({
+    type: "Feature" as const,
+    geometry: {
+      type: "Point" as const,
+      coordinates: [point.lng, point.lat] as [number, number],
+    },
+    properties: {
+      tooltip: point.tooltip,
+      code: point.code,
+      ...(typeof point.value === "number" && Number.isFinite(point.value)
+        ? { value: point.value }
+        : {}),
+    },
+  }));
+}
+
+export function installMetricMapSource(
+  map: MlMap,
+  features: ReturnType<typeof metricMapFeatures>,
+  minValue: number,
+  maxValue: number,
+) {
+  const geo = { type: "FeatureCollection" as const, features };
+  map.addSource("metrics-v3", { type: "geojson", data: geo });
+  map.addLayer({
+    id: "metrics-v3",
+    type: "circle",
+    source: "metrics-v3",
+    paint: {
+      "circle-radius": 3,
+      "circle-opacity": 0.86,
+      "circle-color": [
+        "interpolate", ["linear"], ["to-number", ["get", "value"], minValue],
+        minValue, MAP_SCALE_COLORS[0],
+        minValue + (maxValue - minValue) * 0.25, MAP_SCALE_COLORS[1],
+        minValue + (maxValue - minValue) * 0.5, MAP_SCALE_COLORS[2],
+        minValue + (maxValue - minValue) * 0.75, MAP_SCALE_COLORS[3],
+        maxValue, MAP_SCALE_COLORS[4],
+      ],
+    },
+  });
+}
+
+function MetricMap({ data, label, unit }: { data: MetricAnalysis; label: string; unit: string }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
-  const features = useMemo(
-    () =>
-      data.map_points.map((p) => ({
-        type: "Feature" as const,
-        geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
-        properties: { tooltip: p.tooltip, code: p.code },
-      })),
-    [data],
-  );
+  const [minValue, maxValue] = useMemo(() => metricMapNumericExtent(data), [data]);
+  const features = useMemo(() => metricMapFeatures(data), [data]);
   useEffect(() => {
     if (!map) return;
     const geo = { type: "FeatureCollection" as const, features };
     const source = map.getSource("metrics-v3") as GeoJSONSource | undefined;
-    if (source) source.setData(geo);
-    else {
-      // 1.106.3 — points clusterisés : des milliers de cercles de 5 px
-      // se superposaient en une tache illisible. Clusters gradués +
-      // compteur, points individuels seulement au zoom fort.
-      map.addSource("metrics-v3", {
-        type: "geojson",
-        data: geo,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-      map.addLayer({
-        id: "metrics-v3-clusters",
-        type: "circle",
-        source: "metrics-v3",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-radius": ["step", ["get", "point_count"], 13, 50, 17, 250, 22, 1000, 28],
-          "circle-color": "#1769E0",
-          "circle-opacity": 0.78,
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5,
-        },
-      });
-      map.addLayer({
-        id: "metrics-v3-cluster-count",
-        type: "symbol",
-        source: "metrics-v3",
-        filter: ["has", "point_count"],
-        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
-        paint: { "text-color": "#ffffff" },
-      });
-      map.addLayer({
-        id: "metrics-v3",
-        type: "circle",
-        source: "metrics-v3",
-        filter: ["!", ["has", "point_count"]],
-        paint: {
-          "circle-radius": 4,
-          "circle-color": "#60a5fa",
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1,
-        },
-      });
+    if (source) {
+      source.setData(geo);
+      map.setPaintProperty("metrics-v3", "circle-color", [
+        "interpolate", ["linear"], ["to-number", ["get", "value"], minValue],
+        minValue, MAP_SCALE_COLORS[0],
+        minValue + (maxValue - minValue) * 0.25, MAP_SCALE_COLORS[1],
+        minValue + (maxValue - minValue) * 0.5, MAP_SCALE_COLORS[2],
+        minValue + (maxValue - minValue) * 0.75, MAP_SCALE_COLORS[3],
+        maxValue, MAP_SCALE_COLORS[4],
+      ]);
+    } else {
+      installMetricMapSource(map, features, minValue, maxValue);
     }
     // Cadrer sur l'étendue réelle des points (et non la France entière).
     if (features.length) {
@@ -195,7 +211,7 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
         { padding: 48, maxZoom: 14, duration: 0 },
       );
     }
-  }, [map, features]);
+  }, [map, features, minValue, maxValue]);
   useEffect(() => {
     if (!map) return;
     let popup: import("maplibre-gl").Popup | undefined;
@@ -208,16 +224,6 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       popup?.remove();
       popup = new Popup().setLngLat(e.lngLat).setDOMContent(node).addTo(map);
     };
-    const clickCluster = async (e: import("maplibre-gl").MapLayerMouseEvent) => {
-      const clusterId = e.features?.[0]?.properties?.["cluster_id"];
-      if (clusterId == null) return;
-      const src = map.getSource("metrics-v3") as GeoJSONSource | undefined;
-      if (!src) return;
-      const zoom = await src.getClusterExpansionZoom(clusterId as number);
-      if (disposed) return;
-      const coords = (e.features?.[0]?.geometry as unknown as { coordinates: [number, number] }).coordinates;
-      map.easeTo({ center: coords, zoom });
-    };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
     };
@@ -225,19 +231,13 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       map.getCanvas().style.cursor = "";
     };
     map.on("click", "metrics-v3", click);
-    map.on("click", "metrics-v3-clusters", clickCluster);
     map.on("mouseenter", "metrics-v3", pointer);
     map.on("mouseleave", "metrics-v3", noPointer);
-    map.on("mouseenter", "metrics-v3-clusters", pointer);
-    map.on("mouseleave", "metrics-v3-clusters", noPointer);
     return () => {
       disposed = true;
       map.off("click", "metrics-v3", click);
-      map.off("click", "metrics-v3-clusters", clickCluster);
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
-      map.off("mouseenter", "metrics-v3-clusters", pointer);
-      map.off("mouseleave", "metrics-v3-clusters", noPointer);
       popup?.remove();
     };
   }, [map]);
@@ -248,20 +248,29 @@ function MetricMap({ data }: { data: MetricAnalysis }) {
       {...(first ? { center: [first.lng, first.lat] as [number, number] } : {})}
       zoom={first ? 13 : 5}
       showOperatorLegend={false}
+      flush
       contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
       measurementStatus={first ? null : translate("metrics.59d5ea1eb6a5")}
-    />
+    >
+      <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
+        <strong>{label}{unit ? ` · ${unit}` : ""}</strong>
+        <span className="kpi-metric-map-scale" aria-hidden="true" />
+        <span className="kpi-metric-map-scale-labels">
+          <span>{fmt(minValue)}</span><span>{fmt(maxValue)}</span>
+        </span>
+      </div>
+    </KpiMapOSM>
   );
 }
-function MetricMapCard({ projectId, captureId, selection, title, filters, onRemove, onVisualization }: {
+function MetricMapCard({ projectId, captureId, selection, title, unit, filters, onRemove }: {
   projectId: string;
   captureId: string;
   selection: string;
   title: string;
+  unit: string;
   filters: KpiQueryFilters;
   onRemove: () => void;
-  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
 }) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLElement>(null);
@@ -272,30 +281,21 @@ function MetricMapCard({ projectId, captureId, selection, title, filters, onRemo
     retry: false,
   });
   return (
-    <article ref={panelRef} className="kpi-graph-card" data-metric-code={selection} data-view="map">
-      <header className="kpi-card-header">
-        <h3 title={title}>{title}</h3>
-        <WorkspacePanelMenu label={title}>
-          {onVisualization && (["graph", "histogram", "table", "map"] as MetricView[]).map((mode) => {
-            const Icon = METRIC_VIEW_ICONS[mode];
-            return <DropdownMenuItem key={mode} onSelect={() => onVisualization(selection, mode)}>
-              <Icon size={14} />{METRIC_VIEW_LABELS[mode]}
-            </DropdownMenuItem>;
-          })}
+    <article ref={panelRef} className="kpi-graph-card kpi-metric-map-card" data-metric-code={selection} data-view="map" data-point-count={query.data?.map_points.length ?? 0}>
+      <div className="kpi-metric-map-menu">
+        <WorkspacePanelMenu label={`${title} · actions`}>
+          <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => void panelRef.current?.requestFullscreen?.()}>
-            <Maximize2 size={14} />{t("panel.fullscreen")}
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={onRemove}><X size={14} />{t("panel.remove")}</DropdownMenuItem>
+          <DropdownMenuItem onSelect={onRemove}><X size={14} />Fermer</DropdownMenuItem>
         </WorkspacePanelMenu>
-      </header>
+      </div>
       {query.isPending ? <div className="kpi-measurements-loading" aria-busy="true">
         <div className="kpi-measurements-progress" role="progressbar" aria-label={t("metrics.eb724a908f1f")}><span /></div>
       </div> : query.isError ? <QueryErrorState
         error={query.error}
         title={t("metrics.f1d7675032b2")}
         onRetry={() => void query.refetch()}
-      /> : query.data ? <MetricMap data={query.data} /> : null}
+      /> : query.data ? <MetricMap data={query.data} label={title} unit={unit} /> : null}
     </article>
   );
 }
@@ -322,6 +322,7 @@ export function MetricsWorkspace({
   cardViewRequest,
   onRemove,
   onVisualization,
+  mapFillsAvailable = false,
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -340,6 +341,7 @@ export function MetricsWorkspace({
   cardViewRequest?: { code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
+  mapFillsAvailable?: boolean;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -814,15 +816,17 @@ export function MetricsWorkspace({
                 id={`metric:${s.full}`}
                 natural={100 + i}
                 defaultTitle={`${i + 1}. ${title}`}
+                fullRow={mapFillsAvailable && metricView === "map"}
+                bare={metricView === "map"}
               >
                 {(panelTitle) => metricView === "map" ? <MetricMapCard
                   projectId={projectId}
                   captureId={captureId}
                   selection={s.full}
-                  title={panelTitle}
+                  title={title}
+                  unit={info?.unit ?? ""}
                   filters={filters}
                   onRemove={remove}
-                  onVisualization={onVisualization}
                 /> : <MetricGraphCard
                 projectId={projectId}
                 code={s.full}
@@ -1167,7 +1171,11 @@ export function MetricsWorkspace({
                 </div>
               </div>
             ) : view === "map" ? (
-              <MetricMap data={data} />
+              <MetricMap
+                data={data}
+                label={data.columns[0]?.label ?? selections[0] ?? "Metric"}
+                unit={data.columns[0]?.unit ?? ""}
+              />
             ) : (
               <Plot
                 option={option}

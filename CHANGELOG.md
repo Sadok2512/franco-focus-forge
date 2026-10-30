@@ -1,3 +1,17 @@
+## 1.124.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : panneau carte métrique (Agent BC4, numérotation BC3)
+
+Merge `bc4/kpi-map-panel` (`276e068`, rebasé sur 1.123.1). Carte
+métrique en pleine surface sans titre.
+
+- Une carte seule occupe toute la surface disponible du workspace,
+  sous le bandeau Events, sans en-tête ni cadre intermédiaire.
+- La légende embarque le libellé de la métrique, son unité et son
+  échelle de couleurs ; chaque mesure géolocalisée est rendue
+  individuellement selon sa valeur, sans cluster ni bulle de comptage.
+- Le menu `…` est superposé à la carte et propose `Paramètres`
+  (réservé) et `Fermer`. Les sites restent une couche séparée.
+- SemVer front : **MINOR 1.124.0**.
+
 ## 1.123.1 (patch) — BC4-FRONT 2026-10-30 — KPI Analytics regressions : tableau mesures + loaders (Agent BC1, numérotation BC3)
 
 Compagnon front du back `0.113.1`.
