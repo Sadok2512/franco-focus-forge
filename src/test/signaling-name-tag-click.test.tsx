@@ -64,7 +64,18 @@ const event = {
 
 function renderTimeline() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  client.setQueryData(["signaling-rf", "p", "c", "", "", ""], {
+  client.setQueryData(["signaling-rf-overview", "p", "c", "", "", ""], {
+    project_id: "p",
+    capture_id: "c",
+    result_id: "overview",
+    buckets: [{ t_rel_s: 0, counts: { Procedures: 1 }, lane_counts: { services: 1 } }],
+    state_events: [],
+    bucket_s: 10,
+    total: 1,
+    missing_time: 0,
+    t_rel_end_s: 100,
+  });
+  client.setQueryData(["signaling-rf", "p", "c", "", "", "", [0, 30]], {
     project_id: "p",
     capture_id: "c",
     result_id: "r",
@@ -96,7 +107,7 @@ function renderTimeline() {
         direction=""
         search=""
         allowedProtocols={[]}
-        timeWindow={[0, 100]}
+        timeWindow={[0, 30]}
         onWindow={() => {}}
       />
     </QueryClientProvider>,

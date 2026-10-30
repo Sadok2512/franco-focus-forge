@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { ECharts, EChartsOption, CustomSeriesRenderItem } from "echarts";
 import { getSignaling, getMetricSeries } from "@/lib/api/client";
-import { getAllSignalingEvents, type RfEvent } from "@/lib/api/signaling";
+import { type RfEvent } from "@/lib/api/signaling";
 import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
@@ -22,6 +22,7 @@ import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
 import { clampNameTagX, nearestNameTag, type NameTag } from "./name-tag";
+import { shouldLoadTimelineDetail } from "./timeline-loading";
 
 // Fixed lane order: RRC state on top (user request), then UE state,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -115,21 +116,28 @@ export function RfTimeline({
   const chart = useRef<ECharts | undefined>(undefined);
   const callbacks = useRef({ onSelect, onRange });
   callbacks.current = { onSelect, onRange };
-  const summary = useQuery({
-    queryKey: ["signaling-rf-summary", projectId, captureId],
+  const overview = useQuery({
+    queryKey: ["signaling-rf-overview", projectId, captureId, technology, direction, search],
     queryFn: ({ signal }) =>
-      getSignaling(projectId, "eventSummary", { capture_id: captureId }, signal),
+      getSignaling(
+        projectId,
+        "timeline",
+        {
+          capture_id: captureId,
+          bucket_s: 10,
+          technology: technology || undefined,
+          direction: direction || undefined,
+          q: search || undefined,
+        },
+        signal,
+      ),
     staleTime: 60000,
   });
-  const radio = useQuery({
-    queryKey: ["signaling-rf-radio", projectId, captureId],
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal),
-    staleTime: 60000,
-  });
-  const duration = radio.data?.duration_s ?? summary.data?.t_rel_end_s ?? 0;
+  const duration = overview.data?.t_rel_end_s ?? 0;
   const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
   const visibleWindow = timeWindow ?? localWindow.window;
   const changeWindow = onWindow ?? localWindow.setWindow;
+  const detailEnabled = shouldLoadTimelineDetail(overview.isSuccess, duration, visibleWindow);
   const events = useQuery({
     queryKey: [
       "signaling-rf",
@@ -140,9 +148,11 @@ export function RfTimeline({
       search,
       visibleWindow,
     ],
+    enabled: detailEnabled,
     queryFn: ({ signal }) =>
-      getAllSignalingEvents(
+      getSignaling(
         projectId,
+        "events",
         {
           capture_id: captureId,
           view: "rf",
@@ -151,7 +161,7 @@ export function RfTimeline({
           q: search || undefined,
           from_s: visibleWindow[0],
           to_s: visibleWindow[1],
-          limit: 2000,
+          limit: 5000,
         },
         signal,
       ),
@@ -163,9 +173,42 @@ export function RfTimeline({
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal, windowSeq),
     staleTime: 60000,
   });
+  // Read the page-level full radio query if it already exists, but never
+  // trigger it from the timeline. Zoom-window data remains authoritative.
+  const cachedRadio = useQuery({
+    queryKey: ["signaling-rf-radio", projectId, captureId],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal),
+    enabled: false,
+    staleTime: 60000,
+  });
+  useEffect(() => {
+    if (!detailEnabled) {
+      setWindowSeq(undefined);
+      return;
+    }
+    const rows = events.data?.events ?? [];
+    if (!rows.length) {
+      setWindowSeq(undefined);
+      return;
+    }
+    const from_seq = Math.min(...rows.map((event) => event.seq));
+    const to_seq = Math.max(...rows.map((event) => event.seq_end ?? event.seq));
+    setWindowSeq((current) =>
+      current?.from_seq === from_seq && current.to_seq === to_seq ? current : { from_seq, to_seq },
+    );
+  }, [detailEnabled, events.data?.events]);
+  const overviewStateEvents = useMemo(
+    () => (overview.data?.state_events ?? []) as unknown as RfEvent[],
+    [overview.data?.state_events],
+  );
   const eligibleEvents = useMemo(
-    () =>
-      events.data?.events.filter(
+    () => {
+      const stateIds = new Set(overviewStateEvents.map((event) => event.id));
+      const source = [
+        ...overviewStateEvents,
+        ...(events.data?.events.filter((event) => !stateIds.has(event.id)) ?? []),
+      ];
+      return source.filter(
         (e) =>
           !e.attrs.protocol ||
           (layers.includes(e.attrs.protocol) &&
@@ -174,12 +217,13 @@ export function RfTimeline({
                 e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
               )) &&
             e.t_rel_s !== null),
-      ) ?? [],
-    [events.data, layers, allowedProtocols],
+      );
+    },
+    [events.data, overviewStateEvents, layers, allowedProtocols],
   );
   const states = useMemo(
-    () => (stateTracksV2 ? provenStates(events.data?.events ?? [], captureId) : []),
-    [stateTracksV2, events.data, captureId],
+    () => (stateTracksV2 ? provenStates(overviewStateEvents, captureId) : []),
+    [stateTracksV2, overviewStateEvents, captureId],
   );
   const rrcSegments = useMemo(
     () => (stateTracksV2 ? rrcStateSegments(states, duration) : []),
@@ -218,7 +262,15 @@ export function RfTimeline({
       });
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
   }, [eligibleEvents, states, technology, t]);
-  const series = (detailed.data ?? radio.data)?.series;
+  const series = detailed.data?.series ?? cachedRadio.data?.series;
+  const overviewPoints = useMemo(
+    () =>
+      (overview.data?.buckets ?? []).map((bucket) => ({
+        t: bucket.t_rel_s,
+        count: Object.values(bucket.counts).reduce((sum, count) => sum + count, 0),
+      })),
+    [overview.data?.buckets],
+  );
   const lanes = useMemo(
     () =>
       laneOrder.filter(
@@ -843,6 +895,23 @@ export function RfTimeline({
         },
       },
       series: [
+        {
+          id: "overview-density",
+          name: "Overview",
+          type: "scatter",
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          symbol: "rect",
+          symbolSize: (value: unknown) => {
+            const count = Number((value as unknown[])[2] ?? 0);
+            return [3, Math.min(16, 3 + Math.sqrt(count))];
+          },
+          itemStyle: { color: rfColors["unknown"]!, opacity: detailEnabled ? 0.25 : 0.65 },
+          data: overviewPoints.map((point) => ({
+            value: [point.t, lanes.indexOf("network"), point.count],
+          })),
+          z: 1,
+        },
         ...(stateTracksV2
           ? [
               {
@@ -923,6 +992,8 @@ export function RfTimeline({
     rfTop,
     laneLayout,
     visibleWindow,
+    overviewPoints,
+    detailEnabled,
   ]);
   return (
     <div ref={root} className="flex min-h-0 flex-1 flex-col bg-card" data-testid="rf-timeline">
@@ -970,8 +1041,8 @@ export function RfTimeline({
           </div>
         </details>
       </div>
-      {summary.isPending && <p role="status">{t("rfTimeline.loading")}</p>}
-      {[events, radio, detailed]
+      {overview.isPending && <p role="status">{t("rfTimeline.loading")}</p>}
+      {[overview, events, detailed]
         .filter((q) => q.isError)
         .map((q, i) => (
           <p key={i} role="alert">

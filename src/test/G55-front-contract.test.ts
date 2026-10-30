@@ -97,6 +97,28 @@ describe("G55 — live front contracts", () => {
     );
   });
 
+  it("accepts one full-capture overview with bucketed density and proven states", () => {
+    const state = stateEvent("RRC_STATE", 2);
+    const response = signalingSchemas.timeline.parse({
+      project_id: "43e81a34a073",
+      capture_id: "a4b0c321c52e",
+      result_id: "overview",
+      buckets: Array.from({ length: 486 }, (_, index) => ({
+        t_rel_s: index * 10,
+        counts: { "RRC LTE": index % 3 },
+        lane_counts: { radio: index % 3 },
+      })),
+      state_events: [state],
+      bucket_s: 10,
+      total: 23398,
+      missing_time: 0,
+      t_rel_end_s: 4857,
+    });
+    expect(response.buckets).toHaveLength(486);
+    expect(response.state_events).toHaveLength(1);
+    expect(response.t_rel_end_s).toBe(4857);
+  });
+
   it("continues a full-capture RF request while the server says truncated", async () => {
     const e1 = stateEvent("RRC_STATE", 2);
     const e2 = stateEvent("UE_STATE", 5);

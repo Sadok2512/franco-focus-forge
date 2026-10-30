@@ -1,3 +1,12 @@
+## Unreleased (patch) — Frise Signaling progressive (Agent BC1)
+
+- La frise affiche d'abord l'ensemble de la capture depuis une seule réponse
+  `/signaling/timeline?bucket_s=10` ; les événements détaillés ne sont chargés
+  qu'après zoom ou déplacement vers une fenêtre plus étroite.
+- Les états RRC/UE proviennent de la même vue d'ensemble et les séries radio
+  détaillées restent bornées à la fenêtre lorsque ses seq sont connus.
+- SemVer front : **PATCH**, numéro attribué par BC3 au merge.
+
 ## 1.124.1 (patch) — BC4-FRONT 2026-10-30 — Signaling front contracts : Drive RSRP + frise RRC/UE State (Agent BC1, numérotation BC3)
 
 Merge `bc1/signaling-front-contract` (`1c1fa54`). Correctif des deux
