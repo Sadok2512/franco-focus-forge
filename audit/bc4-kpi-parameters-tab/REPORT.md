@@ -203,3 +203,211 @@ f27578b fix(catalog): remove unsupported Analytics series
   le garde d'exposition des feuilles.
 
 L'activation de 2.57.0 en production reste exclusivement à BC3.
+
+## Audit cartes — cohérence Map / Signaling / KPI Analytics
+
+Audit de lecture réalisé sur le front servi en `1.124.0`, projet Test_6
+`43e81a34a073`, capture `a4b0c321c52e`. Les captures ont été obtenues avec
+un JWT éphémère généré dans le conteneur API, sans lecture ni essai de mot de
+passe ; le navigateur n'a effectué que des lectures.
+
+### Inventaire des implémentations et couches
+
+| Page | Composition réelle | Bibliothèque | Couches propres à la page |
+|---|---|---|---|
+| Map | `src/features/map/MapWorkspacePage.tsx` → `KpiMapOSM workspace` → `NetworkMapChrome`, `SitesLayer`, `DriveRsrpLayer` | MapLibre GL v6 | fonds OSM/satellite, sites, cellules/secteurs GEOREF, labels, couverture Drive RSRP, liens RSRP → cellule serveuse prouvée |
+| Signaling | `SignalMap` dans `src/features/signaling/SignalingPage.tsx:740` → `KpiMapOSM workspace`, avec `DriveRsrpLayer` | MapLibre GL v6 | trajet GPS, marqueurs d'événements, point sélectionné, couverture Drive RSRP, liens serveurs prouvés, plus sites/cellules partagés |
+| KPI Analytics | `MetricMap` dans `src/features/kpi/MetricsWorkspace.tsx:180` → `KpiMapOSM` **sans** `workspace` | MapLibre GL v6 | points `metrics-v3` colorés par valeur et légende min/max ; sites/cellules via le petit `SitesLayerControls`, sans chrome partagé |
+
+Le socle cartographique est donc déjà commun (`KpiMapOSM`), mais son contrat
+d'outils ne l'est pas : `KpiMapOSM.tsx:101-117` choisit
+`NetworkMapChrome` seulement avec `workspace=true`, sinon
+`SitesLayerControls`. Map et Signaling passent `workspace`; KPI ne le passe
+pas (`MetricsWorkspace.tsx:246-263`).
+
+### Matrice des outils réellement disponibles
+
+`✓` présent, `—` absent, `partiel` présent avec une autre sémantique que son
+libellé attendu.
+
+| Outil | Map | Signaling | KPI Analytics |
+|---|:---:|:---:|:---:|
+| Sites / Cells | ✓ / ✓ | ✓ / ✓ | ✓ / ✓, dans le panneau compact |
+| filtres 4G, 5G NR, LTE, bandes, opérateurs | ✓ | ✓ | ✓ |
+| recherche site/cellule/PCI/coordonnées | ✓ | ✓ | — |
+| plein écran | ✓ | ✓ | ✓ |
+| zoom + / − | ✓ | ✓ | ✓, contrôle MapLibre standard |
+| « me localiser » | partiel | partiel | — |
+| mesure de distance | ✓ | ✓ | — |
+| tracé de surface | ✓ | ✓ | — |
+| sélection | ✓ | ✓ | partiel : popup point/site/cellule seulement |
+| barre basse Sites / Cells / zoom / échelle | ✓ | ✓ | — |
+| choix du fond cartographique | ✓ | ✓ | — |
+
+Le bouton à icône `LocateFixed` de Map/Signaling recentre sur le centre fourni
+par la page (`onRecenter`/`flyTo`) ; il n'appelle pas l'API de géolocalisation
+du navigateur. Il ne faut donc pas le présenter comme une localisation de
+l'utilisateur tant que `navigator.geolocation` n'est pas câblé.
+
+### Légendes et réglages visuels
+
+- Map et Signaling ont la légende réseau de `NetworkMapChrome.tsx:205-237` :
+  technologies, bandes actives, couleurs opérateur et symboles site/secteur.
+  `BeamDisplayControls` règle la taille et l'intensité des secteurs.
+- KPI Analytics a seulement la légende de métrique
+  `MetricsWorkspace.tsx:256-262`, une rampe fixe de cinq couleurs entre le
+  minimum et le maximum des points. Le rayon des points est codé en dur à
+  `3` et l'opacité à `0.86` (`MetricsWorkspace.tsx:161-175`) : aucun réglage
+  de couleur ou de taille des points n'est exposé. Les réglages de beam du
+  panneau Sites ne modifient pas les points de mesure.
+- La capture KPI prise douze secondes après l'ouverture du workspace montre
+  `mapCards=1`, `busy=1`, `legend=0` : la carte entière est conditionnée par
+  la fin de `/metrics` (`MetricsWorkspace.tsx:277-284`). Tant que cette requête
+  attend, ni fond, ni cellules, ni légende ne sont montés. C'est la cause
+  directe du rendu vide observé, indépendamment du contenu de `cell_ref`.
+
+Commande de capture KPI bornée (`page.waitForTimeout(12000)` avant lecture de
+l'état) :
+
+```text
+timeout 60s node --input-type=module <script Playwright de l'audit>
+{
+  "legend": 0,
+  "mapCards": 1,
+  "busy": 1,
+  "alerts": [],
+  "pageErrors": []
+}
+VERDICT_RC=0
+```
+
+Captures et empreintes (`sha256sum audit/bc4-kpi-parameters-tab/maps-audit/*.png`) :
+
+```text
+15557d3cfacd6103dc68ba90a2577a45fd8bfab79002106c6b601738fcc51330  kpi-analytics.png
+8c0e7daeb4fe1771f7d321fe3066dd0282070102e3bace60a97fa9d65b90a716  map-page.png
+24d4ed6f583f3bee8b927ea6c72028e69fd6716167ba75b0fac78dde218ba6c2  signaling.png
+```
+
+### Cellules et liens point → cellule
+
+Le constat historique « `cell_ref` est vide depuis la purge » est **fermé**
+pour l'état audité. Requête exécutée dans une transaction read-only :
+
+```sql
+BEGIN READ ONLY;
+SELECT count(*) AS cell_ref_rows,
+       count(*) FILTER (WHERE geom IS NOT NULL) AS cell_ref_with_geom
+FROM cell_ref;
+COMMIT;
+```
+
+```text
+cell_ref_rows=458211
+cell_ref_with_geom=457845
+VERDICT=FERMÉ — le référentiel n'est plus vide.
+```
+
+La capture Map montre des sites et secteurs réels ; la capture Signaling
+montre également les compteurs Sites/Cells. La carte KPI n'atteint pas le
+montage de `SitesLayer`, donc son absence de cellules ne prouve pas une absence
+de données.
+
+Un lien exact existe déjà dans `DriveRsrpLayer.tsx:174-202` et est utilisé par
+Map et Signaling. Le back construit dans `app/kpi/metrics_v3.py:892-953` les
+champs `serving_cell_id`, `serving_cell_seq`, `serving_cell_ref_id`,
+`serving_site_id/name`, `serving_cell_lat/lng` et
+`serving_cell_source=chi_previous_seq_cell_ref_exact`. La preuve est stricte :
+dernier CHI LTE précédent dans **la même capture**, ordre canonique par `seq`,
+puis égalité exacte `CHI Cell ID = cell_ref.eci`; aucune proximité ou PCI seul.
+Le schéma front accepte déjà ces champs dans
+`src/lib/api/metrics-schemas.ts:294-311`.
+
+Ce lien n'est pas réutilisé par la couche KPI `metrics-v3` :
+`metricMapFeatures()` ne conserve que `tooltip`, `code` et `value`
+(`MetricsWorkspace.tsx:136-150`). C'est un écart front fermé par le code, pas
+un manque du contrat serving.
+
+Les identités voisines observées existent aussi :
+
+```sql
+BEGIN READ ONLY;
+SELECT count(*) AS observed_identity_rows,
+       count(*) FILTER (
+         WHERE cell_arfcn IS NOT NULL AND cell_pci IS NOT NULL
+       ) AS with_arfcn_pci,
+       count(DISTINCT (system, cell_arfcn, cell_pci)) FILTER (
+         WHERE cell_arfcn IS NOT NULL AND cell_pci IS NOT NULL
+       ) AS physical_identities
+FROM nmf_cell_identity
+WHERE project_id = '43e81a34a073'
+  AND capture_id = 'a4b0c321c52e';
+COMMIT;
+```
+
+```text
+observed_identity_rows=58605
+with_arfcn_pci=58605
+physical_identities=479
+```
+
+En revanche, le contrat `map_points` ne fournit aucune liste de voisines ni
+d'ancre NR avec `cell_ref_id` et géométrie. `nmf_cell_identity` prouve
+`(system, ARFCN, PCI)` au `seq`, mais ne suffit pas à choisir sans ambiguïté
+une ligne géographique de `cell_ref`. Manquent donc, pour tracer ces liens :
+
+- une association back prouvée et versionnée mesure → cellule voisine réelle ;
+- une association back prouvée vers l'ancre NR ;
+- pour chaque cible, son identifiant de référence, sa géométrie et la règle de
+  preuve ;
+- l'exposition de ces cibles dans `map_points` sans approximation par distance.
+
+### Gravité, cause et taille estimée
+
+| Écart | Gravité | Cause par le contenu | Taille estimée |
+|---|---|---|---|
+| Carte KPI vide et cellules invisibles pendant le chargement | Haute | `MetricMap` n'est monté qu'après la réponse complète `/metrics`; la capture reste `aria-busy` sans fond ni outils | M |
+| Outils différents dans KPI | Haute | KPI appelle `KpiMapOSM` sans `workspace`, donc reçoit `SitesLayerControls` au lieu de `NetworkMapChrome` | M |
+| Légende/réglage des points KPI incomplets | Moyenne | rampe et rayon codés en dur, aucun état partagé de présentation des mesures | S–M |
+| Lien serving absent de KPI | Haute | le back l'envoie déjà, mais `metricMapFeatures()` supprime les champs et aucune couche de lignes n'est installée | M |
+| Liens voisins et ancre NR absents | Haute | identité radio observée disponible, mais aucune association géographique prouvée dans le contrat back | L |
+| « Me localiser » ambigu | Moyenne | recentrage métier, aucune géolocalisation navigateur | S |
+
+Les tailles sont relatives : S = adaptation locale, M = plusieurs composants
+front et gardes, L = contrat back + front + migration/rattrapage éventuel.
+
+### Architecture proposée
+
+Conserver un seul moteur et rendre son contrat explicite :
+
+```text
+SharedNetworkMap (MapLibre + sources de base)
+├── NetworkMapChrome (toujours identique sur les trois pages)
+├── SitesCellsLayer (sites, secteurs, labels, filtres et sélection)
+├── slots de légendes/couches métier
+│   ├── Map : DriveRsrpLayer + ServingLinks
+│   ├── Signaling : trajet + événements + sélection + DriveRsrpLayer
+│   └── KPI : MetricPointsLayer + MetricLegend + ServingLinks
+└── état partagé de présentation (fond, sites/cells, techno, bandes,
+    recherche, plein écran, zoom, mesure, sélection, taille/intensité)
+```
+
+`KpiMapOSM` peut devenir ce `SharedNetworkMap` sans nouvelle bibliothèque ni
+refonte visuelle. La première étape est de faire utiliser `workspace`/le chrome
+commun à `MetricMap`, tout en gardant sa légende métrique dans un slot. La
+seconde est d'extraire `ServingLinks` de `DriveRsrpLayer` afin de le réutiliser
+sur la couche KPI. Les couches Signaling et KPI restent spécifiques et ne
+doivent jamais polluer les requêtes ou sélections des autres pages.
+
+### Incidents de commande déclarés
+
+- Première requête SQL : `exit 1`, identifiant alphanumérique mal échappé ;
+  aucune écriture. VERDICT : commande invalide, corrigée avec un heredoc SQL.
+- Deuxième requête SQL : `exit != 0`, colonne `arfcn` inexistante ; transaction
+  read-only annulée. VERDICT : schéma relevé via `information_schema`, colonne
+  correcte `cell_arfcn`, contrôle final PASS.
+- Première capture KPI : `exit 1`, locator Playwright ambigu entre plusieurs
+  feuilles RSRP. VERDICT : automatisation invalide, aucun impact applicatif.
+- Deuxième capture KPI : délai atteint en attendant une légende jamais montée.
+  VERDICT : écart reproduit. La capture finale utilise le contrat URL du
+  workspace et se termine avec `VERDICT_RC=0`.

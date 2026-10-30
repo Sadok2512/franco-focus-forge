@@ -1,12 +1,20 @@
-## Unreleased (patch) — Signaling front contracts (Agent BC1)
+## 1.124.1 (patch) — BC4-FRONT 2026-10-30 — Signaling front contracts : Drive RSRP + frise RRC/UE State (Agent BC1, numérotation BC3)
 
-- Drive RSRP consumes the semantic LTE Serving selector and recognises the
-  current `lte-type-N` selectors, including physical `!ARFCN:PCI` identities.
-- RF event windows follow the capture-local `next_seq` cursor until the server
-  reports `truncated=false`; RRC/UE state tracks are resolved from
-  `attrs.track` even when their canonical lane is `connexion`.
-- G55 locks the selectors measured from Test_6, the state-track contract, and
-  progressive RF-window pagination.
+Merge `bc1/signaling-front-contract` (`1c1fa54`). Correctif des deux
+régressions UI signalées cet après-midi (Drive RSRP « No measurement »
++ frise RRC State « Unknown » après ~270 s).
+
+- Drive RSRP consomme désormais le sélecteur sémantique LTE Serving et
+  reconnaît les sélecteurs courants `cell_rsrp@lte-type-N` ainsi que
+  les identités physiques `!ARFCN:PCI` (livrées en back 0.112.0).
+- Les fenêtres d'events RF suivent le curseur capture-local
+  `next_seq` jusqu'à ce que le serveur renvoie `truncated=false` ;
+  les tracks RRC_STATE / UE_STATE sont résolus depuis `attrs.track`
+  même quand leur `lane` canonique est `connexion`.
+- Nouveau test de contrat **G55** verrouille les sélecteurs mesurés
+  sur Test_6, le contrat state-track et la pagination progressive
+  RF-window.
+- SemVer front : **PATCH 1.124.1**.
 
 ## 1.124.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : panneau carte métrique (Agent BC4, numérotation BC3)
 
