@@ -489,7 +489,7 @@ export function DriveRsrpLayer({
           filter: ["==", ["get", "seq"], -1],
           paint: {
             "circle-radius": metricRadius(metricSize, true),
-            "circle-color": ["match", ["get", "rsrp_class"], ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]), RSRP_CLASSES[0]?.color ?? "transparent"] as ExpressionSpecification,
+            "circle-color": ["match", ["get", "rsrp_class"], ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]), RSRP_CLASSES[0]?.color ?? "transparent"] as unknown as ExpressionSpecification,
             "circle-stroke-width": 2,
             "circle-stroke-color": CELL_LINK_COLORS.serving,
             "circle-opacity": 1,
