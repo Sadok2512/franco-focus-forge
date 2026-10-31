@@ -1,3 +1,14 @@
+## 1.127.0 (minor) — Superstream SS-02 frontend management — 2026-10-31 (BC4)
+
+- Project management reuses the existing Superstream dialog and tree with
+  capture-level selection, search and explicit ordered membership.
+- Create, rename, member replacement and delete now use the SS-01
+  `captureIds`/`revision` contract and send `If-Match` on every existing-row
+  mutation. HTTP 409/428 receive explicit recovery messages.
+- Shared/public projects remain readable while mutation controls are owner-only.
+  Signaling, KPI, Map and NMF decoding are unchanged.
+- SemVer front: **MINOR 1.127.0**.
+
 ## 1.126.13 (patch) — BC4-FRONT 2026-10-31 — refonte carte MAP UI V1, point actif et curseur (Agent BC4)
 
 - **MAP UI V1** : sidebar repliable en rail d'icônes (Calques, Filtres,

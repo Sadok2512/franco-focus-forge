@@ -10,31 +10,42 @@
 // précédente mocked : `clearSuperstreamsLocalStorageMock()` est appelé
 // par `src/features/projects/SuperstreamTree.tsx` à l'`useEffect` initial.
 import { z } from "zod";
-import { apiFetch } from "./http";
+import { apiFetch, ApiHttpError } from "./http";
 import { getImportReport } from "./projects";
 import type { SuperstreamLog } from "@/features/projects/superstream-model";
 
 // Shape renvoyée par le back. captureIds et positions sont des champs
 // additifs (NMFHE2) ; ignorés par le dialog actuel, utilisés par le
 // consommateur `GET /stream` (lot ultérieur Signaling/Metrics).
+const SuperstreamMemberSchema = z.object({
+  position: z.number().int().nonnegative(),
+  captureId: z.string(),
+  captureName: z.string(),
+});
+
 export const SuperstreamSchema = z.object({
   id: z.string(),
   projectId: z.string(),
   name: z.string(),
   logIds: z.array(z.string()),
-  captureIds: z.array(z.string()).optional(),
-  positions: z.array(z.number()).optional(),
+  captureIds: z.array(z.string()),
+  positions: z.array(z.number().int().nonnegative()),
+  members: z.array(SuperstreamMemberSchema),
+  revision: z.number().int().positive(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });
 export type Superstream = z.infer<typeof SuperstreamSchema>;
 const ListSchema = z.array(SuperstreamSchema);
 
-export type SuperstreamInput = { name: string; logIds: string[] };
+export type SuperstreamInput = { name: string; captureIds: string[] };
 
 /** Project logs from the existing import report. `imported_at` et
  *  `n_records` sont alimentés depuis NmfFileEntry (NMFHE2). */
-export async function getProjectLogs(projectId: string, signal?: AbortSignal): Promise<SuperstreamLog[]> {
+export async function getProjectLogs(
+  projectId: string,
+  signal?: AbortSignal,
+): Promise<SuperstreamLog[]> {
   const report = await getImportReport(projectId, signal);
   const seen = new Map<string, number>();
   return report.by_file.map((f) => {
@@ -49,8 +60,26 @@ export async function getProjectLogs(projectId: string, signal?: AbortSignal): P
       n_gps: f.n_gps,
       n_records: f.n_records ?? null,
       imported_at: f.imported_at ?? null,
+      capture_ids: f.capture_ids ?? [],
     };
   });
+}
+
+export async function getProjectCaptures(projectId: string, signal?: AbortSignal) {
+  const logs = await getProjectLogs(projectId, signal);
+  return logs.flatMap((log) =>
+    log.capture_ids.map((captureId) => ({
+      id: captureId,
+      captureId,
+      filename: log.filename,
+      label: log.capture_ids.length > 1 ? `${log.filename} · ${captureId}` : log.filename,
+      status: log.status,
+      n_events: log.n_events,
+      n_gps: log.n_gps,
+      n_records: log.n_records,
+      imported_at: log.imported_at,
+    })),
+  );
 }
 
 /** Nettoie les clés `bc4.superstreams.<pid>` écrites par la version
@@ -74,25 +103,57 @@ export function listSuperstreams(projectId: string, signal?: AbortSignal): Promi
   return apiFetch(base(projectId), ListSchema, { signal });
 }
 
-export function createSuperstream(projectId: string, input: SuperstreamInput): Promise<Superstream> {
-  const body = { name: input.name.trim(), logIds: [...new Set(input.logIds)] };
+export function createSuperstream(
+  projectId: string,
+  input: SuperstreamInput,
+): Promise<Superstream> {
+  const body = { name: input.name.trim(), captureIds: [...input.captureIds] };
   return apiFetch(base(projectId), SuperstreamSchema, {
     method: "POST",
     body: JSON.stringify(body),
   });
 }
 
-export function updateSuperstream(projectId: string, id: string, input: SuperstreamInput): Promise<Superstream> {
-  const body = { name: input.name.trim(), logIds: [...new Set(input.logIds)] };
+export function renameSuperstream(
+  projectId: string,
+  id: string,
+  revision: number,
+  name: string,
+): Promise<Superstream> {
   return apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, SuperstreamSchema, {
+    method: "PATCH",
+    headers: { "If-Match": `"${revision}"` },
+    body: JSON.stringify({ name: name.trim() }),
+  });
+}
+
+export function replaceSuperstreamMembers(
+  projectId: string,
+  id: string,
+  revision: number,
+  captureIds: string[],
+): Promise<Superstream> {
+  return apiFetch(`${base(projectId)}/${encodeURIComponent(id)}/members`, SuperstreamSchema, {
     method: "PUT",
-    body: JSON.stringify(body),
+    headers: { "If-Match": `"${revision}"` },
+    body: JSON.stringify({ captureIds: [...captureIds] }),
   });
 }
 
 /** Removes only the grouping; logs and their data are untouched. */
-export async function deleteSuperstream(projectId: string, id: string): Promise<void> {
+export async function deleteSuperstream(
+  projectId: string,
+  id: string,
+  revision: number,
+): Promise<void> {
   await apiFetch(`${base(projectId)}/${encodeURIComponent(id)}`, z.unknown(), {
     method: "DELETE",
+    headers: { "If-Match": `"${revision}"` },
   });
+}
+
+export function superstreamPreconditionStatus(error: unknown): 409 | 428 | null {
+  return error instanceof ApiHttpError && (error.status === 409 || error.status === 428)
+    ? error.status
+    : null;
 }

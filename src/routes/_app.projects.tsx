@@ -596,15 +596,16 @@ function ProjectsPage() {
                                   Partager
                                 </DropdownMenuItem>
                               )}
-                              <DropdownMenuItem
-                                onSelect={(e) => {
-                                  e.preventDefault();
-                                  setTimeout(() => setSsProject(p), 0);
-                                }}
-                              >
-                                <Layers className="h-4 w-4" aria-hidden />
-                                {t("superstream.createTitle")}
-                              </DropdownMenuItem>
+                              {p.owner_id === currentUserId && (
+                                <DropdownMenuItem
+                                  onSelect={() => {
+                                    setTimeout(() => setSsProject(p), 0);
+                                  }}
+                                >
+                                  <Layers className="h-4 w-4" aria-hidden />
+                                  {t("superstream.createTitle")}
+                                </DropdownMenuItem>
+                              )}
                               <DropdownMenuItem
                                 onSelect={() => setExpanded((prev) => new Set(prev).add(p.id))}
                               >
@@ -638,6 +639,7 @@ function ProjectsPage() {
                               projectId={p.id}
                               projectName={p.name}
                               highlightId={ssHighlight[p.id] ?? null}
+                              canWrite={p.owner_id === currentUserId}
                             />
                           </div>
                           <ProjectRowDetails project={p} open={isOpen} />
