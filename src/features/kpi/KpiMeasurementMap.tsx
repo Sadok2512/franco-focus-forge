@@ -289,6 +289,7 @@ export function KpiMeasurementMap({
                 activeCaptureId={captureId ?? ""}
                 autoFrame={false}
                 hidePoints
+                hideControls
               />
               <div
                 role="status"

@@ -130,6 +130,7 @@ export function DriveRsrpLayer({
   positions,
   onRouteChange,
   hidePoints = false,
+  hideControls = false,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -140,6 +141,8 @@ export function DriveRsrpLayer({
   onRouteChange?: (coordinates: Array<[number, number]>) => void;
   /** Hide the RSRP-coloured points (KPI maps draw their own metric points). */
   hidePoints?: boolean;
+  /** Hide the Drive RSRP control card; the layer stays on. */
+  hideControls?: boolean;
 }) {
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
@@ -148,7 +151,11 @@ export function DriveRsrpLayer({
   // sessions may have persisted the layer OFF before it became the primary
   // map measurement. Signaling now opens with real RSRP visible and framed.
   const store = embedded ? "bc4.signaling.driveRsrp.v2" : STORE;
-  const [prefs, setPrefs] = useState<Prefs>(DEFAULT);
+  const [storedPrefs, setPrefs] = useState<Prefs>(DEFAULT);
+  const prefs = useMemo(
+    () => (hideControls ? { ...storedPrefs, on: true } : storedPrefs),
+    [hideControls, storedPrefs],
+  );
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
@@ -521,8 +528,9 @@ export function DriveRsrpLayer({
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }
       if (!map.getLayer(LAYER)) return;
-      map.setLayoutProperty(LAYER, "visibility", prefs.on && !hidePoints ? "visible" : "none");
-      map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+      map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+      map.setPaintProperty(LAYER, "circle-opacity", hidePoints ? 0 : prefs.opacity / 100);
+      if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
       map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
       map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setFilter(SELECTED_LAYER, [
@@ -661,12 +669,13 @@ export function DriveRsrpLayer({
 
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
-    map.setLayoutProperty(LAYER, "visibility", prefs.on && !hidePoints ? "visible" : "none");
+    map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
     if (map.getLayer(LINK_LAYER))
       map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
     if (map.getLayer(LINK_LAYER_PROBABLE))
       map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
-    map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+    map.setPaintProperty(LAYER, "circle-opacity", hidePoints ? 0 : prefs.opacity / 100);
+      if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
     map.setFilter(
       LAYER,
       prefs.hidden.length
@@ -801,6 +810,7 @@ export function DriveRsrpLayer({
       className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
       {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
+      {!hideControls && (
       <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <Button
@@ -965,6 +975,7 @@ export function DriveRsrpLayer({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }
