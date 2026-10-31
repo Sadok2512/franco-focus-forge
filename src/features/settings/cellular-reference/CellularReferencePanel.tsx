@@ -148,11 +148,19 @@ function ImportsHistory({ imports }: { imports: ReferenceImportEntry[] }) {
         </thead>
         <tbody>
           {imports.map((i) => {
-            const unmapped = Object.keys(i.report.bands_unmapped).length;
+            // 1.126.7 BC3 — `i.report` est `null` pour les imports legacy
+            // (format pré-0.117.2 toléré par le back 0.117.3). Guard pour
+            // éviter TypeError et marquer visuellement la ligne.
+            const unmapped = i.report ? Object.keys(i.report.bands_unmapped).length : 0;
             return (
               <tr key={i.id} className="border-t">
                 <td className="px-3 py-2">
                   <div className="font-medium">{i.filename}</div>
+                  {!i.report && (
+                    <div className="mt-1">
+                      <Pill tone="warn">legacy</Pill>
+                    </div>
+                  )}
                   {unmapped > 0 && (
                     <div className="mt-1">
                       <Pill tone="warn">{unmapped} bande(s) hors mapping</Pill>

@@ -89,7 +89,9 @@ export const ReferenceImportEntrySchema = z.object({
   rows_loaded: z.number().int(),
   rows_rejected: z.number().int(),
   status: z.string(),
-  report: ImportReportSchema,
+  // 1.126.7 BC3 — nullable pour accepter les imports legacy renvoyés par
+  // le back 0.117.3 avec `report: null` (format pré-0.117.2 non convertible).
+  report: ImportReportSchema.nullable(),
 });
 export type ReferenceImportEntry = z.infer<typeof ReferenceImportEntrySchema>;
 

@@ -1,3 +1,16 @@
+## 1.126.7 (patch) — BC4-FRONT 2026-10-31 — tolère les imports legacy dans Historique (BC3)
+
+Comble l'écart révélé par le déploiement 1.126.6 + back 0.117.3 : les
+anciens `reference_import` (format legacy pré-0.117.2) sont renvoyés
+par le back avec `report = null`. Le code d'affichage de l'historique
+faisait `i.report.bands_unmapped` sans guard → TypeError → table ne
+rendait pas → UI restait sur « Chargement… » indéfiniment.
+
+- `CellularReferencePanel.tsx:150` : guard `i.report ?` sur
+  `bands_unmapped` et affichage d'un badge « legacy » pour les lignes
+  à report null.
+- SemVer front : **PATCH 1.126.7**.
+
 ## 1.126.6 (patch) — BC4-FRONT 2026-10-31 — upload du référentiel cellulaire fiable (Agent BC1, numérotation BC3)
 
 Merge `bc1/cell-ref-upload-proxy` (`aa467d4` + `2691bc4`). Résout le
