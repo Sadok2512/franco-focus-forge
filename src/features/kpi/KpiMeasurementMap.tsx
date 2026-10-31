@@ -66,6 +66,10 @@ export function KpiMeasurementMap({
     [features],
   );
   const [map, setMap] = useState<MlMap | null>(null);
+  // The map legend mounts only while its Legend tab is open. Keep the drive
+  // layer outside that tab and portal its RSRP/link controls into this host,
+  // matching the Signaling map without unmounting or refetching the layer.
+  const [legendHost, setLegendHost] = useState<HTMLDivElement | null>(null);
   // The drive layer owns the click; the KPI map only needs to know which point
   // was picked so the selection ring can take the colour of the point it shows.
   const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
@@ -295,6 +299,7 @@ export function KpiMeasurementMap({
                 <>
                   {legend}
                   {addedLegend}
+                  <div ref={setLegendHost} />
                 </>
               }
               routeCoordinates={routeCoordinates}
@@ -310,6 +315,7 @@ export function KpiMeasurementMap({
                 hideControls
                 selectedRingColor={selectedRingColor}
                 onSelectedChange={setSelectedPoint}
+                legendHost={legendHost}
               />
               <div
                 role="status"
