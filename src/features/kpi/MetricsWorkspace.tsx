@@ -422,6 +422,9 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
+  // same wiring as the Signaling and KPI measurement maps.
+  const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
   const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
