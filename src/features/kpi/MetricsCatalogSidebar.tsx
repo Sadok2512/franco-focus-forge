@@ -53,6 +53,31 @@ function cleanLabel(raw: string): string {
   return raw.replace(STAR, "").replace(SOURCE_BADGE_RE, "").trim();
 }
 
+// Demande user — la section « Decoded values » (compteurs DCI/grants par
+// cellule, libellés fournis par le back) est retirée de l'arbre entier :
+// ni la branche ni ses feuilles n'apparaissent, quelle que soit la langue
+// du libellé renvoyé par l'API ("Decoded values", "Valeurs décodées", ...).
+const DECODED_SECTION_RE = /d[ée]cod/i;
+function withoutDecodedSection(all: MetricCatalogNode[]): MetricCatalogNode[] {
+  const childrenOf = new Map<string, MetricCatalogNode[]>();
+  for (const node of all) {
+    if (!node.parent_id) continue;
+    childrenOf.set(node.parent_id, [...(childrenOf.get(node.parent_id) ?? []), node]);
+  }
+  const hidden = new Set<string>();
+  const hideBranch = (id: string) => {
+    if (hidden.has(id)) return;
+    hidden.add(id);
+    for (const child of childrenOf.get(id) ?? []) hideBranch(child.node_id);
+  };
+  for (const node of all) {
+    if (node.node_type !== "leaf" && DECODED_SECTION_RE.test(node.label)) {
+      hideBranch(node.node_id);
+    }
+  }
+  return hidden.size ? all.filter((node) => !hidden.has(node.node_id)) : all;
+}
+
 export function MetricsCatalogSidebar({
   projectId,
   selected,
