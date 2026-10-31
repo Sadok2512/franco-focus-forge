@@ -6,13 +6,13 @@ import type {
   FilterSpecification,
   GeoJSONSource,
   MapLayerMouseEvent,
-  Popup,
 } from "maplibre-gl";
 import { getMetricAnalysis, getMetricMap, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
+import { SelectedPointCard } from "./SelectedPointCard";
 import {
   RSRP_CLASSES,
   RSRP_SELECTION,
@@ -25,7 +25,6 @@ import {
   type RsrpPosition,
 } from "./drive-rsrp";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
