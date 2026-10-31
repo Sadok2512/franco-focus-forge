@@ -2469,13 +2469,8 @@ export function SignalingPage({
                                               key={`${p.path}:${i}`}
                                               className="border-b align-top"
                                             >
-                                              <td className="p-1">
-                                                <a
-                                                  href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
-                                                  className="text-primary underline"
-                                                >
-                                                  {p.param_key ?? p.path.split("/").slice(-1)[0]}
-                                                </a>
+                                              <td className="p-1 font-medium">
+                                                {p.param_key ?? p.path.split("/").slice(-1)[0]}
                                               </td>
                                               <td className="p-1 font-mono">{shown(p.value)}</td>
                                               <td className="p-1 font-mono text-[10px] text-muted-foreground">

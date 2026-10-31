@@ -38,9 +38,6 @@ import { useHeaderFloating } from "@/lib/header-floating";
 
 const NAV = [
   { to: "/projects", label: "nav.projects" },
-  { to: "/overview", label: "nav.overview" },
-  { to: "/map", label: "nav.map" },
-  { to: "/rrc", label: "nav.dictionary" },
   { to: "/kpi", label: "nav.kpi" },
   { to: "/signaling", label: "nav.signaling" },
   { to: "/rf", label: "nav.rf" },
@@ -204,24 +201,23 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           )}
         </Link>
-        <nav
-          aria-label={t("nav.main")}
-          className="flex h-full min-w-0 items-center gap-1 overflow-x-auto"
-        >
-          {NAV.map((n) => {
-            const active = path.startsWith(n.to);
-            return (
-              <Link
-                key={n.to}
-                to={n.to}
-                search={(s: FilterContext) => s}
-                className={`flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors xl:px-3.5 ${active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
-              >
-                {t(n.label)}
-                {active && n.to === "/projects" && <ChevronDown className="h-3.5 w-3.5" />}
-              </Link>
-            );
-          })}
+        <nav aria-label={t("nav.main")} className="h-full min-w-0 overflow-x-auto">
+          <div className="flex h-full w-max min-w-full items-center justify-center gap-1">
+            {NAV.map((n) => {
+              const active = path.startsWith(n.to);
+              return (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  search={(s: FilterContext) => s}
+                  className={`flex h-9 shrink-0 items-center gap-1 whitespace-nowrap rounded-md px-2.5 text-[13px] font-medium transition-colors xl:px-3.5 ${active ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`}
+                >
+                  {t(n.label)}
+                  {active && n.to === "/projects" && <ChevronDown className="h-3.5 w-3.5" />}
+                </Link>
+              );
+            })}
+          </div>
         </nav>
         <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
           <HeaderFloatingButton />

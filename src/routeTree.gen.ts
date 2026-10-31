@@ -15,11 +15,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppAssistantRouteImport } from './routes/_app.assistant'
 import { Route as AppChangePasswordRouteImport } from './routes/_app.change-password'
 import { Route as AppKpiRouteImport } from './routes/_app.kpi'
-import { Route as AppMapRouteImport } from './routes/_app.map'
-import { Route as AppOverviewRouteImport } from './routes/_app.overview'
 import { Route as AppProjectsRouteImport } from './routes/_app.projects'
 import { Route as AppRfRouteImport } from './routes/_app.rf'
-import { Route as AppRrcRouteImport } from './routes/_app.rrc'
 import { Route as AppSettingsRouteImport } from './routes/_app.settings'
 import { Route as AppSignalingRouteImport } from './routes/_app.signaling'
 import { Route as AppSignalingV2RouteImport } from './routes/_app.signaling-v2'
@@ -65,16 +62,6 @@ const AppKpiRoute = AppKpiRouteImport.update({
   path: '/kpi',
   getParentRoute: () => AppRoute,
 } as any)
-const AppMapRoute = AppMapRouteImport.update({
-  id: '/map',
-  path: '/map',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppOverviewRoute = AppOverviewRouteImport.update({
-  id: '/overview',
-  path: '/overview',
-  getParentRoute: () => AppRoute,
-} as any)
 const AppProjectsRoute = AppProjectsRouteImport.update({
   id: '/projects',
   path: '/projects',
@@ -83,11 +70,6 @@ const AppProjectsRoute = AppProjectsRouteImport.update({
 const AppRfRoute = AppRfRouteImport.update({
   id: '/rf',
   path: '/rf',
-  getParentRoute: () => AppRoute,
-} as any)
-const AppRrcRoute = AppRrcRouteImport.update({
-  id: '/rrc',
-  path: '/rrc',
   getParentRoute: () => AppRoute,
 } as any)
 const AppSettingsRoute = AppSettingsRouteImport.update({
@@ -174,11 +156,8 @@ export interface FileRoutesByFullPath {
   '/assistant': typeof AppAssistantRoute
   '/change-password': typeof AppChangePasswordRoute
   '/kpi': typeof AppKpiRoute
-  '/map': typeof AppMapRoute
-  '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRouteWithChildren
   '/rf': typeof AppRfRoute
-  '/rrc': typeof AppRrcRoute
   '/settings': typeof AppSettingsRouteWithChildren
   '/signaling': typeof AppSignalingRoute
   '/signaling-v2': typeof AppSignalingV2Route
@@ -201,11 +180,8 @@ export interface FileRoutesByTo {
   '/assistant': typeof AppAssistantRoute
   '/change-password': typeof AppChangePasswordRoute
   '/kpi': typeof AppKpiRoute
-  '/map': typeof AppMapRoute
-  '/overview': typeof AppOverviewRoute
   '/projects': typeof AppProjectsRouteWithChildren
   '/rf': typeof AppRfRoute
-  '/rrc': typeof AppRrcRoute
   '/signaling': typeof AppSignalingRoute
   '/signaling-v2': typeof AppSignalingV2Route
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
@@ -229,11 +205,8 @@ export interface FileRoutesById {
   '/_app/assistant': typeof AppAssistantRoute
   '/_app/change-password': typeof AppChangePasswordRoute
   '/_app/kpi': typeof AppKpiRoute
-  '/_app/map': typeof AppMapRoute
-  '/_app/overview': typeof AppOverviewRoute
   '/_app/projects': typeof AppProjectsRouteWithChildren
   '/_app/rf': typeof AppRfRoute
-  '/_app/rrc': typeof AppRrcRoute
   '/_app/settings': typeof AppSettingsRouteWithChildren
   '/_app/signaling': typeof AppSignalingRoute
   '/_app/signaling-v2': typeof AppSignalingV2Route
@@ -258,11 +231,8 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/change-password'
     | '/kpi'
-    | '/map'
-    | '/overview'
     | '/projects'
     | '/rf'
-    | '/rrc'
     | '/settings'
     | '/signaling'
     | '/signaling-v2'
@@ -285,11 +255,8 @@ export interface FileRouteTypes {
     | '/assistant'
     | '/change-password'
     | '/kpi'
-    | '/map'
-    | '/overview'
     | '/projects'
     | '/rf'
-    | '/rrc'
     | '/signaling'
     | '/signaling-v2'
     | '/projects/$projectId'
@@ -312,11 +279,8 @@ export interface FileRouteTypes {
     | '/_app/assistant'
     | '/_app/change-password'
     | '/_app/kpi'
-    | '/_app/map'
-    | '/_app/overview'
     | '/_app/projects'
     | '/_app/rf'
-    | '/_app/rrc'
     | '/_app/settings'
     | '/_app/signaling'
     | '/_app/signaling-v2'
@@ -384,20 +348,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppKpiRouteImport
       parentRoute: typeof AppRoute
     }
-    '/_app/map': {
-      id: '/_app/map'
-      path: '/map'
-      fullPath: '/map'
-      preLoaderRoute: typeof AppMapRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/overview': {
-      id: '/_app/overview'
-      path: '/overview'
-      fullPath: '/overview'
-      preLoaderRoute: typeof AppOverviewRouteImport
-      parentRoute: typeof AppRoute
-    }
     '/_app/projects': {
       id: '/_app/projects'
       path: '/projects'
@@ -410,13 +360,6 @@ declare module '@tanstack/react-router' {
       path: '/rf'
       fullPath: '/rf'
       preLoaderRoute: typeof AppRfRouteImport
-      parentRoute: typeof AppRoute
-    }
-    '/_app/rrc': {
-      id: '/_app/rrc'
-      path: '/rrc'
-      fullPath: '/rrc'
-      preLoaderRoute: typeof AppRrcRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings': {
@@ -573,11 +516,8 @@ interface AppRouteChildren {
   AppAssistantRoute: typeof AppAssistantRoute
   AppChangePasswordRoute: typeof AppChangePasswordRoute
   AppKpiRoute: typeof AppKpiRoute
-  AppMapRoute: typeof AppMapRoute
-  AppOverviewRoute: typeof AppOverviewRoute
   AppProjectsRoute: typeof AppProjectsRouteWithChildren
   AppRfRoute: typeof AppRfRoute
-  AppRrcRoute: typeof AppRrcRoute
   AppSettingsRoute: typeof AppSettingsRouteWithChildren
   AppSignalingRoute: typeof AppSignalingRoute
   AppSignalingV2Route: typeof AppSignalingV2Route
@@ -588,11 +528,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppAssistantRoute: AppAssistantRoute,
   AppChangePasswordRoute: AppChangePasswordRoute,
   AppKpiRoute: AppKpiRoute,
-  AppMapRoute: AppMapRoute,
-  AppOverviewRoute: AppOverviewRoute,
   AppProjectsRoute: AppProjectsRouteWithChildren,
   AppRfRoute: AppRfRoute,
-  AppRrcRoute: AppRrcRoute,
   AppSettingsRoute: AppSettingsRouteWithChildren,
   AppSignalingRoute: AppSignalingRoute,
   AppSignalingV2Route: AppSignalingV2Route,
