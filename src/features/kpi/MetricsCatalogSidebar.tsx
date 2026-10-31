@@ -202,7 +202,7 @@ export function MetricsCatalogSidebar({
       cache.set(id, values);
       return values;
     };
-    for (const node of query.data?.nodes ?? []) collect(node.node_id);
+    for (const node of catalogNodes) collect(node.node_id);
     return cache;
   }, [byParent, query.data]);
   const toggleOpen = (id: string) =>
