@@ -42,7 +42,9 @@ function SitesLayerHarness({
   fullscreen = false,
   onToggleFullscreen,
   onRecenter,
+  layersLegend,
 }: {
+  layersLegend?: ReactNode;
   map: MlMap | null;
   workspace?: boolean;
   fullscreen?: boolean;
@@ -121,6 +123,7 @@ function SitesLayerHarness({
         fullscreen={fullscreen}
         {...(onToggleFullscreen ? { onToggleFullscreen } : {})}
         {...(onRecenter ? { onRecenter } : {})}
+        layersLegend={layersLegend}
       />
     );
   return <SitesLayerControls {...controls} />;
@@ -146,7 +149,9 @@ export function KpiMapOSM({
   // par défaut. Utilisateur active + filtre techno/band/operator.
   sitesLayerEnabled = true,
   workspace = false,
+  layersLegend,
 }: {
+  layersLegend?: ReactNode;
   center?: [number, number];
   zoom?: number;
   nPoints?: number;
@@ -478,6 +483,7 @@ export function KpiMapOSM({
           fullscreen={full}
           onToggleFullscreen={() => setFull(!full)}
           onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
+          layersLegend={layersLegend}
         />
       )}
       {/* Compact empty-measurement status; attribution remains on the map. */}
