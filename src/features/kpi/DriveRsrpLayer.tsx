@@ -56,6 +56,16 @@ export const DRIVE_CELL_LINK_LAYER_SPECS = [
   { id: SERVING_LINK_LAYER_PROBABLE, confidence: "probable", serving: true },
   { id: SERVING_LINK_LAYER, confidence: "proven", serving: true },
 ] as const;
+/**
+ * A measurement's own legend colour. The selection ring borrows it so the
+ * point is never framed in a colour that is not its own.
+ */
+const RSRP_COLOR_EXPRESSION = [
+  "match",
+  ["get", "rsrp_class"],
+  ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
+  "#94a3b8",
+] as unknown as ExpressionSpecification;
 // v2 enables the measurement layer on first use. The dedicated Map page is
 // expected to open on real radio points rather than on an empty basemap.
 const STORE = "bc4.map.driveRsrp.v2";
@@ -79,6 +89,9 @@ export type MeasurementPointIdentity = {
   captureId: string;
   seq: number;
 };
+
+/** The selected point plus its published position, so a host map can match it. */
+export type SelectedDrivePoint = MeasurementPointIdentity & { lng: number; lat: number };
 
 type PointLinkEntry = { point: DriveRsrpPoint; links: RadioCellLink[] };
 
