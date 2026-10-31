@@ -318,4 +318,77 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(screen.getByText("Raw RSRP")).toBeVisible();
     expect(screen.queryByText("No KPIs match this search.")).toBeNull();
   });
+
+  // Demande user — la section « Decoded values » (compteurs DCI/grants par
+  // cellule) est retirée de l'arbre : ni la branche ni ses feuilles, dans
+  // aucune langue de libellé renvoyé par le back.
+  it("hides the whole Decoded values section and its leaves", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "v6",
+      title: "Nemo metrics",
+      header: "LTE — 345 metrics + NR 16",
+      decoder_version: "",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("radio", null, "Serving radio", 0, { node_type: "category" }),
+        node("rsrp", "radio", "RSRP", 0, { node_type: "metric" }),
+        node("rsrp-pcell", "rsrp", "RSRP — PCell", 0, {
+          metric_id: "cell_rsrp@pcell",
+          selection: "cell_rsrp@0",
+          event: "CELLMEAS",
+          field_idx: 9,
+          source_column: "cell_rsrp",
+          cell: "pcell",
+          n: 12,
+          selectable: true,
+        }),
+        node("decoded", null, "Decoded values", 1, { node_type: "category" }),
+        node("dci", "decoded", "DCI counters", 0, { node_type: "metric" }),
+        node("grant-ul", "dci", "UL grants (bloc NR) @ SCell 6", 0, {
+          metric_id: "dci_ul_grant@199",
+          selection: "dci_ul_grant@199",
+          event: "DCI",
+          n: 165,
+          selectable: true,
+        }),
+        node("valeurs-decodees", null, "Valeurs décodées", 2, { node_type: "category" }),
+        node("dci-count", "valeurs-decodees", "DCI count @ PCell", 0, {
+          metric_id: "dci_count@0",
+          selection: "dci_count@0",
+          n: 189,
+          selectable: true,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    const onToggle = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={onToggle}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByRole("button", { name: /Serving radio/ })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: /Serving radio/ }));
+    expect(screen.getByText("RSRP — PCell")).toBeVisible();
+
+    // Neither the English nor the French section heading survives, and a
+    // search that only matches the hidden leaves finds nothing of them.
+    expect(screen.queryByText("Decoded values")).toBeNull();
+    expect(screen.queryByText("Valeurs décodées")).toBeNull();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search metrics" }), {
+      target: { value: "grants" },
+    });
+    expect(screen.queryByText("UL grants (bloc NR) @ SCell 6")).toBeNull();
+    expect(screen.queryByText("DCI count @ PCell")).toBeNull();
+    fireEvent.change(screen.getByRole("textbox", { name: "Search metrics" }), {
+      target: { value: "RSRP" },
+    });
+    expect(screen.getByText("RSRP — PCell")).toBeVisible();
+  });
 });
