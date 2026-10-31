@@ -957,6 +957,7 @@
     "beams": "Beams",
     "beamSize": "Beam size",
     "beamIntensity": "Colour intensity",
+    "metricSize": "Metric size",
     "labels": "Labels",
     "technology": "Technology",
     "notInData": "Not present in network data",

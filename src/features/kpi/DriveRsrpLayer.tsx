@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
 import { SelectedPointCard } from "./SelectedPointCard";
+import { metricRadius, useMetricSize } from "./metric-display";
 import {
   RSRP_CLASSES,
   RSRP_SELECTION,
@@ -36,6 +37,7 @@ import {
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
+const SELECTED_LAYER = "bc4-drive-rsrp-selected";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
 const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
 const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
@@ -134,6 +136,7 @@ export function DriveRsrpLayer({
   onRouteChange?: (coordinates: Array<[number, number]>) => void;
 }) {
   const { t } = useTranslation();
+  const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
   // v2 deliberately resets the embedded Signaling preference once: older
   // sessions may have persisted the layer OFF before it became the primary
@@ -464,7 +467,7 @@ export function DriveRsrpLayer({
             source: SOURCE,
             filter: ["!=", ["get", "rsrp_class"], null],
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2, 14, 4, 18, 7],
+              "circle-radius": metricRadius(metricSize),
               "circle-color": [
                 "match",
                 ["get", "rsrp_class"],
@@ -477,6 +480,22 @@ export function DriveRsrpLayer({
           before,
         );
       }
+      if (!map.getLayer(SELECTED_LAYER)) {
+        map.addLayer({
+          id: SELECTED_LAYER,
+          type: "circle",
+          source: SOURCE,
+          filter: ["==", ["get", "seq"], -1],
+          paint: {
+            "circle-radius": metricRadius(metricSize, true),
+            "circle-color": ["match", ["get", "rsrp_class"], ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]), RSRP_CLASSES[0]?.color ?? "transparent"] as ExpressionSpecification,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": CELL_LINK_COLORS.serving,
+            "circle-opacity": 1,
+          },
+        });
+      }
+      map.moveLayer(SELECTED_LAYER);
       const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
       source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
       const linkSource = map.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
@@ -491,6 +510,9 @@ export function DriveRsrpLayer({
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+      map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
+      map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
+      map.setFilter(SELECTED_LAYER, ["all", ["==", ["get", "seq"], selectedPoint?.seq ?? -1], ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]]]);
       map.setFilter(LAYER, [
         "all",
         ["!=", ["get", "rsrp_class"], null],
@@ -509,7 +531,23 @@ export function DriveRsrpLayer({
       map.off("idle", promoteServingLayers);
       if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
-  }, [map, features, linkFeatures, prefs]);
+  }, [map, features, linkFeatures, prefs, metricSize, selectedPoint]);
+
+  useEffect(() => {
+    if (!map || !selectedPoint || !prefs.on) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let pulse = 0;
+    const paint = () => {
+      if (!map.getLayer(SELECTED_LAYER)) return;
+      map.setPaintProperty(SELECTED_LAYER, "circle-radius", metricRadius(metricSize, true, pulse));
+      map.setPaintProperty(SELECTED_LAYER, "circle-opacity", pulse ? 0.55 : 1);
+      pulse = pulse ? 0 : 1;
+    };
+    paint();
+    if (reduced) return;
+    const timer = window.setInterval(paint, 500);
+    return () => window.clearInterval(timer);
+  }, [map, selectedPoint, metricSize, prefs.on]);
 
   useEffect(() => {
     const src = map?.getSource(SOURCE) as GeoJSONSource | undefined;
@@ -600,8 +638,10 @@ export function DriveRsrpLayer({
       setSelectedPoint(identity);
     };
     map.on("click", LAYER, click);
+    map.on("click", SELECTED_LAYER, click);
     return () => {
       map.off("click", LAYER, click);
+      map.off("click", SELECTED_LAYER, click);
     };
   }, [drivePoints, effectiveCaptureId, map, projectId]);
 
