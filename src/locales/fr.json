@@ -118,7 +118,10 @@
       "lon": "Longitude"
     },
     "cellTechnicalHint": "Détail technique de cellule",
-    "cellFilters": { "pci": "Filtrer PCI", "arfcn": "Filtrer ARFCN" },
+    "cellFilters": {
+      "pci": "Filtrer PCI",
+      "arfcn": "Filtrer ARFCN"
+    },
     "tableShowing": "Lignes {{from}}–{{to}} sur {{total}}",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Plein écran",
@@ -1050,7 +1053,8 @@
       "fair": "Moyen",
       "poor": "Faible",
       "bad": "Mauvais"
-    }
+    },
+    "metricLegend": "Légende métrique"
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",

@@ -61,6 +61,8 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   onToggleFullscreen?: () => void;
   onRecenter?: () => void;
   status?: SitesLayerControlsProps["status"];
+  /** Metric legend (classes, colours, counts) shown first in the Layers panel. */
+  layersLegend?: ReactNode;
 };
 
 type MeasureMode = "none" | "distance" | "area";
@@ -331,6 +333,9 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
+            {props.layersLegend && (
+              <Section title={t("mapWorkspace.metricLegend")}>{props.layersLegend}</Section>
+            )}
             <Section title={t("mapWorkspace.sitesAndCells")}>
               <Check label={t("mapWorkspace.sites")} checked={enabled} onChange={onToggleEnabled} />
               <Check
