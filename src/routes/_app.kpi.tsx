@@ -5,9 +5,9 @@ import { KpiWorkspace } from "@/features/kpi/KpiWorkspace";
 
 // Tous les champs KPI restent optionnels dans le search : les reducers
 // `search` des <Link to="/kpi"> (ProjectPage) n'ont pas à les énumérer.
-type KpiSearch = Partial<
-  Record<(typeof URL_KEYS)[keyof typeof URL_KEYS], string[]>
-> & {
+// Les filtres partagés (URL_KEYS) sont déjà typés par le schéma racine ;
+// la route ne retape ici que ses champs propres.
+type KpiSearch = {
   metrics?: string[];
   kpi?: string;
   kpis?: string[];
