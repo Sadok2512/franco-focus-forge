@@ -333,7 +333,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {/* Top — floating filter toolbar */}
       <div
         className="pointer-events-none absolute top-3 flex justify-center"
-        style={{ left: showPanel && !compact ? 248 : compact ? 64 : 140, right: compact ? 56 : 380 }}
+        style={{ left: showPanel && !compact ? 248 : 64, right: compact ? 56 : 380 }}
       >
         <div data-testid="map-workspace-topbar" className={`pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1 ${glass}`}>
           <button type="button" aria-pressed={enabled} onClick={() => onToggleEnabled(!enabled)} className={pill(enabled)}>
@@ -384,6 +384,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           <label className={`flex h-10 items-center gap-2 rounded-xl px-3 ${glass}`}>
             <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <input
+              ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("mapWorkspace.searchPlaceholder")}
