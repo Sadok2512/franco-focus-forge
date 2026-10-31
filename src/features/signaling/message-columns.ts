@@ -23,7 +23,14 @@ export type ColKey =
   | "size_bytes"
   | "ecgi"
   | "pci"
-  | "source";
+  | "source"
+  | `metric:${string}`;
+
+/** Dynamic metric columns added from the metrics catalogue ("Add Metric"). */
+export const METRIC_COL_PREFIX = "metric:";
+export const isMetricCol = (key: string): key is ColKey => key.startsWith(METRIC_COL_PREFIX);
+export const metricColKey = (code: string): ColKey => `${METRIC_COL_PREFIX}${code}`;
+export const metricCodeOf = (key: string) => key.slice(METRIC_COL_PREFIX.length);
 
 export type ColDef = { key: ColKey; available: boolean; sortKey?: string; numeric?: boolean };
 
@@ -76,14 +83,12 @@ export function parseColumns(raw: string | null): ColumnConfig {
   try {
     const value = JSON.parse(raw) as Partial<ColumnConfig>;
     const known = new Set<string>(DEFAULT_ORDER);
-    const order = (Array.isArray(value.order) ? value.order : []).filter(
-      (k): k is ColKey => known.has(k),
-    );
+    const kept = (k: unknown): k is ColKey =>
+      typeof k === "string" && (known.has(k) || isMetricCol(k));
+    const order = (Array.isArray(value.order) ? value.order : []).filter(kept);
     const unique = [...new Set(order)];
     for (const k of DEFAULT_ORDER) if (!unique.includes(k)) unique.push(k);
-    const visible = (Array.isArray(value.visible) ? value.visible : []).filter(
-      (k): k is ColKey => known.has(k),
-    );
+    const visible = (Array.isArray(value.visible) ? value.visible : []).filter(kept);
     for (const k of MANDATORY_COLS) if (!visible.includes(k)) visible.push(k);
     return { order: unique, visible: [...new Set(visible)] };
   } catch {
@@ -109,14 +114,34 @@ export function moveColumn(config: ColumnConfig, key: ColKey, delta: -1 | 1): Co
 }
 
 const KNOWN_COLS = new Set<string>(COLUMNS.map((c) => c.key));
+const isKnownCol = (k: string) => KNOWN_COLS.has(k) || isMetricCol(k);
 
 /** Ordered visible columns; keys absent from the catalog are ignored. */
 export const visibleColumns = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k) && config.visible.includes(k));
+  config.order.filter((k) => isKnownCol(k) && config.visible.includes(k));
 
 /** Configured order restricted to catalog columns. */
-export const knownOrder = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k));
+export const knownOrder = (config: ColumnConfig) => config.order.filter(isKnownCol);
+
+/** Adds a metric column at the end (or re-shows it if already present). */
+export function addMetricColumn(config: ColumnConfig, code: string): ColumnConfig {
+  const key = metricColKey(code);
+  if (config.order.includes(key)) {
+    return config.visible.includes(key)
+      ? config
+      : { ...config, visible: [...config.visible, key] };
+  }
+  return { order: [...config.order, key], visible: [...config.visible, key] };
+}
+
+/** Removes a metric column entirely (order + visibility). */
+export function removeMetricColumn(config: ColumnConfig, code: string): ColumnConfig {
+  const key = metricColKey(code);
+  return {
+    order: config.order.filter((k) => k !== key),
+    visible: config.visible.filter((k) => k !== key),
+  };
+}
 
 // ---------- Info: backend procedures only ----------
 type Proc = {
@@ -183,8 +208,9 @@ export function rrcStateAt(t: number | null | undefined, states: ProvenState[]) 
 }
 
 // ---------- Radio: previous real observation, never interpolated ----------
-type SeriesPoint = { seq: number; t_rel_s: number; value: number | string };
+export type SeriesPoint = { seq: number; t_rel_s: number; value: number | string };
 export type RadioReading = { value: number; dtS: number; seq: number; t: number };
+export type MetricReading = { value: number | string; dtS: number; seq: number; t: number };
 /** Latest numeric observation at or before `t`; points must be sorted by time. */
 export function radioAt(points: SeriesPoint[] | undefined, t: number | null | undefined) {
   if (!points?.length || t == null) return null;
@@ -204,6 +230,29 @@ export function radioAt(points: SeriesPoint[] | undefined, t: number | null | un
       return { value: p.value, dtS: t - p.t_rel_s, seq: p.seq, t: p.t_rel_s } satisfies RadioReading;
   }
   return null;
+}
+
+/**
+ * Latest observation at or before `t` for an added metric column; numeric and
+ * categorical values are both shown as-is, never interpolated. Points must be
+ * sorted by time.
+ */
+export function seriesValueAt(points: SeriesPoint[] | undefined, t: number | null | undefined) {
+  if (!points?.length || t == null) return null;
+  let lo = 0,
+    hi = points.length - 1,
+    found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (points[mid]!.t_rel_s <= t) {
+      found = mid;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  if (found < 0) return null;
+  const p = points[found]!;
+  if (typeof p.value === "number" && !Number.isFinite(p.value)) return null;
+  return { value: p.value, dtS: t - p.t_rel_s, seq: p.seq, t: p.t_rel_s } satisfies MetricReading;
 }
 
 /** Page numbers with ellipses: 1 … 4 5 6 … 137 */
