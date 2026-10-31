@@ -189,7 +189,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <Link
           to="/projects"
           search={(s: FilterContext) => s}
-          className="flex shrink-0 items-center gap-2 text-lg"
+          className="col-start-1 flex shrink-0 items-center gap-2 text-lg"
         >
           <Logo />
           <span className="hidden sm:inline">
@@ -201,7 +201,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           )}
         </Link>
-        <nav aria-label={t("nav.main")} className="h-full min-w-0 overflow-x-auto">
+        <nav
+          aria-label={t("nav.main")}
+          className="col-start-2 h-full min-w-0 overflow-x-auto 2xl:absolute 2xl:inset-y-0 2xl:left-1/2 2xl:w-max 2xl:max-w-[calc(100%-44rem)] 2xl:-translate-x-1/2"
+        >
           <div className="flex h-full w-max min-w-full items-center justify-center gap-1">
             {NAV.map((n) => {
               const active = path.startsWith(n.to);
@@ -219,7 +222,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             })}
           </div>
         </nav>
-        <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
+        <div className="col-start-3 flex shrink-0 items-center gap-0.5 sm:gap-1">
           <HeaderFloatingButton />
           <AppFullscreenButton />
           {activeProject && (
