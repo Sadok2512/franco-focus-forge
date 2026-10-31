@@ -40,7 +40,7 @@ describe("Add a metric to the existing map", () => {
     await waitFor(() => expect(map.addLayer).toHaveBeenCalledOnce());
     expect(getMetricMap).toHaveBeenCalledWith("p1", "cap1", ["cell_rsrq@0"], { band: ["B3"] }, expect.any(AbortSignal));
     const setData = [...sources.values()][0]?.setData;
-    expect(setData?.mock.calls.at(-1)?.[0].features[0].geometry.coordinates).toEqual([2.3, 48.8]);
+    await waitFor(() => expect(setData?.mock.calls.at(-1)?.[0].features[0]?.geometry.coordinates).toEqual([2.3, 48.8]));
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(screen.getAllByTestId("existing-map")).toHaveLength(1);
     fireEvent.drop(target, { dataTransfer });
