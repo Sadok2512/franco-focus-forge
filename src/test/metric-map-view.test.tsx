@@ -168,8 +168,8 @@ describe("Map selection keeps its own panel", () => {
     ]);
     vi.mocked(getMetricMap).mockResolvedValue({
       project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
-      decoder_version: "test", total_points: data.map_points.length,
-      map_points: data.map_points,
+      decoder_version: "test", total_points: (data as any).map_points.length,
+      map_points: (data as any).map_points,
     } as never);
     writeMetricViews("map-links", { "cell_rsrp@0": "map" });
     render(

@@ -42,7 +42,7 @@ function rsrpColor(v: number | null | undefined): string {
   return RSRP_BINS[RSRP_BINS.length - 1]!.color;
 }
 
-const OPERATOR_COLORS: Record<Operator, string> = {
+const OPERATOR_COLORS: Record<string, string> = {
   Orange: "#ff7900",
   SFR: "#e2001a",
   Bouygues: "#0084d6",
@@ -111,7 +111,7 @@ export function AssistantMap({
 
   const presentOperators = useMemo(() => {
     const s = new Set<Operator>();
-    for (const p of points) s.add(p.operator);
+    for (const p of points) s.add(p.operator as Operator);
     return Array.from(s) as Operator[];
   }, [points]);
 

@@ -215,7 +215,7 @@ export async function runEngine(
           }),
         })),
       });
-      const fails = pts.filter((p) => ops.includes(p.operator) && rrcOutcome(p) === false);
+      const fails = pts.filter((p) => ops.includes(p.operator as Operator) && rrcOutcome(p) === false);
       base.blocks.push({
         type: "map",
         heading: `Répartition géographique des échecs (${fails.length})`,
