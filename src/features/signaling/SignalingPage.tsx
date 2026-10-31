@@ -932,6 +932,7 @@ function SignalMap({
           activeCaptureId={captureId}
           autoFrame
           positions={rsrpPositions}
+          hideControls
         />
       </KpiMapOSM>
       {!hasMarkers && (
