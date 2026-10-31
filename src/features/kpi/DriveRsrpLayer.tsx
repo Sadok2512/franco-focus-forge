@@ -4,15 +4,17 @@ import { useTranslation } from "react-i18next";
 import type {
   Map as MlMap,
   FilterSpecification,
+  ExpressionSpecification,
   GeoJSONSource,
   MapLayerMouseEvent,
-  Popup,
 } from "maplibre-gl";
 import { getMetricAnalysis, getMetricMap, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
+import { SelectedPointCard } from "./SelectedPointCard";
+import { metricRadius, useMetricSize } from "./metric-display";
 import {
   RSRP_CLASSES,
   RSRP_SELECTION,
@@ -25,7 +27,6 @@ import {
   type RsrpPosition,
 } from "./drive-rsrp";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
@@ -37,6 +38,7 @@ import {
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
+const SELECTED_LAYER = "bc4-drive-rsrp-selected";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
 const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
 const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
@@ -135,6 +137,7 @@ export function DriveRsrpLayer({
   onRouteChange?: (coordinates: Array<[number, number]>) => void;
 }) {
   const { t } = useTranslation();
+  const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
   // v2 deliberately resets the embedded Signaling preference once: older
   // sessions may have persisted the layer OFF before it became the primary
@@ -146,7 +149,6 @@ export function DriveRsrpLayer({
   const [diagOpen, setDiagOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<MeasurementPointIdentity | null>(null);
   const selectedPointRef = useRef<MeasurementPointIdentity | null>(null);
-  const popupRef = useRef<Popup | undefined>(undefined);
   const explicitCapture = useRef(false);
   const automaticRecoveryAttempted = useRef(false);
   const previousProjectId = useRef(projectId);
@@ -466,7 +468,7 @@ export function DriveRsrpLayer({
             source: SOURCE,
             filter: ["!=", ["get", "rsrp_class"], null],
             paint: {
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2, 14, 4, 18, 7],
+              "circle-radius": metricRadius(metricSize),
               "circle-color": [
                 "match",
                 ["get", "rsrp_class"],
@@ -479,6 +481,22 @@ export function DriveRsrpLayer({
           before,
         );
       }
+      if (!map.getLayer(SELECTED_LAYER)) {
+        map.addLayer({
+          id: SELECTED_LAYER,
+          type: "circle",
+          source: SOURCE,
+          filter: ["==", ["get", "seq"], -1],
+          paint: {
+            "circle-radius": metricRadius(metricSize, true),
+            "circle-color": ["match", ["get", "rsrp_class"], ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]), RSRP_CLASSES[0]?.color ?? "transparent"] as unknown as ExpressionSpecification,
+            "circle-stroke-width": 2,
+            "circle-stroke-color": CELL_LINK_COLORS.serving,
+            "circle-opacity": 1,
+          },
+        });
+      }
+      map.moveLayer(SELECTED_LAYER);
       const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
       source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
       const linkSource = map.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
@@ -493,6 +511,9 @@ export function DriveRsrpLayer({
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+      map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
+      map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
+      map.setFilter(SELECTED_LAYER, ["all", ["==", ["get", "seq"], selectedPoint?.seq ?? -1], ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]]]);
       map.setFilter(LAYER, [
         "all",
         ["!=", ["get", "rsrp_class"], null],
@@ -511,7 +532,23 @@ export function DriveRsrpLayer({
       map.off("idle", promoteServingLayers);
       if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
-  }, [map, features, linkFeatures, prefs]);
+  }, [map, features, linkFeatures, prefs, metricSize, selectedPoint]);
+
+  useEffect(() => {
+    if (!map || !selectedPoint || !prefs.on) return;
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    let pulse = 0;
+    const paint = () => {
+      if (!map.getLayer(SELECTED_LAYER)) return;
+      map.setPaintProperty(SELECTED_LAYER, "circle-radius", metricRadius(metricSize, true, pulse));
+      map.setPaintProperty(SELECTED_LAYER, "circle-opacity", pulse ? 0.55 : 1);
+      pulse = pulse ? 0 : 1;
+    };
+    paint();
+    if (reduced) return;
+    const timer = window.setInterval(paint, 500);
+    return () => window.clearInterval(timer);
+  }, [map, selectedPoint, metricSize, prefs.on]);
 
   useEffect(() => {
     const src = map?.getSource(SOURCE) as GeoJSONSource | undefined;
@@ -570,10 +607,14 @@ export function DriveRsrpLayer({
     );
   }, [map, prefs, features]);
 
+  // MAP UI V1 — the click no longer opens a large map popup: it selects the
+  // point and the compact RF card rendered below the layer panel takes over.
   useEffect(() => {
     if (!map) return;
-    let disposed = false;
-    const click = async (e: MapLayerMouseEvent) => {
+    let lastClick: MouseEvent | undefined;
+    const click = (e: MapLayerMouseEvent) => {
+      if (e.originalEvent && lastClick === e.originalEvent) return;
+      lastClick = e.originalEvent;
       // Several measurements can share one GPS fix. Keep the already-active
       // identity when it is part of the clicked stack so a second click on
       // that visual point reliably deselects it instead of selecting another
@@ -594,54 +635,37 @@ export function DriveRsrpLayer({
       if (samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
-        popupRef.current?.remove();
-        popupRef.current = undefined;
         return;
       }
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      popupRef.current?.remove();
       const identity = { projectId, captureId: effectiveCaptureId, seq };
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
-      const el = buildMeasurementPointPopup(
-        pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm"),
-      );
-      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
-        .setLngLat(e.lngLat)
-        .setDOMContent(el)
-        .addTo(map);
-      popupRef.current = popup;
-      popup.on("close", () => {
-        if (popupRef.current !== popup) return;
-        popupRef.current = undefined;
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-      });
     };
     map.on("click", LAYER, click);
+    map.on("click", SELECTED_LAYER, click);
     return () => {
-      disposed = true;
       map.off("click", LAYER, click);
+      map.off("click", SELECTED_LAYER, click);
     };
-  }, [drivePoints, effectiveCaptureId, map, projectId, t]);
+  }, [drivePoints, effectiveCaptureId, map, projectId]);
 
   // A selection is scoped to one project/capture/map workspace. Never carry
-  // its line or popup into another context, even when sequence numbers match.
+  // its line or card into another context, even when sequence numbers match.
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
-    popupRef.current?.remove();
-    popupRef.current = undefined;
   }, [effectiveCaptureId, map, projectId]);
 
-  useEffect(
-    () => () => {
-      popupRef.current?.remove();
-      popupRef.current = undefined;
-    },
-    [],
-  );
+  const clearSelection = () => {
+    selectedPointRef.current = null;
+    setSelectedPoint(null);
+  };
+
+  const selectedDetails = useMemo(() => {
+    if (!selectedPoint) return null;
+    const point = drivePoints.find((candidate) => candidate.seq === selectedPoint.seq);
+    return point ? pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm") : null;
+  }, [drivePoints, selectedPoint, t]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -702,8 +726,11 @@ export function DriveRsrpLayer({
 
   return (
     <div
-      className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}
+      className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
+      {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
+      <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
+
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <Button
           type="button"
@@ -866,6 +893,7 @@ export function DriveRsrpLayer({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -28,7 +28,7 @@ export function MapWorkspacePage() {
 
   const center = resolveNetworkMapCenter(projectQuery.data?.center);
   return (
-    <section className="h-[calc(100dvh-var(--app-header-offset))] min-h-[520px] overflow-hidden bg-background p-1.5">
+    <section className="h-[calc(100dvh-var(--app-header-offset))] min-h-[520px] overflow-hidden bg-background p-1.5 pt-[calc(var(--project-header-clearance)+6px)]">
       <KpiMapOSM
         center={center}
         workspace
