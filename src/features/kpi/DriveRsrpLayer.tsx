@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type {
   Map as MlMap,
@@ -146,6 +147,7 @@ export function DriveRsrpLayer({
   hideControls = false,
   selectedRingColor,
   onSelectedChange,
+  legendHost,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -162,6 +164,8 @@ export function DriveRsrpLayer({
   selectedRingColor?: string | undefined;
   /** The selected point with its position, so the host map can match colours. */
   onSelectedChange?: (selected: SelectedDrivePoint | null) => void;
+  /** Host map legend panel element the RSRP rows are rendered into. */
+  legendHost?: HTMLDivElement | null;
 }) {
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
@@ -846,7 +850,101 @@ export function DriveRsrpLayer({
                 ? t("mapWorkspace.driveRsrpNoValue")
                 : t("mapWorkspace.driveRsrpNoGps");
 
+  // Legend rows shared by the control card and the host map's own legend panel:
+  // the RSRP classes (click to hide or show them) and the proven cell links.
+  const legendRows = (
+    <div className="space-y-2">
+      <ul className="space-y-1" aria-label={t("mapWorkspace.driveRsrpLegend")}>
+        {RSRP_CLASSES.map((c, i) => {
+          const upper = RSRP_CLASSES[i - 1]?.min;
+          const range =
+            upper === undefined
+              ? `≥ ${c.min}`
+              : c.min === -Infinity
+                ? `< ${upper}`
+                : `${c.min} … ${upper}`;
+          const hidden = prefs.hidden.includes(c.id);
+          return (
+            <li key={c.id}>
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={!hidden}
+                  onChange={() =>
+                    update({
+                      hidden: hidden
+                        ? prefs.hidden.filter((h) => h !== c.id)
+                        : [...prefs.hidden, c.id],
+                    })
+                  }
+                />
+                <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
+                <span className="flex-1">{t(`mapWorkspace.rsrp_${c.id}`)}</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {range} dBm{prefs.on && counts[c.id] ? ` · ${counts[c.id]}` : ""}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <fieldset className="space-y-1 border-t pt-2">
+        <legend className="font-semibold">{t("metrics.mapCellLinks")}</legend>
+        {CELL_LINK_KINDS.map((kind) => (
+          <label key={kind} className="flex cursor-pointer items-center gap-2">
+            <input
+              type="checkbox"
+              checked={prefs.links[kind]}
+              onChange={(event) =>
+                update({ links: { ...prefs.links, [kind]: event.target.checked } })
+              }
+            />
+            <span
+              className="h-0 w-5 border-t-[3px]"
+              style={{ borderColor: CELL_LINK_COLORS[kind] }}
+            />
+            <span className="flex-1">{t(`metrics.mapLink.${kind}`)}</span>
+            <span className="tabular-nums text-muted-foreground">{linkCounts[kind]}</span>
+          </label>
+        ))}
+        <div
+          className="measurement-link-style-legend pt-1"
+          data-testid="measurement-link-style-legend"
+        >
+          <strong>{t("mapPointPopup.lineStyles")}</strong>
+          <span>
+            <i className="measurement-popup-line is-proven" />
+            {t("mapPointPopup.solid")}
+          </span>
+          <span>
+            <i className="measurement-popup-line is-probable" />
+            {t("mapPointPopup.dashed")}
+          </span>
+        </div>
+      </fieldset>
+    </div>
+  );
+  // The host map's legend panel (Layers → Legend) receives these rows through a
+  // portal: the layer itself stays mounted outside the panel, so switching tabs
+  // never hides the points or refetches the capture.
+  const legendPanel = legendHost
+    ? createPortal(
+        <section className="space-y-2" data-map-drive-rsrp-legend="">
+          <div className="font-semibold">{t("mapWorkspace.driveRsrp")}</div>
+          {status && (
+            <p role="status" className="break-words text-muted-foreground">
+              {status}
+            </p>
+          )}
+          {legendRows}
+        </section>,
+        legendHost,
+      )
+    : null;
+
   return (
+    <>
+      {legendPanel}
     <div
       className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
@@ -931,77 +1029,7 @@ export function DriveRsrpLayer({
                   ))}
                 </select>
               )}
-              <ul className="space-y-1" aria-label={t("mapWorkspace.driveRsrpLegend")}>
-                {RSRP_CLASSES.map((c, i) => {
-                  const upper = RSRP_CLASSES[i - 1]?.min;
-                  const range =
-                    upper === undefined
-                      ? `≥ ${c.min}`
-                      : c.min === -Infinity
-                        ? `< ${upper}`
-                        : `${c.min} … ${upper}`;
-                  const hidden = prefs.hidden.includes(c.id);
-                  return (
-                    <li key={c.id}>
-                      <label className="flex cursor-pointer items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={!hidden}
-                          onChange={() =>
-                            update({
-                              hidden: hidden
-                                ? prefs.hidden.filter((h) => h !== c.id)
-                                : [...prefs.hidden, c.id],
-                            })
-                          }
-                        />
-                        <span
-                          className="h-2.5 w-2.5 rounded-full"
-                          style={{ background: c.color }}
-                        />
-                        <span className="flex-1">{t(`mapWorkspace.rsrp_${c.id}`)}</span>
-                        <span className="tabular-nums text-muted-foreground">
-                          {range} dBm{prefs.on && counts[c.id] ? ` · ${counts[c.id]}` : ""}
-                        </span>
-                      </label>
-                    </li>
-                  );
-                })}
-              </ul>
-              <fieldset className="space-y-1 border-t pt-2">
-                <legend className="font-semibold">{t("metrics.mapCellLinks")}</legend>
-                {CELL_LINK_KINDS.map((kind) => (
-                  <label key={kind} className="flex cursor-pointer items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={prefs.links[kind]}
-                      onChange={(event) =>
-                        update({ links: { ...prefs.links, [kind]: event.target.checked } })
-                      }
-                    />
-                    <span
-                      className="h-0 w-5 border-t-[3px]"
-                      style={{ borderColor: CELL_LINK_COLORS[kind] }}
-                    />
-                    <span className="flex-1">{t(`metrics.mapLink.${kind}`)}</span>
-                    <span className="tabular-nums text-muted-foreground">{linkCounts[kind]}</span>
-                  </label>
-                ))}
-                <div
-                  className="measurement-link-style-legend pt-1"
-                  data-testid="measurement-link-style-legend"
-                >
-                  <strong>{t("mapPointPopup.lineStyles")}</strong>
-                  <span>
-                    <i className="measurement-popup-line is-proven" />
-                    {t("mapPointPopup.solid")}
-                  </span>
-                  <span>
-                    <i className="measurement-popup-line is-probable" />
-                    {t("mapPointPopup.dashed")}
-                  </span>
-                </div>
-              </fieldset>
+              {legendRows}
               <div>
                 <div className="mb-1 flex justify-between">
                   <span>{t("mapWorkspace.driveRsrpOpacity")}</span>
@@ -1021,5 +1049,6 @@ export function DriveRsrpLayer({
         </div>
       )}
     </div>
+    </>
   );
 }
