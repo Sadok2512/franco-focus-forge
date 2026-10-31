@@ -310,7 +310,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     </div>
   );
 
-
   return (
     <div
       ref={rootRef}
@@ -356,97 +355,104 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               props.layersLegend
             ) : (
               <>
-            <Section title={t("mapWorkspace.sitesAndCells")}>
-              <Check label={t("mapWorkspace.sites")} checked={enabled} onChange={onToggleEnabled} />
-              <Check
-                label={t("mapWorkspace.cellSectors")}
-                checked={cellsEnabled}
-                onChange={onToggleCells}
-                hint={cellsAvailable ? undefined : t("mapSites.cellsFromZoom")}
-              />
-              <Check
-                label={t("mapWorkspace.beams")}
-                checked={display.beams}
-                disabled={!onToggleDisplay}
-                onChange={(v) => onToggleDisplay?.("beams", v)}
-              />
-              <Check
-                label={t("mapWorkspace.labels")}
-                checked={display.labels}
-                disabled={!onToggleDisplay}
-                onChange={(v) => onToggleDisplay?.("labels", v)}
-              />
-              <BeamDisplayControls display={display} onSetBeamDisplay={props.onSetBeamDisplay} />
-            </Section>
-            <Section title={t("mapWorkspace.technology")}>
-              <Check
-                label="5G NR"
-                color={NR_COLOR}
-                checked={isActive(filters.technos, ["5G"])}
-                onChange={() => setTechnos(["5G"])}
-              />
-              <Check
-                label="4G LTE"
-                color={LTE_COLOR}
-                checked={isActive(filters.technos, ["4G", "LTE"])}
-                onChange={() => setTechnos(["4G", "LTE"])}
-              />
-              <Check
-                label="3G"
-                checked={false}
-                disabled
-                onChange={() => {}}
-                hint={t("mapWorkspace.notInData")}
-              />
-            </Section>
-            <Section title={t("mapWorkspace.bands")}>
-              {NETWORK_BANDS.map((b) => (
-                <Check
-                  key={b.key}
-                  label={b.key}
-                  color={bandColor(b.key)}
-                  checked={isActive(filters.bands, [b.code])}
-                  onChange={() => setBand(b.code)}
-                />
-              ))}
-            </Section>
-            {/* MAP UI V1 — operator filtering leaves the top toolbar and lives
+                <Section title={t("mapWorkspace.sitesAndCells")}>
+                  <Check
+                    label={t("mapWorkspace.sites")}
+                    checked={enabled}
+                    onChange={onToggleEnabled}
+                  />
+                  <Check
+                    label={t("mapWorkspace.cellSectors")}
+                    checked={cellsEnabled}
+                    onChange={onToggleCells}
+                    hint={cellsAvailable ? undefined : t("mapSites.cellsFromZoom")}
+                  />
+                  <Check
+                    label={t("mapWorkspace.beams")}
+                    checked={display.beams}
+                    disabled={!onToggleDisplay}
+                    onChange={(v) => onToggleDisplay?.("beams", v)}
+                  />
+                  <Check
+                    label={t("mapWorkspace.labels")}
+                    checked={display.labels}
+                    disabled={!onToggleDisplay}
+                    onChange={(v) => onToggleDisplay?.("labels", v)}
+                  />
+                  <BeamDisplayControls
+                    display={display}
+                    onSetBeamDisplay={props.onSetBeamDisplay}
+                  />
+                </Section>
+                <Section title={t("mapWorkspace.technology")}>
+                  <Check
+                    label="5G NR"
+                    color={NR_COLOR}
+                    checked={isActive(filters.technos, ["5G"])}
+                    onChange={() => setTechnos(["5G"])}
+                  />
+                  <Check
+                    label="4G LTE"
+                    color={LTE_COLOR}
+                    checked={isActive(filters.technos, ["4G", "LTE"])}
+                    onChange={() => setTechnos(["4G", "LTE"])}
+                  />
+                  <Check
+                    label="3G"
+                    checked={false}
+                    disabled
+                    onChange={() => {}}
+                    hint={t("mapWorkspace.notInData")}
+                  />
+                </Section>
+                <Section title={t("mapWorkspace.bands")}>
+                  {NETWORK_BANDS.map((b) => (
+                    <Check
+                      key={b.key}
+                      label={b.key}
+                      color={bandColor(b.key)}
+                      checked={isActive(filters.bands, [b.code])}
+                      onChange={() => setBand(b.code)}
+                    />
+                  ))}
+                </Section>
+                {/* MAP UI V1 — operator filtering leaves the top toolbar and lives
                 in the sidebar Filters, so the functional filter is preserved. */}
-            <Section title={t("mapSites.operator")}>
-              {OPERATORS.map((o) => (
-                <Check
-                  key={o.v}
-                  label={o.label}
-                  color={o.color}
-                  checked={isActive(filters.operators, [o.v])}
-                  onChange={() => onToggleOperator(o.v)}
-                />
-              ))}
-            </Section>
-            <Section title={t("mapWorkspace.siteTypes")}>
-              {["macro", "indoor", "smallCell"].map((k) => (
-                <Check
-                  key={k}
-                  label={t(`mapWorkspace.${k}`)}
-                  checked={false}
-                  disabled
-                  onChange={() => {}}
-                />
-              ))}
-              <p className="text-[10px] text-muted-foreground">
-                {t("mapWorkspace.siteTypesUnavailable")}
-              </p>
-            </Section>
-            <Section title={t("mapWorkspace.heatmap")}>
-              <Check
-                label={t("mapWorkspace.heatmap")}
-                checked={false}
-                disabled
-                onChange={() => {}}
-                hint={t("mapWorkspace.heatmapUnavailable")}
-              />
-            </Section>
-            {compact && <Section title={t("mapWorkspace.legend")}>{legend}</Section>}
+                <Section title={t("mapSites.operator")}>
+                  {OPERATORS.map((o) => (
+                    <Check
+                      key={o.v}
+                      label={o.label}
+                      color={o.color}
+                      checked={isActive(filters.operators, [o.v])}
+                      onChange={() => onToggleOperator(o.v)}
+                    />
+                  ))}
+                </Section>
+                <Section title={t("mapWorkspace.siteTypes")}>
+                  {["macro", "indoor", "smallCell"].map((k) => (
+                    <Check
+                      key={k}
+                      label={t(`mapWorkspace.${k}`)}
+                      checked={false}
+                      disabled
+                      onChange={() => {}}
+                    />
+                  ))}
+                  <p className="text-[10px] text-muted-foreground">
+                    {t("mapWorkspace.siteTypesUnavailable")}
+                  </p>
+                </Section>
+                <Section title={t("mapWorkspace.heatmap")}>
+                  <Check
+                    label={t("mapWorkspace.heatmap")}
+                    checked={false}
+                    disabled
+                    onChange={() => {}}
+                    hint={t("mapWorkspace.heatmapUnavailable")}
+                  />
+                </Section>
+                {compact && <Section title={t("mapWorkspace.legend")}>{legend}</Section>}
               </>
             )}
           </div>
@@ -510,7 +516,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           {t("mapSites.zoomToSeeCells")}
         </div>
       )}
-
 
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (

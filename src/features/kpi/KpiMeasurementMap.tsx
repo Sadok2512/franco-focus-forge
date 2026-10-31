@@ -75,7 +75,12 @@ export function KpiMeasurementMap({
   const [hidden, setHidden] = useState<string[]>([]);
   const [legendSettings, setLegendSettings] = useMetricLegendSettings(code);
   const classes = useMemo(
-    () => metricClasses(code, features.map((f) => Number(f.properties.value)), legendSettings),
+    () =>
+      metricClasses(
+        code,
+        features.map((f) => Number(f.properties.value)),
+        legendSettings,
+      ),
     [code, features, legendSettings],
   );
   useEffect(() => setHidden([]), [classes.length]);
@@ -147,12 +152,14 @@ export function KpiMeasurementMap({
             key={c.id}
             type="button"
             aria-pressed={!off}
-            onClick={() =>
-              setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))
-            }
+            onClick={() => setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))}
             className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
           >
-            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} data-index={index} />
+            <span
+              className="h-3 w-3 shrink-0 rounded-full"
+              style={{ background: c.color }}
+              data-index={index}
+            />
             <span className="flex-1">{range}</span>
             <span className="tabular-nums text-muted-foreground">
               {(counts.get(c.id) ?? 0).toLocaleString()}
@@ -245,25 +252,31 @@ export function KpiMeasurementMap({
         </button>
       )}
       <div className="relative min-h-0 flex-1">
-      <KpiMapOSM
-        workspace
-        showOperatorLegend={false}
-        measurementStatus={null}
-        onMapReady={setMap}
-        onRecenter={recenter}
-        layersLegend={legend}
-        routeCoordinates={routeCoordinates}
-      >
-        {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
-            lines to the API-published cells and the blinking serving site. */}
-        <DriveRsrpLayer map={map} projectId={projectId} activeCaptureId={captureId ?? ""} autoFrame={false} hidePoints />
-        <div
-          role="status"
-          className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+        <KpiMapOSM
+          workspace
+          showOperatorLegend={false}
+          measurementStatus={null}
+          onMapReady={setMap}
+          onRecenter={recenter}
+          layersLegend={legend}
+          routeCoordinates={routeCoordinates}
         >
-          {message}
-        </div>
-      </KpiMapOSM>
+          {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
+            lines to the API-published cells and the blinking serving site. */}
+          <DriveRsrpLayer
+            map={map}
+            projectId={projectId}
+            activeCaptureId={captureId ?? ""}
+            autoFrame={false}
+            hidePoints
+          />
+          <div
+            role="status"
+            className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+          >
+            {message}
+          </div>
+        </KpiMapOSM>
       </div>
     </div>
   );

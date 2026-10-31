@@ -306,7 +306,6 @@ export function KpiMapOSM({
     recenterMap();
   }, [ready, recenterMap, routeSignature]);
 
-
   useEffect(() => {
     const observer = new ResizeObserver(() => map.current?.resize());
     if (el.current) observer.observe(el.current);
@@ -508,20 +507,20 @@ export function KpiMapOSM({
       )}
       {/* Bouton plein écran ⤢ en haut à droite (le rail du mode workspace en a un). */}
       {!workspace && (
-      <button
-        onClick={() => setFull(!full)}
-        aria-label={
-          full
-            ? translate("kpi.3645da627202")
-            : premium
-              ? translate("kpi.2668a681be64")
-              : translate("kpi.dee312b0129c")
-        }
-        title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
-        className="absolute right-[50px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
-      >
-        {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-      </button>
+        <button
+          onClick={() => setFull(!full)}
+          aria-label={
+            full
+              ? translate("kpi.3645da627202")
+              : premium
+                ? translate("kpi.2668a681be64")
+                : translate("kpi.dee312b0129c")
+          }
+          title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
+          className="absolute right-[50px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
+        >
+          {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </button>
       )}
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
       {showOperatorLegend && !workspace && (

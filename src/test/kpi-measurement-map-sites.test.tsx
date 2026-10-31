@@ -39,7 +39,9 @@ vi.mock("maplibre-gl", () => {
     removeSource() {}
     setFilter() {}
     setFeatureState() {}
-    fitBounds(...args: unknown[]) { fitBounds(...args); }
+    fitBounds(...args: unknown[]) {
+      fitBounds(...args);
+    }
     resize() {}
     remove() {}
     isStyleLoaded() {
@@ -146,7 +148,10 @@ describe("KpiMeasurementMap — couche Sites", () => {
     render(
       <KpiMapOSM
         workspace
-        routeCoordinates={[[2.2, 48.8], [2.3, 48.9]]}
+        routeCoordinates={[
+          [2.2, 48.8],
+          [2.3, 48.9],
+        ]}
         measurementStatus={null}
       />,
     );
@@ -155,7 +160,10 @@ describe("KpiMeasurementMap — couche Sites", () => {
     fitBounds.mockClear();
     center.click();
     expect(fitBounds).toHaveBeenCalledWith(
-      [[2.2, 48.8], [2.3, 48.9]],
+      [
+        [2.2, 48.8],
+        [2.3, 48.9],
+      ],
       expect.objectContaining({ padding: 60 }),
     );
   });
