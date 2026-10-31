@@ -114,14 +114,34 @@ export function moveColumn(config: ColumnConfig, key: ColKey, delta: -1 | 1): Co
 }
 
 const KNOWN_COLS = new Set<string>(COLUMNS.map((c) => c.key));
+const isKnownCol = (k: string) => KNOWN_COLS.has(k) || isMetricCol(k);
 
 /** Ordered visible columns; keys absent from the catalog are ignored. */
 export const visibleColumns = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k) && config.visible.includes(k));
+  config.order.filter((k) => isKnownCol(k) && config.visible.includes(k));
 
 /** Configured order restricted to catalog columns. */
-export const knownOrder = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k));
+export const knownOrder = (config: ColumnConfig) => config.order.filter(isKnownCol);
+
+/** Adds a metric column at the end (or re-shows it if already present). */
+export function addMetricColumn(config: ColumnConfig, code: string): ColumnConfig {
+  const key = metricColKey(code);
+  if (config.order.includes(key)) {
+    return config.visible.includes(key)
+      ? config
+      : { ...config, visible: [...config.visible, key] };
+  }
+  return { order: [...config.order, key], visible: [...config.visible, key] };
+}
+
+/** Removes a metric column entirely (order + visibility). */
+export function removeMetricColumn(config: ColumnConfig, code: string): ColumnConfig {
+  const key = metricColKey(code);
+  return {
+    order: config.order.filter((k) => k !== key),
+    visible: config.visible.filter((k) => k !== key),
+  };
+}
 
 // ---------- Info: backend procedures only ----------
 type Proc = {
