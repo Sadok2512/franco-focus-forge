@@ -1,3 +1,14 @@
+## 1.126.11 (patch) — BC4-FRONT 2026-10-31 — lien serving du point actif uniquement (Agent BC4)
+
+- Map et Signaling n'affichent plus aucune liaison serving à l'ouverture.
+  Un clic sur un point publie au maximum sa seule liaison serving ; un autre
+  point la remplace et un second clic sur le même point la masque.
+- La sélection utilise l'identité complète `project_id + capture_id + seq` et
+  est nettoyée au changement de projet, capture ou workspace. Le popup et les
+  preuves `proven` (plein) / `probable` (pointillé) sont conservés sans nouvel
+  appel API.
+- SemVer front : **PATCH 1.126.11**.
+
 ## 1.126.10 (patch) — BC4-FRONT 2026-10-31 — priorité visuelle des liens serving (Agent BC4)
 
 - `DriveRsrpLayer`, partagé par Map et Signaling, peint désormais les liens

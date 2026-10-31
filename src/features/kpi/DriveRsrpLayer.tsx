@@ -20,6 +20,7 @@ import {
   driveRsrpPoints,
   rsrpClass,
   rsrpPositionsFrom,
+  type DriveRsrpPoint,
   type RsrpClassId,
   type RsrpPosition,
 } from "./drive-rsrp";
@@ -31,6 +32,7 @@ import {
   pointCellLinks,
   pointDetails,
   type CellLinkKind,
+  type RadioCellLink,
 } from "./measurement-point-popup";
 
 const SOURCE = "bc4-drive-rsrp";
@@ -68,6 +70,44 @@ const DEFAULT: Prefs = {
 };
 const LAST_CAPTURE_STORE = "bc4.driveRsrp.lastCapture";
 
+export type MeasurementPointIdentity = {
+  projectId: string;
+  captureId: string;
+  seq: number;
+};
+
+type PointLinkEntry = { point: DriveRsrpPoint; links: RadioCellLink[] };
+
+/** Return at most the serving evidence for the exact active measurement point. */
+export function activeServingPointLink(
+  entries: readonly PointLinkEntry[],
+  selected: MeasurementPointIdentity | null,
+  projectId: string,
+  captureId?: string,
+): { point: DriveRsrpPoint; link: RadioCellLink } | undefined {
+  if (
+    !selected ||
+    !captureId ||
+    selected.projectId !== projectId ||
+    selected.captureId !== captureId
+  )
+    return undefined;
+  const entry = entries.find(({ point }) => point.seq === selected.seq);
+  const link = entry?.links.find((candidate) => candidate.kind === "serving");
+  return entry && link ? { point: entry.point, link } : undefined;
+}
+
+function samePoint(
+  selected: MeasurementPointIdentity | null,
+  projectId: string,
+  captureId: string,
+  seq: number,
+): boolean {
+  return (
+    selected?.projectId === projectId && selected.captureId === captureId && selected.seq === seq
+  );
+}
+
 function readPrefs(store: string, defaults: Prefs): Prefs {
   try {
     const stored = JSON.parse(localStorage.getItem(store) ?? "{}") as Partial<Prefs>;
@@ -104,7 +144,9 @@ export function DriveRsrpLayer({
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
-  const [selectedSeq, setSelectedSeq] = useState<number | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<MeasurementPointIdentity | null>(null);
+  const selectedPointRef = useRef<MeasurementPointIdentity | null>(null);
+  const popupRef = useRef<Popup | undefined>(undefined);
   const explicitCapture = useRef(false);
   const automaticRecoveryAttempted = useRef(false);
   const previousProjectId = useRef(projectId);
@@ -254,32 +296,36 @@ export function DriveRsrpLayer({
     () => drivePoints.map((point) => ({ point, links: pointCellLinks(point) })),
     [drivePoints],
   );
-  const linkFeatures = useMemo(
-    () =>
-      pointLinks.flatMap(({ point, links }) =>
-        links
-          .filter((link) => prefs.links[link.kind])
-          .map((link) => ({
-            type: "Feature" as const,
-            geometry: {
-              type: "LineString" as const,
-              coordinates: [
-                [point.lng, point.lat],
-                [link.lng, link.lat],
-              ],
-            },
-            properties: {
-              seq: point.seq,
-              link_type: link.kind,
-              confidence: link.confidence,
-              source: link.source ?? "",
-              selected: selectedSeq !== null && selectedSeq === point.seq,
-              has_selection: selectedSeq !== null,
-            },
-          })),
-      ),
-    [pointLinks, prefs.links, selectedSeq],
+  const activeServing = useMemo(
+    () => activeServingPointLink(pointLinks, selectedPoint, projectId, effectiveCaptureId),
+    [effectiveCaptureId, pointLinks, projectId, selectedPoint],
   );
+  const linkFeatures = useMemo(() => {
+    if (!activeServing || !prefs.links.serving || !effectiveCaptureId) return [];
+    const { point, link } = activeServing;
+    return [
+      {
+        type: "Feature" as const,
+        geometry: {
+          type: "LineString" as const,
+          coordinates: [
+            [point.lng, point.lat],
+            [link.lng, link.lat],
+          ],
+        },
+        properties: {
+          project_id: projectId,
+          capture_id: effectiveCaptureId,
+          seq: point.seq,
+          link_type: link.kind,
+          confidence: link.confidence,
+          source: link.source ?? "",
+          selected: true,
+          has_selection: true,
+        },
+      },
+    ];
+  }, [activeServing, effectiveCaptureId, prefs.links.serving, projectId]);
   const linkCounts = useMemo(
     () =>
       pointLinks
@@ -526,33 +572,76 @@ export function DriveRsrpLayer({
 
   useEffect(() => {
     if (!map) return;
-    let popup: Popup | undefined;
     let disposed = false;
     const click = async (e: MapLayerMouseEvent) => {
-      const p = e.features?.[0]?.properties;
+      // Several measurements can share one GPS fix. Keep the already-active
+      // identity when it is part of the clicked stack so a second click on
+      // that visual point reliably deselects it instead of selecting another
+      // overlapping sequence.
+      const activeFeature = e.features?.find((feature) => {
+        const seq = Number(feature.properties?.["seq"]);
+        return (
+          effectiveCaptureId &&
+          Number.isFinite(seq) &&
+          samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)
+        );
+      });
+      const p = activeFeature?.properties ?? e.features?.[0]?.properties;
       if (!p) return;
       const seq = Number(p["seq"]);
       const point = drivePoints.find((candidate) => candidate.seq === seq);
-      if (!point) return;
+      if (!point || !effectiveCaptureId) return;
+      if (samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)) {
+        selectedPointRef.current = null;
+        setSelectedPoint(null);
+        popupRef.current?.remove();
+        popupRef.current = undefined;
+        return;
+      }
       const { Popup } = await import("maplibre-gl");
       if (disposed) return;
-      setSelectedSeq(seq);
+      popupRef.current?.remove();
+      const identity = { projectId, captureId: effectiveCaptureId, seq };
+      selectedPointRef.current = identity;
+      setSelectedPoint(identity);
       const el = buildMeasurementPointPopup(
         pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm"),
       );
-      popup?.remove();
-      popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
+      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
         .setLngLat(e.lngLat)
         .setDOMContent(el)
         .addTo(map);
+      popupRef.current = popup;
+      popup.on("close", () => {
+        if (popupRef.current !== popup) return;
+        popupRef.current = undefined;
+        selectedPointRef.current = null;
+        setSelectedPoint(null);
+      });
     };
     map.on("click", LAYER, click);
     return () => {
       disposed = true;
-      popup?.remove();
       map.off("click", LAYER, click);
     };
-  }, [drivePoints, map, t]);
+  }, [drivePoints, effectiveCaptureId, map, projectId, t]);
+
+  // A selection is scoped to one project/capture/map workspace. Never carry
+  // its line or popup into another context, even when sequence numbers match.
+  useEffect(() => {
+    selectedPointRef.current = null;
+    setSelectedPoint(null);
+    popupRef.current?.remove();
+    popupRef.current = undefined;
+  }, [effectiveCaptureId, map, projectId]);
+
+  useEffect(
+    () => () => {
+      popupRef.current?.remove();
+      popupRef.current = undefined;
+    },
+    [],
+  );
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
