@@ -1557,3 +1557,11 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
     animation: kpi-measurements-progress 3.2s cubic-bezier(.4, 0, .2, 1) infinite !important;
   }
 }
+
+/* A lone KPI map card fills the whole workspace. */
+.kpi-workspace-grid-viewport.is-map-only .kpi-graph-card[data-visualization="map"] {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.kpi-graph-card[data-visualization="map"] > :not(header) { flex: 1; min-height: 0; }
