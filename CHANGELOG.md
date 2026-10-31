@@ -1,3 +1,37 @@
+## 1.126.14 (patch) — BC4-FRONT 2026-10-31 — carte KPI alignée sur Signaling, légende interactive, sélection fidèle (Agent BC4)
+
+- **Légende en haut de carte** : la légende flottante passe du bas en haut ;
+  Technology (5G NR / 4G LTE), Bands et Symbols (Site / Cell sector) sont des
+  boutons on/off qui désactivent la couche correspondante, même look, élément
+  éteint translucide et barré ; la légende et la sidebar pilotent les mêmes
+  réglages.
+- **Faisceaux** : Beam size reste réglable de 0 à 100 % mais son effet est
+  multiplié par 5 (100 % = 10× le rayon d'origine).
+- **Serving** : la ligne vers la cellule serving est toujours en trait plein ;
+  le site serving clignote (cercle pulsé) quand un point est sélectionné.
+- **Carte KPI Analytics alignée sur Signaling View** : tout le haut de carte
+  (titre, unité, sélecteur Capture) est supprimé, la carte prend toute la
+  place quand elle est seule, le menu ⋮ reste en haut à droite.
+- **Points séparés et colorés** : le groupement en bulles numérotées est
+  retiré, chaque mesure s'affiche comme un point distinct à la couleur exacte
+  de sa tranche de légende ; l'échelle va du vert (valeur basse) au rouge
+  (valeur haute) et les points du trajet ne recouvrent plus la métrique.
+- **Sidebar en onglets** : « Calques » et « Légende » séparés ; tranches
+  cliquables pour cacher/afficher, nombre de couleurs réglable de 2 à 8,
+  couleur éditable par tranche, réinitialisation possible, choix mémorisés.
+- **Nettoyage** : la fiche popup des points KPI (métrique, valeur, capture) et
+  le panneau « Drive RSRP » sont retirés des cartes KPI et Signaling, la
+  couche restant active.
+- **Sélection fidèle** : le point cliqué ne change ni de taille ni de couleur ;
+  la sélection se signale par un anneau creux clignotant dans la couleur du
+  point lui-même, jamais en bleu.
+- **Signaling View** : boutons ON/OFF « Signaling View » (messages + payload)
+  et « Metric » (section de métriques en bas de page, désactivée par défaut).
+- **Glisser-déposer** : une métrique du catalogue se dépose sur la carte
+  existante en une couche ajoutée, sans créer de tableau ; légende, couleurs,
+  ON/OFF et retrait disponibles, choix mémorisés.
+- SemVer front : **PATCH 1.126.14**.
+
 ## 1.126.13 (patch) — BC4-FRONT 2026-10-31 — refonte carte MAP UI V1, point actif et curseur (Agent BC4)
 
 - **MAP UI V1** : sidebar repliable en rail d'icônes (Calques, Filtres,
