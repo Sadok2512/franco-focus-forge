@@ -1066,7 +1066,10 @@
     "metricLegend": "Metric legend",
     "legendCount": "Number of colours",
     "legendReset": "Reset colours",
-    "legendSettings": "Colour settings"
+    "legendSettings": "Colour settings",
+    "signalingPoints": "Signaling points",
+    "gpsRoute": "GPS route",
+    "selectedPosition": "Selected position"
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Cell reference detected",

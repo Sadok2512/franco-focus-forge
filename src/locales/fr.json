@@ -1066,7 +1066,10 @@
     "metricLegend": "Légende métrique",
     "legendCount": "Nombre de couleurs",
     "legendReset": "Réinitialiser les couleurs",
-    "legendSettings": "Réglages des couleurs"
+    "legendSettings": "Réglages des couleurs",
+    "signalingPoints": "Points signalisation",
+    "gpsRoute": "Trajet GPS",
+    "selectedPosition": "Position sélectionnée"
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",

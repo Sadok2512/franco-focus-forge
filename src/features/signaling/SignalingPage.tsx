@@ -102,6 +102,8 @@ import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = layers.map((layer) => rfProtocolColors[layer]!);
+/** Grey of the plotted GPS route line. */
+const ROUTE_COLOR = "#64748b";
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
 
 // V10 column catalog lives in message-columns.ts (catalog, persistence, Info/RRC/radio rules).
@@ -760,6 +762,17 @@ function SignalMap({
 }) {
   const [map, setMap] = useState<MlMap>();
   const ready = useCallback((m: MlMap) => setMap(m), []);
+  const { t } = useTranslation();
+  // The map's own legend panel (Layers → Legend) hosts the drive RSRP rows.
+  const [legendHost, setLegendHost] = useState<HTMLDivElement | null>(null);
+  // Per-protocol totals of the plotted event points, straight from the markers.
+  const protocolTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const marker of data.markers)
+      for (const [protocol, count] of Object.entries(marker.counts))
+        totals.set(protocol, (totals.get(protocol) ?? 0) + count);
+    return totals;
+  }, [data.markers]);
   const callback = useRef(onSelect);
   callback.current = onSelect;
   /** Positions the server already published for this capture, so an RSRP row
@@ -812,7 +825,7 @@ function SignalMap({
           id: "signaling-route-line",
           type: "line",
           source: "signaling-route",
-          paint: { "line-color": "#64748b", "line-width": 2, "line-opacity": 0.5 },
+          paint: { "line-color": ROUTE_COLOR, "line-width": 2, "line-opacity": 0.5 },
         });
       }
       const source = map.getSource("signaling") as GeoJSONSource | undefined;
@@ -922,6 +935,43 @@ function SignalMap({
         contextLabel="Signalisation"
         measurementStatus={null}
         nPoints={data.positioned_count}
+        layersLegend={
+          <div className="space-y-3">
+            <section className="space-y-1">
+              <div className="font-semibold">{t("mapWorkspace.signalingPoints")}</div>
+              {layers.map((protocol, i) => (
+                <div key={protocol} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full border border-border"
+                    style={{ background: colors[i] }}
+                  />
+                  <span className="flex-1 truncate">{protocol}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {(protocolTotals.get(protocol) ?? 0).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </section>
+            <section className="space-y-1 border-t pt-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-0 w-5 shrink-0 border-t-[3px]"
+                  style={{ borderColor: ROUTE_COLOR }}
+                />
+                <span className="flex-1">{t("mapWorkspace.gpsRoute")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                  style={{ borderColor: "var(--signaling-cursor)" }}
+                />
+                <span className="flex-1">{t("mapWorkspace.selectedPosition")}</span>
+              </div>
+            </section>
+            {/* The drive RSRP classes and cell links are portalled in by the layer. */}
+            <div ref={setLegendHost} />
+          </div>
+        }
         routeCoordinates={data.markers
           .filter((point) => point.lng !== null && point.lat !== null)
           .map((point) => [point.lng!, point.lat!])}
@@ -933,6 +983,7 @@ function SignalMap({
           autoFrame
           positions={rsrpPositions}
           hideControls
+          legendHost={legendHost}
         />
       </KpiMapOSM>
       {!hasMarkers && (
