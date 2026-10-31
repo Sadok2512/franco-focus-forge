@@ -1439,8 +1439,8 @@ export function SignalingPage({
   // View activations (view switch, timeline, map) live in the filters sidebar,
   // never in a strip above the workspace.
   const viewControls = (
-    <>
-      <Button asChild variant="outline" size="sm">
+    <div className="signaling-view-controls">
+      <Button asChild variant="outline" size="sm" className="signaling-view-switch">
         <Link
           to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
           search={(previous) => ({ ...previous, capture_id: capture, seq })}
@@ -1450,7 +1450,7 @@ export function SignalingPage({
       </Button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={toggleTimeline}
         aria-pressed={timelineVisible}
         data-testid="signaling-timeline-toggle"
@@ -1461,7 +1461,7 @@ export function SignalingPage({
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={toggleMap}
         aria-pressed={mapVisible}
         data-testid="signaling-map-toggle"
@@ -1472,7 +1472,7 @@ export function SignalingPage({
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={() => togglePanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)}
         aria-pressed={inspectionVisible}
         data-testid="signaling-inspection-toggle"
@@ -1483,7 +1483,7 @@ export function SignalingPage({
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={() => togglePanel(metricsPanelRef, metricsVisible, setMetricsVisible)}
         aria-pressed={metricsVisible}
         data-testid="signaling-metrics-toggle"
@@ -1491,7 +1491,7 @@ export function SignalingPage({
         <LineChart size={14} />
         {t("signalingV2.metrics")} · {metricsVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
-    </>
+    </div>
   );
 
   return (
