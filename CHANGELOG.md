@@ -1,3 +1,13 @@
+## 1.126.10 (patch) — BC4-FRONT 2026-10-31 — priorité visuelle des liens serving (Agent BC4)
+
+- `DriveRsrpLayer`, partagé par Map et Signaling, peint désormais les liens
+  serving dans deux couches dédiées (plein prouvé, pointillé probable), après
+  les couches voisines et ancre NR. Une association voisine portant exactement
+  la même géométrie ne peut donc plus masquer le trait serving.
+- Aucun lien n'est ajouté, supprimé ou reclassé : la source GeoJSON, les trois
+  interrupteurs et les couleurs existantes sont conservés.
+- SemVer front : **PATCH 1.126.10**.
+
 ## 1.126.9 (patch) — BC4-FRONT 2026-10-31 — liens point → cellule visibles (Agent BC4)
 
 - Le contrat front conserve les 4 435 candidats `probable_serving_*` publiés

@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
+import type {
+  Map as MlMap,
+  FilterSpecification,
+  GeoJSONSource,
+  MapLayerMouseEvent,
+  Popup,
+} from "maplibre-gl";
 import { getMetricAnalysis, getMetricMap, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -32,6 +38,18 @@ const LAYER = "bc4-drive-rsrp-points";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
 const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
 const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
+const SERVING_LINK_LAYER_PROBABLE = "bc4-drive-rsrp-serving-links-probable";
+const SERVING_LINK_LAYER = "bc4-drive-rsrp-serving-links-proven";
+export const DRIVE_CELL_LINK_LAYER_SPECS = [
+  { id: LINK_LAYER, confidence: "proven", serving: false },
+  { id: LINK_LAYER_PROBABLE, confidence: "probable", serving: false },
+  // Serving is deliberately painted after neighbour/NR links. Some API
+  // records legitimately resolve the serving and a neighbour to the exact
+  // same segment; a shared confidence layer used to let the later neighbour
+  // hide the serving line completely.
+  { id: SERVING_LINK_LAYER_PROBABLE, confidence: "probable", serving: true },
+  { id: SERVING_LINK_LAYER, confidence: "proven", serving: true },
+] as const;
 // v2 enables the measurement layer on first use. The dedicated Map page is
 // expected to open on real radio points rather than on an empty basemap.
 const STORE = "bc4.map.driveRsrp.v2";
@@ -325,30 +343,47 @@ export function DriveRsrpLayer({
   // Source + layer (added once the style is parsed, kept across basemap changes).
   useEffect(() => {
     if (!map) return;
+    let promoteFrame: number | undefined;
+    const promoteServingLayers = () => {
+      // Site/sector layers are installed by the shared map chrome after this
+      // measurement component. Keep serving above those overlays as well as
+      // above neighbour/NR links; point circles remain independently
+      // clickable because MapLibre hit testing is layer-specific below.
+      for (const id of [SERVING_LINK_LAYER_PROBABLE, SERVING_LINK_LAYER]) {
+        if (map.getLayer(id)) map.moveLayer(id);
+      }
+    };
     const add = () => {
       if (!map.getSource(LINK_SOURCE)) {
         map.addSource(LINK_SOURCE, {
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
         });
-        for (const confidence of ["proven", "probable"] as const) {
+      }
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+        const filter: FilterSpecification = [
+          "all",
+          ["==", ["get", "confidence"], spec.confidence],
+          [spec.serving ? "==" : "!=", ["get", "link_type"], "serving"],
+        ];
+        if (!map.getLayer(spec.id)) {
           map.addLayer({
-            id: confidence === "proven" ? LINK_LAYER : LINK_LAYER_PROBABLE,
+            id: spec.id,
             type: "line",
             source: LINK_SOURCE,
-            filter: ["==", ["get", "confidence"], confidence],
+            filter,
             paint: {
-              "line-color": [
-                "match",
-                ["get", "link_type"],
-                "serving",
-                CELL_LINK_COLORS.serving,
-                "neighbour",
-                CELL_LINK_COLORS.neighbour,
-                "nr_anchor",
-                CELL_LINK_COLORS.nr_anchor,
-                "#64748b",
-              ],
+              "line-color": spec.serving
+                ? CELL_LINK_COLORS.serving
+                : [
+                    "match",
+                    ["get", "link_type"],
+                    "neighbour",
+                    CELL_LINK_COLORS.neighbour,
+                    "nr_anchor",
+                    CELL_LINK_COLORS.nr_anchor,
+                    "#64748b",
+                  ],
               "line-width": [
                 "case",
                 ["get", "selected"],
@@ -363,12 +398,14 @@ export function DriveRsrpLayer({
                 CELL_LINK_STYLE.mutedOpacity,
                 CELL_LINK_STYLE.opacity,
               ],
-              ...(confidence === "probable"
+              ...(spec.confidence === "probable"
                 ? { "line-dasharray": CELL_LINK_STYLE.probableDash }
                 : {}),
             },
           });
         }
+        // Also repair maps whose source survived a style/component refresh.
+        map.setFilter(spec.id, filter);
       }
       if (!map.getSource(SOURCE)) {
         map.addSource(SOURCE, {
@@ -403,10 +440,10 @@ export function DriveRsrpLayer({
         type: "FeatureCollection",
         features: prefs.on ? linkFeatures : [],
       });
-      if (map.getLayer(LINK_LAYER))
-        map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
-      if (map.getLayer(LINK_LAYER_PROBABLE))
-        map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+        if (map.getLayer(spec.id))
+          map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
+      }
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
@@ -415,11 +452,18 @@ export function DriveRsrpLayer({
         ["!=", ["get", "rsrp_class"], null],
         ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
       ]);
+      promoteServingLayers();
+      map.once("idle", promoteServingLayers);
+      promoteFrame = window.requestAnimationFrame(() => {
+        promoteFrame = window.requestAnimationFrame(promoteServingLayers);
+      });
     };
     if (map.getStyle?.() || map.isStyleLoaded()) add();
     else map.once("load", add);
     return () => {
       map.off("load", add);
+      map.off("idle", promoteServingLayers);
+      if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
   }, [map, features, linkFeatures, prefs]);
 

@@ -20,7 +20,10 @@ const password = process.env.BC4_AUDIT_PASSWORD_FILE
 if (!email || !password) throw new Error("reader credentials are incomplete");
 
 const projectId = "43e81a34a073";
-const captures = ["a4b0c321c52e", "ecffb18dbd7f"];
+const captures = (process.env.BC4_AUDIT_CAPTURES ?? "a4b0c321c52e,ecffb18dbd7f")
+  .split(",")
+  .filter(Boolean);
+const views = (process.env.BC4_AUDIT_VIEWS ?? "map,signaling,kpi").split(",").filter(Boolean);
 const out = process.env.BC4_AUDIT_OUT
   ? `${process.env.BC4_AUDIT_OUT.replace(/\/$/, "")}/`
   : new URL("../audit/bc4-serving-links-visible/public-before/", import.meta.url).pathname;
@@ -96,29 +99,85 @@ async function inspectMap(page) {
       );
       const layers = layerIds.map((id) => {
         let rendered = null;
+        let renderedByType = null;
         try {
-          rendered = value.queryRenderedFeatures(undefined, { layers: [id] }).length;
+          const renderedFeatures = value.queryRenderedFeatures(undefined, { layers: [id] });
+          rendered = renderedFeatures.length;
+          renderedByType = renderedFeatures.reduce((counts, feature) => {
+            const key = feature?.properties?.link_type ?? "<missing>";
+            counts[key] = (counts[key] ?? 0) + 1;
+            return counts;
+          }, {});
         } catch {}
         return {
           id,
+          styleIndex: (style?.layers ?? []).findIndex((layer) => layer.id === id),
           visibility: value.getLayoutProperty(id, "visibility") ?? "visible",
           width: value.getPaintProperty(id, "line-width"),
           opacity: value.getPaintProperty(id, "line-opacity"),
           dasharray: value.getPaintProperty(id, "line-dasharray") ?? null,
           rendered,
+          renderedByType,
         };
       });
       const sources = sourceIds.map((id) => {
         const source = value.getSource(id);
         const data = source?._data ?? source?._options?.data ?? null;
-        let features = Array.isArray(data?.features) ? data.features : [];
+        const features = Array.isArray(data?.features) ? data.features : [];
+        let tiledFeatures = [];
         try {
           const queried = value.querySourceFeatures(id);
-          if (queried.length) features = queried;
+          if (queried.length) tiledFeatures = queried;
         } catch {}
+        const unique = new Map();
+        for (const feature of tiledFeatures) {
+          const coordinates = feature?.geometry?.coordinates ?? [];
+          const key = JSON.stringify([
+            feature?.properties?.seq,
+            feature?.properties?.link_type,
+            feature?.properties?.confidence,
+            coordinates,
+          ]);
+          unique.set(key, feature);
+        }
+        const uniqueFeatures = [...unique.values()];
+        const radioBySeq = new Map();
+        for (const feature of uniqueFeatures) {
+          const seq = feature?.properties?.seq;
+          if (seq == null) continue;
+          const group = radioBySeq.get(seq) ?? [];
+          group.push(feature);
+          radioBySeq.set(seq, group);
+        }
+        let servingSameGeometryAsOther = 0;
+        let servingSameDestinationAsOther = 0;
+        for (const group of radioBySeq.values()) {
+          const servings = group.filter((feature) => feature?.properties?.link_type === "serving");
+          const others = group.filter((feature) => feature?.properties?.link_type !== "serving");
+          for (const serving of servings) {
+            const geometry = JSON.stringify(serving?.geometry?.coordinates ?? []);
+            const destination = JSON.stringify(serving?.geometry?.coordinates?.at?.(-1) ?? null);
+            if (others.some((feature) => JSON.stringify(feature?.geometry?.coordinates ?? []) === geometry))
+              servingSameGeometryAsOther += 1;
+            if (
+              others.some(
+                (feature) =>
+                  JSON.stringify(feature?.geometry?.coordinates?.at?.(-1) ?? null) === destination,
+              )
+            )
+              servingSameDestinationAsOther += 1;
+          }
+        }
         return {
           id,
           features: features.length,
+          tiledFeatures: tiledFeatures.length,
+          uniqueFeatures: uniqueFeatures.length,
+          uniqueServing: uniqueFeatures.filter(
+            (feature) => feature?.properties?.link_type === "serving",
+          ).length,
+          servingSameGeometryAsOther,
+          servingSameDestinationAsOther,
           serving: features.filter((feature) => feature?.properties?.link_type === "serving")
             .length,
           selected: features.filter((feature) => feature?.properties?.selected === true).length,
@@ -147,7 +206,14 @@ async function inspectMap(page) {
           }
         } catch {}
       }
-      maps.push({ layerIds, sourceIds, layers, sources, clickTarget });
+      maps.push({
+        layerIds,
+        sourceIds,
+        layers,
+        sources,
+        styleOrder: (style?.layers ?? []).map((layer, index) => ({ index, id: layer.id })),
+        clickTarget,
+      });
     };
     for (const element of candidates) {
       const key = Object.keys(element).find((name) => name.startsWith("__reactFiber$"));
@@ -219,7 +285,12 @@ await page.goto(`${base}/login`, { waitUntil: "domcontentloaded", timeout: 120_0
 await page.getByLabel(/Adresse e-mail|Email address/).fill(email);
 await page.getByLabel(/Mot de passe|Password/, { exact: true }).fill(password);
 await page.getByRole("button", { name: /Se connecter|Sign in/, exact: true }).click();
-await page.waitForURL((url) => url.pathname !== "/login", { timeout: 30_000 });
+// The app keeps long-lived tile/font requests open, so waiting for the page
+// `load` event can time out after a successful SPA navigation.  The pathname
+// is the authentication fact needed by this read-only audit.
+await page.waitForFunction(() => window.location.pathname !== "/login", undefined, {
+  timeout: 30_000,
+});
 await page.evaluate(
   ({ projectId: pid, email: user }) => {
     localStorage.setItem(
@@ -233,7 +304,7 @@ await page.evaluate(
 const report = { base, projectId, captures: {}, generatedAt: new Date().toISOString() };
 for (const captureId of captures) {
   report.captures[captureId] = {};
-  for (const view of ["map", "signaling", "kpi"]) {
+  for (const view of views) {
     responses.length = 0;
     await page.evaluate(
       ({ projectId: pid, captureId: cid }) => {
