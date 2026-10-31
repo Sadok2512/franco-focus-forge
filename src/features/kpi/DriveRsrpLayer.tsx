@@ -692,7 +692,7 @@ export function DriveRsrpLayer({
     if (map.getLayer(LINK_LAYER_PROBABLE))
       map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
     map.setPaintProperty(LAYER, "circle-opacity", hidePoints ? 0 : prefs.opacity / 100);
-      if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
+    if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
     map.setFilter(
       LAYER,
       prefs.hidden.length
@@ -852,170 +852,173 @@ export function DriveRsrpLayer({
     >
       {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
       {!hideControls && (
-      <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="h-auto px-0 py-0 font-semibold text-foreground"
-            aria-expanded={open}
-            onClick={() => setOpen((o) => !o)}
-          >
-            {t("mapWorkspace.driveRsrp")} {open ? "▾" : "▸"}
-          </Button>
-          <Switch
-            aria-label={t("mapWorkspace.driveRsrpToggle")}
-            checked={prefs.on}
-            onCheckedChange={(on) => {
-              update({ on });
-              if (on) setOpen(true);
-            }}
-          />
-        </div>
-        {status && (
-          <div className="space-y-1.5 border-t px-3 py-1.5">
-            <p role="status" className="break-words text-muted-foreground">
-              {status}
-              {automaticRecovery && features.length > 0
-                ? ` · ${t("mapWorkspace.driveRsrpCaptureRecovered", automaticRecovery)}`
-                : ""}
-              {linkFeatures.length > 0
-                ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
-                : ""}
-            </p>
-            <div className="flex justify-end gap-1.5">
-              {!analysis.isLoading && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-6 shrink-0 px-2 text-[11px]"
-                  onClick={() => setDiagOpen(true)}
-                >
-                  {t("rsrpDiagnosis.open")}
-                </Button>
-              )}
-              {features.length > 0 && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-6 shrink-0 px-2 text-[11px]"
-                  onClick={frame}
-                >
-                  {t("mapWorkspace.driveRsrpFrame")}
-                </Button>
-              )}
-            </div>
+        <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
+          <div className="flex items-center justify-between gap-2 px-3 py-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-auto px-0 py-0 font-semibold text-foreground"
+              aria-expanded={open}
+              onClick={() => setOpen((o) => !o)}
+            >
+              {t("mapWorkspace.driveRsrp")} {open ? "▾" : "▸"}
+            </Button>
+            <Switch
+              aria-label={t("mapWorkspace.driveRsrpToggle")}
+              checked={prefs.on}
+              onCheckedChange={(on) => {
+                update({ on });
+                if (on) setOpen(true);
+              }}
+            />
           </div>
-        )}
-        <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
-        {open && (
-          <div className="space-y-2 border-t px-3 py-2">
-            {prefs.on && !embedded && !!captures.data?.length && (
-              <select
-                aria-label={t("mapWorkspace.driveRsrpCapture")}
-                className="w-full rounded border bg-background px-1 py-0.5"
-                value={captureId ?? ""}
-                onChange={(e) => {
-                  explicitCapture.current = true;
-                  setAutomaticRecovery(undefined);
-                  setCaptureId(e.target.value);
-                }}
-              >
-                {captures.data.map((c) => (
-                  <option key={c.capture_id} value={c.capture_id}>
-                    {c.label || c.capture_id}
-                  </option>
+          {status && (
+            <div className="space-y-1.5 border-t px-3 py-1.5">
+              <p role="status" className="break-words text-muted-foreground">
+                {status}
+                {automaticRecovery && features.length > 0
+                  ? ` · ${t("mapWorkspace.driveRsrpCaptureRecovered", automaticRecovery)}`
+                  : ""}
+                {linkFeatures.length > 0
+                  ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
+                  : ""}
+              </p>
+              <div className="flex justify-end gap-1.5">
+                {!analysis.isLoading && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 shrink-0 px-2 text-[11px]"
+                    onClick={() => setDiagOpen(true)}
+                  >
+                    {t("rsrpDiagnosis.open")}
+                  </Button>
+                )}
+                {features.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-6 shrink-0 px-2 text-[11px]"
+                    onClick={frame}
+                  >
+                    {t("mapWorkspace.driveRsrpFrame")}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+          <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
+          {open && (
+            <div className="space-y-2 border-t px-3 py-2">
+              {prefs.on && !embedded && !!captures.data?.length && (
+                <select
+                  aria-label={t("mapWorkspace.driveRsrpCapture")}
+                  className="w-full rounded border bg-background px-1 py-0.5"
+                  value={captureId ?? ""}
+                  onChange={(e) => {
+                    explicitCapture.current = true;
+                    setAutomaticRecovery(undefined);
+                    setCaptureId(e.target.value);
+                  }}
+                >
+                  {captures.data.map((c) => (
+                    <option key={c.capture_id} value={c.capture_id}>
+                      {c.label || c.capture_id}
+                    </option>
+                  ))}
+                </select>
+              )}
+              <ul className="space-y-1" aria-label={t("mapWorkspace.driveRsrpLegend")}>
+                {RSRP_CLASSES.map((c, i) => {
+                  const upper = RSRP_CLASSES[i - 1]?.min;
+                  const range =
+                    upper === undefined
+                      ? `≥ ${c.min}`
+                      : c.min === -Infinity
+                        ? `< ${upper}`
+                        : `${c.min} … ${upper}`;
+                  const hidden = prefs.hidden.includes(c.id);
+                  return (
+                    <li key={c.id}>
+                      <label className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={!hidden}
+                          onChange={() =>
+                            update({
+                              hidden: hidden
+                                ? prefs.hidden.filter((h) => h !== c.id)
+                                : [...prefs.hidden, c.id],
+                            })
+                          }
+                        />
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ background: c.color }}
+                        />
+                        <span className="flex-1">{t(`mapWorkspace.rsrp_${c.id}`)}</span>
+                        <span className="tabular-nums text-muted-foreground">
+                          {range} dBm{prefs.on && counts[c.id] ? ` · ${counts[c.id]}` : ""}
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+              <fieldset className="space-y-1 border-t pt-2">
+                <legend className="font-semibold">{t("metrics.mapCellLinks")}</legend>
+                {CELL_LINK_KINDS.map((kind) => (
+                  <label key={kind} className="flex cursor-pointer items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={prefs.links[kind]}
+                      onChange={(event) =>
+                        update({ links: { ...prefs.links, [kind]: event.target.checked } })
+                      }
+                    />
+                    <span
+                      className="h-0 w-5 border-t-[3px]"
+                      style={{ borderColor: CELL_LINK_COLORS[kind] }}
+                    />
+                    <span className="flex-1">{t(`metrics.mapLink.${kind}`)}</span>
+                    <span className="tabular-nums text-muted-foreground">{linkCounts[kind]}</span>
+                  </label>
                 ))}
-              </select>
-            )}
-            <ul className="space-y-1" aria-label={t("mapWorkspace.driveRsrpLegend")}>
-              {RSRP_CLASSES.map((c, i) => {
-                const upper = RSRP_CLASSES[i - 1]?.min;
-                const range =
-                  upper === undefined
-                    ? `≥ ${c.min}`
-                    : c.min === -Infinity
-                      ? `< ${upper}`
-                      : `${c.min} … ${upper}`;
-                const hidden = prefs.hidden.includes(c.id);
-                return (
-                  <li key={c.id}>
-                    <label className="flex cursor-pointer items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={!hidden}
-                        onChange={() =>
-                          update({
-                            hidden: hidden
-                              ? prefs.hidden.filter((h) => h !== c.id)
-                              : [...prefs.hidden, c.id],
-                          })
-                        }
-                      />
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ background: c.color }} />
-                      <span className="flex-1">{t(`mapWorkspace.rsrp_${c.id}`)}</span>
-                      <span className="tabular-nums text-muted-foreground">
-                        {range} dBm{prefs.on && counts[c.id] ? ` · ${counts[c.id]}` : ""}
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-            <fieldset className="space-y-1 border-t pt-2">
-              <legend className="font-semibold">{t("metrics.mapCellLinks")}</legend>
-              {CELL_LINK_KINDS.map((kind) => (
-                <label key={kind} className="flex cursor-pointer items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={prefs.links[kind]}
-                    onChange={(event) =>
-                      update({ links: { ...prefs.links, [kind]: event.target.checked } })
-                    }
-                  />
-                  <span
-                    className="h-0 w-5 border-t-[3px]"
-                    style={{ borderColor: CELL_LINK_COLORS[kind] }}
-                  />
-                  <span className="flex-1">{t(`metrics.mapLink.${kind}`)}</span>
-                  <span className="tabular-nums text-muted-foreground">{linkCounts[kind]}</span>
-                </label>
-              ))}
-              <div
-                className="measurement-link-style-legend pt-1"
-                data-testid="measurement-link-style-legend"
-              >
-                <strong>{t("mapPointPopup.lineStyles")}</strong>
-                <span>
-                  <i className="measurement-popup-line is-proven" />
-                  {t("mapPointPopup.solid")}
-                </span>
-                <span>
-                  <i className="measurement-popup-line is-probable" />
-                  {t("mapPointPopup.dashed")}
-                </span>
+                <div
+                  className="measurement-link-style-legend pt-1"
+                  data-testid="measurement-link-style-legend"
+                >
+                  <strong>{t("mapPointPopup.lineStyles")}</strong>
+                  <span>
+                    <i className="measurement-popup-line is-proven" />
+                    {t("mapPointPopup.solid")}
+                  </span>
+                  <span>
+                    <i className="measurement-popup-line is-probable" />
+                    {t("mapPointPopup.dashed")}
+                  </span>
+                </div>
+              </fieldset>
+              <div>
+                <div className="mb-1 flex justify-between">
+                  <span>{t("mapWorkspace.driveRsrpOpacity")}</span>
+                  <span className="tabular-nums">{prefs.opacity} %</span>
+                </div>
+                <Slider
+                  aria-label={t("mapWorkspace.driveRsrpOpacity")}
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={[prefs.opacity]}
+                  onValueChange={([v]) => update({ opacity: v ?? 0 })}
+                />
               </div>
-            </fieldset>
-            <div>
-              <div className="mb-1 flex justify-between">
-                <span>{t("mapWorkspace.driveRsrpOpacity")}</span>
-                <span className="tabular-nums">{prefs.opacity} %</span>
-              </div>
-              <Slider
-                aria-label={t("mapWorkspace.driveRsrpOpacity")}
-                min={0}
-                max={100}
-                step={5}
-                value={[prefs.opacity]}
-                onValueChange={([v]) => update({ opacity: v ?? 0 })}
-              />
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
     </div>
   );

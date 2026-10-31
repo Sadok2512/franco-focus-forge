@@ -55,7 +55,9 @@ function selectedPaint(map: ReturnType<typeof mapDouble>) {
 
 function mount(map: ReturnType<typeof mapDouble>) {
   return render(
-    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
       <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId="c1" />
     </QueryClientProvider>,
   );
