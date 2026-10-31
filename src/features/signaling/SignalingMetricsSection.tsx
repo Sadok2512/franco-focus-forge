@@ -22,7 +22,7 @@ export function SignalingMetricsSection({
     queryFn: ({ signal }) => getMetrics(projectId, signal),
   });
   const infoByCode = useMemo(() => {
-    const m = new Map<string, (typeof catalog.data extends { metrics: infer M } ? M : never)[number]>();
+    const m = new Map<string, NonNullable<typeof catalog.data>["metrics"][number]>();
     for (const info of catalog.data?.metrics ?? []) m.set(info.code, info);
     return m;
   }, [catalog.data]);
