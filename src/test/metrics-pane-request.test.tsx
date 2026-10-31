@@ -4,7 +4,7 @@
 // cardViewRequest. Ces deux tests verrouillent les deux directions.
 import { fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import "@/lib/i18n";
@@ -60,7 +60,7 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
     mount({ paneRequest: 1 });
     await waitFor(
       () => {
-        expect(screen.getByText("Time local")).toBeVisible();
+        expect(screen.getByTestId("metrics-table-panel")).toBeVisible();
       },
       { timeout: 3000 },
     );
@@ -71,10 +71,22 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
   it("closing the table panel keeps the graphs", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "table");
     mount({});
-    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), { timeout: 3000 });
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), {
+      timeout: 3000,
+    });
     await removeTable();
     expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
     expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
+  });
+
+  it("Add Table from one graph opens the independent table without removing that graph", async () => {
+    window.localStorage.setItem("bc3.metrics.pane", "charts");
+    mount({});
+    const graph = await screen.findByTestId("metrics-charts-grid");
+    fireEvent.keyDown(within(graph).getByTestId("workspace-panel-menu"), { key: "Enter" });
+    fireEvent.click(await screen.findByTestId("metric-open-table"));
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
+    expect(screen.getByTestId("metrics-charts-grid")).toBeVisible();
   });
 
   it("⋮ → Graphique (cardViewRequest) ramène les cartes alors que le mode mémorisé est table", async () => {

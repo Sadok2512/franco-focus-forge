@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { LoaderCircle } from "lucide-react";
 import { mapFeatures } from "./map-model";
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -21,6 +22,8 @@ const KPI_MEASURES_LAYER = "kpi-measures";
 export function KpiMeasurementMap({
   projectId,
   code,
+  label,
+  declaredUnit,
   captureId,
   onCaptureChange,
   filters,
@@ -28,6 +31,8 @@ export function KpiMeasurementMap({
 }: {
   projectId: string;
   code: string;
+  label?: string;
+  declaredUnit?: string | null;
   captureId: string | undefined;
   onCaptureChange: (capture: string) => void;
   filters: KpiQueryFilters;
@@ -161,11 +166,12 @@ export function KpiMeasurementMap({
     );
   }, [map, hidden, colored]);
   const fmtNum = (n: number) => (Number.isFinite(n) ? Number(n.toPrecision(3)).toString() : "");
-  const unit = features[0]?.properties.unit ?? "";
+  const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
+  const legendLabel = label ?? code;
   const legend = classes.length ? (
     <div className="space-y-0.5">
       <div className="font-semibold">
-        {code}
+        {legendLabel}
         {unit ? ` (${unit})` : ""}
       </div>
       {[...classes].reverse().map((c, ri) => {
@@ -320,6 +326,17 @@ export function KpiMeasurementMap({
                 legendHost={legendHost}
                 selectionLayerId={KPI_MEASURES_LAYER}
               />
+              {allowed && !!captureId && query.isPending && (
+                <div
+                  className="kpi-metric-map-status"
+                  role="status"
+                  aria-live="polite"
+                  data-testid="kpi-map-loading"
+                >
+                  <LoaderCircle className="animate-spin" size={15} />
+                  {translate("kpi.db30f893cb8b")}
+                </div>
+              )}
               <div
                 role="status"
                 className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"

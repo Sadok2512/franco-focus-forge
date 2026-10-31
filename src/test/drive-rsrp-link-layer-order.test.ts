@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { DRIVE_CELL_LINK_LAYER_SPECS } from "@/features/kpi/DriveRsrpLayer";
+import {
+  DRIVE_CELL_LINK_LAYER_SPECS,
+  cellLinkDasharray,
+} from "@/features/kpi/DriveRsrpLayer";
 
 describe("Drive RSRP cell-link layer order", () => {
   it("paints serving links after neighbour and NR links for both confidences", () => {
@@ -13,5 +16,10 @@ describe("Drive RSRP cell-link layer order", () => {
     expect(
       DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.serving).map((layer) => layer.confidence),
     ).toEqual(["probable", "proven"]);
+  });
+
+  it("keeps probable links dashed, including serving links", () => {
+    expect(cellLinkDasharray("probable")).toEqual([3, 2]);
+    expect(cellLinkDasharray("proven")).toBeUndefined();
   });
 });

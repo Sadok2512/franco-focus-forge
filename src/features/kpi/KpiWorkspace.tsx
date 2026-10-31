@@ -155,7 +155,29 @@ function Workspace({
   const entries = useMemo(() => catalogEntries(catalog), [catalog]);
   const classifiedCatalogs = useMemo(() => classifyKpiCatalog(catalog), [catalog]);
   const cataloguePanel = useRef<PanelImperativeHandle>(null);
-  const [catalogueCollapsed, setCatalogueCollapsed] = useState(false);
+  const cataloguePreferenceKey = `bc4.kpi.catalogueCollapsed.${projectId}`;
+  const [catalogueCollapsed, setCatalogueCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(cataloguePreferenceKey) === "1";
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    if (!catalogueCollapsed) return;
+    const frame = requestAnimationFrame(() => cataloguePanel.current?.collapse());
+    return () => cancelAnimationFrame(frame);
+    // Only restore once when this project workspace mounts.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const rememberCatalogueCollapsed = (collapsed: boolean) => {
+    setCatalogueCollapsed(collapsed);
+    try {
+      localStorage.setItem(cataloguePreferenceKey, collapsed ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+  };
   // 1.75.0 (BC3) — Spec v2 Phase B : état d'onglets persistés en URL (?tabs=
   // base64-JSON). Backcompat ?kpis=... et ?kpi=... : ancien schéma mono-onglet
   // décodé en un tab par défaut si ?tabs= absent.
@@ -210,10 +232,12 @@ function Workspace({
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
   const queryClient = useQueryClient();
-  const storageKey = `bc4.kpi.visualizations.${projectId}`;
-  const [configs, setConfigs] = useState<Record<string, ChartConfig>>(() => {
+  const readConfigs = (tabId: string): Record<string, ChartConfig> => {
     try {
-      const stored: unknown = JSON.parse(sessionStorage.getItem(storageKey) ?? "{}");
+      const tabKey = `bc4.kpi.visualizations.${projectId}.${tabId}`;
+      const legacyKey = `bc4.kpi.visualizations.${projectId}`;
+      const raw = localStorage.getItem(tabKey) ?? sessionStorage.getItem(legacyKey) ?? "{}";
+      const stored: unknown = JSON.parse(raw);
       if (!stored || typeof stored !== "object") return {};
       return Object.fromEntries(
         Object.entries(stored).filter(
@@ -239,10 +263,19 @@ function Workspace({
     } catch {
       return {};
     }
-  });
+  };
+  const [configsState, setConfigsState] = useState(() => ({
+    tabId: currentTab.id,
+    configs: readConfigs(currentTab.id),
+  }));
+  if (configsState.tabId !== currentTab.id) {
+    setConfigsState({ tabId: currentTab.id, configs: readConfigs(currentTab.id) });
+  }
+  const configs = configsState.configs;
+  const storageKey = `bc4.kpi.visualizations.${projectId}.${currentTab.id}`;
   useEffect(() => {
     try {
-      sessionStorage.setItem(storageKey, JSON.stringify(configs));
+      localStorage.setItem(storageKey, JSON.stringify(configs));
     } catch {
       /* Memory-only when storage is unavailable. */
     }
@@ -262,7 +295,10 @@ function Workspace({
         exact: true,
       });
     }
-    setConfigs((prev) => ({ ...prev, [code]: next }));
+    setConfigsState((previous) => ({
+      tabId: currentTab.id,
+      configs: { ...(previous.tabId === currentTab.id ? previous.configs : {}), [code]: next },
+    }));
     setSelectedRows(new Set());
   };
   const [captureId, setCaptureId] = useCaptureContext(projectId);
@@ -621,7 +657,9 @@ function Workspace({
           panelRef={cataloguePanel}
           collapsible
           collapsedSize="36px"
-          onResize={() => setCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)}
+          onResize={() =>
+            rememberCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)
+          }
           className="kpi-sidebar-panel"
         >
           {catalogueCollapsed && (

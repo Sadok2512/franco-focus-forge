@@ -324,6 +324,8 @@ export function KpiGraphCard({
         <KpiMeasurementMap
           projectId={projectId}
           code={entry.item.code}
+          label={entry.item.name}
+          declaredUnit={entry.item.unit}
           captureId={captureId}
           onCaptureChange={onCaptureChange}
           filters={appliedFilters}

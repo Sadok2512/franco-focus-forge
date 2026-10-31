@@ -308,9 +308,29 @@ export function KpiMapOSM({
   }, [ready, recenterMap, routeSignature]);
 
   useEffect(() => {
-    const observer = new ResizeObserver(() => map.current?.resize());
+    let frame = 0;
+    const resize = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        map.current?.resize();
+        map.current?.triggerRepaint();
+      });
+    };
+    const observer = new ResizeObserver(resize);
     if (el.current) observer.observe(el.current);
-    return () => observer.disconnect();
+    const visibility = () => {
+      if (!document.hidden) resize();
+    };
+    window.addEventListener("resize", resize);
+    window.addEventListener("bc4:workspace-resize", resize);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener("resize", resize);
+      window.removeEventListener("bc4:workspace-resize", resize);
+      document.removeEventListener("visibilitychange", visibility);
+    };
   }, []);
 
   // Esc → sortie fullscreen

@@ -22,14 +22,24 @@ export function WorkspaceGrid({
     const el = ref.current;
     if (!el) return;
     const observer = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(entry.contentRect.width);
+      if (entry) {
+        setWidth(entry.contentRect.width);
+        // MapLibre/ECharts panels can have been hidden, collapsed or moved.
+        // Notify mounted visualisations after the grid owns its new size so
+        // reactivation never leaves a stale canvas or misplaced overlays.
+        requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("bc4:workspace-resize")));
+      }
     });
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
   const cols = workspaceColumns(layout, width, count);
   return (
-    <div ref={ref} className={`kpi-workspace-grid-viewport${fillAvailable ? " is-map-only" : ""}`} hidden={hidden}>
+    <div
+      ref={ref}
+      className={`kpi-workspace-grid-viewport${fillAvailable ? " is-map-only" : ""}`}
+      hidden={hidden}
+    >
       <div
         className="kpi-graph-grid"
         data-layout={layout}

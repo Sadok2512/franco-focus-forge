@@ -156,6 +156,8 @@ describe("KpiMeasurementMap — couche Sites", () => {
     expect(screen.getByText("Serving cell")).toBeInTheDocument();
     expect(screen.getByText("Neighbour cells")).toBeInTheDocument();
     expect(screen.getByText("NR anchor")).toBeInTheDocument();
+    screen.getByRole("button", { name: "Close legend" }).click();
+    await waitFor(() => expect(screen.queryByText("Drive RSRP")).toBeNull());
   });
 
   it("cadre le parcours fourni et expose le recentrage dans la barre commune", async () => {

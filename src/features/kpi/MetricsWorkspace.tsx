@@ -1,5 +1,4 @@
-import { Columns3, Download, Info, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
-import { CaptureSheet } from "./CaptureSheet";
+import { Columns3, Download, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -65,6 +64,21 @@ function fmtLatLng(v: number | null | undefined): string {
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
+type MetricPane = "charts" | "table" | "overlay";
+
+function metricPaneStorageKey(workspaceId?: string) {
+  return workspaceId ? `bc3.metrics.pane.${workspaceId}` : "bc3.metrics.pane";
+}
+
+function readMetricPane(workspaceId?: string): MetricPane {
+  try {
+    const stored = localStorage.getItem(metricPaneStorageKey(workspaceId));
+    if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
+  } catch {
+    /* storage unavailable */
+  }
+  return "charts";
+}
 const LABELS: Record<View, string> = {
   get table() {
     return i18n.t("metrics.e86755d376aa");
@@ -423,8 +437,32 @@ function MetricMap({
   // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
   // same wiring as the Signaling and KPI measurement maps.
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
+  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const outside = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (!settingsRef.current?.contains(target) && !settingsButtonRef.current?.contains(target)) {
+        setSettingsOpen(false);
+      }
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSettingsOpen(false);
+        settingsButtonRef.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside, true);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside, true);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [settingsOpen]);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
@@ -542,6 +580,7 @@ function MetricMap({
             {unit ? ` · ${unit}` : ""}
           </strong>
           <button
+            ref={settingsButtonRef}
             type="button"
             aria-label={translate("metrics.mapSettings")}
             aria-expanded={settingsOpen}
@@ -560,7 +599,24 @@ function MetricMap({
           <span>{fmt(maxValue)}</span>
         </span>
         {settingsOpen && (
-          <div className="kpi-metric-map-settings" data-testid="metric-map-settings">
+          <div
+            ref={settingsRef}
+            className="kpi-metric-map-settings"
+            data-testid="metric-map-settings"
+          >
+            <div className="kpi-metric-map-settings-head">
+              <strong>{translate("mapWorkspace.legendSettings")}</strong>
+              <button
+                type="button"
+                aria-label={translate("mapWorkspace.closeLegend")}
+                onClick={() => {
+                  setSettingsOpen(false);
+                  settingsButtonRef.current?.focus();
+                }}
+              >
+                <X size={13} />
+              </button>
+            </div>
             <label>
               {translate("metrics.mapPalette")}
               <select
@@ -848,6 +904,24 @@ export function MetricsWorkspace({
     setInternalView(v);
     onViewChange?.(v);
   };
+  // The table is a real workspace panel, independent from every metric card.
+  // Keep its state per tab and make it available before query activation is
+  // computed so a restored table can never remain on an inert loading state.
+  const [pane, setPaneRaw] = useState<MetricPane>(() => readMetricPane(_workspaceId));
+  const tablePanelRef = useRef<HTMLDivElement>(null);
+  const tableOnlyDismissed = useRef(false);
+  const setPane = (next: MetricPane) => {
+    if (next !== "table") tableOnlyDismissed.current = true;
+    setPaneRaw(next);
+    try {
+      localStorage.setItem(metricPaneStorageKey(_workspaceId), next);
+    } catch {
+      /* storage unavailable */
+    }
+    if (next === "table") setView("table");
+    else if (next === "overlay") setView("graph");
+    onTablePaneChange?.(next === "table");
+  };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
   const [search, setSearch] = useState("");
@@ -911,8 +985,6 @@ export function MetricsWorkspace({
       return next;
     });
   };
-  // 1.109.0 — Lot B : Fiche capture (Sheet).
-  const [sheetOpen, setSheetOpen] = useState(false);
   const captureQuery = useQuery({
     queryKey: metricCapturesKey(projectId, filters),
     queryFn: ({ signal }) => getMetricCaptures(projectId, filters, signal),
@@ -966,7 +1038,7 @@ export function MetricsWorkspace({
       ),
     // A map-only workspace already has everything it needs in mapQuery. Keep
     // the table request dormant unless the user explicitly opens that pane.
-    enabled: !!captureId && selections.length > 0 && (!onlyMapSelections || (paneRequest ?? 0) > 0),
+    enabled: !!captureId && selections.length > 0 && (!onlyMapSelections || pane === "table"),
     staleTime: 60_000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -1206,47 +1278,12 @@ export function MetricsWorkspace({
   // l'interface ; le mode reste mémorisé (localStorage) et pilote les ticks.
 
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
-  type MetricPane = "charts" | "table" | "overlay";
   // Pagination effectuée par /metrics/table ; le navigateur ne reçoit que la page.
   // 1.102.0 — le menu ⋮ du tableau des mesures (export, plein écran, fermeture).
-  const tablePanelRef = useRef<HTMLDivElement>(null);
-  const [pane, setPaneRaw] = useState<MetricPane>(() => {
-    try {
-      const stored = localStorage.getItem(
-        _workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane",
-      );
-      if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
-    } catch {
-      /* ignore */
-    }
-    return "charts";
-  });
-  const tableOnlyDismissed = useRef(false);
   // 1.106.2 — dernier paneRequest « table » appliqué : une ouverture explicite
   // du tableau (⋮ → Tableau) ne doit pas être refermée par l'auto-fermeture
   // « vue map » (1.105.8).
   const tablePaneRequestRef = useRef<number>(-1);
-  const setPane = (p: MetricPane) => {
-    // 1.105.1 — fermer le tableau quand il n'y a rien à grapher ne doit pas
-    // être rouverte en boucle par l'effet table-only ci-dessous.
-    if (p !== "table") tableOnlyDismissed.current = true;
-    setPaneRaw(p);
-    try {
-      localStorage.setItem(
-        _workspaceId ? `bc3.metrics.pane.${_workspaceId}` : "bc3.metrics.pane",
-        p,
-      );
-    } catch {
-      /* ignore */
-    }
-    // Projection sur l'ancien `view` interne : table→table, overlay→graph.
-    // charts n'utilise pas /metrics/table en SSR, les cards gèrent leur propre série.
-    if (p === "table") setView("table");
-    else if (p === "overlay") setView("graph");
-    // Le parent a besoin du mode pour dimensionner la grille et savoir que le
-    // tableau est ouvert (compteur de panneaux, disposition table-only).
-    onTablePaneChange?.(p === "table");
-  };
   // 1.94.0 — la barre [View ▾ | Per row ▾ | Export CSV | Fullscreen] est
   // supprimée. Le mode du panneau vient des demandes du catalogue Metrics :
   // ⋮ → Tableau ouvre le grand tableau, ⋮ → Graphique/Histogramme/Carte y
@@ -1296,21 +1333,6 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphSelections.length, parsedSelections.length, pane]);
-  // 1.105.8 — Si au moins une métrique affichée est en vue "map", on ferme
-  // le grand Measurements table (requis UX : "afficher QUE la map"). Couvre
-  // les 2 chemins d'activation : view switcher d'une carte ET pick direct
-  // "Map" depuis le menu ⋮ du catalogue (passant par viewsProp).
-  useEffect(() => {
-    const hasMapView = parsedSelections.some((s) => viewsProp?.[s.full] === "map");
-    // 1.106.2 — saute l'auto-fermeture si le tableau vient d'être ouvert
-    // explicitement (⋮ → Tableau) : la demande de l'utilisateur prime.
-    const explicitTableOpen = tablePaneRequestRef.current === paneRequest;
-    if (hasMapView && pane === "table" && !explicitTableOpen) {
-      tableOnlyDismissed.current = true;
-      setPane("charts");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewsProp, parsedSelections, pane, paneRequest]);
   const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
   return (
     <ActiveEventsContext.Provider value={activeEvents}>
@@ -1390,12 +1412,8 @@ export function MetricsWorkspace({
                         view={metricView}
                         onViewChange={(next) => {
                           onVisualization?.(s.full, next);
-                          // 1.105.8 — Quand l'utilisateur bascule une carte en vue Map,
-                          // on referme le grand Measurements table (le besoin UX est
-                          // d'afficher UNIQUEMENT la map). L'utilisateur peut rouvrir
-                          // le tableau via ⋮ → Tableau.
-                          if (next === "map") setPane("charts");
                         }}
+                        onOpenTable={() => setPane("table")}
                         syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                         timeAxisMode={effectiveTimeAxisMode}
                         eventsCaptureId={captureId}
@@ -1511,16 +1529,6 @@ export function MetricsWorkspace({
                   )}
                   <div className="kpi-metrics-table-head">
                     <div className="flex gap-0.5 shrink-0 items-center">
-                      <button
-                        type="button"
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded hover:bg-accent"
-                        onClick={() => setSheetOpen(true)}
-                        disabled={!captureId}
-                        data-testid="metrics-capture-sheet-open"
-                        title="Fiche capture : fichier, décodage, SCRIPT, DEVI, trafic"
-                      >
-                        <Info size={14} /> Fiche capture
-                      </button>
                       <WorkspacePanelMenu label={translate("panel.actions")}>
                         {(
                           ["time_local", "cell", "time_utc", "task", "lat", "lon"] as LeanColumn[]
@@ -1840,14 +1848,6 @@ export function MetricsWorkspace({
                 via le tooltip title du row (`seq N–M · t_rel Xs`). */}
             </>
           )
-        )}
-        {captureId && (
-          <CaptureSheet
-            projectId={projectId}
-            captureId={captureId}
-            open={sheetOpen}
-            onOpenChange={setSheetOpen}
-          />
         )}
       </article>
     </ActiveEventsContext.Provider>

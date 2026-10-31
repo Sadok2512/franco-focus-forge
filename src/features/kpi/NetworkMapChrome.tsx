@@ -95,7 +95,23 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(1200);
   const compact = width < 760;
-  const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
+  const [panelOpen, setPanelOpenState] = useState<boolean | null>(() => {
+    try {
+      const saved = localStorage.getItem("bc4.map.chrome.sidebar.v1");
+      return saved === "open" ? true : saved === "closed" ? false : null;
+    } catch {
+      return null;
+    }
+  });
+  const setPanelOpen = (open: boolean) => {
+    setPanelOpenState(open);
+    try {
+      localStorage.setItem("bc4.map.chrome.sidebar.v1", open ? "open" : "closed");
+    } catch {
+      /* storage unavailable */
+    }
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("bc4:workspace-resize")));
+  };
   const showPanel = panelOpen ?? !compact;
   const rfPanel = useMapRfPanel();
   const [panelTab, setPanelTab] = useState<"layers" | "legend" | "rf">("layers");
@@ -136,6 +152,27 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     obs.observe(node);
     return () => obs.disconnect();
   }, []);
+
+  // On a compact map an explicitly opened floating panel behaves like a
+  // popover: a click back on the map closes it. Desktop keeps the persisted
+  // panel open until its own Close control is used.
+  useEffect(() => {
+    if (!map || !compact || panelOpen !== true) return;
+    const close = () => setPanelOpen(false);
+    map.on("click", close);
+    return () => {
+      map.off("click", close);
+    };
+  }, [compact, map, panelOpen]);
+
+  useEffect(() => {
+    if (!map || tab !== "legend" || !props.layersLegend) return;
+    const closeLegend = () => setPanelTab("layers");
+    map.on("click", closeLegend);
+    return () => {
+      map.off("click", closeLegend);
+    };
+  }, [map, props.layersLegend, tab]);
 
   // Live cursor / zoom / scale from the real map state.
   useEffect(() => {
@@ -364,11 +401,17 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             )}
             <button
               type="button"
-              aria-label={t("mapWorkspace.collapse")}
-              onClick={() => setPanelOpen(false)}
+              aria-label={
+                tab === "legend" ? t("mapWorkspace.closeLegend") : t("mapWorkspace.collapse")
+              }
+              onClick={() => (tab === "legend" ? setPanelTab("layers") : setPanelOpen(false))}
               className="rounded p-1 hover:bg-muted"
             >
-              <ChevronLeft className="h-3.5 w-3.5" />
+              {tab === "legend" ? (
+                <X className="h-3.5 w-3.5" />
+              ) : (
+                <ChevronLeft className="h-3.5 w-3.5" />
+              )}
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
@@ -516,7 +559,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             type="button"
             className={railBtn()}
             aria-label={t("mapWorkspace.legend")}
-            onClick={() => setPanelOpen(true)}
+            onClick={() => {
+              setPanelTab("legend");
+              setPanelOpen(true);
+            }}
           >
             <List className="h-4 w-4" />
           </button>

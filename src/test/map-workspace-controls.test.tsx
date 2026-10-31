@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import "@/lib/i18n";
 import { NetworkMapChrome as SitesMapWorkspaceControls } from "@/features/kpi/NetworkMapChrome";
 import { DEFAULT_NETWORK_MAP_CENTER, resolveNetworkMapCenter } from "@/features/map/map-center";
 
 describe("Map workspace chrome", () => {
+  beforeEach(() => localStorage.removeItem("bc4.map.chrome.sidebar.v1"));
   it("does not open a legacy project with a [0, 0] sentinel outside the sites perimeter", () => {
     expect(resolveNetworkMapCenter([0, 0])).toEqual(DEFAULT_NETWORK_MAP_CENTER);
     expect(resolveNetworkMapCenter(undefined)).toEqual(DEFAULT_NETWORK_MAP_CENTER);
@@ -82,5 +83,30 @@ describe("Map workspace chrome", () => {
     expect(sectors).toBeChecked();
     expect(sectors).not.toBeDisabled();
     expect(screen.getByText("Zoom in to see cells")).toBeInTheDocument();
+  });
+
+  it("restores the sidebar preference and opens/closes the real legend tab", () => {
+    localStorage.setItem("bc4.map.chrome.sidebar.v1", "closed");
+    render(
+      <SitesMapWorkspaceControls
+        enabled
+        cellsEnabled
+        cellsAvailable
+        filters={{ technos: [], bands: [], operators: [] }}
+        onToggleEnabled={() => {}}
+        onToggleCells={() => {}}
+        onToggleTechno={() => {}}
+        onToggleBand={() => {}}
+        onToggleOperator={() => {}}
+        onReset={() => {}}
+        layersLegend={<div>Dynamic metric legend</div>}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Legend" }));
+    expect(screen.getByText("Dynamic metric legend")).toBeVisible();
+    expect(localStorage.getItem("bc4.map.chrome.sidebar.v1")).toBe("open");
+    fireEvent.click(screen.getByRole("button", { name: "Close legend" }));
+    expect(screen.queryByText("Dynamic metric legend")).toBeNull();
   });
 });

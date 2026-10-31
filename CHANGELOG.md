@@ -27,6 +27,21 @@
   Signaling, KPI, Map and NMF decoding are unchanged.
 - SemVer front: **MINOR 1.127.0**.
 
+## 1.126.15 (patch) — KPI Analytics audit et restauration des panneaux — 2026-10-31 (BC4)
+
+- Map, Timeline et sidebar recalculent leur géométrie après réactivation ; les
+  préférences de visualisation, layout et sidebar sont restaurées par workspace.
+- Le tableau Measurements devient un panneau indépendant des cartes Graph/Map :
+  ajout et fermeture ciblés, requête active après restauration, position pleine
+  largeur sous les graphes, états Loading/Empty/Error compacts. Le bouton et le
+  panneau décoratif « Fiche capture » sont retirés sans supprimer de colonnes.
+- La carte reste montée pendant le chargement des mesures ; légende dynamique,
+  réglages, fermeture, clic extérieur, z-index et responsive sont corrigés.
+- Les liens serving probables retrouvent leur pointillé contractuel ; les liens
+  prouvés restent continus et la sélection unique `0 → 1 → remplacement → 0` est préservée.
+- Aucun endpoint, formule RF, valeur, décodeur ou contrat analytique n'est modifié.
+- SemVer front : **PATCH 1.126.15**.
+
 ## 1.126.14 (patch) — BC4-FRONT 2026-10-31 — carte KPI alignée sur Signaling, légende interactive, sélection fidèle (Agent BC4)
 
 - **Légende en haut de carte** : la légende flottante passe du bas en haut ;

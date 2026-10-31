@@ -1088,6 +1088,7 @@
     "legendCount": "Nombre de couleurs",
     "legendReset": "Réinitialiser les couleurs",
     "legendSettings": "Réglages des couleurs",
+    "closeLegend": "Fermer la légende",
     "signalingPoints": "Points signalisation",
     "gpsRoute": "Trajet GPS",
     "selectedPosition": "Position sélectionnée",

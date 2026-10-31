@@ -57,11 +57,10 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
-  // 1.105.8 — une métrique en vue « map » ferme le grand Measurements table
-  // (requis UX : « afficher QUE la map »). Le test vérifie que la carte
-  // demande le GPS pour sa seule métrique, ne la graphe jamais, et que le
-  // tableau reste fermé.
-  it("requests GPS for only the map metric, never graphs it, and closes the table", async () => {
+  // Graph/Map cards and the measurements table are independent panels. A
+  // targeted map switch must not close a table explicitly restored for this
+  // workspace tab.
+  it("requests GPS only for the map metric and preserves the independent table", async () => {
     localStorage.setItem("bc3.metrics.pane.map-test", "table");
     writeMetricViews("map-test", { "cell_rsrp@0": "map", "cell_rsrq@0": "table" });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -95,8 +94,9 @@ describe("Map selection keeps its own panel", () => {
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
-    await waitFor(() => expect(screen.queryByTestId("metrics-table-panel")).toBeNull());
-    expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("charts");
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
+    expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table");
+    expect(screen.queryByTestId("metrics-capture-sheet-open")).toBeNull();
   });
 
   it("renders 4,935 coloured raw points, the metric legend and the overlay menu", async () => {

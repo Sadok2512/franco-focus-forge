@@ -59,6 +59,8 @@ export const DRIVE_CELL_LINK_LAYER_SPECS = [
   { id: SERVING_LINK_LAYER_PROBABLE, confidence: "probable", serving: true },
   { id: SERVING_LINK_LAYER, confidence: "proven", serving: true },
 ] as const;
+export const cellLinkDasharray = (confidence: "proven" | "probable") =>
+  confidence === "probable" ? CELL_LINK_STYLE.probableDash : undefined;
 /**
  * A measurement's own legend colour. The selection ring borrows it so the
  * point is never framed in a colour that is not its own.
@@ -453,6 +455,7 @@ export function DriveRsrpLayer({
         });
       }
       for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+        const dasharray = cellLinkDasharray(spec.confidence);
         const filter: FilterSpecification = [
           "all",
           ["==", ["get", "confidence"], spec.confidence],
@@ -490,11 +493,7 @@ export function DriveRsrpLayer({
                 CELL_LINK_STYLE.mutedOpacity,
                 CELL_LINK_STYLE.opacity,
               ],
-              // The serving line is always continuous (user request);
-              // only neighbour/NR probable links keep the dash.
-              ...(spec.confidence === "probable" && !spec.serving
-                ? { "line-dasharray": CELL_LINK_STYLE.probableDash }
-                : {}),
+              ...(dasharray ? { "line-dasharray": dasharray } : {}),
             },
           });
         }
