@@ -1000,7 +1000,14 @@ function Workspace({
                 if (!panels.length) return null;
                 // A map card never brings a data table with it (user request).
                 if (
-                  panels.every((panel) => configFor(panel.entry.item.code).visualization === "map")
+                  panels.every((panel) => {
+                    const visualization = configFor(panel.entry.item.code).visualization;
+                    // Map cards bring no table; temporal Table cards render their own rows.
+                    return (
+                      visualization === "map" ||
+                      (visualization === "table" && !!panel.entry.item.temporal_source)
+                    );
+                  })
                 )
                   return null;
                 // 1.43.0 — Tableau brut : si au moins un KPI « temporel »

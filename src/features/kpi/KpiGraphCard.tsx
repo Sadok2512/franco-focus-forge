@@ -1,3 +1,4 @@
+import { KpiInlineRawTable } from "./KpiInlineRawTable";
 import { useTranslation } from "react-i18next";
 import { KpiMeasurementMap } from "./KpiMeasurementMap";
 import { Chronogram } from "./Chronogram";
@@ -361,6 +362,16 @@ export function KpiGraphCard({
           code={entry.item.code}
           unit={entry.item.unit ?? null}
           height={full ? 430 : 235}
+        />
+      ) : config.visualization === "table" && seriesAvailable ? (
+        // Tableau : observations brutes de la capture, directement dans le panneau.
+        <KpiInlineRawTable
+          projectId={projectId}
+          captureId={captureId}
+          onCaptureChange={onCaptureChange}
+          code={entry.item.code}
+          label={entry.item.name}
+          unit={entry.item.unit ?? null}
         />
       ) : config.visualization === "task_scatter" && !blockedReason ? (
         <TaskScatter
