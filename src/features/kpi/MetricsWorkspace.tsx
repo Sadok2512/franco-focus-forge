@@ -654,7 +654,39 @@ function MetricMap({
             </div>
           </div>
         )}
-      </div>
+    </div>
+  );
+  const content = (addedLegend: ReactNode) => (
+    <KpiMapOSM
+      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
+      layersLegend={
+        <>
+          {legend}
+          {addedLegend}
+          <div ref={setDriveLegendHost} />
+        </>
+      }
+      zoom={first ? 13 : 5}
+      showOperatorLegend={false}
+      flush
+      workspace
+      contextLabel={translate("metrics.b7ef3d32472c")}
+      onMapReady={setMap}
+      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
+      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
+    >
+      {/* Same drive layer as Signaling View: serving/neighbour lines to the
+      API-published cells and the blinking serving site on point selection. */}
+      <DriveRsrpLayer
+        map={map}
+        projectId={projectId}
+        activeCaptureId={captureId}
+        autoFrame={false}
+        hidePoints
+        hideControls
+        legendHost={driveLegendHost}
+        selectionLayerId="metrics-v3"
+      />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
           <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}
