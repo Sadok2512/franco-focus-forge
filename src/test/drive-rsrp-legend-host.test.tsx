@@ -1,0 +1,115 @@
+import { fireEvent, render, waitFor } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { Map as MlMap } from "maplibre-gl";
+import "@/lib/i18n";
+
+const api = vi.hoisted(() => ({ map: vi.fn() }));
+vi.mock("@/lib/api/client", () => ({
+  getMetricAnalysis: vi.fn(),
+  getMetricMap: api.map,
+  getMetricCaptures: vi.fn(),
+  getSignaling: vi.fn(),
+}));
+vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
+  RsrpDiagnosisDialog: () => null,
+}));
+import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
+import { RSRP_CLASSES } from "@/features/kpi/drive-rsrp";
+
+/** Map double that remembers installed sources and layers like MapLibre does. */
+function mapDouble() {
+  const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
+  const layers = new Set<string>();
+  return {
+    sources,
+    layers,
+    getSource: vi.fn((id: string) => sources.get(id)),
+    addSource: vi.fn((id: string) => sources.set(id, { setData: vi.fn() })),
+    addLayer: vi.fn((layer: { id: string }) => {
+      layers.add(layer.id);
+    }),
+    getLayer: vi.fn((id: string) => (layers.has(id) ? {} : undefined)),
+    getStyle: vi.fn(() => ({ layers: [] })),
+    isStyleLoaded: vi.fn(() => true),
+    setLayoutProperty: vi.fn(),
+    setPaintProperty: vi.fn(),
+    setFilter: vi.fn(),
+    fitBounds: vi.fn(),
+    easeTo: vi.fn(),
+    on: vi.fn(),
+    off: vi.fn(),
+    once: vi.fn(),
+    moveLayer: vi.fn(),
+  };
+}
+
+function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement) {
+  return render(
+    <QueryClientProvider
+      client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+    >
+      <DriveRsrpLayer
+        map={map as unknown as MlMap}
+        projectId="Test_3"
+        activeCaptureId="c1"
+        hideControls
+        legendHost={legendHost}
+      />
+    </QueryClientProvider>,
+  );
+}
+
+describe("Drive RSRP legend inside the host map's legend panel", () => {
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+    api.map.mockResolvedValue({
+      capture_id: "c1",
+      map_points: [
+        { seq: 67, lat: 48.9, lng: 2.2, code: "cell_rsrp", value: -95 },
+        { seq: 68, lat: 48.91, lng: 2.21, code: "cell_rsrp", value: -75 },
+      ],
+    });
+  });
+
+  it("shows every RSRP class with its own colour, and hiding one filters the map", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const map = mapDouble();
+    mount(map, host);
+
+    // The control card is hidden, so anything in the host comes from the legend portal.
+    await waitFor(() =>
+      expect(host.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull(),
+    );
+
+    const rows = host.querySelectorAll("ul[aria-label='RSRP legend'] > li");
+    expect(rows).toHaveLength(RSRP_CLASSES.length);
+    // Each class row carries its own colour, so the panel cannot drift from the map.
+    const swatches = [...host.querySelectorAll<HTMLElement>("ul[aria-label='RSRP legend'] span[style]")].map(
+      (span) => span.style.background,
+    );
+    for (const cls of RSRP_CLASSES) expect(swatches).toContain(cls.color);
+    // The proven cell links are listed too.
+    expect(host.textContent).toContain("Serving cell");
+    expect(host.textContent).toContain("Neighbour cells");
+    expect(host.textContent).toContain("NR anchor");
+
+    // Clicking a class in the panel hides it on the map and remembers the choice.
+    const firstCheckbox = host.querySelector<HTMLInputElement>(
+      "ul[aria-label='RSRP legend'] input[type=checkbox]",
+    );
+    expect(firstCheckbox).not.toBeNull();
+    fireEvent.click(firstCheckbox!);
+
+    await waitFor(() =>
+      expect(
+        map.setFilter.mock.calls.some((call) => JSON.stringify(call).includes('"excellent"')),
+      ).toBe(true),
+    );
+    expect(
+      JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v2") ?? "{}").hidden,
+    ).toContain("excellent");
+  });
+});
