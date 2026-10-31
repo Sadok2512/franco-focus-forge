@@ -155,7 +155,7 @@ export function MetricsCatalogSidebar({
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
     const own = new Set(
-      (query.data?.nodes ?? [])
+      catalogNodes
         .filter((node) =>
           `${node.label} ${node.source ?? ""} ${node.event ?? ""}`
             .toLocaleLowerCase()
@@ -164,7 +164,7 @@ export function MetricsCatalogSidebar({
         .map((node) => node.node_id),
     );
     const visible = new Set(own);
-    const byId = new Map((query.data?.nodes ?? []).map((node) => [node.node_id, node]));
+    const byId = new Map(catalogNodes.map((node) => [node.node_id, node]));
     for (const id of own) {
       let node = byId.get(id);
       while (node?.parent_id) {
