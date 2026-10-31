@@ -28,12 +28,10 @@ import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
   pointCellLinks,
-  pointDetails,
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
@@ -427,7 +425,6 @@ function MetricMap({
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
-  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
