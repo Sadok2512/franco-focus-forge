@@ -59,8 +59,7 @@ describe("Map workspace chrome", () => {
 
     expect(toggleSites).toHaveBeenCalledWith(false);
     expect(toggleCells).toHaveBeenCalledWith(false);
-    expect(toggleTechno).toHaveBeenCalledWith("4G");
-    expect(toggleTechno).toHaveBeenCalledWith("LTE");
+    expect(toggleTechno.mock.calls.map((call) => call[0])).toEqual(["4G", "LTE"]);
   });
 
   it("keeps the persisted cell layer active below its data zoom while data waits", () => {
