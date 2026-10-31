@@ -1005,6 +1005,12 @@
       "street": "Rues",
       "satellite": "Satellite"
     },
+    "selectedPoint": "Point sélectionné",
+    "radio": "Radio",
+    "distanceUeSite": "Distance UE ↔ site",
+    "collapseCard": "Réduire la carte",
+    "expandCard": "Développer la carte",
+    "closeCard": "Fermer la carte",
     "driveRsrp": "RSRP du drive",
     "driveRsrpToggle": "Afficher les points RSRP du drive",
     "driveRsrpCapture": "Capture du drive",
