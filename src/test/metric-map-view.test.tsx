@@ -3,11 +3,13 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  activeMetricMapServingLink,
   installMetricMapSource,
   metricMapFeatures,
   metricMapLinkFeatures,
   metricMapNumericExtent,
   MetricsWorkspace,
+  toggleMetricMapPoint,
 } from "@/features/kpi/MetricsWorkspace";
 import { getMetricAnalysis, getMetricMap } from "@/lib/api/client";
 import { readMetricViews, writeMetricViews } from "@/features/kpi/metric-views";
@@ -16,22 +18,30 @@ import "@/lib/i18n";
 const renderers = vi.hoisted(() => ({ graph: vi.fn(), map: vi.fn() }));
 vi.mock("@/features/kpi/MetricGraphCard", async (original) => {
   const actual = await original<typeof import("@/features/kpi/MetricGraphCard")>();
-  return { ...actual, MetricGraphCard: (props: { code: string; view: string }) => {
-    renderers.graph(props);
-    return null;
-  } };
+  return {
+    ...actual,
+    MetricGraphCard: (props: { code: string; view: string }) => {
+      renderers.graph(props);
+      return null;
+    },
+  };
 });
-vi.mock("@/features/kpi/KpiMapOSM", () => ({ KpiMapOSM: (props: unknown) => {
-  renderers.map(props);
-  return <div data-testid="metric-map-mock">{(props as { children?: ReactNode }).children}</div>;
-} }));
+vi.mock("@/features/kpi/KpiMapOSM", () => ({
+  KpiMapOSM: (props: unknown) => {
+    renderers.map(props);
+    return <div data-testid="metric-map-mock">{(props as { children?: ReactNode }).children}</div>;
+  },
+}));
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
   return {
     getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
     getMetricMap: vi.fn().mockResolvedValue({
-      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
-      decoder_version: "test", total_points: fixture.map_points.length,
+      project_id: "project-a",
+      capture_id: "44621571bccc",
+      result_id: "map-result",
+      decoder_version: "test",
+      total_points: fixture.map_points.length,
       map_points: fixture.map_points,
     }),
     getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "Demo" }]),
@@ -48,18 +58,33 @@ describe("Map selection keeps its own panel", () => {
     localStorage.setItem("bc3.metrics.pane.map-test", "table");
     writeMetricViews("map-test", { "cell_rsrp@0": "map", "cell_rsrq@0": "table" });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(<QueryClientProvider client={client}><MetricsWorkspace
-      workspaceId="map-test" projectId="project-a" captureId="44621571bccc"
-      selections={["cell_rsrp@0", "cell_rsrq@0", "ci_rs_snr@1"]}
-      views={readMetricViews("map-test")} catalog={[]} filters={{}}
-      onClear={() => {}} onCaptureChange={() => {}}
-    /></QueryClientProvider>);
+    render(
+      <QueryClientProvider client={client}>
+        <MetricsWorkspace
+          workspaceId="map-test"
+          projectId="project-a"
+          captureId="44621571bccc"
+          selections={["cell_rsrp@0", "cell_rsrq@0", "ci_rs_snr@1"]}
+          views={readMetricViews("map-test")}
+          catalog={[]}
+          filters={{}}
+          onClear={() => {}}
+          onCaptureChange={() => {}}
+        />
+      </QueryClientProvider>,
+    );
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
     expect(getMetricMap).toHaveBeenCalledTimes(1);
     expect(getMetricMap).toHaveBeenCalledWith(
-      "project-a", "44621571bccc", ["cell_rsrp@0"], {}, expect.any(AbortSignal),
+      "project-a",
+      "44621571bccc",
+      ["cell_rsrp@0"],
+      {},
+      expect.any(AbortSignal),
     );
-    expect(vi.mocked(getMetricAnalysis).mock.calls.every((call) => !call[4].include_map)).toBe(true);
+    expect(vi.mocked(getMetricAnalysis).mock.calls.every((call) => !call[4].include_map)).toBe(
+      true,
+    );
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
@@ -80,32 +105,53 @@ describe("Map selection keeps its own panel", () => {
       tooltip: `RSRP ${-115 + (index % 55)} dBm`,
     }));
     vi.mocked(getMetricMap).mockResolvedValue({
-      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
-      decoder_version: "test", total_points: points.length, map_points: points,
+      project_id: "project-a",
+      capture_id: "44621571bccc",
+      result_id: "map-result",
+      decoder_version: "test",
+      total_points: points.length,
+      map_points: points,
     } as never);
     writeMetricViews("map-raw-points", { "cell_rsrp@0": "map" });
     const close = vi.fn();
-    render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
-      <MetricsWorkspace
-        workspaceId="map-raw-points" projectId="project-a" captureId="44621571bccc"
-        selections={["cell_rsrp@0"]} views={readMetricViews("map-raw-points")}
-        catalog={[{ code: "cell_rsrp@0", label: "RSRP (LTE) @ Serving", unit: "dBm" } as never]}
-        filters={{}} onClear={close} onCaptureChange={() => {}}
-        mapFillsAvailable
-      />
-    </QueryClientProvider>);
+    render(
+      <QueryClientProvider
+        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
+      >
+        <MetricsWorkspace
+          workspaceId="map-raw-points"
+          projectId="project-a"
+          captureId="44621571bccc"
+          selections={["cell_rsrp@0"]}
+          views={readMetricViews("map-raw-points")}
+          catalog={[{ code: "cell_rsrp@0", label: "RSRP (LTE) @ Serving", unit: "dBm" } as never]}
+          filters={{}}
+          onClear={close}
+          onCaptureChange={() => {}}
+          mapFillsAvailable
+        />
+      </QueryClientProvider>,
+    );
 
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
     const map = {
-      getSource: vi.fn(), addSource: vi.fn(), addLayer: vi.fn(), fitBounds: vi.fn(),
-      on: vi.fn(), off: vi.fn(), getCanvas: vi.fn(() => ({ style: {} })),
+      getSource: vi.fn(),
+      addSource: vi.fn(),
+      addLayer: vi.fn(),
+      fitBounds: vi.fn(),
+      on: vi.fn(),
+      off: vi.fn(),
+      getCanvas: vi.fn(() => ({ style: {} })),
     };
     const analysis = { ...fixture, map_points: points } as never;
     const features = metricMapFeatures(analysis);
     const [min, max] = metricMapNumericExtent(analysis);
     installMetricMapSource(map as never, features, min, max);
 
-    const source = map.addSource.mock.calls[0]?.[1] as { cluster?: boolean; data: { features: unknown[] } };
+    const source = map.addSource.mock.calls[0]?.[1] as {
+      cluster?: boolean;
+      data: { features: unknown[] };
+    };
     expect(source.cluster).toBeUndefined();
     expect(source.data.features).toHaveLength(4_935);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual(["metrics-v3"]);
@@ -148,15 +194,35 @@ describe("Map selection keeps its own panel", () => {
           serving_cell_lat: 48.81,
           serving_cell_lng: 2.31,
           serving_cell_source: "chi_previous_seq_cell_ref_exact",
-          neighbour_links: [{
-            system: "LTE", arfcn: 1300, reference_channel: 1800, pci: 215, cell_type: 2,
-            cell_ref_id: "neighbour", lat: 48.82, lng: 2.32, distance_m: 12,
-            max_distance_m: 25_000, candidate_count: 1, confidence: "radio_band_pci_unique",
-          }],
+          neighbour_links: [
+            {
+              system: "LTE",
+              arfcn: 1300,
+              reference_channel: 1800,
+              pci: 215,
+              cell_type: 2,
+              cell_ref_id: "neighbour",
+              lat: 48.82,
+              lng: 2.32,
+              distance_m: 12,
+              max_distance_m: 25_000,
+              candidate_count: 1,
+              confidence: "radio_band_pci_unique",
+            },
+          ],
           nr_anchor_link: {
-            system: "NR", arfcn: 640000, reference_channel: 3500, pci: 7, cell_type: 199,
-            cell_ref_id: "anchor", lat: 48.83, lng: 2.33, distance_m: 18,
-            max_distance_m: 25_000, candidate_count: 1, confidence: "radio_band_pci_unique",
+            system: "NR",
+            arfcn: 640000,
+            reference_channel: 3500,
+            pci: 7,
+            cell_type: 199,
+            cell_ref_id: "anchor",
+            lat: 48.83,
+            lng: 2.33,
+            distance_m: 18,
+            max_distance_m: 25_000,
+            candidate_count: 1,
+            confidence: "radio_band_pci_unique",
           },
         },
       ],
@@ -166,9 +232,35 @@ describe("Map selection keeps its own panel", () => {
       "neighbour",
       "nr_anchor",
     ]);
+    const allLinks = metricMapLinkFeatures(data);
+    expect(activeMetricMapServingLink(allLinks, null, "project-a", "44621571bccc")).toEqual([]);
+    expect(
+      activeMetricMapServingLink(
+        allLinks,
+        { projectId: "project-a", captureId: "44621571bccc", seq: 7 },
+        "project-a",
+        "44621571bccc",
+      ).map((feature) => feature.properties.link_type),
+    ).toEqual(["serving"]);
+    expect(
+      activeMetricMapServingLink(
+        allLinks,
+        { projectId: "project-a", captureId: "other-capture", seq: 7 },
+        "project-a",
+        "44621571bccc",
+      ),
+    ).toEqual([]);
+    const first = toggleMetricMapPoint(null, "project-a", "44621571bccc", 7);
+    expect(first).toEqual({ projectId: "project-a", captureId: "44621571bccc", seq: 7 });
+    const replacement = toggleMetricMapPoint(first, "project-a", "44621571bccc", 8);
+    expect(replacement).toEqual({ projectId: "project-a", captureId: "44621571bccc", seq: 8 });
+    expect(toggleMetricMapPoint(replacement, "project-a", "44621571bccc", 8)).toBeNull();
     vi.mocked(getMetricMap).mockResolvedValue({
-      project_id: "project-a", capture_id: "44621571bccc", result_id: "map-result",
-      decoder_version: "test", total_points: (data as any).map_points.length,
+      project_id: "project-a",
+      capture_id: "44621571bccc",
+      result_id: "map-result",
+      decoder_version: "test",
+      total_points: (data as any).map_points.length,
       map_points: (data as any).map_points,
     } as never);
     writeMetricViews("map-links", { "cell_rsrp@0": "map" });
@@ -211,19 +303,38 @@ describe("Map selection keeps its own panel", () => {
     localStorage.setItem("bc3.metrics.pane.map-test", "charts");
     writeMetricViews("map-test", { "cell_rsrp@0": "map", "ci_rs_snr@1": "graph" });
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const { rerender } = render(<QueryClientProvider client={client}><MetricsWorkspace
-      workspaceId="map-test" projectId="project-a" captureId="44621571bccc"
-      selections={["cell_rsrp@0", "ci_rs_snr@1"]}
-      views={readMetricViews("map-test")} catalog={[]} filters={{}}
-      onClear={() => {}} onCaptureChange={() => {}}
-    /></QueryClientProvider>);
+    const { rerender } = render(
+      <QueryClientProvider client={client}>
+        <MetricsWorkspace
+          workspaceId="map-test"
+          projectId="project-a"
+          captureId="44621571bccc"
+          selections={["cell_rsrp@0", "ci_rs_snr@1"]}
+          views={readMetricViews("map-test")}
+          catalog={[]}
+          filters={{}}
+          onClear={() => {}}
+          onCaptureChange={() => {}}
+        />
+      </QueryClientProvider>,
+    );
     await waitFor(() => expect(renderers.map).toHaveBeenCalled());
-    rerender(<QueryClientProvider client={client}><MetricsWorkspace
-      workspaceId="map-test" projectId="project-a" captureId="44621571bccc"
-      selections={["cell_rsrp@0", "ci_rs_snr@1"]}
-      views={readMetricViews("map-test")} catalog={[]} filters={{}}
-      onClear={() => {}} onCaptureChange={() => {}} paneRequest={1}
-    /></QueryClientProvider>);
+    rerender(
+      <QueryClientProvider client={client}>
+        <MetricsWorkspace
+          workspaceId="map-test"
+          projectId="project-a"
+          captureId="44621571bccc"
+          selections={["cell_rsrp@0", "ci_rs_snr@1"]}
+          views={readMetricViews("map-test")}
+          catalog={[]}
+          filters={{}}
+          onClear={() => {}}
+          onCaptureChange={() => {}}
+          paneRequest={1}
+        />
+      </QueryClientProvider>,
+    );
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeTruthy());
     await waitFor(() => expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table"));
   });

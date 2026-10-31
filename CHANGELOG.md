@@ -6,6 +6,15 @@
   barre, le curseur ou la fenêtre temporelle.
 - Aucun changement de mise en page : le composant ECharts, ses couleurs,
   libellés, durées, zoom, scroll et sélection existants sont conservés.
+
+## 1.126.12 (patch) — BC4-FRONT 2026-10-31 — lien serving sélectionné sur KPI Analytics (Agent BC4)
+
+- La carte métrique de KPI Analytics s'ouvre sans trait. Un clic sur un point
+  affiche uniquement sa liaison serving justifiée par l'API ; un autre point
+  remplace le trait et un second clic sur le même point le masque.
+- La sélection est liée à `project_id + capture_id + seq`, nettoyée avec le
+  contexte et le popup. Les styles `proven` plein / `probable` pointillé, les
+  contrôles et les données déjà chargées sont conservés, sans appel API ajouté.
 - SemVer front : **PATCH 1.126.12**.
 
 ## 1.126.11 (patch) — BC4-FRONT 2026-10-31 — lien serving du point actif uniquement (Agent BC4)

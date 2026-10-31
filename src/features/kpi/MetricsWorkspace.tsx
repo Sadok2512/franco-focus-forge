@@ -229,6 +229,56 @@ export function metricMapLinkFeatures(data: MetricMapData) {
   });
 }
 
+export type MetricMapPointIdentity = {
+  projectId: string;
+  captureId: string;
+  seq: number;
+};
+
+function sameMetricMapPoint(
+  selected: MetricMapPointIdentity | null,
+  projectId: string,
+  captureId: string,
+  seq: number,
+): boolean {
+  return (
+    selected?.projectId === projectId && selected.captureId === captureId && selected.seq === seq
+  );
+}
+
+export function toggleMetricMapPoint(
+  selected: MetricMapPointIdentity | null,
+  projectId: string,
+  captureId: string,
+  seq: number,
+): MetricMapPointIdentity | null {
+  return sameMetricMapPoint(selected, projectId, captureId, seq)
+    ? null
+    : { projectId, captureId, seq };
+}
+
+/** Keep at most the serving segment for the exact point selected in this KPI map. */
+export function activeMetricMapServingLink(
+  features: ReturnType<typeof metricMapLinkFeatures>,
+  selected: MetricMapPointIdentity | null,
+  projectId: string,
+  captureId: string,
+) {
+  if (!selected || selected.projectId !== projectId || selected.captureId !== captureId) return [];
+  const link = features.find(
+    (feature) =>
+      feature.properties.seq === selected.seq && feature.properties.link_type === "serving",
+  );
+  return link
+    ? [
+        {
+          ...link,
+          properties: { ...link.properties, selected: true, has_selection: true },
+        },
+      ]
+    : [];
+}
+
 function metricColorExpression(
   minValue: number,
   maxValue: number,
@@ -320,6 +370,8 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
 
 function MetricMap({
   data,
+  projectId,
+  captureId,
   label,
   unit,
   center,
@@ -331,6 +383,8 @@ function MetricMap({
   routeCoordinates = [],
 }: {
   data?: MetricMapData | undefined;
+  projectId: string;
+  captureId: string;
   label: string;
   unit: string;
   center?: [number, number] | undefined;
@@ -344,7 +398,9 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [selectedSeq, setSelectedSeq] = useState<number | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
+  const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
+  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
@@ -357,17 +413,10 @@ function MetricMap({
   const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
   const links = useMemo(
     () =>
-      allLinks
-        .filter((feature) => preferences.links[feature.properties.link_type])
-        .map((feature) => ({
-          ...feature,
-          properties: {
-            ...feature.properties,
-            selected: selectedSeq !== null && feature.properties.seq === selectedSeq,
-            has_selection: selectedSeq !== null,
-          },
-        })),
-    [allLinks, preferences.links, selectedSeq],
+      preferences.links.serving
+        ? activeMetricMapServingLink(allLinks, selectedPoint, projectId, captureId)
+        : [],
+    [allLinks, captureId, preferences.links.serving, projectId, selectedPoint],
   );
   useEffect(() => {
     if (!map) return;
@@ -398,21 +447,50 @@ function MetricMap({
   }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
   useEffect(() => {
     if (!map) return;
-    let popup: import("maplibre-gl").Popup | undefined;
     let disposed = false;
     const click = async (e: import("maplibre-gl").MapLayerMouseEvent) => {
-      const seq = Number(e.features?.[0]?.properties?.["seq"]);
+      // GPS fixes can overlap. Prefer the active sequence in the clicked
+      // feature stack so a second click on the same visual point deselects it.
+      const activeFeature = e.features?.find((feature) => {
+        const seq = Number(feature.properties?.["seq"]);
+        return (
+          Number.isFinite(seq) &&
+          sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq)
+        );
+      });
+      const seq = Number((activeFeature?.properties ?? e.features?.[0]?.properties)?.["seq"]);
       const point = data?.map_points.find((candidate) => candidate.seq === seq);
       if (!point) return;
+      const nextSelection = toggleMetricMapPoint(
+        selectedPointRef.current,
+        projectId,
+        captureId,
+        seq,
+      );
+      if (!nextSelection) {
+        selectedPointRef.current = null;
+        setSelectedPoint(null);
+        popupRef.current?.remove();
+        popupRef.current = undefined;
+        return;
+      }
       const { Popup } = await import("maplibre-gl");
       if (disposed) return;
-      setSelectedSeq(seq);
+      popupRef.current?.remove();
+      selectedPointRef.current = nextSelection;
+      setSelectedPoint(nextSelection);
       const node = buildMeasurementPointPopup(pointDetails(point, label, unit));
-      popup?.remove();
-      popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
+      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
         .setLngLat(e.lngLat)
         .setDOMContent(node)
         .addTo(map);
+      popupRef.current = popup;
+      popup.on("close", () => {
+        if (popupRef.current !== popup) return;
+        popupRef.current = undefined;
+        selectedPointRef.current = null;
+        setSelectedPoint(null);
+      });
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -428,9 +506,21 @@ function MetricMap({
       map.off("click", "metrics-v3", click);
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
-      popup?.remove();
     };
-  }, [data, label, map, unit]);
+  }, [captureId, data, label, map, projectId, unit]);
+  useEffect(() => {
+    selectedPointRef.current = null;
+    setSelectedPoint(null);
+    popupRef.current?.remove();
+    popupRef.current = undefined;
+  }, [captureId, map, projectId]);
+  useEffect(
+    () => () => {
+      popupRef.current?.remove();
+      popupRef.current = undefined;
+    },
+    [],
+  );
   const first = data?.map_points[0];
   const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
@@ -561,6 +651,8 @@ function MetricMap({
 }
 function MetricMapCard({
   selection,
+  projectId,
+  captureId,
   title,
   unit,
   data,
@@ -573,6 +665,8 @@ function MetricMapCard({
   routeCoordinates,
 }: {
   selection: string;
+  projectId: string;
+  captureId: string;
   title: string;
   unit: string;
   data?: MetricMapData | undefined;
@@ -625,6 +719,8 @@ function MetricMapCard({
       </div>
       <MetricMap
         data={metricData}
+        projectId={projectId}
+        captureId={captureId}
         label={title}
         unit={unit}
         center={projectCenter}
@@ -1220,6 +1316,8 @@ export function MetricsWorkspace({
                     metricView === "map" ? (
                       <MetricMapCard
                         selection={s.full}
+                        projectId={projectId}
+                        captureId={captureId!}
                         title={title}
                         unit={info?.unit ?? ""}
                         data={mapQuery.data as MetricMapData | undefined}
@@ -1656,6 +1754,8 @@ export function MetricsWorkspace({
               ) : view === "map" ? (
                 <MetricMap
                   data={data as unknown as MetricMapData}
+                  projectId={projectId}
+                  captureId={captureId!}
                   label={data.columns[0]?.label ?? selections[0] ?? "Metric"}
                   unit={data.columns[0]?.unit ?? ""}
                   center={projectCenter}
