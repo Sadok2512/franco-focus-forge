@@ -892,6 +892,7 @@ function Workspace({
                     {(panelTitle) => (
                       <KpiGraphCard
                         projectId={projectId}
+                        workspaceId={tabsState.activeTabId}
                         appliedFilters={applied}
                         captureId={captureId}
                         onCaptureChange={setCaptureId}

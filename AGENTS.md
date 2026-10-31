@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- Existing KPI/metric maps accept catalogue drops through a dedicated metric MIME payload and per-map/per-workspace presentation membership; each added layer queries only its metric on the current capture, preserving existing panels, tables, filters and camera.
 - Map metric size uses a shared external presentation store so layer controls and drive overlays stay synchronized without refetching; selection is a separate sequence-filtered circle layer with reduced-motion-aware pulsing.
 - Project listing and detail pages use fluid full-width containers; the shared header keeps navigation in a shrinkable grid track and controls fixed-size, so screen resizing expands the workspace without causing page-level horizontal overflow.
 - App-wide fullscreen targets document.documentElement through the shared header control and follows fullscreenchange, so navigation and Escape preserve accurate state. Whether the header floats over the content or reserves its own space is a user preference kept in `src/lib/header-floating.ts` (class `app-header-floating` on `<html>`, floating by default), so page heights must derive from `var(--app-header-offset)` rather than a hardcoded header height.

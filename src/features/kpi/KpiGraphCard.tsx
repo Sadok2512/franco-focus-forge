@@ -231,6 +231,7 @@ export function KpiGraphCard({
   config,
   onConfig,
   groupOptions,
+  workspaceId,
 }: {
   projectId: string;
   appliedFilters: KpiQueryFilters;
@@ -253,6 +254,7 @@ export function KpiGraphCard({
   config: ChartConfig;
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
+  workspaceId?: string;
 }) {
   const { t: translate } = useTranslation();
   const seriesAvailable = !!entry.item.temporal_source;
@@ -324,6 +326,7 @@ export function KpiGraphCard({
           captureId={captureId}
           onCaptureChange={onCaptureChange}
           filters={appliedFilters}
+          workspaceId={workspaceId}
         />
       ) : taskView && blockedReason ? (
         <div className="kpi-chart-state" role="status">
