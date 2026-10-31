@@ -49,7 +49,7 @@ export const Route = createFileRoute("/_app/kpi")({
         ["insee", asList(search["insee"])],
         ["phase", asList(search["phase"])],
       ].filter(([, value]) => value !== undefined),
-    );
+    ) as KpiSearch;
   },
   component: KpiWorkspace,
 });
