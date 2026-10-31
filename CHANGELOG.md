@@ -1,3 +1,20 @@
+## Next (patch) — BC4-FRONT 2026-10-31 — fiche des points et liens radio (Agent BC4, numérotation BC3)
+
+- Map, Signaling et KPI Metrics partagent désormais la même fiche de point :
+  heure de capture, valeur/unité, cellule serving, PCI/EARFCN/distance,
+  voisines mesurées et ancre NR quand l'API les fournit.
+- Le clic renforce uniquement les liens appartenant au point sélectionné.
+  Serving, voisines et ancre NR gardent trois couleurs et trois interrupteurs
+  indépendants sur les trois cartes.
+- Les preuves API sont réduites à deux styles lisibles sans perdre leur source :
+  trait plein pour `proven`, pointillés pour `probable`. La légende décrit les
+  deux styles ; aucun lien absent de la réponse API n'est inventé.
+- Le schéma accepte le contrat serving par ECI en cours de livraison et reste
+  compatible avec les preuves radio détaillées existantes.
+- Preuve jetable :
+  `BC4_FRONT_BASE=http://127.0.0.1:9183 node scripts/map_point_popup_evidence.mjs`.
+- SemVer front déclaré : **PATCH** ; numéro attribué par BC3.
+
 ## Next (patch) — BC4-FRONT 2026-10-30 — valeurs initiales et cadrage des cartes (Agent BC4, numérotation BC3)
 
 - Les cellules sont actives par défaut sur Map, Signaling et KPI Analytics ;

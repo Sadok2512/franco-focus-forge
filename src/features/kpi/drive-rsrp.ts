@@ -1,5 +1,6 @@
 import type { ProjectKpiCatalog, KpiCatalogItem } from "@/lib/api/project-kpi-schemas";
 import { parseMetricSelection } from "./metric-selection";
+import type { ApiMeasurementPoint } from "./measurement-point-popup";
 
 /** RSRP coverage classes (dBm, lower bound inclusive). Presentation only. */
 export const RSRP_CLASSES = [
@@ -46,6 +47,7 @@ type AnalysisLike = {
     lng: number;
     code: string;
     value: unknown;
+    t_rel_s?: number | null | undefined;
     serving_cell_id?: string | null | undefined;
     serving_cell_seq?: number | null | undefined;
     serving_cell_ref_id?: string | null | undefined;
@@ -53,10 +55,17 @@ type AnalysisLike = {
     serving_site_name?: string | null | undefined;
     serving_cell_lat?: number | null | undefined;
     serving_cell_lng?: number | null | undefined;
-    serving_cell_source?: "chi_previous_seq_cell_ref_exact" | null | undefined;
+    serving_cell_pci?: number | null | undefined;
+    serving_cell_arfcn?: number | null | undefined;
+    serving_link_distance_m?: number | null | undefined;
+    serving_link_confidence?: string | null | undefined;
+    serving_cell_source?: string | null | undefined;
+    neighbour_links?: ApiMeasurementPoint["neighbour_links"];
+    nr_anchor_link?: ApiMeasurementPoint["nr_anchor_link"];
   }[];
   rows?: {
     seq_first: number;
+    t_rel_s?: number | null | undefined;
     lat?: number | null | undefined;
     lon?: number | null | undefined;
     values: Record<string, unknown>;
@@ -80,8 +89,7 @@ export function rsrpPositionsFrom(
   markers: readonly { lat: number | null; lng: number | null; seqs: readonly number[] }[] = [],
 ): RsrpPosition[] {
   const out: RsrpPosition[] = points.map((p) => ({ seq: p.seq, lat: p.lat, lng: p.lng }));
-  for (const m of markers)
-    for (const s of m.seqs) out.push({ seq: s, lat: m.lat, lng: m.lng });
+  for (const m of markers) for (const s of m.seqs) out.push({ seq: s, lat: m.lat, lng: m.lng });
   return out;
 }
 
@@ -91,6 +99,7 @@ export type DriveRsrpPoint = {
   lng: number;
   value: number;
   cell: number;
+  t_rel_s?: number | null | undefined;
   serving_cell_id?: string | undefined;
   serving_cell_seq?: number | undefined;
   serving_cell_ref_id?: string | undefined;
@@ -98,7 +107,13 @@ export type DriveRsrpPoint = {
   serving_site_name?: string | undefined;
   serving_cell_lat?: number | undefined;
   serving_cell_lng?: number | undefined;
-  serving_cell_source?: "chi_previous_seq_cell_ref_exact" | undefined;
+  serving_cell_pci?: number | undefined;
+  serving_cell_arfcn?: number | undefined;
+  serving_link_distance_m?: number | undefined;
+  serving_link_confidence?: string | undefined;
+  serving_cell_source?: string | undefined;
+  neighbour_links?: ApiMeasurementPoint["neighbour_links"];
+  nr_anchor_link?: ApiMeasurementPoint["nr_anchor_link"];
   /**
    * Where the position came from: an API map point, the row's own GPS, or the
    * capture's GPS log at the very same sequence. Never a guessed position.
@@ -157,8 +172,9 @@ export function driveRsrpPoints(
       lng: p.lng,
       value: p.value as number,
       cell: rsrpColumnCell(p.code) ?? 0,
+      t_rel_s: p.t_rel_s,
       position_source: "map" as const,
-      ...(p.serving_cell_source === "chi_previous_seq_cell_ref_exact" &&
+      ...((p.serving_link_confidence || p.serving_cell_source) &&
       validPos(p.serving_cell_lat, p.serving_cell_lng)
         ? {
             serving_cell_id: p.serving_cell_id ?? undefined,
@@ -168,9 +184,15 @@ export function driveRsrpPoints(
             serving_site_name: p.serving_site_name ?? undefined,
             serving_cell_lat: p.serving_cell_lat as number,
             serving_cell_lng: p.serving_cell_lng as number,
-            serving_cell_source: p.serving_cell_source,
+            serving_cell_source: p.serving_cell_source ?? undefined,
+            serving_cell_pci: p.serving_cell_pci ?? undefined,
+            serving_cell_arfcn: p.serving_cell_arfcn ?? undefined,
+            serving_link_distance_m: p.serving_link_distance_m ?? undefined,
+            serving_link_confidence: p.serving_link_confidence ?? undefined,
           }
         : {}),
+      neighbour_links: p.neighbour_links,
+      nr_anchor_link: p.nr_anchor_link,
     }));
   if (fromMap.length) return fromMap;
   const gps = positionBySeq(positions);
@@ -185,6 +207,7 @@ export function driveRsrpPoints(
           lng: r.lon as number,
           value: rsrp.value,
           cell: rsrp.cell,
+          t_rel_s: r.t_rel_s,
           position_source: "row" as const,
         },
       ];
@@ -197,6 +220,7 @@ export function driveRsrpPoints(
         lng: p.lng as number,
         value: rsrp.value,
         cell: rsrp.cell,
+        t_rel_s: r.t_rel_s,
         position_source: "capture" as const,
       },
     ];

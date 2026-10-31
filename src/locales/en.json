@@ -1159,6 +1159,20 @@
       }
     }
   },
+  "mapPointPopup": {
+    "time": "Time",
+    "serving": "Serving cell",
+    "neighbours": "Neighbours ({{count}})",
+    "neighbour": "Neighbour",
+    "nrAnchor": "NR anchor",
+    "lineStyles": "Link styles",
+    "solid": "Solid · proven",
+    "dashed": "Dashed · probable",
+    "confidence": {
+      "proven": "Proven",
+      "probable": "Probable"
+    }
+  },
   "rsrpDiagnosis": {
     "open": "AI diagnosis",
     "title": "Why are RSRP points missing?",

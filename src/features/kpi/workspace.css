@@ -793,6 +793,23 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   height: 2px;
   border-radius: 999px;
 }
+.measurement-link-style-legend {
+  display: grid;
+  gap: 5px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: 10px;
+}
+.measurement-link-style-legend > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.measurement-link-style-legend .measurement-popup-line {
+  --measurement-link-color: currentColor;
+  display: inline-block;
+}
 .kpi-metric-map-status {
   position: absolute;
   left: 50%;

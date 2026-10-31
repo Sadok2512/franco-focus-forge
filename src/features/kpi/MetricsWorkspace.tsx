@@ -26,6 +26,14 @@ import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
+  buildMeasurementPointPopup,
+  CELL_LINK_COLORS,
+  CELL_LINK_KINDS,
+  pointCellLinks,
+  pointDetails,
+  type CellLinkKind,
+} from "./measurement-point-popup";
+import {
   isClockAvailable,
   readTimeAxisMode,
   writeTimeAxisMode,
@@ -131,7 +139,7 @@ const MAP_PALETTES = {
   ocean: ["#172554", "#1e40af", "#0284c7", "#06b6d4", "#a7f3d0"],
 } as const;
 type MetricMapPalette = keyof typeof MAP_PALETTES;
-type MetricLinkKind = "serving" | "neighbour" | "nr_anchor";
+type MetricLinkKind = CellLinkKind;
 type MetricMapPreferences = {
   palette: MetricMapPalette;
   pointSize: number;
@@ -142,12 +150,6 @@ const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
   pointSize: 3,
   links: { serving: true, neighbour: true, nr_anchor: true },
 };
-const METRIC_LINK_COLORS: Record<MetricLinkKind, string> = {
-  serving: "#2563eb",
-  neighbour: "#f59e0b",
-  nr_anchor: "#9333ea",
-};
-
 function metricMapPreferenceKey(workspaceId: string, selection: string) {
   return `bc4.metric-map.v1.${workspaceId}.${selection}`;
 }
@@ -197,6 +199,7 @@ export function metricMapFeatures(data: MetricMapData) {
       serving_site_id: point.serving_site_id,
       serving_site_name: point.serving_site_name,
       serving_cell_source: point.serving_cell_source,
+      t_rel_s: point.t_rel_s,
       ...(typeof point.value === "number" && Number.isFinite(point.value)
         ? { value: point.value }
         : {}),
@@ -206,36 +209,7 @@ export function metricMapFeatures(data: MetricMapData) {
 
 export function metricMapLinkFeatures(data: MetricMapData) {
   return data.map_points.flatMap((point) => {
-    const links: Array<{ kind: MetricLinkKind; lat: number; lng: number; source: string }> = [];
-    if (
-      point.serving_cell_source === "chi_previous_seq_cell_ref_exact" &&
-      typeof point.serving_cell_lat === "number" &&
-      Number.isFinite(point.serving_cell_lat) &&
-      typeof point.serving_cell_lng === "number" &&
-      Number.isFinite(point.serving_cell_lng)
-    ) {
-      links.push({
-        kind: "serving",
-        lat: point.serving_cell_lat,
-        lng: point.serving_cell_lng,
-        source: point.serving_cell_source,
-      });
-    }
-    for (const link of point.neighbour_links ?? []) {
-      if (Number.isFinite(link.lat) && Number.isFinite(link.lng) && link.confidence) {
-        links.push({
-          kind: "neighbour",
-          lat: link.lat,
-          lng: link.lng,
-          source: link.confidence,
-        });
-      }
-    }
-    const anchor = point.nr_anchor_link;
-    if (anchor && Number.isFinite(anchor.lat) && Number.isFinite(anchor.lng) && anchor.confidence) {
-      links.push({ kind: "nr_anchor", lat: anchor.lat, lng: anchor.lng, source: anchor.confidence });
-    }
-    return links.map((link) => ({
+    return pointCellLinks(point).map((link) => ({
       type: "Feature" as const,
       geometry: {
         type: "LineString" as const,
@@ -244,7 +218,12 @@ export function metricMapLinkFeatures(data: MetricMapData) {
           [link.lng, link.lat],
         ],
       },
-      properties: { link_type: link.kind, source: link.source, seq: point.seq },
+      properties: {
+        link_type: link.kind,
+        source: link.source ?? "",
+        confidence: link.confidence,
+        seq: point.seq,
+      },
     }));
   });
 }
@@ -299,26 +278,31 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
     type: "geojson",
     data: { type: "FeatureCollection", features },
   });
-  map.addLayer({
-    id: "metric-cell-links-v1",
-    type: "line",
-    source: "metric-cell-links-v1",
-    paint: {
-      "line-color": [
-        "match",
-        ["get", "link_type"],
-        "serving",
-        METRIC_LINK_COLORS.serving,
-        "neighbour",
-        METRIC_LINK_COLORS.neighbour,
-        "nr_anchor",
-        METRIC_LINK_COLORS.nr_anchor,
-        "#64748b",
-      ],
-      "line-width": 1.5,
-      "line-opacity": 0.55,
-    },
-  });
+  const color = [
+    "match",
+    ["get", "link_type"],
+    "serving",
+    CELL_LINK_COLORS.serving,
+    "neighbour",
+    CELL_LINK_COLORS.neighbour,
+    "nr_anchor",
+    CELL_LINK_COLORS.nr_anchor,
+    "#64748b",
+  ] as ExpressionSpecification;
+  for (const confidence of ["proven", "probable"] as const) {
+    map.addLayer({
+      id: `metric-cell-links-v1-${confidence}`,
+      type: "line",
+      source: "metric-cell-links-v1",
+      filter: ["==", ["get", "confidence"], confidence],
+      paint: {
+        "line-color": color,
+        "line-width": ["case", ["get", "selected"], 3, 1.5],
+        "line-opacity": ["case", ["get", "selected"], 1, ["get", "has_selection"], 0.18, 0.55],
+        ...(confidence === "probable" ? { "line-dasharray": [2, 2] } : {}),
+      },
+    });
+  }
 }
 
 function MetricMap({
@@ -347,6 +331,7 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [selectedSeq, setSelectedSeq] = useState<number | null>(null);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
@@ -358,8 +343,18 @@ function MetricMap({
   );
   const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
   const links = useMemo(
-    () => allLinks.filter((feature) => preferences.links[feature.properties.link_type]),
-    [allLinks, preferences.links],
+    () =>
+      allLinks
+        .filter((feature) => preferences.links[feature.properties.link_type])
+        .map((feature) => ({
+          ...feature,
+          properties: {
+            ...feature.properties,
+            selected: selectedSeq !== null && feature.properties.seq === selectedSeq,
+            has_selection: selectedSeq !== null,
+          },
+        })),
+    [allLinks, preferences.links, selectedSeq],
   );
   useEffect(() => {
     if (!map) return;
@@ -393,12 +388,18 @@ function MetricMap({
     let popup: import("maplibre-gl").Popup | undefined;
     let disposed = false;
     const click = async (e: import("maplibre-gl").MapLayerMouseEvent) => {
+      const seq = Number(e.features?.[0]?.properties?.["seq"]);
+      const point = data?.map_points.find((candidate) => candidate.seq === seq);
+      if (!point) return;
       const { Popup } = await import("maplibre-gl");
       if (disposed) return;
-      const node = document.createElement("div");
-      node.textContent = String(e.features?.[0]?.properties?.["tooltip"] ?? "");
+      setSelectedSeq(seq);
+      const node = buildMeasurementPointPopup(pointDetails(point, label, unit));
       popup?.remove();
-      popup = new Popup().setLngLat(e.lngLat).setDOMContent(node).addTo(map);
+      popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
+        .setLngLat(e.lngLat)
+        .setDOMContent(node)
+        .addTo(map);
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -416,7 +417,7 @@ function MetricMap({
       map.off("mouseleave", "metrics-v3", noPointer);
       popup?.remove();
     };
-  }, [map]);
+  }, [data, label, map, unit]);
   const first = data?.map_points[0];
   const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
@@ -492,7 +493,7 @@ function MetricMap({
             </label>
             <fieldset>
               <legend>{translate("metrics.mapCellLinks")}</legend>
-              {(["serving", "neighbour", "nr_anchor"] as const).map((kind) => (
+              {CELL_LINK_KINDS.map((kind) => (
                 <label key={kind}>
                   <input
                     type="checkbox"
@@ -506,12 +507,26 @@ function MetricMap({
                   />
                   <span
                     className="kpi-metric-map-link-swatch"
-                    style={{ backgroundColor: METRIC_LINK_COLORS[kind] }}
+                    style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
                   />
                   {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
                 </label>
               ))}
             </fieldset>
+            <div
+              className="measurement-link-style-legend"
+              data-testid="measurement-link-style-legend"
+            >
+              <strong>{translate("mapPointPopup.lineStyles")}</strong>
+              <span>
+                <i className="measurement-popup-line is-proven" />
+                {translate("mapPointPopup.solid")}
+              </span>
+              <span>
+                <i className="measurement-popup-line is-probable" />
+                {translate("mapPointPopup.dashed")}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -755,8 +770,7 @@ export function MetricsWorkspace({
   // independently while the dedicated endpoint loads all points at once.
   const mapQuery = useQuery({
     queryKey: metricMapKey(projectId, captureId, mapSelections, filters),
-    queryFn: ({ signal }) =>
-      getMetricMap(projectId, captureId!, mapSelections, filters, signal),
+    queryFn: ({ signal }) => getMetricMap(projectId, captureId!, mapSelections, filters, signal),
     enabled: !!captureId && mapSelections.length > 0,
     staleTime: 60_000,
     refetchOnMount: false,
@@ -797,8 +811,7 @@ export function MetricsWorkspace({
       ),
     // A map-only workspace already has everything it needs in mapQuery. Keep
     // the table request dormant unless the user explicitly opens that pane.
-    enabled:
-      !!captureId && selections.length > 0 && (!onlyMapSelections || (paneRequest ?? 0) > 0),
+    enabled: !!captureId && selections.length > 0 && (!onlyMapSelections || (paneRequest ?? 0) > 0),
     staleTime: 60_000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,
@@ -1100,8 +1113,7 @@ export function MetricsWorkspace({
   }, []);
   // Décoder chaque selection "code@cell" en { code, cell }
   const parsedSelections = useMemo(
-    () =>
-      selections.map((s) => parseMetricSelection(s) ?? { full: s, code: "", cell: "all" }),
+    () => selections.map((s) => parseMetricSelection(s) ?? { full: s, code: "", cell: "all" }),
     [selections],
   );
   const metricInfoByCode = useMemo(() => {
