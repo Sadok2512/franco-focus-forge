@@ -375,6 +375,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
 
     expect(await screen.findByRole("button", { name: /Serving radio/ })).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: /Serving radio/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^RSRP/ }));
     expect(screen.getByText("RSRP — PCell")).toBeVisible();
 
     // Neither the English nor the French section heading survives, and a
