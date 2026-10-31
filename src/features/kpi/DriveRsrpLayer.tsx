@@ -944,6 +944,7 @@ export function DriveRsrpLayer({
 
   return (
     <>
+      {legendPanel}
     <div
       className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
