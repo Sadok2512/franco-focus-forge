@@ -2,10 +2,10 @@ import { describe, expect, it } from "vitest";
 import { beamOpacity, beamPercent, beamRadiusScale } from "@/features/kpi/beam-display";
 
 describe("Beam presentation percentages", () => {
-  it("limits the size range to 0–100% and allows enlarging the original beam", () => {
+  it("limits the size range to 0–100% and multiplies the original beam by 5 at full size", () => {
     expect(beamRadiusScale(0)).toBe(0);
-    expect(beamRadiusScale(50)).toBe(1);
-    expect(beamRadiusScale(100)).toBe(2);
+    expect(beamRadiusScale(50)).toBe(5);
+    expect(beamRadiusScale(100)).toBe(10);
     expect(beamPercent(-1, 50)).toBe(0);
     expect(beamPercent(101, 50)).toBe(100);
   });
