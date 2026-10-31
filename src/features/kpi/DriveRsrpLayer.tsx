@@ -945,110 +945,112 @@ export function DriveRsrpLayer({
   return (
     <>
       {legendPanel}
-    <div
-      className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
-    >
-      {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
-      {!hideControls && (
-        <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
-          <div className="flex items-center justify-between gap-2 px-3 py-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-auto px-0 py-0 font-semibold text-foreground"
-              aria-expanded={open}
-              onClick={() => setOpen((o) => !o)}
-            >
-              {t("mapWorkspace.driveRsrp")} {open ? "▾" : "▸"}
-            </Button>
-            <Switch
-              aria-label={t("mapWorkspace.driveRsrpToggle")}
-              checked={prefs.on}
-              onCheckedChange={(on) => {
-                update({ on });
-                if (on) setOpen(true);
-              }}
-            />
-          </div>
-          {status && (
-            <div className="space-y-1.5 border-t px-3 py-1.5">
-              <p role="status" className="break-words text-muted-foreground">
-                {status}
-                {automaticRecovery && features.length > 0
-                  ? ` · ${t("mapWorkspace.driveRsrpCaptureRecovered", automaticRecovery)}`
-                  : ""}
-                {linkFeatures.length > 0
-                  ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
-                  : ""}
-              </p>
-              <div className="flex justify-end gap-1.5">
-                {!analysis.isLoading && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-6 shrink-0 px-2 text-[11px]"
-                    onClick={() => setDiagOpen(true)}
-                  >
-                    {t("rsrpDiagnosis.open")}
-                  </Button>
-                )}
-                {features.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-6 shrink-0 px-2 text-[11px]"
-                    onClick={frame}
-                  >
-                    {t("mapWorkspace.driveRsrpFrame")}
-                  </Button>
-                )}
-              </div>
+      <div
+        className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
+      >
+        {selectedDetails && (
+          <SelectedPointCard details={selectedDetails} onClose={clearSelection} />
+        )}
+        {!hideControls && (
+          <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
+            <div className="flex items-center justify-between gap-2 px-3 py-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-auto px-0 py-0 font-semibold text-foreground"
+                aria-expanded={open}
+                onClick={() => setOpen((o) => !o)}
+              >
+                {t("mapWorkspace.driveRsrp")} {open ? "▾" : "▸"}
+              </Button>
+              <Switch
+                aria-label={t("mapWorkspace.driveRsrpToggle")}
+                checked={prefs.on}
+                onCheckedChange={(on) => {
+                  update({ on });
+                  if (on) setOpen(true);
+                }}
+              />
             </div>
-          )}
-          <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
-          {open && (
-            <div className="space-y-2 border-t px-3 py-2">
-              {prefs.on && !embedded && !!captures.data?.length && (
-                <select
-                  aria-label={t("mapWorkspace.driveRsrpCapture")}
-                  className="w-full rounded border bg-background px-1 py-0.5"
-                  value={captureId ?? ""}
-                  onChange={(e) => {
-                    explicitCapture.current = true;
-                    setAutomaticRecovery(undefined);
-                    setCaptureId(e.target.value);
-                  }}
-                >
-                  {captures.data.map((c) => (
-                    <option key={c.capture_id} value={c.capture_id}>
-                      {c.label || c.capture_id}
-                    </option>
-                  ))}
-                </select>
-              )}
-              {legendRows}
-              <div>
-                <div className="mb-1 flex justify-between">
-                  <span>{t("mapWorkspace.driveRsrpOpacity")}</span>
-                  <span className="tabular-nums">{prefs.opacity} %</span>
+            {status && (
+              <div className="space-y-1.5 border-t px-3 py-1.5">
+                <p role="status" className="break-words text-muted-foreground">
+                  {status}
+                  {automaticRecovery && features.length > 0
+                    ? ` · ${t("mapWorkspace.driveRsrpCaptureRecovered", automaticRecovery)}`
+                    : ""}
+                  {linkFeatures.length > 0
+                    ? ` · ${t("mapWorkspace.driveRsrpServingLinks", { count: linkFeatures.length })}`
+                    : ""}
+                </p>
+                <div className="flex justify-end gap-1.5">
+                  {!analysis.isLoading && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 shrink-0 px-2 text-[11px]"
+                      onClick={() => setDiagOpen(true)}
+                    >
+                      {t("rsrpDiagnosis.open")}
+                    </Button>
+                  )}
+                  {features.length > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-6 shrink-0 px-2 text-[11px]"
+                      onClick={frame}
+                    >
+                      {t("mapWorkspace.driveRsrpFrame")}
+                    </Button>
+                  )}
                 </div>
-                <Slider
-                  aria-label={t("mapWorkspace.driveRsrpOpacity")}
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={[prefs.opacity]}
-                  onValueChange={([v]) => update({ opacity: v ?? 0 })}
-                />
               </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
+            )}
+            <RsrpDiagnosisDialog open={diagOpen} onOpenChange={setDiagOpen} status={diagStatus} />
+            {open && (
+              <div className="space-y-2 border-t px-3 py-2">
+                {prefs.on && !embedded && !!captures.data?.length && (
+                  <select
+                    aria-label={t("mapWorkspace.driveRsrpCapture")}
+                    className="w-full rounded border bg-background px-1 py-0.5"
+                    value={captureId ?? ""}
+                    onChange={(e) => {
+                      explicitCapture.current = true;
+                      setAutomaticRecovery(undefined);
+                      setCaptureId(e.target.value);
+                    }}
+                  >
+                    {captures.data.map((c) => (
+                      <option key={c.capture_id} value={c.capture_id}>
+                        {c.label || c.capture_id}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                {legendRows}
+                <div>
+                  <div className="mb-1 flex justify-between">
+                    <span>{t("mapWorkspace.driveRsrpOpacity")}</span>
+                    <span className="tabular-nums">{prefs.opacity} %</span>
+                  </div>
+                  <Slider
+                    aria-label={t("mapWorkspace.driveRsrpOpacity")}
+                    min={0}
+                    max={100}
+                    step={5}
+                    value={[prefs.opacity]}
+                    onValueChange={([v]) => update({ opacity: v ?? 0 })}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </>
   );
 }

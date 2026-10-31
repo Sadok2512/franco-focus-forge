@@ -63,7 +63,13 @@ function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement) {
 /** Browsers normalise hex colours to rgb(); compare in the same form. */
 function rgb(hex: string) {
   const digits = hex.replace("#", "");
-  const expanded = digits.length === 3 ? digits.split("").map((c) => c + c).join("") : digits;
+  const expanded =
+    digits.length === 3
+      ? digits
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : digits;
   const value = parseInt(expanded, 16);
   return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
 }
@@ -88,16 +94,14 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
     mount(map, host);
 
     // The control card is hidden, so anything in the host comes from the legend portal.
-    await waitFor(() =>
-      expect(host.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull(),
-    );
+    await waitFor(() => expect(host.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull());
 
     const rows = host.querySelectorAll("ul[aria-label='RSRP legend'] > li");
     expect(rows).toHaveLength(RSRP_CLASSES.length);
     // Each class row carries its own colour, so the panel cannot drift from the map.
-    const swatches = [...host.querySelectorAll<HTMLElement>("ul[aria-label='RSRP legend'] span[style]")].map(
-      (span) => span.style.background,
-    );
+    const swatches = [
+      ...host.querySelectorAll<HTMLElement>("ul[aria-label='RSRP legend'] span[style]"),
+    ].map((span) => span.style.background);
     for (const cls of RSRP_CLASSES) expect(swatches).toContain(rgb(cls.color));
     // The proven cell links are listed too.
     expect(host.textContent).toContain("Serving cell");
@@ -116,8 +120,8 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
         map.setFilter.mock.calls.some((call) => JSON.stringify(call).includes('"excellent"')),
       ).toBe(true),
     );
-    expect(
-      JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v2") ?? "{}").hidden,
-    ).toContain("excellent");
+    expect(JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v2") ?? "{}").hidden).toContain(
+      "excellent",
+    );
   });
 });
