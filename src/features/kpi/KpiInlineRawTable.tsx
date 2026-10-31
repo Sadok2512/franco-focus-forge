@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getKpiCaptures } from "@/lib/api/client";
+import { getKpiCaptures } from "@/lib/api/kpi-timeseries";
 import { KpiRawDataTable } from "./KpiRawDataTable";
 
 /** Raw observations of one temporal KPI inside its own panel; picks the richest capture when none is active. */
