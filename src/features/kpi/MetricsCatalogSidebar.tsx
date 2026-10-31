@@ -173,7 +173,7 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, search]);
+  }, [catalogNodes, search]);
   const visibleSelectableCount = useMemo(
     () =>
       catalogNodes.filter(
