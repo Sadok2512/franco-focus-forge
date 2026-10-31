@@ -6,7 +6,7 @@ export function beamPercent(value: unknown, fallback: number): number {
 }
 
 export function beamRadiusScale(value: unknown): number {
-  return beamPercent(value, 50) / 50;
+  return (beamPercent(value, 50) / 50) * 5;
 }
 
 export function beamOpacity(value: unknown): number {
