@@ -604,7 +604,7 @@ function MetricMap({
               </select>
             </label>
             <label>
-              {translate("metrics.mapPointSize")} · {preferences.pointSize}px
+              {translate("metrics.mapPointSize")} · {preferences.pointSize}
               <input
                 type="range"
                 min="1"
