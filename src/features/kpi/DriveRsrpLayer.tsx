@@ -159,7 +159,7 @@ export function DriveRsrpLayer({
   /** Hide the Drive RSRP control card; the layer stays on. */
   hideControls?: boolean;
   /** Colour the selection ring borrows from the host map's own legend. */
-  selectedRingColor?: string;
+  selectedRingColor?: string | undefined;
   /** The selected point with its position, so the host map can match colours. */
   onSelectedChange?: (selected: SelectedDrivePoint | null) => void;
 }) {
