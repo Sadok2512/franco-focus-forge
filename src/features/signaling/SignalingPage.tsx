@@ -1368,6 +1368,54 @@ export function SignalingPage({
       );
     return { rsrp: byCode("cell_rsrp"), rsrq: byCode("cell_rsrq"), sinr: byCode("ci_rs_snr") };
   }, [captureRadio.data]);
+  // Added metric columns ("Add Metric" in the columns popup): codes come from
+  // the column config, labels/units from the metrics catalogue, values from
+  // one series request per capture — previous real observation, never
+  // interpolated, exactly like the RSRP/RSRQ/SINR columns.
+  const [metricPickerOpen, setMetricPickerOpen] = useState(false);
+  const metricSearchRef = useRef<HTMLInputElement>(null);
+  const metricCodes = useMemo(
+    () => knownOrder(colConfig).filter(isMetricCol).map(metricCodeOf),
+    [colConfig],
+  );
+  const metricCatalog = useQuery({
+    ...metricsCatalogQuery(projectId),
+    enabled: metricPickerOpen || metricCodes.length > 0,
+    retry: false,
+  });
+  const metricMeta = useMemo(() => {
+    const map = new Map<string, { label: string; unit: string }>();
+    for (const node of metricCatalog.data?.nodes ?? []) {
+      if (node.selection) map.set(node.selection, { label: node.label, unit: node.unit });
+    }
+    return map;
+  }, [metricCatalog.data]);
+  const metricSeriesQuery = useQuery({
+    queryKey: ["signaling-metric-columns", projectId, capture, metricCodes],
+    enabled: !!capture && metricCodes.length > 0,
+    queryFn: ({ signal }) => getMetricSeries(projectId, capture!, metricCodes, signal),
+    staleTime: 60000,
+    retry: false,
+  });
+  const metricPoints = useMemo(() => {
+    const map = new Map<string, SeriesPoint[]>();
+    metricCodes.forEach((code, i) => {
+      const series =
+        metricSeriesQuery.data?.series.find((s) => s.code === code) ??
+        metricSeriesQuery.data?.series[i];
+      if (series)
+        map.set(
+          code,
+          [...series.points].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq),
+        );
+    });
+    return map;
+  }, [metricSeriesQuery.data, metricCodes]);
+  const toggleMetricColumn = (code: string) =>
+    setColConfig((old) => {
+      const codes = knownOrder(old).filter(isMetricCol).map(metricCodeOf);
+      return codes.includes(code) ? removeMetricColumn(old, code) : addMetricColumn(old, code);
+    });
   const filtersActive =
     messageSelection !== null ||
     !!search ||
