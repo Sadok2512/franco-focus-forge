@@ -692,18 +692,26 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
-      <div
-        className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}
-      >
-        {!compact && (
+      {/* Top — interactive legend: click an item to show/hide it. */}
+      {!compact && (
+        <div
+          className="pointer-events-none absolute top-3 flex justify-center"
+          style={{ left: showPanel ? 248 : 64, right: 380 }}
+        >
           <div
-            className={`pointer-events-auto shrink-0 rounded-xl px-3 py-2 ${glass}`}
+            data-testid="map-workspace-legend"
+            className={`pointer-events-auto rounded-xl px-3 py-2 ${glass}`}
             aria-label={t("mapWorkspace.legend")}
           >
             {legend}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
+      <div
+        className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}
+      >
         <div
           data-testid="map-workspace-statusbar"
           className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}
@@ -933,20 +941,30 @@ function Swatch({
   label,
   round,
   hideLabel,
+  active = true,
+  onClick,
 }: {
   color: string;
   label: string;
   round?: boolean;
   hideLabel?: boolean;
+  active?: boolean;
+  onClick?: () => void;
 }) {
   return (
-    <span className="inline-flex items-center gap-1" title={label}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      aria-label={label}
+      title={label}
+      className={`inline-flex items-center gap-1 rounded px-0.5 transition hover:bg-muted ${active ? "" : "opacity-30"}`}
+    >
       <span
         className={`h-2.5 w-2.5 ${round ? "rounded-full" : "rounded-sm"}`}
         style={{ background: color }}
-        aria-label={hideLabel ? label : undefined}
       />
-      {!hideLabel && label}
-    </span>
+      {!hideLabel && <span className={active ? "" : "line-through"}>{label}</span>}
+    </button>
   );
 }
