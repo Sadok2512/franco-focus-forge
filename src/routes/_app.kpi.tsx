@@ -3,6 +3,19 @@ import { createFileRoute } from "@tanstack/react-router";
 import { URL_KEYS } from "@/features/kpi/workspace-model";
 import { KpiWorkspace } from "@/features/kpi/KpiWorkspace";
 
+// Tous les champs KPI restent optionnels dans le search : les reducers
+// `search` des <Link to="/kpi"> (ProjectPage) n'ont pas à les énumérer.
+type KpiSearch = Partial<
+  Record<(typeof URL_KEYS)[keyof typeof URL_KEYS], string[]>
+> & {
+  metrics?: string[];
+  kpi?: string;
+  kpis?: string[];
+  commune?: string[];
+  insee?: string[];
+  phase?: string[];
+};
+
 export const Route = createFileRoute("/_app/kpi")({
   head: () => ({
     meta: [
