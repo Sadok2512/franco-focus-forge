@@ -144,6 +144,8 @@ export function DriveRsrpLayer({
   onRouteChange,
   hidePoints = false,
   hideControls = false,
+  selectedRingColor,
+  onSelectedChange,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -156,6 +158,10 @@ export function DriveRsrpLayer({
   hidePoints?: boolean;
   /** Hide the Drive RSRP control card; the layer stays on. */
   hideControls?: boolean;
+  /** Colour the selection ring borrows from the host map's own legend. */
+  selectedRingColor?: string;
+  /** The selected point with its position, so the host map can match colours. */
+  onSelectedChange?: (selected: SelectedDrivePoint | null) => void;
 }) {
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
@@ -172,8 +178,8 @@ export function DriveRsrpLayer({
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
-  const [selectedPoint, setSelectedPoint] = useState<MeasurementPointIdentity | null>(null);
-  const selectedPointRef = useRef<MeasurementPointIdentity | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
+  const selectedPointRef = useRef<SelectedDrivePoint | null>(null);
   const explicitCapture = useRef(false);
   const automaticRecoveryAttempted = useRef(false);
   const previousProjectId = useRef(projectId);
@@ -515,15 +521,12 @@ export function DriveRsrpLayer({
           source: SOURCE,
           filter: ["==", ["get", "seq"], -1],
           paint: {
-            "circle-radius": metricRadius(metricSize, true),
-            "circle-color": [
-              "match",
-              ["get", "rsrp_class"],
-              ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
-              RSRP_CLASSES[0]?.color ?? "transparent",
-            ] as unknown as ExpressionSpecification,
-            "circle-stroke-width": 2,
-            "circle-stroke-color": CELL_LINK_COLORS.serving,
+            // A hollow ring drawn just outside the point: the point itself is
+            // never repainted nor enlarged, and the ring borrows its colour.
+            "circle-radius": metricRingRadius(metricSize),
+            "circle-color": "transparent",
+            "circle-stroke-width": 2.5,
+            "circle-stroke-color": selectedRingColor ?? RSRP_COLOR_EXPRESSION,
             "circle-opacity": 1,
           },
         });
@@ -633,8 +636,9 @@ export function DriveRsrpLayer({
     let pulse = 0;
     const paint = () => {
       if (!map.getLayer(SELECTED_LAYER)) return;
-      map.setPaintProperty(SELECTED_LAYER, "circle-radius", metricRadius(metricSize, true, pulse));
-      map.setPaintProperty(SELECTED_LAYER, "circle-opacity", pulse ? 0.55 : 1);
+      // Only the ring breathes; the selected point keeps its own size and colour.
+      map.setPaintProperty(SELECTED_LAYER, "circle-radius", metricRingRadius(metricSize, pulse));
+      map.setPaintProperty(SELECTED_LAYER, "circle-stroke-opacity", pulse ? 0.35 : 1);
       pulse = pulse ? 0 : 1;
     };
     paint();
@@ -731,7 +735,13 @@ export function DriveRsrpLayer({
         setSelectedPoint(null);
         return;
       }
-      const identity = { projectId, captureId: effectiveCaptureId, seq };
+      const identity: SelectedDrivePoint = {
+        projectId,
+        captureId: effectiveCaptureId,
+        seq,
+        lng: point.lng,
+        lat: point.lat,
+      };
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
     };
@@ -749,6 +759,24 @@ export function DriveRsrpLayer({
     selectedPointRef.current = null;
     setSelectedPoint(null);
   }, [effectiveCaptureId, map, projectId]);
+
+  // The ring always borrows the colour of the point it surrounds: the drive
+  // layer's own RSRP class colour, or the metric legend colour the host map
+  // resolves for that same point (KPI maps draw their own coloured points).
+  useEffect(() => {
+    if (!map?.getLayer(SELECTED_LAYER)) return;
+    map.setPaintProperty(
+      SELECTED_LAYER,
+      "circle-stroke-color",
+      selectedRingColor ?? RSRP_COLOR_EXPRESSION,
+    );
+  }, [map, selectedRingColor, selectedPoint]);
+
+  // Tell the host map which point is selected so it can match the ring to the
+  // colour of the point it actually shows at that position.
+  useEffect(() => {
+    onSelectedChange?.(selectedPoint);
+  }, [onSelectedChange, selectedPoint]);
 
   const clearSelection = () => {
     selectedPointRef.current = null;
