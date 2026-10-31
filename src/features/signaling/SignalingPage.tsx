@@ -1452,7 +1452,26 @@ export function SignalingPage({
       </span>
     );
   };
+  const metricCell = (code: string, t: number | null) => {
+    const r = seriesValueAt(metricPoints.get(code), t);
+    if (!r) return <span className="text-muted-foreground">—</span>;
+    const exact = r.dtS === 0;
+    const text = typeof r.value === "number" ? fmtRadio(r.value) : r.value;
+    return (
+      <span
+        className={exact ? undefined : "sig-radio-prev"}
+        title={
+          exact
+            ? t("sigTable.metricExact", { seq: r.seq, t: r.t.toFixed(3) })
+            : t("sigTable.metricPrev", { seq: r.seq, t: r.t.toFixed(3), dt: r.dtS.toFixed(3) })
+        }
+      >
+        {text}
+      </span>
+    );
+  };
   const renderCell = (c: ColKey, r: SignalingLine) => {
+    if (isMetricCol(c)) return metricCell(metricCodeOf(c), r.t_rel_s);
     switch (c) {
       case "seq":
         return r.seq;
