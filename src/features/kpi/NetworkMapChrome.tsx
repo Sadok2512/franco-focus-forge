@@ -596,13 +596,6 @@ function MenuCheck({ label, checked, onClick, color }: { label: string; checked:
   );
 }
 
-function MenuItem({ children, onClick }: { children: ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" role="menuitem" onClick={onClick} className="block w-full rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-muted">
-      {children}
-    </button>
-  );
-}
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
