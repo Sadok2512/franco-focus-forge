@@ -53,6 +53,31 @@ function cleanLabel(raw: string): string {
   return raw.replace(STAR, "").replace(SOURCE_BADGE_RE, "").trim();
 }
 
+// Demande user — la section « Decoded values » (compteurs DCI/grants par
+// cellule, libellés fournis par le back) est retirée de l'arbre entier :
+// ni la branche ni ses feuilles n'apparaissent, quelle que soit la langue
+// du libellé renvoyé par l'API ("Decoded values", "Valeurs décodées", ...).
+const DECODED_SECTION_RE = /d[ée]cod/i;
+function withoutDecodedSection(all: MetricCatalogNode[]): MetricCatalogNode[] {
+  const childrenOf = new Map<string, MetricCatalogNode[]>();
+  for (const node of all) {
+    if (!node.parent_id) continue;
+    childrenOf.set(node.parent_id, [...(childrenOf.get(node.parent_id) ?? []), node]);
+  }
+  const hidden = new Set<string>();
+  const hideBranch = (id: string) => {
+    if (hidden.has(id)) return;
+    hidden.add(id);
+    for (const child of childrenOf.get(id) ?? []) hideBranch(child.node_id);
+  };
+  for (const node of all) {
+    if (node.node_type !== "leaf" && DECODED_SECTION_RE.test(node.label)) {
+      hideBranch(node.node_id);
+    }
+  }
+  return hidden.size ? all.filter((node) => !hidden.has(node.node_id)) : all;
+}
+
 export function MetricsCatalogSidebar({
   projectId,
   selected,
@@ -98,18 +123,22 @@ export function MetricsCatalogSidebar({
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
   const query = useQuery({ ...metricsCatalogQuery(projectId), retry: false });
+  const catalogNodes = useMemo(
+    () => withoutDecodedSection(query.data?.nodes ?? []),
+    [query.data],
+  );
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
-    for (const node of query.data?.nodes ?? []) {
+    for (const node of catalogNodes) {
       const key = node.parent_id ?? rootKey;
       result.set(key, [...(result.get(key) ?? []), node]);
     }
     for (const children of result.values()) children.sort((a, b) => a.order - b.order);
     return result;
-  }, [query.data]);
+  }, [catalogNodes]);
   const availableTree = useMemo(() => {
     if (showUnavailable) return null;
-    const nodes = query.data?.nodes ?? [];
+    const nodes = catalogNodes;
     const byId = new Map(nodes.map((node) => [node.node_id, node]));
     const visible = new Set<string>();
     for (const leaf of nodes) {
@@ -121,12 +150,12 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, showUnavailable]);
+  }, [catalogNodes, showUnavailable]);
   const matching = useMemo(() => {
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
     const own = new Set(
-      (query.data?.nodes ?? [])
+      catalogNodes
         .filter((node) =>
           `${node.label} ${node.source ?? ""} ${node.event ?? ""}`
             .toLocaleLowerCase()
@@ -135,7 +164,7 @@ export function MetricsCatalogSidebar({
         .map((node) => node.node_id),
     );
     const visible = new Set(own);
-    const byId = new Map((query.data?.nodes ?? []).map((node) => [node.node_id, node]));
+    const byId = new Map(catalogNodes.map((node) => [node.node_id, node]));
     for (const id of own) {
       let node = byId.get(id);
       while (node?.parent_id) {
@@ -144,10 +173,10 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, search]);
+  }, [catalogNodes, search]);
   const visibleSelectableCount = useMemo(
     () =>
-      (query.data?.nodes ?? []).filter(
+      catalogNodes.filter(
         (node) =>
           node.node_type === "leaf" &&
           node.selectable &&
@@ -155,7 +184,7 @@ export function MetricsCatalogSidebar({
           (!matching || matching.has(node.node_id)) &&
           (!activeOnly || node.n > 0),
       ).length,
-    [activeOnly, availableTree, matching, query.data],
+    [activeOnly, availableTree, catalogNodes, matching],
   );
   useEffect(
     () => onVisibleCountChange?.(visibleSelectableCount),
@@ -173,9 +202,9 @@ export function MetricsCatalogSidebar({
       cache.set(id, values);
       return values;
     };
-    for (const node of query.data?.nodes ?? []) collect(node.node_id);
+    for (const node of catalogNodes) collect(node.node_id);
     return cache;
-  }, [byParent, query.data]);
+  }, [byParent, catalogNodes]);
   const toggleOpen = (id: string) =>
     setOpen((previous) => {
       const next = new Set(previous);
