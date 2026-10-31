@@ -123,9 +123,13 @@ export function MetricsCatalogSidebar({
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
   const query = useQuery({ ...metricsCatalogQuery(projectId), retry: false });
+  const catalogNodes = useMemo(
+    () => withoutDecodedSection(query.data?.nodes ?? []),
+    [query.data],
+  );
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
-    for (const node of query.data?.nodes ?? []) {
+    for (const node of catalogNodes) {
       const key = node.parent_id ?? rootKey;
       result.set(key, [...(result.get(key) ?? []), node]);
     }
