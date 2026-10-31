@@ -2224,7 +2224,7 @@ export function SignalingPage({
                                         : undefined
                                     }
                                   >
-                                    {def.sortKey ? (
+                                    {def?.sortKey ? (
                                       <button
                                         type="button"
                                         onClick={() => {
