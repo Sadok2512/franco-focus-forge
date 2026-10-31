@@ -2261,7 +2261,7 @@ export function SignalingPage({
                                   ? meta
                                     ? `${meta.label}${meta.unit ? ` (${meta.unit})` : ""}`
                                     : metricCodeOf(c)
-                                  : t(`sigTable.col.${c}`);
+                                  : t(`sigTable.col.${c as Exclude<ColKey, `metric:${string}`>}`);
                                 const active = def?.sortKey && sort === def.sortKey;
                                 return (
                                   <th
