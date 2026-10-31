@@ -1,3 +1,20 @@
+## 1.126.13 (patch) — BC4-FRONT 2026-10-31 — refonte carte MAP UI V1, point actif et curseur (Agent BC4)
+
+- **MAP UI V1** : sidebar repliable en rail d'icônes (Calques, Filtres,
+  Légende, Recherche), barre du haut compacte (Sites/Cells, 4G/5G/LTE,
+  Bandes, recherche — sélecteur Operator retiré, le filtre reste dans la
+  sidebar), légende flottante en bas à gauche, contrôles droits réunis en une
+  seule barre verticale (le menu « Outils » dupliqué en bas est supprimé).
+- **Fiche du point sélectionné** : le grand popup horizontal est remplacé par
+  une carte verticale compacte en bas à droite (Radio, Serving avec distance
+  UE↔site, Anchor si existant), réductible et fermable, sans valeur inventée.
+- **Point actif** : le point cliqué s'agrandit et clignote ; réglage
+  « Taille des métriques » (0–100 %) ajouté à côté de Beam size et
+  Colour intensity, persisté et partagé entre couches.
+- **Curseur** : le curseur « main » par défaut de MapLibre est remplacé par
+  le pointeur standard sur toutes les cartes, y compris pendant le déplacement.
+- SemVer front : **PATCH 1.126.13**.
+
 ## 1.126.12 (patch) — restauration Task Bar Signaling — 2026-10-31 (BC1)
 
 - La Timeline consomme désormais les intervalles légers `task_events` de
