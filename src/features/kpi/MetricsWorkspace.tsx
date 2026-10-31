@@ -28,12 +28,10 @@ import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
   pointCellLinks,
-  pointDetails,
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
@@ -427,7 +425,6 @@ function MetricMap({
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
-  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
@@ -501,27 +498,10 @@ function MetricMap({
       if (!nextSelection) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
-        popupRef.current?.remove();
-        popupRef.current = undefined;
         return;
       }
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      popupRef.current?.remove();
       selectedPointRef.current = nextSelection;
       setSelectedPoint(nextSelection);
-      const node = buildMeasurementPointPopup(pointDetails(point, label, unit));
-      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
-        .setLngLat(e.lngLat)
-        .setDOMContent(node)
-        .addTo(map);
-      popupRef.current = popup;
-      popup.on("close", () => {
-        if (popupRef.current !== popup) return;
-        popupRef.current = undefined;
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-      });
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -542,16 +522,7 @@ function MetricMap({
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
-    popupRef.current?.remove();
-    popupRef.current = undefined;
   }, [captureId, map, projectId]);
-  useEffect(
-    () => () => {
-      popupRef.current?.remove();
-      popupRef.current = undefined;
-    },
-    [],
-  );
   const first = data?.map_points[0];
   const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
