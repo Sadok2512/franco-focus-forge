@@ -1916,27 +1916,7 @@ export function SignalingPage({
                       aria-label={t("sigTable.title")}
                     >
                       <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b px-2.5 py-1.5">
-                        <h2 className="sig-count mr-1" data-testid="signaling-total">
-                          {listing.data
-                            ? t("sigTable.count", {
-                                count: listing.data.total,
-                                n: fmtInt(listing.data.total),
-                              })
-                            : t("sigTable.countPending")}
-                        </h2>
-                        <label className="sig-search">
-                          <Search size={14} aria-hidden="true" />
-                          <input
-                            aria-label={t("sigTable.search")}
-                            placeholder={t("sigTable.searchPlaceholder")}
-                            title={t("sigTable.searchScope")}
-                            value={search}
-                            onChange={(e) => {
-                              setSearch(e.target.value);
-                              resetPage();
-                            }}
-                          />
-                        </label>
+                        {/* Demande user — ni compteur (« 22 939 messages ») ni recherche dans la barre de la table ; la recherche reste accessible dans les filtres (MessageFilterPopover / SignalingFilters). */}
                         <select
                           className="sig-select"
                           aria-label={t("sigTable.layer")}
