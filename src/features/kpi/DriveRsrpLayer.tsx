@@ -6,13 +6,13 @@ import type {
   FilterSpecification,
   GeoJSONSource,
   MapLayerMouseEvent,
-  Popup,
 } from "maplibre-gl";
 import { getMetricAnalysis, getMetricMap, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
+import { SelectedPointCard } from "./SelectedPointCard";
 import {
   RSRP_CLASSES,
   RSRP_SELECTION,
@@ -25,7 +25,6 @@ import {
   type RsrpPosition,
 } from "./drive-rsrp";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
@@ -146,7 +145,6 @@ export function DriveRsrpLayer({
   const [diagOpen, setDiagOpen] = useState(false);
   const [selectedPoint, setSelectedPoint] = useState<MeasurementPointIdentity | null>(null);
   const selectedPointRef = useRef<MeasurementPointIdentity | null>(null);
-  const popupRef = useRef<Popup | undefined>(undefined);
   const explicitCapture = useRef(false);
   const automaticRecoveryAttempted = useRef(false);
   const previousProjectId = useRef(projectId);
@@ -570,10 +568,11 @@ export function DriveRsrpLayer({
     );
   }, [map, prefs, features]);
 
+  // MAP UI V1 — the click no longer opens a large map popup: it selects the
+  // point and the compact RF card rendered below the layer panel takes over.
   useEffect(() => {
     if (!map) return;
-    let disposed = false;
-    const click = async (e: MapLayerMouseEvent) => {
+    const click = (e: MapLayerMouseEvent) => {
       // Several measurements can share one GPS fix. Keep the already-active
       // identity when it is part of the clicked stack so a second click on
       // that visual point reliably deselects it instead of selecting another
@@ -594,54 +593,35 @@ export function DriveRsrpLayer({
       if (samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
-        popupRef.current?.remove();
-        popupRef.current = undefined;
         return;
       }
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      popupRef.current?.remove();
       const identity = { projectId, captureId: effectiveCaptureId, seq };
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
-      const el = buildMeasurementPointPopup(
-        pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm"),
-      );
-      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
-        .setLngLat(e.lngLat)
-        .setDOMContent(el)
-        .addTo(map);
-      popupRef.current = popup;
-      popup.on("close", () => {
-        if (popupRef.current !== popup) return;
-        popupRef.current = undefined;
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-      });
     };
     map.on("click", LAYER, click);
     return () => {
-      disposed = true;
       map.off("click", LAYER, click);
     };
-  }, [drivePoints, effectiveCaptureId, map, projectId, t]);
+  }, [drivePoints, effectiveCaptureId, map, projectId]);
 
   // A selection is scoped to one project/capture/map workspace. Never carry
-  // its line or popup into another context, even when sequence numbers match.
+  // its line or card into another context, even when sequence numbers match.
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
-    popupRef.current?.remove();
-    popupRef.current = undefined;
   }, [effectiveCaptureId, map, projectId]);
 
-  useEffect(
-    () => () => {
-      popupRef.current?.remove();
-      popupRef.current = undefined;
-    },
-    [],
-  );
+  const clearSelection = () => {
+    selectedPointRef.current = null;
+    setSelectedPoint(null);
+  };
+
+  const selectedDetails = useMemo(() => {
+    if (!selectedPoint) return null;
+    const point = drivePoints.find((candidate) => candidate.seq === selectedPoint.seq);
+    return point ? pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm") : null;
+  }, [drivePoints, selectedPoint, t]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -702,8 +682,11 @@ export function DriveRsrpLayer({
 
   return (
     <div
-      className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}
+      className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
+      {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
+      <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
+
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <Button
           type="button"
@@ -866,6 +849,7 @@ export function DriveRsrpLayer({
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

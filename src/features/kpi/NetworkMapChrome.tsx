@@ -9,16 +9,15 @@ import {
   ChevronLeft,
   Crosshair,
   Layers,
+  List,
   LocateFixed,
   MapPin,
   Maximize2,
   Minimize2,
   Minus,
-  MousePointer2,
   Plus,
   Ruler,
   Search,
-  Settings2,
   SlidersHorizontal,
   Spline,
   X,
@@ -90,8 +89,9 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const compact = width < 760;
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
   const showPanel = panelOpen ?? !compact;
-  const [menu, setMenu] = useState<null | "bands" | "operator" | "metrics" | "tools">(null);
+  const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cursor, setCursor] = useState<[number, number] | null>(null);
   const [liveZoom, setLiveZoom] = useState<number | null>(null);
@@ -200,11 +200,14 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const measureValue =
     mode === "distance" ? formatDistance(pathLength(points)) : mode === "area" ? formatArea(polygonArea(points)) : "";
 
+  // MAP UI V1 — compact top toolbar: reduced height, spacing and buttons.
   const pill = (on: boolean) =>
-    `flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${on ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"}`;
+    `flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${on ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"}`;
   const railBtn = (on = false) =>
     `flex h-8 w-8 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
 
+  // MAP UI V1 — floating compact legend: technology, band colours and symbols
+  // only. The "site colour = operator" row is removed by design.
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
       <LegendRow title={t("mapWorkspace.technology")}>
@@ -214,11 +217,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       <LegendRow title={t("mapWorkspace.bands")}>
         {NETWORK_BANDS.filter((b) => isActive(filters.bands, [b.code])).map((b) => (
           <Swatch key={b.key} color={bandColor(b.key)} label={b.key} hideLabel={!compact} />
-        ))}
-      </LegendRow>
-      <LegendRow title={t("mapWorkspace.siteColour")}>
-        {OPERATORS.filter((o) => isActive(filters.operators, [o.v])).map((o) => (
-          <Swatch key={o.v} color={o.color} label={o.label} round hideLabel={!compact} />
         ))}
       </LegendRow>
       <LegendRow title={t("mapWorkspace.symbols")}>
@@ -268,6 +266,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
                 <Check key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onChange={() => setBand(b.code)} />
               ))}
             </Section>
+            {/* MAP UI V1 — operator filtering leaves the top toolbar and lives
+                in the sidebar Filters, so the functional filter is preserved. */}
+            <Section title={t("mapSites.operator")}>
+              {OPERATORS.map((o) => (
+                <Check key={o.v} label={o.label} color={o.color} checked={isActive(filters.operators, [o.v])} onChange={() => onToggleOperator(o.v)} />
+              ))}
+            </Section>
             <Section title={t("mapWorkspace.siteTypes")}>
               {["macro", "indoor", "smallCell"].map((k) => (
                 <Check key={k} label={t(`mapWorkspace.${k}`)} checked={false} disabled onChange={() => {}} />
@@ -281,14 +286,35 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           </div>
         </aside>
       ) : (
-        <button
-          type="button"
-          onClick={() => setPanelOpen(true)}
-          aria-label={t("mapWorkspace.expandLayers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex h-10 items-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold ${glass}`}
+        /* MAP UI V1 — collapsed sidebar keeps a compact vertical icon rail;
+           each icon reopens the panel, filters keep their values. */
+        <div
+          role="toolbar"
+          aria-orientation="vertical"
+          aria-label={t("mapWorkspace.layers")}
+          className={`pointer-events-auto absolute left-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
         >
-          <Layers className="h-4 w-4" /> {!compact && t("mapWorkspace.layers")}
-        </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.expandLayers")} onClick={() => setPanelOpen(true)}>
+            <Layers className="h-4 w-4" />
+          </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.moreFilters")} onClick={() => setPanelOpen(true)}>
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.legend")} onClick={() => setPanelOpen(true)}>
+            <List className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.search")}
+            onClick={() => {
+              if (compact) setSearchOpen(true);
+              searchInputRef.current?.focus();
+            }}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       {/* 1.126.3 BC3 — Overlay « Zoomez pour voir les cellules » quand
@@ -307,7 +333,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {/* Top — floating filter toolbar */}
       <div
         className="pointer-events-none absolute top-3 flex justify-center"
-        style={{ left: showPanel && !compact ? 248 : compact ? 64 : 140, right: compact ? 56 : 380 }}
+        style={{ left: showPanel && !compact ? 248 : 64, right: compact ? 56 : 380 }}
       >
         <div data-testid="map-workspace-topbar" className={`pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1 ${glass}`}>
           <button type="button" aria-pressed={enabled} onClick={() => onToggleEnabled(!enabled)} className={pill(enabled)}>
@@ -340,15 +366,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               <MenuCheck key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onClick={() => setBand(b.code)} />
             ))}
           </Dropdown>
-          <Dropdown
-            open={menu === "operator"}
-            onOpen={(o) => setMenu(o ? "operator" : null)}
-            label={`${t("mapSites.operator")} (${filters.operators.length || t("common.all")})`}
-          >
-            {OPERATORS.map((o) => (
-              <MenuCheck key={o.v} label={o.label} color={o.color} checked={isActive(filters.operators, [o.v])} onClick={() => onToggleOperator(o.v)} />
-            ))}
-          </Dropdown>
           <button type="button" onClick={() => setPanelOpen(!showPanel)} className={pill(false)}>
             <SlidersHorizontal className="h-3.5 w-3.5" /> {!compact && t("mapWorkspace.moreFilters")}
             {filterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[9px] text-primary-foreground">{filterCount}</span>}
@@ -367,6 +384,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           <label className={`flex h-10 items-center gap-2 rounded-xl px-3 ${glass}`}>
             <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <input
+              ref={searchInputRef}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={t("mapWorkspace.searchPlaceholder")}
@@ -429,9 +447,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </button>
         <button type="button" className={railBtn(mode === "area")} aria-pressed={mode === "area"} aria-label={t("mapWorkspace.area")} onClick={() => startMeasure("area")}>
           <Spline className="h-4 w-4" />
-        </button>
-        <button type="button" className={railBtn(mode === "none")} aria-pressed={mode === "none"} aria-label={t("mapWorkspace.select")} onClick={() => setMode("none")}>
-          <MousePointer2 className="h-4 w-4" />
         </button>
         <button type="button" className={railBtn(basemapOpen)} aria-expanded={basemapOpen} aria-label={t("mapWorkspace.basemap")} onClick={() => setBasemapOpen((v) => !v)}>
           <Layers className="h-4 w-4" />
@@ -509,12 +524,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               <p className="text-[10px] text-muted-foreground">{t("mapWorkspace.heatmapUnavailable")}</p>
             </div>
           </Dropdown>
-          <Dropdown up open={menu === "tools"} onOpen={(o) => setMenu(o ? "tools" : null)} label={<><Settings2 className="h-3.5 w-3.5" />{!compact && t("mapWorkspace.tools")}</>}>
-            <MenuItem onClick={() => startMeasure("distance")}>{t("mapWorkspace.distance")}</MenuItem>
-            <MenuItem onClick={() => startMeasure("area")}>{t("mapWorkspace.area")}</MenuItem>
-            <MenuItem onClick={() => { setPoints([]); setMode("none"); setMenu(null); }}>{t("mapWorkspace.clearMeasure")}</MenuItem>
-            <MenuItem onClick={() => { props.onRecenter?.(); setMenu(null); }}>{t("mapWorkspace.centerRoute")}</MenuItem>
-          </Dropdown>
+          {/* MAP UI V1 — the measure/recenter tools live only in the right
+              rail; the duplicated Tools dropdown is removed. */}
         </div>
         {!compact && <span className="w-0 shrink" />}
       </div>
@@ -585,13 +596,6 @@ function MenuCheck({ label, checked, onClick, color }: { label: string; checked:
   );
 }
 
-function MenuItem({ children, onClick }: { children: ReactNode; onClick: () => void }) {
-  return (
-    <button type="button" role="menuitem" onClick={onClick} className="block w-full rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-muted">
-      {children}
-    </button>
-  );
-}
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
