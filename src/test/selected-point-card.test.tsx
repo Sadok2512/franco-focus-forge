@@ -28,7 +28,7 @@ const point = {
   },
 };
 
-const details = (p: typeof point | Omit<typeof point, "nr_anchor_link">) =>
+const details = (p: Parameters<typeof pointDetails>[0]) =>
   pointDetails(p, "RSRP (LTE) @ Serving", "dBm");
 
 describe("MAP UI V1 selected-point RF card", () => {
