@@ -29,7 +29,7 @@ export function KpiMeasurementMap({
   captureId: string | undefined;
   onCaptureChange: (capture: string) => void;
   filters: KpiQueryFilters;
-  workspaceId?: string;
+  workspaceId?: string | undefined;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   // The capture endpoint has no analytical filter arguments. Never silently ignore them.
