@@ -232,6 +232,29 @@ export function radioAt(points: SeriesPoint[] | undefined, t: number | null | un
   return null;
 }
 
+/**
+ * Latest observation at or before `t` for an added metric column; numeric and
+ * categorical values are both shown as-is, never interpolated. Points must be
+ * sorted by time.
+ */
+export function seriesValueAt(points: SeriesPoint[] | undefined, t: number | null | undefined) {
+  if (!points?.length || t == null) return null;
+  let lo = 0,
+    hi = points.length - 1,
+    found = -1;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    if (points[mid]!.t_rel_s <= t) {
+      found = mid;
+      lo = mid + 1;
+    } else hi = mid - 1;
+  }
+  if (found < 0) return null;
+  const p = points[found]!;
+  if (typeof p.value === "number" && !Number.isFinite(p.value)) return null;
+  return { value: p.value, dtS: t - p.t_rel_s, seq: p.seq, t: p.t_rel_s } satisfies MetricReading;
+}
+
 /** Page numbers with ellipses: 1 … 4 5 6 … 137 */
 export function pageItems(page: number, pages: number): (number | "…")[] {
   if (pages <= 7) return Array.from({ length: pages }, (_, i) => i + 1);
