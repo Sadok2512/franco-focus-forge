@@ -544,7 +544,10 @@
     "CONFIGURED": "configurées",
     "ACTIVATED": "activées",
     "USED": "utilisées",
-    "unavailable": "Les intervalles UE / RRC exigent des bornes prouvées, une identité de session et des séquences source."
+    "unavailable": "Les intervalles UE / RRC exigent des bornes prouvées, une identité de session et des séquences source.",
+    "inspection": "Signaling View",
+    "metrics": "Métriques",
+    "metricsEmpty": "Choisissez des métriques dans le catalogue pour afficher leurs graphes sur cette capture."
   },
   "timeNavigator": {
     "title": "Navigateur temporel",

@@ -58,6 +58,8 @@ import {
   RadioTower,
   Search,
   SlidersHorizontal,
+  ListTree,
+  LineChart,
 } from "lucide-react";
 import {
   DropdownMenu,
