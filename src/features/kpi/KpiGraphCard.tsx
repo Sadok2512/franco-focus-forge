@@ -452,20 +452,32 @@ export function KpiGraphCard({
       data-code={entry.item.code}
       data-visualization={config.visualization}
       data-status={status}
+      style={config.visualization === "map" ? { position: "relative" } : undefined}
       onFocus={onActivate}
     >
-      <header className="kpi-card-header">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="kpi-order">{index + 1}</span>
-            <h3 title={entry.item.name}>{entry.item.name}</h3>
+      <header
+        className="kpi-card-header"
+        style={
+          config.visualization === "map"
+            ? { position: "absolute", top: 6, right: 6, zIndex: 30, padding: 0, border: 0 }
+            : undefined
+        }
+      >
+        {config.visualization !== "map" && (
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="kpi-order">{index + 1}</span>
+              <h3 title={entry.item.name}>{entry.item.name}</h3>
+            </div>
+            <p>
+              {techLabel(entry.techno)} · {entry.family} ·{" "}
+              {data?.unit ?? entry.item.unit ?? translate("kpi.8246d8942ee4")}
+            </p>
           </div>
-          <p>
-            {techLabel(entry.techno)} · {entry.family} ·{" "}
-            {data?.unit ?? entry.item.unit ?? translate("kpi.8246d8942ee4")}
-          </p>
-        </div>
-        <div className="flex gap-0.5 shrink-0">
+        )}
+        <div
+          className={`flex gap-0.5 shrink-0 ${config.visualization === "map" ? "rounded-md bg-card/90 shadow-sm" : ""}`}
+        >
           <Popover open={settings} onOpenChange={setSettings}>
             <PopoverAnchor asChild>
               <span className="inline-flex">

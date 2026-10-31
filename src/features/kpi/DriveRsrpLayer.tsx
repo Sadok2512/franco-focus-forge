@@ -39,6 +39,8 @@ import {
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
 const SELECTED_LAYER = "bc4-drive-rsrp-selected";
+const SERVING_SITE_SOURCE = "bc4-drive-rsrp-serving-site";
+const SERVING_SITE_LAYER = "bc4-drive-rsrp-serving-site";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
 const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
 const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
@@ -446,7 +448,9 @@ export function DriveRsrpLayer({
                 CELL_LINK_STYLE.mutedOpacity,
                 CELL_LINK_STYLE.opacity,
               ],
-              ...(spec.confidence === "probable"
+              // The serving line is always continuous (user request);
+              // only neighbour/NR probable links keep the dash.
+              ...(spec.confidence === "probable" && !spec.serving
                 ? { "line-dasharray": CELL_LINK_STYLE.probableDash }
                 : {}),
             },
@@ -542,6 +546,62 @@ export function DriveRsrpLayer({
       if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
   }, [map, features, linkFeatures, prefs, metricSize, selectedPoint]);
+
+  // Serving site circle: a pulsing ring at the API-published serving cell
+  // position of the selected point (never inferred).
+  useEffect(() => {
+    if (!map) return;
+    const site = prefs.on && prefs.links.serving ? activeServing?.link : undefined;
+    const data = {
+      type: "FeatureCollection" as const,
+      features: site
+        ? [
+            {
+              type: "Feature" as const,
+              geometry: { type: "Point" as const, coordinates: [site.lng, site.lat] },
+              properties: {},
+            },
+          ]
+        : [],
+    };
+    let timer: number | undefined;
+    const install = () => {
+      if (!map.getSource(SERVING_SITE_SOURCE))
+        map.addSource(SERVING_SITE_SOURCE, { type: "geojson", data });
+      else (map.getSource(SERVING_SITE_SOURCE) as GeoJSONSource).setData(data);
+      if (!map.getLayer(SERVING_SITE_LAYER))
+        map.addLayer({
+          id: SERVING_SITE_LAYER,
+          type: "circle",
+          source: SERVING_SITE_SOURCE,
+          paint: {
+            "circle-radius": 10,
+            "circle-color": CELL_LINK_COLORS.serving,
+            "circle-opacity": 0.25,
+            "circle-stroke-width": 3,
+            "circle-stroke-color": CELL_LINK_COLORS.serving,
+          },
+        });
+      map.moveLayer(SERVING_SITE_LAYER);
+      if (!site) return;
+      const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      let pulse = 0;
+      const paint = () => {
+        if (!map.getLayer(SERVING_SITE_LAYER)) return;
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 15 : 10);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.35 : 1);
+        pulse = pulse ? 0 : 1;
+      };
+      paint();
+      if (!reduced) timer = window.setInterval(paint, 500);
+    };
+    if (map.getStyle?.() || map.isStyleLoaded()) install();
+    else map.once("load", install);
+    return () => {
+      map.off("load", install);
+      if (timer !== undefined) window.clearInterval(timer);
+    };
+  }, [map, activeServing, prefs.on, prefs.links.serving]);
 
   useEffect(() => {
     if (!map || !selectedPoint || !prefs.on) return;

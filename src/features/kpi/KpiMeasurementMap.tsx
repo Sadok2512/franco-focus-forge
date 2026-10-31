@@ -182,31 +182,10 @@ export function KpiMeasurementMap({
                     : "",
               })
             : translate("kpi.912d53fb4f88");
+  // No capture selector (user request): the card follows the active capture,
+  // defaulting to the first one returned by the API.
   return (
     <div>
-      {allowed && !!captures.data?.length && (
-        <label className="kpi-select-label mb-2">
-          Capture
-          <select
-            aria-label={`Capture carte ${code}`}
-            value={captureId ?? ""}
-            onChange={(event) => onCaptureChange(event.target.value)}
-          >
-            <option value="" disabled>
-              {" "}
-              {translate("kpi.b07b688a46b7")}{" "}
-            </option>
-            {captureId && !captures.data.some((c) => c.capture_id === captureId) && (
-              <option value={captureId}>{captureId}</option>
-            )}
-            {captures.data.map((c) => (
-              <option key={c.capture_id} value={c.capture_id}>
-                {c.capture_id}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
       {(captures.isError || query.isError) && (
         <button
           className="kpi-button"
@@ -220,7 +199,7 @@ export function KpiMeasurementMap({
         </button>
       )}
       <KpiMapOSM
-        premium
+        workspace
         showOperatorLegend={false}
         measurementStatus={null}
         onMapReady={setMap}
