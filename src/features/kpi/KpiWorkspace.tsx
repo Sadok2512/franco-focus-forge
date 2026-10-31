@@ -988,6 +988,9 @@ function Workspace({
             <div id="kpi-workspace-data">
               {(() => {
                 if (!panels.length) return null;
+                // A map card never brings a data table with it (user request).
+                if (panels.every((panel) => configFor(panel.entry.item.code).visualization === "map"))
+                  return null;
                 // 1.43.0 — Tableau brut : si au moins un KPI « temporel »
                 // (temporal_source != null) est sélectionné en mode
                 // Graphique, on affiche les observations brutes de la

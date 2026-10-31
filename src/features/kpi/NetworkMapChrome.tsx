@@ -96,6 +96,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const compact = width < 760;
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
   const showPanel = panelOpen ?? !compact;
+  const [panelTab, setPanelTab] = useState<"layers" | "legend">("layers");
+  const tab = props.layersLegend ? panelTab : "layers";
   const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -322,7 +324,24 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           className={`pointer-events-auto absolute left-3 top-3 flex w-56 flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[76px]"}`}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
-            <h2 className="text-xs font-semibold">{t("mapWorkspace.layers")}</h2>
+            {props.layersLegend ? (
+              <div role="tablist" className="flex gap-1 text-xs font-semibold">
+                {(["layers", "legend"] as const).map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === id}
+                    onClick={() => setPanelTab(id)}
+                    className={`rounded px-2 py-0.5 ${tab === id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                  >
+                    {t(id === "layers" ? "mapWorkspace.layers" : "mapWorkspace.legend")}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <h2 className="text-xs font-semibold">{t("mapWorkspace.layers")}</h2>
+            )}
             <button
               type="button"
               aria-label={t("mapWorkspace.collapse")}
@@ -333,9 +352,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
-            {props.layersLegend && (
-              <Section title={t("mapWorkspace.metricLegend")}>{props.layersLegend}</Section>
-            )}
+            {tab === "legend" ? (
+              props.layersLegend
+            ) : (
+              <>
             <Section title={t("mapWorkspace.sitesAndCells")}>
               <Check label={t("mapWorkspace.sites")} checked={enabled} onChange={onToggleEnabled} />
               <Check
@@ -427,6 +447,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               />
             </Section>
             {compact && <Section title={t("mapWorkspace.legend")}>{legend}</Section>}
+              </>
+            )}
           </div>
         </aside>
       ) : (

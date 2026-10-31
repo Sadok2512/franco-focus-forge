@@ -6,7 +6,14 @@ import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import { getKpiCaptures, getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { classOf, metricClasses } from "./metric-classes";
+import {
+  MAX_CLASSES,
+  MIN_CLASSES,
+  classOf,
+  metricClasses,
+  useMetricLegendSettings,
+} from "./metric-classes";
+import { DriveRsrpLayer } from "./DriveRsrpLayer";
 
 export function KpiMeasurementMap({
   projectId,
@@ -65,11 +72,13 @@ export function KpiMeasurementMap({
       { padding: 40, maxZoom: 15, duration: 0 },
     );
   };
-  const classes = useMemo(
-    () => metricClasses(code, features.map((f) => Number(f.properties.value))),
-    [code, features],
-  );
   const [hidden, setHidden] = useState<string[]>([]);
+  const [legendSettings, setLegendSettings] = useMetricLegendSettings(code);
+  const classes = useMemo(
+    () => metricClasses(code, features.map((f) => Number(f.properties.value)), legendSettings),
+    [code, features, legendSettings],
+  );
+  useEffect(() => setHidden([]), [classes.length]);
   const colored = useMemo(
     () =>
       features.flatMap((f) => {
@@ -96,10 +105,13 @@ export function KpiMeasurementMap({
         type: "circle",
         source: "kpi-measures",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 4.5, 18, 7],
+          // Same look as the Signaling drive points: solid fill in the legend
+          // colour, thin dark outline so light basemaps never wash it out.
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 6, 18, 9],
           "circle-color": ["get", "color"],
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 0.6,
+          "circle-opacity": 1,
+          "circle-stroke-color": "rgba(15,23,42,0.55)",
+          "circle-stroke-width": 0.5,
         },
       });
     }
@@ -121,7 +133,8 @@ export function KpiMeasurementMap({
         {code}
         {unit ? ` (${unit})` : ""}
       </div>
-      {[...classes].reverse().map((c) => {
+      {[...classes].reverse().map((c, ri) => {
+        const index = classes.length - 1 - ri;
         const off = hidden.includes(c.id);
         const range =
           c.min === -Infinity
@@ -139,7 +152,7 @@ export function KpiMeasurementMap({
             }
             className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
           >
-            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} data-index={index} />
             <span className="flex-1">{range}</span>
             <span className="tabular-nums text-muted-foreground">
               {(counts.get(c.id) ?? 0).toLocaleString()}
@@ -147,6 +160,49 @@ export function KpiMeasurementMap({
           </button>
         );
       })}
+      <div className="mt-2 space-y-1 border-t pt-2">
+        <div className="font-semibold">{translate("mapWorkspace.legendSettings")}</div>
+        <label className="flex items-center justify-between gap-2">
+          {translate("mapWorkspace.legendCount")}
+          <select
+            className="rounded border bg-background px-1 py-0.5"
+            value={classes.length}
+            onChange={(e) => setLegendSettings({ count: Number(e.target.value), colors: {} })}
+          >
+            {Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map(
+              (n) => (
+                <option key={n} value={n}>
+                  {n}
+                </option>
+              ),
+            )}
+          </select>
+        </label>
+        <div className="flex flex-wrap gap-1">
+          {classes.map((c, i) => (
+            <input
+              key={c.id}
+              type="color"
+              aria-label={c.id}
+              value={c.color}
+              onChange={(e) =>
+                setLegendSettings({
+                  ...legendSettings,
+                  colors: { ...legendSettings.colors, [i]: e.target.value },
+                })
+              }
+              className="h-5 w-6 cursor-pointer rounded border p-0"
+            />
+          ))}
+        </div>
+        <button
+          type="button"
+          className="text-primary underline"
+          onClick={() => setLegendSettings({ count: null, colors: {} })}
+        >
+          {translate("mapWorkspace.legendReset")}
+        </button>
+      </div>
     </div>
   ) : null;
   useEffect(() => {
@@ -226,6 +282,9 @@ export function KpiMeasurementMap({
         layersLegend={legend}
         routeCoordinates={routeCoordinates}
       >
+        {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
+            lines to the API-published cells and the blinking serving site. */}
+        <DriveRsrpLayer map={map} projectId={projectId} activeCaptureId={captureId ?? ""} autoFrame={false} />
         <div
           role="status"
           className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"

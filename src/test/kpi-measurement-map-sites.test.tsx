@@ -28,6 +28,7 @@ vi.mock("maplibre-gl", () => {
     addControl() {}
     addSource() {}
     addLayer() {}
+    moveLayer() {}
     getSource() {
       return { setData: vi.fn() };
     }
