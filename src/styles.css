@@ -268,9 +268,11 @@ html.dark {
 html[data-density="comfortable"] body { font-size: 14px; }
 
 /* Map cursor: standard pointer instead of MapLibre's default hand (grab).
+   MapLibre's CSS is imported asynchronously (after this file), so specificity
+   must exceed `.maplibregl-interactive` and `.maplibregl-interactive:active`.
    Clickable features (sites, points) still set cursor:pointer from app code. */
-.maplibregl-canvas-container.maplibregl-interactive,
-.maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
+html .maplibregl-canvas-container.maplibregl-interactive,
+html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
 
 /* Shared network-map site/cell popup (Map page + Signaling View). */
 .bc4-net-popup { z-index: 30; }
