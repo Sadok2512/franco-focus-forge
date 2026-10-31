@@ -267,12 +267,10 @@ html.dark {
 
 html[data-density="comfortable"] body { font-size: 14px; }
 
-/* Map cursor: standard pointer instead of MapLibre's default hand (grab). */
-.maplibregl-canvas-container.maplibregl-interactive { cursor: default; }
+/* Map cursor: standard pointer instead of MapLibre's default hand (grab).
+   Clickable features (sites, points) still set cursor:pointer from app code. */
+.maplibregl-canvas-container.maplibregl-interactive,
 .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
-.maplibregl-canvas-container.maplibregl-interactive .maplibregl-canvas { cursor: default; }
-.maplibregl-map.mouse-add .maplibregl-canvas-container.maplibregl-interactive { cursor: crosshair; }
-.maplibregl-canvas-container.maplibregl-interactive:where(.maplibregl-clickable, [style*="pointer"]) { cursor: pointer; }
 
 /* Shared network-map site/cell popup (Map page + Signaling View). */
 .bc4-net-popup { z-index: 30; }
