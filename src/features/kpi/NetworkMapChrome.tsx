@@ -9,16 +9,15 @@ import {
   ChevronLeft,
   Crosshair,
   Layers,
+  List,
   LocateFixed,
   MapPin,
   Maximize2,
   Minimize2,
   Minus,
-  MousePointer2,
   Plus,
   Ruler,
   Search,
-  Settings2,
   SlidersHorizontal,
   Spline,
   X,
@@ -90,8 +89,9 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const compact = width < 760;
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
   const showPanel = panelOpen ?? !compact;
-  const [menu, setMenu] = useState<null | "bands" | "operator" | "metrics" | "tools">(null);
+  const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [cursor, setCursor] = useState<[number, number] | null>(null);
   const [liveZoom, setLiveZoom] = useState<number | null>(null);
@@ -523,12 +523,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               <p className="text-[10px] text-muted-foreground">{t("mapWorkspace.heatmapUnavailable")}</p>
             </div>
           </Dropdown>
-          <Dropdown up open={menu === "tools"} onOpen={(o) => setMenu(o ? "tools" : null)} label={<><Settings2 className="h-3.5 w-3.5" />{!compact && t("mapWorkspace.tools")}</>}>
-            <MenuItem onClick={() => startMeasure("distance")}>{t("mapWorkspace.distance")}</MenuItem>
-            <MenuItem onClick={() => startMeasure("area")}>{t("mapWorkspace.area")}</MenuItem>
-            <MenuItem onClick={() => { setPoints([]); setMode("none"); setMenu(null); }}>{t("mapWorkspace.clearMeasure")}</MenuItem>
-            <MenuItem onClick={() => { props.onRecenter?.(); setMenu(null); }}>{t("mapWorkspace.centerRoute")}</MenuItem>
-          </Dropdown>
+          {/* MAP UI V1 — the measure/recenter tools live only in the right
+              rail; the duplicated Tools dropdown is removed. */}
         </div>
         {!compact && <span className="w-0 shrink" />}
       </div>
