@@ -957,6 +957,7 @@
     "beams": "Faisceaux",
     "beamSize": "Taille des faisceaux",
     "beamIntensity": "Intensité des couleurs",
+    "metricSize": "Taille des métriques",
     "labels": "Étiquettes",
     "technology": "Technologie",
     "notInData": "Absent des données réseau",
