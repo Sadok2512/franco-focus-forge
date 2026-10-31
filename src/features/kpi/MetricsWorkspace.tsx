@@ -457,7 +457,11 @@ function MetricMap({
         "circle-color",
         metricColorExpression(minValue, maxValue, preferences.palette),
       );
-      map.setPaintProperty("metrics-v3", "circle-radius", preferences.pointSize);
+      map.setPaintProperty(
+        "metrics-v3",
+        "circle-radius",
+        metricRadiusExpression(preferences.pointSize),
+      );
     } else {
       installMetricMapSource(
         map,
