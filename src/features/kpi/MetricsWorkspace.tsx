@@ -12,6 +12,7 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -303,6 +304,23 @@ function metricColorExpression(
   ] as ExpressionSpecification;
 }
 
+/** Same zoom-scaled radius as the Signaling drive points (4→6→9 px); the
+ * point-size setting scales it, so the default 3 matches Signaling exactly. */
+export function metricRadiusExpression(pointSize = 3): ExpressionSpecification {
+  const k = pointSize / 3;
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    9,
+    4 * k,
+    14,
+    6 * k,
+    18,
+    9 * k,
+  ] as ExpressionSpecification;
+}
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
@@ -318,9 +336,12 @@ export function installMetricMapSource(
     type: "circle",
     source: "metrics-v3",
     paint: {
-      "circle-radius": pointSize,
-      "circle-opacity": 0.86,
+      // Same look as the Signaling drive points: solid fill, thin dark outline.
+      "circle-radius": metricRadiusExpression(pointSize),
+      "circle-opacity": 1,
       "circle-color": metricColorExpression(minValue, maxValue, palette),
+      "circle-stroke-color": "rgba(15,23,42,0.55)",
+      "circle-stroke-width": 0.5,
     },
   });
 }
@@ -401,6 +422,9 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
+  // same wiring as the Signaling and KPI measurement maps.
+  const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
   const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
@@ -436,7 +460,11 @@ function MetricMap({
         "circle-color",
         metricColorExpression(minValue, maxValue, preferences.palette),
       );
-      map.setPaintProperty("metrics-v3", "circle-radius", preferences.pointSize);
+      map.setPaintProperty(
+        "metrics-v3",
+        "circle-radius",
+        metricRadiusExpression(preferences.pointSize),
+      );
     } else {
       installMetricMapSource(
         map,
@@ -533,21 +561,11 @@ function MetricMap({
     }),
     { serving: 0, neighbour: 0, nr_anchor: 0 },
   );
-  const content = (addedLegend: ReactNode) => (
-    <KpiMapOSM
-      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
-      layersLegend={addedLegend}
-      zoom={first ? 13 : 5}
-      showOperatorLegend={false}
-      flush
-      workspace
-      contextLabel={translate("metrics.b7ef3d32472c")}
-      onMapReady={setMap}
-      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
-      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
-    >
-      <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
-        <div className="kpi-metric-map-legend-title">
+  // The metric legend lives in the Layers panel's Legend tab, like the
+  // Signaling map — nothing floats over the map itself.
+  const legend = (
+    <div className="space-y-1" data-testid="metric-map-legend">
+      <div className="kpi-metric-map-legend-title">
           <strong>
             {label}
             {unit ? ` · ${unit}` : ""}
@@ -586,7 +604,7 @@ function MetricMap({
               </select>
             </label>
             <label>
-              {translate("metrics.mapPointSize")} · {preferences.pointSize}px
+              {translate("metrics.mapPointSize")} · {preferences.pointSize}
               <input
                 type="range"
                 min="1"
@@ -636,7 +654,39 @@ function MetricMap({
             </div>
           </div>
         )}
-      </div>
+    </div>
+  );
+  const content = (addedLegend: ReactNode) => (
+    <KpiMapOSM
+      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
+      layersLegend={
+        <>
+          {legend}
+          {addedLegend}
+          <div ref={setDriveLegendHost} />
+        </>
+      }
+      zoom={first ? 13 : 5}
+      showOperatorLegend={false}
+      flush
+      workspace
+      contextLabel={translate("metrics.b7ef3d32472c")}
+      onMapReady={setMap}
+      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
+      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
+    >
+      {/* Same drive layer as Signaling View: serving/neighbour lines to the
+      API-published cells and the blinking serving site on point selection. */}
+      <DriveRsrpLayer
+        map={map}
+        projectId={projectId}
+        activeCaptureId={captureId}
+        autoFrame={false}
+        hidePoints
+        hideControls
+        legendHost={driveLegendHost}
+        selectionLayerId="metrics-v3"
+      />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
           <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}
