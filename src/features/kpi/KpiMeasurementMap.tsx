@@ -14,6 +14,7 @@ import {
   useMetricLegendSettings,
 } from "./metric-classes";
 import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import { MapMetricDropTarget } from "./MapMetricDropTarget";
 
 export function KpiMeasurementMap({
   projectId,
@@ -21,12 +22,14 @@ export function KpiMeasurementMap({
   captureId,
   onCaptureChange,
   filters,
+  workspaceId = "kpi",
 }: {
   projectId: string;
   code: string;
   captureId: string | undefined;
   onCaptureChange: (capture: string) => void;
   filters: KpiQueryFilters;
+  workspaceId?: string | undefined;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   // The capture endpoint has no analytical filter arguments. Never silently ignore them.
@@ -51,7 +54,10 @@ export function KpiMeasurementMap({
   }, [allowed, captureId, captures.data, onCaptureChange]);
   const query = useQuery({
     queryKey: ["kpi-timeseries", projectId, captureId, code, 5000],
-    queryFn: ({ signal }) => getKpiTimeSeries(projectId, captureId!, code, 5000, signal),
+    queryFn: ({ signal }) => {
+      if (!captureId) throw new Error(translate("kpi.b07b688a46b7"));
+      return getKpiTimeSeries(projectId, captureId, code, 5000, signal);
+    },
     enabled: allowed && !!captureId,
   });
   const features = useMemo(() => (allowed ? mapFeatures(query.data) : []), [allowed, query.data]);
@@ -252,31 +258,47 @@ export function KpiMeasurementMap({
         </button>
       )}
       <div className="relative min-h-0 flex-1">
-        <KpiMapOSM
-          workspace
-          showOperatorLegend={false}
-          measurementStatus={null}
-          onMapReady={setMap}
-          onRecenter={recenter}
-          layersLegend={legend}
-          routeCoordinates={routeCoordinates}
+        <MapMetricDropTarget
+          base={{ kind: "kpi", code, label: code, unit }}
+          map={map}
+          projectId={projectId}
+          captureId={captureId}
+          filters={filters}
+          workspaceId={workspaceId}
         >
-          {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
+          {(addedLegend) => (
+            <KpiMapOSM
+              workspace
+              showOperatorLegend={false}
+              measurementStatus={null}
+              onMapReady={setMap}
+              onRecenter={recenter}
+              layersLegend={
+                <>
+                  {legend}
+                  {addedLegend}
+                </>
+              }
+              routeCoordinates={routeCoordinates}
+            >
+              {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
             lines to the API-published cells and the blinking serving site. */}
-          <DriveRsrpLayer
-            map={map}
-            projectId={projectId}
-            activeCaptureId={captureId ?? ""}
-            autoFrame={false}
-            hidePoints
-          />
-          <div
-            role="status"
-            className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
-          >
-            {message}
-          </div>
-        </KpiMapOSM>
+              <DriveRsrpLayer
+                map={map}
+                projectId={projectId}
+                activeCaptureId={captureId ?? ""}
+                autoFrame={false}
+                hidePoints
+              />
+              <div
+                role="status"
+                className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+              >
+                {message}
+              </div>
+            </KpiMapOSM>
+          )}
+        </MapMetricDropTarget>
       </div>
     </div>
   );

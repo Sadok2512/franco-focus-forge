@@ -2,7 +2,8 @@ import { Columns3, Download, Info, LoaderCircle, Maximize2, Settings2, X } from 
 import { CaptureSheet } from "./CaptureSheet";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
@@ -381,6 +382,7 @@ function MetricMap({
   error,
   onRetry,
   routeCoordinates = [],
+  dropContext,
 }: {
   data?: MetricMapData | undefined;
   projectId: string;
@@ -394,6 +396,7 @@ function MetricMap({
   error?: Error | null | undefined;
   onRetry: () => void;
   routeCoordinates?: Array<[number, number]> | undefined;
+  dropContext?: { selection: string; workspaceId: string; filters: KpiQueryFilters };
 }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
@@ -530,9 +533,10 @@ function MetricMap({
     }),
     { serving: 0, neighbour: 0, nr_anchor: 0 },
   );
-  return (
+  const content = (addedLegend: ReactNode) => (
     <KpiMapOSM
       center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
+      layersLegend={addedLegend}
       zoom={first ? 13 : 5}
       showOperatorLegend={false}
       flush
@@ -648,6 +652,20 @@ function MetricMap({
       )}
     </KpiMapOSM>
   );
+  return dropContext ? (
+    <MapMetricDropTarget
+      base={{ kind: "metric", code: dropContext.selection, label, unit }}
+      map={map}
+      projectId={projectId}
+      captureId={captureId}
+      filters={dropContext.filters}
+      workspaceId={dropContext.workspaceId}
+    >
+      {content}
+    </MapMetricDropTarget>
+  ) : (
+    content(null)
+  );
 }
 function MetricMapCard({
   selection,
@@ -663,6 +681,7 @@ function MetricMapCard({
   workspaceId,
   projectCenter,
   routeCoordinates,
+  filters,
 }: {
   selection: string;
   projectId: string;
@@ -677,6 +696,7 @@ function MetricMapCard({
   workspaceId: string;
   projectCenter?: [number, number] | undefined;
   routeCoordinates?: Array<[number, number]> | undefined;
+  filters: KpiQueryFilters;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const [preferences, setPreferences] = useState(() =>
@@ -730,6 +750,7 @@ function MetricMapCard({
         error={error}
         onRetry={onRetry}
         routeCoordinates={routeCoordinates}
+        dropContext={{ selection, workspaceId, filters }}
       />
     </article>
   );
@@ -1316,6 +1337,7 @@ export function MetricsWorkspace({
                     metricView === "map" ? (
                       <MetricMapCard
                         selection={s.full}
+                        filters={filters}
                         projectId={projectId}
                         captureId={captureId!}
                         title={title}
