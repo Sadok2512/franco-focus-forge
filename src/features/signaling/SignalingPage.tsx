@@ -1452,8 +1452,8 @@ export function SignalingPage({
       </span>
     );
   };
-  const metricCell = (code: string, t: number | null) => {
-    const r = seriesValueAt(metricPoints.get(code), t);
+  const metricCell = (code: string, timeS: number | null) => {
+    const r = seriesValueAt(metricPoints.get(code), timeS);
     if (!r) return <span className="text-muted-foreground">—</span>;
     const exact = r.dtS === 0;
     const text = typeof r.value === "number" ? fmtRadio(r.value) : r.value;
@@ -2078,7 +2078,7 @@ export function SignalingPage({
                                   ? meta
                                     ? `${meta.label}${meta.unit ? ` (${meta.unit})` : ""}`
                                     : metricCodeOf(c)
-                                  : t(`sigTable.col.${c}`);
+                                  : t(`sigTable.col.${c as Exclude<ColKey, `metric:${string}`>}`);
                                 return (
                                   <div
                                     key={c}
