@@ -55,7 +55,6 @@ import {
   Maximize,
   Minimize,
   RadioTower,
-  Search,
   SlidersHorizontal,
   ListTree,
   LineChart,
