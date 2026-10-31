@@ -8,6 +8,7 @@
 import { z } from "zod";
 import {
   ApiNetworkError,
+  ApiHttpError,
   ApiSchemaError,
   apiBase,
   apiFetch,
@@ -18,6 +19,8 @@ import {
 } from "./http";
 import {
   CellSummarySchema,
+  CellReferenceJobAcceptedSchema,
+  CellReferenceJobSchema,
   ImportReportSchema,
   ReferenceImportEntrySchema,
   type CellSummary,
@@ -31,14 +34,42 @@ export type UploadProgress = { loaded: number; total: number; percent: number | 
 export type UploadOptions = {
   signal?: AbortSignal;
   onProgress?: (p: UploadProgress) => void;
+  onJobProgress?: (status: string, percent: number) => void;
 };
 
-/** POST /reference/cell/upload — ingestion complète du référentiel 4G/5G.
+const JOB_POLL_MS = 1_000;
+
+async function waitForCellReferenceJob(
+  jobId: string,
+  opts: UploadOptions,
+): Promise<ImportReport> {
+  while (true) {
+    if (opts.signal?.aborted) throw Object.assign(new Error("Upload annulé"), { code: "ABORTED" });
+    const job = await apiFetch(
+      `/settings/cell-ref/jobs/${encodeURIComponent(jobId)}`,
+      CellReferenceJobSchema,
+      { signal: opts.signal },
+    );
+    opts.onJobProgress?.(job.status, job.progress_percent);
+    if ((job.status === "completed" || job.status === "empty") && job.report) {
+      return job.report;
+    }
+    if (job.status === "failed") {
+      throw new ApiHttpError(
+        job.error?.code ?? "CELL_REFERENCE_IMPORT_FAILED",
+        job.error?.reason ?? "L'import du référentiel a échoué.",
+        422,
+        job.error,
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, JOB_POLL_MS));
+  }
+}
+
+/** POST /settings/cell-ref/upload — mise en file du référentiel 4G/5G.
  *
- * Cette route crée/met à jour les cellules, sites, coordonnées, bandes et
- * azimuts. `/settings/cell-ref/upload` ne fait qu'enrichir les dimensions
- * géographiques de cellules déjà présentes et ne peut donc pas alimenter une
- * base `cell_ref` vide.
+ * Le multipart est persisté puis le résultat du job d'ingestion complète est
+ * suivi jusqu'à son état terminal.
  */
 export async function uploadCellReference(
   file: File,
@@ -53,7 +84,7 @@ export async function uploadCellReference(
 
   return new Promise<ImportReport>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
-    xhr.open("POST", `${apiBase()}/reference/cell/upload`, true);
+    xhr.open("POST", `${apiBase()}/settings/cell-ref/upload`, true);
     const s = getSession();
     if (s) {
       xhr.setRequestHeader("Authorization", `Bearer ${s.token}`);
@@ -77,19 +108,20 @@ export async function uploadCellReference(
         reject(e as Error);
         return;
       }
-      const parsed = ImportReportSchema.safeParse(payload);
+      const parsed = CellReferenceJobAcceptedSchema.safeParse(payload);
       if (!parsed.success) {
         // eslint-disable-next-line no-console
         console.error("[cell-reference upload] schema mismatch", parsed.error.issues, payload);
         reject(
           new ApiSchemaError(
-            "Réponse d'upload /reference/cell/upload non conforme au schéma Zod",
+            "Réponse d'upload /settings/cell-ref/upload non conforme au schéma Zod",
             parsed.error.issues,
           ),
         );
         return;
       }
-      resolve(parsed.data);
+      opts.onJobProgress?.(parsed.data.status, 0);
+      waitForCellReferenceJob(parsed.data.job_id, opts).then(resolve, reject);
     };
     xhr.onerror = () => {
       // XHR `onerror` = aucune réponse reçue (DNS, connect refused, CORS

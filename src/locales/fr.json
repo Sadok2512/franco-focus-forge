@@ -1173,6 +1173,11 @@
       "probable": "Probable"
     }
   },
+  "settingsCellRef": {
+    "sending": "Envoi : {{loaded}} / {{total}}",
+    "processing": "Fichier transmis — import du référentiel en cours…",
+    "processingProgress": "Import serveur {{status}} — {{percent}} %"
+  },
   "rsrpDiagnosis": {
     "open": "Diagnostic IA",
     "title": "Pourquoi les points RSRP manquent ?",

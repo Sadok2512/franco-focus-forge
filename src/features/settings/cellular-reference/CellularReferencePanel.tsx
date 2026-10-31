@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, CheckCircle2, FileWarning, Upload } from "lucide-react";
 import { useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getCellSummary,
   listCellImports,
@@ -189,10 +190,12 @@ const fmtBytes = (n: number): string => {
 };
 
 export function CellularReferencePanel() {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
   const [progress, setProgress] = useState<UploadProgress | null>(null);
+  const [jobProgress, setJobProgress] = useState<{ status: string; percent: number } | null>(null);
   const [lastReport, setLastReport] = useState<ImportReport | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -211,14 +214,19 @@ export function CellularReferencePanel() {
       setProgress({ loaded: 0, total: f.size, percent: 0 });
       return uploadCellReference(f, {
         onProgress: (p) => setProgress(p),
+        onJobProgress: (status, percent) => setJobProgress({ status, percent }),
       });
     },
-    onSuccess: (report) => {
+    onSuccess: async (report) => {
       setLastReport(report);
       setProgress(null);
+      setJobProgress(null);
       setFile(null);
       if (inputRef.current) inputRef.current.value = "";
-      qc.invalidateQueries({ queryKey: ["reference", "cell"] });
+      // Keep the mutation pending until the visible history and summary have
+      // actually reloaded. A successful upload must never leave the operator
+      // looking at a stale import list.
+      await qc.refetchQueries({ queryKey: ["reference", "cell"], type: "active" });
     },
     onError: (e: Error) => {
       // P1-3 : distingue 401 / réseau / 4xx-5xx. Le message réel du back
@@ -226,6 +234,7 @@ export function CellularReferencePanel() {
       // est affiché TEL QUEL, jamais remplacé par « Backend injoignable ».
       setUploadError(toUserMessage(e));
       setProgress(null);
+      setJobProgress(null);
     },
   });
 
@@ -278,16 +287,34 @@ export function CellularReferencePanel() {
             <div className="mt-4 space-y-1" role="status" aria-live="polite">
               <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                 <span>
-                  Envoi : {fmtBytes(progress.loaded)} / {fmtBytes(progress.total)}
+                  {jobProgress
+                    ? t("settingsCellRef.processingProgress", {
+                        status: jobProgress.status,
+                        percent: jobProgress.percent,
+                      })
+                    : progress.percent === 100
+                      ? t("settingsCellRef.processing")
+                    : t("settingsCellRef.sending", {
+                        loaded: fmtBytes(progress.loaded),
+                        total: fmtBytes(progress.total),
+                      })}
                 </span>
-                <span>{progress.percent == null ? "…" : `${progress.percent}%`}</span>
+                <span>
+                  {jobProgress
+                    ? `${jobProgress.percent}%`
+                    : progress.percent == null
+                      ? "…"
+                      : `${progress.percent}%`}
+                </span>
               </div>
               <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                 <div
                   className="h-full bg-primary transition-[width]"
                   style={{
                     width:
-                      progress.percent == null
+                      jobProgress != null
+                        ? `${Math.min(100, Math.max(0, jobProgress.percent))}%`
+                        : progress.percent == null
                         ? "100%"
                         : `${Math.min(100, Math.max(0, progress.percent))}%`,
                   }}

@@ -2,13 +2,26 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
-import { isTransientUpstreamError, upstreamUnavailableResponse } from "./lib/upstream-unavailable";
+import {
+  cellReferenceUploadTimeoutResponse,
+  isTransientUpstreamError,
+  isUpstreamTimeoutError,
+  upstreamUnavailableResponse,
+} from "./lib/upstream-unavailable";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
 };
 
 const API_PREFIX = "/api";
+const CELL_REFERENCE_UPLOAD_TIMEOUT_MS = 60 * 60 * 1000;
+
+export function isCellReferenceUpload(pathname: string, method: string): boolean {
+  return (
+    method === "POST" &&
+    (pathname === "/api/reference/cell/upload" || pathname === "/api/settings/cell-ref/upload")
+  );
+}
 
 function apiUpstream(): string {
   return (
@@ -104,7 +117,7 @@ export async function proxyApiRequest(request: Request): Promise<Response> {
   // proxy negotiates and emits the browser-facing representation itself.
   headers.set("accept-encoding", "identity");
 
-  const init: RequestInit & { duplex?: "half" } = {
+  const init: RequestInit & { duplex?: "half"; timeout?: number | boolean } = {
     method: request.method,
     headers,
     redirect: "manual",
@@ -112,6 +125,13 @@ export async function proxyApiRequest(request: Request): Promise<Response> {
   if (request.method !== "GET" && request.method !== "HEAD") {
     init.body = request.body;
     init.duplex = "half";
+  }
+  // Bun's fetch has a 300 s socket-idle timeout. Keep a route-local margin for
+  // slow clients sending a cell-reference CSV: the request body stays a
+  // ReadableStream (no buffering in Nitro), while the API enforces the
+  // authoritative 256 MiB limit and returns 202 once the spool is durable.
+  if (isCellReferenceUpload(source.pathname, request.method)) {
+    init.timeout = CELL_REFERENCE_UPLOAD_TIMEOUT_MS;
   }
   const upstream = await fetch(target, init);
   return proxyResponse(request, upstream);
@@ -162,6 +182,9 @@ export default {
         try {
           return await proxyApiRequest(request);
         } catch (error) {
+          if (isCellReferenceUpload(pathname, request.method) && isUpstreamTimeoutError(error)) {
+            return cellReferenceUploadTimeoutResponse();
+          }
           if (isTransientUpstreamError(error)) return upstreamUnavailableResponse();
           throw error;
         }

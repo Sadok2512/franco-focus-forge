@@ -1,3 +1,28 @@
+## 1.126.6 (patch) — BC4-FRONT 2026-10-31 — upload du référentiel cellulaire fiable (Agent BC1, numérotation BC3)
+
+Merge `bc1/cell-ref-upload-proxy` (`aa467d4` + `2691bc4`). Résout le
+blocage côté proxy Nitro sur les gros CSV (~134 MiB) et le suivi
+asynchrone côté UI du job back 0.117.2.
+
+- `src/server.ts` : le proxy Nitro transmet le multipart en flux et
+  porte à une heure son délai d'envoi, uniquement pour les deux routes
+  du référentiel (`POST /settings/cell-ref/upload` + `GET /settings/
+  cell-ref/jobs/{job_id}`) ; la limite API reste fixée à 256 Mio.
+- `CellularReferencePanel.tsx` reçoit immédiatement l'identifiant du
+  job asynchrone, suit son état (`sending` → `processing` → `completed`
+  ou `failed`) jusqu'au résultat puis recharge l'historique des imports.
+- Une coupure du proxy renvoie une erreur 504 structurée et lisible
+  dans l'interface. La progression distingue l'envoi du traitement
+  serveur ; l'historique et le résumé sont rechargés avant de déclarer
+  l'import terminé.
+- `src/lib/upstream-unavailable.ts` + `src/lib/api/reference-schemas.ts`
+  + `src/lib/api/reference.ts` ajoutent le typage du job et l'erreur
+  structurée.
+- Preuves jetables :
+  `audit/bc1-cell-ref-upload/e2e.spec.cjs` (processing visible,
+  history completed, forced cutoff error).
+- SemVer front : **PATCH 1.126.6**.
+
 ## 1.126.5 (patch) — BC4-FRONT 2026-10-31 — fiche des points et liens radio (Agent BC4, numérotation BC3)
 
 Merge `bc4/map-point-popup` (`95cef18`). Les trois cartes (Map,
