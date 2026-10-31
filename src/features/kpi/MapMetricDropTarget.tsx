@@ -8,7 +8,7 @@ import { getMetricMap } from "@/lib/api/client";
 import { getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { mapFeatures } from "./map-model";
-import { classOf, metricClasses, useMetricLegendSettings } from "./metric-classes";
+import { classOf, metricClasses, useMetricLegendSettings, MIN_CLASSES, MAX_CLASSES } from "./metric-classes";
 import { addMapMetric, MAP_METRIC_MIME, readMapMetric, type MapMetric } from "./map-metric-drop";
 
 function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
@@ -17,7 +17,7 @@ function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
 }) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
-  const [settings] = useMetricLegendSettings(metric.code);
+  const [settings, setSettings] = useMetricLegendSettings(metric.code);
   const id = `bc4-dropped-${metric.kind}-${encodeURIComponent(metric.code)}`;
   const query = useQuery({
     queryKey: ["map-dropped-metric", projectId, captureId, metric.kind, metric.code, filters],
@@ -25,6 +25,8 @@ function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
     queryFn: async ({ signal }) => {
       if (!captureId) throw new Error(t("metrics.pickFromCatalogue"));
       if (metric.kind === "kpi") {
+        const unsupported = Object.entries(filters).filter(([key, value]) => key !== "capture_id" && key !== "group_by" && Array.isArray(value) && (value.length > 0 || key === "operator")).map(([key]) => key);
+        if (unsupported.length) throw new Error(t("kpi.a5bacfb3bfd4", { v0: unsupported.join(", ") }));
         const data = await getKpiTimeSeries(projectId, captureId, metric.code, 5000, signal);
         return mapFeatures(data).flatMap((f) => typeof f.properties.value === "number" && Number.isFinite(f.properties.value) ? [f] : []);
       }
@@ -62,13 +64,14 @@ function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
       <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" aria-label={t("mapMetricDrop.remove", { metric: metric.label })} onClick={onRemove}><X size={14} /></Button>
     </div>
     {query.isFetching && <div role="progressbar" aria-label={t("mapMetricDrop.loading", { metric: metric.label })} className="h-1 animate-pulse bg-primary" />}
-    {query.isError && <Button variant="ghost" size="sm" onClick={() => void query.refetch()}>{t("common.retry")}</Button>}
+    {query.isError && <div role="alert"><span>{query.error.message}</span><Button variant="ghost" size="sm" onClick={() => void query.refetch()}>{t("common.retry")}</Button></div>}
     {!query.isFetching && !query.isError && !features.length && <span className="text-muted-foreground">{t("mapMetricDrop.noGps")}</span>}
-    {[...classes].reverse().map((c) => <div key={c.id} className="flex items-center gap-2 text-xs">
-      <input type="color" aria-label={metric.label} value={c.color} readOnly disabled className="h-4 w-4 border-0 p-0" />
-      <span className="flex-1">{c.min === -Infinity ? `< ${Number(c.max.toPrecision(3))}` : c.max === Infinity ? `≥ ${Number(c.min.toPrecision(3))}` : `${Number(c.min.toPrecision(3))} – ${Number(c.max.toPrecision(3))}`}</span>
+    {[...classes].reverse().map((c, reverseIndex) => <div key={c.id} className="flex items-center gap-2 text-xs">
+      <input type="color" aria-label={`${t("mapWorkspace.legendSettings")} · ${metric.label} · ${reverseIndex + 1}`} value={c.color} onChange={(e) => setSettings({ ...settings, colors: { ...settings.colors, [classes.length - 1 - reverseIndex]: e.target.value } })} className="h-4 w-4 border-0 p-0" />
+      <span className="flex-1">{c.min === -Infinity && c.max === Infinity ? t("common.all") : c.min === -Infinity ? `< ${Number(c.max.toPrecision(3))}` : c.max === Infinity ? `≥ ${Number(c.min.toPrecision(3))}` : `${Number(c.min.toPrecision(3))} – ${Number(c.max.toPrecision(3))}`}</span>
       <span className="tabular-nums">{features.filter((f) => f.properties.cls === c.id).length}</span>
     </div>)}
+    {classes.length > 0 && <label className="flex items-center justify-between gap-2 text-xs">{t("mapWorkspace.legendCount")}<select className="border border-border bg-background" value={settings.count ?? 5} onChange={(e) => setSettings({ count: Number(e.target.value), colors: {} })}>{Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map((n) => <option key={n} value={n}>{n}</option>)}</select></label>}
   </section>;
 }
 

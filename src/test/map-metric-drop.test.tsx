@@ -24,7 +24,8 @@ describe("Add a metric to the existing map", () => {
   });
   it("loads only the dropped metric after drop on the same capture and preserves the map camera", async () => {
     localStorage.clear();
-    const map = { getSource: vi.fn(), addSource: vi.fn(), addLayer: vi.fn(), setLayoutProperty: vi.fn(), getLayer: vi.fn(), removeLayer: vi.fn(), removeSource: vi.fn(), fitBounds: vi.fn() };
+    const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
+    const map = { getSource: vi.fn((id: string) => sources.get(id)), addSource: vi.fn((id: string, _data: unknown) => { sources.set(id, { setData: vi.fn() }); }), addLayer: vi.fn(), setLayoutProperty: vi.fn(), getLayer: vi.fn(), removeLayer: vi.fn(), removeSource: vi.fn(), fitBounds: vi.fn() };
     const { container } = render(<QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
       <MapMetricDropTarget base={base} map={map as never} projectId="p1" captureId="cap1" filters={{ band: ["B3"] } as never} workspaceId="w1">
         {(legend) => <article data-testid="existing-map">{legend}</article>}
@@ -38,7 +39,8 @@ describe("Add a metric to the existing map", () => {
     fireEvent.drop(target, { dataTransfer });
     await waitFor(() => expect(map.addLayer).toHaveBeenCalledOnce());
     expect(getMetricMap).toHaveBeenCalledWith("p1", "cap1", ["cell_rsrq@0"], { band: ["B3"] }, expect.any(AbortSignal));
-    expect(map.addSource.mock.calls[0]?.[1].data.features[0].geometry.coordinates).toEqual([2.3, 48.8]);
+    const setData = [...sources.values()][0]?.setData;
+    expect(setData?.mock.calls.at(-1)?.[0].features[0].geometry.coordinates).toEqual([2.3, 48.8]);
     expect(map.fitBounds).not.toHaveBeenCalled();
     expect(screen.getAllByTestId("existing-map")).toHaveLength(1);
     fireEvent.drop(target, { dataTransfer });
