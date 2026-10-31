@@ -2071,7 +2071,14 @@ export function SignalingPage({
                               <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
                               {knownOrder(colConfig).map((c, i) => {
                                 const mandatory = MANDATORY_COLS.includes(c);
-                                const def = COLUMNS.find((d) => d.key === c)!;
+                                const metric = isMetricCol(c);
+                                const def = metric ? undefined : COLUMNS.find((d) => d.key === c)!;
+                                const meta = metric ? metricMeta.get(metricCodeOf(c)) : undefined;
+                                const colLabel = metric
+                                  ? meta
+                                    ? `${meta.label}${meta.unit ? ` (${meta.unit})` : ""}`
+                                    : metricCodeOf(c)
+                                  : t(`sigTable.col.${c}`);
                                 return (
                                   <div
                                     key={c}
@@ -2085,8 +2092,13 @@ export function SignalingPage({
                                         onChange={() => setColConfig((old) => toggleColumn(old, c))}
                                         data-testid={`signaling-column-${c}`}
                                       />
-                                      <span className="truncate">{t(`sigTable.col.${c}`)}</span>
-                                      {!def.available && (
+                                      <span className="truncate">{colLabel}</span>
+                                      {metric && (
+                                        <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+                                          {t("sigTable.metricBadge")}
+                                        </span>
+                                      )}
+                                      {def && !def.available && (
                                         <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                                           {t("sigTable.notSupplied")}
                                         </span>
@@ -2097,6 +2109,21 @@ export function SignalingPage({
                                         </span>
                                       )}
                                     </label>
+                                    {metric && (
+                                      <button
+                                        type="button"
+                                        className="sig-move"
+                                        aria-label={t("sigTable.removeMetric", { col: colLabel })}
+                                        title={t("sigTable.removeMetric", { col: colLabel })}
+                                        onClick={() =>
+                                          setColConfig((old) =>
+                                            removeMetricColumn(old, metricCodeOf(c)),
+                                          )
+                                        }
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       className="sig-move"
