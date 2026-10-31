@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type {
   Map as MlMap,
   FilterSpecification,
+  ExpressionSpecification,
   GeoJSONSource,
   MapLayerMouseEvent,
 } from "maplibre-gl";
@@ -610,7 +611,10 @@ export function DriveRsrpLayer({
   // point and the compact RF card rendered below the layer panel takes over.
   useEffect(() => {
     if (!map) return;
+    let lastClick: MouseEvent | undefined;
     const click = (e: MapLayerMouseEvent) => {
+      if (e.originalEvent && lastClick === e.originalEvent) return;
+      lastClick = e.originalEvent;
       // Several measurements can share one GPS fix. Keep the already-active
       // identity when it is part of the clicked stack so a second click on
       // that visual point reliably deselects it instead of selecting another
