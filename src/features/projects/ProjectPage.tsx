@@ -70,7 +70,7 @@ export function ProjectPage({ projectId }: { projectId: string }) {
           </button>
           <Link
             to="/kpi"
-            search={(search) => ({ ...search, project: projectId })}
+            search={(search) => ({ ...search, project: projectId, metrics: search.metrics })}
             className="inline-flex h-9 items-center gap-1.5 rounded-md border border-primary px-3 text-xs font-semibold text-primary hover:bg-accent"
           >
             <FolderOpen className="h-3.5 w-3.5" aria-hidden /> Ouvrir KPI Analytics
