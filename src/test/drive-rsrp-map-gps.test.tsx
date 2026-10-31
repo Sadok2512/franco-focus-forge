@@ -54,6 +54,8 @@ function mapDouble() {
     easeTo: vi.fn(),
     on: vi.fn(),
     off: vi.fn(),
+    once: vi.fn(),
+    moveLayer: vi.fn(),
   };
 }
 
