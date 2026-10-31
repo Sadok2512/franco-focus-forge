@@ -16,18 +16,19 @@ vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
 }));
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 
+/** Map double that remembers installed sources and layers like MapLibre does. */
 function mapDouble() {
   const sources = new Map<string, { setData: ReturnType<typeof vi.fn> }>();
-  return {
+  const layers = new Set<string>();
+  const double = {
+    sources,
+    layers,
     getSource: vi.fn((id: string) => sources.get(id)),
     addSource: vi.fn((id: string) => sources.set(id, { setData: vi.fn() })),
-    addLayer: vi.fn(),
-    // A layer only exists once its own source has been installed.
-    getLayer: vi.fn((id: string) =>
-      sources.has(id === "bc4-drive-rsrp-points" ? "bc4-drive-rsrp" : "bc4-drive-rsrp-serving-links")
-        ? {}
-        : undefined,
-    ),
+    addLayer: vi.fn((layer: { id: string }) => {
+      layers.add(layer.id);
+    }),
+    getLayer: vi.fn((id: string) => (layers.has(id) ? {} : undefined)),
     getStyle: vi.fn(() => ({ layers: [] })),
     isStyleLoaded: vi.fn(() => true),
     setLayoutProperty: vi.fn(),
@@ -40,6 +41,7 @@ function mapDouble() {
     once: vi.fn(),
     moveLayer: vi.fn(),
   };
+  return double;
 }
 
 const SELECTED = "bc4-drive-rsrp-selected";
@@ -49,6 +51,14 @@ function selectedPaint(map: ReturnType<typeof mapDouble>) {
     .map(([layer]) => layer as { id?: string; paint?: Record<string, unknown> })
     .find((layer) => layer?.id === SELECTED);
   return call?.paint;
+}
+
+function mount(map: ReturnType<typeof mapDouble>) {
+  return render(
+    <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+      <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId="c1" />
+    </QueryClientProvider>,
+  );
 }
 
 describe("Selection ring of a drive point", () => {
@@ -66,14 +76,8 @@ describe("Selection ring of a drive point", () => {
 
   it("draws a hollow ring that borrows the point's own colour, never the blue link colour", async () => {
     const map = mapDouble();
-    render(
-      <QueryClientProvider
-        client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
-      >
-        <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId="c1" />
-      </QueryClientProvider>,
-    );
-    await waitFor(() => expect(map.addLayer).toHaveBeenCalled());
+    mount(map);
+    await waitFor(() => expect(map.layers.has(SELECTED)).toBe(true));
 
     const paint = selectedPaint(map);
     expect(paint).toBeDefined();
@@ -104,7 +108,7 @@ describe("Selection ring of a drive point", () => {
         />
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(map.addLayer).toHaveBeenCalled());
+    await waitFor(() => expect(map.layers.has(SELECTED)).toBe(true));
     expect(selectedPaint(map)?.["circle-stroke-color"]).toBe("#dc2626");
   });
 });
