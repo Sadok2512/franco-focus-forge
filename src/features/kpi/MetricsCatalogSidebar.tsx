@@ -176,7 +176,7 @@ export function MetricsCatalogSidebar({
   }, [query.data, search]);
   const visibleSelectableCount = useMemo(
     () =>
-      (query.data?.nodes ?? []).filter(
+      catalogNodes.filter(
         (node) =>
           node.node_type === "leaf" &&
           node.selectable &&
@@ -184,7 +184,7 @@ export function MetricsCatalogSidebar({
           (!matching || matching.has(node.node_id)) &&
           (!activeOnly || node.n > 0),
       ).length,
-    [activeOnly, availableTree, matching, query.data],
+    [activeOnly, availableTree, catalogNodes, matching],
   );
   useEffect(
     () => onVisibleCountChange?.(visibleSelectableCount),
