@@ -12,6 +12,7 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -303,6 +304,23 @@ function metricColorExpression(
   ] as ExpressionSpecification;
 }
 
+/** Same zoom-scaled radius as the Signaling drive points (4→6→9 px); the
+ * point-size setting scales it, so the default 3 matches Signaling exactly. */
+export function metricRadiusExpression(pointSize = 3): ExpressionSpecification {
+  const k = pointSize / 3;
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    9,
+    4 * k,
+    14,
+    6 * k,
+    18,
+    9 * k,
+  ] as ExpressionSpecification;
+}
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
@@ -318,9 +336,12 @@ export function installMetricMapSource(
     type: "circle",
     source: "metrics-v3",
     paint: {
-      "circle-radius": pointSize,
-      "circle-opacity": 0.86,
+      // Same look as the Signaling drive points: solid fill, thin dark outline.
+      "circle-radius": metricRadiusExpression(pointSize),
+      "circle-opacity": 1,
       "circle-color": metricColorExpression(minValue, maxValue, palette),
+      "circle-stroke-color": "rgba(15,23,42,0.55)",
+      "circle-stroke-width": 0.5,
     },
   });
 }
