@@ -10,7 +10,6 @@ import {
   MAX_CLASSES,
   MIN_CLASSES,
   classOf,
-  defaultPalette,
   metricClasses,
   useMetricLegendSettings,
 } from "./metric-classes";
@@ -206,7 +205,6 @@ export function KpiMeasurementMap({
       </div>
     </div>
   ) : null;
-  void defaultPalette;
   useEffect(() => {
     if (!map) return;
     let disposed = false;
