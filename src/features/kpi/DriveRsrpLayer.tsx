@@ -682,8 +682,11 @@ export function DriveRsrpLayer({
 
   return (
     <div
-      className={`absolute bottom-12 z-20 w-60 max-w-[calc(100%-1rem)] rounded-lg border bg-card/95 text-[11px] shadow-md ${embedded ? "right-2" : "right-14"}`}
+      className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
     >
+      {selectedDetails && <SelectedPointCard details={selectedDetails} onClose={clearSelection} />}
+      <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
+
       <div className="flex items-center justify-between gap-2 px-3 py-2">
         <Button
           type="button"
