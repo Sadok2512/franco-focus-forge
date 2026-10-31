@@ -210,7 +210,7 @@ export async function getDictTree(
   const q = buildQuery({ view, message: message || undefined });
   return apiFetch(
     `/projects/${encodeURIComponent(projectId)}/dict/v2/tree${q}`,
-    DictTreeResponseSchema,
+    DictTreeResponseSchema as unknown as z.ZodType<DictTreeResponse>,
     { signal },
   );
 }
