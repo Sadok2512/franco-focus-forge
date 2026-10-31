@@ -13,7 +13,7 @@ import {
   metricClasses,
   useMetricLegendSettings,
 } from "./metric-classes";
-import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
 
 export function KpiMeasurementMap({
@@ -66,6 +66,9 @@ export function KpiMeasurementMap({
     [features],
   );
   const [map, setMap] = useState<MlMap | null>(null);
+  // The drive layer owns the click; the KPI map only needs to know which point
+  // was picked so the selection ring can take the colour of the point it shows.
+  const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
   const recenter = () => {
     if (!map || !features.length) return;
     const xs = features.map((f) => f.geometry.coordinates[0]);
@@ -98,6 +101,21 @@ export function KpiMeasurementMap({
       }),
     [features, classes],
   );
+  // Colour of the selection ring: the legend colour of the visible metric point
+  // at the selected position. Same sequence first, then a point that really is
+  // at that spot (never a far-away colour, never an invented one).
+  const selectedRingColor = useMemo(() => {
+    if (!selectedPoint) return undefined;
+    const exact = colored.find((f) => Number(f.properties.seq) === selectedPoint.seq);
+    if (exact) return String(exact.properties.color);
+    let best: { color: string; d: number } | undefined;
+    for (const f of colored) {
+      const [lng, lat] = f.geometry.coordinates;
+      const d = (lng - selectedPoint.lng) ** 2 + (lat - selectedPoint.lat) ** 2;
+      if (!best || d < best.d) best = { color: String(f.properties.color), d };
+    }
+    return best && Math.sqrt(best.d) < 0.0005 ? best.color : undefined;
+  }, [colored, selectedPoint]);
   const counts = useMemo(() => {
     const m = new Map<string, number>();
     for (const f of colored) m.set(f.properties.cls, (m.get(f.properties.cls) ?? 0) + 1);
@@ -290,6 +308,8 @@ export function KpiMeasurementMap({
                 autoFrame={false}
                 hidePoints
                 hideControls
+                selectedRingColor={selectedRingColor}
+                onSelectedChange={setSelectedPoint}
               />
               <div
                 role="status"
