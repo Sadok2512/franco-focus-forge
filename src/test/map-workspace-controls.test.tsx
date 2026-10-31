@@ -11,7 +11,29 @@ describe("Map workspace chrome", () => {
     expect(resolveNetworkMapCenter([2.35, 48.86])).toEqual([2.35, 48.86]);
   });
 
-  it("renders functional top controls and API-backed bottom status", () => {
+  it("shows no floating filter toolbar and keeps API-backed bottom status", () => {
+    render(
+      <SitesMapWorkspaceControls
+        enabled
+        cellsEnabled
+        cellsAvailable
+        filters={{ technos: [], bands: [], operators: [] }}
+        onToggleEnabled={() => {}}
+        onToggleCells={() => {}}
+        onToggleTechno={() => {}}
+        onToggleBand={() => {}}
+        onToggleOperator={() => {}}
+        onReset={() => {}}
+        status={{ loading: false, error: null, zoom: 13, n_sites: 619, n_cells: 341 }}
+      />,
+    );
+
+    expect(screen.queryByTestId("map-workspace-topbar")).not.toBeInTheDocument();
+    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("619");
+    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("341");
+  });
+
+  it("drives sites, cell sectors and technology from the sidebar layers panel", () => {
     const toggleSites = vi.fn();
     const toggleCells = vi.fn();
     const toggleTechno = vi.fn();
@@ -31,15 +53,13 @@ describe("Map workspace chrome", () => {
       />,
     );
 
-    expect(screen.getByTestId("map-workspace-topbar")).toBeInTheDocument();
-    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("619");
-    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("341");
-    fireEvent.click(screen.getByRole("button", { name: "Sites" }));
-    fireEvent.click(screen.getByRole("button", { name: "Cells" }));
-    fireEvent.click(screen.getByRole("button", { name: "LTE" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Sites" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Cell sectors" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "4G LTE" }));
+
     expect(toggleSites).toHaveBeenCalledWith(false);
     expect(toggleCells).toHaveBeenCalledWith(false);
-    expect(toggleTechno).toHaveBeenCalledWith("LTE");
+    expect(toggleTechno.mock.calls.map((call) => call[0])).toEqual(["4G", "LTE"]);
   });
 
   it("keeps the persisted cell layer active below its data zoom while data waits", () => {
@@ -57,7 +77,10 @@ describe("Map workspace chrome", () => {
         status={{ loading: false, error: null, zoom: 12, n_sites: 25 }}
       />,
     );
-    expect(screen.getByRole("button", { name: "Cells" })).not.toBeDisabled();
-    expect(screen.getByRole("button", { name: "Cells" })).toHaveAttribute("aria-pressed", "true");
+
+    const sectors = screen.getByRole("checkbox", { name: "Cell sectors" });
+    expect(sectors).toBeChecked();
+    expect(sectors).not.toBeDisabled();
+    expect(screen.getByText("Zoom in to see cells")).toBeInTheDocument();
   });
 });

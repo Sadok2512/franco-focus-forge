@@ -3,7 +3,6 @@
  * state: no second map implementation, no fabricated counters. */
 import type { GeoJSONSource, Map as MlMap, MapMouseEvent } from "maplibre-gl";
 import {
-  Antenna,
   BarChart3,
   ChevronDown,
   ChevronLeft,
@@ -11,7 +10,6 @@ import {
   Layers,
   List,
   LocateFixed,
-  MapPin,
   Maximize2,
   Minimize2,
   Minus,
@@ -242,7 +240,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       : values.forEach(onToggleTechno);
   const setBand = (code: string) =>
     onSetBands ? onSetBands(toggleWithin(filters.bands, [code], BAND_CODES)) : onToggleBand(code);
-  const filterCount = filters.technos.length + filters.bands.length + filters.operators.length;
   const measureValue =
     mode === "distance"
       ? formatDistance(pathLength(points))
@@ -250,9 +247,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         ? formatArea(polygonArea(points))
         : "";
 
-  // MAP UI V1 — compact top toolbar: reduced height, spacing and buttons.
-  const pill = (on: boolean) =>
-    `flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${on ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"}`;
   const railBtn = (on = false) =>
     `flex h-8 w-8 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
 
@@ -461,87 +455,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Top — floating filter toolbar */}
-      <div
-        className="pointer-events-none absolute top-3 flex justify-center"
-        style={{ left: showPanel && !compact ? 248 : 64, right: compact ? 56 : 380 }}
-      >
-        <div
-          data-testid="map-workspace-topbar"
-          className={`pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1 ${glass}`}
-        >
-          <button
-            type="button"
-            aria-pressed={enabled}
-            onClick={() => onToggleEnabled(!enabled)}
-            className={pill(enabled)}
-          >
-            <MapPin className="h-3.5 w-3.5" /> {t("mapWorkspace.sites")}
-          </button>
-          <button
-            type="button"
-            aria-pressed={cellsEnabled}
-            title={cellsAvailable ? t("mapSites.showCells") : t("mapSites.cellsFromZoom")}
-            onClick={() => onToggleCells(!cellsEnabled)}
-            className={pill(cellsEnabled)}
-          >
-            <Antenna className="h-3.5 w-3.5" /> {t("mapWorkspace.cells")}
-          </button>
-          <span className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-          <div
-            className="flex shrink-0 gap-0.5"
-            role="group"
-            aria-label={t("mapWorkspace.technology")}
-          >
-            {TECHNO_CODES.map((code) => (
-              <button
-                key={code}
-                type="button"
-                aria-pressed={isActive(filters.technos, [code])}
-                onClick={() => (onSetTechnos ? setTechnos([code]) : onToggleTechno(code))}
-                className={pill(isActive(filters.technos, [code]))}
-              >
-                {code}
-              </button>
-            ))}
-          </div>
-          <span className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-          <Dropdown
-            open={menu === "bands"}
-            onOpen={(o) => setMenu(o ? "bands" : null)}
-            label={`${t("mapWorkspace.bands")} (${filters.bands.length || t("common.all")})`}
-          >
-            {NETWORK_BANDS.map((b) => (
-              <MenuCheck
-                key={b.key}
-                label={b.key}
-                color={bandColor(b.key)}
-                checked={isActive(filters.bands, [b.code])}
-                onClick={() => setBand(b.code)}
-              />
-            ))}
-          </Dropdown>
-          <button type="button" onClick={() => setPanelOpen(!showPanel)} className={pill(false)}>
-            <SlidersHorizontal className="h-3.5 w-3.5" />{" "}
-            {!compact && t("mapWorkspace.moreFilters")}
-            {filterCount > 0 && (
-              <span className="rounded-full bg-primary px-1.5 text-[9px] text-primary-foreground">
-                {filterCount}
-              </span>
-            )}
-          </button>
-          {filterCount > 0 && onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              className={pill(false)}
-              aria-label={t("common.reset")}
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
 
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (
