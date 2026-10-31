@@ -135,7 +135,7 @@ export function MetricsCatalogSidebar({
     }
     for (const children of result.values()) children.sort((a, b) => a.order - b.order);
     return result;
-  }, [query.data]);
+  }, [catalogNodes]);
   const availableTree = useMemo(() => {
     if (showUnavailable) return null;
     const nodes = catalogNodes;
