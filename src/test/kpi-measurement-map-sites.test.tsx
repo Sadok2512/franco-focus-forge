@@ -128,8 +128,9 @@ describe("KpiMeasurementMap — couche Sites", () => {
       }),
     );
     renderMap();
-    const toggle = await screen.findByRole("button", { name: "Site and cell layers" });
-    expect(toggle.textContent).toMatch(/Sites ON/);
+    // Same chrome as the Signaling map: Sites toggles live in the layers panel.
+    const toggle = await screen.findByRole("checkbox", { name: "Sites" });
+    expect(toggle).toBeChecked();
     await waitFor(() => expect(getSites).toHaveBeenCalled());
     const requests = getSites.mock.calls.map((call) => call[0] as { bbox: number[]; zoom: number });
     expect(requests).toEqual(
