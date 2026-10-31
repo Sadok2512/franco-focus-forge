@@ -150,7 +150,7 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, showUnavailable]);
+  }, [catalogNodes, showUnavailable]);
   const matching = useMemo(() => {
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
