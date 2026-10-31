@@ -32,7 +32,7 @@ export const Route = createFileRoute("/_app/kpi")({
   }),
   // Additional URL fields belong to KPI only; shared operator/technology/band
   // filters continue to use the root schema and useFilters().
-  validateSearch: (search: Record<string, unknown>) => {
+  validateSearch: (search: Record<string, unknown>): KpiSearch => {
     const asList = (value: unknown): string[] | undefined =>
       Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : undefined;
     // Chaque champ ne figure dans l'objet search que s'il est défini (le
