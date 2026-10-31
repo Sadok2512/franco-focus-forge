@@ -544,7 +544,10 @@
     "CONFIGURED": "configured",
     "ACTIVATED": "activated",
     "USED": "used",
-    "unavailable": "UE / RRC intervals require proven bounds, session identity and source sequences."
+    "unavailable": "UE / RRC intervals require proven bounds, session identity and source sequences.",
+    "inspection": "Signaling View",
+    "metrics": "Metric",
+    "metricsEmpty": "Pick metrics in the catalogue to display their graphs for this capture."
   },
   "timeNavigator": {
     "title": "Time Navigator",

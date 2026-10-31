@@ -58,6 +58,8 @@ import {
   RadioTower,
   Search,
   SlidersHorizontal,
+  ListTree,
+  LineChart,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -88,6 +90,7 @@ import {
   type MessageInfo,
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
+import { SignalingMetricsSection } from "./SignalingMetricsSection";
 import {
   filterMessageRows,
   messageTypes,
@@ -1009,6 +1012,19 @@ export function SignalingPage({
   const [mapVisible, setMapVisible] = useState(true);
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [inspectionExpanded, setInspectionExpanded] = useState(false);
+  const [inspectionVisible, setInspectionVisible] = useState(true);
+  const [metricsVisible, setMetricsVisible] = useState(false);
+  const inspectionPanelRef = useRef<PanelImperativeHandle>(null);
+  const metricsPanelRef = useRef<PanelImperativeHandle>(null);
+  const togglePanel = (
+    ref: RefObject<PanelImperativeHandle | null>,
+    current: boolean,
+    set: (v: boolean) => void,
+  ) => {
+    set(!current);
+    if (current) ref.current?.collapse();
+    else ref.current?.expand();
+  };
   useEffect(() => {
     if (!inspectionExpanded) return;
     const restoreInspection = (event: KeyboardEvent) => {
@@ -1456,6 +1472,26 @@ export function SignalingPage({
         {t("signalingV2.map")} ·{" "}
         {mapVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
+      <button
+        type="button"
+        className="kpi-button"
+        onClick={() => togglePanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)}
+        aria-pressed={inspectionVisible}
+        data-testid="signaling-inspection-toggle"
+      >
+        <ListTree size={14} />
+        {t("signalingV2.inspection")} · {inspectionVisible ? t("signalingV2.on") : t("signalingV2.off")}
+      </button>
+      <button
+        type="button"
+        className="kpi-button"
+        onClick={() => togglePanel(metricsPanelRef, metricsVisible, setMetricsVisible)}
+        aria-pressed={metricsVisible}
+        data-testid="signaling-metrics-toggle"
+      >
+        <LineChart size={14} />
+        {t("signalingV2.metrics")} · {metricsVisible ? t("signalingV2.on") : t("signalingV2.off")}
+      </button>
     </>
   );
 
@@ -1803,7 +1839,15 @@ export function SignalingPage({
                 className="signaling-separator"
                 aria-label="Hauteur de la vue d’ensemble"
               />
-              <Panel id="inspection" minSize={300} data-testid="signaling-inspection-panel">
+              <Panel
+                id="inspection"
+                panelRef={inspectionPanelRef}
+                minSize={inspectionVisible ? 300 : 0}
+                collapsible
+                collapsedSize={0}
+                onResize={() => syncFromPanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)}
+                data-testid="signaling-inspection-panel"
+              >
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
                   <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
                     <section
@@ -2415,6 +2459,19 @@ export function SignalingPage({
                     </section>
                   </Panel>
                 </Group>
+              </Panel>
+              <Separator className="signaling-separator" aria-label={t("signalingV2.metrics")} />
+              <Panel
+                id="metrics"
+                panelRef={metricsPanelRef}
+                defaultSize={0}
+                minSize={metricsVisible ? 220 : 0}
+                collapsible
+                collapsedSize={0}
+                onResize={() => syncFromPanel(metricsPanelRef, metricsVisible, setMetricsVisible)}
+                data-testid="signaling-metrics-panel"
+              >
+                {metricsVisible && <SignalingMetricsSection projectId={projectId} captureId={capture} />}
               </Panel>
             </Group>
           </Panel>
