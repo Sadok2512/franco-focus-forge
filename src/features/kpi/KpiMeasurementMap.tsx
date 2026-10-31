@@ -205,36 +205,7 @@ export function KpiMeasurementMap({
       </div>
     </div>
   ) : null;
-  useEffect(() => {
-    if (!map) return;
-    let disposed = false;
-    let popup: import("maplibre-gl").Popup | undefined;
-    const click = async (event: import("maplibre-gl").MapLayerMouseEvent) => {
-      const p = event.features?.[0]?.properties;
-      if (!p) return;
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      const content = document.createElement("div");
-      content.style.whiteSpace = "pre-line";
-      content.textContent = translate("kpi.e4b37c222c49", {
-        v0: code,
-        v1: p["value"],
-        v2: p["unit"],
-        v3: p["capture_id"],
-        v4: p["seq"],
-        v5: p["result_id"],
-        v6: p["file"],
-      });
-      popup?.remove();
-      popup = new Popup().setLngLat(event.lngLat).setDOMContent(content).addTo(map);
-    };
-    map.on("click", "kpi-measures", click);
-    return () => {
-      disposed = true;
-      popup?.remove();
-      map.off("click", "kpi-measures", click);
-    };
-  }, [map, code, features, translate]);
+  // No measurement popup: clicking a point must not open an info card (user request).
   const message = !allowed
     ? translate("kpi.a5bacfb3bfd4", { v0: unsupported.join(", ") })
     : captures.isError || query.isError
