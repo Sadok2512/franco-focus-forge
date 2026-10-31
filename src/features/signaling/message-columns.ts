@@ -208,8 +208,9 @@ export function rrcStateAt(t: number | null | undefined, states: ProvenState[]) 
 }
 
 // ---------- Radio: previous real observation, never interpolated ----------
-type SeriesPoint = { seq: number; t_rel_s: number; value: number | string };
+export type SeriesPoint = { seq: number; t_rel_s: number; value: number | string };
 export type RadioReading = { value: number; dtS: number; seq: number; t: number };
+export type MetricReading = { value: number | string; dtS: number; seq: number; t: number };
 /** Latest numeric observation at or before `t`; points must be sorted by time. */
 export function radioAt(points: SeriesPoint[] | undefined, t: number | null | undefined) {
   if (!points?.length || t == null) return null;
