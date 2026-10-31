@@ -40,6 +40,7 @@ import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
 import { toUserMessage } from "@/lib/api/http";
+import { MAP_METRIC_MIME } from "./map-metric-drop";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -328,6 +329,13 @@ export function MetricsCatalogSidebar({
       <li key={node.node_id}>
         <div
           className={`kpi-tree-leaf ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
+          draggable={Boolean(node.selection && !disabled)}
+          onDragStart={(event) => {
+            if (!node.selection || disabled) { event.preventDefault(); return; }
+            event.stopPropagation();
+            event.dataTransfer.effectAllowed = "copy";
+            event.dataTransfer.setData(MAP_METRIC_MIME, JSON.stringify({ kind: "metric", code: node.selection, label, unit: node.unit ?? "" }));
+          }}
           title={scannerTooltip ?? node.reason ?? node.source ?? label}
         >
           <button

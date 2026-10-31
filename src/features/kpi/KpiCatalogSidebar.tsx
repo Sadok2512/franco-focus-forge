@@ -11,6 +11,7 @@ import { useEffect, useState, type RefObject } from "react";
 import { BarChart3, ChevronDown, ChevronRight, Search, MoreVertical } from "lucide-react";
 import type { ProjectKpiCatalog } from "@/lib/api/project-kpi-schemas";
 import { APP_VERSION } from "@/lib/version";
+import { MAP_METRIC_MIME } from "./map-metric-drop";
 import { MAX_GRAPHS, matchesEntry, techLabel } from "./workspace-model";
 
 /** Existing KPI tree: same server technologies, families, codes and status counts. */
@@ -139,6 +140,12 @@ export function KpiCatalogSidebar({
                           return (
                             <div
                               key={item.code}
+                              draggable={item.status === "AVAILABLE"}
+                              onDragStart={(event) => {
+                                event.stopPropagation();
+                                event.dataTransfer.effectAllowed = "copy";
+                                event.dataTransfer.setData(MAP_METRIC_MIME, JSON.stringify({ kind: "kpi", code: item.code, label: item.name, unit: item.unit ?? "" }));
+                              }}
                               title={`${t.techno} / ${f.family} / ${item.code}${item.reason ? ` — ${item.reason}` : ""}`}
                               className={`kpi-tree-leaf ${active === item.code ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canAdd ? "is-disabled" : ""}`}
                             >

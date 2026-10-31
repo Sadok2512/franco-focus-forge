@@ -1,4 +1,10 @@
 {
+  "mapMetricDrop": {
+    "visibility": "Afficher / masquer {{metric}}",
+    "remove": "Retirer {{metric}} de cette carte",
+    "loading": "Chargement de {{metric}}",
+    "noGps": "Aucune observation géolocalisée pour cette capture."
+  },
   "passwordChange": {
     "title": "Changer mon mot de passe",
     "description": "Choisissez un nouveau mot de passe d’au moins 12 caractères.",
