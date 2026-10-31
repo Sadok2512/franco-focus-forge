@@ -138,7 +138,7 @@ export function MetricsCatalogSidebar({
   }, [query.data]);
   const availableTree = useMemo(() => {
     if (showUnavailable) return null;
-    const nodes = query.data?.nodes ?? [];
+    const nodes = catalogNodes;
     const byId = new Map(nodes.map((node) => [node.node_id, node]));
     const visible = new Set<string>();
     for (const leaf of nodes) {
