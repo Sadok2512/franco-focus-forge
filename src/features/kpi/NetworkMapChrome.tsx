@@ -200,11 +200,14 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const measureValue =
     mode === "distance" ? formatDistance(pathLength(points)) : mode === "area" ? formatArea(polygonArea(points)) : "";
 
+  // MAP UI V1 — compact top toolbar: reduced height, spacing and buttons.
   const pill = (on: boolean) =>
-    `flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${on ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"}`;
+    `flex h-7 shrink-0 items-center gap-1 rounded-md px-2 text-[11px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-45 ${on ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground hover:bg-muted"}`;
   const railBtn = (on = false) =>
     `flex h-8 w-8 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
 
+  // MAP UI V1 — floating compact legend: technology, band colours and symbols
+  // only. The "site colour = operator" row is removed by design.
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
       <LegendRow title={t("mapWorkspace.technology")}>
@@ -214,11 +217,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       <LegendRow title={t("mapWorkspace.bands")}>
         {NETWORK_BANDS.filter((b) => isActive(filters.bands, [b.code])).map((b) => (
           <Swatch key={b.key} color={bandColor(b.key)} label={b.key} hideLabel={!compact} />
-        ))}
-      </LegendRow>
-      <LegendRow title={t("mapWorkspace.siteColour")}>
-        {OPERATORS.filter((o) => isActive(filters.operators, [o.v])).map((o) => (
-          <Swatch key={o.v} color={o.color} label={o.label} round hideLabel={!compact} />
         ))}
       </LegendRow>
       <LegendRow title={t("mapWorkspace.symbols")}>
@@ -266,6 +264,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <Section title={t("mapWorkspace.bands")}>
               {NETWORK_BANDS.map((b) => (
                 <Check key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onChange={() => setBand(b.code)} />
+              ))}
+            </Section>
+            {/* MAP UI V1 — operator filtering leaves the top toolbar and lives
+                in the sidebar Filters, so the functional filter is preserved. */}
+            <Section title={t("mapSites.operator")}>
+              {OPERATORS.map((o) => (
+                <Check key={o.v} label={o.label} color={o.color} checked={isActive(filters.operators, [o.v])} onChange={() => onToggleOperator(o.v)} />
               ))}
             </Section>
             <Section title={t("mapWorkspace.siteTypes")}>
