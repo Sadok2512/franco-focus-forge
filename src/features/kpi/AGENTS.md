@@ -3,6 +3,7 @@
 - Beam size and opacity are presentation-only percentages in the shared Sites display state: rebuild sector geometry locally for radius changes and update paint for opacity, never refetch sites or change RF azimuths, coordinates, filters or multi-band slices.
 
 - Metric Map selections render independent map cards using the analysis API with `include_map: true` for the active capture and selected parameter; never fall back to a graph or change the measurements table's view. Catalogue and panel view changes share the per-tab metric view state.
+- Catalogue drag/drop onto an existing map is an explicit exception to independent card creation: add a per-map overlay through MapMetricDropTarget, not a workspace selection; keep the layer mounted outside the conditional legend tab using a portal so closing that tab never destroys measurements or triggers requests.
 - KPI and metric selections persist together per workspace tab; legacy URL metrics migrate only to the active tab, so new tabs are empty and switching restores each tab's panels.
 - Metrics shares KPI catalog/card classes and design-system controls; presentation changes must leave metric analysis queries and capture filters unchanged.
 - Map cards (KpiMapOSM) must set the MapLibre v6 worker explicitly via `setWorkerUrl` AND the map div must fill its wrapper with inline `position: absolute; inset: 0` — a `h-full` div collapses to 0 px inside a parent that only has `min-height`, leaving a white canvas; MapLibre's own stylesheet forces `position: relative`, so a class alone cannot override it.
