@@ -6,6 +6,7 @@ import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import { getKpiCaptures, getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { classOf, metricClasses } from "./metric-classes";
 
 export function KpiMeasurementMap({
   projectId,
@@ -64,60 +65,90 @@ export function KpiMeasurementMap({
       { padding: 40, maxZoom: 15, duration: 0 },
     );
   };
+  const classes = useMemo(
+    () => metricClasses(code, features.map((f) => Number(f.properties.value))),
+    [code, features],
+  );
+  const [hidden, setHidden] = useState<string[]>([]);
+  const colored = useMemo(
+    () =>
+      features.flatMap((f) => {
+        const c = classOf(classes, Number(f.properties.value));
+        return c ? [{ ...f, properties: { ...f.properties, cls: c.id, color: c.color } }] : [];
+      }),
+    [features, classes],
+  );
+  const counts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const f of colored) m.set(f.properties.cls, (m.get(f.properties.cls) ?? 0) + 1);
+    return m;
+  }, [colored]);
   useEffect(() => {
     if (!map) return;
-    const data = { type: "FeatureCollection" as const, features };
+    const data = { type: "FeatureCollection" as const, features: colored };
     if (map.getSource("kpi-measures"))
       (map.getSource("kpi-measures") as GeoJSONSource).setData(data);
     else {
-      // 1.106.3 — clusterisation : des milliers de cercles superposés
-      // formaient une tache illisible. Clusters gradués + compteur,
-      // points individuels au zoom fort.
-      map.addSource("kpi-measures", {
-        type: "geojson",
-        data,
-        cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
-      });
-      map.addLayer({
-        id: "kpi-measures-clusters",
-        type: "circle",
-        source: "kpi-measures",
-        filter: ["has", "point_count"],
-        paint: {
-          "circle-radius": ["step", ["get", "point_count"], 13, 50, 17, 250, 22, 1000, 28],
-          "circle-color": "#1769E0",
-          "circle-opacity": 0.78,
-          "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5,
-        },
-      });
-      map.addLayer({
-        id: "kpi-measures-cluster-count",
-        type: "symbol",
-        source: "kpi-measures",
-        filter: ["has", "point_count"],
-        layout: { "text-field": ["get", "point_count_abbreviated"], "text-size": 11 },
-        paint: { "text-color": "#ffffff" },
-      });
+      // Every measurement is an individual point coloured by its value (no clustering).
+      map.addSource("kpi-measures", { type: "geojson", data });
       map.addLayer({
         id: "kpi-measures",
         type: "circle",
         source: "kpi-measures",
-        filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-radius": 4,
-          "circle-color": "#1769E0",
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 2.5, 14, 4.5, 18, 7],
+          "circle-color": ["get", "color"],
           "circle-stroke-color": "#ffffff",
-          "circle-stroke-width": 1.5,
+          "circle-stroke-width": 0.6,
         },
       });
     }
     recenter();
-    // recenter uses exactly the current map and API features.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, features]);
+  }, [map, colored]);
+  useEffect(() => {
+    if (!map?.getLayer("kpi-measures")) return;
+    map.setFilter(
+      "kpi-measures",
+      hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
+    );
+  }, [map, hidden, colored]);
+  const fmtNum = (n: number) => (Number.isFinite(n) ? Number(n.toPrecision(3)).toString() : "");
+  const unit = features[0]?.properties.unit ?? "";
+  const legend = classes.length ? (
+    <div className="space-y-0.5">
+      <div className="font-semibold">
+        {code}
+        {unit ? ` (${unit})` : ""}
+      </div>
+      {[...classes].reverse().map((c) => {
+        const off = hidden.includes(c.id);
+        const range =
+          c.min === -Infinity
+            ? `< ${fmtNum(c.max)}`
+            : c.max === Infinity
+              ? `≥ ${fmtNum(c.min)}`
+              : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            aria-pressed={!off}
+            onClick={() =>
+              setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))
+            }
+            className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
+          >
+            <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: c.color }} />
+            <span className="flex-1">{range}</span>
+            <span className="tabular-nums text-muted-foreground">
+              {(counts.get(c.id) ?? 0).toLocaleString()}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  ) : null;
   useEffect(() => {
     if (!map) return;
     let disposed = false;
@@ -141,23 +172,11 @@ export function KpiMeasurementMap({
       popup?.remove();
       popup = new Popup().setLngLat(event.lngLat).setDOMContent(content).addTo(map);
     };
-    const clickCluster = async (event: import("maplibre-gl").MapLayerMouseEvent) => {
-      const clusterId = event.features?.[0]?.properties?.["cluster_id"];
-      if (clusterId == null) return;
-      const src = map.getSource("kpi-measures") as GeoJSONSource | undefined;
-      if (!src) return;
-      const zoom = await src.getClusterExpansionZoom(clusterId as number);
-      if (disposed) return;
-      const coords = (event.features?.[0]?.geometry as unknown as { coordinates: [number, number] }).coordinates;
-      map.easeTo({ center: coords, zoom });
-    };
     map.on("click", "kpi-measures", click);
-    map.on("click", "kpi-measures-clusters", clickCluster);
     return () => {
       disposed = true;
       popup?.remove();
       map.off("click", "kpi-measures", click);
-      map.off("click", "kpi-measures-clusters", clickCluster);
     };
   }, [map, code, features, translate]);
   const message = !allowed
@@ -204,6 +223,7 @@ export function KpiMeasurementMap({
         measurementStatus={null}
         onMapReady={setMap}
         onRecenter={recenter}
+        layersLegend={legend}
         routeCoordinates={routeCoordinates}
       >
         <div
