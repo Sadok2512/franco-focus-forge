@@ -19,31 +19,24 @@ export const Route = createFileRoute("/_app/kpi")({
   }),
   // Additional URL fields belong to KPI only; shared operator/technology/band
   // filters continue to use the root schema and useFilters().
-  validateSearch: (search: Record<string, unknown>) => ({
-    ...Object.fromEntries(
-      Object.values(URL_KEYS).map((key) => [
-        key,
-        Array.isArray(search[key])
-          ? search[key].filter((v): v is string => typeof v === "string")
-          : undefined,
-      ]),
-    ),
-    metrics: Array.isArray(search["metrics"])
-      ? search["metrics"].filter((v): v is string => typeof v === "string")
-      : undefined,
-    kpi: typeof search["kpi"] === "string" ? search["kpi"] : undefined,
-    kpis: Array.isArray(search["kpis"])
-      ? search["kpis"].filter((v): v is string => typeof v === "string")
-      : undefined,
-    commune: Array.isArray(search["commune"])
-      ? search["commune"].filter((v): v is string => typeof v === "string")
-      : undefined,
-    insee: Array.isArray(search["insee"])
-      ? search["insee"].filter((v): v is string => typeof v === "string")
-      : undefined,
-    phase: Array.isArray(search["phase"])
-      ? search["phase"].filter((v): v is string => typeof v === "string")
-      : undefined,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const asList = (value: unknown): string[] | undefined =>
+      Array.isArray(value) ? value.filter((v): v is string => typeof v === "string") : undefined;
+    // Chaque champ ne figure dans l'objet search que s'il est défini (le
+    // runtime était déjà identique : une clé `undefined` n'est jamais
+    // sérialisée) — ainsi les reducers `search` des <Link to="/kpi">
+    // (ProjectPage) restent typés optionnels.
+    return Object.fromEntries(
+      [
+        ...Object.values(URL_KEYS).map((key) => [key, asList(search[key])]),
+        ["metrics", asList(search["metrics"])],
+        ["kpi", typeof search["kpi"] === "string" ? search["kpi"] : undefined],
+        ["kpis", asList(search["kpis"])],
+        ["commune", asList(search["commune"])],
+        ["insee", asList(search["insee"])],
+        ["phase", asList(search["phase"])],
+      ].filter(([, value]) => value !== undefined),
+    );
+  },
   component: KpiWorkspace,
 });
