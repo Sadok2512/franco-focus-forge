@@ -148,6 +148,7 @@ export function DriveRsrpLayer({
   selectedRingColor,
   onSelectedChange,
   legendHost,
+  selectionLayerId,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -166,6 +167,8 @@ export function DriveRsrpLayer({
   onSelectedChange?: (selected: SelectedDrivePoint | null) => void;
   /** Host map legend panel element the RSRP rows are rendered into. */
   legendHost?: HTMLDivElement | null;
+  /** Host point layer whose exact-sequence clicks select this drive evidence. */
+  selectionLayerId?: string | undefined;
 }) {
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
@@ -749,13 +752,14 @@ export function DriveRsrpLayer({
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
     };
-    map.on("click", LAYER, click);
-    map.on("click", SELECTED_LAYER, click);
+    const clickLayers = [LAYER, SELECTED_LAYER, selectionLayerId].filter(
+      (layer, index, layers): layer is string => !!layer && layers.indexOf(layer) === index,
+    );
+    for (const layer of clickLayers) map.on("click", layer, click);
     return () => {
-      map.off("click", LAYER, click);
-      map.off("click", SELECTED_LAYER, click);
+      for (const layer of clickLayers) map.off("click", layer, click);
     };
-  }, [drivePoints, effectiveCaptureId, map, projectId]);
+  }, [drivePoints, effectiveCaptureId, map, projectId, selectionLayerId]);
 
   // A selection is scoped to one project/capture/map workspace. Never carry
   // its line or card into another context, even when sequence numbers match.

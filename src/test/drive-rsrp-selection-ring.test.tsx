@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
@@ -53,12 +53,17 @@ function selectedPaint(map: ReturnType<typeof mapDouble>) {
   return call?.paint;
 }
 
-function mount(map: ReturnType<typeof mapDouble>) {
+function mount(map: ReturnType<typeof mapDouble>, selectionLayerId?: string) {
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
     >
-      <DriveRsrpLayer map={map as unknown as MlMap} projectId="Test_3" activeCaptureId="c1" />
+      <DriveRsrpLayer
+        map={map as unknown as MlMap}
+        projectId="Test_3"
+        activeCaptureId="c1"
+        selectionLayerId={selectionLayerId}
+      />
     </QueryClientProvider>,
   );
 }
@@ -112,5 +117,57 @@ describe("Selection ring of a drive point", () => {
     );
     await waitFor(() => expect(map.layers.has(SELECTED)).toBe(true));
     expect(selectedPaint(map)?.["circle-stroke-color"]).toBe("#dc2626");
+  });
+
+  it("selects an exact KPI point and draws its API-published serving line", async () => {
+    api.map.mockResolvedValue({
+      capture_id: "c1",
+      map_points: [
+        {
+          seq: 67,
+          lat: 48.9,
+          lng: 2.2,
+          code: "cell_rsrp",
+          value: -95,
+          serving_cell_lat: 48.91,
+          serving_cell_lng: 2.21,
+          serving_cell_source: "chi_previous_seq_cell_ref_exact",
+        },
+      ],
+    });
+    const map = mapDouble();
+    mount(map, "kpi-measures");
+
+    await screen.findByText("1 point shown");
+    await waitFor(() =>
+      expect(map.on).toHaveBeenCalledWith("click", "kpi-measures", expect.any(Function)),
+    );
+    const click = map.on.mock.calls
+      .filter(([event, layer]) => event === "click" && layer === "kpi-measures")
+      .at(-1)?.[2] as ((event: unknown) => void) | undefined;
+    expect(click).toBeDefined();
+
+    act(() => click?.({ features: [{ properties: { seq: 67 } }] }));
+
+    const links = map.sources.get("bc4-drive-rsrp-serving-links");
+    await screen.findByTestId("selected-point-card");
+    await waitFor(() =>
+      expect(
+        links?.setData.mock.calls.some(([data]) =>
+          JSON.stringify(data).includes('"coordinates":[[2.2,48.9],[2.21,48.91]]'),
+        ),
+      ).toBe(true),
+    );
+    expect(
+      map.setFilter.mock.calls.some(
+        ([layer, filter]) => layer === SELECTED && JSON.stringify(filter).includes("67"),
+      ),
+    ).toBe(true);
+    const servingSite = map.sources.get("bc4-drive-rsrp-serving-site");
+    expect(
+      servingSite?.setData.mock.calls.some(([data]) =>
+        JSON.stringify(data).includes('"coordinates":[2.21,48.91]'),
+      ),
+    ).toBe(true);
   });
 });

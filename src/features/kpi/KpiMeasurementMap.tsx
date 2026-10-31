@@ -16,6 +16,8 @@ import {
 import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
 
+const KPI_MEASURES_LAYER = "kpi-measures";
+
 export function KpiMeasurementMap({
   projectId,
   code,
@@ -128,15 +130,15 @@ export function KpiMeasurementMap({
   useEffect(() => {
     if (!map) return;
     const data = { type: "FeatureCollection" as const, features: colored };
-    if (map.getSource("kpi-measures"))
-      (map.getSource("kpi-measures") as GeoJSONSource).setData(data);
+    if (map.getSource(KPI_MEASURES_LAYER))
+      (map.getSource(KPI_MEASURES_LAYER) as GeoJSONSource).setData(data);
     else {
       // Every measurement is an individual point coloured by its value (no clustering).
-      map.addSource("kpi-measures", { type: "geojson", data });
+      map.addSource(KPI_MEASURES_LAYER, { type: "geojson", data });
       map.addLayer({
-        id: "kpi-measures",
+        id: KPI_MEASURES_LAYER,
         type: "circle",
-        source: "kpi-measures",
+        source: KPI_MEASURES_LAYER,
         paint: {
           // Same look as the Signaling drive points: solid fill in the legend
           // colour, thin dark outline so light basemaps never wash it out.
@@ -152,9 +154,9 @@ export function KpiMeasurementMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, colored]);
   useEffect(() => {
-    if (!map?.getLayer("kpi-measures")) return;
+    if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
     map.setFilter(
-      "kpi-measures",
+      KPI_MEASURES_LAYER,
       hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
     );
   }, [map, hidden, colored]);
@@ -316,6 +318,7 @@ export function KpiMeasurementMap({
                 selectedRingColor={selectedRingColor}
                 onSelectedChange={setSelectedPoint}
                 legendHost={legendHost}
+                selectionLayerId={KPI_MEASURES_LAYER}
               />
               <div
                 role="status"
