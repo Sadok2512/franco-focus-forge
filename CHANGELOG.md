@@ -1,3 +1,13 @@
+## 1.126.12 (patch) — restauration Task Bar Signaling — 2026-10-31 (BC1)
+
+- La Timeline consomme désormais les intervalles légers `task_events` de
+  l'overview et conserve les barres HTTP DL/UL sur la capture entière. Au
+  zoom, les détails remplacent les doublons par identifiant sans déplacer la
+  barre, le curseur ou la fenêtre temporelle.
+- Aucun changement de mise en page : le composant ECharts, ses couleurs,
+  libellés, durées, zoom, scroll et sélection existants sont conservés.
+- SemVer front : **PATCH 1.126.12**.
+
 ## 1.126.11 (patch) — BC4-FRONT 2026-10-31 — lien serving du point actif uniquement (Agent BC4)
 
 - Map et Signaling n'affichent plus aucune liaison serving à l'ouverture.

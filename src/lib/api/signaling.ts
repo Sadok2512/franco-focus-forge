@@ -255,6 +255,7 @@ export const signalingSchemas = {
       }),
     ),
     state_events: z.array(z.record(z.unknown())).optional(),
+    task_events: z.array(z.record(z.unknown())).optional(),
     bucket_s: z.number(),
     total: z.number(),
     missing_time: z.number(),

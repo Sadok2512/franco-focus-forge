@@ -22,7 +22,7 @@ import { eventIcon, iconImage } from "./event-icons";
 import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
 import { clampNameTagX, nearestNameTag, type NameTag } from "./name-tag";
-import { shouldLoadTimelineDetail } from "./timeline-loading";
+import { mergeTimelineEvents, shouldLoadTimelineDetail } from "./timeline-loading";
 
 // Fixed lane order: RRC state on top (user request), then UE state,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -201,13 +201,17 @@ export function RfTimeline({
     () => (overview.data?.state_events ?? []) as unknown as RfEvent[],
     [overview.data?.state_events],
   );
+  const overviewTaskEvents = useMemo(
+    () => (overview.data?.task_events ?? []) as unknown as RfEvent[],
+    [overview.data?.task_events],
+  );
   const eligibleEvents = useMemo(
     () => {
-      const stateIds = new Set(overviewStateEvents.map((event) => event.id));
-      const source = [
-        ...overviewStateEvents,
-        ...(events.data?.events.filter((event) => !stateIds.has(event.id)) ?? []),
-      ];
+      const source = mergeTimelineEvents(
+        overviewStateEvents,
+        overviewTaskEvents,
+        events.data?.events ?? [],
+      );
       return source.filter(
         (e) =>
           !e.attrs.protocol ||
@@ -219,7 +223,7 @@ export function RfTimeline({
             e.t_rel_s !== null),
       );
     },
-    [events.data, overviewStateEvents, layers, allowedProtocols],
+    [events.data, overviewStateEvents, overviewTaskEvents, layers, allowedProtocols],
   );
   const states = useMemo(
     () => (stateTracksV2 ? provenStates(overviewStateEvents, captureId) : []),
@@ -996,7 +1000,12 @@ export function RfTimeline({
     detailEnabled,
   ]);
   return (
-    <div ref={root} className="flex min-h-0 flex-1 flex-col bg-card" data-testid="rf-timeline">
+    <div
+      ref={root}
+      className="flex min-h-0 flex-1 flex-col bg-card"
+      data-testid="rf-timeline"
+      data-task-count={overviewTaskEvents.length}
+    >
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="flex items-center gap-2" aria-hidden="true">
           {severityLegend.map((s) => (
