@@ -58,6 +58,27 @@ export const ImportReportSchema = z.object({
 });
 export type ImportReport = z.infer<typeof ImportReportSchema>;
 
+export const CellReferenceJobAcceptedSchema = z.object({
+  job_id: z.string(),
+  status: z.literal("queued"),
+  filename: z.string(),
+  source_bytes: z.number().int().nonnegative(),
+});
+
+export const CellReferenceJobSchema = z.object({
+  job_id: z.string(),
+  filename: z.string(),
+  uploaded_at: z.string(),
+  status: z.enum(["queued", "running", "completed", "empty", "failed"]),
+  progress_percent: z.number().int().min(0).max(100),
+  rows_read: z.number().int().nonnegative(),
+  rows_loaded: z.number().int().nonnegative(),
+  rows_rejected: z.number().int().nonnegative(),
+  report: ImportReportSchema.nullable(),
+  error: z.object({ code: z.string(), reason: z.string() }).nullable(),
+});
+export type CellReferenceJob = z.infer<typeof CellReferenceJobSchema>;
+
 export const ReferenceImportEntrySchema = z.object({
   id: z.string(),
   filename: z.string(),

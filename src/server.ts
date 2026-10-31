@@ -126,11 +126,10 @@ export async function proxyApiRequest(request: Request): Promise<Response> {
     init.body = request.body;
     init.duplex = "half";
   }
-  // Bun's fetch has a 300 s socket-idle timeout. Large cell-reference CSVs
-  // finish streaming quickly, then legitimately spend several minutes in the
-  // API before response headers exist. Raise that limit only for these two
-  // multipart routes; the request body remains a ReadableStream (no buffering
-  // in Nitro) and the API keeps the authoritative 256 MiB limit.
+  // Bun's fetch has a 300 s socket-idle timeout. Keep a route-local margin for
+  // slow clients sending a cell-reference CSV: the request body stays a
+  // ReadableStream (no buffering in Nitro), while the API enforces the
+  // authoritative 256 MiB limit and returns 202 once the spool is durable.
   if (isCellReferenceUpload(source.pathname, request.method)) {
     init.timeout = CELL_REFERENCE_UPLOAD_TIMEOUT_MS;
   }

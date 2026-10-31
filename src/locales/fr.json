@@ -1161,7 +1161,8 @@
   },
   "settingsCellRef": {
     "sending": "Envoi : {{loaded}} / {{total}}",
-    "processing": "Fichier transmis — import du référentiel en cours…"
+    "processing": "Fichier transmis — import du référentiel en cours…",
+    "processingProgress": "Import serveur {{status}} — {{percent}} %"
   },
   "rsrpDiagnosis": {
     "open": "Diagnostic IA",

@@ -1161,7 +1161,8 @@
   },
   "settingsCellRef": {
     "sending": "Uploading: {{loaded}} / {{total}}",
-    "processing": "File uploaded — cell-reference import in progress…"
+    "processing": "File uploaded — cell-reference import in progress…",
+    "processingProgress": "Server import {{status}} — {{percent}}%"
   },
   "rsrpDiagnosis": {
     "open": "AI diagnosis",

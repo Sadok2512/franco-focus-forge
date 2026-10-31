@@ -1,8 +1,10 @@
 ## Unreleased (patch) — upload du référentiel cellulaire fiable (Agent BC1, numérotation BC3)
 
-- Le proxy Bun transmet toujours le multipart en flux et porte à une heure son
-  délai d'attente, uniquement pour les deux routes d'import du référentiel ;
-  la limite serveur reste fixée à 256 Mio.
+- Le proxy Bun transmet le multipart en flux et porte à une heure son délai
+  d'envoi, uniquement pour les deux routes du référentiel ; la limite API
+  reste fixée à 256 Mio.
+- L'interface reçoit immédiatement l'identifiant du job asynchrone, suit son
+  état jusqu'au résultat puis recharge l'historique des imports.
 - Une coupure du proxy renvoie une erreur 504 structurée et lisible dans
   l'interface. La progression distingue l'envoi du traitement serveur, puis
   l'historique et le résumé sont rechargés avant de déclarer l'import terminé.
