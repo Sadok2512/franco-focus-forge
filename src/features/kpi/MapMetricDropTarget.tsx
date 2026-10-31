@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { Eye, EyeOff, X } from "lucide-react";
@@ -11,9 +12,10 @@ import { mapFeatures } from "./map-model";
 import { classOf, metricClasses, useMetricLegendSettings, MIN_CLASSES, MAX_CLASSES } from "./metric-classes";
 import { addMapMetric, MAP_METRIC_MIME, readMapMetric, type MapMetric } from "./map-metric-drop";
 
-function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
+function AddedMetric({ metric, map, projectId, captureId, filters, onRemove, legendHost }: {
   metric: MapMetric; map: MlMap | null; projectId: string; captureId: string | undefined;
   filters: KpiQueryFilters; onRemove: () => void;
+  legendHost: HTMLDivElement | null;
 }) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
@@ -57,7 +59,7 @@ function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
     if (!map) return;
     try { if (map.getLayer(id)) map.removeLayer(id); if (map.getSource(id)) map.removeSource(id); } catch { /* Map may already have been disposed. */ }
   }, [map, id]);
-  return <section className="border-t border-border pt-2" data-map-added-metric={metric.code}>
+  return legendHost ? createPortal(<section className="border-t border-border pt-2" data-map-added-metric={metric.code}>
     <div className="flex items-center gap-1">
       <span className="min-w-0 flex-1 break-words font-semibold">{metric.label}{metric.unit ? ` · ${metric.unit}` : ""}</span>
       <Button size="icon" variant="ghost" className="h-7 w-7 shrink-0" aria-label={t("mapMetricDrop.visibility", { metric: metric.label })} aria-pressed={visible} onClick={() => setVisible((v) => !v)}>{visible ? <Eye size={14} /> : <EyeOff size={14} />}</Button>
@@ -72,7 +74,7 @@ function AddedMetric({ metric, map, projectId, captureId, filters, onRemove }: {
       <span className="tabular-nums">{features.filter((f) => f.properties.cls === c.id).length}</span>
     </div>)}
     {classes.length > 0 && <label className="flex items-center justify-between gap-2 text-xs">{t("mapWorkspace.legendCount")}<select className="border border-border bg-background" value={settings.count ?? 5} onChange={(e) => setSettings({ count: Number(e.target.value), colors: {} })}>{Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map((n) => <option key={n} value={n}>{n}</option>)}</select></label>}
-  </section>;
+  </section>, legendHost) : null;
 }
 
 export function MapMetricDropTarget({ base, map, projectId, captureId, filters, workspaceId, children }: {
@@ -82,6 +84,7 @@ export function MapMetricDropTarget({ base, map, projectId, captureId, filters, 
   const key = `bc4.map.added-metrics.v1.${projectId}.${workspaceId}.${base.kind}.${base.code}`;
   const [metrics, setMetrics] = useState<MapMetric[]>([]);
   const [over, setOver] = useState(false);
+  const [legendHost, setLegendHost] = useState<HTMLDivElement | null>(null);
   useEffect(() => {
     try {
       const raw: unknown = JSON.parse(localStorage.getItem(key) ?? "[]");
@@ -93,6 +96,7 @@ export function MapMetricDropTarget({ base, map, projectId, captureId, filters, 
     onDragOver={(e) => { if (!e.dataTransfer.types.includes(MAP_METRIC_MIME)) return; e.preventDefault(); e.stopPropagation(); e.dataTransfer.dropEffect = "copy"; setOver(true); }}
     onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setOver(false); }}
     onDrop={(e) => { const metric = readMapMetric(e.dataTransfer.getData(MAP_METRIC_MIME)); setOver(false); if (!metric) return; e.preventDefault(); e.stopPropagation(); save(addMapMetric(metrics, metric, base)); }}>
-    {children(metrics.map((metric) => <AddedMetric key={`${metric.kind}:${metric.code}`} metric={metric} map={map} projectId={projectId} captureId={captureId} filters={filters} onRemove={() => save(metrics.filter((m) => m !== metric))} />))}
+    {children(<div ref={setLegendHost} />)}
+    {metrics.map((metric) => <AddedMetric key={`${metric.kind}:${metric.code}`} metric={metric} map={map} projectId={projectId} captureId={captureId} filters={filters} legendHost={legendHost} onRemove={() => save(metrics.filter((m) => m !== metric))} />)}
   </div>;
 }
