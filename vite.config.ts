@@ -28,9 +28,6 @@ export default defineConfig({
   // /assets/*.js|css est aussi émis en .gz et .br, Nitro sert la variante
   // selon Accept-Encoding du client (gain ~70 % : 662 KB → ~200 KB gzip,
   // ~170 KB br). Compression statique faite au build, zéro CPU runtime.
-  nitro: {
-    compressPublicAssets: { gzip: true, brotli: true },
-  },
   vite: {
     optimizeDeps: { exclude: ["maplibre-gl"] },
     server: {

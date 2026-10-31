@@ -236,7 +236,7 @@ function Overview() {
         axisLabel: { color: c.muted, fontSize: 10 },
         splitLine: { lineStyle: { color: c.border } },
       },
-      series: (p?.operators ?? []).map((op) => ({
+      series: ((p?.operators ?? []) as Operator[]).map((op) => ({
         name: op,
         type: "line" as const,
         smooth: true,
