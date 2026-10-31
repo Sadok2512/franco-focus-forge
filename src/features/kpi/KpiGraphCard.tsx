@@ -452,6 +452,7 @@ export function KpiGraphCard({
       data-code={entry.item.code}
       data-visualization={config.visualization}
       data-status={status}
+      style={config.visualization === "map" ? { position: "relative" } : undefined}
       onFocus={onActivate}
     >
       <header
@@ -474,7 +475,9 @@ export function KpiGraphCard({
             </p>
           </div>
         )}
-        <div className="flex gap-0.5 shrink-0 rounded-md bg-card/90 shadow-sm">
+        <div
+          className={`flex gap-0.5 shrink-0 ${config.visualization === "map" ? "rounded-md bg-card/90 shadow-sm" : ""}`}
+        >
           <Popover open={settings} onOpenChange={setSettings}>
             <PopoverAnchor asChild>
               <span className="inline-flex">
