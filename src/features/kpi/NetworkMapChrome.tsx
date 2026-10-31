@@ -255,28 +255,57 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
       <LegendRow title={t("mapWorkspace.technology")}>
-        <Swatch color={NR_COLOR} label="5G NR" />
-        <Swatch color={LTE_COLOR} label="4G LTE" />
+        <Swatch
+          color={NR_COLOR}
+          label="5G NR"
+          active={isActive(filters.technos, ["5G"])}
+          onClick={() => setTechnos(["5G"])}
+        />
+        <Swatch
+          color={LTE_COLOR}
+          label="4G LTE"
+          active={isActive(filters.technos, ["4G", "LTE"])}
+          onClick={() => setTechnos(["4G", "LTE"])}
+        />
       </LegendRow>
       <LegendRow title={t("mapWorkspace.bands")}>
-        {NETWORK_BANDS.filter((b) => isActive(filters.bands, [b.code])).map((b) => (
-          <Swatch key={b.key} color={bandColor(b.key)} label={b.key} hideLabel={!compact} />
+        {NETWORK_BANDS.map((b) => (
+          <Swatch
+            key={b.key}
+            color={bandColor(b.key)}
+            label={b.key}
+            hideLabel={!compact}
+            active={isActive(filters.bands, [b.code])}
+            onClick={() => setBand(b.code)}
+          />
         ))}
       </LegendRow>
       <LegendRow title={t("mapWorkspace.symbols")}>
-        <span className="inline-flex items-center gap-1">
+        <button
+          type="button"
+          aria-pressed={enabled}
+          onClick={onToggleEnabled}
+          className={`inline-flex items-center gap-1 rounded px-0.5 transition hover:bg-muted ${enabled ? "" : "opacity-40 line-through"}`}
+        >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-card bg-muted-foreground ring-1 ring-border" />
           {t("mapWorkspace.site")}
-        </span>
-        <span className="inline-flex items-center gap-1">
+        </button>
+        <button
+          type="button"
+          aria-pressed={cellsEnabled}
+          onClick={onToggleCells}
+          disabled={!enabled}
+          className={`inline-flex items-center gap-1 rounded px-0.5 transition hover:bg-muted disabled:cursor-not-allowed ${cellsEnabled && enabled ? "" : "opacity-40 line-through"}`}
+        >
           <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
             <path d="M6 11 L1 2 A6 6 0 0 1 11 2 Z" fill="currentColor" opacity="0.5" />
           </svg>
           {t("mapWorkspace.cellSector")}
-        </span>
+        </button>
       </LegendRow>
     </div>
   );
+
 
   return (
     <div
