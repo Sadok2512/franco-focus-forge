@@ -2199,16 +2199,22 @@ export function SignalingPage({
                           <thead>
                             <tr>
                               {shownCols.map((c) => {
-                                const def = COLUMNS.find((d) => d.key === c)!;
-                                const label = t(`sigTable.col.${c}`);
-                                const active = def.sortKey && sort === def.sortKey;
+                                const metric = isMetricCol(c);
+                                const def = metric ? undefined : COLUMNS.find((d) => d.key === c)!;
+                                const meta = metric ? metricMeta.get(metricCodeOf(c)) : undefined;
+                                const label = metric
+                                  ? meta
+                                    ? `${meta.label}${meta.unit ? ` (${meta.unit})` : ""}`
+                                    : metricCodeOf(c)
+                                  : t(`sigTable.col.${c}`);
+                                const active = def?.sortKey && sort === def.sortKey;
                                 return (
                                   <th
                                     key={c}
                                     data-col={c}
-                                    className={def.numeric ? "num" : undefined}
+                                    className={metric || def?.numeric ? "num" : undefined}
                                     title={
-                                      def.available ? undefined : t("sigTable.notSuppliedHint")
+                                      def && !def.available ? t("sigTable.notSuppliedHint") : undefined
                                     }
                                     aria-sort={
                                       active
