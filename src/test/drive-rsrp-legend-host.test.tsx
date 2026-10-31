@@ -60,6 +60,14 @@ function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement) {
   );
 }
 
+/** Browsers normalise hex colours to rgb(); compare in the same form. */
+function rgb(hex: string) {
+  const digits = hex.replace("#", "");
+  const expanded = digits.length === 3 ? digits.split("").map((c) => c + c).join("") : digits;
+  const value = parseInt(expanded, 16);
+  return `rgb(${(value >> 16) & 255}, ${(value >> 8) & 255}, ${value & 255})`;
+}
+
 describe("Drive RSRP legend inside the host map's legend panel", () => {
   beforeEach(() => {
     localStorage.clear();
@@ -90,7 +98,7 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
     const swatches = [...host.querySelectorAll<HTMLElement>("ul[aria-label='RSRP legend'] span[style]")].map(
       (span) => span.style.background,
     );
-    for (const cls of RSRP_CLASSES) expect(swatches).toContain(cls.color);
+    for (const cls of RSRP_CLASSES) expect(swatches).toContain(rgb(cls.color));
     // The proven cell links are listed too.
     expect(host.textContent).toContain("Serving cell");
     expect(host.textContent).toContain("Neighbour cells");
