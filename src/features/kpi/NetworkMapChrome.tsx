@@ -286,14 +286,35 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           </div>
         </aside>
       ) : (
-        <button
-          type="button"
-          onClick={() => setPanelOpen(true)}
-          aria-label={t("mapWorkspace.expandLayers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex h-10 items-center gap-1.5 rounded-xl px-3 text-[11px] font-semibold ${glass}`}
+        /* MAP UI V1 — collapsed sidebar keeps a compact vertical icon rail;
+           each icon reopens the panel, filters keep their values. */
+        <div
+          role="toolbar"
+          aria-orientation="vertical"
+          aria-label={t("mapWorkspace.layers")}
+          className={`pointer-events-auto absolute left-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
         >
-          <Layers className="h-4 w-4" /> {!compact && t("mapWorkspace.layers")}
-        </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.expandLayers")} onClick={() => setPanelOpen(true)}>
+            <Layers className="h-4 w-4" />
+          </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.moreFilters")} onClick={() => setPanelOpen(true)}>
+            <SlidersHorizontal className="h-4 w-4" />
+          </button>
+          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.legend")} onClick={() => setPanelOpen(true)}>
+            <List className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.search")}
+            onClick={() => {
+              if (compact) setSearchOpen(true);
+              searchInputRef.current?.focus();
+            }}
+          >
+            <Search className="h-4 w-4" />
+          </button>
+        </div>
       )}
 
       {/* 1.126.3 BC3 — Overlay « Zoomez pour voir les cellules » quand
@@ -343,15 +364,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           >
             {NETWORK_BANDS.map((b) => (
               <MenuCheck key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onClick={() => setBand(b.code)} />
-            ))}
-          </Dropdown>
-          <Dropdown
-            open={menu === "operator"}
-            onOpen={(o) => setMenu(o ? "operator" : null)}
-            label={`${t("mapSites.operator")} (${filters.operators.length || t("common.all")})`}
-          >
-            {OPERATORS.map((o) => (
-              <MenuCheck key={o.v} label={o.label} color={o.color} checked={isActive(filters.operators, [o.v])} onClick={() => onToggleOperator(o.v)} />
             ))}
           </Dropdown>
           <button type="button" onClick={() => setPanelOpen(!showPanel)} className={pill(false)}>
@@ -434,9 +446,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </button>
         <button type="button" className={railBtn(mode === "area")} aria-pressed={mode === "area"} aria-label={t("mapWorkspace.area")} onClick={() => startMeasure("area")}>
           <Spline className="h-4 w-4" />
-        </button>
-        <button type="button" className={railBtn(mode === "none")} aria-pressed={mode === "none"} aria-label={t("mapWorkspace.select")} onClick={() => setMode("none")}>
-          <MousePointer2 className="h-4 w-4" />
         </button>
         <button type="button" className={railBtn(basemapOpen)} aria-expanded={basemapOpen} aria-label={t("mapWorkspace.basemap")} onClick={() => setBasemapOpen((v) => !v)}>
           <Layers className="h-4 w-4" />
