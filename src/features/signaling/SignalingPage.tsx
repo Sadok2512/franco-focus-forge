@@ -2152,6 +2152,16 @@ export function SignalingPage({
                               <DropdownMenuSeparator />
                               <button
                                 type="button"
+                                onClick={() => setMetricPickerOpen(true)}
+                                className="flex w-full items-center gap-2 px-2 py-1 text-left text-xs hover:bg-accent"
+                                data-testid="signaling-add-metric"
+                              >
+                                <Plus size={12} aria-hidden="true" />
+                                {t("sigTable.addMetric")}
+                              </button>
+                              <DropdownMenuSeparator />
+                              <button
+                                type="button"
                                 onClick={() => setColConfig(defaultColumns())}
                                 className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
                               >
@@ -2159,6 +2169,24 @@ export function SignalingPage({
                               </button>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          <Dialog open={metricPickerOpen} onOpenChange={setMetricPickerOpen}>
+                            <DialogContent className="flex max-w-md flex-col gap-2">
+                              <DialogHeader>
+                                <DialogTitle>{t("sigTable.addMetricTitle")}</DialogTitle>
+                              </DialogHeader>
+                              <div
+                                className="h-96 min-h-0 overflow-auto"
+                                data-testid="signaling-metric-picker"
+                              >
+                                <MetricsCatalogSidebar
+                                  projectId={projectId}
+                                  selected={metricCodes}
+                                  onToggle={toggleMetricColumn}
+                                  searchRef={metricSearchRef}
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           <button
                             type="button"
                             className="sig-tool sig-tool-icon"
