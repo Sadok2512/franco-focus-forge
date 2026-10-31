@@ -361,10 +361,13 @@ function Workspace({
   const tableOnlyWorkspace =
     selectedMetrics.length > 0 && graphMetricCount === 0 && codes.length === 0 && metricsTablePane;
   const mapOnlyWorkspace =
-    codes.length === 0 &&
-    selectedMetrics.length === 1 &&
-    metricViews[selectedMetrics[0]!] === "map" &&
-    !metricsTablePane;
+    !metricsTablePane &&
+    ((codes.length === 0 &&
+      selectedMetrics.length === 1 &&
+      metricViews[selectedMetrics[0]!] === "map") ||
+      (selectedMetrics.length === 0 &&
+        codes.length === 1 &&
+        configFor(codes[0]!).visualization === "map"));
   const [cardViewRequest, setCardViewRequest] = useState<
     { code: string; view: MetricView; n: number } | undefined
   >();

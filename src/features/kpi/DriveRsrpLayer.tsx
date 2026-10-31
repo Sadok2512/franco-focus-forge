@@ -129,6 +129,7 @@ export function DriveRsrpLayer({
   autoFrame = true,
   positions,
   onRouteChange,
+  hidePoints = false,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -137,6 +138,8 @@ export function DriveRsrpLayer({
   /** Capture positions the page already holds, used when a row carries no GPS of its own. */
   positions?: RsrpPosition[];
   onRouteChange?: (coordinates: Array<[number, number]>) => void;
+  /** Hide the RSRP-coloured points (KPI maps draw their own metric points). */
+  hidePoints?: boolean;
 }) {
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
@@ -518,7 +521,7 @@ export function DriveRsrpLayer({
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }
       if (!map.getLayer(LAYER)) return;
-      map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+      map.setLayoutProperty(LAYER, "visibility", prefs.on && !hidePoints ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
       map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
       map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
@@ -658,7 +661,7 @@ export function DriveRsrpLayer({
 
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
-    map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+    map.setLayoutProperty(LAYER, "visibility", prefs.on && !hidePoints ? "visible" : "none");
     if (map.getLayer(LINK_LAYER))
       map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
     if (map.getLayer(LINK_LAYER_PROBABLE))

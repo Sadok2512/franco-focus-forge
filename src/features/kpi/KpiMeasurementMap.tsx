@@ -231,7 +231,7 @@ export function KpiMeasurementMap({
   // No capture selector (user request): the card follows the active capture,
   // defaulting to the first one returned by the API.
   return (
-    <div>
+    <div className="flex h-full min-h-[280px] flex-col">
       {(captures.isError || query.isError) && (
         <button
           className="kpi-button"
@@ -244,6 +244,7 @@ export function KpiMeasurementMap({
           {translate("kpi.af273d956b5b")}{" "}
         </button>
       )}
+      <div className="relative min-h-0 flex-1">
       <KpiMapOSM
         workspace
         showOperatorLegend={false}
@@ -255,7 +256,7 @@ export function KpiMeasurementMap({
       >
         {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
             lines to the API-published cells and the blinking serving site. */}
-        <DriveRsrpLayer map={map} projectId={projectId} activeCaptureId={captureId ?? ""} autoFrame={false} />
+        <DriveRsrpLayer map={map} projectId={projectId} activeCaptureId={captureId ?? ""} autoFrame={false} hidePoints />
         <div
           role="status"
           className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
@@ -263,6 +264,7 @@ export function KpiMeasurementMap({
           {message}
         </div>
       </KpiMapOSM>
+      </div>
     </div>
   );
 }
