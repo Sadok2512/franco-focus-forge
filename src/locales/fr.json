@@ -1159,6 +1159,20 @@
       }
     }
   },
+  "mapPointPopup": {
+    "time": "Heure",
+    "serving": "Cellule serving",
+    "neighbours": "Voisines ({{count}})",
+    "neighbour": "Voisine",
+    "nrAnchor": "Ancre NR",
+    "lineStyles": "Styles des liens",
+    "solid": "Plein · prouvé",
+    "dashed": "Pointillés · probable",
+    "confidence": {
+      "proven": "Prouvé",
+      "probable": "Probable"
+    }
+  },
   "rsrpDiagnosis": {
     "open": "Diagnostic IA",
     "title": "Pourquoi les points RSRP manquent ?",

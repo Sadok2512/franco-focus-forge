@@ -17,22 +17,42 @@ import {
   type RsrpClassId,
   type RsrpPosition,
 } from "./drive-rsrp";
+import {
+  buildMeasurementPointPopup,
+  CELL_LINK_COLORS,
+  CELL_LINK_KINDS,
+  pointCellLinks,
+  pointDetails,
+  type CellLinkKind,
+} from "./measurement-point-popup";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
-const LINK_LAYER = "bc4-drive-rsrp-serving-links";
+const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
+const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
 // v2 enables the measurement layer on first use. The dedicated Map page is
 // expected to open on real radio points rather than on an empty basemap.
 const STORE = "bc4.map.driveRsrp.v2";
 
-type Prefs = { on: boolean; opacity: number; hidden: RsrpClassId[] };
-const DEFAULT: Prefs = { on: true, opacity: 90, hidden: [] };
+type Prefs = {
+  on: boolean;
+  opacity: number;
+  hidden: RsrpClassId[];
+  links: Record<CellLinkKind, boolean>;
+};
+const DEFAULT: Prefs = {
+  on: true,
+  opacity: 90,
+  hidden: [],
+  links: { serving: true, neighbour: true, nr_anchor: true },
+};
 const LAST_CAPTURE_STORE = "bc4.driveRsrp.lastCapture";
 
 function readPrefs(store: string, defaults: Prefs): Prefs {
   try {
-    return { ...defaults, ...JSON.parse(localStorage.getItem(store) ?? "{}") };
+    const stored = JSON.parse(localStorage.getItem(store) ?? "{}") as Partial<Prefs>;
+    return { ...defaults, ...stored, links: { ...defaults.links, ...stored.links } };
   } catch {
     return defaults;
   }
@@ -65,6 +85,7 @@ export function DriveRsrpLayer({
   const [open, setOpen] = useState(false);
   const [captureId, setCaptureId] = useState<string>();
   const [diagOpen, setDiagOpen] = useState(false);
+  const [selectedSeq, setSelectedSeq] = useState<number | null>(null);
   const explicitCapture = useRef(false);
   const automaticRecoveryAttempted = useRef(false);
   const previousProjectId = useRef(projectId);
@@ -154,13 +175,18 @@ export function DriveRsrpLayer({
     if (!gps.data) return [];
     return rsrpPositionsFrom(gps.data.points, gps.data.markers);
   }, [positions, gps.data]);
+  const drivePoints = useMemo(
+    () => driveRsrpPoints(analysis.data, allPositions),
+    [analysis.data, allPositions],
+  );
   const features = useMemo(
     () =>
-      driveRsrpPoints(analysis.data, allPositions).map((p) => ({
+      drivePoints.map((p) => ({
         type: "Feature" as const,
         geometry: { type: "Point" as const, coordinates: [p.lng, p.lat] as [number, number] },
         properties: {
           value: p.value,
+          t_rel_s: p.t_rel_s,
           seq: p.seq,
           capture_id: effectiveCaptureId,
           unit: "dBm",
@@ -174,7 +200,7 @@ export function DriveRsrpLayer({
           serving_site_name: p.serving_site_name,
         },
       })),
-    [analysis.data, allPositions, effectiveCaptureId],
+    [drivePoints, effectiveCaptureId],
   );
   useEffect(() => {
     const routePositions = gps.data?.markers?.length ? gps.data.markers : allPositions;
@@ -188,39 +214,48 @@ export function DriveRsrpLayer({
       )
       .map((point) => [point.lng, point.lat] as [number, number]);
     onRouteChange?.(
-      captureRoute.length
-        ? captureRoute
-        : features.map((feature) => feature.geometry.coordinates),
+      captureRoute.length ? captureRoute : features.map((feature) => feature.geometry.coordinates),
     );
   }, [allPositions, features, gps.data?.markers, onRouteChange]);
+  const pointLinks = useMemo(
+    () => drivePoints.map((point) => ({ point, links: pointCellLinks(point) })),
+    [drivePoints],
+  );
   const linkFeatures = useMemo(
     () =>
-      driveRsrpPoints(analysis.data, allPositions).flatMap((p) =>
-        typeof p.serving_cell_lat === "number" && typeof p.serving_cell_lng === "number"
-          ? [
-              {
-                type: "Feature" as const,
-                geometry: {
-                  type: "LineString" as const,
-                  coordinates: [
-                    [p.lng, p.lat],
-                    [p.serving_cell_lng, p.serving_cell_lat],
-                  ],
-                },
-                properties: {
-                  seq: p.seq,
-                  serving_cell_id: p.serving_cell_id,
-                  serving_cell_seq: p.serving_cell_seq,
-                  serving_cell_ref_id: p.serving_cell_ref_id,
-                  serving_site_id: p.serving_site_id,
-                  serving_site_name: p.serving_site_name,
-                  proof: p.serving_cell_source,
-                },
-              },
-            ]
-          : [],
+      pointLinks.flatMap(({ point, links }) =>
+        links
+          .filter((link) => prefs.links[link.kind])
+          .map((link) => ({
+            type: "Feature" as const,
+            geometry: {
+              type: "LineString" as const,
+              coordinates: [
+                [point.lng, point.lat],
+                [link.lng, link.lat],
+              ],
+            },
+            properties: {
+              seq: point.seq,
+              link_type: link.kind,
+              confidence: link.confidence,
+              source: link.source ?? "",
+              selected: selectedSeq !== null && selectedSeq === point.seq,
+              has_selection: selectedSeq !== null,
+            },
+          })),
       ),
-    [analysis.data, allPositions],
+    [pointLinks, prefs.links, selectedSeq],
+  );
+  const linkCounts = useMemo(
+    () =>
+      pointLinks
+        .flatMap(({ links }) => links)
+        .reduce<Record<CellLinkKind, number>>(
+          (counts, link) => ({ ...counts, [link.kind]: counts[link.kind] + 1 }),
+          { serving: 0, neighbour: 0, nr_anchor: 0 },
+        ),
+    [pointLinks],
   );
 
   const diag = useMemo(
@@ -281,16 +316,37 @@ export function DriveRsrpLayer({
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
         });
-        map.addLayer({
-          id: LINK_LAYER,
-          type: "line",
-          source: LINK_SOURCE,
-          paint: {
-            "line-color": "#2563eb",
-            "line-width": ["interpolate", ["linear"], ["zoom"], 9, 0.5, 14, 1.25, 18, 2],
-            "line-opacity": 0.32,
-          },
-        });
+        for (const confidence of ["proven", "probable"] as const) {
+          map.addLayer({
+            id: confidence === "proven" ? LINK_LAYER : LINK_LAYER_PROBABLE,
+            type: "line",
+            source: LINK_SOURCE,
+            filter: ["==", ["get", "confidence"], confidence],
+            paint: {
+              "line-color": [
+                "match",
+                ["get", "link_type"],
+                "serving",
+                CELL_LINK_COLORS.serving,
+                "neighbour",
+                CELL_LINK_COLORS.neighbour,
+                "nr_anchor",
+                CELL_LINK_COLORS.nr_anchor,
+                "#64748b",
+              ],
+              "line-width": ["case", ["get", "selected"], 3, 1.5],
+              "line-opacity": [
+                "case",
+                ["get", "selected"],
+                1,
+                ["get", "has_selection"],
+                0.18,
+                0.55,
+              ],
+              ...(confidence === "probable" ? { "line-dasharray": [2, 2] } : {}),
+            },
+          });
+        }
       }
       if (!map.getSource(SOURCE)) {
         map.addSource(SOURCE, {
@@ -327,6 +383,8 @@ export function DriveRsrpLayer({
       });
       if (map.getLayer(LINK_LAYER))
         map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
+      if (map.getLayer(LINK_LAYER_PROBABLE))
+        map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
@@ -385,6 +443,8 @@ export function DriveRsrpLayer({
     map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
     if (map.getLayer(LINK_LAYER))
       map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
+    if (map.getLayer(LINK_LAYER_PROBABLE))
+      map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
     map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
     map.setFilter(
       LAYER,
@@ -405,35 +465,20 @@ export function DriveRsrpLayer({
     const click = async (e: MapLayerMouseEvent) => {
       const p = e.features?.[0]?.properties;
       if (!p) return;
+      const seq = Number(p["seq"]);
+      const point = drivePoints.find((candidate) => candidate.seq === seq);
+      if (!point) return;
       const { Popup } = await import("maplibre-gl");
       if (disposed) return;
-      const el = document.createElement("div");
-      el.style.whiteSpace = "pre-line";
-      el.textContent =
-        t("mapWorkspace.driveRsrpPopup", {
-          value: p["value"],
-          unit: p["unit"] || "dBm",
-          capture: p["capture_id"],
-          seq: p["seq"],
-        }) +
-        "\n" +
-        t("mapWorkspace.driveRsrpPopupCell", { cell: p["cell"] ?? 0 }) +
-        "\n" +
-        t(
-          p["position_source"] === "capture"
-            ? "mapWorkspace.driveRsrpPopupPosCapture"
-            : "mapWorkspace.driveRsrpPopupPosRow",
-        ) +
-        (p["serving_cell_id"]
-          ? "\n" +
-            t("mapWorkspace.driveRsrpPopupServing", {
-              cell: p["serving_cell_id"],
-              site: p["serving_site_name"] || p["serving_site_id"] || "—",
-              seq: p["serving_cell_seq"],
-            })
-          : "");
+      setSelectedSeq(seq);
+      const el = buildMeasurementPointPopup(
+        pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm"),
+      );
       popup?.remove();
-      popup = new Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map);
+      popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
+        .setLngLat(e.lngLat)
+        .setDOMContent(el)
+        .addTo(map);
     };
     map.on("click", LAYER, click);
     return () => {
@@ -441,7 +486,7 @@ export function DriveRsrpLayer({
       popup?.remove();
       map.off("click", LAYER, click);
     };
-  }, [map, t]);
+  }, [drivePoints, map, t]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -616,6 +661,40 @@ export function DriveRsrpLayer({
               );
             })}
           </ul>
+          <fieldset className="space-y-1 border-t pt-2">
+            <legend className="font-semibold">{t("metrics.mapCellLinks")}</legend>
+            {CELL_LINK_KINDS.map((kind) => (
+              <label key={kind} className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={prefs.links[kind]}
+                  onChange={(event) =>
+                    update({ links: { ...prefs.links, [kind]: event.target.checked } })
+                  }
+                />
+                <span
+                  className="h-0 w-5 border-t-[3px]"
+                  style={{ borderColor: CELL_LINK_COLORS[kind] }}
+                />
+                <span className="flex-1">{t(`metrics.mapLink.${kind}`)}</span>
+                <span className="tabular-nums text-muted-foreground">{linkCounts[kind]}</span>
+              </label>
+            ))}
+            <div
+              className="measurement-link-style-legend pt-1"
+              data-testid="measurement-link-style-legend"
+            >
+              <strong>{t("mapPointPopup.lineStyles")}</strong>
+              <span>
+                <i className="measurement-popup-line is-proven" />
+                {t("mapPointPopup.solid")}
+              </span>
+              <span>
+                <i className="measurement-popup-line is-probable" />
+                {t("mapPointPopup.dashed")}
+              </span>
+            </div>
+          </fieldset>
           <div>
             <div className="mb-1 flex justify-between">
               <span>{t("mapWorkspace.driveRsrpOpacity")}</span>

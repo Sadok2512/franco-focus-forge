@@ -1,3 +1,25 @@
+## 1.126.5 (patch) — BC4-FRONT 2026-10-31 — fiche des points et liens radio (Agent BC4, numérotation BC3)
+
+Merge `bc4/map-point-popup` (`95cef18`). Les trois cartes (Map,
+Signaling, KPI Metrics) partagent désormais la même fiche de point et
+une mise en forme deux-styles pour les liens radio.
+
+- Fiche unique : heure de capture, valeur/unité, cellule serving,
+  PCI/EARFCN/distance, voisines mesurées et ancre NR quand l'API les
+  fournit.
+- Le clic renforce uniquement les liens appartenant au point
+  sélectionné. Serving, voisines et ancre NR gardent trois couleurs et
+  trois interrupteurs indépendants sur les trois cartes.
+- Deux styles de liens : trait plein pour `proven`, pointillés pour
+  `probable`. La légende décrit les deux styles ; aucun lien absent de
+  la réponse API n'est inventé.
+- Schéma front compatible avec le contrat `link_method/confidence`
+  (back 0.117.0 + patch 0.117.1 ) et avec les preuves radio détaillées
+  existantes.
+- Preuve jetable :
+  `BC4_FRONT_BASE=http://127.0.0.1:9183 node scripts/map_point_popup_evidence.mjs`.
+- SemVer front : **PATCH 1.126.5**.
+
 ## 1.126.4 (patch) — BC4-FRONT 2026-10-30 — valeurs initiales + cadrage sur parcours capture (Agent BC4, numérotation BC3)
 
 Merge `bc4/map-defaults` (`269ef56`). Finalise l'ergonomie carte en

@@ -1,0 +1,31 @@
+{
+  "base": "http://127.0.0.1:9183",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "fixture": {
+    "points": 9
+  },
+  "popups": {
+    "map-popup": {
+      "complete": true,
+      "text": "Drive RSRP\n-95 dBm\nTime 00:01:05.525 · seq 4204\nServing cell\nPROVEN\nDOUAI CENTRE\nPCI 196 · EARFCN 1675 · 412 m\nNEIGHBOURS (1)\nNeighbour\nPROBABLE\nDOUAI NORD\nPCI 195 · EARFCN 1675 · 859 m · -98 dBm\nNR anchor\nPROVEN\nDOUAI NR\nPCI 7 · EARFCN 643392 · 1.20 km"
+    },
+    "signaling-popup": {
+      "complete": true,
+      "text": "Drive RSRP\n-95 dBm\nTime 00:01:05.525 · seq 4204\nServing cell\nPROVEN\nDOUAI CENTRE\nPCI 196 · EARFCN 1675 · 412 m\nNEIGHBOURS (1)\nNeighbour\nPROBABLE\nDOUAI NORD\nPCI 195 · EARFCN 1675 · 859 m · -98 dBm\nNR anchor\nPROVEN\nDOUAI NR\nPCI 7 · EARFCN 643392 · 1.20 km"
+    },
+    "kpi": {
+      "complete": true,
+      "text": "RSRP (bloc LTE) @ Serving\n-95 dBm\nTime 00:01:05.525 · seq 4204\nServing cell\nPROVEN\nDOUAI CENTRE\nPCI 196 · EARFCN 1675 · 412 m\nNEIGHBOURS (1)\nNeighbour\nPROBABLE\nDOUAI NORD\nPCI 195 · EARFCN 1675 · 859 m · -98 dBm\nNR anchor\nPROVEN\nDOUAI NR\nPCI 7 · EARFCN 643392 · 1.20 km"
+    }
+  },
+  "lines": {
+    "legendText": "Link styles\nSolid · proven\nDashed · probable",
+    "solid": true,
+    "dashed": true,
+    "serving": true,
+    "neighbour": true,
+    "nrAnchor": true
+  },
+  "verdict": "PASS"
+}
