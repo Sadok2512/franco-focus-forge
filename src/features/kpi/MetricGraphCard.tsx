@@ -40,7 +40,7 @@ import {
   type TimeAxisMode,
 } from "./time-axis";
 
-const KPI_SERIES_RENDER_DEBUG = import.meta.env.VITE_KPI_SERIES_RENDER_DEBUG === "1";
+const KPI_SERIES_RENDER_DEBUG = import.meta.env["VITE_KPI_SERIES_RENDER_DEBUG"] === "1";
 
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *

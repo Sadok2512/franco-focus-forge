@@ -76,7 +76,7 @@ function projectDims(id: string) {
 function filtered(id: string, f: DictFilters): Observation[] {
   const { dims } = projectDims(id);
   const defs = new Map(DICT_STORE.params.map((d) => [d.param_id, d]));
-  return observationsFor(dims).filter((o) => {
+  return observationsFor(dims as unknown as Parameters<typeof observationsFor>[0]).filter((o) => {
     const d = defs.get(o.param_id)!;
     return (
       (!f.op?.length || f.op.includes(o.operator)) &&

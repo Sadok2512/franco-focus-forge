@@ -5,6 +5,7 @@
 //     React/TanStack dedupe, error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { loadEnv } from "vite";
 import type { ServerResponse } from "node:http";
 import { isTransientUpstreamError } from "./src/lib/upstream-unavailable";
 
@@ -14,7 +15,10 @@ import { isTransientUpstreamError } from "./src/lib/upstream-unavailable";
 //   2. http://api:8000  (nom de service docker-compose, cas par défaut
 //      quand le front tourne dans `bc4-front-1`).
 // Le navigateur, lui, ne voit que /api/* — même origine, pas de CORS.
-const API_UPSTREAM = process.env["VITE_BC4_API_UPSTREAM"] || "http://api:8000";
+const API_UPSTREAM =
+  process.env["VITE_BC4_API_UPSTREAM"] ||
+  loadEnv(process.env["NODE_ENV"] || "development", process.cwd(), "VITE_BC4_")["VITE_BC4_API_UPSTREAM"] ||
+  "http://api:8000";
 
 export default defineConfig({
   tanstackStart: {
@@ -28,9 +32,14 @@ export default defineConfig({
   // /assets/*.js|css est aussi émis en .gz et .br, Nitro sert la variante
   // selon Accept-Encoding du client (gain ~70 % : 662 KB → ~200 KB gzip,
   // ~170 KB br). Compression statique faite au build, zéro CPU runtime.
-  nitro: {
-    compressPublicAssets: { gzip: true, brotli: true },
-  },
+  // 1.126.8 BC3 : `nitro.compressPublicAssets` restauré après que Lovable
+  // l'ait retiré pour contourner un refus TypeScript du type Nitro exposé
+  // par @lovable.dev/vite-tanstack-config. Le typage Lovable est partiel ;
+  // Nitro accepte bien la clé au runtime (preuve : .gz/.br présents dans
+  // .output/public/assets/ du front en prod 1.126.7). Cast large pour
+  // satisfaire le type étroit de Lovable sans perdre la compression prod.
+  // @ts-expect-error — type Lovable (@lovable.dev/vite-tanstack-config) ne liste pas `nitro.compressPublicAssets` mais Nitro l'accepte au runtime (gz/br en prod).
+  nitro: { compressPublicAssets: { gzip: true, brotli: true } },
   vite: {
     optimizeDeps: { exclude: ["maplibre-gl"] },
     server: {

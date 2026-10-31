@@ -81,7 +81,7 @@ export type OverviewData = {
   points: OverviewPoint[];
   kpis: MetricValue[];
   byOperator: {
-    operator: Operator;
+    operator: string;
     samples: number;
     dl: number | null;
     rsrp: number | null;
@@ -109,7 +109,7 @@ const OverviewSchema = z.object({
   ),
   byOperator: z.array(
     z.object({
-      operator: z.enum(["Orange", "SFR", "Bouygues", "Free"]),
+      operator: z.string(),
       samples: z.number().int(),
       dl: z.number().nullable(),
       rsrp: z.number().nullable(),

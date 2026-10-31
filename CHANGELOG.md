@@ -1,3 +1,49 @@
+## 1.126.8 (patch) — BC4-FRONT 2026-10-31 — intégration github/Lovable, version serveur prioritaire en cas de conflit (BC3)
+
+Réconciliation `main` local (1.126.7) ↔ `github/main` divergent via
+`git merge -X ours github/main`. Les 7 commits Lovable (gpt-engineer-app
+bot) intégrés : `cb4ee92 Relancé tunnel BC4`, `f653578 Changes`,
+`989e732 Corrigé les erreurs de build`, `d4064e4 d6462f162390...`,
+`56dbb82`, `847f529`, `176999e`.
+
+**Baseline typecheck pré-merge** : 19 erreurs TS2769/TS7053/TS2339
+sur `OPERATOR_COLORS`/`OP_VAR`/`metric-map-view.test` + `vite.config.ts`
+`compressPublicAssets`. **Post-merge** : **0 erreur** (gain net des
+fixes build de Lovable).
+
+**Fichiers modifiés par le merge** (12, aucun conflit manuel) :
+- `src/features/assistant/AssistantMap.tsx` : `Record<Operator, string>` →
+  `Record<string, string>` + cast `p.operator as Operator`.
+- `src/features/kpi/MetricGraphCard.tsx` : `import.meta.env.X` → `env["X"]`.
+- `src/features/kpi/MetricsWorkspace.tsx` : `captureId ?? null` dans
+  queryKey + cast `mapQuery.data as MetricMapData | undefined`.
+- `src/lib/api/client.ts` : `Operator` → `string` (schéma + type) sur
+  `byOperator.operator` ; le serveur accepte désormais tout nom
+  d'opérateur (plus de restriction à Orange/SFR/Bouygues/Free).
+- `src/lib/api/dict-v2.ts` : cast du schéma DictTree.
+- `src/lib/api/dictionary.ts` : cast `dims` pour `observationsFor`.
+- `src/lib/api/fixtures.ts` : `OP_BIAS` typé `Record<string, number>`
+  avec fallback `?? 1` ; casts `Tech`/`Service`.
+- `src/mocks/assistant.ts` : cast `p.operator as Operator`.
+- `src/routes/_app.overview.tsx` : casts `o.op as Operator` pour
+  l'indexation de `OP_VAR`/`OP_DOT` + typage explicite de la série.
+- `src/test/metric-map-view.test.tsx` : casts `as any` sur map_points.
+- `vite.config.ts` : import `loadEnv` + fallback env + **BC3 restaure
+  `nitro.compressPublicAssets` avec `@ts-expect-error`** (Lovable
+  l'avait retiré ; Nitro l'accepte au runtime, prod génère bien
+  `.gz`+`.br` dans `.output/public/assets/`).
+- `.env` : réalignement URLs locales (dev Lovable), aucune incidence
+  sur l'image Docker prod (Dockerfile.v2 hardcode `/api` + `http://api:8000`).
+
+**Vérifications post-merge** :
+- `bun run typecheck` : 0 erreur ✓
+- `bun run build` : EXIT=0 ✓, `.output/public/assets/*.gz` + `*.br`
+  générés ✓ (compression prod préservée).
+- G55 (`src/test/G55-front-contract.test.ts`) : échec **pré-existant**
+  (`z.enum` TypeError), identique pré- et post-merge → non régressif.
+
+- SemVer front : **PATCH 1.126.8**.
+
 ## 1.126.7 (patch) — BC4-FRONT 2026-10-31 — tolère les imports legacy dans Historique (BC3)
 
 Comble l'écart révélé par le déploiement 1.126.6 + back 0.117.3 : les

@@ -205,7 +205,7 @@ function Overview() {
           data: opShare.map((o) => ({
             name: o.op,
             value: o.pct,
-            itemStyle: { color: css(OP_VAR[o.op]) },
+            itemStyle: { color: css(OP_VAR[o.op as Operator]) },
           })),
         },
       ],
@@ -236,7 +236,7 @@ function Overview() {
         axisLabel: { color: c.muted, fontSize: 10 },
         splitLine: { lineStyle: { color: c.border } },
       },
-      series: (p?.operators ?? []).map((op) => ({
+      series: ((p?.operators ?? []) as Operator[]).map((op) => ({
         name: op,
         type: "line" as const,
         smooth: true,
@@ -451,7 +451,7 @@ function Overview() {
                   {opShare.map((o) => (
                     <li key={o.op} className="flex items-center justify-between">
                       <span className="flex items-center gap-2">
-                        <span className={`h-2.5 w-2.5 rounded-sm ${OP_DOT[o.op]}`} />
+                        <span className={`h-2.5 w-2.5 rounded-sm ${OP_DOT[o.op as Operator]}`} />
                         {o.op}
                       </span>
                       <span className="num font-semibold">{o.pct}%</span>

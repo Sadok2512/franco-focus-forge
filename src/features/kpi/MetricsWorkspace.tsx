@@ -769,7 +769,7 @@ export function MetricsWorkspace({
   // One lean geographic response feeds every map card. The map chrome mounts
   // independently while the dedicated endpoint loads all points at once.
   const mapQuery = useQuery({
-    queryKey: metricMapKey(projectId, captureId, mapSelections, filters),
+    queryKey: metricMapKey(projectId, captureId ?? null, mapSelections, filters),
     queryFn: ({ signal }) => getMetricMap(projectId, captureId!, mapSelections, filters, signal),
     enabled: !!captureId && mapSelections.length > 0,
     staleTime: 60_000,
@@ -1209,7 +1209,7 @@ export function MetricsWorkspace({
                         selection={s.full}
                         title={title}
                         unit={info?.unit ?? ""}
-                        data={mapQuery.data}
+                        data={mapQuery.data as MetricMapData | undefined}
                         loading={mapQuery.isPending}
                         error={mapQuery.isError ? mapQuery.error : null}
                         onRetry={() => void mapQuery.refetch()}
@@ -1642,7 +1642,7 @@ export function MetricsWorkspace({
                 </div>
               ) : view === "map" ? (
                 <MetricMap
-                  data={data}
+                  data={data as unknown as MetricMapData}
                   label={data.columns[0]?.label ?? selections[0] ?? "Metric"}
                   unit={data.columns[0]?.unit ?? ""}
                   center={projectCenter}
