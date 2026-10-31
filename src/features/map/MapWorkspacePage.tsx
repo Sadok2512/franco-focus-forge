@@ -17,7 +17,10 @@ export function MapWorkspacePage() {
   const { activeProject } = useActiveProject();
   const [map, setMap] = useState<MlMap | null>(null);
   const [route, setRoute] = useState<Array<[number, number]>>([]);
-  const updateRoute = useCallback((coordinates: Array<[number, number]>) => setRoute(coordinates), []);
+  const updateRoute = useCallback(
+    (coordinates: Array<[number, number]>) => setRoute(coordinates),
+    [],
+  );
   const projectQuery = useQuery({
     queryKey: ["project", activeProject?.id],
     queryFn: ({ signal }) => getProject(activeProject!.id, signal),
@@ -38,7 +41,12 @@ export function MapWorkspacePage() {
         onMapReady={setMap}
         routeCoordinates={route}
       >
-        <DriveRsrpLayer map={map} projectId={activeProject.id} autoFrame={false} onRouteChange={updateRoute} />
+        <DriveRsrpLayer
+          map={map}
+          projectId={activeProject.id}
+          autoFrame={false}
+          onRouteChange={updateRoute}
+        />
         {projectQuery.isError && (
           <span
             role="status"

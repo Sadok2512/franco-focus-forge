@@ -6,8 +6,28 @@ describe("metric display geometry", () => {
     expect(metricRadius(50)).toEqual(["interpolate", ["linear"], ["zoom"], 9, 2, 14, 4, 18, 7]);
   });
   it("enlarges only the selected point and pulses its radius", () => {
-    expect(metricRadius(50, true)).toEqual(["interpolate", ["linear"], ["zoom"], 9, 5, 14, 7, 18, 10]);
-    expect(metricRadius(50, true, 1)).toEqual(["interpolate", ["linear"], ["zoom"], 9, 7, 14, 9, 18, 12]);
+    expect(metricRadius(50, true)).toEqual([
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      9,
+      5,
+      14,
+      7,
+      18,
+      10,
+    ]);
+    expect(metricRadius(50, true, 1)).toEqual([
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      9,
+      7,
+      14,
+      9,
+      18,
+      12,
+    ]);
   });
   it("limits presentation size to 0–100 percent", () => {
     expect(metricRadius(200)).toEqual(metricRadius(100));

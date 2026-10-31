@@ -73,7 +73,11 @@ export function SelectedPointCard({
             onClick={() => setCollapsed((c) => !c)}
             className="rounded p-1 hover:bg-muted"
           >
-            {collapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+            {collapsed ? (
+              <ChevronDown className="h-3.5 w-3.5" />
+            ) : (
+              <ChevronUp className="h-3.5 w-3.5" />
+            )}
           </button>
           <button
             type="button"

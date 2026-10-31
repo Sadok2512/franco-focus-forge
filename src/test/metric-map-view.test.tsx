@@ -180,53 +180,51 @@ describe("Map selection keeps its own panel", () => {
   it("keeps only API-proven cell links and exposes three independent link controls", async () => {
     renderers.map.mockClear();
     const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
-    const data = {
-      ...fixture,
-      map_points: [
-        {
-          seq: 7,
-          lat: 48.8,
-          lng: 2.3,
-          code: "cell_rsrp@0",
-          value: -91,
-          t_rel_s: 1,
-          tooltip: "RSRP -91 dBm",
-          serving_cell_lat: 48.81,
-          serving_cell_lng: 2.31,
-          serving_cell_source: "chi_previous_seq_cell_ref_exact",
-          neighbour_links: [
-            {
-              system: "LTE",
-              arfcn: 1300,
-              reference_channel: 1800,
-              pci: 215,
-              cell_type: 2,
-              cell_ref_id: "neighbour",
-              lat: 48.82,
-              lng: 2.32,
-              distance_m: 12,
-              max_distance_m: 25_000,
-              candidate_count: 1,
-              confidence: "radio_band_pci_unique",
-            },
-          ],
-          nr_anchor_link: {
-            system: "NR",
-            arfcn: 640000,
-            reference_channel: 3500,
-            pci: 7,
-            cell_type: 199,
-            cell_ref_id: "anchor",
-            lat: 48.83,
-            lng: 2.33,
-            distance_m: 18,
+    const mapPoints = [
+      {
+        seq: 7,
+        lat: 48.8,
+        lng: 2.3,
+        code: "cell_rsrp@0",
+        value: -91,
+        t_rel_s: 1,
+        tooltip: "RSRP -91 dBm",
+        serving_cell_lat: 48.81,
+        serving_cell_lng: 2.31,
+        serving_cell_source: "chi_previous_seq_cell_ref_exact",
+        neighbour_links: [
+          {
+            system: "LTE",
+            arfcn: 1300,
+            reference_channel: 1800,
+            pci: 215,
+            cell_type: 2,
+            cell_ref_id: "neighbour",
+            lat: 48.82,
+            lng: 2.32,
+            distance_m: 12,
             max_distance_m: 25_000,
             candidate_count: 1,
             confidence: "radio_band_pci_unique",
           },
+        ],
+        nr_anchor_link: {
+          system: "NR",
+          arfcn: 640000,
+          reference_channel: 3500,
+          pci: 7,
+          cell_type: 199,
+          cell_ref_id: "anchor",
+          lat: 48.83,
+          lng: 2.33,
+          distance_m: 18,
+          max_distance_m: 25_000,
+          candidate_count: 1,
+          confidence: "radio_band_pci_unique",
         },
-      ],
-    } as never;
+      },
+    ];
+    const data = { ...fixture, map_points: mapPoints } as never;
     expect(metricMapLinkFeatures(data).map((feature) => feature.properties.link_type)).toEqual([
       "serving",
       "neighbour",
@@ -260,8 +258,8 @@ describe("Map selection keeps its own panel", () => {
       capture_id: "44621571bccc",
       result_id: "map-result",
       decoder_version: "test",
-      total_points: (data as any).map_points.length,
-      map_points: (data as any).map_points,
+      total_points: mapPoints.length,
+      map_points: mapPoints,
     } as never);
     writeMetricViews("map-links", { "cell_rsrp@0": "map" });
     render(

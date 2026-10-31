@@ -21,10 +21,19 @@ export function BeamDisplayControls({ display, onSetBeamDisplay }: BeamDisplayCo
         return (
           <div key={key} className="space-y-2">
             <div className="flex items-center justify-between gap-2 text-[11px]">
-              <span>{label}</span><output className="shrink-0 font-semibold tabular-nums">{value} %</output>
+              <span>{label}</span>
+              <output className="shrink-0 font-semibold tabular-nums">{value} %</output>
             </div>
-            <Slider aria-label={label} min={0} max={100} step={1} value={[value]}
-              onValueChange={([next]) => { if (next !== undefined) onSetBeamDisplay(key, next); }} />
+            <Slider
+              aria-label={label}
+              min={0}
+              max={100}
+              step={1}
+              value={[value]}
+              onValueChange={([next]) => {
+                if (next !== undefined) onSetBeamDisplay(key, next);
+              }}
+            />
           </div>
         );
       })}
@@ -33,8 +42,16 @@ export function BeamDisplayControls({ display, onSetBeamDisplay }: BeamDisplayCo
           <span>{t("mapWorkspace.metricSize")}</span>
           <output className="shrink-0 font-semibold tabular-nums">{metricSize} %</output>
         </div>
-        <Slider aria-label={t("mapWorkspace.metricSize")} min={0} max={100} step={1}
-          value={[metricSize]} onValueChange={([next]) => { if (next !== undefined) setMetricSize(next); }} />
+        <Slider
+          aria-label={t("mapWorkspace.metricSize")}
+          min={0}
+          max={100}
+          step={1}
+          value={[metricSize]}
+          onValueChange={([next]) => {
+            if (next !== undefined) setMetricSize(next);
+          }}
+        />
       </div>
     </div>
   );

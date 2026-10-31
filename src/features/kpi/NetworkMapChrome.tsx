@@ -24,7 +24,14 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { BASEMAPS, BASEMAP_PREVIEW, applyBasemap, readBasemap, writeBasemap, type BasemapId } from "./basemaps";
+import {
+  BASEMAPS,
+  BASEMAP_PREVIEW,
+  applyBasemap,
+  readBasemap,
+  writeBasemap,
+  type BasemapId,
+} from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
 import { BeamDisplayControls } from "./BeamDisplayControls";
 import {
@@ -159,21 +166,60 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       type: "FeatureCollection",
       features: [
         ...(coords.length > 1
-          ? [{ type: "Feature" as const, properties: {}, geometry: { type: "LineString" as const, coordinates: coords } }]
+          ? [
+              {
+                type: "Feature" as const,
+                properties: {},
+                geometry: { type: "LineString" as const, coordinates: coords },
+              },
+            ]
           : []),
         ...(mode === "area" && points.length > 2
-          ? [{ type: "Feature" as const, properties: {}, geometry: { type: "Polygon" as const, coordinates: [coords] } }]
+          ? [
+              {
+                type: "Feature" as const,
+                properties: {},
+                geometry: { type: "Polygon" as const, coordinates: [coords] },
+              },
+            ]
           : []),
-        ...points.map((c) => ({ type: "Feature" as const, properties: {}, geometry: { type: "Point" as const, coordinates: c } })),
+        ...points.map((c) => ({
+          type: "Feature" as const,
+          properties: {},
+          geometry: { type: "Point" as const, coordinates: c },
+        })),
       ],
     };
     const src = map.getSource(MEASURE_SRC) as GeoJSONSource | undefined;
     if (src) return void src.setData(data);
     if (!points.length) return;
     map.addSource(MEASURE_SRC, { type: "geojson", data });
-    map.addLayer({ id: "bc4-measure-fill", type: "fill", source: MEASURE_SRC, filter: ["==", ["geometry-type"], "Polygon"], paint: { "fill-color": "#2563eb", "fill-opacity": 0.12 } });
-    map.addLayer({ id: "bc4-measure-line", type: "line", source: MEASURE_SRC, filter: ["==", ["geometry-type"], "LineString"], paint: { "line-color": "#2563eb", "line-width": 2, "line-dasharray": [2, 1] } });
-    map.addLayer({ id: "bc4-measure-pt", type: "circle", source: MEASURE_SRC, filter: ["==", ["geometry-type"], "Point"], paint: { "circle-radius": 4, "circle-color": "#ffffff", "circle-stroke-color": "#2563eb", "circle-stroke-width": 2 } });
+    map.addLayer({
+      id: "bc4-measure-fill",
+      type: "fill",
+      source: MEASURE_SRC,
+      filter: ["==", ["geometry-type"], "Polygon"],
+      paint: { "fill-color": "#2563eb", "fill-opacity": 0.12 },
+    });
+    map.addLayer({
+      id: "bc4-measure-line",
+      type: "line",
+      source: MEASURE_SRC,
+      filter: ["==", ["geometry-type"], "LineString"],
+      paint: { "line-color": "#2563eb", "line-width": 2, "line-dasharray": [2, 1] },
+    });
+    map.addLayer({
+      id: "bc4-measure-pt",
+      type: "circle",
+      source: MEASURE_SRC,
+      filter: ["==", ["geometry-type"], "Point"],
+      paint: {
+        "circle-radius": 4,
+        "circle-color": "#ffffff",
+        "circle-stroke-color": "#2563eb",
+        "circle-stroke-width": 2,
+      },
+    });
   }, [map, points, mode]);
 
   const startMeasure = (next: MeasureMode) => {
@@ -198,7 +244,11 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     onSetBands ? onSetBands(toggleWithin(filters.bands, [code], BAND_CODES)) : onToggleBand(code);
   const filterCount = filters.technos.length + filters.bands.length + filters.operators.length;
   const measureValue =
-    mode === "distance" ? formatDistance(pathLength(points)) : mode === "area" ? formatArea(polygonArea(points)) : "";
+    mode === "distance"
+      ? formatDistance(pathLength(points))
+      : mode === "area"
+        ? formatArea(polygonArea(points))
+        : "";
 
   // MAP UI V1 — compact top toolbar: reduced height, spacing and buttons.
   const pill = (on: boolean) =>
@@ -235,7 +285,11 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   );
 
   return (
-    <div ref={rootRef} className="pointer-events-none absolute inset-0 z-20" data-testid="network-map-chrome">
+    <div
+      ref={rootRef}
+      className="pointer-events-none absolute inset-0 z-20"
+      data-testid="network-map-chrome"
+    >
       {/* Left — collapsible Layers panel */}
       {showPanel ? (
         <aside
@@ -244,43 +298,105 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             <h2 className="text-xs font-semibold">{t("mapWorkspace.layers")}</h2>
-            <button type="button" aria-label={t("mapWorkspace.collapse")} onClick={() => setPanelOpen(false)} className="rounded p-1 hover:bg-muted">
+            <button
+              type="button"
+              aria-label={t("mapWorkspace.collapse")}
+              onClick={() => setPanelOpen(false)}
+              className="rounded p-1 hover:bg-muted"
+            >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
             <Section title={t("mapWorkspace.sitesAndCells")}>
               <Check label={t("mapWorkspace.sites")} checked={enabled} onChange={onToggleEnabled} />
-              <Check label={t("mapWorkspace.cellSectors")} checked={cellsEnabled} onChange={onToggleCells} hint={cellsAvailable ? undefined : t("mapSites.cellsFromZoom")} />
-              <Check label={t("mapWorkspace.beams")} checked={display.beams} disabled={!onToggleDisplay} onChange={(v) => onToggleDisplay?.("beams", v)} />
-              <Check label={t("mapWorkspace.labels")} checked={display.labels} disabled={!onToggleDisplay} onChange={(v) => onToggleDisplay?.("labels", v)} />
+              <Check
+                label={t("mapWorkspace.cellSectors")}
+                checked={cellsEnabled}
+                onChange={onToggleCells}
+                hint={cellsAvailable ? undefined : t("mapSites.cellsFromZoom")}
+              />
+              <Check
+                label={t("mapWorkspace.beams")}
+                checked={display.beams}
+                disabled={!onToggleDisplay}
+                onChange={(v) => onToggleDisplay?.("beams", v)}
+              />
+              <Check
+                label={t("mapWorkspace.labels")}
+                checked={display.labels}
+                disabled={!onToggleDisplay}
+                onChange={(v) => onToggleDisplay?.("labels", v)}
+              />
               <BeamDisplayControls display={display} onSetBeamDisplay={props.onSetBeamDisplay} />
             </Section>
             <Section title={t("mapWorkspace.technology")}>
-              <Check label="5G NR" color={NR_COLOR} checked={isActive(filters.technos, ["5G"])} onChange={() => setTechnos(["5G"])} />
-              <Check label="4G LTE" color={LTE_COLOR} checked={isActive(filters.technos, ["4G", "LTE"])} onChange={() => setTechnos(["4G", "LTE"])} />
-              <Check label="3G" checked={false} disabled onChange={() => {}} hint={t("mapWorkspace.notInData")} />
+              <Check
+                label="5G NR"
+                color={NR_COLOR}
+                checked={isActive(filters.technos, ["5G"])}
+                onChange={() => setTechnos(["5G"])}
+              />
+              <Check
+                label="4G LTE"
+                color={LTE_COLOR}
+                checked={isActive(filters.technos, ["4G", "LTE"])}
+                onChange={() => setTechnos(["4G", "LTE"])}
+              />
+              <Check
+                label="3G"
+                checked={false}
+                disabled
+                onChange={() => {}}
+                hint={t("mapWorkspace.notInData")}
+              />
             </Section>
             <Section title={t("mapWorkspace.bands")}>
               {NETWORK_BANDS.map((b) => (
-                <Check key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onChange={() => setBand(b.code)} />
+                <Check
+                  key={b.key}
+                  label={b.key}
+                  color={bandColor(b.key)}
+                  checked={isActive(filters.bands, [b.code])}
+                  onChange={() => setBand(b.code)}
+                />
               ))}
             </Section>
             {/* MAP UI V1 — operator filtering leaves the top toolbar and lives
                 in the sidebar Filters, so the functional filter is preserved. */}
             <Section title={t("mapSites.operator")}>
               {OPERATORS.map((o) => (
-                <Check key={o.v} label={o.label} color={o.color} checked={isActive(filters.operators, [o.v])} onChange={() => onToggleOperator(o.v)} />
+                <Check
+                  key={o.v}
+                  label={o.label}
+                  color={o.color}
+                  checked={isActive(filters.operators, [o.v])}
+                  onChange={() => onToggleOperator(o.v)}
+                />
               ))}
             </Section>
             <Section title={t("mapWorkspace.siteTypes")}>
               {["macro", "indoor", "smallCell"].map((k) => (
-                <Check key={k} label={t(`mapWorkspace.${k}`)} checked={false} disabled onChange={() => {}} />
+                <Check
+                  key={k}
+                  label={t(`mapWorkspace.${k}`)}
+                  checked={false}
+                  disabled
+                  onChange={() => {}}
+                />
               ))}
-              <p className="text-[10px] text-muted-foreground">{t("mapWorkspace.siteTypesUnavailable")}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {t("mapWorkspace.siteTypesUnavailable")}
+              </p>
             </Section>
             <Section title={t("mapWorkspace.heatmap")}>
-              <Check label={t("mapWorkspace.heatmap")} checked={false} disabled onChange={() => {}} hint={t("mapWorkspace.heatmapUnavailable")} />
+              <Check
+                label={t("mapWorkspace.heatmap")}
+                checked={false}
+                disabled
+                onChange={() => {}}
+                hint={t("mapWorkspace.heatmapUnavailable")}
+              />
             </Section>
             {compact && <Section title={t("mapWorkspace.legend")}>{legend}</Section>}
           </div>
@@ -294,13 +410,28 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           aria-label={t("mapWorkspace.layers")}
           className={`pointer-events-auto absolute left-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
         >
-          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.expandLayers")} onClick={() => setPanelOpen(true)}>
+          <button
+            type="button"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.expandLayers")}
+            onClick={() => setPanelOpen(true)}
+          >
             <Layers className="h-4 w-4" />
           </button>
-          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.moreFilters")} onClick={() => setPanelOpen(true)}>
+          <button
+            type="button"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.moreFilters")}
+            onClick={() => setPanelOpen(true)}
+          >
             <SlidersHorizontal className="h-4 w-4" />
           </button>
-          <button type="button" className={railBtn()} aria-label={t("mapWorkspace.legend")} onClick={() => setPanelOpen(true)}>
+          <button
+            type="button"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.legend")}
+            onClick={() => setPanelOpen(true)}
+          >
             <List className="h-4 w-4" />
           </button>
           <button
@@ -335,8 +466,16 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         className="pointer-events-none absolute top-3 flex justify-center"
         style={{ left: showPanel && !compact ? 248 : 64, right: compact ? 56 : 380 }}
       >
-        <div data-testid="map-workspace-topbar" className={`pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1 ${glass}`}>
-          <button type="button" aria-pressed={enabled} onClick={() => onToggleEnabled(!enabled)} className={pill(enabled)}>
+        <div
+          data-testid="map-workspace-topbar"
+          className={`pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl p-1 ${glass}`}
+        >
+          <button
+            type="button"
+            aria-pressed={enabled}
+            onClick={() => onToggleEnabled(!enabled)}
+            className={pill(enabled)}
+          >
             <MapPin className="h-3.5 w-3.5" /> {t("mapWorkspace.sites")}
           </button>
           <button
@@ -349,9 +488,19 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <Antenna className="h-3.5 w-3.5" /> {t("mapWorkspace.cells")}
           </button>
           <span className="mx-0.5 h-5 w-px shrink-0 bg-border" />
-          <div className="flex shrink-0 gap-0.5" role="group" aria-label={t("mapWorkspace.technology")}>
+          <div
+            className="flex shrink-0 gap-0.5"
+            role="group"
+            aria-label={t("mapWorkspace.technology")}
+          >
             {TECHNO_CODES.map((code) => (
-              <button key={code} type="button" aria-pressed={isActive(filters.technos, [code])} onClick={() => (onSetTechnos ? setTechnos([code]) : onToggleTechno(code))} className={pill(isActive(filters.technos, [code]))}>
+              <button
+                key={code}
+                type="button"
+                aria-pressed={isActive(filters.technos, [code])}
+                onClick={() => (onSetTechnos ? setTechnos([code]) : onToggleTechno(code))}
+                className={pill(isActive(filters.technos, [code]))}
+              >
                 {code}
               </button>
             ))}
@@ -363,15 +512,31 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             label={`${t("mapWorkspace.bands")} (${filters.bands.length || t("common.all")})`}
           >
             {NETWORK_BANDS.map((b) => (
-              <MenuCheck key={b.key} label={b.key} color={bandColor(b.key)} checked={isActive(filters.bands, [b.code])} onClick={() => setBand(b.code)} />
+              <MenuCheck
+                key={b.key}
+                label={b.key}
+                color={bandColor(b.key)}
+                checked={isActive(filters.bands, [b.code])}
+                onClick={() => setBand(b.code)}
+              />
             ))}
           </Dropdown>
           <button type="button" onClick={() => setPanelOpen(!showPanel)} className={pill(false)}>
-            <SlidersHorizontal className="h-3.5 w-3.5" /> {!compact && t("mapWorkspace.moreFilters")}
-            {filterCount > 0 && <span className="rounded-full bg-primary px-1.5 text-[9px] text-primary-foreground">{filterCount}</span>}
+            <SlidersHorizontal className="h-3.5 w-3.5" />{" "}
+            {!compact && t("mapWorkspace.moreFilters")}
+            {filterCount > 0 && (
+              <span className="rounded-full bg-primary px-1.5 text-[9px] text-primary-foreground">
+                {filterCount}
+              </span>
+            )}
           </button>
           {filterCount > 0 && onReset && (
-            <button type="button" onClick={onReset} className={pill(false)} aria-label={t("common.reset")}>
+            <button
+              type="button"
+              onClick={onReset}
+              className={pill(false)}
+              aria-label={t("common.reset")}
+            >
               <X className="h-3.5 w-3.5" />
             </button>
           )}
@@ -380,7 +545,9 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
 
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (
-        <div className={`pointer-events-auto absolute top-3 ${compact ? "left-3 right-14" : "right-14 w-[300px]"}`}>
+        <div
+          className={`pointer-events-auto absolute top-3 ${compact ? "left-3 right-14" : "right-14 w-[300px]"}`}
+        >
           <label className={`flex h-10 items-center gap-2 rounded-xl px-3 ${glass}`}>
             <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             <input
@@ -392,7 +559,11 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               className="min-w-0 flex-1 bg-transparent text-[11px] outline-none placeholder:text-muted-foreground"
             />
             {query && (
-              <button type="button" aria-label={t("mapWorkspace.clearSearch")} onClick={() => setQuery("")}>
+              <button
+                type="button"
+                aria-label={t("mapWorkspace.clearSearch")}
+                onClick={() => setQuery("")}
+              >
                 <X className="h-3.5 w-3.5" />
               </button>
             )}
@@ -406,56 +577,125 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
                     role="option"
                     aria-selected={false}
                     onClick={() => {
-                      map?.flyTo({ center: h.center, zoom: Math.max(map.getZoom(), h.kind === "coords" ? 14 : 15) });
+                      map?.flyTo({
+                        center: h.center,
+                        zoom: Math.max(map.getZoom(), h.kind === "coords" ? 14 : 15),
+                      });
                       setQuery("");
                       setSearchOpen(false);
                     }}
                     className="flex w-full flex-col rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-muted"
                   >
-                    <span className="font-semibold">{h.kind === "coords" ? t("mapWorkspace.goToCoordinates", { v: h.title }) : h.title}</span>
-                    {h.subtitle && <span className="text-[10px] text-muted-foreground">{h.subtitle}</span>}
+                    <span className="font-semibold">
+                      {h.kind === "coords"
+                        ? t("mapWorkspace.goToCoordinates", { v: h.title })
+                        : h.title}
+                    </span>
+                    {h.subtitle && (
+                      <span className="text-[10px] text-muted-foreground">{h.subtitle}</span>
+                    )}
                   </button>
                 </li>
               ))}
-              {!hits.length && <li className="px-2 py-1.5 text-[11px] text-muted-foreground">{t("mapWorkspace.searchNoResult")}</li>}
+              {!hits.length && (
+                <li className="px-2 py-1.5 text-[11px] text-muted-foreground">
+                  {t("mapWorkspace.searchNoResult")}
+                </li>
+              )}
             </ul>
           )}
         </div>
       )}
 
       {/* Right — vertical map tools */}
-      <div className={`pointer-events-auto absolute right-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`} role="toolbar" aria-orientation="vertical" aria-label={t("mapWorkspace.tools")}>
+      <div
+        className={`pointer-events-auto absolute right-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
+        role="toolbar"
+        aria-orientation="vertical"
+        aria-label={t("mapWorkspace.tools")}
+      >
         {compact && (
-          <button type="button" className={railBtn(searchOpen)} aria-label={t("mapWorkspace.search")} onClick={() => setSearchOpen((v) => !v)}>
+          <button
+            type="button"
+            className={railBtn(searchOpen)}
+            aria-label={t("mapWorkspace.search")}
+            onClick={() => setSearchOpen((v) => !v)}
+          >
             <Search className="h-4 w-4" />
           </button>
         )}
-        <button type="button" className={railBtn(props.fullscreen)} aria-label={props.fullscreen ? t("mapWorkspace.exitFullscreen") : t("mapWorkspace.fullscreen")} onClick={props.onToggleFullscreen}>
+        <button
+          type="button"
+          className={railBtn(props.fullscreen)}
+          aria-label={
+            props.fullscreen ? t("mapWorkspace.exitFullscreen") : t("mapWorkspace.fullscreen")
+          }
+          onClick={props.onToggleFullscreen}
+        >
           {props.fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </button>
-        <button type="button" className={railBtn()} aria-label={t("mapWorkspace.zoomIn")} onClick={() => map?.zoomIn()}>
+        <button
+          type="button"
+          className={railBtn()}
+          aria-label={t("mapWorkspace.zoomIn")}
+          onClick={() => map?.zoomIn()}
+        >
           <Plus className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn()} aria-label={t("mapWorkspace.zoomOut")} onClick={() => map?.zoomOut()}>
+        <button
+          type="button"
+          className={railBtn()}
+          aria-label={t("mapWorkspace.zoomOut")}
+          onClick={() => map?.zoomOut()}
+        >
           <Minus className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn()} aria-label={t("mapWorkspace.centerRoute")} title={t("mapWorkspace.centerRoute")} onClick={props.onRecenter}>
+        <button
+          type="button"
+          className={railBtn()}
+          aria-label={t("mapWorkspace.centerRoute")}
+          title={t("mapWorkspace.centerRoute")}
+          onClick={props.onRecenter}
+        >
           <LocateFixed className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn(mode === "distance")} aria-pressed={mode === "distance"} aria-label={t("mapWorkspace.distance")} onClick={() => startMeasure("distance")}>
+        <button
+          type="button"
+          className={railBtn(mode === "distance")}
+          aria-pressed={mode === "distance"}
+          aria-label={t("mapWorkspace.distance")}
+          onClick={() => startMeasure("distance")}
+        >
           <Ruler className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn(mode === "area")} aria-pressed={mode === "area"} aria-label={t("mapWorkspace.area")} onClick={() => startMeasure("area")}>
+        <button
+          type="button"
+          className={railBtn(mode === "area")}
+          aria-pressed={mode === "area"}
+          aria-label={t("mapWorkspace.area")}
+          onClick={() => startMeasure("area")}
+        >
           <Spline className="h-4 w-4" />
         </button>
-        <button type="button" className={railBtn(basemapOpen)} aria-expanded={basemapOpen} aria-label={t("mapWorkspace.basemap")} onClick={() => setBasemapOpen((v) => !v)}>
+        <button
+          type="button"
+          className={railBtn(basemapOpen)}
+          aria-expanded={basemapOpen}
+          aria-label={t("mapWorkspace.basemap")}
+          onClick={() => setBasemapOpen((v) => !v)}
+        >
           <Layers className="h-4 w-4" />
         </button>
       </div>
 
       {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
       {basemapOpen && (
-        <div role="radiogroup" aria-label={t("mapWorkspace.basemap")} className={`pointer-events-auto absolute right-14 w-56 rounded-xl p-2 ${glass}`} style={{ top: compact ? 56 : 300 }}>
+        <div
+          role="radiogroup"
+          aria-label={t("mapWorkspace.basemap")}
+          className={`pointer-events-auto absolute right-14 w-56 rounded-xl p-2 ${glass}`}
+          style={{ top: compact ? 56 : 300 }}
+        >
           <p className="mb-1.5 px-1 text-[11px] font-semibold">{t("mapWorkspace.basemap")}</p>
           <div className="grid grid-cols-2 gap-1.5">
             {BASEMAPS.map((id) => (
@@ -467,7 +707,15 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
                 onClick={() => chooseBasemap(id)}
                 className={`overflow-hidden rounded-lg border-2 text-left text-[10px] font-semibold transition ${basemap === id ? "border-primary" : "border-transparent hover:border-border"}`}
               >
-                <img src={BASEMAP_PREVIEW[id].src} alt="" loading="lazy" className="h-14 w-full object-cover" style={BASEMAP_PREVIEW[id].filter ? { filter: BASEMAP_PREVIEW[id].filter } : undefined} />
+                <img
+                  src={BASEMAP_PREVIEW[id].src}
+                  alt=""
+                  loading="lazy"
+                  className="h-14 w-full object-cover"
+                  style={
+                    BASEMAP_PREVIEW[id].filter ? { filter: BASEMAP_PREVIEW[id].filter } : undefined
+                  }
+                />
                 <span className="block px-1.5 py-1">{t(`mapWorkspace.basemaps.${id}`)}</span>
               </button>
             ))}
@@ -477,26 +725,47 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
 
       {/* Measurement read-out */}
       {mode !== "none" && (
-        <div className={`pointer-events-auto absolute left-1/2 top-16 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-1.5 text-[11px] ${glass}`} role="status">
+        <div
+          className={`pointer-events-auto absolute left-1/2 top-16 flex -translate-x-1/2 items-center gap-2 rounded-full px-3 py-1.5 text-[11px] ${glass}`}
+          role="status"
+        >
           <Ruler className="h-3.5 w-3.5 text-primary" />
-          <strong className="tabular-nums">{points.length ? measureValue : t("mapWorkspace.measureHint")}</strong>
-          <button type="button" className="text-muted-foreground hover:text-foreground" onClick={() => setPoints([])}>
+          <strong className="tabular-nums">
+            {points.length ? measureValue : t("mapWorkspace.measureHint")}
+          </strong>
+          <button
+            type="button"
+            className="text-muted-foreground hover:text-foreground"
+            onClick={() => setPoints([])}
+          >
             {t("mapWorkspace.clearMeasure")}
           </button>
-          <button type="button" aria-label={t("mapWorkspace.select")} onClick={() => setMode("none")}>
+          <button
+            type="button"
+            aria-label={t("mapWorkspace.select")}
+            onClick={() => setMode("none")}
+          >
             <X className="h-3.5 w-3.5" />
           </button>
         </div>
       )}
 
       {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
-      <div className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}>
+      <div
+        className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}
+      >
         {!compact && (
-          <div className={`pointer-events-auto shrink-0 rounded-xl px-3 py-2 ${glass}`} aria-label={t("mapWorkspace.legend")}>
+          <div
+            className={`pointer-events-auto shrink-0 rounded-xl px-3 py-2 ${glass}`}
+            aria-label={t("mapWorkspace.legend")}
+          >
             {legend}
           </div>
         )}
-        <div data-testid="map-workspace-statusbar" className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}>
+        <div
+          data-testid="map-workspace-statusbar"
+          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}
+        >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
           <span className="h-6 w-px bg-border" />
@@ -505,7 +774,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <strong className="text-sm">{zoom.toFixed(1)}</strong>
           </span>
           {!compact && (
-            <span className="inline-flex min-w-[118px] items-center gap-1 tabular-nums text-muted-foreground" title={t("mapWorkspace.cursor")}>
+            <span
+              className="inline-flex min-w-[118px] items-center gap-1 tabular-nums text-muted-foreground"
+              title={t("mapWorkspace.cursor")}
+            >
               <Crosshair className="h-3 w-3" />
               {cursor ? `${cursor[1].toFixed(4)}, ${cursor[0].toFixed(4)}` : "—"}
             </span>
@@ -514,14 +786,37 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             {scale.label}
             <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
           </span>
-          <span className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`} title={status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))} />
-          <Dropdown up open={menu === "metrics"} onOpen={(o) => setMenu(o ? "metrics" : null)} label={<><BarChart3 className="h-3.5 w-3.5" />{!compact && t("mapWorkspace.metrics")}</>}>
+          <span
+            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
+            title={
+              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
+            }
+          />
+          <Dropdown
+            up
+            open={menu === "metrics"}
+            onOpen={(o) => setMenu(o ? "metrics" : null)}
+            label={
+              <>
+                <BarChart3 className="h-3.5 w-3.5" />
+                {!compact && t("mapWorkspace.metrics")}
+              </>
+            }
+          >
             <div className="space-y-1 p-2 text-[11px]">
               <Row label={t("mapWorkspace.totalInView")} value={fmt(status?.n_total)} />
               <Row label={t("mapWorkspace.returned")} value={fmt(status?.n_returned)} />
-              {status?.truncated && <p className="text-[10px] text-destructive">{t("mapSites.partial")}</p>}
-              {status?.error && <p className="text-[10px] text-destructive">{t("mapSites.error")}: {status.error}</p>}
-              <p className="text-[10px] text-muted-foreground">{t("mapWorkspace.heatmapUnavailable")}</p>
+              {status?.truncated && (
+                <p className="text-[10px] text-destructive">{t("mapSites.partial")}</p>
+              )}
+              {status?.error && (
+                <p className="text-[10px] text-destructive">
+                  {t("mapSites.error")}: {status.error}
+                </p>
+              )}
+              <p className="text-[10px] text-muted-foreground">
+                {t("mapWorkspace.heatmapUnavailable")}
+              </p>
             </div>
           </Dropdown>
           {/* MAP UI V1 — the measure/recenter tools live only in the right
@@ -537,7 +832,12 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
     <section>
-      <button type="button" aria-expanded={open} onClick={() => setOpen(!open)} className="mb-1 flex w-full items-center justify-between font-semibold">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen(!open)}
+        className="mb-1 flex w-full items-center justify-between font-semibold"
+      >
         {title}
         <ChevronDown className={`h-3 w-3 transition ${open ? "" : "-rotate-90"}`} />
       </button>
@@ -546,17 +846,52 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Check({ label, checked, onChange, disabled, color, hint }: { label: string; checked: boolean; onChange: (v: boolean) => void; disabled?: boolean; color?: string; hint?: string | undefined }) {
+function Check({
+  label,
+  checked,
+  onChange,
+  disabled,
+  color,
+  hint,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+  color?: string;
+  hint?: string | undefined;
+}) {
   return (
-    <label className={`flex items-center gap-2 rounded px-1 py-0.5 ${disabled ? "opacity-50" : "cursor-pointer hover:bg-muted"}`} title={hint}>
-      <input type="checkbox" className="h-3.5 w-3.5 accent-primary" checked={checked} disabled={disabled} onChange={(e) => onChange(e.target.checked)} />
+    <label
+      className={`flex items-center gap-2 rounded px-1 py-0.5 ${disabled ? "opacity-50" : "cursor-pointer hover:bg-muted"}`}
+      title={hint}
+    >
+      <input
+        type="checkbox"
+        className="h-3.5 w-3.5 accent-primary"
+        checked={checked}
+        disabled={disabled}
+        onChange={(e) => onChange(e.target.checked)}
+      />
       {color && <span className="h-2.5 w-2.5 rounded-sm" style={{ background: color }} />}
       <span className="flex-1">{label}</span>
     </label>
   );
 }
 
-function Dropdown({ label, open, onOpen, children, up = false }: { label: ReactNode; open: boolean; onOpen: (o: boolean) => void; children: ReactNode; up?: boolean }) {
+function Dropdown({
+  label,
+  open,
+  onOpen,
+  children,
+  up = false,
+}: {
+  label: ReactNode;
+  open: boolean;
+  onOpen: (o: boolean) => void;
+  children: ReactNode;
+  up?: boolean;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!open) return;
@@ -566,12 +901,20 @@ function Dropdown({ label, open, onOpen, children, up = false }: { label: ReactN
   }, [open, onOpen]);
   return (
     <div ref={ref} className="relative shrink-0">
-      <button type="button" aria-expanded={open} onClick={() => onOpen(!open)} className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold hover:bg-muted">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => onOpen(!open)}
+        className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold hover:bg-muted"
+      >
         {label}
         <ChevronDown className="h-3 w-3 opacity-60" />
       </button>
       {open && (
-        <div className={`fixed z-50 min-w-44 rounded-xl border bg-popover p-1 shadow-xl`} style={dropdownPos(ref.current, up)}>
+        <div
+          className={`fixed z-50 min-w-44 rounded-xl border bg-popover p-1 shadow-xl`}
+          style={dropdownPos(ref.current, up)}
+        >
           {children}
         </div>
       )}
@@ -583,19 +926,38 @@ function Dropdown({ label, open, onOpen, children, up = false }: { label: ReactN
 function dropdownPos(el: HTMLElement | null, up: boolean): React.CSSProperties {
   const r = el?.getBoundingClientRect();
   if (!r) return {};
-  return up ? { left: r.left, bottom: window.innerHeight - r.top + 6 } : { left: r.left, top: r.bottom + 6 };
+  return up
+    ? { left: r.left, bottom: window.innerHeight - r.top + 6 }
+    : { left: r.left, top: r.bottom + 6 };
 }
 
-function MenuCheck({ label, checked, onClick, color }: { label: string; checked: boolean; onClick: () => void; color?: string }) {
+function MenuCheck({
+  label,
+  checked,
+  onClick,
+  color,
+}: {
+  label: string;
+  checked: boolean;
+  onClick: () => void;
+  color?: string;
+}) {
   return (
-    <button type="button" role="menuitemcheckbox" aria-checked={checked} onClick={onClick} className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-muted">
+    <button
+      type="button"
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      onClick={onClick}
+      className="flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left text-[11px] hover:bg-muted"
+    >
       {color && <span className="h-2.5 w-2.5 rounded-full" style={{ background: color }} />}
       <span className="flex-1">{label}</span>
-      <span aria-hidden className="text-primary">{checked ? "✓" : ""}</span>
+      <span aria-hidden className="text-primary">
+        {checked ? "✓" : ""}
+      </span>
     </button>
   );
 }
-
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
@@ -624,10 +986,24 @@ function LegendRow({ title, children }: { title: string; children: ReactNode }) 
   );
 }
 
-function Swatch({ color, label, round, hideLabel }: { color: string; label: string; round?: boolean; hideLabel?: boolean }) {
+function Swatch({
+  color,
+  label,
+  round,
+  hideLabel,
+}: {
+  color: string;
+  label: string;
+  round?: boolean;
+  hideLabel?: boolean;
+}) {
   return (
     <span className="inline-flex items-center gap-1" title={label}>
-      <span className={`h-2.5 w-2.5 ${round ? "rounded-full" : "rounded-sm"}`} style={{ background: color }} aria-label={hideLabel ? label : undefined} />
+      <span
+        className={`h-2.5 w-2.5 ${round ? "rounded-full" : "rounded-sm"}`}
+        style={{ background: color }}
+        aria-label={hideLabel ? label : undefined}
+      />
       {!hideLabel && label}
     </span>
   );
