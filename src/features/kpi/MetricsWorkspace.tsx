@@ -498,27 +498,10 @@ function MetricMap({
       if (!nextSelection) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
-        popupRef.current?.remove();
-        popupRef.current = undefined;
         return;
       }
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      popupRef.current?.remove();
       selectedPointRef.current = nextSelection;
       setSelectedPoint(nextSelection);
-      const node = buildMeasurementPointPopup(pointDetails(point, label, unit));
-      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
-        .setLngLat(e.lngLat)
-        .setDOMContent(node)
-        .addTo(map);
-      popupRef.current = popup;
-      popup.on("close", () => {
-        if (popupRef.current !== popup) return;
-        popupRef.current = undefined;
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-      });
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
