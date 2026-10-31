@@ -561,21 +561,11 @@ function MetricMap({
     }),
     { serving: 0, neighbour: 0, nr_anchor: 0 },
   );
-  const content = (addedLegend: ReactNode) => (
-    <KpiMapOSM
-      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
-      layersLegend={addedLegend}
-      zoom={first ? 13 : 5}
-      showOperatorLegend={false}
-      flush
-      workspace
-      contextLabel={translate("metrics.b7ef3d32472c")}
-      onMapReady={setMap}
-      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
-      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
-    >
-      <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
-        <div className="kpi-metric-map-legend-title">
+  // The metric legend lives in the Layers panel's Legend tab, like the
+  // Signaling map — nothing floats over the map itself.
+  const legend = (
+    <div className="space-y-1" data-testid="metric-map-legend">
+      <div className="kpi-metric-map-legend-title">
           <strong>
             {label}
             {unit ? ` · ${unit}` : ""}
