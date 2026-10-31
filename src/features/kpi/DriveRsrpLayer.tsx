@@ -14,7 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
 import { SelectedPointCard } from "./SelectedPointCard";
-import { metricRadius, useMetricSize } from "./metric-display";
+import { metricRadius, metricRingRadius, useMetricSize } from "./metric-display";
 import {
   RSRP_CLASSES,
   RSRP_SELECTION,
