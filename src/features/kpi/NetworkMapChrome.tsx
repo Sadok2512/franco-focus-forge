@@ -284,7 +284,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         <button
           type="button"
           aria-pressed={enabled}
-          onClick={onToggleEnabled}
+          onClick={() => onToggleEnabled(!enabled)}
           className={`inline-flex items-center gap-1 rounded px-0.5 transition hover:bg-muted ${enabled ? "" : "opacity-40 line-through"}`}
         >
           <span className="h-2.5 w-2.5 rounded-full border-2 border-card bg-muted-foreground ring-1 ring-border" />
@@ -293,7 +293,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         <button
           type="button"
           aria-pressed={cellsEnabled}
-          onClick={onToggleCells}
+          onClick={() => onToggleCells(!cellsEnabled)}
           disabled={!enabled}
           className={`inline-flex items-center gap-1 rounded px-0.5 transition hover:bg-muted disabled:cursor-not-allowed ${cellsEnabled && enabled ? "" : "opacity-40 line-through"}`}
         >
