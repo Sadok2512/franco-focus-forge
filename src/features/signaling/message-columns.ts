@@ -23,7 +23,14 @@ export type ColKey =
   | "size_bytes"
   | "ecgi"
   | "pci"
-  | "source";
+  | "source"
+  | `metric:${string}`;
+
+/** Dynamic metric columns added from the metrics catalogue ("Add Metric"). */
+export const METRIC_COL_PREFIX = "metric:";
+export const isMetricCol = (key: string): key is ColKey => key.startsWith(METRIC_COL_PREFIX);
+export const metricColKey = (code: string): ColKey => `${METRIC_COL_PREFIX}${code}`;
+export const metricCodeOf = (key: string) => key.slice(METRIC_COL_PREFIX.length);
 
 export type ColDef = { key: ColKey; available: boolean; sortKey?: string; numeric?: boolean };
 
