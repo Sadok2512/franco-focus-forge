@@ -1005,6 +1005,12 @@
       "street": "Street",
       "satellite": "Satellite"
     },
+    "selectedPoint": "Selected point",
+    "radio": "Radio",
+    "distanceUeSite": "Distance UE ↔ site",
+    "collapseCard": "Reduce the card",
+    "expandCard": "Expand the card",
+    "closeCard": "Close the card",
     "driveRsrp": "Drive RSRP",
     "driveRsrpToggle": "Show drive RSRP points",
     "driveRsrpCapture": "Drive capture",
