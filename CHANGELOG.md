@@ -1,3 +1,19 @@
+## 1.126.9 (patch) — BC4-FRONT 2026-10-31 — liens point → cellule visibles (Agent BC4)
+
+- Le contrat front conserve les 4 435 candidats `probable_serving_*` publiés
+  par le back 0.118.1 : ils restent pointillés et ne sont jamais promus en
+  association `proven`.
+- Map et Signaling utilisent désormais le même endpoint lean `/metrics/map`
+  que KPI ; `/metrics/table` reste un repli pour les anciens décodages sans
+  point cartographique.
+- Les trois cartes partagent des liens plus contrastés dès l'ouverture
+  (cyan/ambre/magenta, 2,75 px, opacité 0,9). Le clic renforce uniquement les
+  lignes du point sélectionné ; serving, voisines et NR restent activés par
+  défaut avec trois interrupteurs indépendants.
+- Preuves publiques et jetables :
+  `audit/bc4-serving-links-visible/REPORT.md`.
+- SemVer front : **PATCH 1.126.9**.
+
 ## 1.126.8 (patch) — BC4-FRONT 2026-10-31 — intégration github/Lovable, version serveur prioritaire en cas de conflit (BC3)
 
 Réconciliation `main` local (1.126.7) ↔ `github/main` divergent via

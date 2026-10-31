@@ -5,10 +5,20 @@ export type LinkConfidence = "proven" | "probable";
 
 export const CELL_LINK_KINDS = ["serving", "neighbour", "nr_anchor"] as const;
 export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
-  serving: "#2563eb",
-  neighbour: "#f59e0b",
-  nr_anchor: "#9333ea",
+  serving: "#00b8ff",
+  neighbour: "#ff8a00",
+  nr_anchor: "#d946ef",
 };
+
+/** Shared high-contrast line treatment for Map, Signaling and KPI. */
+export const CELL_LINK_STYLE = {
+  width: 2.75,
+  selectedWidth: 5,
+  opacity: 0.9,
+  mutedOpacity: 0.32,
+  selectedOpacity: 1,
+  probableDash: [3, 2] as [number, number],
+} as const;
 
 export type RadioCellLink = {
   kind: CellLinkKind;
@@ -62,6 +72,14 @@ export type ApiMeasurementPoint = {
   serving_link_distance_m?: number | null | undefined;
   serving_link_confidence?: string | null | undefined;
   serving_cell_source?: string | null | undefined;
+  probable_serving_cell_ref_id?: string | null | undefined;
+  probable_serving_site_id?: string | null | undefined;
+  probable_serving_site_name?: string | null | undefined;
+  probable_serving_cell_lat?: number | null | undefined;
+  probable_serving_cell_lng?: number | null | undefined;
+  probable_serving_pci?: number | null | undefined;
+  probable_serving_band_mhz?: number | null | undefined;
+  probable_serving_distance_m?: number | null | undefined;
   neighbour_links?: ApiRadioLink[] | null | undefined;
   nr_anchor_link?: ApiRadioLink | null | undefined;
 };
@@ -90,6 +108,21 @@ export function pointCellLinks(point: ApiMeasurementPoint): RadioCellLink[] {
       distanceM: point.serving_link_distance_m,
       confidence: linkConfidence(servingEvidence),
       source: servingEvidence,
+    });
+  } else if (
+    point.probable_serving_cell_ref_id &&
+    finite(point.probable_serving_cell_lat) &&
+    finite(point.probable_serving_cell_lng)
+  ) {
+    links.push({
+      kind: "serving",
+      lat: point.probable_serving_cell_lat,
+      lng: point.probable_serving_cell_lng,
+      siteName: point.probable_serving_site_name ?? point.probable_serving_site_id,
+      pci: point.probable_serving_pci,
+      distanceM: point.probable_serving_distance_m,
+      confidence: "probable",
+      source: "probable_serving_cell_ref_id",
     });
   }
   for (const link of point.neighbour_links ?? []) {

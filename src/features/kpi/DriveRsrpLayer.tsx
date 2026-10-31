@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import type { Map as MlMap, GeoJSONSource, MapLayerMouseEvent, Popup } from "maplibre-gl";
-import { getMetricAnalysis, getSignaling } from "@/lib/api/client";
+import { getMetricAnalysis, getMetricMap, getSignaling } from "@/lib/api/client";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
@@ -21,6 +21,7 @@ import {
   buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
+  CELL_LINK_STYLE,
   pointCellLinks,
   pointDetails,
   type CellLinkKind,
@@ -137,8 +138,21 @@ export function DriveRsrpLayer({
     setCaptureId(preferredCapture?.id ?? drive ?? captures.data[0]?.capture_id);
   }, [captureId, captures.data, embedded, preferredCapture]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
-  const analysis = useQuery({
-    queryKey: ["drive-rsrp", projectId, effectiveCaptureId],
+  const mapAnalysis = useQuery({
+    queryKey: ["drive-rsrp-map", projectId, effectiveCaptureId],
+    queryFn: ({ signal }) => {
+      if (!effectiveCaptureId) throw new Error("Missing capture");
+      return getMetricMap(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, signal);
+    },
+    enabled: prefs.on && !!effectiveCaptureId,
+    staleTime: 60_000,
+  });
+  // Old decoded captures can have no lean map points while the legacy table
+  // still carries same-sequence GPS rows. Keep that compatibility path, but
+  // never make the normal Map/Signaling load wait for the heavy table route.
+  const needsLegacyFallback = mapAnalysis.isSuccess && mapAnalysis.data.map_points.length === 0;
+  const legacyAnalysis = useQuery({
+    queryKey: ["drive-rsrp-legacy", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
       if (!effectiveCaptureId) throw new Error("Missing capture");
       return getMetricAnalysis(
@@ -150,9 +164,10 @@ export function DriveRsrpLayer({
         signal,
       );
     },
-    enabled: prefs.on && !!effectiveCaptureId,
+    enabled: prefs.on && !!effectiveCaptureId && needsLegacyFallback,
     staleTime: 60_000,
   });
+  const analysis = needsLegacyFallback ? legacyAnalysis : mapAnalysis;
   /** What arrived before any pairing: decides whether the capture's GPS log is even needed. */
   const bare = useMemo(() => driveRsrpDiagnostics(analysis.data), [analysis.data]);
   const needsGps =
@@ -334,16 +349,23 @@ export function DriveRsrpLayer({
                 CELL_LINK_COLORS.nr_anchor,
                 "#64748b",
               ],
-              "line-width": ["case", ["get", "selected"], 3, 1.5],
+              "line-width": [
+                "case",
+                ["get", "selected"],
+                CELL_LINK_STYLE.selectedWidth,
+                CELL_LINK_STYLE.width,
+              ],
               "line-opacity": [
                 "case",
                 ["get", "selected"],
-                1,
+                CELL_LINK_STYLE.selectedOpacity,
                 ["get", "has_selection"],
-                0.18,
-                0.55,
+                CELL_LINK_STYLE.mutedOpacity,
+                CELL_LINK_STYLE.opacity,
               ],
-              ...(confidence === "probable" ? { "line-dasharray": [2, 2] } : {}),
+              ...(confidence === "probable"
+                ? { "line-dasharray": CELL_LINK_STYLE.probableDash }
+                : {}),
             },
           });
         }

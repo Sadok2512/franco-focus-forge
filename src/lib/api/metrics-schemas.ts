@@ -328,6 +328,17 @@ export const MetricAnalysisSchema = z.object({
         ])
         .nullable()
         .optional(),
+      // 0.118.1 publishes a conservative serving candidate separately when
+      // no exact CHI/ECI identity is available. Keep these API-owned fields:
+      // the UI must not turn the candidate into a proven association.
+      probable_serving_cell_ref_id: z.string().nullable().optional(),
+      probable_serving_site_id: z.string().nullable().optional(),
+      probable_serving_site_name: z.string().nullable().optional(),
+      probable_serving_cell_lat: z.number().nullable().optional(),
+      probable_serving_cell_lng: z.number().nullable().optional(),
+      probable_serving_pci: z.number().int().nullable().optional(),
+      probable_serving_band_mhz: z.number().nullable().optional(),
+      probable_serving_distance_m: z.number().nullable().optional(),
       // Exact optional contract prepared by bc1/map-cell-links. Geometry is
       // accepted only with the API's radio-identity confidence.
       neighbour_links: z

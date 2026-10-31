@@ -22,9 +22,19 @@ describe("drive RSRP classes", () => {
     expect(rsrpClass(Number.NaN)).toBeNull();
   });
   it("picks the LTE RSRP KPI from the catalogue", () => {
-    const k = (code: string) => ({ code, name: code, nature: "", unit: "dBm", source: null, formula: null, status: "AVAILABLE", reason: null });
+    const k = (code: string) => ({
+      code,
+      name: code,
+      nature: "",
+      unit: "dBm",
+      source: null,
+      formula: null,
+      status: "AVAILABLE",
+      reason: null,
+    });
     const catalog = {
-      project_id: "p", catalog_version: "1",
+      project_id: "p",
+      catalog_version: "1",
       tree: [
         { techno: "NR", families: [{ family: "Radio", kpis: [k("NR_RSRP")] }] },
         { techno: "LTE", families: [{ family: "Radio", kpis: [k("SINR"), k("LTE_RSRP")] }] },
@@ -62,11 +72,19 @@ describe("RSRP map point codes", () => {
 
 describe("drive RSRP points from table rows", () => {
   const row = (lat: number | null, lon: number | null, v: number | null) => ({
-    seq_first: 1, lat, lon, values: { "cell_rsrp@0": v },
+    seq_first: 1,
+    lat,
+    lon,
+    values: { "cell_rsrp@0": v },
   });
   it("uses rows with GPS and RSRP when map_points is empty", () => {
-    const pts = driveRsrpPoints({ map_points: [], rows: [row(50.378, 3.478, -92), row(null, null, -80), row(50.4, 3.5, null)] });
-    expect(pts).toEqual([{ seq: 1, lat: 50.378, lng: 3.478, value: -92, cell: 0, position_source: "row" }]);
+    const pts = driveRsrpPoints({
+      map_points: [],
+      rows: [row(50.378, 3.478, -92), row(null, null, -80), row(50.4, 3.5, null)],
+    });
+    expect(pts).toEqual([
+      { seq: 1, lat: 50.378, lng: 3.478, value: -92, cell: 0, position_source: "row" },
+    ]);
   });
   it("prefers API map_points when present", () => {
     const pts = driveRsrpPoints({
@@ -123,12 +141,44 @@ describe("drive RSRP points from table rows", () => {
     expect(pts[0]?.serving_cell_lat).toBeUndefined();
     expect(pts[0]?.serving_cell_lng).toBeUndefined();
   });
+  it("preserves an API-declared probable serving candidate", () => {
+    const pts = driveRsrpPoints({
+      map_points: [
+        {
+          seq: 23,
+          lat: 50.39,
+          lng: 2.98,
+          code: "cell_rsrp@0",
+          value: -84,
+          probable_serving_cell_ref_id: "466486624",
+          probable_serving_cell_lat: 50.392,
+          probable_serving_cell_lng: 2.977,
+          probable_serving_site_name: "HENIN BEAUMONT",
+          probable_serving_pci: 195,
+          probable_serving_distance_m: 692.5,
+        },
+      ],
+    });
+    expect(pts[0]).toMatchObject({
+      probable_serving_cell_ref_id: "466486624",
+      probable_serving_cell_lat: 50.392,
+      probable_serving_cell_lng: 2.977,
+      probable_serving_site_name: "HENIN BEAUMONT",
+      probable_serving_pci: 195,
+      probable_serving_distance_m: 692.5,
+    });
+  });
   it("reads the RSRP of any cell column, lowest cell first", () => {
     const pts = driveRsrpPoints({
       map_points: [],
       rows: [
         { seq_first: 4, lat: 50.3, lon: 3.4, values: { "cell_rsrq@0": -10, "cell_rsrp@2": -88 } },
-        { seq_first: 5, lat: 50.31, lon: 3.41, values: { "cell_rsrp@0": null, "cell_rsrp@1": -95 } },
+        {
+          seq_first: 5,
+          lat: 50.31,
+          lon: 3.41,
+          values: { "cell_rsrp@0": null, "cell_rsrp@1": -95 },
+        },
       ],
     });
     expect(pts).toEqual([
@@ -154,15 +204,19 @@ describe("drive RSRP paired with the capture's GPS log", () => {
     ]);
   });
   it("never borrows a neighbouring position", () => {
-    expect(driveRsrpPoints({ map_points: [], rows }, [{ seq: 14, lat: 50.378, lng: 3.478 }])).toEqual([
+    expect(
+      driveRsrpPoints({ map_points: [], rows }, [{ seq: 14, lat: 50.378, lng: 3.478 }]),
+    ).toEqual([
       { seq: 14, lat: 50.378, lng: 3.478, value: -95, cell: 0, position_source: "capture" },
     ]);
   });
   it("drops a row whose capture position has no coordinates", () => {
-    expect(driveRsrpPoints({ map_points: [], rows }, [
-      { seq: 14, lat: null, lng: null },
-      { seq: 15, lat: Number.NaN, lng: 3.479 },
-    ])).toEqual([]);
+    expect(
+      driveRsrpPoints({ map_points: [], rows }, [
+        { seq: 14, lat: null, lng: null },
+        { seq: 15, lat: Number.NaN, lng: 3.479 },
+      ]),
+    ).toEqual([]);
   });
   it("expands a grouped marker over the sequences the server attached to it", () => {
     const positions = rsrpPositionsFrom(

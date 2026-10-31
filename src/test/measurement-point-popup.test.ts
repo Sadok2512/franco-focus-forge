@@ -75,6 +75,30 @@ describe("shared measurement-point popup", () => {
     ).toEqual([]);
   });
 
+  it("keeps the backend probable serving candidate dashed without promoting it", () => {
+    expect(
+      pointCellLinks({
+        seq: 23,
+        lat: 50.39,
+        lng: 2.98,
+        probable_serving_cell_ref_id: "466486624",
+        probable_serving_cell_lat: 50.392,
+        probable_serving_cell_lng: 2.977,
+        probable_serving_site_name: "HENIN BEAUMONT",
+        probable_serving_pci: 195,
+        probable_serving_distance_m: 692.5,
+      }),
+    ).toEqual([
+      expect.objectContaining({
+        kind: "serving",
+        confidence: "probable",
+        siteName: "HENIN BEAUMONT",
+        pci: 195,
+        distanceM: 692.5,
+      }),
+    ]);
+  });
+
   it("renders time, metric value, serving identity and neighbours in one readable card", () => {
     const card = buildMeasurementPointPopup(pointDetails(point, "RSRP (LTE) @ Serving", "dBm"));
     expect(card.textContent).toContain("RSRP (LTE) @ Serving");

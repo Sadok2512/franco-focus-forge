@@ -1,0 +1,1406 @@
+{
+  "base": "http://127.0.0.1:9183",
+  "projectId": "43e81a34a073",
+  "captures": {
+    "a4b0c321c52e": {
+      "map": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 4935,
+            "servingCellRefId": 1,
+            "servingCellLatLng": 1,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 4435,
+            "confidence": {
+              "<missing>": 4935
+            },
+            "sample": [
+              {
+                "seq": 217205,
+                "serving_cell_ref_id": "466265799",
+                "serving_cell_lat": 50.376063888888886,
+                "serving_cell_lng": 3.0146194444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell4436",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells4074",
+            "checked": true
+          },
+          {
+            "text": "NR anchor2685",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12928
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 36595,
+                "serving": 14451,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 36594,
+                  "proven": 1
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 597.1268401824598,
+              "y": 200.10907729418395,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12928
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 36595,
+                "serving": 14451,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 36594,
+                  "proven": 1
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 597.1268401824598,
+              "y": 200.10907729418395,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-map-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-map-after-click.png"
+      },
+      "signaling": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 4935,
+            "servingCellRefId": 1,
+            "servingCellLatLng": 1,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 4435,
+            "confidence": {
+              "<missing>": 4935
+            },
+            "sample": [
+              {
+                "seq": 217205,
+                "serving_cell_ref_id": "466265799",
+                "serving_cell_lat": 50.376063888888886,
+                "serving_cell_lng": 3.0146194444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell4436",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells4074",
+            "checked": true
+          },
+          {
+            "text": "NR anchor2685",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12584
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 38654,
+                "serving": 15267,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 38650,
+                  "proven": 4
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 1240.214106042805,
+              "y": 150.0193091114362,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12584
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 38654,
+                "serving": 15267,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 38650,
+                  "proven": 4
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 1240.214106042805,
+              "y": 150.0193091114362,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-signaling-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-signaling-after-click.png"
+      },
+      "kpi": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/table?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0&group_by=operator&include_map=false&table_only=true&page=1&page_size=25",
+            "status": 200,
+            "points": 0,
+            "servingCellRefId": 0,
+            "servingCellLatLng": 0,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 0,
+            "confidence": {},
+            "sample": []
+          },
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=a4b0c321c52e&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 4935,
+            "servingCellRefId": 1,
+            "servingCellLatLng": 1,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 4435,
+            "confidence": {
+              "<missing>": 4935
+            },
+            "sample": [
+              {
+                "seq": 217205,
+                "serving_cell_ref_id": "466265799",
+                "serving_cell_lat": 50.376063888888886,
+                "serving_cell_lng": 3.0146194444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell (4436)",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells (4074)",
+            "checked": true
+          },
+          {
+            "text": "NR anchor (2685)",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "metric-cell-links-v1-proven",
+              "metric-cell-links-v1-probable"
+            ],
+            "sourceIds": [
+              "metric-cell-links-v1"
+            ],
+            "layers": [
+              {
+                "id": "metric-cell-links-v1-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "metric-cell-links-v1-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12584
+              }
+            ],
+            "sources": [
+              {
+                "id": "metric-cell-links-v1",
+                "features": 38654,
+                "serving": 15267,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 38650,
+                  "proven": 4
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 792.6888822247124,
+              "y": 342.60307630703153,
+              "pointLayer": "metrics-v3"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "metric-cell-links-v1-proven",
+              "metric-cell-links-v1-probable"
+            ],
+            "sourceIds": [
+              "metric-cell-links-v1"
+            ],
+            "layers": [
+              {
+                "id": "metric-cell-links-v1-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 1
+              },
+              {
+                "id": "metric-cell-links-v1-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 12584
+              }
+            ],
+            "sources": [
+              {
+                "id": "metric-cell-links-v1",
+                "features": 38654,
+                "serving": 15267,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 38650,
+                  "proven": 4
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 792.6888822247124,
+              "y": 342.60307630703153,
+              "pointLayer": "metrics-v3"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-kpi-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/a4b0c321c52e-kpi-after-click.png"
+      }
+    },
+    "ecffb18dbd7f": {
+      "map": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=ecffb18dbd7f&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 199,
+            "servingCellRefId": 199,
+            "servingCellLatLng": 199,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 0,
+            "confidence": {
+              "<missing>": 199
+            },
+            "sample": [
+              {
+                "seq": 278,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              },
+              {
+                "seq": 407,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell199",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells199",
+            "checked": true
+          },
+          {
+            "text": "NR anchor107",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 612,
+                "serving": 199,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 801.8809128549149,
+              "y": 501.1845504907114,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 612,
+                "serving": 199,
+                "selected": 2,
+                "hasSelection": 612,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 801.8809128549149,
+              "y": 501.1845504907114,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-map-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-map-after-click.png"
+      },
+      "signaling": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=ecffb18dbd7f&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 199,
+            "servingCellRefId": 199,
+            "servingCellLatLng": 199,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 0,
+            "confidence": {
+              "<missing>": 199
+            },
+            "sample": [
+              {
+                "seq": 278,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              },
+              {
+                "seq": 407,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell199",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells199",
+            "checked": true
+          },
+          {
+            "text": "NR anchor107",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 612,
+                "serving": 199,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 1338.1777878551363,
+              "y": 293.1845504910691,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "bc4-drive-rsrp-cell-links-proven",
+              "bc4-drive-rsrp-cell-links-probable"
+            ],
+            "sourceIds": [
+              "bc4-drive-rsrp-serving-links"
+            ],
+            "layers": [
+              {
+                "id": "bc4-drive-rsrp-cell-links-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "bc4-drive-rsrp-cell-links-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "bc4-drive-rsrp-serving-links",
+                "features": 612,
+                "serving": 199,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 1338.1777878551363,
+              "y": 293.1845504910691,
+              "pointLayer": "bc4-drive-rsrp-points"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-signaling-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-signaling-after-click.png"
+      },
+      "kpi": {
+        "metricResponses": [
+          {
+            "url": "http://127.0.0.1:9183/api/projects/43e81a34a073/metrics/map?capture_id=ecffb18dbd7f&codes=cell_rsrp%40lte-type-0",
+            "status": 200,
+            "points": 199,
+            "servingCellRefId": 199,
+            "servingCellLatLng": 199,
+            "servingConfidence": 0,
+            "completeServing": 0,
+            "probableServing": 0,
+            "confidence": {
+              "<missing>": 199
+            },
+            "sample": [
+              {
+                "seq": 278,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              },
+              {
+                "seq": 407,
+                "serving_cell_ref_id": "466486623",
+                "serving_cell_lat": 50.392022222222224,
+                "serving_cell_lng": 2.9774694444444445,
+                "serving_cell_source": "chi_previous_seq_cell_ref_exact"
+              }
+            ]
+          }
+        ],
+        "toggles": [
+          {
+            "text": "Serving cell (199)",
+            "checked": true
+          },
+          {
+            "text": "Neighbour cells (199)",
+            "checked": true
+          },
+          {
+            "text": "NR anchor (107)",
+            "checked": true
+          }
+        ],
+        "beforeClick": [
+          {
+            "layerIds": [
+              "metric-cell-links-v1-proven",
+              "metric-cell-links-v1-probable"
+            ],
+            "sourceIds": [
+              "metric-cell-links-v1"
+            ],
+            "layers": [
+              {
+                "id": "metric-cell-links-v1-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "metric-cell-links-v1-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "metric-cell-links-v1",
+                "features": 612,
+                "serving": 199,
+                "selected": 0,
+                "hasSelection": 0,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 943.3809128557083,
+              "y": 563.6845504908109,
+              "pointLayer": "metrics-v3"
+            }
+          }
+        ],
+        "clickedMeasurementPoint": true,
+        "afterClick": [
+          {
+            "layerIds": [
+              "metric-cell-links-v1-proven",
+              "metric-cell-links-v1-probable"
+            ],
+            "sourceIds": [
+              "metric-cell-links-v1"
+            ],
+            "layers": [
+              {
+                "id": "metric-cell-links-v1-proven",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": null,
+                "rendered": 199
+              },
+              {
+                "id": "metric-cell-links-v1-probable",
+                "visibility": "visible",
+                "width": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  5,
+                  2.75
+                ],
+                "opacity": [
+                  "case",
+                  [
+                    "get",
+                    "selected"
+                  ],
+                  1,
+                  [
+                    "get",
+                    "has_selection"
+                  ],
+                  0.32,
+                  0.9
+                ],
+                "dasharray": [
+                  3,
+                  2
+                ],
+                "rendered": 306
+              }
+            ],
+            "sources": [
+              {
+                "id": "metric-cell-links-v1",
+                "features": 612,
+                "serving": 199,
+                "selected": 2,
+                "hasSelection": 612,
+                "confidence": {
+                  "probable": 413,
+                  "proven": 199
+                }
+              }
+            ],
+            "clickTarget": {
+              "x": 943.3809128557083,
+              "y": 563.6845504908109,
+              "pointLayer": "metrics-v3"
+            }
+          }
+        ],
+        "beforeClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-kpi-before-click.png",
+        "afterClickScreenshot": "/home/devmat/BC4/front-a4/audit/bc4-serving-links-visible/disposable-after/ecffb18dbd7f-kpi-after-click.png"
+      }
+    }
+  },
+  "generatedAt": "2026-10-31T09:10:26.003Z"
+}

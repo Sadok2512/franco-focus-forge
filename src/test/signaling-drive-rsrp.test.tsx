@@ -4,9 +4,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
 import "@/lib/i18n";
 
-const api = vi.hoisted(() => ({ analysis: vi.fn(), captures: vi.fn() }));
+const api = vi.hoisted(() => ({ analysis: vi.fn(), map: vi.fn(), captures: vi.fn() }));
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: api.analysis,
+  getMetricMap: api.map,
   getMetricCaptures: api.captures,
   getSignaling: vi.fn(),
 }));
@@ -48,7 +49,7 @@ describe("Signaling drive RSRP", () => {
   beforeEach(() => {
     localStorage.clear();
     vi.clearAllMocks();
-    api.analysis.mockImplementation(async (_project, capture) => ({
+    api.map.mockImplementation(async (_project, capture) => ({
       capture_id: capture,
       map_points: [
         { seq: 67, lat: 48.9, lng: 2.2, code: "cell_rsrp", value: -95 },
@@ -73,18 +74,17 @@ describe("Signaling drive RSRP", () => {
     const map = mapDouble();
     const mounted = mount(map, "1e4e8d879a83");
     await waitFor(() =>
-      expect(api.analysis).toHaveBeenCalledWith(
+      expect(api.map).toHaveBeenCalledWith(
         "Test_3",
         "1e4e8d879a83",
         ["cell_rsrp@lte-type-0"],
         {},
-        { group_by: "operator", include_map: true },
         expect.any(AbortSignal),
       ),
     );
     expect(api.captures).not.toHaveBeenCalled();
     mounted.rerender(mounted.view("capture-2"));
-    await waitFor(() => expect(api.analysis.mock.calls.at(-1)?.[1]).toBe("capture-2"));
+    await waitFor(() => expect(api.map.mock.calls.at(-1)?.[1]).toBe("capture-2"));
   });
 
   it("renders only numeric RSRP with valid GPS and retains the original sequence", async () => {

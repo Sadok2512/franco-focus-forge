@@ -60,6 +60,14 @@ type AnalysisLike = {
     serving_link_distance_m?: number | null | undefined;
     serving_link_confidence?: string | null | undefined;
     serving_cell_source?: string | null | undefined;
+    probable_serving_cell_ref_id?: string | null | undefined;
+    probable_serving_site_id?: string | null | undefined;
+    probable_serving_site_name?: string | null | undefined;
+    probable_serving_cell_lat?: number | null | undefined;
+    probable_serving_cell_lng?: number | null | undefined;
+    probable_serving_pci?: number | null | undefined;
+    probable_serving_band_mhz?: number | null | undefined;
+    probable_serving_distance_m?: number | null | undefined;
     neighbour_links?: ApiMeasurementPoint["neighbour_links"];
     nr_anchor_link?: ApiMeasurementPoint["nr_anchor_link"];
   }[];
@@ -112,6 +120,14 @@ export type DriveRsrpPoint = {
   serving_link_distance_m?: number | undefined;
   serving_link_confidence?: string | undefined;
   serving_cell_source?: string | undefined;
+  probable_serving_cell_ref_id?: string | undefined;
+  probable_serving_site_id?: string | undefined;
+  probable_serving_site_name?: string | undefined;
+  probable_serving_cell_lat?: number | undefined;
+  probable_serving_cell_lng?: number | undefined;
+  probable_serving_pci?: number | undefined;
+  probable_serving_band_mhz?: number | undefined;
+  probable_serving_distance_m?: number | undefined;
   neighbour_links?: ApiMeasurementPoint["neighbour_links"];
   nr_anchor_link?: ApiMeasurementPoint["nr_anchor_link"];
   /**
@@ -189,6 +205,19 @@ export function driveRsrpPoints(
             serving_cell_arfcn: p.serving_cell_arfcn ?? undefined,
             serving_link_distance_m: p.serving_link_distance_m ?? undefined,
             serving_link_confidence: p.serving_link_confidence ?? undefined,
+          }
+        : {}),
+      ...(p.probable_serving_cell_ref_id &&
+      validPos(p.probable_serving_cell_lat, p.probable_serving_cell_lng)
+        ? {
+            probable_serving_cell_ref_id: p.probable_serving_cell_ref_id,
+            probable_serving_site_id: p.probable_serving_site_id ?? undefined,
+            probable_serving_site_name: p.probable_serving_site_name ?? undefined,
+            probable_serving_cell_lat: p.probable_serving_cell_lat as number,
+            probable_serving_cell_lng: p.probable_serving_cell_lng as number,
+            probable_serving_pci: p.probable_serving_pci ?? undefined,
+            probable_serving_band_mhz: p.probable_serving_band_mhz ?? undefined,
+            probable_serving_distance_m: p.probable_serving_distance_m ?? undefined,
           }
         : {}),
       neighbour_links: p.neighbour_links,

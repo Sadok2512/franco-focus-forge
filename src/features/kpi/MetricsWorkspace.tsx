@@ -29,6 +29,7 @@ import {
   buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
+  CELL_LINK_STYLE,
   pointCellLinks,
   pointDetails,
   type CellLinkKind,
@@ -297,9 +298,21 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
       filter: ["==", ["get", "confidence"], confidence],
       paint: {
         "line-color": color,
-        "line-width": ["case", ["get", "selected"], 3, 1.5],
-        "line-opacity": ["case", ["get", "selected"], 1, ["get", "has_selection"], 0.18, 0.55],
-        ...(confidence === "probable" ? { "line-dasharray": [2, 2] } : {}),
+        "line-width": [
+          "case",
+          ["get", "selected"],
+          CELL_LINK_STYLE.selectedWidth,
+          CELL_LINK_STYLE.width,
+        ],
+        "line-opacity": [
+          "case",
+          ["get", "selected"],
+          CELL_LINK_STYLE.selectedOpacity,
+          ["get", "has_selection"],
+          CELL_LINK_STYLE.mutedOpacity,
+          CELL_LINK_STYLE.opacity,
+        ],
+        ...(confidence === "probable" ? { "line-dasharray": CELL_LINK_STYLE.probableDash } : {}),
       },
     });
   }

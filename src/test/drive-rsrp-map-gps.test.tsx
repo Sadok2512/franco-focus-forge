@@ -4,9 +4,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { Map as MlMap } from "maplibre-gl";
 import "@/lib/i18n";
 
-const api = vi.hoisted(() => ({ analysis: vi.fn(), captures: vi.fn(), points: vi.fn() }));
+const api = vi.hoisted(() => ({
+  analysis: vi.fn(),
+  map: vi.fn(),
+  captures: vi.fn(),
+  points: vi.fn(),
+}));
 vi.mock("@/lib/api/client", () => ({
   getMetricAnalysis: api.analysis,
+  getMetricMap: api.map,
   getSignaling: (
     project: string,
     endpoint: string,
@@ -62,6 +68,7 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
     localStorage.clear();
     window.history.replaceState({}, "", "/map");
     vi.clearAllMocks();
+    api.map.mockResolvedValue({ map_points: [] });
     api.captures.mockResolvedValue({
       captures: [{ capture_id: "cap-1", label: "Drive 1", env: "incar" }],
     });
@@ -221,6 +228,7 @@ describe("Map page drive RSRP paired with the capture GPS", () => {
       expect(api.analysis.mock.calls.some((call) => call[1] === "cap-empty")).toBe(true),
     );
     await new Promise((resolve) => setTimeout(resolve, 20));
-    expect(api.analysis.mock.calls.map((call) => call[1])).toEqual(["cap-map", "cap-empty"]);
+    expect(api.map.mock.calls.map((call) => call[1])).toEqual(["cap-map", "cap-empty"]);
+    expect(api.analysis.mock.calls.at(-1)?.[1]).toBe("cap-empty");
   });
 });
