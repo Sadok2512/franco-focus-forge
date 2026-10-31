@@ -83,14 +83,12 @@ export function parseColumns(raw: string | null): ColumnConfig {
   try {
     const value = JSON.parse(raw) as Partial<ColumnConfig>;
     const known = new Set<string>(DEFAULT_ORDER);
-    const order = (Array.isArray(value.order) ? value.order : []).filter(
-      (k): k is ColKey => known.has(k),
-    );
+    const kept = (k: unknown): k is ColKey =>
+      typeof k === "string" && (known.has(k) || isMetricCol(k));
+    const order = (Array.isArray(value.order) ? value.order : []).filter(kept);
     const unique = [...new Set(order)];
     for (const k of DEFAULT_ORDER) if (!unique.includes(k)) unique.push(k);
-    const visible = (Array.isArray(value.visible) ? value.visible : []).filter(
-      (k): k is ColKey => known.has(k),
-    );
+    const visible = (Array.isArray(value.visible) ? value.visible : []).filter(kept);
     for (const k of MANDATORY_COLS) if (!visible.includes(k)) visible.push(k);
     return { order: unique, visible: [...new Set(visible)] };
   } catch {
