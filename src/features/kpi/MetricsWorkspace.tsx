@@ -522,16 +522,7 @@ function MetricMap({
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
-    popupRef.current?.remove();
-    popupRef.current = undefined;
   }, [captureId, map, projectId]);
-  useEffect(
-    () => () => {
-      popupRef.current?.remove();
-      popupRef.current = undefined;
-    },
-    [],
-  );
   const first = data?.map_points[0];
   const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
