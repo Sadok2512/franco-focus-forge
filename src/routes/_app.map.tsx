@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import i18n from "@/lib/i18n";
 import { MapWorkspacePage } from "@/features/map/MapWorkspacePage";
+import { validateAnalysisScopeSearch } from "@/lib/analysis-scope";
 
 export const Route = createFileRoute("/_app/map")({
+  validateSearch: validateAnalysisScopeSearch,
   head: () => ({
     meta: [
       { title: `${i18n.t("mapWorkspace.title")} — BC4` },

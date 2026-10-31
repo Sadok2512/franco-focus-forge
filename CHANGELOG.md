@@ -1,3 +1,13 @@
+## 1.128.0 (minor) — Superstream SS-03 analysis scope preparation — 2026-10-31 (BC4)
+
+- Adds the shared capture/Superstream `AnalysisScope`, project-and-scope
+  isolated React Query keys and typed resolver client.
+- Superstream actions prepare navigation to Signaling, Metrics and Map with an
+  explicit project, scope id and revision. The three analytical engines remain
+  unchanged until their dedicated integration lots.
+- Existing single-capture search parameters remain compatible.
+- SemVer front: **MINOR 1.128.0**.
+
 ## 1.127.0 (minor) — Superstream SS-02 frontend management — 2026-10-31 (BC4)
 
 - Project management reuses the existing Superstream dialog and tree with

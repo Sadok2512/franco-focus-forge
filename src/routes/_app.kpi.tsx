@@ -2,6 +2,7 @@ import i18n from "@/lib/i18n";
 import { createFileRoute } from "@tanstack/react-router";
 import { URL_KEYS } from "@/features/kpi/workspace-model";
 import { KpiWorkspace } from "@/features/kpi/KpiWorkspace";
+import { validateAnalysisScopeSearch } from "@/lib/analysis-scope";
 
 export const Route = createFileRoute("/_app/kpi")({
   head: () => ({
@@ -20,6 +21,7 @@ export const Route = createFileRoute("/_app/kpi")({
   // Additional URL fields belong to KPI only; shared operator/technology/band
   // filters continue to use the root schema and useFilters().
   validateSearch: (search: Record<string, unknown>) => ({
+    ...validateAnalysisScopeSearch(search),
     ...Object.fromEntries(
       Object.values(URL_KEYS).map((key) => [
         key,

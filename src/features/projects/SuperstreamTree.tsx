@@ -1,5 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  Activity,
+  ChartNoAxesCombined,
   ChevronDown,
   ChevronRight,
   Eye,
@@ -7,10 +9,12 @@ import {
   Folder,
   Layers,
   ListRestart,
+  Map,
   MoreVertical,
   Pencil,
   Trash2,
 } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -31,6 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toUserMessage } from "@/lib/api/http";
+import { analysisScopeSearch, type AnalysisModule } from "@/lib/analysis-scope";
+import { setActiveProject } from "@/lib/activeProject";
 import {
   clearSuperstreamsLocalStorageMock,
   deleteSuperstream,
@@ -66,6 +72,7 @@ export function SuperstreamTree({
   canWrite?: boolean;
 }) {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const listQ = useQuery({
     queryKey: superstreamsKey(projectId),
@@ -98,6 +105,18 @@ export function SuperstreamTree({
   const [editingMembers, setEditingMembers] = useState<Superstream | null>(null);
   const [renaming, setRenaming] = useState<Superstream | null>(null);
   const [pendingDelete, setPendingDelete] = useState<Superstream | null>(null);
+  const openAnalysis = (module: AnalysisModule, stream: Superstream) => {
+    setActiveProject({ id: projectId, name: projectName });
+    const to = module === "metrics" ? "/kpi" : `/${module}`;
+    void navigate({
+      to,
+      search: analysisScopeSearch({
+        type: "superstream",
+        superstreamId: stream.id,
+        revision: stream.revision,
+      }),
+    } as never);
+  };
   const del = useMutation({
     mutationFn: (s: Superstream) => deleteSuperstream(projectId, s.id, s.revision),
     onSuccess: () => {
@@ -183,6 +202,18 @@ export function SuperstreamTree({
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuItem onSelect={() => toggle(key, true)}>
                             <Eye className="h-4 w-4" aria-hidden /> {t("superstream.open")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => openAnalysis("signaling", s)}>
+                            <Activity className="h-4 w-4" aria-hidden />
+                            {t("superstream.openInSignaling")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => openAnalysis("metrics", s)}>
+                            <ChartNoAxesCombined className="h-4 w-4" aria-hidden />
+                            {t("superstream.openInMetrics")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onSelect={() => openAnalysis("map", s)}>
+                            <Map className="h-4 w-4" aria-hidden />
+                            {t("superstream.openInMap")}
                           </DropdownMenuItem>
                           {canWrite && (
                             <>

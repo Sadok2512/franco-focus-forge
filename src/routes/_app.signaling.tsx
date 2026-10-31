@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useActiveProject } from "@/lib/activeProject";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
 import { SignalingPage } from "@/features/signaling/SignalingPage";
+import { validateAnalysisScopeSearch } from "@/lib/analysis-scope";
 export const Route = createFileRoute("/_app/signaling")({
   validateSearch: (s: Record<string, unknown>) => ({
+    ...validateAnalysisScopeSearch(s),
     capture_id: typeof s["capture_id"] === "string" ? s["capture_id"] : undefined,
     seq: Number.isInteger(Number(s["seq"])) && Number(s["seq"]) >= 0 ? Number(s["seq"]) : undefined,
   }),

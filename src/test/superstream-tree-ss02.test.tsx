@@ -70,6 +70,9 @@ describe("SS-02 Superstream tree", () => {
     renderTree(false);
     expect(await screen.findByLabelText("superstream.actionsFor")).toBeInTheDocument();
     expect(await screen.findByText("superstream.open")).toBeInTheDocument();
+    expect(screen.getByText("superstream.openInSignaling")).toBeInTheDocument();
+    expect(screen.getByText("superstream.openInMetrics")).toBeInTheDocument();
+    expect(screen.getByText("superstream.openInMap")).toBeInTheDocument();
     expect(screen.queryByText("superstream.rename")).not.toBeInTheDocument();
   });
 
