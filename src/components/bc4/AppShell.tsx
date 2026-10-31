@@ -203,7 +203,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </Link>
         <nav
           aria-label={t("nav.main")}
-          className="col-start-2 h-full min-w-0 overflow-x-auto 2xl:absolute 2xl:inset-y-0 2xl:left-1/2 2xl:w-max 2xl:max-w-[calc(100%-44rem)] 2xl:-translate-x-1/2"
+          className="col-start-2 h-full min-w-0 overflow-x-auto 2xl:absolute 2xl:inset-y-0 2xl:left-1/2 2xl:col-auto 2xl:w-max 2xl:max-w-[calc(100%-44rem)] 2xl:-translate-x-1/2"
         >
           <div className="flex h-full w-max min-w-full items-center justify-center gap-1">
             {NAV.map((n) => {
