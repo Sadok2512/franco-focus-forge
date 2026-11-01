@@ -879,49 +879,18 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
           </span>
         </div>
-        <div
-          className={`pointer-events-auto flex items-center rounded-xl px-1.5 py-0.5 text-[11px] justify-self-center ${glass}`}
-        >
-          <Dropdown
-            up
-            open={menu === "metrics"}
-            onOpen={(o) => setMenu(o ? "metrics" : null)}
-            label={
-              <>
-                <BarChart3 className="h-3.5 w-3.5" />
-                {!compact && t("mapWorkspace.metrics")}
-              </>
-            }
-          >
-            <div className="space-y-1 p-2 text-[11px]">
-              <Row label={t("mapWorkspace.totalInView")} value={fmt(status?.n_total)} />
-              <Row label={t("mapWorkspace.returned")} value={fmt(status?.n_returned)} />
-              {status?.truncated && (
-                <p className="text-[10px] text-destructive">{t("mapSites.partial")}</p>
-              )}
-              {status?.error && (
-                <p className="text-[10px] text-destructive">
-                  {t("mapSites.error")}: {status.error}
-                </p>
-              )}
-              <p className="text-[10px] text-muted-foreground">
-                {t("mapWorkspace.heatmapUnavailable")}
-              </p>
-            </div>
-          </Dropdown>
-        </div>
-        <div
-          className={`pointer-events-auto flex items-center rounded-xl px-2.5 py-1 justify-self-end ${glass}`}
-        >
-          {/* MAP UI V1 — the measure/recenter tools live only in the right
-              rail; the duplicated Tools dropdown is removed. */}
-          <span
-            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
-            title={
-              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
-            }
-          />
-        </div>
+      </div>
+      <div
+        className={`pointer-events-auto absolute bottom-3 right-3 flex items-center rounded-xl px-2.5 py-1 ${glass}`}
+      >
+        {/* MAP UI V1 — the measure/recenter tools live only in the right
+            rail; the duplicated Tools dropdown is removed. */}
+        <span
+          className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
+          title={
+            status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
+          }
+        />
       </div>
     </div>
   );
