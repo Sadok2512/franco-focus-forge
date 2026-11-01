@@ -20,6 +20,12 @@ import {
 } from "./map-legend";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
+import {
+  readMetricStyles,
+  writeMetricStyles,
+  type MetricStyle,
+  type MetricStyles,
+} from "./metric-styles";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { eventsAt, useActiveEvents } from "./active-events";
 import {
