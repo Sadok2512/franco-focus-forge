@@ -150,6 +150,7 @@ describe("Selection ring of a drive point", () => {
     act(() => click?.({ features: [{ properties: { seq: 67 } }] }));
 
     const links = map.sources.get("bc4-drive-rsrp-serving-links");
+    await screen.findByTestId("selected-point-card");
     await waitFor(() =>
       expect(
         links?.setData.mock.calls.some(([data]) =>

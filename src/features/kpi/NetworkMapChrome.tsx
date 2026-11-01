@@ -32,6 +32,7 @@ import {
 } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
 import { BeamDisplayControls } from "./BeamDisplayControls";
+import { useMapRfPanel } from "./map-rf-panel";
 import {
   BAND_CODES,
   LTE_COLOR,
@@ -96,12 +97,21 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const compact = width < 760;
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
   const showPanel = panelOpen ?? !compact;
-  const [panelTab, setPanelTab] = useState<"layers" | "legend">("layers");
+  const rfPanel = useMapRfPanel();
+  const [panelTab, setPanelTab] = useState<"layers" | "legend" | "rf">("layers");
   const tabs = [
     "layers" as const,
     ...(props.layersLegend ? (["legend"] as const) : []),
+    ...(rfPanel ? (["rf"] as const) : []),
   ];
   const tab = tabs.includes(panelTab) ? panelTab : "layers";
+  // A new point selection brings its RF details forward in the same sidebar.
+  const selectionTick = rfPanel?.selectionTick ?? 0;
+  useEffect(() => {
+    if (selectionTick === 0) return;
+    setPanelTab("rf");
+    setPanelOpen(true);
+  }, [selectionTick]);
   const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -339,7 +349,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
                     onClick={() => setPanelTab(id)}
                     className={`whitespace-nowrap rounded px-2 py-0.5 ${tab === id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
-                    {t(id === "layers" ? "mapWorkspace.layers" : "mapWorkspace.legend")}
+                    {t(
+                      id === "layers"
+                        ? "mapWorkspace.layers"
+                        : id === "legend"
+                          ? "mapWorkspace.legend"
+                          : "mapWorkspace.rfTab",
+                    )}
                   </button>
                 ))}
               </div>
@@ -356,7 +372,16 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
-            {tab === "legend" ? (
+            {/* RF host stays mounted so the selected point survives tab switches. */}
+            {rfPanel && (
+              <div className={tab === "rf" ? "" : "hidden"} data-testid="map-rf-panel">
+                <div ref={rfPanel.setHost} className="peer" />
+                <p className="hidden text-muted-foreground peer-empty:block">
+                  {t("mapWorkspace.rfEmpty")}
+                </p>
+              </div>
+            )}
+            {tab === "rf" ? null : tab === "legend" ? (
               props.layersLegend
             ) : (
               <>
