@@ -1,6 +1,9 @@
-# Roadmap
+# Roadmap — BC4 MAP UI MINOR FIXES
 
-- [x] Deux niveaux de plein écran et largeur dans les réglages carte ; 15 tests passent. Vérification visuelle sur données réelles bloquée par la connexion.
-
-- [x] Bouton « Ajouter une métrique » dans le popup colonnes Signaling (catalogue, colonnes persistées, 7 tests)
-- [x] Restaurer le panneau Paramètres RF sur la carte (restauré depuis ad94620, 17+15 tests OK, build OK)
+- [ ] 1. Supprimer le bouton flottant « Metrics » en bas de la carte
+- [ ] 2. Centrer horizontalement la barre d'infos (Sites/Cells/Z/échelle)
+- [ ] 3. Supprimer le message « No proven GPS position… » et son conteneur
+- [ ] 4. Améliorer l'apparence/alignement du bouton ⋯ Settings
+- [ ] 5. Supprimer le message flottant « Zoom in to see cells »
+- [ ] 6. Ajouter le réglage Map Height (Compact 300 / Default / Large 600 / XL 800), persisté par workspace, avec resize de la carte
+- [ ] Validation : tests + captures avant/après + liste des fichiers
