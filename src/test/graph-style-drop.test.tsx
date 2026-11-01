@@ -101,7 +101,11 @@ async function mountedCard() {
 // Le ⋮ et son sous-menu Style sont rouverts à chaque interaction : Radix ferme
 // le menu dès qu'une entrée est choisie.
 async function openStyleMenu(card: HTMLElement) {
-  fireEvent.keyDown(within(card).getByTestId("workspace-panel-menu"), { key: "Enter" });
+  const trigger = within(card).getByTestId("workspace-panel-menu");
+  // jsdom ne connaît pas les pointeurs de Radix : le menu s'ouvre au clavier,
+  // et only si le déclencheur a le focus.
+  trigger.focus();
+  fireEvent.keyDown(trigger, { key: "Enter" });
   fireEvent.click(await screen.findByTestId("metric-style-sub"));
 }
 
