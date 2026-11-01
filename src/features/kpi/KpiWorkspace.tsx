@@ -486,8 +486,16 @@ function Workspace({
     writeMetricViews(tabsState.activeTabId, next);
   };
   const graphMetricCount = selectedMetrics.filter((code) => metricViews[code] !== "table").length;
+  // 1.130.0 — pendant que le tableau des mesures est ouvert, les cartes graphe
+  // sont masquées (jamais supprimées) : seules les cartes carte restent visibles.
+  const mapMetricCount = selectedMetrics.filter((code) => metricViews[code] === "map").length;
+  const visibleGraphMetricCount = metricsTablePane ? mapMetricCount : graphMetricCount;
   const tableOnlyWorkspace =
-    selectedMetrics.length > 0 && graphMetricCount === 0 && codes.length === 0 && metricsTablePane;
+    selectedMetrics.length > 0 &&
+    codes.length === 0 &&
+    metricsTablePane &&
+    visibleGraphMetricCount === 0;
+
   const mapOnlyWorkspace =
     !metricsTablePane &&
     ((codes.length === 0 &&
@@ -513,11 +521,12 @@ function Workspace({
     });
   };
   const visualizeMetric = (code: string, view: MetricView) => {
-    // Graph, map and table are independent: showing a metric in the table never
-    // removes its existing graph/map card. Only a metric with no card yet is
-    // marked "table" (table-only).
+    // 1.130.0 — le tableau et les graphes ne s'affichent jamais en même temps :
+    // ⋮ → Tableau garde la carte graphe de la métrique en mémoire (jamais
+    // supprimée) mais ne la montre pas tant que le tableau est ouvert.
     const keepsCard =
       view === "table" && selectedMetrics.includes(code) && metricViews[code] !== "table";
+
     const nextViews = keepsCard ? metricViews : { ...metricViews, [code]: view };
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
@@ -1244,7 +1253,7 @@ function Workspace({
               />
             ) : null}
             <WorkspaceGrid
-              count={panels.length + graphMetricCount + (metricsTablePane ? 1 : 0)}
+              count={panels.length + visibleGraphMetricCount + (metricsTablePane ? 1 : 0)}
               layout={currentTab.layout}
               hidden={analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2}
               fillAvailable={mapOnlyWorkspace}

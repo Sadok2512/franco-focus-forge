@@ -59,8 +59,12 @@ describe("métrique ajoutée en Tableau", () => {
       () => expect(screen.getByTestId("metrics-table-panel")).toBeInTheDocument(),
       { timeout: 3000 },
     );
+    // 1.130.0 — le tableau ouvert masque toutes les cartes graphe : on le
+    // referme pour vérifier la carte réellement créée par chaque vue.
+    await removeTable();
     expect(card("cell_rsrp@0")).toBeNull();
     expect(card("cell_rsrq@0")).not.toBeNull();
+
   });
 
   it("sans carte à afficher, le tableau s'ouvre seul, sans message ni bouton", async () => {

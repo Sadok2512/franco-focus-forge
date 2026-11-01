@@ -1464,9 +1464,17 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
-  // 1.102.1 — ajouter un graphe ne ferme plus le tableau des mesures : les
-  // cartes graphiques s'affichent à côté, seul « Fermer le panneau » le retire.
+  // 1.130.0 — une demande de graphe (⋮ → Graphe / Histogramme) ferme le tableau :
+  // les deux ne s'affichent jamais en même temps. La carte graphe n'est pas
+  // supprimée, elle revient dès que le tableau est refermé.
+  const cardViewRequestRef = useRef<number>(-1);
+  useEffect(() => {
+    if (!cardViewRequest || cardViewRequest.n === cardViewRequestRef.current) return;
+    cardViewRequestRef.current = cardViewRequest.n;
+    if (cardViewRequest.view !== "table" && cardViewRequest.view !== "map") setPane("charts");
+  }, [cardViewRequest]);
   // 1.101.0 — le mode mémorisé à l'ouverture de l'onglet est signalé au parent
+
   // (le compteur de panneaux de KpiWorkspace part du tableau des mesures).
   useEffect(() => {
     onTablePaneChange?.(pane === "table");
@@ -1488,6 +1496,16 @@ export function MetricsWorkspace({
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
   );
+  // 1.130.0 — le tableau des mesures et les cartes graphique ne s'affichent
+  // jamais en même temps. Pendant que le tableau est ouvert, les graphes sont
+  // retirés de la vue mais jamais supprimés : refermer le tableau les ramène.
+  // Une carte carte (map) n'est pas un graphe : elle reste visible.
+  const tableOpen = pane === "table";
+  const visibleGridSelections = useMemo(
+    () => (tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections),
+    [graphSelections, tableOpen, viewsProp],
+  );
+
   // 1.105.1 — plus de message « The selected metrics are shown in the
   // measurements table » ni de bouton : quand il n'y a rien à grapher, le
   // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
@@ -1528,9 +1546,10 @@ export function MetricsWorkspace({
           {translate("metrics.pickFromCatalogue")}
         </p>
       )}
-      {captureId && graphSelections.length > 0 && (
+      {captureId && visibleGridSelections.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
-          {graphSelections.map((s, i) => {
+          {visibleGridSelections.map((s, i) => {
+
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
             const metricView = viewsProp?.[s.full] ?? "graph";
