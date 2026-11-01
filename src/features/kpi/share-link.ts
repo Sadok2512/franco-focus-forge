@@ -7,7 +7,7 @@ export const SHARE_PROJECT_PARAM = "project";
  * paramètres : `tabs` est du base64 brut, une réécriture par URLSearchParams
  * corromprait ses `+` et ses `=`. */
 export function buildShareUrl(projectId: string, href = window.location.href): string {
-  const [beforeHash, hash = ""] = href.split("#");
+  const [beforeHash = "", hash = ""] = href.split("#");
   const [base, query = ""] = beforeHash.split("?");
   const kept = query
     .split("&")

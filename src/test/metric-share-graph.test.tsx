@@ -71,7 +71,7 @@ describe("lien partagé d'une carte métrique", () => {
     fireEvent.keyDown(within(card).getByTestId("workspace-panel-menu"), { key: "Enter" });
     fireEvent.click(await screen.findByTestId("metric-share-graph"));
     await waitFor(() => expect(writeText).toHaveBeenCalled());
-    const url = writeText.mock.calls[0][0] as string;
+    const url = writeText.mock.calls[0]?.[0] as string;
     expect(url).toContain("project=4b7bfd50ddb6");
     expect(url).toContain("tabs=YWJjKz0%3D");
     expect(url).toContain("op=BYT");
