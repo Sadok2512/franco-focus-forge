@@ -201,10 +201,50 @@ export function applyReferenceHierarchy(
     }
   }
 
-  // Keep non-leaf nodes only if they lead to a kept leaf. Walk ancestors
-  // of kept leaves and mark them visible.
-  const visibleOriginalIds = new Set<string>();
+  // Climb to find a leaf's original tech ancestor label.
+  const originalTechOf = (leaf: MetricCatalogNode): string | null => {
+    let current: MetricCatalogNode | undefined = leaf;
+    while (current) {
+      if (current.node_type === "tech") return current.label;
+      current = current.parent_id ? byId.get(current.parent_id) : undefined;
+    }
+    return null;
+  };
+
+  // Un-remapped leaves whose tech is LTE or NR must still be reparented into
+  // the synthetic LTE/NR tree so the sidebar never shows two "LTE" roots
+  // (one synthetic + one leftover). They land under the "Non catégorisé"
+  // category of the matching tech, mirroring the reference artifact's own
+  // bucket for undocumented metrics.
+  const reparentedUncategorised: MetricCatalogNode[] = [];
+  const stillKept: MetricCatalogNode[] = [];
   for (const leaf of keptLeaves) {
+    const tech = originalTechOf(leaf);
+    if (tech === "LTE" || tech === "NR") {
+      const techNode = synthesizeTech(tech);
+      const catNode = synthesizeCategory(tech, "Non catégorisé");
+      const grpNode = synthesizeGroup(tech, "Non catégorisé", "À étiqueter");
+      const metNode = synthesizeMetric(
+        tech,
+        "Non catégorisé",
+        "À étiqueter",
+        metricNameFromLabel(leaf.label),
+      );
+      ensureSynthetic(techNode);
+      ensureSynthetic(catNode);
+      ensureSynthetic(grpNode);
+      ensureSynthetic(metNode);
+      reparentedUncategorised.push({ ...leaf, parent_id: metNode.node_id });
+    } else {
+      stillKept.push(leaf);
+    }
+  }
+
+  // Keep non-leaf nodes only if they lead to a leaf that is still kept
+  // (CAPTURE / Shared / Other hierarchies). Walk ancestors of each still-kept
+  // leaf and mark the chain visible.
+  const visibleOriginalIds = new Set<string>();
+  for (const leaf of stillKept) {
     let current: MetricCatalogNode | undefined = leaf;
     while (current && !visibleOriginalIds.has(current.node_id)) {
       visibleOriginalIds.add(current.node_id);
@@ -212,12 +252,18 @@ export function applyReferenceHierarchy(
     }
   }
 
-  const keptOriginalNodes = nodes.filter(
-    (node) => node.node_type === "leaf" ? !mapping[node.node_id] : visibleOriginalIds.has(node.node_id),
-  );
+  const keptOriginalNodes = nodes.filter((node) => {
+    if (node.node_type === "leaf") return stillKept.some((l) => l.node_id === node.node_id);
+    return visibleOriginalIds.has(node.node_id);
+  });
 
   return {
     ...response,
-    nodes: [...keptOriginalNodes, ...synthetic.values(), ...remappedLeaves],
+    nodes: [
+      ...keptOriginalNodes,
+      ...synthetic.values(),
+      ...remappedLeaves,
+      ...reparentedUncategorised,
+    ],
   };
 }
