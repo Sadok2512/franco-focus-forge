@@ -770,17 +770,17 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
+      {/* Bottom — status (left), Metrics (true centre), state dot (right). */}
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}
+        className={`pointer-events-none absolute bottom-3 left-3 grid grid-cols-[1fr_auto_1fr] items-end gap-3 ${compact ? "right-3" : "right-[150px]"}`}
       >
         <div
           data-testid="map-workspace-statusbar"
-          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}
+          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] justify-self-start ${glass}`}
         >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
-          <span className="h-6 w-px bg-border" />
+          <span className="h-5 w-px bg-border" />
           <span className="tabular-nums">
             <span className="text-muted-foreground">Z </span>
             <strong className="text-sm">{zoom.toFixed(1)}</strong>
@@ -798,12 +798,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             {scale.label}
             <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
           </span>
-          <span
-            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
-            title={
-              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
-            }
-          />
+        </div>
+        <div
+          className={`pointer-events-auto flex items-center rounded-xl px-1.5 py-0.5 text-[11px] justify-self-center ${glass}`}
+        >
           <Dropdown
             up
             open={menu === "metrics"}
@@ -831,10 +829,19 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               </p>
             </div>
           </Dropdown>
+        </div>
+        <div
+          className={`pointer-events-auto flex items-center rounded-xl px-2.5 py-1 justify-self-end ${glass}`}
+        >
           {/* MAP UI V1 — the measure/recenter tools live only in the right
               rail; the duplicated Tools dropdown is removed. */}
+          <span
+            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
+            title={
+              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
+            }
+          />
         </div>
-        {!compact && <span className="w-0 shrink" />}
       </div>
     </div>
   );
