@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { SharePanelMenuItem } from "./SharePanelMenuItem";
 import { PanelShell } from "./PanelShell";
 import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
@@ -964,6 +965,8 @@ function MetricMapCard({
       <div className="kpi-metric-map-menu">
         <WorkspacePanelMenu label={`${title} · actions`}>
           <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <SharePanelMenuItem projectId={projectId} testId="metric-map-share" />
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={onRemove}>
             <X size={14} />

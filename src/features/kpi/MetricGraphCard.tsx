@@ -26,6 +26,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { SharePanelMenuItem } from "./SharePanelMenuItem";
 import { QueryErrorState } from "./QueryErrorState";
 import { useActiveEvents } from "./active-events";
 import { usePanelTableSettings } from "./table-settings";
@@ -168,6 +169,8 @@ export function MetricGraphCard({
             <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
               <Maximize2 size={14} /> {translate("panel.fullscreen")}
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <SharePanelMenuItem projectId={projectId} testId="metric-share-graph" />
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onRemove}>
               <X size={14} /> {translate("panel.remove")}
