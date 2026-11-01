@@ -1,3 +1,18 @@
+## 1.129.5 (patch) — Table/graph separation, legend removal, grey GPS points — 2026-11-01 (BC4)
+
+- Table and graphs never share the screen: ⋮ → Tableau hides the graph cards
+  (nothing is deleted) and closing the table brings them back; ⋮ → Graphe or
+  Histogramme closes the table instead.
+- The ✕ on a map legend now removes that metric from the map completely —
+  points and legend — with no "Reopen legend" leftover; the "Link styles"
+  block is removed from all maps.
+- The drive route shows as grey GPS points by default on KPI maps, listed as
+  a single "GPS points" legend line; the "Drive RSRP" legend block is no
+  longer shown by default. Serving line and blinking site are unchanged.
+- The measurements table header gets a ⋮ menu (Export CSV plus column
+  show/hide) and a ✕ that hides the table until a panel is added or removed.
+- SemVer front: **PATCH 1.129.5**.
+
 ## 1.129.4 (patch) — BC4 MAP UI minor fixes — 2026-11-01 (BC4)
 
 - Removes the floating Metrics button at the bottom of the KPI Analytics map
