@@ -356,16 +356,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
-            {/* RF host stays mounted so the selected point survives tab switches. */}
-            {rfPanel && (
-              <div className={tab === "rf" ? "" : "hidden"} data-testid="map-rf-panel">
-                <div ref={rfPanel.setHost} className="peer" />
-                <p className="hidden text-muted-foreground peer-empty:block">
-                  {t("mapWorkspace.rfEmpty")}
-                </p>
-              </div>
-            )}
-            {tab === "rf" ? null : tab === "legend" ? (
+            {tab === "legend" ? (
               props.layersLegend
             ) : (
               <>
