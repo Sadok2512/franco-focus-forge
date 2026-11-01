@@ -1069,7 +1069,27 @@
     "legendSettings": "Réglages des couleurs",
     "signalingPoints": "Points signalisation",
     "gpsRoute": "Trajet GPS",
-    "selectedPosition": "Position sélectionnée"
+    "selectedPosition": "Position sélectionnée",
+    "rfTab": "Paramètres RF",
+    "rfEmpty": "Sélectionnez un point de mesure pour voir ses paramètres RF.",
+    "rf": {
+      "time": "Heure",
+      "position": "Position",
+      "eventId": "Événement / ID",
+      "radioInfo": "Informations radio",
+      "technology": "Technologie",
+      "band": "Bande",
+      "bandwidth": "Largeur de bande",
+      "ca": "CA",
+      "servingTech": "Technologie",
+      "site": "Site",
+      "azimuth": "Azimut (UE → site)",
+      "noServing": "Aucune cellule serving publiée pour ce point.",
+      "neighbours": "Cellules voisines",
+      "measurements": "Mesures RF",
+      "metrics": "Métriques",
+      "noMetrics": "Aucune autre métrique publiée pour ce point."
+    }
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",
