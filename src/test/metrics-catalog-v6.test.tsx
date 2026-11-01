@@ -1,11 +1,9 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { createRef, useState } from "react";
+import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
-import { KpiCatalogSidebar } from "@/features/kpi/KpiCatalogSidebar";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
-import type { ProjectKpiCatalog } from "@/lib/api/project-kpi-schemas";
 import "@/lib/i18n";
 
 const getMetrics = vi.fn();
@@ -221,7 +219,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(screen.queryByTestId("per-cell-physical")).toBeNull();
   });
 
-  it("uses one search for measured metrics and catalogue leaves in one panel", async () => {
+  it("lists only metrics returned by the metrics API", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",
       title: "Nemo metrics",
@@ -239,74 +237,15 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
         }),
       ],
     } satisfies MetricCatalogResponse);
-    const measuredCatalog: ProjectKpiCatalog = {
-      project_id: "TEST2",
-      catalog_version: "2.60.0",
-      tree: [
-        {
-          techno: "LTE",
-          families: [
-            {
-              family: "Radio",
-              kpis: [
-                {
-                  code: "rsrp_measured",
-                  name: "Measured RSRP",
-                  nature: "metric",
-                  analytics_tab: "metrics",
-                  unit: "dBm",
-                  source: "CELLMEAS",
-                  formula: null,
-                  status: "AVAILABLE",
-                  reason: null,
-                },
-                {
-                  code: "sinr_measured",
-                  name: "Measured SINR",
-                  nature: "metric",
-                  analytics_tab: "metrics",
-                  unit: "dB",
-                  source: "CELLMEAS",
-                  formula: null,
-                  status: "AVAILABLE",
-                  reason: null,
-                },
-              ],
-            },
-          ],
-        },
-      ],
-    };
-    function UnifiedHarness() {
-      const [search, setSearch] = useState("");
-      const searchRef = createRef<HTMLInputElement>();
-      return (
+    render(
+      <QueryClientProvider client={new QueryClient()}>
         <MetricsCatalogSidebar
           projectId="TEST2"
           selected={[]}
           onToggle={vi.fn()}
-          searchRef={searchRef}
-          search={search}
-          onSearchChange={setSearch}
+          searchRef={createRef<HTMLInputElement>()}
           selectionCount={0}
-          measuredTree={
-            <KpiCatalogSidebar
-              catalog={measuredCatalog}
-              selected={[]}
-              active={null}
-              onToggle={vi.fn()}
-              onVisualization={vi.fn()}
-              searchRef={searchRef}
-              searchValue={search}
-              embedded
-            />
-          }
         />
-      );
-    }
-    render(
-      <QueryClientProvider client={new QueryClient()}>
-        <UnifiedHarness />
       </QueryClientProvider>,
     );
 
@@ -314,8 +253,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(searches).toHaveLength(1);
     expect(screen.getByTestId("metrics-unified-selection-count")).toHaveTextContent("0 selected");
     fireEvent.change(searches[0]!, { target: { value: "RSRP" } });
-    expect(screen.getByText("Measured RSRP")).toBeVisible();
     expect(screen.getByText("Raw RSRP")).toBeVisible();
-    expect(screen.queryByText("No KPIs match this search.")).toBeNull();
+    expect(screen.queryByText("Measured RSRP")).toBeNull();
+    expect(screen.queryByText("Measured SINR")).toBeNull();
   });
 });
