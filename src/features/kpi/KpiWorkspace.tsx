@@ -512,19 +512,21 @@ function Workspace({
     });
   };
   const visualizeMetric = (code: string, view: MetricView) => {
-    const nextViews = { ...metricViews, [code]: view };
+    // Graph, map and table are independent: showing a metric in the table never
+    // removes its existing graph/map card. Only a metric with no card yet is
+    // marked "table" (table-only).
+    const keepsCard =
+      view === "table" && selectedMetrics.includes(code) && metricViews[code] !== "table";
+    const nextViews = keepsCard ? metricViews : { ...metricViews, [code]: view };
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
       : [...selectedMetrics, code];
     // Start the lean request in the menu event, before MapLibre's workspace
     // mounts. useQuery below adopts the same in-flight promise by key.
     if (view === "map") prefetchMetricMap(code);
-    writeViews(nextViews);
+    if (!keepsCard) writeViews(nextViews);
     if (!selectedMetrics.includes(code)) setSelectedMetrics(nextSelected);
     if (view === "table") {
-      // 1.91.0 — ⋮ → Tableau ouvre le grand tableau des métriques (avec les
-      // colonnes de paramètres). 1.101.0 — cette métrique ne reçoit aucune
-      // carte graphique : le tableau est sa seule représentation.
       setMetricsTablePane(true);
       setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
       return;
