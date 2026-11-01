@@ -1,3 +1,11 @@
+## 1.129.3 (patch) — Lovable legend controls reconciliation — 2026-11-01 (BC4)
+
+- Merges the restored Lovable history with a regular merge, preserving both
+  histories without rebase, squash or force-push.
+- Adds shared visibility, close and reopen controls to KPI map legends while
+  retaining drive RSRP layers, per-class filters and existing map state.
+- SemVer front: **PATCH 1.129.3**.
+
 ## 1.129.2 (patch) — KPI Header V2 compact toolbar — 2026-11-01 (BC1)
 
 - Restores the original one-row KPI toolbar chrome and mandatory Technology,
