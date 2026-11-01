@@ -90,6 +90,7 @@ function mount() {
 }
 
 async function mountedCard() {
+  mount();
   return (await waitFor(() => {
     const element = document.querySelector('[data-metric-code="cell_rsrp@0"]');
     expect(element).not.toBeNull();
