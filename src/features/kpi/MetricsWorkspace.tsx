@@ -1488,6 +1488,16 @@ export function MetricsWorkspace({
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
   );
+  // 1.130.0 — le tableau des mesures et les cartes graphique ne s'affichent
+  // jamais en même temps. Pendant que le tableau est ouvert, les graphes sont
+  // retirés de la vue mais jamais supprimés : refermer le tableau les ramène.
+  // Une carte carte (map) n'est pas un graphe : elle reste visible.
+  const tableOpen = pane === "table";
+  const visibleGridSelections = useMemo(
+    () => (tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections),
+    [graphSelections, tableOpen, viewsProp],
+  );
+
   // 1.105.1 — plus de message « The selected metrics are shown in the
   // measurements table » ni de bouton : quand il n'y a rien à grapher, le
   // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
@@ -1528,9 +1538,10 @@ export function MetricsWorkspace({
           {translate("metrics.pickFromCatalogue")}
         </p>
       )}
-      {captureId && graphSelections.length > 0 && (
+      {captureId && visibleGridSelections.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
-          {graphSelections.map((s, i) => {
+          {visibleGridSelections.map((s, i) => {
+
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
             const metricView = viewsProp?.[s.full] ?? "graph";
