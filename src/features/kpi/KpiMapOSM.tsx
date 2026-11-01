@@ -201,6 +201,18 @@ export function KpiMapOSM({
   const [tileError, setTileError] = useState(false);
   const mapFullscreen = useMapFullscreen(fullscreen);
   const full = mapFullscreen.expanded;
+  // Level one keeps the app header and the catalogue sidebar visible: the map
+  // grows inside the content frame instead of covering the whole window.
+  const frameInsets = useMapFrameInsets(mapFullscreen.ref, full && !mapFullscreen.active);
+  const expandedStyle: CSSProperties | undefined =
+    full && frameInsets
+      ? {
+          top: frameInsets.top,
+          left: frameInsets.left,
+          right: frameInsets.right,
+          bottom: frameInsets.bottom,
+        }
+      : undefined;
   const panelWidth = useContext(MapPanelWidthContext);
   const [wide, setWide] = useState(false);
   const [wideBounds, setWideBounds] = useState({ top: 56, height: 280 });
@@ -355,7 +367,7 @@ export function KpiMapOSM({
   useEffect(() => {
     const id = setTimeout(() => map.current?.resize(), 50);
     return () => clearTimeout(id);
-  }, [full, mapFullscreen.active, wide, panelWidth?.wide]);
+  }, [full, mapFullscreen.active, wide, panelWidth?.wide, frameInsets]);
 
   return (
     <MapRfPanelProvider>
@@ -364,11 +376,12 @@ export function KpiMapOSM({
       data-map-expanded={full || wide ? "true" : undefined}
       data-map-level={mapFullscreen.level}
       style={
-        wide && !full
+        expandedStyle ??
+        (wide && !full
           ? { top: wideBounds.top, height: wideBounds.height }
           : premium && !full && !workspace
-          ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
-          : undefined
+            ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
+            : undefined)
       }
       className={
         full
