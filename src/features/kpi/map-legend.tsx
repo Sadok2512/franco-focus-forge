@@ -183,18 +183,21 @@ export function MapLegendHeaderActions({
 export function MapLegendReopen({
   label,
   onOpen,
+  openLabel,
 }: {
   label: ReactNode;
   onOpen: () => void;
+  openLabel: string;
 }) {
   return (
     <button
       type="button"
-      className="flex w-full items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-left text-xs font-semibold"
+      className="flex w-full items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-left text-xs"
       onClick={onOpen}
     >
-      <span className="min-w-0 truncate">{label}</span>
-      <span className="shrink-0 text-primary underline">{label ? "" : ""}</span>
+      <span className="min-w-0 truncate font-semibold">{label}</span>
+      <span className="shrink-0 font-medium text-primary underline">{openLabel}</span>
     </button>
   );
 }
+
