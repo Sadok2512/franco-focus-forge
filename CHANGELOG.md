@@ -1,3 +1,19 @@
+## 1.129.4 (patch) — BC4 MAP UI minor fixes — 2026-11-01 (BC4)
+
+- Removes the floating Metrics button at the bottom of the KPI Analytics map
+  (Metrics features elsewhere are untouched).
+- Centres the bottom information bar (Sites, Cells, zoom, scale) horizontally
+  on the map; the state dot stays at the right without overlap.
+- Removes the floating "No proven GPS position" message and its container;
+  GPS logic and data are unchanged.
+- Aligns the Settings (⋯) rail button with the other map controls and adds a
+  Map Height section (Compact 300 px, Default, Large 600 px, Extra Large
+  800 px), applied immediately, persisted per workspace and restored on
+  reopen, with the map canvas resized and its camera/layers/selection kept.
+- Removes the floating "Zoom in to see cells" overlay; zoom thresholds and
+  cell/sector/beam rendering conditions are unchanged.
+- SemVer front: **PATCH 1.129.4**.
+
 ## 1.129.3 (patch) — Lovable legend controls reconciliation — 2026-11-01 (BC4)
 
 - Merges the restored Lovable history with a regular merge, preserving both
