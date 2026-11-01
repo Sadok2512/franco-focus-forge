@@ -1,14 +1,13 @@
-// Workspace Settings popup (⚙ next to the tab name): Graphs + Tables tabs.
+// Workspace Settings popup (⚙ next to the tab name): one "Settings" tab.
 // Settings are per workspace tab and only change presentation.
 // Edits stay in a local draft: nothing reaches the tables until "Apply" is clicked.
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp, Eye, EyeOff, GripVertical, RotateCcw } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import type { WorkspaceLayout } from "./workspace-tabs";
 import {
   DEFAULT_TABLE_SETTINGS,
   PALETTES,
@@ -58,37 +57,6 @@ function Seg<T extends string>({
   );
 }
 
-function LayoutThumbs({
-  value,
-  onChange,
-  label,
-}: {
-  value: number;
-  onChange: (n: 1 | 2 | 3) => void;
-  label: (n: number) => string;
-}) {
-  return (
-    <div className="grid grid-cols-3 gap-2">
-      {([1, 2, 3] as const).map((n) => (
-        <Button
-          key={n}
-          type="button"
-          variant="outline"
-          onClick={() => onChange(n)}
-          aria-pressed={value === n}
-          className={`block h-auto rounded-md border p-2 text-[11px] ${value === n ? "border-primary ring-1 ring-primary" : "border-border"}`}
-        >
-          <div className="mb-1 grid h-8 gap-1" style={{ gridTemplateColumns: `repeat(${n}, 1fr)` }}>
-            {Array.from({ length: n }, (_, i) => (
-              <div key={i} className="rounded-sm bg-muted" />
-            ))}
-          </div>
-          {label(n)}
-        </Button>
-      ))}
-    </div>
-  );
-}
 
 const COLOR_KEYS: (keyof TableColors)[] = [
   "background",
@@ -107,31 +75,23 @@ export function WorkspaceSettingsDialog({
   open,
   onOpenChange,
   workspaceId,
-  layout,
-  onLayoutChange,
   columns,
 }: {
   open: boolean;
   onOpenChange: (o: boolean) => void;
   workspaceId: string;
-  layout: WorkspaceLayout;
-  onLayoutChange: (l: WorkspaceLayout) => void;
   columns: { code: string; label: string }[];
 }) {
   const { t } = useTranslation();
   const [saved] = useTableSettings(workspaceId);
   const [draft, setDraft] = useState<TableSettings>(() => loadTableSettings(workspaceId));
-  const [draftLayout, setDraftLayout] = useState<WorkspaceLayout>(layout);
   const [colSearch, setColSearch] = useState("");
   const [drag, setDrag] = useState<string | null>(null);
-  const layoutRef = useRef(layout);
-  layoutRef.current = layout;
 
   // Re-open always starts from what is currently applied.
   useEffect(() => {
     if (!open) return;
     setDraft(loadTableSettings(workspaceId));
-    setDraftLayout(layoutRef.current);
   }, [open, workspaceId]);
 
   const patch =
@@ -152,10 +112,9 @@ export function WorkspaceSettingsDialog({
     setDraft((d) => ({ ...d, order: codes }));
   };
   const lowContrast = contrastRatio(draft.colors.headerBg, draft.colors.headerText) < 4.5;
-  const dirty = draftLayout !== layout || sig(draft) !== sig(saved);
+  const dirty = sig(draft) !== sig(saved);
   const apply = () => {
     saveTableSettings(workspaceId, { ...draft, search: loadTableSettings(workspaceId).search });
-    if (draftLayout !== layout) onLayoutChange(draftLayout);
   };
   const T = (k: string) => t(k);
 
@@ -169,29 +128,12 @@ export function WorkspaceSettingsDialog({
           <DialogTitle>{t("wss.title")}</DialogTitle>
         </DialogHeader>
         <div className="-mx-6 min-h-0 flex-1 space-y-4 overflow-y-auto px-6">
-        {/* Graphs follow this layout; tables always reserve an entire row. */}
-        <section className="space-y-2">
-          <h4 className="text-xs font-semibold">{t("wss.layout")}</h4>
-          <LayoutThumbs
-            value={draftLayout === "auto" ? 0 : Number(draftLayout)}
-            onChange={(n) => setDraftLayout(String(n) as WorkspaceLayout)}
-            label={(n) => t("wss.perRow", { n })}
-          />
-          <Button
-            variant={draftLayout === "auto" ? "default" : "outline"}
-            size="sm"
-            data-testid="workspace-layout-auto"
-            onClick={() => setDraftLayout("auto")}
-          >
-            {t("wss.opt_auto")}
-          </Button>
-        </section>
-        <Tabs defaultValue="tables">
+        <Tabs defaultValue="settings">
           <TabsList className="grid w-full grid-cols-1">
-            <TabsTrigger value="tables">{t("wss.tables")}</TabsTrigger>
+            <TabsTrigger value="settings">{t("wss.tabSettings")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="tables" className="space-y-4">
+          <TabsContent value="settings" className="space-y-4">
             <section>
               <Row label={t("wss.autoFit")}>
                 <Switch checked={draft.autoFitWidth} onCheckedChange={patch("autoFitWidth")} />
