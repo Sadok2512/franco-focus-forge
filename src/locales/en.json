@@ -5,6 +5,12 @@
     "loading": "Loading {{metric}}",
     "noGps": "No geolocated observations for this capture."
   },
+  "graphSeries": {
+    "added": "{{metric}} added to this graph",
+    "duplicate": "This metric is already on this graph",
+    "axis": "This graph already carries two units — open a separate graph instead",
+    "kpiUnsupported": "Graphs accept metrics from the Metrics catalogue, not KPIs"
+  },
   "passwordChange": {
     "title": "Change my password",
     "description": "Choose a new password with at least 12 characters.",
@@ -868,6 +874,13 @@
     "share": "Copy link",
     "shareCopied": "Link copied to the clipboard",
     "shareFailed": "Copy failed — select the address bar and copy it manually",
+    "style": "Style",
+    "plot": "Plot type",
+    "plot_line": "Line",
+    "plot_bar": "Bars",
+    "plot_point": "Points",
+    "color": "Colour",
+    "series": "Series",
     "open_metrics_table": "Show metrics table",
     "layout": "Layout",
     "add_chronogram": "Add Chronogram",
