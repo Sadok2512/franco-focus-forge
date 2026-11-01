@@ -397,7 +397,8 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 }
 .kpi-graph-grid {
   display: grid;
-  align-items: start;
+  /* Panneaux alignés : chaque carte prend la hauteur de sa ligne. */
+  align-items: stretch;
   width: 100%;
   min-width: 0;
   gap: 16px;
@@ -658,6 +659,19 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-width: 0;
   overflow: hidden;
   scroll-margin: 8px;
+  display: flex;
+  flex-direction: column;
+}
+/* Le tracé et la carte remplissent la hauteur du panneau : graphes et carte
+   restent alignés quelle que soit la hauteur de la ligne. */
+.kpi-graph-card > .kpi-plot,
+.kpi-graph-card > [data-testid="metric-time-plot"],
+.kpi-graph-card > [data-testid="metric-categorical-plot"],
+.kpi-graph-card > [data-testid="metric-aggregate-plot"],
+.kpi-graph-card > [data-testid="metric-vs-time-chart"],
+.kpi-metric-map-card > *:not(.kpi-metric-map-menu) {
+  flex: 1 1 auto;
+  min-height: 0;
 }
 .kpi-graph-card.is-active {
   border-color: #8dbaf7;

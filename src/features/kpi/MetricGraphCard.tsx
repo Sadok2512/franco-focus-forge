@@ -514,7 +514,7 @@ function MetricAggregatePlot({
   return (
     <div
       className="kpi-plot"
-      style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
+      style={{ minHeight: "var(--kpi-panel-chart-height, 235px)" }}
       ref={host}
       role="img"
       data-testid="metric-aggregate-plot"

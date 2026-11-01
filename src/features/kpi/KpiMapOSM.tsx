@@ -402,7 +402,7 @@ export function KpiMapOSM({
         (wide && !full
           ? { top: wideBounds.top, height: wideBounds.height }
           : heightPx
-            ? { height: heightPx }
+            ? { minHeight: heightPx }
             : premium && !full && !workspace
               ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
               : undefined)
