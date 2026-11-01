@@ -38,6 +38,12 @@ import {
   type CellLinkKind,
   type RadioCellLink,
 } from "./measurement-point-popup";
+import {
+  MapLegendList,
+  MapLegendRow,
+  MapLegendSection,
+  MapLegendSettings,
+} from "./map-legend";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
