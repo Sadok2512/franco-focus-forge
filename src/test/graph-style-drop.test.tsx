@@ -108,6 +108,7 @@ async function openStyleMenu(card: HTMLElement) {
   // et seulement si le déclencheur a le focus.
   trigger.focus();
   fireEvent.keyDown(trigger, { key: "Enter" });
+  console.log("DBG state", trigger.getAttribute("data-state"), "items", screen.queryAllByRole("menuitem").length, "sub", !!screen.queryByTestId("metric-style-sub"));
   // Le contenu est lu immédiatement : attendre un tour de boucle laisse Radix
   // refermer le menu avant la lecture.
   fireEvent.click(screen.getByTestId("metric-style-sub"));
