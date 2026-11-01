@@ -1005,6 +1005,7 @@ function MetricMapCard({
         onRetry={onRetry}
         routeCoordinates={routeCoordinates}
         dropContext={{ selection, workspaceId, filters }}
+        heightKey={workspaceId}
       />
     </article>
   );
