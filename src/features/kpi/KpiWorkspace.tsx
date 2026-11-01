@@ -486,8 +486,16 @@ function Workspace({
     writeMetricViews(tabsState.activeTabId, next);
   };
   const graphMetricCount = selectedMetrics.filter((code) => metricViews[code] !== "table").length;
+  // 1.130.0 — pendant que le tableau des mesures est ouvert, les cartes graphe
+  // sont masquées (jamais supprimées) : seules les cartes carte restent visibles.
+  const mapMetricCount = selectedMetrics.filter((code) => metricViews[code] === "map").length;
+  const visibleGraphMetricCount = metricsTablePane ? mapMetricCount : graphMetricCount;
   const tableOnlyWorkspace =
-    selectedMetrics.length > 0 && graphMetricCount === 0 && codes.length === 0 && metricsTablePane;
+    selectedMetrics.length > 0 &&
+    codes.length === 0 &&
+    metricsTablePane &&
+    visibleGraphMetricCount === 0;
+
   const mapOnlyWorkspace =
     !metricsTablePane &&
     ((codes.length === 0 &&

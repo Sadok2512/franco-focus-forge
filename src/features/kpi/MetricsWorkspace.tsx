@@ -1464,9 +1464,17 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
-  // 1.102.1 — ajouter un graphe ne ferme plus le tableau des mesures : les
-  // cartes graphiques s'affichent à côté, seul « Fermer le panneau » le retire.
+  // 1.130.0 — une demande de graphe (⋮ → Graphe / Histogramme) ferme le tableau :
+  // les deux ne s'affichent jamais en même temps. La carte graphe n'est pas
+  // supprimée, elle revient dès que le tableau est refermé.
+  const cardViewRequestRef = useRef<number>(-1);
+  useEffect(() => {
+    if (!cardViewRequest || cardViewRequest.n === cardViewRequestRef.current) return;
+    cardViewRequestRef.current = cardViewRequest.n;
+    if (cardViewRequest.view !== "table" && cardViewRequest.view !== "map") setPane("charts");
+  }, [cardViewRequest]);
   // 1.101.0 — le mode mémorisé à l'ouverture de l'onglet est signalé au parent
+
   // (le compteur de panneaux de KpiWorkspace part du tableau des mesures).
   useEffect(() => {
     onTablePaneChange?.(pane === "table");
