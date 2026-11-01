@@ -10,12 +10,24 @@ export const DEFAULT_LEGEND_SETTINGS: MetricLegendSettings = { count: null, colo
 export const MIN_CLASSES = 2;
 export const MAX_CLASSES = 8;
 
-const RAMP = ["#16a34a", "#22c55e", "#84cc16", "#eab308", "#f59e0b", "#f97316", "#ea580c", "#dc2626"];
+const RAMP = [
+  "#16a34a",
+  "#22c55e",
+  "#84cc16",
+  "#eab308",
+  "#f59e0b",
+  "#f97316",
+  "#ea580c",
+  "#dc2626",
+];
 
 /** Evenly sampled colours from the green→red ramp. */
 export function defaultPalette(count: number): string[] {
   if (count <= 1) return [RAMP[2]!];
-  return Array.from({ length: count }, (_, i) => RAMP[Math.round((i * (RAMP.length - 1)) / (count - 1))]!);
+  return Array.from(
+    { length: count },
+    (_, i) => RAMP[Math.round((i * (RAMP.length - 1)) / (count - 1))]!,
+  );
 }
 
 export function metricClasses(
@@ -70,7 +82,10 @@ export function useMetricLegendSettings(code: string) {
   const [settings, setSettings] = useState<MetricLegendSettings>(DEFAULT_LEGEND_SETTINGS);
   useEffect(() => {
     try {
-      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<string, MetricLegendSettings>;
+      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
+        string,
+        MetricLegendSettings
+      >;
       setSettings({ ...DEFAULT_LEGEND_SETTINGS, ...all[code] });
     } catch {
       setSettings(DEFAULT_LEGEND_SETTINGS);
@@ -79,7 +94,10 @@ export function useMetricLegendSettings(code: string) {
   const save = (next: MetricLegendSettings) => {
     setSettings(next);
     try {
-      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<string, MetricLegendSettings>;
+      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
+        string,
+        MetricLegendSettings
+      >;
       localStorage.setItem(KEY, JSON.stringify({ ...all, [code]: next }));
     } catch {
       /* storage unavailable: keep in memory */

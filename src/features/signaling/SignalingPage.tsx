@@ -47,7 +47,6 @@ import {
   Download,
   Eye,
   FilterX,
-
   Gauge,
   LogIn,
   LogOut,
@@ -103,6 +102,8 @@ import "./signaling.css";
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = layers.map((layer) => rfProtocolColors[layer]!);
+/** Grey of the plotted GPS route line. */
+const ROUTE_COLOR = "#64748b";
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
 
 // V10 column catalog lives in message-columns.ts (catalog, persistence, Info/RRC/radio rules).
@@ -761,6 +762,17 @@ function SignalMap({
 }) {
   const [map, setMap] = useState<MlMap>();
   const ready = useCallback((m: MlMap) => setMap(m), []);
+  const { t } = useTranslation();
+  // The map's own legend panel (Layers → Legend) hosts the drive RSRP rows.
+  const [legendHost, setLegendHost] = useState<HTMLDivElement | null>(null);
+  // Per-protocol totals of the plotted event points, straight from the markers.
+  const protocolTotals = useMemo(() => {
+    const totals = new Map<string, number>();
+    for (const marker of data.markers)
+      for (const [protocol, count] of Object.entries(marker.counts))
+        totals.set(protocol, (totals.get(protocol) ?? 0) + count);
+    return totals;
+  }, [data.markers]);
   const callback = useRef(onSelect);
   callback.current = onSelect;
   /** Positions the server already published for this capture, so an RSRP row
@@ -813,7 +825,7 @@ function SignalMap({
           id: "signaling-route-line",
           type: "line",
           source: "signaling-route",
-          paint: { "line-color": "#64748b", "line-width": 2, "line-opacity": 0.5 },
+          paint: { "line-color": ROUTE_COLOR, "line-width": 2, "line-opacity": 0.5 },
         });
       }
       const source = map.getSource("signaling") as GeoJSONSource | undefined;
@@ -923,6 +935,43 @@ function SignalMap({
         contextLabel="Signalisation"
         measurementStatus={null}
         nPoints={data.positioned_count}
+        layersLegend={
+          <div className="space-y-3">
+            <section className="space-y-1">
+              <div className="font-semibold">{t("mapWorkspace.signalingPoints")}</div>
+              {layers.map((protocol, i) => (
+                <div key={protocol} className="flex items-center gap-2">
+                  <span
+                    className="h-2.5 w-2.5 shrink-0 rounded-full border border-border"
+                    style={{ background: colors[i] }}
+                  />
+                  <span className="flex-1 truncate">{protocol}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {(protocolTotals.get(protocol) ?? 0).toLocaleString()}
+                  </span>
+                </div>
+              ))}
+            </section>
+            <section className="space-y-1 border-t pt-2">
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-0 w-5 shrink-0 border-t-[3px]"
+                  style={{ borderColor: ROUTE_COLOR }}
+                />
+                <span className="flex-1">{t("mapWorkspace.gpsRoute")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
+                  style={{ borderColor: "var(--signaling-cursor)" }}
+                />
+                <span className="flex-1">{t("mapWorkspace.selectedPosition")}</span>
+              </div>
+            </section>
+            {/* The drive RSRP classes and cell links are portalled in by the layer. */}
+            <div ref={setLegendHost} />
+          </div>
+        }
         routeCoordinates={data.markers
           .filter((point) => point.lng !== null && point.lat !== null)
           .map((point) => [point.lng!, point.lat!])}
@@ -933,6 +982,8 @@ function SignalMap({
           activeCaptureId={captureId}
           autoFrame
           positions={rsrpPositions}
+          hideControls
+          legendHost={legendHost}
         />
       </KpiMapOSM>
       {!hasMarkers && (
@@ -1439,8 +1490,8 @@ export function SignalingPage({
   // View activations (view switch, timeline, map) live in the filters sidebar,
   // never in a strip above the workspace.
   const viewControls = (
-    <>
-      <Button asChild variant="outline" size="sm">
+    <div className="signaling-view-controls">
+      <Button asChild variant="outline" size="sm" className="signaling-view-switch">
         <Link
           to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
           search={(previous) => ({ ...previous, capture_id: capture, seq })}
@@ -1450,41 +1501,40 @@ export function SignalingPage({
       </Button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={toggleTimeline}
         aria-pressed={timelineVisible}
         data-testid="signaling-timeline-toggle"
         title={timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")}
       >
         {timelineVisible ? <Activity size={14} /> : <ActivitySquare size={14} />}
-        {t("signalingV2.timeline")} ·{" "}
-        {timelineVisible ? t("signalingV2.on") : t("signalingV2.off")}
+        {t("signalingV2.timeline")} · {timelineVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={toggleMap}
         aria-pressed={mapVisible}
         data-testid="signaling-map-toggle"
         title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
       >
         {mapVisible ? <MapPin size={14} /> : <MapPinOff size={14} />}
-        {t("signalingV2.map")} ·{" "}
-        {mapVisible ? t("signalingV2.on") : t("signalingV2.off")}
+        {t("signalingV2.map")} · {mapVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={() => togglePanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)}
         aria-pressed={inspectionVisible}
         data-testid="signaling-inspection-toggle"
       >
         <ListTree size={14} />
-        {t("signalingV2.inspection")} · {inspectionVisible ? t("signalingV2.on") : t("signalingV2.off")}
+        {t("signalingV2.inspection")} ·{" "}
+        {inspectionVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
       <button
         type="button"
-        className="kpi-button"
+        className="kpi-button signaling-view-toggle"
         onClick={() => togglePanel(metricsPanelRef, metricsVisible, setMetricsVisible)}
         aria-pressed={metricsVisible}
         data-testid="signaling-metrics-toggle"
@@ -1492,11 +1542,10 @@ export function SignalingPage({
         <LineChart size={14} />
         {t("signalingV2.metrics")} · {metricsVisible ? t("signalingV2.on") : t("signalingV2.off")}
       </button>
-    </>
+    </div>
   );
 
   return (
-
     <main className="p-3" data-testid="signaling-page">
       <h1 className="sr-only">{t(stateTracksV2 ? "signalingV2.title" : "signalingV2.stable")}</h1>
 
@@ -1515,7 +1564,11 @@ export function SignalingPage({
             maxSize={narrow ? "50%" : 360}
             collapsible
             collapsedSize={44}
-            onResize={() => syncFromPanel(filtersPanelRef, !sidebarCollapsed, (open) => setSidebarCollapsed(!open))}
+            onResize={() =>
+              syncFromPanel(filtersPanelRef, !sidebarCollapsed, (open) =>
+                setSidebarCollapsed(!open),
+              )
+            }
           >
             {sidebarCollapsed ? (
               <aside
@@ -1555,7 +1608,9 @@ export function SignalingPage({
                   aria-pressed={timelineVisible}
                   aria-label={t("signalingV2.timeline")}
                   data-testid="signaling-timeline-toggle"
-                  title={timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")}
+                  title={
+                    timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")
+                  }
                 >
                   {timelineVisible ? <Activity size={16} /> : <ActivitySquare size={16} />}
                 </button>
@@ -1570,7 +1625,6 @@ export function SignalingPage({
                 >
                   {mapVisible ? <MapPin size={16} /> : <MapPinOff size={16} />}
                 </button>
-
               </aside>
             ) : (
               <SignalingFilters
@@ -1662,7 +1716,9 @@ export function SignalingPage({
                     minSize={timelineVisible ? 20 : 0}
                     collapsible
                     collapsedSize={0}
-                    onResize={() => syncFromPanel(timelinePanelRef, timelineVisible, setTimelineVisible)}
+                    onResize={() =>
+                      syncFromPanel(timelinePanelRef, timelineVisible, setTimelineVisible)
+                    }
                     data-testid="signaling-timeline-panel"
                   >
                     <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
@@ -1818,7 +1874,10 @@ export function SignalingPage({
                     onResize={() => syncFromPanel(mapPanelRef, mapVisible, setMapVisible)}
                     data-testid="signaling-map-panel"
                   >
-                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3" aria-label={t("signalingV2.map")}>
+                    <section
+                      className="signaling-pane flex flex-col rounded-lg border bg-card p-3"
+                      aria-label={t("signalingV2.map")}
+                    >
                       {mapVisible && points.data ? (
                         <SignalMap
                           data={points.data}
@@ -1845,7 +1904,9 @@ export function SignalingPage({
                 minSize={inspectionVisible ? 300 : 0}
                 collapsible
                 collapsedSize={0}
-                onResize={() => syncFromPanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)}
+                onResize={() =>
+                  syncFromPanel(inspectionPanelRef, inspectionVisible, setInspectionVisible)
+                }
                 data-testid="signaling-inspection-panel"
               >
                 <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
@@ -1942,7 +2003,6 @@ export function SignalingPage({
                                 data-testid="signaling-columns-trigger"
                               >
                                 <Columns3 size={14} aria-hidden="true" />
-
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-72">
@@ -2019,7 +2079,6 @@ export function SignalingPage({
                             onClick={() => void exportCsv()}
                           >
                             <Download size={14} aria-hidden="true" />
-
                           </button>
                           <button
                             type="button"
@@ -2041,15 +2100,22 @@ export function SignalingPage({
                             }}
                           >
                             <FilterX size={14} aria-hidden="true" />
-
                           </button>
                           <Button
                             type="button"
                             variant="outline"
                             size="icon"
                             className="sig-tool sig-tool-icon"
-                            aria-label={t(inspectionExpanded ? "sigTable.restoreInspection" : "sigTable.expandInspection")}
-                            title={t(inspectionExpanded ? "sigTable.restoreInspection" : "sigTable.expandInspection")}
+                            aria-label={t(
+                              inspectionExpanded
+                                ? "sigTable.restoreInspection"
+                                : "sigTable.expandInspection",
+                            )}
+                            title={t(
+                              inspectionExpanded
+                                ? "sigTable.restoreInspection"
+                                : "sigTable.expandInspection",
+                            )}
                             aria-pressed={inspectionExpanded}
                             data-testid="sig-messages-fullscreen"
                             onClick={() => setInspectionExpanded((expanded) => !expanded)}
@@ -2403,13 +2469,8 @@ export function SignalingPage({
                                               key={`${p.path}:${i}`}
                                               className="border-b align-top"
                                             >
-                                              <td className="p-1">
-                                                <a
-                                                  href={`/rrc?parameter=${encodeURIComponent(p.param_key ?? p.path)}`}
-                                                  className="text-primary underline"
-                                                >
-                                                  {p.param_key ?? p.path.split("/").slice(-1)[0]}
-                                                </a>
+                                              <td className="p-1 font-medium">
+                                                {p.param_key ?? p.path.split("/").slice(-1)[0]}
                                               </td>
                                               <td className="p-1 font-mono">{shown(p.value)}</td>
                                               <td className="p-1 font-mono text-[10px] text-muted-foreground">
@@ -2471,7 +2532,9 @@ export function SignalingPage({
                 onResize={() => syncFromPanel(metricsPanelRef, metricsVisible, setMetricsVisible)}
                 data-testid="signaling-metrics-panel"
               >
-                {metricsVisible && <SignalingMetricsSection projectId={projectId} captureId={capture} />}
+                {metricsVisible && (
+                  <SignalingMetricsSection projectId={projectId} captureId={capture} />
+                )}
               </Panel>
             </Group>
           </Panel>

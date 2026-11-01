@@ -29,9 +29,16 @@ vi.mock("@/features/kpi/MetricGraphCard", async (original) => {
 vi.mock("@/features/kpi/KpiMapOSM", () => ({
   KpiMapOSM: (props: unknown) => {
     renderers.map(props);
-    return <div data-testid="metric-map-mock">{(props as { children?: ReactNode }).children}</div>;
+    const p = props as { children?: ReactNode; layersLegend?: ReactNode };
+    return (
+      <div data-testid="metric-map-mock">
+        {p.layersLegend}
+        {p.children}
+      </div>
+    );
   },
 }));
+vi.mock("@/features/kpi/DriveRsrpLayer", () => ({ DriveRsrpLayer: () => null }));
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
   return {

@@ -49,3 +49,10 @@ export function metricRadius(size: number, selected = false, pulse = 0): Express
     7 * scale + extra,
   ];
 }
+/**
+ * Selection ring: a hollow circle drawn just outside the point, never over it,
+ * so selecting a measurement never changes how the point itself looks.
+ */
+export function metricRingRadius(size: number, pulse = 0): ExpressionSpecification {
+  return ["+", metricRadius(size), 4 + pulse * 2] as unknown as ExpressionSpecification;
+}

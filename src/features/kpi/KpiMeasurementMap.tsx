@@ -13,7 +13,10 @@ import {
   metricClasses,
   useMetricLegendSettings,
 } from "./metric-classes";
-import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
+import { MapMetricDropTarget } from "./MapMetricDropTarget";
+
+const KPI_MEASURES_LAYER = "kpi-measures";
 
 export function KpiMeasurementMap({
   projectId,
@@ -21,12 +24,14 @@ export function KpiMeasurementMap({
   captureId,
   onCaptureChange,
   filters,
+  workspaceId = "kpi",
 }: {
   projectId: string;
   code: string;
   captureId: string | undefined;
   onCaptureChange: (capture: string) => void;
   filters: KpiQueryFilters;
+  workspaceId?: string | undefined;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   // The capture endpoint has no analytical filter arguments. Never silently ignore them.
@@ -51,7 +56,10 @@ export function KpiMeasurementMap({
   }, [allowed, captureId, captures.data, onCaptureChange]);
   const query = useQuery({
     queryKey: ["kpi-timeseries", projectId, captureId, code, 5000],
-    queryFn: ({ signal }) => getKpiTimeSeries(projectId, captureId!, code, 5000, signal),
+    queryFn: ({ signal }) => {
+      if (!captureId) throw new Error(translate("kpi.b07b688a46b7"));
+      return getKpiTimeSeries(projectId, captureId, code, 5000, signal);
+    },
     enabled: allowed && !!captureId,
   });
   const features = useMemo(() => (allowed ? mapFeatures(query.data) : []), [allowed, query.data]);
@@ -60,6 +68,13 @@ export function KpiMeasurementMap({
     [features],
   );
   const [map, setMap] = useState<MlMap | null>(null);
+  // The map legend mounts only while its Legend tab is open. Keep the drive
+  // layer outside that tab and portal its RSRP/link controls into this host,
+  // matching the Signaling map without unmounting or refetching the layer.
+  const [legendHost, setLegendHost] = useState<HTMLDivElement | null>(null);
+  // The drive layer owns the click; the KPI map only needs to know which point
+  // was picked so the selection ring can take the colour of the point it shows.
+  const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
   const recenter = () => {
     if (!map || !features.length) return;
     const xs = features.map((f) => f.geometry.coordinates[0]);
@@ -75,7 +90,12 @@ export function KpiMeasurementMap({
   const [hidden, setHidden] = useState<string[]>([]);
   const [legendSettings, setLegendSettings] = useMetricLegendSettings(code);
   const classes = useMemo(
-    () => metricClasses(code, features.map((f) => Number(f.properties.value)), legendSettings),
+    () =>
+      metricClasses(
+        code,
+        features.map((f) => Number(f.properties.value)),
+        legendSettings,
+      ),
     [code, features, legendSettings],
   );
   useEffect(() => setHidden([]), [classes.length]);
@@ -87,6 +107,21 @@ export function KpiMeasurementMap({
       }),
     [features, classes],
   );
+  // Colour of the selection ring: the legend colour of the visible metric point
+  // at the selected position. Same sequence first, then a point that really is
+  // at that spot (never a far-away colour, never an invented one).
+  const selectedRingColor = useMemo(() => {
+    if (!selectedPoint) return undefined;
+    const exact = colored.find((f) => Number(f.properties.seq) === selectedPoint.seq);
+    if (exact) return String(exact.properties.color);
+    let best: { color: string; d: number } | undefined;
+    for (const f of colored) {
+      const [lng, lat] = f.geometry.coordinates;
+      const d = (lng - selectedPoint.lng) ** 2 + (lat - selectedPoint.lat) ** 2;
+      if (!best || d < best.d) best = { color: String(f.properties.color), d };
+    }
+    return best && Math.sqrt(best.d) < 0.0005 ? best.color : undefined;
+  }, [colored, selectedPoint]);
   const counts = useMemo(() => {
     const m = new Map<string, number>();
     for (const f of colored) m.set(f.properties.cls, (m.get(f.properties.cls) ?? 0) + 1);
@@ -95,15 +130,15 @@ export function KpiMeasurementMap({
   useEffect(() => {
     if (!map) return;
     const data = { type: "FeatureCollection" as const, features: colored };
-    if (map.getSource("kpi-measures"))
-      (map.getSource("kpi-measures") as GeoJSONSource).setData(data);
+    if (map.getSource(KPI_MEASURES_LAYER))
+      (map.getSource(KPI_MEASURES_LAYER) as GeoJSONSource).setData(data);
     else {
       // Every measurement is an individual point coloured by its value (no clustering).
-      map.addSource("kpi-measures", { type: "geojson", data });
+      map.addSource(KPI_MEASURES_LAYER, { type: "geojson", data });
       map.addLayer({
-        id: "kpi-measures",
+        id: KPI_MEASURES_LAYER,
         type: "circle",
-        source: "kpi-measures",
+        source: KPI_MEASURES_LAYER,
         paint: {
           // Same look as the Signaling drive points: solid fill in the legend
           // colour, thin dark outline so light basemaps never wash it out.
@@ -119,9 +154,9 @@ export function KpiMeasurementMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [map, colored]);
   useEffect(() => {
-    if (!map?.getLayer("kpi-measures")) return;
+    if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
     map.setFilter(
-      "kpi-measures",
+      KPI_MEASURES_LAYER,
       hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
     );
   }, [map, hidden, colored]);
@@ -147,12 +182,14 @@ export function KpiMeasurementMap({
             key={c.id}
             type="button"
             aria-pressed={!off}
-            onClick={() =>
-              setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))
-            }
+            onClick={() => setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))}
             className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
           >
-            <span className="h-3 w-3 shrink-0 rounded-full" style={{ background: c.color }} data-index={index} />
+            <span
+              className="h-3 w-3 shrink-0 rounded-full"
+              style={{ background: c.color }}
+              data-index={index}
+            />
             <span className="flex-1">{range}</span>
             <span className="tabular-nums text-muted-foreground">
               {(counts.get(c.id) ?? 0).toLocaleString()}
@@ -245,25 +282,53 @@ export function KpiMeasurementMap({
         </button>
       )}
       <div className="relative min-h-0 flex-1">
-      <KpiMapOSM
-        workspace
-        showOperatorLegend={false}
-        measurementStatus={null}
-        onMapReady={setMap}
-        onRecenter={recenter}
-        layersLegend={legend}
-        routeCoordinates={routeCoordinates}
-      >
-        {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
-            lines to the API-published cells and the blinking serving site. */}
-        <DriveRsrpLayer map={map} projectId={projectId} activeCaptureId={captureId ?? ""} autoFrame={false} hidePoints />
-        <div
-          role="status"
-          className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+        <MapMetricDropTarget
+          base={{ kind: "kpi", code, label: code, unit }}
+          map={map}
+          projectId={projectId}
+          captureId={captureId}
+          filters={filters}
+          workspaceId={workspaceId}
         >
-          {message}
-        </div>
-      </KpiMapOSM>
+          {(addedLegend) => (
+            <KpiMapOSM
+              workspace
+              showOperatorLegend={false}
+              measurementStatus={null}
+              onMapReady={setMap}
+              onRecenter={recenter}
+              layersLegend={
+                <>
+                  {legend}
+                  {addedLegend}
+                  <div ref={setLegendHost} />
+                </>
+              }
+              routeCoordinates={routeCoordinates}
+            >
+              {/* Same drive layer as Signaling View: RSRP points, serving/neighbour
+            lines to the API-published cells and the blinking serving site. */}
+              <DriveRsrpLayer
+                map={map}
+                projectId={projectId}
+                activeCaptureId={captureId ?? ""}
+                autoFrame={false}
+                hidePoints
+                hideControls
+                selectedRingColor={selectedRingColor}
+                onSelectedChange={setSelectedPoint}
+                legendHost={legendHost}
+                selectionLayerId={KPI_MEASURES_LAYER}
+              />
+              <div
+                role="status"
+                className="absolute bottom-7 left-2 right-2 z-10 w-fit max-w-[calc(100%-1rem)] rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+              >
+                {message}
+              </div>
+            </KpiMapOSM>
+          )}
+        </MapMetricDropTarget>
       </div>
     </div>
   );

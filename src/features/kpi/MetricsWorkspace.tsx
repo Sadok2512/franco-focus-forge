@@ -2,7 +2,8 @@ import { Columns3, Download, Info, LoaderCircle, Maximize2, Settings2, X } from 
 import { CaptureSheet } from "./CaptureSheet";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
@@ -11,6 +12,7 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -26,12 +28,10 @@ import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
-  buildMeasurementPointPopup,
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
   pointCellLinks,
-  pointDetails,
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
@@ -302,6 +302,23 @@ function metricColorExpression(
   ] as ExpressionSpecification;
 }
 
+/** Same zoom-scaled radius as the Signaling drive points (4→6→9 px); the
+ * point-size setting scales it, so the default 3 matches Signaling exactly. */
+export function metricRadiusExpression(pointSize = 3): ExpressionSpecification {
+  const k = pointSize / 3;
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    9,
+    4 * k,
+    14,
+    6 * k,
+    18,
+    9 * k,
+  ] as ExpressionSpecification;
+}
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
@@ -317,9 +334,12 @@ export function installMetricMapSource(
     type: "circle",
     source: "metrics-v3",
     paint: {
-      "circle-radius": pointSize,
-      "circle-opacity": 0.86,
+      // Same look as the Signaling drive points: solid fill, thin dark outline.
+      "circle-radius": metricRadiusExpression(pointSize),
+      "circle-opacity": 1,
       "circle-color": metricColorExpression(minValue, maxValue, palette),
+      "circle-stroke-color": "rgba(15,23,42,0.55)",
+      "circle-stroke-width": 0.5,
     },
   });
 }
@@ -381,6 +401,7 @@ function MetricMap({
   error,
   onRetry,
   routeCoordinates = [],
+  dropContext,
 }: {
   data?: MetricMapData | undefined;
   projectId: string;
@@ -394,13 +415,16 @@ function MetricMap({
   error?: Error | null | undefined;
   onRetry: () => void;
   routeCoordinates?: Array<[number, number]> | undefined;
+  dropContext?: { selection: string; workspaceId: string; filters: KpiQueryFilters };
 }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
+  // same wiring as the Signaling and KPI measurement maps.
+  const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
-  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
   const [minValue, maxValue] = useMemo(
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
@@ -433,7 +457,11 @@ function MetricMap({
         "circle-color",
         metricColorExpression(minValue, maxValue, preferences.palette),
       );
-      map.setPaintProperty("metrics-v3", "circle-radius", preferences.pointSize);
+      map.setPaintProperty(
+        "metrics-v3",
+        "circle-radius",
+        metricRadiusExpression(preferences.pointSize),
+      );
     } else {
       installMetricMapSource(
         map,
@@ -470,27 +498,10 @@ function MetricMap({
       if (!nextSelection) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
-        popupRef.current?.remove();
-        popupRef.current = undefined;
         return;
       }
-      const { Popup } = await import("maplibre-gl");
-      if (disposed) return;
-      popupRef.current?.remove();
       selectedPointRef.current = nextSelection;
       setSelectedPoint(nextSelection);
-      const node = buildMeasurementPointPopup(pointDetails(point, label, unit));
-      const popup = new Popup({ className: "measurement-map-popup", maxWidth: "390px" })
-        .setLngLat(e.lngLat)
-        .setDOMContent(node)
-        .addTo(map);
-      popupRef.current = popup;
-      popup.on("close", () => {
-        if (popupRef.current !== popup) return;
-        popupRef.current = undefined;
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-      });
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -511,16 +522,7 @@ function MetricMap({
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
-    popupRef.current?.remove();
-    popupRef.current = undefined;
   }, [captureId, map, projectId]);
-  useEffect(
-    () => () => {
-      popupRef.current?.remove();
-      popupRef.current = undefined;
-    },
-    [],
-  );
   const first = data?.map_points[0];
   const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
@@ -530,20 +532,11 @@ function MetricMap({
     }),
     { serving: 0, neighbour: 0, nr_anchor: 0 },
   );
-  return (
-    <KpiMapOSM
-      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
-      zoom={first ? 13 : 5}
-      showOperatorLegend={false}
-      flush
-      workspace
-      contextLabel={translate("metrics.b7ef3d32472c")}
-      onMapReady={setMap}
-      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
-      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
-    >
-      <div className="kpi-metric-map-legend" data-testid="metric-map-legend">
-        <div className="kpi-metric-map-legend-title">
+  // The metric legend lives in the Layers panel's Legend tab, like the
+  // Signaling map — nothing floats over the map itself.
+  const legend = (
+    <div className="space-y-1" data-testid="metric-map-legend">
+      <div className="kpi-metric-map-legend-title">
           <strong>
             {label}
             {unit ? ` · ${unit}` : ""}
@@ -582,7 +575,7 @@ function MetricMap({
               </select>
             </label>
             <label>
-              {translate("metrics.mapPointSize")} · {preferences.pointSize}px
+              {translate("metrics.mapPointSize")} · {preferences.pointSize}
               <input
                 type="range"
                 min="1"
@@ -632,7 +625,43 @@ function MetricMap({
             </div>
           </div>
         )}
-      </div>
+    </div>
+  );
+  const content = (addedLegend: ReactNode) => (
+    <KpiMapOSM
+      center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
+      layersLegend={
+        <>
+          {legend}
+          {addedLegend}
+          <div ref={setDriveLegendHost} />
+        </>
+      }
+      zoom={first ? 13 : 5}
+      showOperatorLegend={false}
+      flush
+      workspace
+      contextLabel={translate("metrics.b7ef3d32472c")}
+      onMapReady={setMap}
+      routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
+      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
+    >
+      {/* Same drive layer as Signaling View: serving/neighbour lines to the
+      API-published cells and the blinking serving site on point selection. */}
+      <DriveRsrpLayer
+        map={map}
+        projectId={projectId}
+        activeCaptureId={captureId}
+        autoFrame={false}
+        hidePoints
+        hideControls
+        legendHost={driveLegendHost}
+        selectionLayerId="metrics-v3"
+        pointMetrics={(seq) => {
+          const point = data?.map_points.find((candidate) => candidate.seq === seq);
+          return point ? [{ label, unit, value: point.value, active: true }] : [];
+        }}
+      />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
           <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}
@@ -647,6 +676,20 @@ function MetricMap({
         </div>
       )}
     </KpiMapOSM>
+  );
+  return dropContext ? (
+    <MapMetricDropTarget
+      base={{ kind: "metric", code: dropContext.selection, label, unit }}
+      map={map}
+      projectId={projectId}
+      captureId={captureId}
+      filters={dropContext.filters}
+      workspaceId={dropContext.workspaceId}
+    >
+      {content}
+    </MapMetricDropTarget>
+  ) : (
+    content(null)
   );
 }
 function MetricMapCard({
@@ -663,6 +706,7 @@ function MetricMapCard({
   workspaceId,
   projectCenter,
   routeCoordinates,
+  filters,
 }: {
   selection: string;
   projectId: string;
@@ -677,6 +721,7 @@ function MetricMapCard({
   workspaceId: string;
   projectCenter?: [number, number] | undefined;
   routeCoordinates?: Array<[number, number]> | undefined;
+  filters: KpiQueryFilters;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   const [preferences, setPreferences] = useState(() =>
@@ -730,6 +775,7 @@ function MetricMapCard({
         error={error}
         onRetry={onRetry}
         routeCoordinates={routeCoordinates}
+        dropContext={{ selection, workspaceId, filters }}
       />
     </article>
   );
@@ -1316,6 +1362,7 @@ export function MetricsWorkspace({
                     metricView === "map" ? (
                       <MetricMapCard
                         selection={s.full}
+                        filters={filters}
                         projectId={projectId}
                         captureId={captureId!}
                         title={title}

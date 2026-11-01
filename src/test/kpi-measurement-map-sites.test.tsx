@@ -39,7 +39,9 @@ vi.mock("maplibre-gl", () => {
     removeSource() {}
     setFilter() {}
     setFeatureState() {}
-    fitBounds(...args: unknown[]) { fitBounds(...args); }
+    fitBounds(...args: unknown[]) {
+      fitBounds(...args);
+    }
     resize() {}
     remove() {}
     isStyleLoaded() {
@@ -141,12 +143,30 @@ describe("KpiMeasurementMap — couche Sites", () => {
     );
   });
 
+  it("affiche les classes RSRP et les liens cellule dans l'onglet Légende", async () => {
+    renderMap();
+
+    const legendTab = await screen.findByRole("tab", { name: "Legend" });
+    legendTab.click();
+
+    await waitFor(() =>
+      expect(document.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull(),
+    );
+    expect(screen.getByText("Drive RSRP")).toBeInTheDocument();
+    expect(screen.getByText("Serving cell")).toBeInTheDocument();
+    expect(screen.getByText("Neighbour cells")).toBeInTheDocument();
+    expect(screen.getByText("NR anchor")).toBeInTheDocument();
+  });
+
   it("cadre le parcours fourni et expose le recentrage dans la barre commune", async () => {
     fitBounds.mockClear();
     render(
       <KpiMapOSM
         workspace
-        routeCoordinates={[[2.2, 48.8], [2.3, 48.9]]}
+        routeCoordinates={[
+          [2.2, 48.8],
+          [2.3, 48.9],
+        ]}
         measurementStatus={null}
       />,
     );
@@ -155,7 +175,10 @@ describe("KpiMeasurementMap — couche Sites", () => {
     fitBounds.mockClear();
     center.click();
     expect(fitBounds).toHaveBeenCalledWith(
-      [[2.2, 48.8], [2.3, 48.9]],
+      [
+        [2.2, 48.8],
+        [2.3, 48.9],
+      ],
       expect.objectContaining({ padding: 60 }),
     );
   });

@@ -69,11 +69,24 @@ export function ProjectPage({ projectId }: { projectId: string }) {
             <Upload className="h-3.5 w-3.5" aria-hidden /> Ajouter des logs
           </button>
           <Link
-            to="/overview"
-            search={{ project: projectId }}
+            to="/kpi"
+            search={(search) => ({
+              ...search,
+              project: projectId,
+              analysis_scope: undefined,
+              capture_id: undefined,
+              superstream_id: undefined,
+              scope_revision: undefined,
+              metrics: search.metrics,
+              kpi: search.kpi,
+              kpis: search.kpis,
+              commune: search.commune,
+              insee: search.insee,
+              phase: search.phase,
+            })}
             className="inline-flex h-9 items-center gap-1.5 rounded-md border border-primary px-3 text-xs font-semibold text-primary hover:bg-accent"
           >
-            <FolderOpen className="h-3.5 w-3.5" aria-hidden /> Ouvrir la vue d'ensemble
+            <FolderOpen className="h-3.5 w-3.5" aria-hidden /> Ouvrir KPI Analytics
           </Link>
         </div>
       </div>

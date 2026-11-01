@@ -1,3 +1,11 @@
+## 1.128.1 (patch) — Frontend RC2 reconciliation — 2026-11-01 (BC4)
+
+- Reconciles the RC2 Superstream analysis-scope navigation with the production
+  1.126.14 KPI, Map Serving, Task Bar and workspace implementation.
+- Keeps the production map legend labels and single selected serving-link
+  contract; no GitHub-only visual change is imported implicitly.
+- SemVer front: **PATCH 1.128.1**.
+
 ## 1.128.0 (minor) — Superstream SS-03 analysis scope preparation — 2026-10-31 (BC4)
 
 - Adds the shared capture/Superstream `AnalysisScope`, project-and-scope
@@ -18,6 +26,40 @@
 - Shared/public projects remain readable while mutation controls are owner-only.
   Signaling, KPI, Map and NMF decoding are unchanged.
 - SemVer front: **MINOR 1.127.0**.
+
+## 1.126.14 (patch) — BC4-FRONT 2026-10-31 — carte KPI alignée sur Signaling, légende interactive, sélection fidèle (Agent BC4)
+
+- **Légende en haut de carte** : la légende flottante passe du bas en haut ;
+  Technology (5G NR / 4G LTE), Bands et Symbols (Site / Cell sector) sont des
+  boutons on/off qui désactivent la couche correspondante, même look, élément
+  éteint translucide et barré ; la légende et la sidebar pilotent les mêmes
+  réglages.
+- **Faisceaux** : Beam size reste réglable de 0 à 100 % mais son effet est
+  multiplié par 5 (100 % = 10× le rayon d'origine).
+- **Serving** : la ligne vers la cellule serving est toujours en trait plein ;
+  le site serving clignote (cercle pulsé) quand un point est sélectionné.
+- **Carte KPI Analytics alignée sur Signaling View** : tout le haut de carte
+  (titre, unité, sélecteur Capture) est supprimé, la carte prend toute la
+  place quand elle est seule, le menu ⋮ reste en haut à droite.
+- **Points séparés et colorés** : le groupement en bulles numérotées est
+  retiré, chaque mesure s'affiche comme un point distinct à la couleur exacte
+  de sa tranche de légende ; l'échelle va du vert (valeur basse) au rouge
+  (valeur haute) et les points du trajet ne recouvrent plus la métrique.
+- **Sidebar en onglets** : « Calques » et « Légende » séparés ; tranches
+  cliquables pour cacher/afficher, nombre de couleurs réglable de 2 à 8,
+  couleur éditable par tranche, réinitialisation possible, choix mémorisés.
+- **Nettoyage** : la fiche popup des points KPI (métrique, valeur, capture) et
+  le panneau « Drive RSRP » sont retirés des cartes KPI et Signaling, la
+  couche restant active.
+- **Sélection fidèle** : le point cliqué ne change ni de taille ni de couleur ;
+  la sélection se signale par un anneau creux clignotant dans la couleur du
+  point lui-même, jamais en bleu.
+- **Signaling View** : boutons ON/OFF « Signaling View » (messages + payload)
+  et « Metric » (section de métriques en bas de page, désactivée par défaut).
+- **Glisser-déposer** : une métrique du catalogue se dépose sur la carte
+  existante en une couche ajoutée, sans créer de tableau ; légende, couleurs,
+  ON/OFF et retrait disponibles, choix mémorisés.
+- SemVer front : **PATCH 1.126.14**.
 
 ## 1.126.13 (patch) — BC4-FRONT 2026-10-31 — refonte carte MAP UI V1, point actif et curseur (Agent BC4)
 
@@ -106,6 +148,7 @@ sur `OPERATOR_COLORS`/`OP_VAR`/`metric-map-view.test` + `vite.config.ts`
 fixes build de Lovable).
 
 **Fichiers modifiés par le merge** (12, aucun conflit manuel) :
+
 - `src/features/assistant/AssistantMap.tsx` : `Record<Operator, string>` →
   `Record<string, string>` + cast `p.operator as Operator`.
 - `src/features/kpi/MetricGraphCard.tsx` : `import.meta.env.X` → `env["X"]`.
@@ -130,6 +173,7 @@ fixes build de Lovable).
   sur l'image Docker prod (Dockerfile.v2 hardcode `/api` + `http://api:8000`).
 
 **Vérifications post-merge** :
+
 - `bun run typecheck` : 0 erreur ✓
 - `bun run build` : EXIT=0 ✓, `.output/public/assets/*.gz` + `*.br`
   générés ✓ (compression prod préservée).
@@ -160,7 +204,7 @@ asynchrone côté UI du job back 0.117.2.
 - `src/server.ts` : le proxy Nitro transmet le multipart en flux et
   porte à une heure son délai d'envoi, uniquement pour les deux routes
   du référentiel (`POST /settings/cell-ref/upload` + `GET /settings/
-  cell-ref/jobs/{job_id}`) ; la limite API reste fixée à 256 Mio.
+cell-ref/jobs/{job_id}`) ; la limite API reste fixée à 256 Mio.
 - `CellularReferencePanel.tsx` reçoit immédiatement l'identifiant du
   job asynchrone, suit son état (`sending` → `processing` → `completed`
   ou `failed`) jusqu'au résultat puis recharge l'historique des imports.
@@ -169,8 +213,8 @@ asynchrone côté UI du job back 0.117.2.
   serveur ; l'historique et le résumé sont rechargés avant de déclarer
   l'import terminé.
 - `src/lib/upstream-unavailable.ts` + `src/lib/api/reference-schemas.ts`
-  + `src/lib/api/reference.ts` ajoutent le typage du job et l'erreur
-  structurée.
+  - `src/lib/api/reference.ts` ajoutent le typage du job et l'erreur
+    structurée.
 - Preuves jetables :
   `audit/bc1-cell-ref-upload/e2e.spec.cjs` (processing visible,
   history completed, forced cutoff error).
@@ -327,7 +371,7 @@ l'onglet Metrics.
 Compagnon front du back `0.114.1`.
 
 - La frise affiche d'abord l'ensemble de la capture via `/signaling/
-  timeline?bucket_s=10` ; les événements détaillés ne sont chargés
+timeline?bucket_s=10` ; les événements détaillés ne sont chargés
   qu'après zoom ou déplacement vers une fenêtre plus étroite.
 - Les états RRC/UE proviennent de la même vue d'ensemble ; les séries
   radio détaillées restent bornées à la fenêtre lorsque ses seq sont
@@ -338,19 +382,20 @@ Compagnon front du back `0.114.1`.
 
 Merge `bc1/signaling-front-contract` (`1c1fa54`). Correctif des deux
 régressions UI signalées cet après-midi (Drive RSRP « No measurement »
-+ frise RRC State « Unknown » après ~270 s).
 
-- Drive RSRP consomme désormais le sélecteur sémantique LTE Serving et
+- frise RRC State « Unknown » après ~270 s).
+
+* Drive RSRP consomme désormais le sélecteur sémantique LTE Serving et
   reconnaît les sélecteurs courants `cell_rsrp@lte-type-N` ainsi que
   les identités physiques `!ARFCN:PCI` (livrées en back 0.112.0).
-- Les fenêtres d'events RF suivent le curseur capture-local
+* Les fenêtres d'events RF suivent le curseur capture-local
   `next_seq` jusqu'à ce que le serveur renvoie `truncated=false` ;
   les tracks RRC_STATE / UE_STATE sont résolus depuis `attrs.track`
   même quand leur `lane` canonique est `connexion`.
-- Nouveau test de contrat **G55** verrouille les sélecteurs mesurés
+* Nouveau test de contrat **G55** verrouille les sélecteurs mesurés
   sur Test_6, le contrat state-track et la pagination progressive
   RF-window.
-- SemVer front : **PATCH 1.124.1**.
+* SemVer front : **PATCH 1.124.1**.
 
 ## 1.124.0 (minor) — BC4-FRONT 2026-10-30 — KPI Analytics : panneau carte métrique (Agent BC4, numérotation BC3)
 
@@ -480,7 +525,6 @@ Supprime les traces `[bc4:kpi-series-render]` oubliées par BC4 dans
 
 Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
 
-
 - **Patch proposé** (numéro final BC3) : le client demande `compact=true` et
   reconstruit le contrat objet existant avant le rendu. Chaque point, sa
   position et son protocole sont conservés ; aucun composant ni design ne
@@ -489,7 +533,6 @@ Companion back `0.102.0`. Décode le format columnar `compact-v1` avant rendu.
 ## 1.118.2 (patch) — BC4-FRONT 2026-10-29 — KPI Analytics : retours de chargement + Réessayer + export CSV (Agent BC1, numérotation BC3)
 
 Companion back 0.100.0. Numéro `1.118.2` attribué par BC3.
-
 
 - Les chargements de graphique et de table conservent le design existant ; les
   animations déclarent explicitement leur origine et leur couche de transformation.
@@ -572,6 +615,7 @@ gain bande passante ~70 %.
 - Les nouveaux textes sont fournis en français et en anglais. Le schéma
   `capture_ids` reste additif/optionnel pour tolérer un backend antérieur.
 - Type SemVer : `minor`. BC3 attribue le numéro de release au merge.
+
 ## 1.115.0 (minor) — BC4-FRONT 2026-10-28 — Release groupée : superstream UI + resilience i18n + PLMN tolérant (Agent BC3)
 
 Compagne du bc4-back 0.91.0 (déploiement groupé). Trois branches mergées
@@ -582,7 +626,7 @@ sur main :
   `MeasurementPointSchema`, `OverviewPointSchema`, `FilterContextSchema`.
   `OperatorChip`/`TechBadge`/`ServiceBadge` : valeur hors catalogue en
   gris (`bg-slate-*`) avec tooltip `"<value> détecté dans les logs, non
-  présent dans le catalogue des opérateurs"` et `data-uncataloged`.
+présent dans le catalogue des opérateurs"` et `data-uncataloged`.
 - **bc1/projects-resilience-i18n** — `503 UPSTREAM_UNAVAILABLE` typé +
   `Retry-After`, retry automatique de la query Projects avec
   « Reconnexion au backend… » et bouton retry manuel. Métadonnées
@@ -609,7 +653,7 @@ Hotfix couplé au bc4-back 0.90.3 (ProjectSchema avec `str` au lieu de
 - Nouveaux helpers `isKnownOperator`, `isKnownTech`, `isKnownService`
   et `uncatalogedTooltip(kind, value)` — tooltip déterministe
   `"${value} détecté dans les logs, non présent dans le catalogue des
-  opérateurs"` (ou technologies/services selon le kind).
+opérateurs"` (ou technologies/services selon le kind).
 - `OperatorChip` et `TechBadge` (ajout `ServiceBadge`) : les valeurs
   hors catalogue sont rendues en gris (`bg-slate-*`) avec le tooltip
   explicite + attribut `data-uncataloged`. Les 4 opérateurs, les 3
@@ -619,7 +663,7 @@ Hotfix couplé au bc4-back 0.90.3 (ProjectSchema avec `str` au lieu de
 ## Resilience : projects upstream recovery and import metadata (Agent BC1, mergée dans 1.115.0)
 
 - Maps transient proxy DNS/connection failures to a typed `503
-  UPSTREAM_UNAVAILABLE` response with `Retry-After`, and automatically retries
+UPSTREAM_UNAVAILABLE` response with `Retry-After`, and automatically retries
   the Projects query while presenting "Reconnexion au backend…" and a manual
   retry action.
 - Explains unavailable perimeter, operator and technology metadata during an
@@ -656,8 +700,8 @@ antérieur à `b9aaa3a` (merge BC1 L1-L3). Correctif :
 
 - Ajout des clés i18n manquantes dans `src/locales/{fr,en}.json` :
   `projects.decodeLevel.{label,light,deep}`, `projects.binningMode.
-  {label,temporal,spatial}`, `projects.temporalResolution.{label,native,
-  native_title}`, `projects.spatialBinM.label`. CreateProjectDialog
+{label,temporal,spatial}`, `projects.temporalResolution.{label,native,
+native_title}`, `projects.spatialBinM.label`. CreateProjectDialog
   utilise des strings littérales françaises pour ces 4 blocs — ces clés
   i18n sont posées pour cohérence future, pas pour corriger un rendu.
 - Rebuild `bc4-front-v2:1.114.1` : nouveau hash de bundle, les anciens

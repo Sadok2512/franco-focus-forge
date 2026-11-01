@@ -693,7 +693,11 @@ function Workspace({
                   fontWeight: activeCatalog === "metrics" ? 600 : 400,
                 }}
               >
-                {translate("kpi.catalogTabMetrics")} ({metricsCatalogLoading ? translate("kpi.catalogReconnecting") : selectableMetricCount})
+                {translate("kpi.catalogTabMetrics")} (
+                {metricsCatalogLoading
+                  ? translate("kpi.catalogReconnecting")
+                  : selectableMetricCount}
+                )
               </button>
               <button
                 role="tab"
@@ -737,7 +741,9 @@ function Workspace({
                 onToggle={onCatalogToggle}
                 onVisualization={visualize}
                 searchRef={catalogSearch}
-                loading={catalogLoading || (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)}
+                loading={
+                  catalogLoading || (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)
+                }
               />
             ) : activeCatalog === "metrics" ? (
               <MetricsCatalogSidebar
@@ -892,6 +898,7 @@ function Workspace({
                     {(panelTitle) => (
                       <KpiGraphCard
                         projectId={projectId}
+                        workspaceId={tabsState.activeTabId}
                         appliedFilters={applied}
                         captureId={captureId}
                         onCaptureChange={setCaptureId}
@@ -992,7 +999,16 @@ function Workspace({
               {(() => {
                 if (!panels.length) return null;
                 // A map card never brings a data table with it (user request).
-                if (panels.every((panel) => configFor(panel.entry.item.code).visualization === "map"))
+                if (
+                  panels.every((panel) => {
+                    const visualization = configFor(panel.entry.item.code).visualization;
+                    // Map cards bring no table; temporal Table cards render their own rows.
+                    return (
+                      visualization === "map" ||
+                      (visualization === "table" && !!panel.entry.item.temporal_source)
+                    );
+                  })
+                )
                   return null;
                 // 1.43.0 — Tableau brut : si au moins un KPI « temporel »
                 // (temporal_source != null) est sélectionné en mode

@@ -1,3 +1,4 @@
+import { KpiInlineRawTable } from "./KpiInlineRawTable";
 import { useTranslation } from "react-i18next";
 import { KpiMeasurementMap } from "./KpiMeasurementMap";
 import { Chronogram } from "./Chronogram";
@@ -231,6 +232,7 @@ export function KpiGraphCard({
   config,
   onConfig,
   groupOptions,
+  workspaceId,
 }: {
   projectId: string;
   appliedFilters: KpiQueryFilters;
@@ -253,6 +255,7 @@ export function KpiGraphCard({
   config: ChartConfig;
   onConfig: (next: ChartConfig) => void;
   groupOptions: KpiGroupBy[];
+  workspaceId?: string;
 }) {
   const { t: translate } = useTranslation();
   const seriesAvailable = !!entry.item.temporal_source;
@@ -324,6 +327,7 @@ export function KpiGraphCard({
           captureId={captureId}
           onCaptureChange={onCaptureChange}
           filters={appliedFilters}
+          workspaceId={workspaceId}
         />
       ) : taskView && blockedReason ? (
         <div className="kpi-chart-state" role="status">
@@ -358,6 +362,16 @@ export function KpiGraphCard({
           code={entry.item.code}
           unit={entry.item.unit ?? null}
           height={full ? 430 : 235}
+        />
+      ) : config.visualization === "table" && seriesAvailable ? (
+        // Tableau : observations brutes de la capture, directement dans le panneau.
+        <KpiInlineRawTable
+          projectId={projectId}
+          captureId={captureId}
+          onCaptureChange={onCaptureChange}
+          code={entry.item.code}
+          label={entry.item.name}
+          unit={entry.item.unit ?? null}
         />
       ) : config.visualization === "task_scatter" && !blockedReason ? (
         <TaskScatter

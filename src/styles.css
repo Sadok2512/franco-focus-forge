@@ -57,36 +57,36 @@
 
 /* ---- thème sombre (bascule) ---- */
 html.dark {
-  --sig-table-header: #1E293B;
+  --sig-table-header: #1e293b;
   --sig-table-border: #334155;
-  --sig-table-text: #E2E8F0;
-  --sig-table-muted: #94A3B8;
-  --sig-row-selected: #1E40AF;
-  --sig-row-selected-hover: #2563EB;
-  --sig-row-selected-text: #FFFFFF;
+  --sig-table-text: #e2e8f0;
+  --sig-table-muted: #94a3b8;
+  --sig-row-selected: #1e40af;
+  --sig-row-selected-hover: #2563eb;
+  --sig-row-selected-text: #ffffff;
   --sig-row-related: #422006;
-  --sig-accent: #60A5FA;
-  --sig-asn-field: #BFDBFE;
-  --sig-asn-value: #60A5FA;
+  --sig-accent: #60a5fa;
+  --sig-asn-field: #bfdbfe;
+  --sig-asn-value: #60a5fa;
   color-scheme: dark;
   --radius: 0.25rem;
-  --background: oklch(0.188 0.029 254);        /* #0A1420 */
-  --foreground: oklch(0.876 0.027 250);        /* #C9D8E8 */
-  --card: oklch(0.232 0.036 254);              /* #111E2E */
+  --background: oklch(0.188 0.029 254); /* #0A1420 */
+  --foreground: oklch(0.876 0.027 250); /* #C9D8E8 */
+  --card: oklch(0.232 0.036 254); /* #111E2E */
   --card-foreground: var(--foreground);
   --popover: oklch(0.242 0.038 254);
   --popover-foreground: var(--foreground);
-  --primary: oklch(0.705 0.159 252);           /* #4DA3FF */
+  --primary: oklch(0.705 0.159 252); /* #4DA3FF */
   --primary-foreground: oklch(0.16 0.03 254);
-  --secondary: oklch(0.288 0.043 253);         /* #1B2C40 */
+  --secondary: oklch(0.288 0.043 253); /* #1B2C40 */
   --secondary-foreground: var(--foreground);
   --muted: oklch(0.288 0.043 253);
-  --muted-foreground: oklch(0.716 0.045 251);  /* #8FA6BF */
-  --accent: oklch(0.327 0.049 253);            /* #22364D */
+  --muted-foreground: oklch(0.716 0.045 251); /* #8FA6BF */
+  --accent: oklch(0.327 0.049 253); /* #22364D */
   --accent-foreground: oklch(0.93 0.02 250);
-  --destructive: oklch(0.691 0.199 24);        /* #FF5C5C */
+  --destructive: oklch(0.691 0.199 24); /* #FF5C5C */
   --destructive-foreground: oklch(0.16 0.03 254);
-  --border: oklch(0.288 0.043 253);            /* #1B2C40 */
+  --border: oklch(0.288 0.043 253); /* #1B2C40 */
   --input: oklch(0.327 0.049 253);
   --ring: oklch(0.705 0.159 252);
   --nav: oklch(0.158 0.028 254);
@@ -97,10 +97,10 @@ html.dark {
   --op-sfr: oklch(0.62 0.21 20);
   --op-bouygues: oklch(0.68 0.16 250);
   --op-free: oklch(0.72 0.18 150);
-  --sev-good: oklch(0.797 0.164 160);          /* #3DDC97 */
-  --sev-fair: oklch(0.854 0.157 84);           /* #FFC53D */
-  --sev-poor: oklch(0.724 0.187 49);           /* #FF7A1A */
-  --sev-bad: oklch(0.691 0.199 24);            /* #FF5C5C */
+  --sev-good: oklch(0.797 0.164 160); /* #3DDC97 */
+  --sev-fair: oklch(0.854 0.157 84); /* #FFC53D */
+  --sev-poor: oklch(0.724 0.187 49); /* #FF7A1A */
+  --sev-bad: oklch(0.691 0.199 24); /* #FF5C5C */
   --warning: oklch(0.854 0.157 84);
   --warning-foreground: oklch(0.2 0.03 254);
   /* ---- 1.15.0 — Heatmap « Détail des valeurs » (bornes [min, max[) ----
@@ -113,12 +113,12 @@ html.dark {
    *   [40; 60 %[  → --heat-3 (orange)
    *   [60; 80 %[  → --heat-4 (rouge clair)
    *   [80; 100 %] → --heat-5 (rouge foncé) */
-  --heat-0: oklch(0.78 0.14 155);              /* vert */
-  --heat-1: oklch(0.86 0.12 140);              /* vert clair */
-  --heat-2: oklch(0.86 0.14 95);               /* jaune */
-  --heat-3: oklch(0.76 0.17 60);               /* orange */
-  --heat-4: oklch(0.72 0.18 35);               /* rouge clair */
-  --heat-5: oklch(0.60 0.21 25);               /* rouge foncé */
+  --heat-0: oklch(0.78 0.14 155); /* vert */
+  --heat-1: oklch(0.86 0.12 140); /* vert clair */
+  --heat-2: oklch(0.86 0.14 95); /* jaune */
+  --heat-3: oklch(0.76 0.17 60); /* orange */
+  --heat-4: oklch(0.72 0.18 35); /* rouge clair */
+  --heat-5: oklch(0.6 0.21 25); /* rouge foncé */
 }
 
 /* ---- Thème clair par défaut ---- */
@@ -129,37 +129,37 @@ html.dark {
   --sig-layer-nemo: oklch(0.65 0.17 55);
   --sig-layer-mac: oklch(0.62 0.2 350);
   --sig-filter-shadow: 0 8px 28px color-mix(in oklch, var(--foreground) 15%, transparent);
-  --signaling-icon-info: #1769E0;
-  --signaling-icon-success: #16A34A;
-  --signaling-icon-warning: #F97316;
-  --signaling-icon-error: #DC2626;
-  --signaling-icon-event: #9333EA;
-  --signaling-icon-scg: #06B6D4;
-  --signaling-icon-foreground: #FFFFFF;
-  --signaling-state-idle: #CBD5E1;
-  --signaling-state-lte: #0EA5E9;
-  --signaling-state-lte-ca: #2563EB;
-  --signaling-state-endc-config: #6366F1;
-  --signaling-state-nr: #A78BFA;
-  --signaling-state-nr-ca: #7C3AED;
-  --signaling-state-endc: #9333EA;
-  --signaling-state-sa: #16A34A;
-  --signaling-state-connected: #2563EB;
-  --signaling-state-text: #FFFFFF;
-  --signaling-cursor: #EF4444;
-  --signaling-navigator: #2563EB;
-  --signaling-cursor-foreground: #FFFFFF;
-  --sig-table-header: #F1F5F9;
-  --sig-table-border: #E2E8F0;
-  --sig-table-text: #0F172A;
-  --sig-table-muted: #64748B;
-  --sig-row-selected: #BFDBFE;
-  --sig-row-selected-hover: #93C5FD;
-  --sig-row-selected-text: #0B1220;
-  --sig-row-related: #FEF3C7;
-  --sig-accent: #2563EB;
-  --sig-asn-field: #1E3A8A;
-  --sig-asn-value: #2563EB;
+  --signaling-icon-info: #1769e0;
+  --signaling-icon-success: #16a34a;
+  --signaling-icon-warning: #f97316;
+  --signaling-icon-error: #dc2626;
+  --signaling-icon-event: #9333ea;
+  --signaling-icon-scg: #06b6d4;
+  --signaling-icon-foreground: #ffffff;
+  --signaling-state-idle: #cbd5e1;
+  --signaling-state-lte: #0ea5e9;
+  --signaling-state-lte-ca: #2563eb;
+  --signaling-state-endc-config: #6366f1;
+  --signaling-state-nr: #a78bfa;
+  --signaling-state-nr-ca: #7c3aed;
+  --signaling-state-endc: #9333ea;
+  --signaling-state-sa: #16a34a;
+  --signaling-state-connected: #2563eb;
+  --signaling-state-text: #ffffff;
+  --signaling-cursor: #ef4444;
+  --signaling-navigator: #2563eb;
+  --signaling-cursor-foreground: #ffffff;
+  --sig-table-header: #f1f5f9;
+  --sig-table-border: #e2e8f0;
+  --sig-table-text: #0f172a;
+  --sig-table-muted: #64748b;
+  --sig-row-selected: #bfdbfe;
+  --sig-row-selected-hover: #93c5fd;
+  --sig-row-selected-text: #0b1220;
+  --sig-row-related: #fef3c7;
+  --sig-accent: #2563eb;
+  --sig-asn-field: #1e3a8a;
+  --sig-asn-value: #2563eb;
   color-scheme: light;
   --radius: 0.5rem;
   --chart-1: oklch(0.6 0.18 250);
@@ -201,8 +201,8 @@ html.dark {
    * bornes et doctrine que la version dark (cf. commentaire plus haut).
    * Nuances assombries pour conserver un contraste suffisant sur le
    * fond blanc des cellules. */
-  --heat-0: oklch(0.70 0.14 150);
-  --heat-1: oklch(0.80 0.14 140);
+  --heat-0: oklch(0.7 0.14 150);
+  --heat-1: oklch(0.8 0.14 140);
   --heat-2: oklch(0.82 0.15 90);
   --heat-3: oklch(0.72 0.17 55);
   --heat-4: oklch(0.66 0.19 30);
@@ -210,8 +210,10 @@ html.dark {
 }
 
 @layer base {
-  * { border-color: var(--color-border); }
-  
+  * {
+    border-color: var(--color-border);
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
@@ -220,25 +222,46 @@ html.dark {
     line-height: 1.45;
     -webkit-font-smoothing: antialiased;
   }
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-family: var(--font-sans);
     font-weight: 700;
     letter-spacing: -0.01em;
   }
-  .num { font-variant-numeric: tabular-nums; }
-  *:focus-visible { outline: 2px solid var(--ring); outline-offset: 1px; }
-  ::selection { background: color-mix(in oklab, var(--primary) 35%, transparent); }
-  ::-webkit-scrollbar { width: 9px; height: 9px; }
-  ::-webkit-scrollbar-track { background: transparent; }
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  *:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 1px;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 35%, transparent);
+  }
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
   ::-webkit-scrollbar-thumb {
     background: var(--color-accent);
     border-radius: 999px;
     border: 2px solid transparent;
     background-clip: padding-box;
   }
-  ::-webkit-scrollbar-thumb:hover { background: var(--color-muted-foreground); background-clip: padding-box; }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+    background-clip: padding-box;
+  }
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 }
 
@@ -265,17 +288,23 @@ html.dark {
   text-transform: uppercase;
 }
 
-html[data-density="comfortable"] body { font-size: 14px; }
+html[data-density="comfortable"] body {
+  font-size: 14px;
+}
 
 /* Map cursor: standard pointer instead of MapLibre's default hand (grab).
    MapLibre's CSS is imported asynchronously (after this file), so specificity
    must exceed `.maplibregl-interactive` and `.maplibregl-interactive:active`.
    Clickable features (sites, points) still set cursor:pointer from app code. */
 html .maplibregl-canvas-container.maplibregl-interactive,
-html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: default; }
+html .maplibregl-canvas-container.maplibregl-interactive:active {
+  cursor: default;
+}
 
 /* Shared network-map site/cell popup (Map page + Signaling View). */
-.bc4-net-popup { z-index: 30; }
+.bc4-net-popup {
+  z-index: 30;
+}
 .bc4-net-popup .maplibregl-popup-content {
   border-radius: 13px;
   padding: 10px 12px;
@@ -284,10 +313,19 @@ html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: defaul
   box-shadow: 0 10px 30px -8px color-mix(in oklab, var(--foreground) 30%, transparent);
   border: 1px solid var(--border);
 }
-.bc4-net-popup .maplibregl-popup-tip { border-top-color: var(--card); border-bottom-color: var(--card); }
-.bc4-net-popup .maplibregl-popup-close-button { color: var(--muted-foreground); font-size: 16px; padding: 2px 6px; }
+.bc4-net-popup .maplibregl-popup-tip {
+  border-top-color: var(--card);
+  border-bottom-color: var(--card);
+}
+.bc4-net-popup .maplibregl-popup-close-button {
+  color: var(--muted-foreground);
+  font-size: 16px;
+  padding: 2px 6px;
+}
 
-.measurement-map-popup { z-index: 31; }
+.measurement-map-popup {
+  z-index: 31;
+}
 .measurement-map-popup .maplibregl-popup-content {
   min-width: 290px;
   max-width: min(380px, calc(100vw - 32px));
@@ -317,17 +355,27 @@ html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: defaul
   padding: 10px 28px 8px 12px;
   background: color-mix(in srgb, var(--muted) 55%, transparent);
 }
-.measurement-point-popup > header strong { font-size: 12px; }
+.measurement-point-popup > header strong {
+  font-size: 12px;
+}
 .measurement-popup-value {
   white-space: nowrap;
   color: var(--foreground);
-  font: 700 13px/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    700 13px/1.2 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
 }
 .measurement-popup-time {
   padding: 7px 12px;
   border-bottom: 1px solid var(--border);
   color: var(--muted-foreground);
-  font: 11px/1.3 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    11px/1.3 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
 }
 .measurement-point-popup section > h4 {
   margin: 0;
@@ -336,18 +384,32 @@ html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: defaul
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: .05em;
+  letter-spacing: 0.05em;
 }
-.measurement-popup-cell { padding: 7px 12px; border-bottom: 1px solid var(--border); }
-.measurement-popup-cell:last-child { border-bottom: 0; }
-.measurement-popup-cell-title { display: flex; align-items: center; gap: 7px; font-size: 11px; }
-.measurement-popup-cell-title strong { min-width: 0; }
+.measurement-popup-cell {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.measurement-popup-cell:last-child {
+  border-bottom: 0;
+}
+.measurement-popup-cell-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+}
+.measurement-popup-cell-title strong {
+  min-width: 0;
+}
 .measurement-popup-line {
   width: 22px;
   flex: 0 0 22px;
   border-top: 3px solid var(--measurement-link-color);
 }
-.measurement-popup-line.is-probable { border-top-style: dashed; }
+.measurement-popup-line.is-probable {
+  border-top-style: dashed;
+}
 .measurement-popup-confidence {
   margin-left: auto;
   padding: 1px 5px;
@@ -358,32 +420,119 @@ html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: defaul
   font-weight: 700;
   text-transform: uppercase;
 }
-.measurement-popup-site { margin-top: 3px; font-size: 11px; font-weight: 600; }
+.measurement-popup-site {
+  margin-top: 3px;
+  font-size: 11px;
+  font-weight: 600;
+}
 .measurement-popup-identity {
   margin-top: 2px;
   color: var(--muted-foreground);
-  font: 10px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace;
+  font:
+    10px/1.35 ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    monospace;
 }
-.bc4-pop { font-size: 11px; max-height: 320px; overflow-y: auto; min-width: 230px; }
-.bc4-pop-head { display: flex; align-items: center; gap: 6px; margin: 0 18px 6px 0; }
-.bc4-pop-head strong { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bc4-pop-badges { display: inline-flex; gap: 3px; }
-.bc4-pop-badge { border-radius: 999px; padding: 1px 6px; font-size: 9px; font-weight: 700; background: var(--muted); color: var(--foreground); }
-.bc4-pop-badge.is-nr { background: #7c3aed; color: #fff; }
-.bc4-pop-badge.is-lte { background: #f39c12; color: #fff; }
-.bc4-pop-grid { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
-.bc4-pop-grid dt { color: var(--muted-foreground); }
-.bc4-pop-grid dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
-.bc4-pop-grid dd.is-empty { color: var(--muted-foreground); font-weight: 400; }
-.bc4-pop-section { margin: 8px 0 3px; font-weight: 700; border-top: 1px solid var(--border); padding-top: 6px; }
-.bc4-pop-note { color: var(--muted-foreground); margin: 2px 0; }
-.bc4-pop-scroll { max-height: 140px; overflow-y: auto; }
-.bc4-pop-cells { width: 100%; border-collapse: collapse; font-size: 10px; font-variant-numeric: tabular-nums; }
-.bc4-pop-cells th { text-align: left; color: var(--muted-foreground); font-weight: 600; padding: 2px 3px; }
-.bc4-pop-cells td { padding: 2px 3px; border-top: 1px solid var(--border); }
-.bc4-pop-cells tr[role="button"] { cursor: pointer; }
-.bc4-pop-cells tr[role="button"]:hover td { background: var(--muted); }
-.bc4-pop-link { margin-top: 6px; color: var(--primary); font-weight: 600; font-size: 11px; }
+.bc4-pop {
+  font-size: 11px;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 230px;
+}
+.bc4-pop-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 18px 6px 0;
+}
+.bc4-pop-head strong {
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bc4-pop-badges {
+  display: inline-flex;
+  gap: 3px;
+}
+.bc4-pop-badge {
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--muted);
+  color: var(--foreground);
+}
+.bc4-pop-badge.is-nr {
+  background: #7c3aed;
+  color: #fff;
+}
+.bc4-pop-badge.is-lte {
+  background: #f39c12;
+  color: #fff;
+}
+.bc4-pop-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin: 0;
+}
+.bc4-pop-grid dt {
+  color: var(--muted-foreground);
+}
+.bc4-pop-grid dd {
+  margin: 0;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.bc4-pop-grid dd.is-empty {
+  color: var(--muted-foreground);
+  font-weight: 400;
+}
+.bc4-pop-section {
+  margin: 8px 0 3px;
+  font-weight: 700;
+  border-top: 1px solid var(--border);
+  padding-top: 6px;
+}
+.bc4-pop-note {
+  color: var(--muted-foreground);
+  margin: 2px 0;
+}
+.bc4-pop-scroll {
+  max-height: 140px;
+  overflow-y: auto;
+}
+.bc4-pop-cells {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.bc4-pop-cells th {
+  text-align: left;
+  color: var(--muted-foreground);
+  font-weight: 600;
+  padding: 2px 3px;
+}
+.bc4-pop-cells td {
+  padding: 2px 3px;
+  border-top: 1px solid var(--border);
+}
+.bc4-pop-cells tr[role="button"] {
+  cursor: pointer;
+}
+.bc4-pop-cells tr[role="button"]:hover td {
+  background: var(--muted);
+}
+.bc4-pop-link {
+  margin-top: 6px;
+  color: var(--primary);
+  font-weight: 600;
+  font-size: 11px;
+}
 
 /* ---- Barre du haut : flottante ou ancrée (bouton dans l'en-tête) ----
  * Ancrée : elle occupe 56px dans la page (--app-header-offset, utilisé par
@@ -392,9 +541,18 @@ html .maplibregl-canvas-container.maplibregl-interactive:active { cursor: defaul
  * transpalette translucide au-dessus du contenu. En plein écran elle se
  * replie en plus hors champ et glisse en place quand le pointeur atteint le
  * bord supérieur ou que le clavier y entre. */
-html { --app-header-offset: 56px; --project-header-clearance: 0px; overflow-x: hidden; }
-html.app-header-floating { --app-header-offset: 0px; --project-header-clearance: 56px; }
-html.app-header-floating.app-fullscreen { --project-header-clearance: 0px; }
+html {
+  --app-header-offset: 56px;
+  --project-header-clearance: 0px;
+  overflow-x: hidden;
+}
+html.app-header-floating {
+  --app-header-offset: 0px;
+  --project-header-clearance: 56px;
+}
+html.app-header-floating.app-fullscreen {
+  --project-header-clearance: 0px;
+}
 
 /* Flow pages keep their first actions accessible below a visible overlay.
  * Fullscreen workspaces retain the full height when that overlay retracts. */
@@ -402,10 +560,14 @@ html.app-header-floating.app-fullscreen { --project-header-clearance: 0px; }
   padding-top: calc(var(--project-header-clearance) + 12px);
 }
 @media (min-width: 640px) {
-  .project-fluid-page { padding-top: calc(var(--project-header-clearance) + 20px); }
+  .project-fluid-page {
+    padding-top: calc(var(--project-header-clearance) + 20px);
+  }
 }
 @media (min-width: 1024px) {
-  .project-fluid-page { padding-top: calc(var(--project-header-clearance) + 24px); }
+  .project-fluid-page {
+    padding-top: calc(var(--project-header-clearance) + 24px);
+  }
 }
 
 html.app-header-floating .app-header {
@@ -418,7 +580,10 @@ html.app-header-floating .app-header {
   backdrop-filter: blur(14px) saturate(1.35);
   -webkit-backdrop-filter: blur(14px) saturate(1.35);
   box-shadow: 0 12px 28px -20px color-mix(in oklab, var(--foreground) 60%, transparent);
-  transition: transform 190ms ease, opacity 190ms ease, visibility 190ms;
+  transition:
+    transform 190ms ease,
+    opacity 190ms ease,
+    visibility 190ms;
 }
 /* En plein écran, une barre flottante se range hors champ : elle ne revient
  * que sur demande (bord supérieur, clic en haut, Tab) ou pendant la brève
@@ -442,8 +607,59 @@ html.app-header-floating.app-fullscreen .app-header.is-revealed {
   z-index: 45;
   height: 3px;
   pointer-events: none;
-  background: linear-gradient(90deg, transparent, color-mix(in oklab, var(--primary) 60%, transparent) 30%, color-mix(in oklab, var(--primary) 60%, transparent) 70%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--primary) 60%, transparent) 30%,
+    color-mix(in oklab, var(--primary) 60%, transparent) 70%,
+    transparent
+  );
 }
 @media (prefers-reduced-motion: reduce) {
-  html.app-header-floating .app-header { transition: none; }
+  html.app-header-floating .app-header {
+    transition: none;
+  }
+}
+
+/* Signaling view activation tiles */
+.signaling-view-controls {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.375rem;
+  width: 100%;
+}
+.signaling-view-controls .signaling-view-switch {
+  grid-column: 1 / -1;
+  justify-content: center;
+}
+.signaling-view-controls .signaling-view-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-width: 0;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--background);
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    background-color 120ms,
+    border-color 120ms,
+    color 120ms;
+}
+.signaling-view-controls .signaling-view-toggle svg {
+  flex-shrink: 0;
+}
+.signaling-view-controls .signaling-view-toggle:hover {
+  border-color: var(--primary);
+}
+.signaling-view-controls .signaling-view-toggle[aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--primary) 45%, transparent);
+  background: color-mix(in oklab, var(--primary) 10%, transparent);
+  color: var(--foreground);
 }

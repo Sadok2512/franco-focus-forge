@@ -1,4 +1,10 @@
 {
+  "mapMetricDrop": {
+    "visibility": "Afficher / masquer {{metric}}",
+    "remove": "Retirer {{metric}} de cette carte",
+    "loading": "Chargement de {{metric}}",
+    "noGps": "Aucune observation géolocalisée pour cette capture."
+  },
   "passwordChange": {
     "title": "Changer mon mot de passe",
     "description": "Choisissez un nouveau mot de passe d’au moins 12 caractères.",
@@ -1081,7 +1087,30 @@
     "metricLegend": "Légende métrique",
     "legendCount": "Nombre de couleurs",
     "legendReset": "Réinitialiser les couleurs",
-    "legendSettings": "Réglages des couleurs"
+    "legendSettings": "Réglages des couleurs",
+    "signalingPoints": "Points signalisation",
+    "gpsRoute": "Trajet GPS",
+    "selectedPosition": "Position sélectionnée",
+    "rfTab": "Paramètres RF",
+    "rfEmpty": "Sélectionnez un point de mesure pour voir ses paramètres RF.",
+    "rf": {
+      "time": "Heure",
+      "position": "Position",
+      "eventId": "Événement / ID",
+      "radioInfo": "Informations radio",
+      "technology": "Technologie",
+      "band": "Bande",
+      "bandwidth": "Largeur de bande",
+      "ca": "CA",
+      "servingTech": "Technologie",
+      "site": "Site",
+      "azimuth": "Azimut (UE → site)",
+      "noServing": "Aucune cellule serving publiée pour ce point.",
+      "neighbours": "Cellules voisines",
+      "measurements": "Mesures RF",
+      "metrics": "Métriques",
+      "noMetrics": "Aucune autre métrique publiée pour ce point."
+    }
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",
