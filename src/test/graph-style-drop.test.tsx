@@ -108,7 +108,9 @@ async function openStyleMenu(card: HTMLElement) {
   // et seulement si le déclencheur a le focus.
   trigger.focus();
   fireEvent.keyDown(trigger, { key: "Enter" });
-  fireEvent.click(await screen.findByTestId("metric-style-sub"));
+  // Le contenu est lu immédiatement : attendre un tour de boucle laisse Radix
+  // refermer le menu avant la lecture.
+  fireEvent.click(screen.getByTestId("metric-style-sub"));
 }
 
 describe("style de graphe", () => {
