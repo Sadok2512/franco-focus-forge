@@ -7,7 +7,7 @@ import {
   MapLegendHeaderActions,
   MapLegendReopen,
 } from "@/features/kpi/map-legend";
-import { getMetricAnalysis, getMetricMap } from "@/lib/api/client";
+import { getMetricMap } from "@/lib/api/client";
 import { readMetricViews, writeMetricViews } from "@/features/kpi/metric-views";
 import "@/lib/i18n";
 
@@ -60,8 +60,14 @@ function renderMetricMap(workspaceId: string, code: string, label: string, unit:
       />
     </QueryClientProvider>,
   );
-  return screen.getByTestId("metric-map-legend");
 }
+
+async function legendOf() {
+  const legend = await screen.findByTestId("metric-map-legend");
+  await waitFor(() => expect(legend).toBeInTheDocument());
+  return legend;
+}
+
 
 describe("Shared legend header controls", () => {
   it("flips the visibility switch and reports it", () => {
@@ -107,8 +113,9 @@ describe("Shared legend header controls", () => {
 describe("Metric map legend controls", () => {
   it("hides the points, closes to a reopen button and reopens", async () => {
     renderers.map.mockClear();
-    const legend = renderMetricMap("legend-close", "cell_rsrp@0", "RSRP (LTE) @ Serving", "dBm");
-    await waitFor(() => expect(legend).toBeInTheDocument());
+    renderMetricMap("legend-close", "cell_rsrp@0", "RSRP (LTE) @ Serving", "dBm");
+    const legend = await legendOf();
+
     fireEvent.click(within(legend).getByRole("button", { name: /Show \/ hide/ }));
     fireEvent.click(within(legend).getByRole("button", { name: /Close the/ }));
     expect(within(legend).queryByRole("button", { name: /Show \/ hide/ })).toBeNull();
@@ -167,13 +174,9 @@ describe("Metric map legend controls", () => {
       map_points: points,
     } as never);
     renderers.map.mockClear();
-    const legend = renderMetricMap(
-      "legend-dci",
-      "dci_format@0",
-      "DCI format (bloc LTE) @ SCell 3",
-      "",
-    );
-    await waitFor(() => expect(legend).toBeInTheDocument());
+    renderMetricMap("legend-dci", "dci_format@0", "DCI format (bloc LTE) @ SCell 3", "");
+    const legend = await legendOf();
+
     const rows = within(legend).getAllByRole("checkbox");
     expect(rows).toHaveLength(4);
     const code0 = within(legend).getByRole("checkbox", { name: /3/ });
