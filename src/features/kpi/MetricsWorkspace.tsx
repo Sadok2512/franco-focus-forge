@@ -1,7 +1,7 @@
 import { Columns3, Download, Inbox, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
@@ -47,8 +47,11 @@ import {
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
+  formatTick,
   isClockAvailable,
   readTimeAxisMode,
+  timeAxisLabel,
+  tooltipTriple,
   writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
@@ -1102,6 +1105,11 @@ export function MetricsWorkspace({
   };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
+  const [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
+  const setTimeAxisMode = useCallback((mode: TimeAxisMode) => {
+    setTimeAxisModeRaw(mode);
+    writeTimeAxisMode(mode);
+  }, []);
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
@@ -1233,6 +1241,19 @@ export function MetricsWorkspace({
   });
   const data = query.data;
   const refreshing = query.isPlaceholderData && query.isFetching;
+  const timeMeta: TimeAxisMeta | undefined = data
+    ? {
+        nmf_start_at: data.nmf_start_at ?? null,
+        origin_ts: data.origin_ts,
+        utc_offset_min: data.utc_offset_min ?? null,
+        capture_date: data.capture_date ?? null,
+      }
+    : undefined;
+  const clockOk = isClockAvailable(timeMeta);
+  // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
+  // pas de meta #START/#UT (null). Jamais une heure inventée.
+  const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+  const timeScatter = x === "" || x === "t_rel_s";
   const option = useMemo<EChartsOption>(() => {
     if (!data) return {};
     const base: EChartsOption = {
@@ -1310,7 +1331,18 @@ export function MetricsWorkspace({
       return {
         ...base,
         tooltip: { trigger: "item", confine: true },
-        xAxis: { type: "value", name: x, scale: true },
+        xAxis: {
+          type: "value",
+          name: timeScatter ? timeAxisLabel(effectiveTimeAxisMode, timeMeta) : x,
+          scale: true,
+          ...(timeScatter
+            ? {
+                axisLabel: {
+                  formatter: (v: number) => formatTick(v, effectiveTimeAxisMode, timeMeta),
+                },
+              }
+            : {}),
+        },
         yAxis: { type: "value", scale: true },
         series: data.columns.map((c) => ({
           type: "scatter" as const,
@@ -1394,8 +1426,41 @@ export function MetricsWorkspace({
         data: [...new Set(cats.flatMap((s) => s.states))],
         axisLabel: { fontSize: 9 },
       });
+    const timeFormatter = (v: number) => formatTick(v, effectiveTimeAxisMode, timeMeta);
+    const axisName = timeAxisLabel(effectiveTimeAxisMode, timeMeta);
+    const timeTooltip: EChartsOption["tooltip"] = {
+      trigger: "axis",
+      confine: true,
+      renderMode: "richText",
+      formatter: (p: unknown) => {
+        const arr = (Array.isArray(p) ? p : [p]) as Array<{
+          axisValue?: number;
+          seriesName?: string;
+          value?: unknown;
+          data?: unknown;
+        }>;
+        const xv =
+          typeof arr[0]?.axisValue === "number" && Number.isFinite(arr[0]!.axisValue!)
+            ? arr[0]!.axisValue!
+            : NaN;
+        const trip = Number.isFinite(xv) ? tooltipTriple(xv, timeMeta) : null;
+        const head = trip
+          ? trip.local && trip.utc
+            ? `${trip.local} · UTC ${trip.utc} · t ${trip.capture}`
+            : `t ${trip.capture}`
+          : "";
+        const rows = arr
+          .map((s) => {
+            const raw = Array.isArray(s.data) ? (s.data[1] ?? "—") : (s.value ?? "—");
+            return `${s.seriesName ?? ""}: ${typeof raw === "number" ? raw : String(raw)}`;
+          })
+          .join("\n");
+        return head ? `${head}\n${rows}` : rows;
+      },
+    };
     return {
       ...base,
+      tooltip: timeTooltip,
       grid: cats.length
         ? [
             { left: 70, right: 100, top: 55, bottom: 155 },
@@ -1404,10 +1469,25 @@ export function MetricsWorkspace({
         : base.grid,
       xAxis: cats.length
         ? [
-            { type: "value", min: 0, name: translate("metrics.46c537ebda08") },
-            { type: "value", min: 0, gridIndex: 1 },
+            {
+              type: "value",
+              min: 0,
+              name: axisName,
+              axisLabel: { formatter: timeFormatter },
+            },
+            {
+              type: "value",
+              min: 0,
+              gridIndex: 1,
+              axisLabel: { formatter: timeFormatter },
+            },
           ]
-        : { type: "value", min: 0, name: translate("metrics.46c537ebda08") },
+        : {
+            type: "value",
+            min: 0,
+            name: axisName,
+            axisLabel: { formatter: timeFormatter },
+          },
       yAxis: yAxes,
       dataZoom: [
         { type: "inside", xAxisIndex: cats.length ? [0, 1] : [0] },
@@ -1415,7 +1495,7 @@ export function MetricsWorkspace({
       ],
       series: [...lines, ...(!numeric.length ? eventSeries : []), ...categorical],
     };
-  }, [translate, data, view, x]);
+  }, [translate, data, view, x, effectiveTimeAxisMode, timeMeta, timeScatter]);
   // 1.81.0 — Spec Premium Adaptive Metrics Table Phase 1 :
   // - Supprimé : titre "Metrics - cells and events", sous-titre Light/Deep,
   //   Capture select, View select, Reset btn, Export CSV dupliqué, Search time.
@@ -1435,26 +1515,6 @@ export function MetricsWorkspace({
   // sur captures scanner. Jamais caché (visibilité utilisateur requise).
   const captureKind = captureQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
   const isScannerCapture = captureKind === "scanner";
-  // 1.99.1 (lot C axe X temps) — mode d'affichage sélectionné + meta temporelle
-  // partagée. La meta vient de /metrics/analysis (data) car /metrics/series
-  // n'est pas query ici (fait par chaque MetricGraphCard séparément) mais
-  // identique au back pour la même capture (join nmf_capture + nmf_file).
-  const [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
-  const timeMeta: TimeAxisMeta | undefined = data
-    ? {
-        nmf_start_at: data.nmf_start_at ?? null,
-        origin_ts: data.origin_ts,
-        utc_offset_min: data.utc_offset_min ?? null,
-        capture_date: data.capture_date ?? null,
-      }
-    : undefined;
-  const clockOk = isClockAvailable(timeMeta);
-  // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
-  // pas de meta #START/#UT (null). Jamais une heure inventée.
-  const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
-  // Le switcher Clock (local)/Clock (UTC)/Capture time (s) a été retiré de
-  // l'interface ; le mode reste mémorisé (localStorage) et pilote les ticks.
-
   // 1.82.0 — BC3_METRICS_NATIVE_CHARTS_V2 Phase 1 + V3 corrections
   // Pagination effectuée par /metrics/table ; le navigateur ne reçoit que la page.
   // 1.102.0 — le menu ⋮ du tableau des mesures (export, plein écran, fermeture).
@@ -1551,9 +1611,37 @@ export function MetricsWorkspace({
       data-testid="metrics-v3-workspace"
     >
       {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
-      {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
-          Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
-          continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
+      {captureId && parsedSelections.length > 0 && (
+        <div className="kpi-time-axis-switcher" data-testid="time-axis-switcher">
+          <span className="kpi-time-axis-switcher__label">
+            {translate("metrics.timeAxis.label")}
+          </span>
+          {(
+            [
+              ["clock-local", translate("metrics.timeAxis.local")],
+              ["clock-utc", translate("metrics.timeAxis.utc")],
+              ["capture", translate("metrics.timeAxis.capture")],
+            ] as Array<[TimeAxisMode, string]>
+          ).map(([m, label]) => (
+            <button
+              key={m}
+              type="button"
+              className="kpi-time-axis-switcher__pill"
+              aria-pressed={effectiveTimeAxisMode === m}
+              disabled={!clockOk && m !== "capture"}
+              onClick={() => setTimeAxisMode(m)}
+              data-active={effectiveTimeAxisMode === m ? "true" : "false"}
+            >
+              {label}
+            </button>
+          ))}
+          {!clockOk && (
+            <span className="kpi-time-axis-switcher__hint" role="note">
+              {translate("metrics.timeAxis.clockUnavailable")}
+            </span>
+          )}
+        </div>
+      )}
       {showEvents && captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}

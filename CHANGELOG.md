@@ -1,3 +1,31 @@
+## 1.132.0 (minor) — Real NMF capture time on Metrics Graphs — 2026-11-02 (Agent BC5 North Star)
+
+- Integrates the BC5 Capture Time fix (`4f6bbf1`) onto the North Star main
+  base `7a6199e` (prod 1.131.2). The Metrics Workspace main chart,
+  scatter view and Chronogram now render the real NMF capture clock on
+  the X axis instead of raw `t_rel_s` seconds, with tooltip triple
+  Local / UTC / Capture at millisecond precision. `effectiveTimeAxisMode`
+  + `timeMeta` propagated through the useMemo deps so the chart
+  refreshes on mode change.
+- Scatter view applies the same formatter when the X axis is implicit
+  time; metric-vs-metric scatter keeps its own metric label.
+- Chronogram accepts `timeAxisMode` + `timeMeta` props and formats each
+  grid's X axis + tooltip identically.
+- Restores the compact Local / UTC / Capture pill switcher above the
+  metric cards and above the Chronogram, backed by the existing
+  `bc3.metrics.timeAxisMode` localStorage preference. Pills disabled
+  (not hidden) when the capture clock is unavailable; textual hint
+  explains the fallback to Capture time.
+- Backend contract unchanged (same `/metrics/analysis` and `/metrics/series`
+  responses carry the clock metadata since back 0.76.3). Table and Table
+  tooltip untouched (already showed real time).
+- Audit artefact: `audit/bc5-graph-real-capture-time/before-after-output.txt`
+  — Test_6, ikea.2, ikea.6 ticks and tooltips, midnight wrap, missing
+  clock fallback, Superstream same-`t_rel_s` disambiguation via UTC.
+- Rebased from the original 1.129.6 bump onto the current main
+  (consolidation requires a minor bump, hence 1.132.0).
+- SemVer front: **MINOR 1.132.0**.
+
 ## 1.131.2 (patch) — Compact Parameters layout — 2026-11-02 (Agent BC5)
 
 - KPI Analytics → Parameters tab is now vertically compact: the whole
@@ -84,6 +112,26 @@ dimension modified.
 - Keeps the six Map UI corrections, four persisted per-workspace heights and
   responsive MapLibre resize behaviour from the server implementation.
 - SemVer front: **MINOR 1.130.0**.
+=======
+## 1.129.6 (patch) — Real capture time on Metrics Graphs — 2026-11-01 (Agent BC5)
+
+- Metrics Workspace and Chronogram now format every X-axis tick with the real
+  NMF capture clock (local or UTC, derived from `nmf_start_at` + `origin_ts` +
+  `utc_offset_min`); `t_rel_s` stays the numeric coordinate so zoom, brush and
+  selection remain unchanged. Scatter view applies the same formatter when its
+  X axis is implicit time; metric-vs-metric scatter keeps its own label.
+- Tooltip on the main graph and on Chronogram now shows local, UTC and
+  capture-relative time with millisecond precision via the existing
+  `tooltipTriple` helper. No clock is invented when `#START` or `#UT` is
+  missing — the display falls back to Capture time with an explicit badge.
+- Restores the compact Local / UTC / Capture pill switcher above the metric
+  cards and above the Chronogram, driven by the existing
+  `bc3.metrics.timeAxisMode` localStorage preference; the Clock options are
+  disabled when the capture clock is unavailable instead of being hidden.
+- Backend contract unchanged (same `/metrics/analysis` and `/metrics/series`
+  responses already carry the clock metadata since back 0.76.3). Table and
+  Table tooltip are untouched (already showed real time).
+- SemVer front: **PATCH 1.129.6** (now consolidated as part of **MINOR 1.132.0**).
 
 ## 1.129.5 (patch) — Table/graph separation, legend removal, grey GPS points — 2026-11-01 (BC4)
 

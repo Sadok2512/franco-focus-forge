@@ -23,6 +23,16 @@ import type { ChronogramData, ChronogramEvents } from "@/lib/api/metrics";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { toUserMessage } from "@/lib/api/http";
 import { DecodePanel } from "@/features/projects/DecodePanel";
+import {
+  formatTick,
+  isClockAvailable,
+  readTimeAxisMode,
+  timeAxisLabel,
+  tooltipTriple,
+  writeTimeAxisMode,
+  type TimeAxisMeta,
+  type TimeAxisMode,
+} from "./time-axis";
 const palette = [
   "#60a5fa",
   "#fbbf24",
@@ -65,12 +75,16 @@ function Plot({
   stacked,
   start,
   end,
+  timeAxisMode,
+  timeMeta,
 }: {
   data: ChronogramData;
   events?: ChronogramEvents | undefined;
   stacked: boolean;
   start?: number | undefined;
   end?: number | undefined;
+  timeAxisMode: TimeAxisMode;
+  timeMeta: TimeAxisMeta | undefined;
 }) {
   const { t: translate } = useTranslation();
   const host = useRef<HTMLDivElement>(null),
@@ -123,15 +137,20 @@ function Plot({
       })),
       ...categories.map((_, i) => ({ left: 80, right: 65, top: categoryTop + i * 65, height: 42 })),
     ];
+    const timeFormatter = (v: number) => formatTick(v, timeAxisMode, timeMeta);
     const xAxis = grids.map((_, i) => ({
       type: "value" as const,
       gridIndex: i,
       min: start ?? 0,
       max: end ?? data.duration_s,
-      name: i === grids.length - 1 ? translate("metrics.46c537ebda08") : "",
+      name: i === grids.length - 1 ? timeAxisLabel(timeAxisMode, timeMeta) : "",
       nameLocation: "middle" as const,
       nameGap: 24,
-      axisLabel: { show: !stacked || i === grids.length - 1, color: "#cbd5e1" },
+      axisLabel: {
+        show: !stacked || i === grids.length - 1,
+        color: "#cbd5e1",
+        formatter: timeFormatter,
+      },
       splitLine: { lineStyle: { color: "#334155" } },
     }));
     const numericAxes = stacked
@@ -241,10 +260,23 @@ function Plot({
           renderMode: "richText",
           confine: true,
           formatter: (params: unknown) => {
-            const items = params as { data?: { tooltipText?: string }; name?: string }[];
-            return (
-              items.find((p) => p.data?.tooltipText)?.data?.tooltipText ?? items[0]?.name ?? ""
-            );
+            const items = params as {
+              data?: { tooltipText?: string };
+              name?: string;
+              axisValue?: number;
+            }[];
+            const inner =
+              items.find((p) => p.data?.tooltipText)?.data?.tooltipText ?? items[0]?.name ?? "";
+            const xv =
+              typeof items[0]?.axisValue === "number" && Number.isFinite(items[0]!.axisValue!)
+                ? items[0]!.axisValue!
+                : NaN;
+            if (!Number.isFinite(xv)) return inner;
+            const trip = tooltipTriple(xv, timeMeta);
+            const head = trip.local
+              ? `${trip.local} · UTC ${trip.utc} · t ${trip.capture}`
+              : `t ${trip.capture}`;
+            return inner ? `${head}\n${inner}` : head;
           },
         },
         axisPointer: { link: [{ xAxisIndex: "all" }] },
@@ -288,7 +320,7 @@ function Plot({
           `/signaling?capture_id=${encodeURIComponent(data.capture_id)}&seq=${hit.data.seq}`,
         );
     });
-  }, [ready, data, events, stacked, start, end, translate]);
+  }, [ready, data, events, stacked, start, end, translate, timeAxisMode, timeMeta]);
   return (
     <>
       <button
@@ -315,7 +347,7 @@ export const Chronogram = forwardRef<
     onCaptureChange: (capture: string) => void;
   }
 >(({ projectId, filters, selectedCapture, onCaptureChange }, ref) => {
-  useTranslation();
+  const { t: translateInline } = useTranslation();
   const [selectedCodes, setCodes] = useState<string[]>([
       "rsrp",
       "sinr",
@@ -327,7 +359,12 @@ export const Chronogram = forwardRef<
     [stacked, setStacked] = useState(true),
     [taskId, setTaskId] = useState(""),
     [unknownEvent, setUnknownEvent] = useState("CHI"),
-    [unknownOpen, setUnknownOpen] = useState(false);
+    [unknownOpen, setUnknownOpen] = useState(false),
+    [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
+  const setTimeAxisMode = (mode: TimeAxisMode) => {
+    setTimeAxisModeRaw(mode);
+    writeTimeAxisMode(mode);
+  };
   const metrics = useQuery({
     queryKey: ["metrics", projectId],
     staleTime: 300_000,
@@ -577,8 +614,46 @@ export const Chronogram = forwardRef<
       )}
       {captures.data?.length === 0 && <p>{i18n.t("metrics.83a847061d36")}</p>}
       {!codes.length && <p>{i18n.t("metrics.6a0225657516")}</p>}
-      {data && (
+      {data && (() => {
+        const timeMeta: TimeAxisMeta = {
+          nmf_start_at: data.nmf_start_at ?? null,
+          origin_ts: data.origin_ts,
+          utc_offset_min: data.utc_offset_min ?? null,
+          capture_date: data.capture_date ?? null,
+        };
+        const clockOk = isClockAvailable(timeMeta);
+        const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+        return (
         <>
+          <div className="kpi-time-axis-switcher" data-testid="time-axis-switcher">
+            <span className="kpi-time-axis-switcher__label">
+              {translateInline("metrics.timeAxis.label")}
+            </span>
+            {(
+              [
+                ["clock-local", translateInline("metrics.timeAxis.local")],
+                ["clock-utc", translateInline("metrics.timeAxis.utc")],
+                ["capture", translateInline("metrics.timeAxis.capture")],
+              ] as Array<[TimeAxisMode, string]>
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                className="kpi-time-axis-switcher__pill"
+                aria-pressed={effectiveTimeAxisMode === m}
+                disabled={!clockOk && m !== "capture"}
+                onClick={() => setTimeAxisMode(m)}
+                data-active={effectiveTimeAxisMode === m ? "true" : "false"}
+              >
+                {label}
+              </button>
+            ))}
+            {!clockOk && (
+              <span className="kpi-time-axis-switcher__hint" role="note">
+                {translateInline("metrics.timeAxis.clockUnavailable")}
+              </span>
+            )}
+          </div>
           <p className="text-xs">
             Capture {data.capture_id} {i18n.t("metrics.21ebc78f9d73")} {data.origin_ts} (seq{" "}
             {data.origin_seq}) · {data.duration_s} s
@@ -594,6 +669,8 @@ export const Chronogram = forwardRef<
             end={
               task ? events.data?.markers.find((m) => m.seq === task.seq_dcomp)?.t_rel_s : undefined
             }
+            timeAxisMode={effectiveTimeAxisMode}
+            timeMeta={timeMeta}
           />
           <div className="text-xs">
             {data.series.map((s) => (
@@ -634,7 +711,8 @@ export const Chronogram = forwardRef<
             </Sheet>
           )}
         </>
-      )}
+      );
+      })()}
     </section>
   );
 });

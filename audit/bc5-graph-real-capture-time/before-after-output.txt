@@ -1,0 +1,55 @@
+
+ RUN  v4.1.11 /home/devmat/BC4/franco-focus-forge
+
+stdout | src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'Test_6' — axis + ticks AFTER fix show real clock
+
+[audit] Test_6 — axis names
+  AFTER local  : Local time · 2026-06-10 · UTC+2h
+  AFTER UTC    : UTC time · 2026-06-10 · UTC
+  AFTER capture: Capture time (s) · origin: capture start
+[audit] Test_6 — ticks (t_rel_s | BEFORE | AFTER local | AFTER UTC | tooltip)
+      0 | 0 s        | 15:59:41   | 13:59:41   | 15:59:41.993 · UTC 13:59:41.993 · t 0.000 s
+   1000 | 1000 s     | 16:16:21   | 14:16:21   | 16:16:21.993 · UTC 14:16:21.993 · t 1000.000 s
+   2000 | 2000 s     | 16:33:01   | 14:33:01   | 16:33:01.993 · UTC 14:33:01.993 · t 2000.000 s
+   3000 | 3000 s     | 16:49:41   | 14:49:41   | 16:49:41.993 · UTC 14:49:41.993 · t 3000.000 s
+   4858 | 4858 s     | 17:20:39   | 15:20:39   | 17:20:39.993 · UTC 15:20:39.993 · t 4858.000 s
+
+stdout | src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'ikea.2' — axis + ticks AFTER fix show real clock
+
+[audit] ikea.2 — axis names
+  AFTER local  : Local time · 2026-06-10 · UTC+2h
+  AFTER UTC    : UTC time · 2026-06-10 · UTC
+  AFTER capture: Capture time (s) · origin: capture start
+[audit] ikea.2 — ticks (t_rel_s | BEFORE | AFTER local | AFTER UTC | tooltip)
+      0 | 0 s        | 17:23:54   | 15:23:54   | 17:23:54.686 · UTC 15:23:54.686 · t 0.000 s
+   1000 | 1000 s     | 17:40:34   | 15:40:34   | 17:40:34.686 · UTC 15:40:34.686 · t 1000.000 s
+   2000 | 2000 s     | 17:57:14   | 15:57:14   | 17:57:14.686 · UTC 15:57:14.686 · t 2000.000 s
+   3000 | 3000 s     | 18:13:54   | 16:13:54   | 18:13:54.686 · UTC 16:13:54.686 · t 3000.000 s
+   4858 | 4858 s     | 18:44:52   | 16:44:52   | 18:44:52.686 · UTC 16:44:52.686 · t 4858.000 s
+
+stdout | src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'ikea.6' — axis + ticks AFTER fix show real clock
+
+[audit] ikea.6 — axis names
+  AFTER local  : Local time · 2026-06-10 · UTC+2h
+  AFTER UTC    : UTC time · 2026-06-10 · UTC
+  AFTER capture: Capture time (s) · origin: capture start
+[audit] ikea.6 — ticks (t_rel_s | BEFORE | AFTER local | AFTER UTC | tooltip)
+      0 | 0 s        | 17:23:54   | 15:23:54   | 17:23:54.658 · UTC 15:23:54.658 · t 0.000 s
+   1000 | 1000 s     | 17:40:34   | 15:40:34   | 17:40:34.658 · UTC 15:40:34.658 · t 1000.000 s
+   2000 | 2000 s     | 17:57:14   | 15:57:14   | 17:57:14.658 · UTC 15:57:14.658 · t 2000.000 s
+   3000 | 3000 s     | 18:13:54   | 16:13:54   | 18:13:54.658 · UTC 16:13:54.658 · t 3000.000 s
+   4858 | 4858 s     | 18:44:52   | 16:44:52   | 18:44:52.658 · UTC 16:44:52.658 · t 4858.000 s
+
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'Test_6' — axis + ticks AFTER fix show real clock 8ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'ikea.2' — axis + ticks AFTER fix show real clock 2ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > 'ikea.6' — axis + ticks AFTER fix show real clock 3ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > Test_6 — specific values verified against back time_label math 1ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > midnight wrap — origin 23:30 + 7200 s = 01:30 modulo 24h 1ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > missing #START/#UT → explicit fallback, never invented 1ms
+ ✓ src/test/bc5-graph-real-capture-time.test.ts > audit BC5 — real capture time before/after > Superstream — chaque capture-local garde son origin ; concaténation = UTC 1ms
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  20:45:07
+   Duration  1.37s (transform 99ms, setup 327ms, import 75ms, tests 18ms, environment 679ms)
+

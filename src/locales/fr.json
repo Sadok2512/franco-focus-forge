@@ -129,6 +129,13 @@
       "lat": "Latitude",
       "lon": "Longitude"
     },
+    "timeAxis": {
+      "label": "Axe temporel",
+      "local": "Local",
+      "utc": "UTC",
+      "capture": "Capture",
+      "clockUnavailable": "horloge N/D — repli sur Temps capture"
+    },
     "cellTechnicalHint": "Détail technique de cellule",
     "cellFilters": {
       "pci": "Filtrer PCI",
