@@ -16,6 +16,15 @@ import {
 } from "./metric-classes";
 import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
+import {
+  MapLegendHeaderActions,
+  MapLegendList,
+  MapLegendReopen,
+  MapLegendRow,
+  MapLegendSection,
+  MapLegendSettings,
+} from "./map-legend";
+
 
 const KPI_MEASURES_LAYER = "kpi-measures";
 
@@ -93,6 +102,9 @@ export function KpiMeasurementMap({
     );
   };
   const [hidden, setHidden] = useState<string[]>([]);
+  const [visible, setVisible] = useState(true);
+  const [closed, setClosed] = useState(false);
+
   const [legendSettings, setLegendSettings] = useMetricLegendSettings(code);
   const classes = useMemo(
     () =>
@@ -165,6 +177,13 @@ export function KpiMeasurementMap({
       hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
     );
   }, [map, hidden, colored]);
+  // The legend's visibility switch hides every measurement point without
+  // unmounting the layer, so the camera, filters and selection survive.
+  useEffect(() => {
+    if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
+    map.setLayoutProperty(KPI_MEASURES_LAYER, "visibility", visible ? "visible" : "none");
+  }, [map, visible, colored]);
+
   const fmtNum = (n: number) => (Number.isFinite(n) ? Number(n.toPrecision(3)).toString() : "");
   const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
   const legendLabel = label ?? code;
