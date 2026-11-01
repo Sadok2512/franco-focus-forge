@@ -72,6 +72,15 @@ const MetricCatalogNodePayloadSchema = z
     // vers "pcell"/"scell*"/"pscell" ; le badge PER CELL est dérivé par le
     // sidebar depuis `metric_id` (suffixe `@<cell_type>`).
     cell: z.string().nullable(),
+    technology: z.string().nullable().optional(),
+    metric_label: z.string().nullable().optional(),
+    cell_label: z.string().nullable().optional(),
+    cell_system: z.enum(["LTE", "NR"]).nullable().optional(),
+    raw_cell_type: z.number().int().nullable().optional(),
+    availability_status: z
+      .enum(["available", "no_data", "not_projected", "not_applicable"])
+      .nullable()
+      .optional(),
     n: z.number().int(),
     proof: z.string(),
     selectable: z.boolean(),

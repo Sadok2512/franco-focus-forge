@@ -3,6 +3,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
+import { catalogEntries } from "@/features/kpi/workspace-model";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
 
@@ -58,27 +59,34 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       reason: "",
       metrics: [],
       nodes: [
-        node("radio", null, "Serving radio", 0, { node_type: "category" }),
-        node("rsrp", "radio", "RSRP ★[CELLMEAS #9]", 0, {
-          node_type: "metric",
-          source: "[CELLMEAS #9]",
-        }),
-        node("pcell", "rsrp", "RSRP — PCell", 0, {
-          metric_id: "cell_rsrp@pcell",
-          selection: "cell_rsrp@0",
+        node("pcell", "legacy-event", "RSRP (LTE) @ Serving", 0, {
+          metric_id: "cell_rsrp@lte-type-0",
+          selection: "cell_rsrp@lte-type-0",
           event: "CELLMEAS",
           field_idx: 9,
           source_column: "cell_rsrp",
-          cell: "pcell",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-0",
+          cell_label: "PCell",
+          cell_system: "LTE",
+          raw_cell_type: 0,
+          availability_status: "available",
           n: 12,
           selectable: true,
         }),
-        node("pscell", "rsrp", "RSRP — PSCell", 5, {
-          metric_id: "cell_rsrp@pscell",
+        node("pscell", "legacy-event", "RSRP (NR) @ SCG PSCell", 5, {
+          metric_id: "cell_rsrp@nr-type-199",
           event: "CELLMEAS",
           field_idx: 9,
           source_column: "cell_rsrp",
-          cell: "pscell",
+          technology: "NR",
+          metric_label: "RSRP",
+          cell: "nr-type-199",
+          cell_label: "PSCell",
+          cell_system: "NR",
+          raw_cell_type: 199,
+          availability_status: "no_data",
           proof: "open",
           reason: "P4 proof pending",
         }),
@@ -98,46 +106,33 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       </QueryClientProvider>,
     );
 
-    // Category "Serving radio" visible, closed by default.
-    const servingRadio = await screen.findByRole("button", { name: /Serving radio/ });
-    expect(servingRadio).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(servingRadio);
-    expect(servingRadio).toHaveAttribute("aria-expanded", "true");
-
-    // Family "RSRP ★[CELLMEAS #9]" visible, closed → open it.
+    const lte = await screen.findByRole("button", { name: "LTE" });
+    fireEvent.click(lte);
     const rsrpFam = screen.getByRole("button", { name: /^RSRP/ });
     expect(rsrpFam).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(rsrpFam);
     expect(rsrpFam).toHaveAttribute("aria-expanded", "true");
 
     // Default tree contains only the selectable leaf.
-    expect(screen.getByText("RSRP — PCell")).toBeVisible();
-    expect(screen.queryByText("RSRP — PSCell")).toBeNull();
+    expect(screen.getByText("PCell")).toBeVisible();
+    expect(screen.queryByText("PSCell")).toBeNull();
 
     // The existing grey rendering is restored by the opt-in switch.
     fireEvent.click(screen.getByRole("switch", { name: "Show unavailable" }));
-    expect(screen.getByText("RSRP — PSCell")).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "NR" }));
+    fireEvent.click(screen.getAllByRole("button", { name: /^RSRP/ })[1]!);
+    expect(screen.getByText("PSCell")).toBeVisible();
 
     // P4 (open-proof) leaf still visible but visually disabled.
-    const pscellLeaf = screen.getByText("RSRP — PSCell").closest(".kpi-tree-leaf");
+    const pscellLeaf = screen.getByText("PSCell").closest(".kpi-tree-leaf");
     expect(pscellLeaf).toHaveClass("opacity-45");
 
-    // Une feuille n'ajoute plus de Graph au clic direct : seul son menu ⋮
-    // déclenche une visualisation.
-    fireEvent.click(screen.getByTestId("metric-label-pcell"));
+    // Cell click opens details only; the ⋮ menu is the sole panel-creation path.
+    const pcellButton = screen.getByRole("button", { name: "Select PCell" });
+    expect(pcellButton).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(pcellButton);
     expect(onToggle).not.toHaveBeenCalled();
-
-    const menu = screen.getByTestId("metric-menu-pcell");
-    for (const mode of ["Graph", "Table", "Map"] as const) {
-      fireEvent.keyDown(menu, { key: "Enter" });
-      fireEvent.click(await screen.findByText(mode));
-    }
-    expect(onVisualization.mock.calls).toEqual([
-      ["cell_rsrp@0", "graph"],
-      ["cell_rsrp@0", "table"],
-      ["cell_rsrp@0", "map"],
-    ]);
-    expect(onToggle).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Visualisation PCell" })).toBeVisible();
   });
 
   it("shows the compact loading bar while a catalogue request is in flight, never the empty message", async () => {
@@ -190,7 +185,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(getMetrics).toHaveBeenCalledTimes(2);
   });
 
-  it("renders a physical neighbour identity without leaking its selector as a badge", async () => {
+  it("renders a semantic neighbour role without confusing it with physical identity", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "2.60.0",
       title: "Nemo metrics",
@@ -199,17 +194,19 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       reason: "",
       metrics: [],
       nodes: [
-        node("lte", null, "LTE", 0, { node_type: "category" }),
-        node("detected", "lte", "RSRP @ Detected LTE neighbour", 0, {
+        node("detected", "legacy-event", "RSRP (LTE) @ Detected LTE neighbour", 0, {
           metric_id: "cell_rsrp@lte-type-2",
-        }),
-        node("physical", "detected", "ARFCN 1675 · PCI 196", 0, {
-          metric_id: "cell_rsrp@lte-type-2!1675:196",
-          selection: "cell_rsrp@lte-type-2!1675:196",
+          selection: "cell_rsrp@lte-type-2",
           event: "CELLMEAS",
           source_column: "cell_rsrp",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-2",
+          cell_label: "Detected LTE neighbour",
+          cell_system: "LTE",
+          raw_cell_type: 2,
+          availability_status: "available",
           n: 1465,
-          proof: "physical-cell-identity",
           selectable: true,
         }),
       ],
@@ -226,10 +223,9 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     );
 
     fireEvent.click(await screen.findByRole("button", { name: "LTE" }));
-    fireEvent.click(screen.getByRole("button", { name: /RSRP @ Detected/ }));
-    expect(screen.getByText("ARFCN 1675 · PCI 196")).toBeVisible();
-    expect(screen.queryByText("LTE-TYPE-2!1675:196")).toBeNull();
-    expect(screen.queryByTestId("per-cell-physical")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /RSRP/ }));
+    expect(screen.getByText("Detected LTE neighbour")).toBeVisible();
+    expect(screen.queryByText(/1675|PCI 196/)).toBeNull();
   });
 
   it("lists only metrics returned by the metrics API", async () => {
@@ -258,6 +254,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
           onToggle={vi.fn()}
           searchRef={createRef<HTMLInputElement>()}
           selectionCount={0}
+          measuredEntries={catalogEntries(measuredCatalog)}
         />
       </QueryClientProvider>,
     );

@@ -27,6 +27,23 @@
   reopen, with the map canvas resized and its camera/layers/selection kept.
 - Removes the floating "Zoom in to see cells" overlay; zoom thresholds and
   cell/sector/beam rendering conditions are unchanged.
+## 1.130.0 (minor) — Map controls and Metrics cell catalogue — 2026-11-01 (BC1 + BC4)
+
+- Removes the redundant floating Metrics, GPS-unavailable and zoom-hint overlays
+  from KPI Analytics maps while centring the live Sites, Cells, zoom and scale bar.
+- Harmonises the map settings control and adds Compact (300 px), Default, Large
+  (600 px) and Extra Large (800 px) heights, persisted independently per Workspace.
+- Keeps the MapLibre instance, camera, layers and selected point alive while a
+  ResizeObserver recalculates the map immediately after height changes.
+- Replaces the release catalogue's category/event presentation with the
+  structured Technology → Metric → Cell hierarchy; cell roles come from the
+  backend enum metadata and never from labels, storage indexes or PCI/ARFCN.
+- Uses capture/superstream-scoped availability counts, keeps unavailable
+  projections explicit, and consolidates measured and decoder metrics under
+  the same search and bottom availability controls.
+- Metric rows only expand/collapse. Graph, Table and Map creation remains in
+  the cell leaf `⋮` menu so a catalogue click cannot create a panel by accident.
+- SemVer front: **MINOR 1.130.0**.
 
 ## 1.129.4 (patch) — Metrics catalogue sidebar and table overflow — 2026-11-01 (BC1 + BC4)
 

@@ -124,13 +124,14 @@ function purgeStaleMetricsCache(pid: string, freshSha: string): void {
 /** `queryOptions` dédié `/metrics` : clé dérivée du sha du
  *  catalog_release présent dans l'enveloppe, GL1 à `initialData`,
  *  purge des entrées périmées après fetch. */
-function shaKeyedMetricsQuery(pid: string) {
+function shaKeyedMetricsQuery(pid: string, captureIds: string[] = []) {
+  const scope = [...new Set(captureIds)].join(",");
   return queryOptions({
-    queryKey: ["project-metrics", pid],
-    queryFn: async () => {
-      const data = await getMetrics(pid);
+    queryKey: ["project-metrics", pid, scope || "project"],
+    queryFn: async ({ signal }) => {
+      const data = await getMetrics(pid, captureIds, signal);
       try {
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && captureIds.length === 0) {
           const sha = (data as unknown as { catalog_release?: { sha256?: string | null } | null })
             ?.catalog_release?.sha256;
           if (sha && typeof sha === "string") {
@@ -203,7 +204,8 @@ export const kpiFiltersQuery = (projectId: string, captureIds: string[] = []) =>
         : getProjectKpiFilters(projectId, signal),
     staleTime: 60_000,
   });
-export const metricsCatalogQuery = (projectId: string) => shaKeyedMetricsQuery(projectId);
+export const metricsCatalogQuery = (projectId: string, captureIds: string[] = []) =>
+  shaKeyedMetricsQuery(projectId, captureIds);
 export const analyticsProjectQuery = (projectId: string) =>
   queryOptions({
     queryKey: ["project", projectId],

@@ -35,12 +35,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
+import type { Entry } from "./workspace-model";
 import type { MetricView } from "./MetricGraphCard";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
 import { toUserMessage } from "@/lib/api/http";
-import { MAP_METRIC_MIME } from "./map-metric-drop";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -53,6 +53,153 @@ function cleanLabel(raw: string): string {
   return raw.replace(STAR, "").replace(SOURCE_BADGE_RE, "").trim();
 }
 
+/** Normalize the release catalogue without using display text as identity.
+ * The backend supplies technology, source_column and the semantic cell enum;
+ * labels are presentation only.  Exact duplicate projections collapse to one
+ * leaf, preferring a selectable definition over an unavailable duplicate. */
+export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNode[] {
+  const byId = new Map(nodes.map((node) => [node.node_id, node]));
+  const technologyOf = (leaf: MetricCatalogNode) => {
+    if (leaf.technology) return leaf.technology;
+    let current: MetricCatalogNode | undefined = leaf;
+    const seen = new Set<string>();
+    while (current && !seen.has(current.node_id)) {
+      seen.add(current.node_id);
+      if (current.node_type === "tech") return cleanLabel(current.label);
+      current = current.parent_id ? byId.get(current.parent_id) : undefined;
+    }
+    return "Other";
+  };
+  const leafCandidates = nodes.filter(
+    (node) => node.node_type === "leaf" && node.analytics_tab === "metrics",
+  );
+  const deduplicated = new Map<string, MetricCatalogNode>();
+  for (const leaf of leafCandidates) {
+    const technology = technologyOf(leaf);
+    const metricIdentity = `${leaf.event ?? ""}:${leaf.source_column ?? leaf.metric_id ?? leaf.node_id}`;
+    const physicalIdentity = leaf.selection?.includes("!")
+      ? leaf.selection.slice(leaf.selection.indexOf("!") + 1)
+      : "";
+    const cellIdentity = `${leaf.cell_system ?? ""}:${leaf.raw_cell_type ?? "none"}:${physicalIdentity}`;
+    const key = `${technology}:${metricIdentity}:${cellIdentity}`;
+    const previous = deduplicated.get(key);
+    if (!previous || (!previous.selectable && leaf.selectable)) deduplicated.set(key, leaf);
+  }
+
+  const technologyOrder = ["LTE", "NR", "EN-DC", "CAPTURE", "Shared", "Other"];
+  const grouped = new Map<string, Map<string, MetricCatalogNode[]>>();
+  for (const leaf of deduplicated.values()) {
+    const technology = technologyOf(leaf);
+    const metricLabel = leaf.metric_label ?? cleanLabel(leaf.label).split(" @ ", 1)[0] ?? leaf.label;
+    const metricIdentity = `${leaf.event ?? ""}:${leaf.source_column ?? leaf.metric_id ?? leaf.node_id}:${metricLabel}`;
+    const metrics = grouped.get(technology) ?? new Map<string, MetricCatalogNode[]>();
+    metrics.set(metricIdentity, [...(metrics.get(metricIdentity) ?? []), leaf]);
+    grouped.set(technology, metrics);
+  }
+
+  const result: MetricCatalogNode[] = [];
+  const technologies = [...grouped].sort(
+    ([a], [b]) =>
+      (technologyOrder.indexOf(a) < 0 ? 99 : technologyOrder.indexOf(a)) -
+        (technologyOrder.indexOf(b) < 0 ? 99 : technologyOrder.indexOf(b)) ||
+      a.localeCompare(b),
+  );
+  technologies.forEach(([technology, metrics], technologyIndex) => {
+    const techId = `normalized:technology:${technology}`;
+    result.push({
+      node_id: techId,
+      parent_id: null,
+      order: technologyIndex,
+      label: technology,
+      note: null,
+      source: null,
+      node_type: "tech",
+      analytics_tab: null,
+      metric_id: null,
+      selection: null,
+      event: null,
+      field_idx: null,
+      source_column: null,
+      unit: "",
+      cell: null,
+      n: 0,
+      proof: "catalog-structured-identity",
+      selectable: false,
+      reason: null,
+    });
+    [...metrics.entries()]
+      .sort(([, a], [, b]) =>
+        (a[0]?.metric_label ?? a[0]?.label ?? "").localeCompare(
+          b[0]?.metric_label ?? b[0]?.label ?? "",
+        ),
+      )
+      .forEach(([metricIdentity, leaves], metricIndex) => {
+        const first = leaves[0]!;
+        const metricId = `${techId}:metric:${metricIdentity}`;
+        result.push({
+          ...first,
+          node_id: metricId,
+          parent_id: techId,
+          order: metricIndex,
+          label: first.metric_label ?? cleanLabel(first.label).split(" @ ", 1)[0] ?? first.label,
+          node_type: "metric",
+          selection: null,
+          cell: null,
+          n: leaves.reduce((total, leaf) => total + (leaf.selectable ? leaf.n : 0), 0),
+          selectable: false,
+          reason: null,
+        });
+        leaves
+          .sort(
+            (a, b) =>
+              (a.raw_cell_type ?? Number.MAX_SAFE_INTEGER) -
+                (b.raw_cell_type ?? Number.MAX_SAFE_INTEGER) ||
+              (a.cell_label ?? a.label).localeCompare(b.cell_label ?? b.label),
+          )
+          .forEach((leaf, cellIndex) =>
+            result.push({
+              ...leaf,
+              node_id: `normalized:leaf:${leaf.node_id}`,
+              parent_id: metricId,
+              order: cellIndex,
+              label: leaf.cell_label ?? (leaf.cell ? leaf.cell : "No cell scope"),
+            }),
+          );
+      });
+  });
+  return result;
+}
+
+function measuredMetricNodes(entries: Entry[]): MetricCatalogNode[] {
+  return entries.map(({ techno, family, item }, order) => ({
+    node_id: `measured:${techno}:${item.code}`,
+    parent_id: null,
+    order,
+    label: item.name,
+    note: item.reason ?? null,
+    source: "measured-catalog",
+    node_type: "leaf" as const,
+    analytics_tab: "metrics" as const,
+    metric_id: item.code,
+    selection: item.status === "AVAILABLE" ? item.code : null,
+    event: family,
+    field_idx: null,
+    source_column: item.code,
+    unit: item.unit ?? "",
+    cell: null,
+    technology: techno === "ENDC" ? "EN-DC" : techno,
+    metric_label: item.name,
+    cell_label: "No cell scope",
+    cell_system: null,
+    raw_cell_type: null,
+    availability_status: item.status === "AVAILABLE" ? "available" as const : "no_data" as const,
+    n: 0,
+    proof: item.source ?? "measured-catalog",
+    selectable: item.status === "AVAILABLE",
+    reason: item.reason ?? null,
+  }));
+}
+
 export function MetricsCatalogSidebar({
   projectId,
   selected,
@@ -63,11 +210,16 @@ export function MetricsCatalogSidebar({
   search: controlledSearch,
   onSearchChange,
   selectionCount,
+  measuredEntries = [],
+  measuredSelected = [],
+  measuredActive = null,
+  onMeasuredVisualization,
   onVisibleCountChange,
   // 1.92.0 — captureKind : si 'scanner', les métriques UE cell_scoped sont
   // désactivées + tooltip "no UE cell metrics in scanner capture". Jamais
   // cachées. 'ue' ou null = comportement nominal.
   captureKind,
+  captureIds = [],
 }: {
   projectId: string;
   selected: string[];
@@ -78,8 +230,13 @@ export function MetricsCatalogSidebar({
   search?: string;
   onSearchChange?: (value: string) => void;
   selectionCount?: number;
+  measuredEntries?: Entry[];
+  measuredSelected?: string[];
+  measuredActive?: string | null;
+  onMeasuredVisualization?: (code: string, view: VisualizationType) => void;
   onVisibleCountChange?: (count: number) => void;
   captureKind?: "ue" | "scanner" | null;
+  captureIds?: string[];
 }) {
   const { t, i18n } = useTranslation();
   const [localSearch, setLocalSearch] = useState("");
@@ -95,19 +252,23 @@ export function MetricsCatalogSidebar({
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
-  const query = useQuery({ ...metricsCatalogQuery(projectId), retry: false });
+  const query = useQuery({ ...metricsCatalogQuery(projectId, captureIds), retry: false });
+  const normalizedNodes = useMemo(
+    () => buildMetricCellTree([...(query.data?.nodes ?? []), ...measuredMetricNodes(measuredEntries)]),
+    [measuredEntries, query.data?.nodes],
+  );
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
-    for (const node of query.data?.nodes ?? []) {
+    for (const node of normalizedNodes) {
       const key = node.parent_id ?? rootKey;
       result.set(key, [...(result.get(key) ?? []), node]);
     }
     for (const children of result.values()) children.sort((a, b) => a.order - b.order);
     return result;
-  }, [query.data]);
+  }, [normalizedNodes]);
   const availableTree = useMemo(() => {
     if (showUnavailable) return null;
-    const nodes = query.data?.nodes ?? [];
+    const nodes = normalizedNodes;
     const byId = new Map(nodes.map((node) => [node.node_id, node]));
     const visible = new Set<string>();
     for (const leaf of nodes) {
@@ -119,12 +280,12 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, showUnavailable]);
+  }, [normalizedNodes, showUnavailable]);
   const matching = useMemo(() => {
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
     const own = new Set(
-      (query.data?.nodes ?? [])
+      normalizedNodes
         .filter((node) =>
           `${node.label} ${node.source ?? ""} ${node.event ?? ""}`
             .toLocaleLowerCase()
@@ -133,7 +294,16 @@ export function MetricsCatalogSidebar({
         .map((node) => node.node_id),
     );
     const visible = new Set(own);
-    const byId = new Map((query.data?.nodes ?? []).map((node) => [node.node_id, node]));
+    const byId = new Map(normalizedNodes.map((node) => [node.node_id, node]));
+    const descendants = [...own];
+    while (descendants.length) {
+      const parent = descendants.pop()!;
+      for (const child of byParent.get(parent) ?? []) {
+        if (visible.has(child.node_id)) continue;
+        visible.add(child.node_id);
+        descendants.push(child.node_id);
+      }
+    }
     for (const id of own) {
       let node = byId.get(id);
       while (node?.parent_id) {
@@ -142,10 +312,10 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [query.data, search]);
+  }, [byParent, normalizedNodes, search]);
   const visibleSelectableCount = useMemo(
     () =>
-      (query.data?.nodes ?? []).filter(
+      normalizedNodes.filter(
         (node) =>
           node.node_type === "leaf" &&
           node.selectable &&
@@ -153,7 +323,7 @@ export function MetricsCatalogSidebar({
           (!matching || matching.has(node.node_id)) &&
           (!activeOnly || node.n > 0),
       ).length,
-    [activeOnly, availableTree, matching, query.data],
+    [activeOnly, availableTree, matching, normalizedNodes],
   );
   useEffect(
     () => onVisibleCountChange?.(visibleSelectableCount),
@@ -171,9 +341,9 @@ export function MetricsCatalogSidebar({
       cache.set(id, values);
       return values;
     };
-    for (const node of query.data?.nodes ?? []) collect(node.node_id);
+    for (const node of normalizedNodes) collect(node.node_id);
     return cache;
-  }, [byParent, query.data]);
+  }, [byParent, normalizedNodes]);
   const toggleOpen = (id: string) =>
     setOpen((previous) => {
       const next = new Set(previous);
@@ -242,9 +412,14 @@ export function MetricsCatalogSidebar({
     const disabled = (node.node_type === "leaf" && !node.selectable) || scannerBlocked;
     const scannerTooltip = scannerBlocked ? "no UE cell metrics in scanner capture" : null;
     const label = cleanLabel(node.label);
-    const isSelected = node.selectable && selected.includes(node.selection ?? "");
+    const measured = node.source === "measured-catalog";
+    const selectedForNode = measured ? measuredSelected : selected;
+    const isSelected = node.selectable && selectedForNode.includes(node.selection ?? "");
+    const isActive = measured && measuredActive === node.selection;
     const canToggle =
-      (node.selectable && node.selection ? isSelected || selected.length < MAX_METRICS : false) &&
+      (node.selectable && node.selection
+        ? isSelected || (selectionCount ?? selected.length) < MAX_METRICS
+        : false) &&
       !scannerBlocked;
     const statusClass =
       node.selectable && node.n > 0
@@ -252,7 +427,7 @@ export function MetricsCatalogSidebar({
         : node.proof === "open"
           ? "status-pending"
           : "status-unavailable";
-    const showMenu = node.node_type === "metric" || (node.node_type === "leaf" && node.selectable);
+    const showMenu = node.node_type === "leaf" && node.selectable;
     const copyPayload =
       node.selection ?? node.metric_id ?? node.source ?? node.source_column ?? node.node_id;
 
@@ -326,29 +501,15 @@ export function MetricsCatalogSidebar({
     return (
       <li key={node.node_id}>
         <div
-          className={`kpi-tree-leaf ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
-          draggable={Boolean(node.selection && !disabled)}
-          onDragStart={(event) => {
-            if (!node.selection || disabled) {
-              event.preventDefault();
-              return;
-            }
-            event.stopPropagation();
-            event.dataTransfer.effectAllowed = "copy";
-            event.dataTransfer.setData(
-              MAP_METRIC_MIME,
-              JSON.stringify({
-                kind: "metric",
-                code: node.selection,
-                label,
-                unit: node.unit ?? "",
-              }),
-            );
-          }}
+          className={`kpi-tree-leaf ${isActive ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
           title={scannerTooltip ?? node.reason ?? node.source ?? label}
         >
           <span
             className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
+            onClick={() => setInfo(node)}
+            disabled={disabled}
+            aria-pressed={isSelected}
+            aria-label={t("metrics.46d8d72f28dd", { v0: label })}
             data-testid={`metric-label-${node.node_id}`}
           >
             <span
@@ -380,19 +541,21 @@ export function MetricsCatalogSidebar({
           </span>
           {/* 1.79.1 — nombre d'observations (node.n) à droite du label,
               aligné sur le pattern KPI tree-root "LTE 84 · 26 AVAIL" */}
-          <span
-            className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
-            data-testid={`metric-leaf-count-${node.node_id}`}
-          >
-            {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
-          </span>
+          {!measured && (
+            <span
+              className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+              data-testid={`metric-leaf-count-${node.node_id}`}
+            >
+              {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
+            </span>
+          )}
           {showMenu && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className="kpi-icon kpi-leaf-menu"
                   aria-label={`Visualisation ${label}`}
-                  disabled={!isSelected && selected.length >= MAX_METRICS}
+                  disabled={!isSelected && (selectionCount ?? selected.length) >= MAX_METRICS}
                   data-testid={`metric-menu-${node.node_id}`}
                   onPointerDown={(event) => event.stopPropagation()}
                   onClick={(event) => event.stopPropagation()}
@@ -407,6 +570,7 @@ export function MetricsCatalogSidebar({
                     {/* 1.80.4 — Graph réintroduit dans le menu Metrics
                         (demande user). KPI menu reste sans Graph (spec v2). */}
                     <VisualizationItems
+                      excludeGraph={measured}
                       throughput={node.unit === "Mbit/s" || node.unit === "Mbps"}
                       onIntent={(mode: VisualizationType) => {
                         if (mode === "map") onVisualizationIntent?.(node.selection!, "map");
@@ -418,7 +582,8 @@ export function MetricsCatalogSidebar({
                           mode === "table" ||
                           mode === "map"
                         ) {
-                          onVisualization(node.selection!, mode as MetricView);
+                          if (measured) onMeasuredVisualization?.(node.selection!, mode);
+                          else onVisualization(node.selection!, mode as MetricView);
                         }
                       }}
                     />

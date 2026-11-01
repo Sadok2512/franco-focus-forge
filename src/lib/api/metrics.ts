@@ -13,8 +13,22 @@ import {
   type MetricAggregate,
 } from "./metrics-schemas";
 export type { ChronogramData, ChronogramEvents } from "./metrics-schemas";
-export const getMetrics = (p: string, signal?: AbortSignal) =>
-  kpiFetch(`/projects/${encodeURIComponent(p)}/metrics`, MetricCatalogResponseSchema, signal);
+export const getMetrics = (
+  p: string,
+  captureIdsOrSignal: string[] | AbortSignal = [],
+  requestSignal?: AbortSignal,
+) => {
+  const captureIds = Array.isArray(captureIdsOrSignal) ? captureIdsOrSignal : [];
+  const signal = Array.isArray(captureIdsOrSignal) ? requestSignal : captureIdsOrSignal;
+  const query = new URLSearchParams();
+  for (const captureId of captureIds) query.append("capture_id", captureId);
+  const suffix = query.size ? `?${query}` : "";
+  return kpiFetch(
+    `/projects/${encodeURIComponent(p)}/metrics${suffix}`,
+    MetricCatalogResponseSchema,
+    signal,
+  );
+};
 /** 0.64.0 (F1) — agrégats d'une métrique NMF par groupe. */
 export const getMetricAggregate = (
   p: string,

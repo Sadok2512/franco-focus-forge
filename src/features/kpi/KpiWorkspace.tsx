@@ -428,7 +428,11 @@ function Workspace({
   const [parameterSelection, setParameterSelection] = useState<DictLeaf[]>([]);
   const [parameterGroupBy, setParameterGroupBy] = useState<GroupByMode>("operator");
   const [parameterResetTick, setParameterResetTick] = useState(0);
-  const metricsCatalog = useQuery(metricsCatalogQuery(projectId));
+  const metricsCatalog = useQuery(metricsCatalogQuery(projectId, scopeCaptureIds));
+  const presentedMeasuredCatalog = useMemo(
+    () => metricsPresentationCatalog(classifiedCatalogs.metrics),
+    [classifiedCatalogs.metrics],
+  );
   const catalogSelectableMetricCount = useMemo(
     () =>
       (metricsCatalog.data?.nodes ?? []).filter(
@@ -1124,7 +1128,12 @@ function Workspace({
                 onSearchChange={setMetricsSearch}
                 selectionCount={selectedMetrics.length}
                 onVisibleCountChange={updateVisibleCatalogMetricCount}
+                measuredEntries={catalogEntries(presentedMeasuredCatalog)}
+                measuredSelected={codes}
+                measuredActive={effectiveActive}
+                onMeasuredVisualization={visualize}
                 captureKind={captureKind}
+                captureIds={scopeCaptureIds}
               />
             ) : (
               <TreePanel
