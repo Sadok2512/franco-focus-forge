@@ -88,6 +88,15 @@ async function openCardMenu() {
   return card;
 }
 
+// La carte démarre en Histogramme : le graphe (et donc la demande de série)
+// n'apparaît qu'après ⋮ → Graphe.
+async function openGraphView() {
+  const card = await openCardMenu();
+  fireEvent.click(await screen.findByTestId("metric-view-graph"));
+  await waitFor(() => expect(getMetricSeries).toHaveBeenCalled());
+  return card;
+}
+
 describe("style de graphe", () => {
   it("le sous-menu Style change le tracé et la couleur, et les mémorise par onglet", async () => {
     await openCardMenu();
@@ -105,7 +114,7 @@ describe("style de graphe", () => {
 
 describe("glisser-déposer sur un graphe", () => {
   it("déposer une métrique l'ajoute comme série du graphe et élargit la demande", async () => {
-    const card = await openCardMenu();
+    const card = await openGraphView();
     const added = { kind: "metric", code: "cell_rsrq@0", label: "RSRQ", unit: "dB" };
     const dataTransfer = {
       types: [MAP_METRIC_MIME],
@@ -115,11 +124,6 @@ describe("glisser-déposer sur un graphe", () => {
     fireEvent.dragOver(card, { dataTransfer });
     expect(card.className).toContain("is-drop-target");
     fireEvent.drop(card, { dataTransfer });
-    console.log("CALLS", JSON.stringify(vi.mocked(getMetricSeries).mock.calls.map((c) => c.slice(0, 3))));
-    console.log("LS", window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0"));
-    await new Promise((r) => setTimeout(r, 300));
-    console.log("CALLS2", JSON.stringify(vi.mocked(getMetricSeries).mock.calls.map((c) => c.slice(0, 3))));
-    console.log("LS2", window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0"));
     await waitFor(() =>
       expect(getMetricSeries).toHaveBeenCalledWith(
         "4b7bfd50ddb6",

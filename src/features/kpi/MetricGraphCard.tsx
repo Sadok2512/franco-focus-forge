@@ -268,7 +268,12 @@ export function MetricGraphCard({
                     <DropdownMenuItem
                       key={mode}
                       data-testid={`metric-plot-${mode}`}
-                      onSelect={() => setStyle({ ...style, plot: mode })}
+                      onSelect={(event) => {
+                        // Le menu reste ouvert : la couleur se choisit juste en
+                        // dessous, sans devoir tout rouvrir.
+                        event.preventDefault();
+                        setStyle({ ...style, plot: mode });
+                      }}
                     >
                       <Icon size={14} />
                       {translate(`panel.plot_${mode}`)}
