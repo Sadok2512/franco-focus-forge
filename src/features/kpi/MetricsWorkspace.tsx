@@ -862,7 +862,8 @@ function MetricMap({
       contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
       routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
-      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
+      measurementStatus={null}
+      {...(heightKey ? { heightKey } : {})}
     >
       <DriveRsrpLayer
         map={map}
