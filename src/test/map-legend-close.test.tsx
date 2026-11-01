@@ -109,19 +109,13 @@ describe("Shared legend header controls", () => {
 });
 
 describe("Metric map legend controls", () => {
-  it("hides the points, closes to a reopen button and reopens", async () => {
+  it("closing the legend removes it without a reopen button", async () => {
     renderers.map.mockClear();
     renderMetricMap("legend-close", "cell_rsrp@0", "RSRP (LTE) @ Serving", "dBm");
     const legend = await legendOf();
-
-    fireEvent.click(within(legend).getByRole("button", { name: /Show \/ hide/ }));
     fireEvent.click(within(legend).getByRole("button", { name: /Close the/ }));
     expect(within(legend).queryByRole("button", { name: /Show \/ hide/ })).toBeNull();
-    const reopen = within(legend).getByRole("button", { name: /Reopen legend/ });
-    fireEvent.click(reopen);
-    await waitFor(() =>
-      expect(within(legend).getByRole("button", { name: /Show \/ hide/ })).toBeInTheDocument(),
-    );
+    expect(within(legend).queryByRole("button", { name: /Reopen legend/ })).toBeNull();
   });
 
   it("lists one hideable row per DCI format code with its count", async () => {

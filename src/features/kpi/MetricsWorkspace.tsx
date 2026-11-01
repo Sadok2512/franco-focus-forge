@@ -15,7 +15,6 @@ import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import {
   MapLegendHeaderActions,
   MapLegendList,
-  MapLegendReopen,
   MapLegendRow,
   MapLegendSection,
 } from "./map-legend";
@@ -620,7 +619,7 @@ function MetricMap({
           : null,
       );
     if (typeof map.setLayoutProperty === "function") {
-      map.setLayoutProperty("metrics-v3", "visibility", visible ? "visible" : "none");
+      map.setLayoutProperty("metrics-v3", "visibility", visible && !closed ? "visible" : "none");
     }
   }, [
     map,

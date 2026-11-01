@@ -19,7 +19,6 @@ import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import {
   MapLegendHeaderActions,
   MapLegendList,
-  MapLegendReopen,
   MapLegendRow,
   MapLegendSection,
   MapLegendSettings,
