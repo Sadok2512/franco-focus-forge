@@ -3,6 +3,14 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
+import {
+  MapLegendHeaderActions,
+  MapLegendList,
+  MapLegendReopen,
+  MapLegendRow,
+  MapLegendSection,
+} from "./map-legend";
+
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
@@ -269,7 +277,55 @@ export function metricMapLinkFeatures(data: MetricMapData) {
   });
 }
 
+/** Distinct categorical colours (one per code, e.g. DCI format). */
+export const CATEGORY_COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#dc2626",
+  "#9333ea",
+  "#0891b2",
+  "#db2777",
+  "#65a30d",
+  "#ea580c",
+  "#475569",
+];
+
+/** Code-valued metrics (DCI format…) are categories, not a quality scale. */
+export function isCategoricalMetric(label: string): boolean {
+  return /\bformat\b/i.test(label);
+}
+
+export function metricCategories(
+  data: MetricMapData,
+): Array<{ value: number; count: number; color: string }> {
+  const counts = new Map<number, number>();
+  for (const p of data.map_points)
+    if (typeof p.value === "number" && Number.isFinite(p.value))
+      counts.set(p.value, (counts.get(p.value) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, count], i) => ({
+      value,
+      count,
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] ?? "#94a3b8",
+    }));
+}
+
+export function categoryColorExpression(
+  categories: Array<{ value: number; color: string }>,
+): ExpressionSpecification {
+  if (!categories.length) return "#94a3b8" as unknown as ExpressionSpecification;
+  return [
+    "match",
+    ["to-number", ["get", "value"], -99999],
+    ...categories.flatMap((c) => [c.value, c.color]),
+    "#94a3b8",
+  ] as unknown as ExpressionSpecification;
+}
+
 export type MetricMapPointIdentity = {
+
   projectId: string;
   captureId: string;
   seq: number;
@@ -464,6 +520,12 @@ function MetricMap({
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
+  // Legend header controls: the points can be hidden without unmounting the
+  // layer, and the legend block itself can be closed to a single button.
+  const [visible, setVisible] = useState(true);
+  const [closed, setClosed] = useState(false);
+  const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
+
   useEffect(() => {
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
@@ -490,6 +552,16 @@ function MetricMap({
     [data],
   );
   const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  // Code-valued metrics (DCI format…) are categories: one colour per code.
+  const categories = useMemo(
+    () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
+    [data, label],
+  );
+  // A new capture or a new code set invalidates the hidden categories.
+  useEffect(() => {
+    setHiddenCategories([]);
+  }, [categories?.length]);
+
   const metricCoordinates = useMemo(
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
