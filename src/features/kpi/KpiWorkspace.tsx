@@ -521,11 +521,12 @@ function Workspace({
     });
   };
   const visualizeMetric = (code: string, view: MetricView) => {
-    // Graph, map and table are independent: showing a metric in the table never
-    // removes its existing graph/map card. Only a metric with no card yet is
-    // marked "table" (table-only).
+    // 1.130.0 — le tableau et les graphes ne s'affichent jamais en même temps :
+    // ⋮ → Tableau garde la carte graphe de la métrique en mémoire (jamais
+    // supprimée) mais ne la montre pas tant que le tableau est ouvert.
     const keepsCard =
       view === "table" && selectedMetrics.includes(code) && metricViews[code] !== "table";
+
     const nextViews = keepsCard ? metricViews : { ...metricViews, [code]: view };
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
@@ -1252,7 +1253,7 @@ function Workspace({
               />
             ) : null}
             <WorkspaceGrid
-              count={panels.length + graphMetricCount + (metricsTablePane ? 1 : 0)}
+              count={panels.length + visibleGraphMetricCount + (metricsTablePane ? 1 : 0)}
               layout={currentTab.layout}
               hidden={analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2}
               fillAvailable={mapOnlyWorkspace}
