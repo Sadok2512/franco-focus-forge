@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildMetricCellTree } from "@/features/kpi/MetricsCatalogSidebar";
+import {
+  buildMetricCellTree,
+  mergeMetricCatalogTrees,
+} from "@/features/kpi/MetricsCatalogSidebar";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 
@@ -66,6 +69,66 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
       ["leaf", "SCell 1"],
     ]);
     expect(nodes.filter((node) => node.node_type === "metric")).toHaveLength(1);
+  });
+
+  it("preserves the reference quarantine hierarchy while attaching measured metrics", () => {
+    const quarantineTech: MetricCatalogNode = {
+      ...leaf({}),
+      node_id: "ref:tech:QUARANTAINE",
+      parent_id: null,
+      label: "QUARANTAINE",
+      node_type: "tech",
+      analytics_tab: null,
+      selection: null,
+      selectable: false,
+    };
+    const quarantineMetric: MetricCatalogNode = {
+      ...leaf({}),
+      node_id: "ref:met:QUARANTAINE/UL power/Serving/Power",
+      parent_id: quarantineTech.node_id,
+      label: "Power",
+      node_type: "metric",
+      analytics_tab: null,
+      selection: null,
+      selectable: false,
+    };
+    const quarantineLeaf = leaf({
+      node_id: "legacy-quarantine-leaf",
+      parent_id: quarantineMetric.node_id,
+      label: "Power @ Serving",
+      technology: "LTE",
+    });
+    const lteTech: MetricCatalogNode = {
+      ...quarantineTech,
+      node_id: "ref:tech:LTE",
+      label: "LTE",
+    };
+    const measured = leaf({
+      node_id: "measured:LTE:LTE_RF_RSRP",
+      selection: "LTE_RF_RSRP",
+      metric_id: "LTE_RF_RSRP",
+      source_column: "LTE_RF_RSRP",
+    });
+
+    const nodes = mergeMetricCatalogTrees(
+      [lteTech, quarantineTech, quarantineMetric, quarantineLeaf],
+      [measured],
+    );
+
+    expect(nodes.filter((node) => node.node_type === "tech").map((node) => node.label)).toEqual([
+      "LTE",
+      "QUARANTAINE",
+    ]);
+    expect(nodes.find((node) => node.node_id === quarantineLeaf.node_id)?.parent_id).toBe(
+      quarantineMetric.node_id,
+    );
+    expect(nodes.find((node) => node.selection === "LTE_RF_RSRP")?.parent_id).toContain(
+      "normalized:technology:LTE:metric:",
+    );
+    expect(
+      nodes.find((node) => node.node_type === "metric" && node.node_id.includes("LTE_RF_RSRP"))
+        ?.parent_id,
+    ).toBe(lteTech.node_id);
   });
 
   it("splits a certified CELLMEAS metric into serving and neighbour groups", () => {

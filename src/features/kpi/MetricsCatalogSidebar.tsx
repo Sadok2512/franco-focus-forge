@@ -203,6 +203,42 @@ export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNo
   return result;
 }
 
+/** Keep the certified BC5 hierarchy when it is present, while attaching the
+ * calculated metrics catalogue to the same technology roots. Rebuilding the
+ * whole response with `buildMetricCellTree` would discard the synthetic
+ * category/group parents and classify QUARANTAINE leaves from their legacy
+ * `technology` field again. */
+export function mergeMetricCatalogTrees(
+  catalogNodes: MetricCatalogNode[],
+  measuredNodes: MetricCatalogNode[],
+): MetricCatalogNode[] {
+  const referenceTech = new Map(
+    catalogNodes
+      .filter((node) => node.node_type === "tech" && node.node_id.startsWith("ref:tech:"))
+      .map((node) => [cleanLabel(node.label), node.node_id]),
+  );
+  if (!referenceTech.size) return buildMetricCellTree([...catalogNodes, ...measuredNodes]);
+
+  const existingSelections = new Set(
+    catalogNodes.flatMap((node) => (node.selection ? [node.selection] : [])),
+  );
+  const measuredTree = buildMetricCellTree(
+    measuredNodes.filter((node) => !node.selection || !existingSelections.has(node.selection)),
+  );
+  const measuredTechIds = new Map(
+    measuredTree
+      .filter((node) => node.node_type === "tech")
+      .map((node) => [node.node_id, cleanLabel(node.label)]),
+  );
+  const attachedMeasured = measuredTree.flatMap((node) => {
+    if (node.node_type === "tech") return referenceTech.has(cleanLabel(node.label)) ? [] : [node];
+    const technology = node.parent_id ? measuredTechIds.get(node.parent_id) : undefined;
+    const referenceParent = technology ? referenceTech.get(technology) : undefined;
+    return [{ ...node, parent_id: referenceParent ?? node.parent_id }];
+  });
+  return [...catalogNodes, ...attachedMeasured];
+}
+
 function measuredMetricNodes(entries: Entry[]): MetricCatalogNode[] {
   return entries.map(({ techno, family, item }, order) => ({
     node_id: `measured:${techno}:${item.code}`,
@@ -290,8 +326,7 @@ export function MetricsCatalogSidebar({
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
   const query = useQuery({ ...metricsCatalogQuery(projectId, captureIds), retry: false });
   const normalizedNodes = useMemo(
-    () =>
-      buildMetricCellTree([...(query.data?.nodes ?? []), ...measuredMetricNodes(measuredEntries)]),
+    () => mergeMetricCatalogTrees(query.data?.nodes ?? [], measuredMetricNodes(measuredEntries)),
     [measuredEntries, query.data?.nodes],
   );
   const byParent = useMemo(() => {

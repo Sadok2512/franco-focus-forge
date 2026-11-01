@@ -1,3 +1,12 @@
+## 1.131.1 (patch) — Preserve the certified Metrics hierarchy — 2026-11-01 (BC1)
+
+- Keeps the BC5 Technology → Category → Group → Metric → Cell hierarchy when
+  calculated metrics are attached to the sidebar. The legacy cell-tree
+  normalizer no longer reclassifies QUARANTAINE leaves from their old
+  `technology` field or removes the QUARANTAINE root.
+- Adds a regression test for a quarantined leaf whose legacy technology is LTE.
+- SemVer front: **PATCH 1.131.1**; backend remains **0.122.0**.
+
 ## 1.131.0 (minor) — Map controls + Metrics cell catalogue + reference hierarchy — 2026-11-01 (BC1 RC + Agent BC5)
 
 Consolidates the BC1 RC Metrics-and-Map candidate (1.130.0) with the Agent BC5
