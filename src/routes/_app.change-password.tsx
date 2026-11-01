@@ -2,10 +2,21 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff, KeyRound, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import i18n from "@/lib/i18n";
 
 import { changePassword, toUserMessage } from "@/lib/api/http";
 
-export const Route = createFileRoute("/_app/change-password")({ component: ChangePasswordPage });
+export const Route = createFileRoute("/_app/change-password")({
+  head: () => ({ meta: [
+    { title: `${i18n.t("passwordChange.title")} — BC4` },
+    { name: "description", content: i18n.t("passwordChange.description") },
+    { property: "og:title", content: `${i18n.t("passwordChange.title")} — BC4` },
+    { property: "og:description", content: i18n.t("passwordChange.description") },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
+  component: ChangePasswordPage,
+});
 
 function ChangePasswordPage() {
   const { t } = useTranslation();

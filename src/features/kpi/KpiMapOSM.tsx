@@ -511,6 +511,7 @@ export function KpiMapOSM({
         </div>
       )}
       {children}
+      {mapFullscreen.failed && <div role="alert" className="absolute bottom-10 right-3 z-10 max-w-64 rounded border border-border bg-card p-2 text-xs">{translate("common.fullscreenFailed")}</div>}
       {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
       {sitesLayerEnabled && ready && (
         <SitesLayerHarness
@@ -557,6 +558,7 @@ export function KpiMapOSM({
           {mapFullscreen.level === 2 ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
         </Button>
       )}
+      {!workspace && full && <Button variant="outline" size="icon" className="absolute right-[82px] top-2 z-10 h-7 w-7 bg-card/95" aria-label={translate("mapWorkspace.restoreMap")} title={translate("mapWorkspace.restoreMap")} onClick={() => void mapFullscreen.restore()}><Minimize2 className="h-3.5 w-3.5" /></Button>}
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
       {showOperatorLegend && !workspace && (
         <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">
