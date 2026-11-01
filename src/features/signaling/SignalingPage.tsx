@@ -1069,48 +1069,6 @@ export function SignalingPage({
     }
   }, [colConfig]);
   const shownCols = visibleColumns(colConfig);
-  // Metric columns added from the catalogue: picker dialog + per-selector series.
-  const [metricPickerOpen, setMetricPickerOpen] = useState(false);
-  const metricSearchRef = useRef<HTMLInputElement | null>(null);
-  const metricCatalog = useQuery({
-    ...metricsCatalogQuery(projectId),
-    enabled: metricPickerOpen,
-    retry: false,
-  });
-  const toggleMetricColumn = (selector: string) => {
-    setColConfig((old) => {
-      if (old.metrics.some((m) => m.selector === selector))
-        return removeMetricColumn(old, selector);
-      const node = metricCatalog.data?.nodes.find((n) => n.selection === selector);
-      const label = (node?.label ?? selector)
-        .replace(/★/g, "")
-        .replace(/\s*\[[A-Z][A-Z0-9]*\s+#\d+\]\s*/g, "")
-        .trim();
-      return addMetricColumn(old, { selector, label, unit: node?.unit ?? "" });
-    });
-  };
-  const metricSelectors = colConfig.metrics.map((m) => m.selector);
-  const metricColSeries = useQuery({
-    queryKey: ["signaling-metric-cols", projectId, capture, metricSelectors],
-    enabled: !!capture && metricSelectors.length > 0,
-    queryFn: ({ signal }) => getMetricSeries(projectId, capture!, metricSelectors, signal),
-    staleTime: 60000,
-    retry: false,
-  });
-  const metricSeriesMap = useMemo(() => {
-    const map = new Map<string, { seq: number; t_rel_s: number; value: number | string }[]>();
-    for (const sel of metricSelectors) {
-      const code = sel.split("@", 1)[0];
-      const entry = metricColSeries.data?.series.find(
-        (s) => s.code === sel || s.code === code || `${s.code}@${s.cell}` === sel,
-      );
-      map.set(
-        sel,
-        [...(entry?.points ?? [])].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq),
-      );
-    }
-    return map;
-  }, [metricColSeries.data, metricSelectors]);
   // Inspector tab state is independent of selection and of every query key.
   type InspectorTab = "Payload" | "Paramètres" | "Call Flow" | "Détails" | "Hexadécimal";
   const [inspectorTab, setInspectorTab] = useState<InspectorTab>("Payload");
@@ -1206,6 +1164,48 @@ export function SignalingPage({
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
   });
   const capture = selectSignalingCapture(caps.data?.captures ?? [], sharedCapture);
+  // Metric columns added from the catalogue: picker dialog + per-selector series.
+  const [metricPickerOpen, setMetricPickerOpen] = useState(false);
+  const metricSearchRef = useRef<HTMLInputElement | null>(null);
+  const metricCatalog = useQuery({
+    ...metricsCatalogQuery(projectId),
+    enabled: metricPickerOpen,
+    retry: false,
+  });
+  const toggleMetricColumn = (selector: string) => {
+    setColConfig((old) => {
+      if (old.metrics.some((m) => m.selector === selector))
+        return removeMetricColumn(old, selector);
+      const node = metricCatalog.data?.nodes.find((n) => n.selection === selector);
+      const label = (node?.label ?? selector)
+        .replace(/★/g, "")
+        .replace(/\s*\[[A-Z][A-Z0-9]*\s+#\d+\]\s*/g, "")
+        .trim();
+      return addMetricColumn(old, { selector, label, unit: node?.unit ?? "" });
+    });
+  };
+  const metricSelectors = colConfig.metrics.map((m) => m.selector);
+  const metricColSeries = useQuery({
+    queryKey: ["signaling-metric-cols", projectId, capture, metricSelectors],
+    enabled: !!capture && metricSelectors.length > 0,
+    queryFn: ({ signal }) => getMetricSeries(projectId, capture!, metricSelectors, signal),
+    staleTime: 60000,
+    retry: false,
+  });
+  const metricSeriesMap = useMemo(() => {
+    const map = new Map<string, { seq: number; t_rel_s: number; value: number | string }[]>();
+    for (const sel of metricSelectors) {
+      const code = sel.split("@", 1)[0];
+      const entry = metricColSeries.data?.series.find(
+        (s) => s.code === sel || s.code === code || `${s.code}@${s.cell}` === sel,
+      );
+      map.set(
+        sel,
+        [...(entry?.points ?? [])].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq),
+      );
+    }
+    return map;
+  }, [metricColSeries.data, metricSelectors]);
   const signalingSummary = useQuery({
     queryKey: ["signaling-rf-summary", projectId, capture],
     enabled: !!capture,
@@ -1447,9 +1447,9 @@ export function SignalingPage({
       </span>
     );
   };
-  const metricCell = (selector: string, t: number | null) => {
+  const metricCell = (selector: string, time: number | null) => {
     const meta = colConfig.metrics.find((m) => m.selector === selector);
-    const r = radioAt(metricSeriesMap.get(selector), t);
+    const r = radioAt(metricSeriesMap.get(selector), time);
     if (!r) return <span className="text-muted-foreground">—</span>;
     const exact = r.dtS === 0;
     return (
@@ -1498,7 +1498,7 @@ export function SignalingPage({
       case "rsrp":
       case "rsrq":
       case "sinr":
-        return radioCell(c, r.t_rel_s);
+        return radioCell(c as "rsrp" | "rsrq" | "sinr", r.t_rel_s);
       case "size_bytes":
         return shown(r.size_bytes);
       case "ecgi":
