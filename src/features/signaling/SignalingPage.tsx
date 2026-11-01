@@ -23,6 +23,11 @@ import {
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
+import {
+  MapLegendList,
+  MapLegendRow,
+  MapLegendSection,
+} from "@/features/kpi/map-legend";
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
 import { resolveNetworkMapCenter } from "@/features/map/map-center";
 import { selectSignalingCapture } from "./capture-selection";
@@ -953,37 +958,26 @@ function SignalMap({
         nPoints={data.positioned_count}
         layersLegend={
           <div className="space-y-3">
-            <section className="space-y-1">
-              <div className="font-semibold">{t("mapWorkspace.signalingPoints")}</div>
-              {layers.map((protocol, i) => (
-                <div key={protocol} className="flex items-center gap-2">
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full border border-border"
-                    style={{ background: colors[i] }}
+            <MapLegendSection title={t("mapWorkspace.signalingPoints")}>
+              <MapLegendList label={t("mapWorkspace.signalingPoints")}>
+                {layers.map((protocol, i) => (
+                  <MapLegendRow
+                    key={protocol}
+                    color={colors[i] ?? ""}
+                    label={protocol}
+                    meta={(protocolTotals.get(protocol) ?? 0).toLocaleString()}
                   />
-                  <span className="flex-1 truncate">{protocol}</span>
-                  <span className="tabular-nums text-muted-foreground">
-                    {(protocolTotals.get(protocol) ?? 0).toLocaleString()}
-                  </span>
-                </div>
-              ))}
-            </section>
-            <section className="space-y-1 border-t pt-2">
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-0 w-5 shrink-0 border-t-[3px]"
-                  style={{ borderColor: ROUTE_COLOR }}
-                />
-                <span className="flex-1">{t("mapWorkspace.gpsRoute")}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full border-2"
-                  style={{ borderColor: "var(--signaling-cursor)" }}
-                />
-                <span className="flex-1">{t("mapWorkspace.selectedPosition")}</span>
-              </div>
-            </section>
+                ))}
+              </MapLegendList>
+            </MapLegendSection>
+            <MapLegendList className="space-y-1 border-t pt-2">
+              <MapLegendRow swatch="line" color={ROUTE_COLOR} label={t("mapWorkspace.gpsRoute")} />
+              <MapLegendRow
+                swatch="ring"
+                color="var(--signaling-cursor)"
+                label={t("mapWorkspace.selectedPosition")}
+              />
+            </MapLegendList>
             {/* The drive RSRP classes and cell links are portalled in by the layer. */}
             <div ref={setLegendHost} />
           </div>
