@@ -1378,6 +1378,8 @@
     "metricUnavailable": "Metric unavailable",
     "metricMissing": "Metric missing from the current catalogue",
     "lteMissing": "LTE is absent from the selected source",
-    "nrMissing": "NR is absent from the selected source"
+    "nrMissing": "NR is absent from the selected source",
+    "reload": "Reload",
+    "saveHint": "Saves the current graphs, maps and table with their settings."
   }
 }

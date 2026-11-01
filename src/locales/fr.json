@@ -1377,6 +1377,8 @@
     "metricUnavailable": "Métrique non disponible",
     "metricMissing": "Métrique absente du catalogue courant",
     "lteMissing": "LTE absent de la source sélectionnée",
-    "nrMissing": "NR absent de la source sélectionnée"
+    "nrMissing": "NR absent de la source sélectionnée",
+    "reload": "Recharger",
+    "saveHint": "Enregistre les graphes, cartes et tableau actuels avec leurs réglages."
   }
 }
