@@ -515,7 +515,8 @@ function Workspace({
     // Graph, map and table are independent: showing a metric in the table never
     // removes its existing graph/map card. Only a metric with no card yet is
     // marked "table" (table-only).
-    const keepsCard = view === "table" && !!metricViews[code] && metricViews[code] !== "table";
+    const keepsCard =
+      view === "table" && selectedMetrics.includes(code) && metricViews[code] !== "table";
     const nextViews = keepsCard ? metricViews : { ...metricViews, [code]: view };
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
