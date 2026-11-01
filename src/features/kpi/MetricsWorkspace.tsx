@@ -632,6 +632,7 @@ function MetricMap({
     categories,
     hiddenCategories,
     visible,
+    closed,
   ]);
   useEffect(() => {
     if (!map) return;
