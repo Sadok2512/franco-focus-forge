@@ -65,7 +65,6 @@
     "appDescription": "Plateforme de benchmark radio LTE/NR/EN-DC.",
     "all": "Tous",
     "none": "Aucun",
-    "reset": "Réinitialiser",
     "clear": "Effacer",
     "search": "Rechercher…",
     "noOptions": "Aucune option",
@@ -1113,7 +1112,6 @@
     "legendClose": "Fermer la légende {{metric}}",
     "legendReopen": "Rouvrir la légende",
     "closeLegend": "Fermer la légende",
-
     "signalingPoints": "Points signalisation",
     "gpsRoute": "Trajet GPS",
     "selectedPosition": "Position sélectionnée",
@@ -1136,7 +1134,8 @@
       "measurements": "Mesures RF",
       "metrics": "Métriques",
       "noMetrics": "Aucune autre métrique publiée pour ce point."
-    }
+    },
+    "gpsPoints": "Points GPS"
   },
   "settingsGeo": {
     "cellReferenceDetectedTitle": "Référentiel cellulaire détecté",

@@ -146,6 +146,8 @@ function readPrefs(store: string, defaults: Prefs): Prefs {
 }
 
 /** Toggleable drive RSRP points with legend and per-class visibility. */
+const GPS_POINT_COLOR = "#9ca3af";
+
 export function DriveRsrpLayer({
   map,
   projectId,
@@ -563,8 +565,7 @@ export function DriveRsrpLayer({
       }
       if (!map.getLayer(LAYER)) return;
       map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
-      map.setPaintProperty(LAYER, "circle-opacity", hidePoints ? 0 : prefs.opacity / 100);
-      if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
+      applyGpsOnly();
       map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
       map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setFilter(SELECTED_LAYER, [
@@ -709,8 +710,7 @@ export function DriveRsrpLayer({
       map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
     if (map.getLayer(LINK_LAYER_PROBABLE))
       map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
-    map.setPaintProperty(LAYER, "circle-opacity", hidePoints ? 0 : prefs.opacity / 100);
-    if (hidePoints) map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
+    applyGpsOnly();
     map.setFilter(
       LAYER,
       prefs.hidden.length
@@ -855,6 +855,17 @@ export function DriveRsrpLayer({
     ],
   );
 
+  // KPI maps show the drive trajectory as neutral grey GPS points below the
+  // metric layer: the RSRP colours and legend belong to Signaling only.
+  function applyGpsOnly() {
+    if (!map?.getLayer(LAYER)) return;
+    map.setPaintProperty(LAYER, "circle-opacity", prefs.opacity / 100);
+    if (!hidePoints) return;
+    map.setPaintProperty(LAYER, "circle-color", GPS_POINT_COLOR);
+    map.setPaintProperty(LAYER, "circle-stroke-opacity", 0);
+    if (selectionLayerId && map.getLayer(selectionLayerId)) map.moveLayer(LAYER, selectionLayerId);
+  }
+
   const status = !prefs.on
     ? null
     : (!embedded && captures.isError) || analysis.isError || (needsGps && gps.isError)
@@ -926,13 +937,27 @@ export function DriveRsrpLayer({
   const legendPanel = legendHost
     ? createPortal(
         <section className="space-y-2" data-map-drive-rsrp-legend="">
-          <div className="font-semibold">{t("mapWorkspace.driveRsrp")}</div>
-          {status && (
-            <p role="status" className="break-words text-muted-foreground">
-              {status}
-            </p>
+          {hidePoints ? (
+            <MapLegendList label={t("mapWorkspace.gpsPoints")}>
+              <MapLegendRow
+                color={GPS_POINT_COLOR}
+                label={t("mapWorkspace.gpsPoints")}
+                meta={prefs.on ? features.length : ""}
+                checked={prefs.on}
+                onToggle={() => update({ on: !prefs.on })}
+              />
+            </MapLegendList>
+          ) : (
+            <>
+              <div className="font-semibold">{t("mapWorkspace.driveRsrp")}</div>
+              {status && (
+                <p role="status" className="break-words text-muted-foreground">
+                  {status}
+                </p>
+              )}
+              {legendRows}
+            </>
           )}
-          {legendRows}
         </section>,
         legendHost,
       )
