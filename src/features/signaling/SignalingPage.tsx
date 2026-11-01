@@ -2206,8 +2206,21 @@ export function SignalingPage({
                           <thead>
                             <tr>
                               {shownCols.map((c) => {
-                                const def = COLUMNS.find((d) => d.key === c)!;
-                                const label = t(`sigTable.col.${c}`);
+                                const metricMeta = isMetricCol(c)
+                                  ? colConfig.metrics.find(
+                                      (m) => metricColId(m.selector) === c,
+                                    )
+                                  : undefined;
+                                const def = COLUMNS.find((d) => d.key === c) ?? {
+                                  key: c as ColKey,
+                                  available: true,
+                                  numeric: true,
+                                };
+                                const label = metricMeta
+                                  ? metricMeta.unit
+                                    ? `${metricMeta.label} (${metricMeta.unit})`
+                                    : metricMeta.label
+                                  : t(`sigTable.col.${c}`);
                                 const active = def.sortKey && sort === def.sortKey;
                                 return (
                                   <th
@@ -2281,7 +2294,13 @@ export function SignalingPage({
                                       key={c}
                                       data-col={c}
                                       className={
-                                        COLUMNS.find((d) => d.key === c)!.numeric
+                                        (
+                                          COLUMNS.find((d) => d.key === c) ?? {
+                                            key: c as ColKey,
+                                            available: true,
+                                            numeric: true,
+                                          }
+                                        ).numeric
                                           ? "num"
                                           : undefined
                                       }
