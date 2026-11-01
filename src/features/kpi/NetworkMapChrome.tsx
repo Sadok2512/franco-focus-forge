@@ -852,7 +852,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
 
       {/* Bottom — status bar centred horizontally, state dot at the right. */}
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 flex items-end justify-center ${compact ? "right-14" : "right-[150px]"}`}
+        className="pointer-events-none absolute bottom-3 left-3 right-14 flex items-end justify-center"
       >
         <div
           data-testid="map-workspace-statusbar"
