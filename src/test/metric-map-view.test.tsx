@@ -344,3 +344,14 @@ describe("Map selection keeps its own panel", () => {
     await waitFor(() => expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table"));
   });
 });
+
+import { isCategoricalMetric, metricCategories } from "@/features/kpi/MetricsWorkspace";
+describe("categorical metric colours", () => {
+  it("treats DCI format as categories with one colour per code", () => {
+    expect(isCategoricalMetric("DCI format (bloc LTE) @ SCell 3")).toBe(true);
+    expect(isCategoricalMetric("LTE RSRP")).toBe(false);
+    const cats = metricCategories({ map_points: [{ value: 2 }, { value: 0 }, { value: 2 }] } as never);
+    expect(cats.map((c) => [c.value, c.count])).toEqual([[0, 1], [2, 2]]);
+    expect(cats[0]!.color).not.toBe(cats[1]!.color);
+  });
+});

@@ -279,6 +279,39 @@ export function activeMetricMapServingLink(
     : [];
 }
 
+/** Distinct categorical colours (one per code, e.g. DCI format). */
+export const CATEGORY_COLORS = [
+  "#2563eb", "#16a34a", "#f59e0b", "#dc2626", "#9333ea",
+  "#0891b2", "#db2777", "#65a30d", "#ea580c", "#475569",
+];
+
+/** Code-valued metrics (DCI format…) are categories, not a quality scale. */
+export function isCategoricalMetric(label: string): boolean {
+  return /\bformat\b/i.test(label);
+}
+
+export function metricCategories(data: MetricMapData): Array<{ value: number; count: number; color: string }> {
+  const counts = new Map<number, number>();
+  for (const p of data.map_points)
+    if (typeof p.value === "number" && Number.isFinite(p.value))
+      counts.set(p.value, (counts.get(p.value) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, count], i) => ({ value, count, color: CATEGORY_COLORS[i % CATEGORY_COLORS.length]! }));
+}
+
+export function categoryColorExpression(
+  categories: Array<{ value: number; color: string }>,
+): ExpressionSpecification {
+  if (!categories.length) return "#94a3b8" as unknown as ExpressionSpecification;
+  return [
+    "match",
+    ["to-number", ["get", "value"], -99999],
+    ...categories.flatMap((c) => [c.value, c.color]),
+    "#94a3b8",
+  ] as unknown as ExpressionSpecification;
+}
+
 function metricColorExpression(
   minValue: number,
   maxValue: number,
@@ -430,6 +463,10 @@ function MetricMap({
     [data],
   );
   const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  const categories = useMemo(
+    () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
+    [data, label],
+  );
   const metricCoordinates = useMemo(
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
@@ -455,7 +492,9 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        metricColorExpression(minValue, maxValue, preferences.palette),
+        categories
+          ? categoryColorExpression(categories)
+          : metricColorExpression(minValue, maxValue, preferences.palette),
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -471,8 +510,10 @@ function MetricMap({
         preferences.palette,
         preferences.pointSize,
       );
+      if (categories)
+        map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
     }
-  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
+  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize, categories]);
   useEffect(() => {
     if (!map) return;
     let disposed = false;
@@ -550,15 +591,33 @@ function MetricMap({
             <Settings2 size={14} />
           </button>
         </div>
-        <span
-          className="kpi-metric-map-scale"
-          aria-hidden="true"
-          style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
-        />
-        <span className="kpi-metric-map-scale-labels">
-          <span>{fmt(minValue)}</span>
-          <span>{fmt(maxValue)}</span>
-        </span>
+        {categories ? (
+          <ul className="space-y-1" data-testid="metric-map-categories">
+            {categories.map((c) => (
+              <li key={c.value} className="flex items-center gap-2 text-xs">
+                <span
+                  aria-hidden="true"
+                  className="inline-block h-3 w-3 rounded-full"
+                  style={{ background: c.color }}
+                />
+                <span className="flex-1">{fmt(c.value)}</span>
+                <span className="tabular-nums text-muted-foreground">{c.count}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <>
+            <span
+              className="kpi-metric-map-scale"
+              aria-hidden="true"
+              style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+            />
+            <span className="kpi-metric-map-scale-labels">
+              <span>{fmt(minValue)}</span>
+              <span>{fmt(maxValue)}</span>
+            </span>
+          </>
+        )}
         {settingsOpen && (
           <div className="kpi-metric-map-settings" data-testid="metric-map-settings">
             <label>
