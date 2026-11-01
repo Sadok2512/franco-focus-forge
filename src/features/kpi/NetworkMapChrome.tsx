@@ -589,19 +589,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* 1.126.3 BC3 — Overlay « Zoomez pour voir les cellules » quand
-          cellsEnabled est vrai mais le niveau de zoom courant est en
-          dessous du seuil CELLS_VISIBLE_ZOOM. Visible et centré, pas
-          seulement en tooltip du bouton. */}
-      {cellsEnabled && !cellsAvailable && (
-        <div
-          role="status"
-          className={`pointer-events-none absolute left-1/2 top-20 z-20 -translate-x-1/2 rounded-full border px-3 py-1.5 text-[11px] font-medium text-muted-foreground ${glass}`}
-        >
-          {t("mapSites.zoomToSeeCells")}
-        </div>
-      )}
-
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (
         <div
