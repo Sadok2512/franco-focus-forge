@@ -137,7 +137,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     setPanelTab("rf");
     setPanelOpen(true);
   }, [selectionTick]);
-  const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -289,7 +288,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const startMeasure = (next: MeasureMode) => {
     setPoints([]);
     setMode((m) => (m === next ? "none" : next));
-    setMenu(null);
   };
 
   const hits = useMemo(
