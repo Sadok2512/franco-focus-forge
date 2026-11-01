@@ -980,9 +980,9 @@ function MenuCheck({
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <span className="flex flex-col items-center leading-tight">
+    <span className="flex items-baseline gap-1 leading-none">
       <strong className="text-sm tabular-nums">{value}</strong>
-      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <span className="text-[10px] text-muted-foreground">: {label}</span>
     </span>
   );
 }
