@@ -947,58 +947,6 @@ function Check({
   );
 }
 
-function Dropdown({
-  label,
-  open,
-  onOpen,
-  children,
-  up = false,
-}: {
-  label: ReactNode;
-  open: boolean;
-  onOpen: (o: boolean) => void;
-  children: ReactNode;
-  up?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && onOpen(false);
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open, onOpen]);
-  return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => onOpen(!open)}
-        className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold hover:bg-muted"
-      >
-        {label}
-        <ChevronDown className="h-3 w-3 opacity-60" />
-      </button>
-      {open && (
-        <div
-          className={`fixed z-50 min-w-44 rounded-xl border bg-popover p-1 shadow-xl`}
-          style={dropdownPos(ref.current, up)}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Fixed positioning escapes the toolbar's overflow clipping. */
-function dropdownPos(el: HTMLElement | null, up: boolean): React.CSSProperties {
-  const r = el?.getBoundingClientRect();
-  if (!r) return {};
-  return up
-    ? { left: r.left, bottom: window.innerHeight - r.top + 6 }
-    : { left: r.left, top: r.bottom + 6 };
-}
-
 function MenuCheck({
   label,
   checked,
@@ -1033,15 +981,6 @@ function Stat({ value, label }: { value: string; label: string }) {
       <strong className="text-sm tabular-nums">{value}</strong>
       <span className="text-[10px] text-muted-foreground">: {label}</span>
     </span>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <strong className="tabular-nums">{value}</strong>
-    </div>
   );
 }
 
