@@ -502,6 +502,7 @@ function MetricMap({
   onRetry,
   routeCoordinates = [],
   dropContext,
+  heightKey,
 }: {
   data?: MetricMapData | undefined;
   projectId: string;
