@@ -138,7 +138,9 @@ function AddedMetric({
       });
     }
     map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-    map.setFilter(id, hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null);
+    if (typeof map.setFilter === "function")
+      map.setFilter(id, hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null);
+
   }, [map, id, features, visible, hidden]);
   useEffect(
     () => () => {
