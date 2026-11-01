@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 
 import { Button } from "@/components/ui/button";
-import { getProcedures } from "@/lib/api/client";
+import { getProcedures, resultsForProcedureMeasure } from "@/lib/api/client";
 import { KpiMapOSM } from "./KpiMapOSM";
 
 const SOURCE_ID = "procedure-evidence";
@@ -25,20 +25,31 @@ export function ProcedureMap({
   projectId,
   captureId,
   procedureTypes,
+  measure,
   label,
 }: {
   projectId: string;
   captureId: string | undefined;
   procedureTypes: string[];
+  measure?: string | undefined;
   label: string;
 }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [map, setMap] = useState<MlMap | null>(null);
+  const results = resultsForProcedureMeasure(measure);
   const query = useQuery({
-    queryKey: ["procedure-map", projectId, captureId, procedureTypes],
+    queryKey: ["procedure-map", projectId, captureId, procedureTypes, results],
     queryFn: ({ signal }) =>
-      getProcedures(projectId, captureId ? [captureId] : [], procedureTypes, 1, 500, signal),
+      getProcedures(
+        projectId,
+        captureId ? [captureId] : [],
+        procedureTypes,
+        results,
+        1,
+        500,
+        signal,
+      ),
     enabled: !!captureId && procedureTypes.length > 0,
     staleTime: 60_000,
     retry: false,

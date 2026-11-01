@@ -11,7 +11,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getProcedures, type ProcedureRow } from "@/lib/api/client";
+import {
+  getProcedures,
+  resultsForProcedureMeasure,
+  type ProcedureRow,
+} from "@/lib/api/client";
 
 const PAGE_SIZE = 100;
 
@@ -24,6 +28,7 @@ export function ProcedureExplorer({
   captureIds,
   name,
   procedureTypes,
+  measure,
   open,
   onOpenChange,
   onOpenSignaling,
@@ -32,16 +37,18 @@ export function ProcedureExplorer({
   captureIds: string[];
   name: string;
   procedureTypes: string[];
+  measure?: string | undefined;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onOpenSignaling: (row: ProcedureRow) => void;
 }) {
   const { t } = useTranslation();
   const [page, setPage] = useState(1);
+  const results = resultsForProcedureMeasure(measure);
   const query = useQuery({
-    queryKey: ["procedures", projectId, captureIds, procedureTypes, page, PAGE_SIZE],
+    queryKey: ["procedures", projectId, captureIds, procedureTypes, results, page, PAGE_SIZE],
     queryFn: ({ signal }) =>
-      getProcedures(projectId, captureIds, procedureTypes, page, PAGE_SIZE, signal),
+      getProcedures(projectId, captureIds, procedureTypes, results, page, PAGE_SIZE, signal),
     enabled: open && captureIds.length > 0 && procedureTypes.length > 0,
     staleTime: 60_000,
     retry: false,

@@ -327,6 +327,7 @@ export function KpiGraphCard({
             projectId={projectId}
             captureId={captureId}
             procedureTypes={entry.item.procedure_types}
+            measure={entry.item.procedure_measure}
             label={entry.item.name}
           />
         ) : (

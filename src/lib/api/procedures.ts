@@ -179,6 +179,7 @@ export function procedureCatalogAsKpiCatalog(catalog: ProcedureCatalog): Project
           map_supported: item.map_supported,
           procedure_counts: item.counts,
           procedure_code: item.code,
+          procedure_measure: item.measure,
           replaces_code: item.replaces_code ?? undefined,
         })),
       })),
@@ -243,12 +244,14 @@ export async function getProcedures(
   projectId: string,
   captureIds: string[],
   procedureTypes: string[],
+  results: string[],
   page: number,
   size: number,
   signal?: AbortSignal,
 ): Promise<ProcedureList> {
   const query = capturesQuery(captureIds);
   for (const type of procedureTypes) query.append("procedure_type", type);
+  for (const result of results) query.append("result", result);
   query.set("page", String(page));
   query.set("size", String(size));
   return kpiFetch(
@@ -256,4 +259,12 @@ export async function getProcedures(
     ProcedureListSchema,
     signal,
   );
+}
+
+export function resultsForProcedureMeasure(measure: string | undefined): string[] {
+  if (measure === "success") return ["SUCCESS"];
+  if (measure === "failures")
+    return ["FAILURE", "ABNORMAL_RELEASE", "DROP", "TIMEOUT"];
+  if (measure === "unknown") return ["ATTEMPT", "UNKNOWN"];
+  return [];
 }

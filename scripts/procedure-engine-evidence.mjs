@@ -74,7 +74,8 @@ await setupMenu.waitFor();
 await setupMenu.getByRole("menuitem", { name: /Graph|Graphe/ }).click();
 const graph = page.locator('article[data-code="LTE_RRC_SETUP_SR"]');
 await graph.waitFor({ timeout: 120_000 });
-await graph.locator('[data-status="Available"], .kpi-plot').first().waitFor({ timeout: 120_000 });
+await graph.locator(".kpi-plot canvas").waitFor({ timeout: 120_000 });
+await page.locator('[role="menu"]').waitFor({ state: "hidden" });
 await page.screenshot({ path: `${out}01-kpi-procedure-graph.png`, fullPage: true });
 
 await setupLeaf.locator("button.kpi-leaf-menu").click();
@@ -96,6 +97,9 @@ const map = page.locator('article[data-code="LTE_RACH_FAILURES"]');
 await map.waitFor({ timeout: 120_000 });
 await map.locator("canvas").first().waitFor({ timeout: 120_000 });
 await map.getByTestId("procedure-map-count").waitFor({ timeout: 120_000 });
+const mapCount = await map.getByTestId("procedure-map-count").innerText();
+if (!/^(?:1 geolocated \/ 1 procedures|1 procédures géolocalisées sur 1)$/.test(mapCount))
+  throw new Error(`failure map population mismatch: ${mapCount}`);
 await page.screenshot({ path: `${out}03-procedure-map.png`, fullPage: true });
 
 const result = {
@@ -105,6 +109,7 @@ const result = {
   directClickPanelsBefore: beforeDirectClick,
   directClickPanelsAfter: afterDirectClick,
   tableRows,
+  mapCount,
   procedureResponses,
   apiErrors,
   consoleErrors,

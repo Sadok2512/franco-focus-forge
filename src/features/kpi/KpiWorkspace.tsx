@@ -1528,6 +1528,7 @@ function Workspace({
         captureIds={analyticCaptureIds}
         name={procedureExplorerEntry?.item.name ?? ""}
         procedureTypes={procedureExplorerEntry?.item.procedure_types ?? []}
+        measure={procedureExplorerEntry?.item.procedure_measure}
         open={procedureExplorerEntry != null}
         onOpenChange={(open) => {
           if (!open) setProcedureExplorerCode(null);

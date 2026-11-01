@@ -283,6 +283,7 @@ export {
   getProcedureCatalog,
   getProcedureKpi,
   getProcedures,
+  resultsForProcedureMeasure,
   procedureCatalogAsKpiCatalog,
 } from "./procedures";
 export type { ProcedureCatalog, ProcedureList, ProcedureRow } from "./procedures";

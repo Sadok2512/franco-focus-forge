@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { procedureCatalogAsKpiCatalog, ProcedureCatalogSchema } from "@/lib/api/procedures";
+import {
+  procedureCatalogAsKpiCatalog,
+  ProcedureCatalogSchema,
+  resultsForProcedureMeasure,
+} from "@/lib/api/procedures";
 import { mergeKpiCatalogs } from "@/features/kpi/workspace-model";
 import type { ProjectKpiCatalog } from "@/lib/api/project-kpi-schemas";
 
@@ -115,8 +119,21 @@ describe("procedure KPI catalogue adapter", () => {
       code: "RRC_RATE",
       name: "RRC Rate",
       procedure_code: "PROC_LTE_HO_SUCCESS_RATE",
+      procedure_measure: "rate",
       source: "procedure-v1",
       status: "AVAILABLE",
     });
+  });
+
+  it("maps KPI measures to explicit procedure outcomes", () => {
+    expect(resultsForProcedureMeasure("success")).toEqual(["SUCCESS"]);
+    expect(resultsForProcedureMeasure("failures")).toEqual([
+      "FAILURE",
+      "ABNORMAL_RELEASE",
+      "DROP",
+      "TIMEOUT",
+    ]);
+    expect(resultsForProcedureMeasure("unknown")).toEqual(["ATTEMPT", "UNKNOWN"]);
+    expect(resultsForProcedureMeasure("rate")).toEqual([]);
   });
 });
