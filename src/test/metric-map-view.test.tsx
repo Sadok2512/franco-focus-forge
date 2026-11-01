@@ -93,11 +93,22 @@ describe("Map selection keeps its own panel", () => {
     );
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
-    expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
+    // 1.130.0 — le tableau est ouvert : aucune carte graphe n'est rendue.
+    expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("ci_rs_snr@1");
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
     expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table");
     expect(screen.queryByTestId("metrics-capture-sheet-open")).toBeNull();
+    // 1.130.0 — le graphe n'est pas supprimé : refermer le tableau le rend.
+    fireEvent.keyDown(
+      within(screen.getByTestId("metrics-table-panel")).getByTestId("workspace-panel-menu"),
+      { key: "Enter" },
+    );
+    fireEvent.click(await screen.findByTestId("metrics-table-remove"));
+    await waitFor(() =>
+      expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1"),
+    );
   });
+
 
   it("renders 4,935 coloured raw points, the metric legend and the overlay menu", async () => {
     renderers.map.mockClear();

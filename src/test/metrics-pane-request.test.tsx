@@ -55,7 +55,7 @@ function mount(props: {
 }
 
 describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)", () => {
-  it("⋮ → Tableau (paneRequest) ouvre le grand tableau alors que le mode mémorisé est charts", async () => {
+  it("⋮ → Tableau (paneRequest) ouvre le grand tableau et retire les cartes graphe", async () => {
     window.localStorage.removeItem("bc3.metrics.pane");
     mount({ paneRequest: 1 });
     await waitFor(
@@ -64,8 +64,8 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
       },
       { timeout: 3000 },
     );
-    // Adding the table keeps the graphs: both panels coexist.
-    expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
+    // 1.130.0 — tableau et graphes ne s'affichent jamais en même temps.
+    expect(screen.queryByTestId("metrics-charts-grid")).toBeNull();
   });
 
   it("closing the table panel keeps the graphs", async () => {
@@ -79,15 +79,19 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
     expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
   });
 
-  it("Add Table from one graph opens the independent table without removing that graph", async () => {
+  it("⋮ → Tableau depuis un graphe ouvre le tableau, et le graphe revient à sa fermeture", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "charts");
     mount({});
     const graph = await screen.findByTestId("metrics-charts-grid");
     fireEvent.keyDown(within(graph).getByTestId("workspace-panel-menu"), { key: "Enter" });
     fireEvent.click(await screen.findByTestId("metric-open-table"));
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
+    // La carte graphe n'est pas supprimée : elle est seulement masquée.
+    expect(screen.queryByTestId("metrics-charts-grid")).toBeNull();
+    await removeTable();
     expect(screen.getByTestId("metrics-charts-grid")).toBeVisible();
   });
+
 
   it("⋮ → Graphique (cardViewRequest) ramène les cartes alors que le mode mémorisé est table", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "table");
