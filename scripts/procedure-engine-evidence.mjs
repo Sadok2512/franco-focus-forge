@@ -98,7 +98,9 @@ await map.waitFor({ timeout: 120_000 });
 await map.locator("canvas").first().waitFor({ timeout: 120_000 });
 await map.getByTestId("procedure-map-count").waitFor({ timeout: 120_000 });
 const mapCount = await map.getByTestId("procedure-map-count").innerText();
-if (!/^(?:1 geolocated \/ 1 procedures|1 procédures géolocalisées sur 1)$/.test(mapCount))
+// The sole failed RACH procedure has no GPS fix.  The map must keep the
+// certified procedure count while refusing to invent a marker.
+if (!/^(?:0 geolocated \/ 1 procedures|0 procédures géolocalisées sur 1)$/.test(mapCount))
   throw new Error(`failure map population mismatch: ${mapCount}`);
 await page.screenshot({ path: `${out}03-procedure-map.png`, fullPage: true });
 
