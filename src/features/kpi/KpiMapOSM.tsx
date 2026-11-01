@@ -224,6 +224,18 @@ export function KpiMapOSM({
         }
       : undefined;
   const panelWidth = useContext(MapPanelWidthContext);
+  // Map height preference (Settings dialog): persisted per workspace scope,
+  // applied only in the normal in-frame mode — fullscreen and wide keep their
+  // own sizing.
+  const [mapHeight, setMapHeight] = useState<MapHeightSetting>(() =>
+    heightKey ? readMapHeight(heightKey) : "default",
+  );
+  const changeMapHeight = (value: MapHeightSetting) => {
+    setMapHeight(value);
+    if (heightKey) writeMapHeight(heightKey, value);
+  };
+  const heightPx =
+    workspace && !full && mapHeight !== "default" ? MAP_HEIGHT_PX[mapHeight] : undefined;
   const [wide, setWide] = useState(false);
   const [wideBounds, setWideBounds] = useState({ top: 56, height: 280 });
   const toggleWide = () => {
