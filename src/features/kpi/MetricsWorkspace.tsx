@@ -3,6 +3,14 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
+import {
+  MapLegendHeaderActions,
+  MapLegendList,
+  MapLegendReopen,
+  MapLegendRow,
+  MapLegendSection,
+} from "./map-legend";
+
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
@@ -269,7 +277,55 @@ export function metricMapLinkFeatures(data: MetricMapData) {
   });
 }
 
+/** Distinct categorical colours (one per code, e.g. DCI format). */
+export const CATEGORY_COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#dc2626",
+  "#9333ea",
+  "#0891b2",
+  "#db2777",
+  "#65a30d",
+  "#ea580c",
+  "#475569",
+];
+
+/** Code-valued metrics (DCI format…) are categories, not a quality scale. */
+export function isCategoricalMetric(label: string): boolean {
+  return /\bformat\b/i.test(label);
+}
+
+export function metricCategories(
+  data: MetricMapData,
+): Array<{ value: number; count: number; color: string }> {
+  const counts = new Map<number, number>();
+  for (const p of data.map_points)
+    if (typeof p.value === "number" && Number.isFinite(p.value))
+      counts.set(p.value, (counts.get(p.value) ?? 0) + 1);
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, count], i) => ({
+      value,
+      count,
+      color: CATEGORY_COLORS[i % CATEGORY_COLORS.length] ?? "#94a3b8",
+    }));
+}
+
+export function categoryColorExpression(
+  categories: Array<{ value: number; color: string }>,
+): ExpressionSpecification {
+  if (!categories.length) return "#94a3b8" as unknown as ExpressionSpecification;
+  return [
+    "match",
+    ["to-number", ["get", "value"], -99999],
+    ...categories.flatMap((c) => [c.value, c.color]),
+    "#94a3b8",
+  ] as unknown as ExpressionSpecification;
+}
+
 export type MetricMapPointIdentity = {
+
   projectId: string;
   captureId: string;
   seq: number;
@@ -464,6 +520,12 @@ function MetricMap({
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
+  // Legend header controls: the points can be hidden without unmounting the
+  // layer, and the legend block itself can be closed to a single button.
+  const [visible, setVisible] = useState(true);
+  const [closed, setClosed] = useState(false);
+  const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
+
   useEffect(() => {
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
@@ -490,6 +552,16 @@ function MetricMap({
     [data],
   );
   const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  // Code-valued metrics (DCI format…) are categories: one colour per code.
+  const categories = useMemo(
+    () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
+    [data, label],
+  );
+  // A new capture or a new code set invalidates the hidden categories.
+  useEffect(() => {
+    setHiddenCategories([]);
+  }, [categories?.length]);
+
   const metricCoordinates = useMemo(
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
@@ -515,7 +587,9 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        metricColorExpression(minValue, maxValue, preferences.palette),
+        categories
+          ? categoryColorExpression(categories)
+          : metricColorExpression(minValue, maxValue, preferences.palette),
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -531,8 +605,33 @@ function MetricMap({
         preferences.palette,
         preferences.pointSize,
       );
+      if (categories && typeof map.setPaintProperty === "function")
+        map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
     }
-  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
+    // Legend controls: hidden categories are filtered out and the visibility
+    // switch hides every point without unmounting the layer.
+    if (typeof map.setFilter === "function")
+      map.setFilter(
+        "metrics-v3",
+        hiddenCategories.length
+          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+          : null,
+      );
+    if (typeof map.setLayoutProperty === "function")
+      map.setLayoutProperty("metrics-v3", "visibility", visible ? "visible" : "none");
+  }, [
+    map,
+    features,
+    links,
+    minValue,
+    maxValue,
+    preferences.palette,
+    preferences.pointSize,
+    categories,
+    hiddenCategories,
+    visible,
+  ]);
+
   useEffect(() => {
     if (!map) return;
     const click = (e: import("maplibre-gl").MapLayerMouseEvent) => {
@@ -594,30 +693,68 @@ function MetricMap({
   // Signaling map — nothing floats over the map itself.
   const legend = (
     <div className="space-y-1" data-testid="metric-map-legend">
-      <div className="kpi-metric-map-legend-title">
-          <strong>
-            {label}
-            {unit ? ` · ${unit}` : ""}
-          </strong>
-          <button
-            ref={settingsButtonRef}
-            type="button"
-            aria-label={translate("metrics.mapSettings")}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((open) => !open)}
-          >
-            <Settings2 size={14} />
-          </button>
-        </div>
-        <span
-          className="kpi-metric-map-scale"
-          aria-hidden="true"
-          style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+      {closed ? (
+        <MapLegendReopen
+          label={`${label}${unit ? ` · ${unit}` : ""}`}
+          openLabel={translate("mapWorkspace.legendReopen")}
+          onOpen={() => setClosed(false)}
         />
-        <span className="kpi-metric-map-scale-labels">
-          <span>{fmt(minValue)}</span>
-          <span>{fmt(maxValue)}</span>
-        </span>
+      ) : (
+        <MapLegendSection
+          title={`${label}${unit ? ` · ${unit}` : ""}`}
+          action={
+            <>
+              <MapLegendHeaderActions
+                visible={visible}
+                onToggleVisible={() => setVisible((v) => !v)}
+                onClose={() => setClosed(true)}
+                visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: label })}
+                closeLabel={translate("mapWorkspace.legendClose", { metric: label })}
+              />
+              <button
+                ref={settingsButtonRef}
+                type="button"
+                aria-label={translate("metrics.mapSettings")}
+                aria-expanded={settingsOpen}
+                onClick={() => setSettingsOpen((open) => !open)}
+              >
+                <Settings2 size={14} />
+              </button>
+            </>
+          }
+        >
+
+          {categories ? (
+            <MapLegendList label={translate("mapWorkspace.metricLegend")}>
+              {categories.map((c) => (
+                <MapLegendRow
+                  key={c.value}
+                  color={c.color}
+                  label={fmt(c.value)}
+                  meta={c.count}
+                  checked={!hiddenCategories.includes(c.value)}
+                  onToggle={() =>
+                    setHiddenCategories((h) =>
+                      h.includes(c.value) ? h.filter((x) => x !== c.value) : [...h, c.value],
+                    )
+                  }
+                />
+              ))}
+            </MapLegendList>
+          ) : (
+            <>
+              <span
+                className="kpi-metric-map-scale"
+                aria-hidden="true"
+                style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+              />
+              <span className="kpi-metric-map-scale-labels">
+                <span>{fmt(minValue)}</span>
+                <span>{fmt(maxValue)}</span>
+              </span>
+            </>
+          )}
+
         {settingsOpen && (
           <div
             ref={settingsRef}
@@ -701,8 +838,11 @@ function MetricMap({
             </div>
           </div>
         )}
+        </MapLegendSection>
+      )}
     </div>
   );
+
   const content = (addedLegend: ReactNode) => (
     <KpiMapOSM
       center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
