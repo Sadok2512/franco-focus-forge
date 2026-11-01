@@ -989,10 +989,9 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LegendRow({ title, children }: { title: string; children: ReactNode }) {
+function LegendRow({ children }: { children: ReactNode }) {
   return (
     <div>
-      <p className="mb-0.5 font-semibold">{title}</p>
       <div className="flex flex-wrap gap-x-2 gap-y-0.5">{children}</div>
     </div>
   );
