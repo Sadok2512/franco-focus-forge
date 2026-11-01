@@ -61,8 +61,9 @@ vi.mock("@/lib/api/metrics", async () => {
     utc_offset_min: null,
     capture_date: null,
   }),
-  getMetricAggregate: vi.fn().mockResolvedValue({ groups: [] }),
-}));
+    getMetricAggregate: vi.fn().mockResolvedValue({ groups: [] }),
+  };
+});
 vi.mock("maplibre-gl", () => ({ Map: vi.fn(), Popup: vi.fn(), NavigationControl: vi.fn() }));
 vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
