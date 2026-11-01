@@ -298,7 +298,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           />
         ))}
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.symbols")}>
+      <LegendRow>
         <button
           type="button"
           aria-pressed={enabled}
