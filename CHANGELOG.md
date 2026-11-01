@@ -1,3 +1,20 @@
+## 1.126.15 (patch) — BC4-FRONT 2026-11-01 — colonnes métriques Signaling, panneau Paramètres RF, compteur retiré (Agent BC4)
+
+- **Colonnes métriques dans le tableau Signaling** : le popup « Afficher et
+  ordonner les colonnes » gagne un bouton « Ajouter une métrique » qui ouvre
+  le catalogue ; chaque métrique cochée devient une colonne affichant la
+  dernière mesure réelle à l'instant du message (jamais interpolée), avec
+  l'unité dans le titre ; colonnes déplaçables, masquables, supprimables et
+  mémorisées avec le reste de la configuration.
+- **Panneau Paramètres RF restauré** : l'onglet « Paramètres RF » revient
+  dans le panneau de gauche de la carte ; au clic sur un point, il affiche
+  les informations radio, la cellule serving (distance, azimut, badge de
+  confiance), les mesures RF et la métrique affichée sur la carte, sans
+  jamais inventer de valeur (N/D quand le serveur ne fournit pas).
+- **Barre des messages allégée** : le compteur « N messages » au-dessus du
+  tableau Signaling est supprimé ; les icônes Colonnes, Export CSV et Effacer
+  restent en place.
+
 ## 1.126.14 (patch) — BC4-FRONT 2026-10-31 — carte KPI alignée sur Signaling, légende interactive, sélection fidèle (Agent BC4)
 
 - **Légende en haut de carte** : la légende flottante passe du bas en haut ;
