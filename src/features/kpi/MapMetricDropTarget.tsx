@@ -15,8 +15,15 @@ import {
   useMetricLegendSettings,
   MIN_CLASSES,
   MAX_CLASSES,
+  type MetricClass,
 } from "./metric-classes";
 import { addMapMetric, MAP_METRIC_MIME, readMapMetric, type MapMetric } from "./map-metric-drop";
+import {
+  MapLegendList,
+  MapLegendRow,
+  MapLegendSection,
+  MapLegendSettings,
+} from "./map-legend";
 
 function AddedMetric({
   metric,
@@ -38,6 +45,7 @@ function AddedMetric({
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
   const [settings, setSettings] = useMetricLegendSettings(metric.code);
+  const [hidden, setHidden] = useState<string[]>([]);
   const id = `bc4-dropped-${metric.kind}-${encodeURIComponent(metric.code)}`;
   const query = useQuery({
     queryKey: ["map-dropped-metric", projectId, captureId, metric.kind, metric.code, filters],
@@ -117,7 +125,13 @@ function AddedMetric({
       });
     }
     map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-  }, [map, id, features, visible]);
+    // Legend rows unchecked by the technician hide their own points only.
+    if (typeof map.setFilter === "function")
+      map.setFilter(
+        id,
+        hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
+      );
+  }, [map, id, features, visible, hidden]);
   useEffect(
     () => () => {
       if (!map) return;
