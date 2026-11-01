@@ -103,7 +103,7 @@ async function mountedCard() {
 async function openStyleMenu(card: HTMLElement) {
   const trigger = within(card).getByTestId("workspace-panel-menu");
   // jsdom ne connaît pas les pointeurs de Radix : le menu s'ouvre au clavier,
-  // et only si le déclencheur a le focus.
+  // et seulement si le déclencheur a le focus.
   trigger.focus();
   fireEvent.keyDown(trigger, { key: "Enter" });
   fireEvent.click(await screen.findByTestId("metric-style-sub"));
