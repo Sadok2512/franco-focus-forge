@@ -12,8 +12,8 @@ export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
 
 /** Shared high-contrast line treatment for Map, Signaling and KPI. */
 export const CELL_LINK_STYLE = {
-  width: 2.75,
-  selectedWidth: 5,
+  width: 3,
+  selectedWidth: 4.5,
   opacity: 0.9,
   mutedOpacity: 0.32,
   selectedOpacity: 1,

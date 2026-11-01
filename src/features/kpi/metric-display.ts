@@ -54,5 +54,5 @@ export function metricRadius(size: number, selected = false, pulse = 0): Express
  * so selecting a measurement never changes how the point itself looks.
  */
 export function metricRingRadius(size: number, pulse = 0): ExpressionSpecification {
-  return ["+", metricRadius(size), 4 + pulse * 2] as unknown as ExpressionSpecification;
+  return ["+", metricRadius(size), 2 + pulse * 2] as unknown as ExpressionSpecification;
 }

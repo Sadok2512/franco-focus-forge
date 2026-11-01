@@ -145,8 +145,7 @@ export function KpiMeasurementMap({
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 6, 18, 9],
           "circle-color": ["get", "color"],
           "circle-opacity": 1,
-          "circle-stroke-color": "rgba(15,23,42,0.55)",
-          "circle-stroke-width": 0.5,
+                    "circle-stroke-width": 0,
         },
       });
     }
