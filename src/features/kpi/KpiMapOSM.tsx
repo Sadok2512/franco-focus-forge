@@ -167,6 +167,7 @@ export function KpiMapOSM({
   children,
   measurementStatus,
   flush = false,
+  heightKey,
   // 2.0.0 (SA2–SA4) — Site layer MapLibre lazy par bbox + contrôles UI.
   // Toujours disponible via le panneau "Layers" en haut à droite, OFF
   // par défaut. Utilisateur active + filtre techno/band/operator.
@@ -191,6 +192,8 @@ export function KpiMapOSM({
   children?: ReactNode;
   measurementStatus?: string | null;
   flush?: boolean;
+  /** Workspace scope used to persist the chosen map height (Settings dialog). */
+  heightKey?: string;
   sitesLayerEnabled?: boolean;
   workspace?: boolean;
 }) {
