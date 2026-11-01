@@ -188,85 +188,95 @@ export function KpiMeasurementMap({
   const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
   const legendLabel = label ?? code;
   const legend = classes.length ? (
-    <div className="space-y-0.5">
-      <div className="font-semibold">
-        {legendLabel}
-        {unit ? ` (${unit})` : ""}
-      </div>
-      {[...classes].reverse().map((c, ri) => {
-        const index = classes.length - 1 - ri;
-        const off = hidden.includes(c.id);
-        const range =
-          c.min === -Infinity
-            ? `< ${fmtNum(c.max)}`
-            : c.max === Infinity
-              ? `≥ ${fmtNum(c.min)}`
-              : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
-        return (
+    closed ? (
+      <MapLegendReopen
+        label={`${legendLabel}${unit ? ` (${unit})` : ""}`}
+        openLabel={translate("mapWorkspace.legendReopen")}
+        onOpen={() => setClosed(false)}
+      />
+    ) : (
+      <MapLegendSection
+        title={`${legendLabel}${unit ? ` (${unit})` : ""}`}
+        action={
+          <MapLegendHeaderActions
+            visible={visible}
+            onToggleVisible={() => setVisible((v) => !v)}
+            onClose={() => setClosed(true)}
+            visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: legendLabel })}
+            closeLabel={translate("mapWorkspace.legendClose", { metric: legendLabel })}
+          />
+        }
+      >
+        <MapLegendList label={translate("mapWorkspace.metricLegend")}>
+          {[...classes].reverse().map((c) => {
+            const range =
+              c.min === -Infinity
+                ? `< ${fmtNum(c.max)}`
+                : c.max === Infinity
+                  ? `≥ ${fmtNum(c.min)}`
+                  : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
+            return (
+              <MapLegendRow
+                key={c.id}
+                color={c.color}
+                label={range}
+                meta={(counts.get(c.id) ?? 0).toLocaleString()}
+                checked={!hidden.includes(c.id)}
+                onToggle={() =>
+                  setHidden((h) =>
+                    h.includes(c.id) ? h.filter((x) => x !== c.id) : [...h, c.id],
+                  )
+                }
+              />
+            );
+          })}
+        </MapLegendList>
+        <MapLegendSettings title={translate("mapWorkspace.legendSettings")}>
+          <label className="flex items-center justify-between gap-2">
+            {translate("mapWorkspace.legendCount")}
+            <select
+              className="rounded border bg-background px-1 py-0.5"
+              value={classes.length}
+              onChange={(e) => setLegendSettings({ count: Number(e.target.value), colors: {} })}
+            >
+              {Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map(
+                (n) => (
+                  <option key={n} value={n}>
+                    {n}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+          <div className="flex flex-wrap gap-1">
+            {classes.map((c, i) => (
+              <input
+                key={c.id}
+                type="color"
+                aria-label={c.id}
+                value={c.color}
+                onChange={(e) =>
+                  setLegendSettings({
+                    ...legendSettings,
+                    colors: { ...legendSettings.colors, [i]: e.target.value },
+                  })
+                }
+                className="h-5 w-6 cursor-pointer rounded border p-0"
+              />
+            ))}
+          </div>
           <button
-            key={c.id}
             type="button"
-            aria-pressed={!off}
-            onClick={() => setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))}
-            className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
+            className="text-primary underline"
+            onClick={() => setLegendSettings({ count: null, colors: {} })}
           >
-            <span
-              className="h-3 w-3 shrink-0 rounded-full"
-              style={{ background: c.color }}
-              data-index={index}
-            />
-            <span className="flex-1">{range}</span>
-            <span className="tabular-nums text-muted-foreground">
-              {(counts.get(c.id) ?? 0).toLocaleString()}
-            </span>
+            {translate("mapWorkspace.legendReset")}
           </button>
-        );
-      })}
-      <div className="mt-2 space-y-1 border-t pt-2">
-        <div className="font-semibold">{translate("mapWorkspace.legendSettings")}</div>
-        <label className="flex items-center justify-between gap-2">
-          {translate("mapWorkspace.legendCount")}
-          <select
-            className="rounded border bg-background px-1 py-0.5"
-            value={classes.length}
-            onChange={(e) => setLegendSettings({ count: Number(e.target.value), colors: {} })}
-          >
-            {Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map(
-              (n) => (
-                <option key={n} value={n}>
-                  {n}
-                </option>
-              ),
-            )}
-          </select>
-        </label>
-        <div className="flex flex-wrap gap-1">
-          {classes.map((c, i) => (
-            <input
-              key={c.id}
-              type="color"
-              aria-label={c.id}
-              value={c.color}
-              onChange={(e) =>
-                setLegendSettings({
-                  ...legendSettings,
-                  colors: { ...legendSettings.colors, [i]: e.target.value },
-                })
-              }
-              className="h-5 w-6 cursor-pointer rounded border p-0"
-            />
-          ))}
-        </div>
-        <button
-          type="button"
-          className="text-primary underline"
-          onClick={() => setLegendSettings({ count: null, colors: {} })}
-        >
-          {translate("mapWorkspace.legendReset")}
-        </button>
-      </div>
-    </div>
+        </MapLegendSettings>
+      </MapLegendSection>
+    )
   ) : null;
+
   // No measurement popup: clicking a point must not open an info card (user request).
   const message = !allowed
     ? translate("kpi.a5bacfb3bfd4", { v0: unsupported.join(", ") })
