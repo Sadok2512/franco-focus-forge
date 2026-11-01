@@ -437,7 +437,6 @@ function MetricMap({
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
-  const popupRef = useRef<import("maplibre-gl").Popup | undefined>(undefined);
   useEffect(() => {
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
@@ -509,8 +508,7 @@ function MetricMap({
   }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
   useEffect(() => {
     if (!map) return;
-    let disposed = false;
-    const click = async (e: import("maplibre-gl").MapLayerMouseEvent) => {
+    const click = (e: import("maplibre-gl").MapLayerMouseEvent) => {
       // GPS fixes can overlap. Prefer the active sequence in the clicked
       // feature stack so a second click on the same visual point deselects it.
       const activeFeature = e.features?.find((feature) => {
@@ -547,7 +545,6 @@ function MetricMap({
     map.on("mouseenter", "metrics-v3", pointer);
     map.on("mouseleave", "metrics-v3", noPointer);
     return () => {
-      disposed = true;
       map.off("click", "metrics-v3", click);
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
