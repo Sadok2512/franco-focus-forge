@@ -90,11 +90,11 @@ function buildMultiQuery(params: Record<string, string[] | string | undefined>):
 }
 
 /** Fetch brut + safeParse Zod. Toute non-conformité → KpiContractMismatchError. */
-export async function kpiFetch<T>(
+export async function kpiFetch<Schema extends z.ZodTypeAny>(
   path: string,
-  schema: z.ZodType<T>,
+  schema: Schema,
   signal?: AbortSignal,
-): Promise<T> {
+): Promise<z.output<Schema>> {
   const session = getSession();
   const headers = new Headers({ Accept: "application/json" });
   if (session) headers.set("Authorization", `Bearer ${session.token}`);

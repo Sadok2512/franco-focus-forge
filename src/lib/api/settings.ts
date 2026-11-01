@@ -111,6 +111,14 @@ export async function createUser(actor: Actor, body: UserCreate) {
       if (S.users.some((u) => u.login.toLowerCase() === login.toLowerCase()))
         fail("CONFLICT", "Cet identifiant existe déjà.", "login");
       if (!body.display_name.trim()) fail("VALIDATION", "Nom affiché requis.", "display_name");
+      if (body.password !== undefined || body.password_confirm !== undefined) {
+        const password = body.password ?? "";
+        const problems = passwordProblems(password, PASSWORD_POLICY);
+        if (problems.length > 0)
+          fail("VALIDATION", `Mot de passe invalide : ${problems.join(", ")}.`, "password");
+        if (body.password_confirm !== password)
+          fail("VALIDATION", "La confirmation du mot de passe ne correspond pas.", "password_confirm");
+      }
       const generated = `Mock-${crypto.randomUUID()}-A1`;
       const u: User = {
         id: `u${++S.seq}`,

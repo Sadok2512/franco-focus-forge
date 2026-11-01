@@ -49,7 +49,7 @@ export const MetricSchema = z.object({
   // 0.64.0 (F1 back) — champ YAML `category` du décodeur (14 catégories).
   category: z.string().nullable().optional(),
 });
-export const MetricCatalogNodeSchema = z
+const MetricCatalogNodePayloadSchema = z
   .object({
     node_id: z.string(),
     parent_id: z.string().nullable(),
@@ -86,6 +86,10 @@ export const MetricCatalogNodeSchema = z
       });
     }
   });
+export const MetricCatalogNodeSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || "analytics_tab" in value) return value;
+  return { ...(value as Record<string, unknown>), analytics_tab: "metrics" };
+}, MetricCatalogNodePayloadSchema);
 export const CatalogReleaseInfoSchema = z.object({
   version: z.string(),
   spec_version: z.string(),
@@ -202,7 +206,7 @@ export type MetricInfo = z.infer<typeof MetricSchema>;
 export type MetricCatalogNode = z.infer<typeof MetricCatalogNodeSchema>;
 export type MetricCatalogResponse = z.infer<typeof MetricCatalogResponseSchema>;
 const scalar = z.union([z.number(), z.string()]);
-export const MetricAnalysisSchema = z.object({
+const MetricAnalysisPayloadSchema = z.object({
   project_id: z.string(),
   capture_id: z.string(),
   result_id: z.string(),
@@ -261,9 +265,9 @@ export const MetricAnalysisSchema = z.object({
     }),
   ),
   page: z.number().int(),
-  page_size: z.number().int(),
-  total_rows: z.number().int(),
-  total_pages: z.number().int(),
+  page_size: z.number().int().positive(),
+  total_rows: z.number().int().nonnegative(),
+  total_pages: z.number().int().nonnegative(),
   series: MetricSeriesSchema.shape.series,
   histogram: z.array(
     z.object({
@@ -418,6 +422,25 @@ export const MetricAnalysisSchema = z.object({
   gaps: z.array(z.string()),
   csv: z.string(),
 });
+export const MetricAnalysisSchema = z.preprocess((value) => {
+  if (!value || typeof value !== "object") return value;
+  const payload = value as Record<string, unknown>;
+  const rows = Array.isArray(payload["rows"]) ? payload["rows"] : [];
+  const pageSize =
+    typeof payload["page_size"] === "number" ? payload["page_size"] : Math.max(rows.length, 1);
+  const totalRows =
+    typeof payload["total_rows"] === "number" ? payload["total_rows"] : rows.length;
+  return {
+    ...payload,
+    page: typeof payload["page"] === "number" ? payload["page"] : 1,
+    page_size: pageSize,
+    total_rows: totalRows,
+    total_pages:
+      typeof payload["total_pages"] === "number"
+        ? payload["total_pages"]
+        : Math.max(Math.ceil(totalRows / pageSize), 1),
+  };
+}, MetricAnalysisPayloadSchema);
 export type MetricAnalysis = z.infer<typeof MetricAnalysisSchema>;
 
 /** Lean geographic response returned by GET /projects/{pid}/metrics/map. */
@@ -427,6 +450,6 @@ export const MetricMapResponseSchema = z.object({
   result_id: z.string(),
   decoder_version: z.string(),
   total_points: z.number().int(),
-  map_points: MetricAnalysisSchema.shape.map_points,
+  map_points: MetricAnalysisPayloadSchema.shape.map_points,
 });
 export type MetricMapResponse = z.infer<typeof MetricMapResponseSchema>;

@@ -27,6 +27,18 @@
   Signaling, KPI, Map and NMF decoding are unchanged.
 - SemVer front: **MINOR 1.127.0**.
 
+## 1.126.16 (patch) — KPI Analytics audit blockers — 2026-10-31 (BC4)
+
+- La navigation Projet → KPI conserve le contrat de recherche typé livré par
+  la baseline `598b091`; le typecheck complet est de nouveau vert.
+- Le mock Users applique réellement la politique de mot de passe et sa
+  confirmation sans persister le secret.
+- Overview rejette les identifiants opérateur synthétiques réservés aux tests,
+  tout en conservant les opérateurs/PLMN réels non catalogués.
+- Les captures Metrics legacy restent validables : `analytics_tab` et la
+  pagination absents sont normalisés avant un schéma de sortie strict.
+- SemVer front : **PATCH 1.126.16**.
+
 ## 1.126.15 (patch) — KPI Analytics audit et restauration des panneaux — 2026-10-31 (BC4)
 
 - Map, Timeline et sidebar recalculent leur géométrie après réactivation ; les

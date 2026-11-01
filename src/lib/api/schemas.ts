@@ -12,6 +12,15 @@ export type Operator = z.infer<typeof OperatorSchema>;
 export type Tech = z.infer<typeof TechSchema>;
 export type Service = z.infer<typeof ServiceSchema>;
 
+// `TEST-*` is the repository's synthetic-fixture namespace, never an ingested
+// operator identity. Real non-catalogued labels (including raw PLMN labels)
+// remain accepted and are rendered through the uncatalogued-value path.
+const ObservedOperatorSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .refine((value) => !/^TEST-/i.test(value), "Synthetic operator identifiers are invalid");
+
 // Helpers de reconnaissance catalogue. Un NMF réel peut exposer un PLMN,
 // une techno ou un service hors catalogue (ex. `PLMN 208-08`). Le back ne
 // renomme ni ne supprime la valeur, et le front doit l'afficher telle
@@ -161,7 +170,7 @@ export type MeasurementPoint = z.infer<typeof MeasurementPointSchema>;
 export const OverviewPointSchema = MeasurementPointSchema.extend({
   lat: z.number().nullable(),
   lng: z.number().nullable(),
-  operator: z.string().nullable(),
+  operator: ObservedOperatorSchema.nullable(),
   tech: z.string().nullable(),
   service: z.string().nullable(),
   band: z.string().nullable(),
