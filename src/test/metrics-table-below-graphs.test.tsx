@@ -1,5 +1,6 @@
-// Le tableau des mesures doit toujours se rendre sous toutes les cartes
-// graphiques, quel que soit le layout ou l'ordre mémorisé des panneaux.
+// 1.130.0 — le tableau des mesures et les cartes graphe ne s'affichent jamais
+// en même temps : ouvert, le tableau masque les graphes sans les supprimer.
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
@@ -36,7 +37,7 @@ if (!("ResizeObserver" in window)) {
 }
 
 describe("measurements table position", () => {
-  it("orders the table below every graph panel", async () => {
+  it("masque les cartes graphe pendant que le tableau est ouvert", async () => {
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -56,17 +57,20 @@ describe("measurements table position", () => {
       </QueryClientProvider>,
     );
     const table = await screen.findByTestId("metrics-table-panel");
+    const workspace = table.parentElement;
+    expect(Number(table.style.order)).toBe(TABLE_PANEL_ORDER);
+    // 1.130.0 — tableau ouvert : les cartes graphe sont masquées, pas supprimées.
+    expect(document.querySelectorAll('[data-testid^="panel-metric:"]')).toHaveLength(0);
+    await removeTable();
     const cards = await screen.findAllByTestId(/^panel-metric:/);
     expect(cards).toHaveLength(2);
-    const tableOrder = Number(table.style.order);
-    expect(tableOrder).toBe(TABLE_PANEL_ORDER);
     for (const card of cards) {
-      expect(Number(card.style.order)).toBeLessThan(tableOrder);
       expect(card.style.gridColumn).toBe("span 1");
     }
     // La règle CSS « pleine largeur » vise les enfants directs du conteneur.
-    expect(table.parentElement?.dataset["testid"]).toBe("metrics-v3-workspace");
+    expect(workspace?.dataset["testid"]).toBe("metrics-v3-workspace");
   });
+
 
   it("sinks a table panel below a graph with the same saved position", () => {
     expect(sunkPanelOrder(false, 0)).toBe(0);
@@ -74,3 +78,11 @@ describe("measurements table position", () => {
     expect(sunkPanelOrder(true, 0)).toBeGreaterThan(sunkPanelOrder(false, 999));
   });
 });
+
+async function removeTable() {
+  const { fireEvent: fe, screen: sc, within: wi } = await import("@testing-library/react");
+  const panel = sc.getByTestId("metrics-table-panel");
+  fe.keyDown(wi(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
+  fe.click(await sc.findByTestId("metrics-table-remove"));
+}
+
