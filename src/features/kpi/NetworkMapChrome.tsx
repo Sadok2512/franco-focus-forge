@@ -272,7 +272,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   // only. The "site colour = operator" row is removed by design.
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
-      <LegendRow title={t("mapWorkspace.technology")}>
+      <LegendRow>
         <Swatch
           color={NR_COLOR}
           label="5G NR"
@@ -286,7 +286,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           onClick={() => setTechnos(["4G", "LTE"])}
         />
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.bands")}>
+      <LegendRow>
         {NETWORK_BANDS.map((b) => (
           <Swatch
             key={b.key}
@@ -298,7 +298,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           />
         ))}
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.symbols")}>
+      <LegendRow>
         <button
           type="button"
           aria-pressed={enabled}
@@ -989,10 +989,9 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LegendRow({ title, children }: { title: string; children: ReactNode }) {
+function LegendRow({ children }: { children: ReactNode }) {
   return (
     <div>
-      <p className="mb-0.5 font-semibold">{title}</p>
       <div className="flex flex-wrap gap-x-2 gap-y-0.5">{children}</div>
     </div>
   );
