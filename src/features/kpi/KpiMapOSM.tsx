@@ -18,6 +18,7 @@ import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } fro
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 import { NetworkMapChrome } from "./NetworkMapChrome";
+import { MAP_HEIGHT_PX, readMapHeight, writeMapHeight, type MapHeightSetting } from "./map-height";
 import { MapRfPanelProvider } from "./map-rf-panel";
 import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
@@ -51,6 +52,8 @@ function SitesLayerHarness({
   onToggleWide,
   onRecenter,
   layersLegend,
+  mapHeight,
+  onMapHeightChange,
 }: {
   layersLegend?: ReactNode;
   map: MlMap | null;
@@ -62,6 +65,8 @@ function SitesLayerHarness({
   wide?: boolean;
   onToggleWide?: () => void;
   onRecenter?: () => void;
+  mapHeight?: MapHeightSetting;
+  onMapHeightChange?: (value: MapHeightSetting) => void;
 }) {
   const { t } = useTranslation();
   const {
@@ -140,6 +145,8 @@ function SitesLayerHarness({
         {...(onToggleFullscreen ? { onToggleFullscreen } : {})}
         {...(onRecenter ? { onRecenter } : {})}
         layersLegend={layersLegend}
+        mapHeight={mapHeight}
+        onMapHeightChange={onMapHeightChange}
       />
     );
   return <SitesLayerControls {...controls} />;
@@ -160,6 +167,7 @@ export function KpiMapOSM({
   children,
   measurementStatus,
   flush = false,
+  heightKey,
   // 2.0.0 (SA2–SA4) — Site layer MapLibre lazy par bbox + contrôles UI.
   // Toujours disponible via le panneau "Layers" en haut à droite, OFF
   // par défaut. Utilisateur active + filtre techno/band/operator.
@@ -184,6 +192,8 @@ export function KpiMapOSM({
   children?: ReactNode;
   measurementStatus?: string | null;
   flush?: boolean;
+  /** Workspace scope used to persist the chosen map height (Settings dialog). */
+  heightKey?: string;
   sitesLayerEnabled?: boolean;
   workspace?: boolean;
 }) {
@@ -214,6 +224,18 @@ export function KpiMapOSM({
         }
       : undefined;
   const panelWidth = useContext(MapPanelWidthContext);
+  // Map height preference (Settings dialog): persisted per workspace scope,
+  // applied only in the normal in-frame mode — fullscreen and wide keep their
+  // own sizing.
+  const [mapHeight, setMapHeight] = useState<MapHeightSetting>(() =>
+    heightKey ? readMapHeight(heightKey) : "default",
+  );
+  const changeMapHeight = (value: MapHeightSetting) => {
+    setMapHeight(value);
+    if (heightKey) writeMapHeight(heightKey, value);
+  };
+  const heightPx =
+    workspace && !full && mapHeight !== "default" ? MAP_HEIGHT_PX[mapHeight] : undefined;
   const [wide, setWide] = useState(false);
   const [wideBounds, setWideBounds] = useState({ top: 56, height: 280 });
   const toggleWide = () => {
@@ -363,11 +385,11 @@ export function KpiMapOSM({
     };
   }, []);
 
-  // Resize map quand on bascule fullscreen
+  // Resize map quand on bascule fullscreen ou qu'on change la hauteur choisie
   useEffect(() => {
     const id = setTimeout(() => map.current?.resize(), 50);
     return () => clearTimeout(id);
-  }, [full, mapFullscreen.active, wide, panelWidth?.wide, frameInsets]);
+  }, [full, mapFullscreen.active, wide, panelWidth?.wide, frameInsets, mapHeight]);
 
   return (
     <MapRfPanelProvider>
@@ -379,9 +401,11 @@ export function KpiMapOSM({
         expandedStyle ??
         (wide && !full
           ? { top: wideBounds.top, height: wideBounds.height }
-          : premium && !full && !workspace
-            ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
-            : undefined)
+          : heightPx
+            ? { height: heightPx }
+            : premium && !full && !workspace
+              ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
+              : undefined)
       }
       className={
         full
@@ -538,6 +562,8 @@ export function KpiMapOSM({
           onToggleWide={toggleWide}
           onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
           layersLegend={layersLegend}
+          mapHeight={mapHeight}
+          {...(heightKey ? { onMapHeightChange: changeMapHeight } : {})}
         />
       )}
       {/* Compact empty-measurement status; attribution remains on the map. */}

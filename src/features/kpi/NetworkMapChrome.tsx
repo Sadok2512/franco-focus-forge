@@ -3,7 +3,6 @@
  * state: no second map implementation, no fabricated counters. */
 import type { GeoJSONSource, Map as MlMap, MapMouseEvent } from "maplibre-gl";
 import {
-  BarChart3,
   ChevronDown,
   ChevronLeft,
   Crosshair,
@@ -33,6 +32,7 @@ import {
   type BasemapId,
 } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
+import { MAP_HEIGHT_OPTIONS, type MapHeightSetting } from "./map-height";
 import { BeamDisplayControls } from "./BeamDisplayControls";
 import { useMapRfPanel } from "./map-rf-panel";
 import {
@@ -70,6 +70,9 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   status?: SitesLayerControlsProps["status"];
   /** Metric legend (classes, colours, counts) shown first in the Layers panel. */
   layersLegend?: ReactNode;
+  /** Workspace map height preference shown in the Settings dialog. */
+  mapHeight?: MapHeightSetting | undefined;
+  onMapHeightChange?: ((value: MapHeightSetting) => void) | undefined;
 };
 
 type MeasureMode = "none" | "distance" | "area";
@@ -134,7 +137,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     setPanelTab("rf");
     setPanelOpen(true);
   }, [selectionTick]);
-  const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -286,7 +288,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const startMeasure = (next: MeasureMode) => {
     setPoints([]);
     setMode((m) => (m === next ? "none" : next));
-    setMenu(null);
   };
 
   const hits = useMemo(
@@ -588,19 +589,6 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* 1.126.3 BC3 — Overlay « Zoomez pour voir les cellules » quand
-          cellsEnabled est vrai mais le niveau de zoom courant est en
-          dessous du seuil CELLS_VISIBLE_ZOOM. Visible et centré, pas
-          seulement en tooltip du bouton. */}
-      {cellsEnabled && !cellsAvailable && (
-        <div
-          role="status"
-          className={`pointer-events-none absolute left-1/2 top-20 z-20 -translate-x-1/2 rounded-full border px-3 py-1.5 text-[11px] font-medium text-muted-foreground ${glass}`}
-        >
-          {t("mapSites.zoomToSeeCells")}
-        </div>
-      )}
-
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (
         <div
@@ -692,7 +680,16 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           {props.fullscreenLevel === 2 ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
         {props.fullscreen && props.onRestore && <Button variant="ghost" size="icon" className={railBtn()} aria-label={t("mapWorkspace.restoreMap")} title={t("mapWorkspace.restoreMap")} onClick={props.onRestore}><Minimize2 className="h-4 w-4" /></Button>}
-        <Button variant="ghost" size="icon" className={railBtn(settingsOpen)} aria-label={t("mapWorkspace.mapSettings")} title={t("mapWorkspace.mapSettings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><SlidersHorizontal className="h-4 w-4" /></Button>
+        <button
+          type="button"
+          className={railBtn(settingsOpen)}
+          aria-label={t("mapWorkspace.mapSettings")}
+          title={t("mapWorkspace.mapSettings")}
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen((value) => !value)}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+        </button>
         <button
           type="button"
           className={railBtn()}
@@ -750,6 +747,29 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {settingsOpen && <div role="dialog" aria-label={t("mapWorkspace.mapSettings")} className={`pointer-events-auto absolute right-14 top-3 w-56 rounded-lg p-3 ${glass}`}>
         <div className="mb-2 flex items-center justify-between gap-2"><strong className="text-xs">{t("mapWorkspace.mapSettings")}</strong><Button variant="ghost" size="icon" className="h-6 w-6" aria-label={t("mapWorkspace.closeSettings")} onClick={() => setSettingsOpen(false)}><X className="h-4 w-4" /></Button></div>
         <Button variant="outline" size="sm" className="w-full text-xs" disabled={props.fullscreen || !props.onToggleWide} aria-pressed={props.wide ?? false} onClick={props.onToggleWide}><ArrowLeftRight className="h-4 w-4" />{t(props.wide ? "mapWorkspace.restoreWidth" : "mapWorkspace.increaseWidth")}</Button>
+        {props.onMapHeightChange && (
+          <div className="mt-2 border-t border-border/60 pt-2">
+            <p className="mb-1.5 text-[11px] font-semibold">{t("mapWorkspace.mapHeight")}</p>
+            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label={t("mapWorkspace.mapHeight")}>
+              {MAP_HEIGHT_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={(props.mapHeight ?? "default") === option}
+                  onClick={() => props.onMapHeightChange?.(option)}
+                  className={`rounded-md border px-2 py-1 text-[11px] transition ${
+                    (props.mapHeight ?? "default") === option
+                      ? "border-primary bg-primary/10 font-semibold"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {t(`mapWorkspace.mapHeightOption.${option}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>}
 
       {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
@@ -830,13 +850,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom — status (left), Metrics (true centre), state dot (right). */}
+      {/* Bottom — status bar centred horizontally, state dot at the right. */}
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 grid grid-cols-[1fr_auto_1fr] items-end gap-3 ${compact ? "right-3" : "right-[150px]"}`}
+        className="pointer-events-none absolute bottom-3 left-3 right-14 flex items-end justify-center"
       >
         <div
           data-testid="map-workspace-statusbar"
-          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] justify-self-start ${glass}`}
+          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] ${glass}`}
         >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
@@ -859,49 +879,18 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
           </span>
         </div>
-        <div
-          className={`pointer-events-auto flex items-center rounded-xl px-1.5 py-0.5 text-[11px] justify-self-center ${glass}`}
-        >
-          <Dropdown
-            up
-            open={menu === "metrics"}
-            onOpen={(o) => setMenu(o ? "metrics" : null)}
-            label={
-              <>
-                <BarChart3 className="h-3.5 w-3.5" />
-                {!compact && t("mapWorkspace.metrics")}
-              </>
-            }
-          >
-            <div className="space-y-1 p-2 text-[11px]">
-              <Row label={t("mapWorkspace.totalInView")} value={fmt(status?.n_total)} />
-              <Row label={t("mapWorkspace.returned")} value={fmt(status?.n_returned)} />
-              {status?.truncated && (
-                <p className="text-[10px] text-destructive">{t("mapSites.partial")}</p>
-              )}
-              {status?.error && (
-                <p className="text-[10px] text-destructive">
-                  {t("mapSites.error")}: {status.error}
-                </p>
-              )}
-              <p className="text-[10px] text-muted-foreground">
-                {t("mapWorkspace.heatmapUnavailable")}
-              </p>
-            </div>
-          </Dropdown>
-        </div>
-        <div
-          className={`pointer-events-auto flex items-center rounded-xl px-2.5 py-1 justify-self-end ${glass}`}
-        >
-          {/* MAP UI V1 — the measure/recenter tools live only in the right
-              rail; the duplicated Tools dropdown is removed. */}
-          <span
-            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
-            title={
-              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
-            }
-          />
-        </div>
+      </div>
+      <div
+        className={`pointer-events-auto absolute bottom-3 right-3 flex items-center rounded-xl px-2.5 py-1 ${glass}`}
+      >
+        {/* MAP UI V1 — the measure/recenter tools live only in the right
+            rail; the duplicated Tools dropdown is removed. */}
+        <span
+          className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
+          title={
+            status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
+          }
+        />
       </div>
     </div>
   );
@@ -958,58 +947,6 @@ function Check({
   );
 }
 
-function Dropdown({
-  label,
-  open,
-  onOpen,
-  children,
-  up = false,
-}: {
-  label: ReactNode;
-  open: boolean;
-  onOpen: (o: boolean) => void;
-  children: ReactNode;
-  up?: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const h = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && onOpen(false);
-    document.addEventListener("mousedown", h);
-    return () => document.removeEventListener("mousedown", h);
-  }, [open, onOpen]);
-  return (
-    <div ref={ref} className="relative shrink-0">
-      <button
-        type="button"
-        aria-expanded={open}
-        onClick={() => onOpen(!open)}
-        className="flex h-8 items-center gap-1 rounded-lg px-2.5 text-[11px] font-semibold hover:bg-muted"
-      >
-        {label}
-        <ChevronDown className="h-3 w-3 opacity-60" />
-      </button>
-      {open && (
-        <div
-          className={`fixed z-50 min-w-44 rounded-xl border bg-popover p-1 shadow-xl`}
-          style={dropdownPos(ref.current, up)}
-        >
-          {children}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** Fixed positioning escapes the toolbar's overflow clipping. */
-function dropdownPos(el: HTMLElement | null, up: boolean): React.CSSProperties {
-  const r = el?.getBoundingClientRect();
-  if (!r) return {};
-  return up
-    ? { left: r.left, bottom: window.innerHeight - r.top + 6 }
-    : { left: r.left, top: r.bottom + 6 };
-}
-
 function MenuCheck({
   label,
   checked,
@@ -1044,15 +981,6 @@ function Stat({ value, label }: { value: string; label: string }) {
       <strong className="text-sm tabular-nums">{value}</strong>
       <span className="text-[10px] text-muted-foreground">: {label}</span>
     </span>
-  );
-}
-
-function Row({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <strong className="tabular-nums">{value}</strong>
-    </div>
   );
 }
 

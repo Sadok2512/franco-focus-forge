@@ -502,6 +502,7 @@ function MetricMap({
   onRetry,
   routeCoordinates = [],
   dropContext,
+  heightKey,
 }: {
   data?: MetricMapData | undefined;
   projectId: string;
@@ -516,6 +517,7 @@ function MetricMap({
   onRetry: () => void;
   routeCoordinates?: Array<[number, number]> | undefined;
   dropContext?: { selection: string; workspaceId: string; filters: KpiQueryFilters };
+  heightKey?: string;
 }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
@@ -862,7 +864,8 @@ function MetricMap({
       contextLabel={translate("metrics.b7ef3d32472c")}
       onMapReady={setMap}
       routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
-      measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
+      measurementStatus={null}
+      {...(heightKey ? { heightKey } : {})}
     >
       <DriveRsrpLayer
         map={map}
@@ -1002,6 +1005,7 @@ function MetricMapCard({
         onRetry={onRetry}
         routeCoordinates={routeCoordinates}
         dropContext={{ selection, workspaceId, filters }}
+        heightKey={workspaceId}
       />
     </article>
   );

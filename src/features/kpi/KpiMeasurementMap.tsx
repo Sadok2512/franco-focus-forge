@@ -327,6 +327,7 @@ export function KpiMeasurementMap({
               workspace
               showOperatorLegend={false}
               measurementStatus={null}
+              heightKey={workspaceId ?? "kpi"}
               onMapReady={setMap}
               onRecenter={recenter}
               layersLegend={
