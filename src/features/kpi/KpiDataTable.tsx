@@ -2,8 +2,24 @@ import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useMemo, useState } from "react";
 import { usePanelTableSettings } from "./table-settings";
-import { ChevronLeft, ChevronRight, Columns3, Download, Search } from "lucide-react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Columns3,
+  Download,
+  MoreVertical,
+  Search,
+  X,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   type AnalyticRow,
   exportRows,
@@ -91,10 +107,12 @@ export function KpiDataTable({
   rows,
   selected,
   onSelect,
+  onClose,
 }: {
   rows: AnalyticRow[];
   selected: Set<string>;
   onSelect: (ids: Set<string>) => void;
+  onClose?: () => void;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const tableProps = usePanelTableSettings();
@@ -167,46 +185,56 @@ export function KpiDataTable({
             {selected.size} {translate("kpi.214ab747f5ed")}{" "}
           </button>
         )}
-        <div className="ml-auto flex gap-2">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="kpi-button">
-                <Columns3 size={14} /> {translate("kpi.bd9a317f77ed")}{" "}
+        <div className="ml-auto flex items-center gap-1">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="kpi-button px-1.5" aria-label={translate("kpi.tableMenu")}>
+                <MoreVertical size={15} />
               </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-3" align="end">
-              <div className="space-y-2">
-                {available.map((col) => (
-                  <label key={col.key} className="flex items-center gap-2 text-xs">
-                    <input
-                      type="checkbox"
-                      checked={!hidden.has(col.key)}
-                      disabled={!hidden.has(col.key) && columns.length === 1}
-                      onChange={() =>
-                        setHidden((prev) => {
-                          const next = new Set(prev);
-                          if (next.has(col.key)) next.delete(col.key);
-                          else next.add(col.key);
-                          return next;
-                        })
-                      }
-                    />
-                    {col.label}
-                  </label>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-          <button
-            className="kpi-button"
-            disabled={!filtered.length}
-            onClick={() => exportRows(selectedExport.length ? selectedExport : filtered)}
-          >
-            <Download size={14} />
-            {selectedExport.length
-              ? translate("kpi.5562230cf53d", { v0: selectedExport.length })
-              : translate("kpi.b84f9613287b")}
-          </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem
+                disabled={!filtered.length}
+                onSelect={() => exportRows(selectedExport.length ? selectedExport : filtered)}
+              >
+                <Download size={14} />
+                {selectedExport.length
+                  ? translate("kpi.5562230cf53d", { v0: selectedExport.length })
+                  : translate("kpi.b84f9613287b")}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="flex items-center gap-2">
+                <Columns3 size={14} /> {translate("kpi.bd9a317f77ed")}
+              </DropdownMenuLabel>
+              {available.map((col) => (
+                <DropdownMenuCheckboxItem
+                  key={col.key}
+                  checked={!hidden.has(col.key)}
+                  disabled={!hidden.has(col.key) && columns.length === 1}
+                  onSelect={(e) => e.preventDefault()}
+                  onCheckedChange={() =>
+                    setHidden((prev) => {
+                      const next = new Set(prev);
+                      if (next.has(col.key)) next.delete(col.key);
+                      else next.add(col.key);
+                      return next;
+                    })
+                  }
+                >
+                  {col.label}
+                </DropdownMenuCheckboxItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {onClose && (
+            <button
+              className="kpi-button px-1.5"
+              aria-label={translate("kpi.tableClose")}
+              onClick={onClose}
+            >
+              <X size={15} />
+            </button>
+          )}
         </div>
       </header>
       <div className="kpi-table-scroll kpi-ts" {...tableProps}>

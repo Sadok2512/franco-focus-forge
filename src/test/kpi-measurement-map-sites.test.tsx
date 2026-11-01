@@ -143,7 +143,7 @@ describe("KpiMeasurementMap — couche Sites", () => {
     );
   });
 
-  it("affiche les classes RSRP et les liens cellule dans l'onglet Légende", async () => {
+  it("affiche des points GPS gris, sans légende Drive RSRP, dans l'onglet Légende", async () => {
     renderMap();
 
     const legendTab = await screen.findByRole("tab", { name: "Legend" });
@@ -152,12 +152,8 @@ describe("KpiMeasurementMap — couche Sites", () => {
     await waitFor(() =>
       expect(document.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull(),
     );
-    expect(screen.getByText("Drive RSRP")).toBeInTheDocument();
-    expect(screen.getByText("Serving cell")).toBeInTheDocument();
-    expect(screen.getByText("Neighbour cells")).toBeInTheDocument();
-    expect(screen.getByText("NR anchor")).toBeInTheDocument();
-    screen.getByRole("button", { name: "Close legend" }).click();
-    await waitFor(() => expect(screen.queryByText("Drive RSRP")).toBeNull());
+    expect(screen.queryByText("Drive RSRP")).toBeNull();
+    expect(screen.getAllByText("GPS points").length).toBeGreaterThan(0);
   });
 
   it("cadre le parcours fourni et expose le recentrage dans la barre commune", async () => {

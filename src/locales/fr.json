@@ -510,7 +510,9 @@
     "apiSampling": " · échantillonnage API",
     "cell": "Cellule",
     "nmfFile": "Fichier NMF",
-    "timestamp": "Horodatage"
+    "timestamp": "Horodatage",
+    "tableMenu": "Menu du tableau",
+    "tableClose": "Fermer le tableau"
   },
   "signalingV2": {
     "title": "Signaling View V2",

@@ -510,7 +510,9 @@
     "apiSampling": " · API sampling",
     "cell": "Cell",
     "nmfFile": "NMF file",
-    "timestamp": "Timestamp"
+    "timestamp": "Timestamp",
+    "tableMenu": "Table menu",
+    "tableClose": "Close table"
   },
   "signalingV2": {
     "title": "Signaling View V2",

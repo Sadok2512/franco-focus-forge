@@ -162,6 +162,7 @@ function Workspace({
   const classifiedCatalogs = useMemo(() => classifyKpiCatalog(catalog), [catalog]);
   const cataloguePanel = useRef<PanelImperativeHandle>(null);
   const cataloguePreferenceKey = `bc4.kpi.catalogueCollapsed.${projectId}`;
+  const [dataTableClosedFor, setDataTableClosedFor] = useState<string | null>(null);
   const [catalogueCollapsed, setCatalogueCollapsed] = useState(() => {
     try {
       return localStorage.getItem(cataloguePreferenceKey) === "1";
@@ -700,6 +701,8 @@ function Workspace({
       memberPosition,
     }];
   });
+  // Closing the data table hides it until the set of panels changes.
+  const panelsKey = panels.map((panel) => panel.entry.item.code).join("|");
   const rows = panels
     .filter((panel) => !configFor(panel.entry.item.code).visualization.startsWith("task_"))
     .flatMap((panel) => panel.rows);
@@ -1375,7 +1378,7 @@ function Workspace({
             )}
             <div id="kpi-workspace-data">
               {(() => {
-                if (!panels.length) return null;
+                if (!panels.length || dataTableClosedFor === panelsKey) return null;
                 // A map card never brings a data table with it (user request).
                 if (
                   panels.every((panel) => {
@@ -1451,11 +1454,17 @@ function Workspace({
                               .flatMap((panel) => panel.rows)}
                             selected={selectedRows}
                             onSelect={setSelectedRows}
+                            onClose={() => setDataTableClosedFor(panelsKey)}
                           />
                         </section>
                       ))
                     ) : (
-                      <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                      <KpiDataTable
+                        rows={rows}
+                        selected={selectedRows}
+                        onSelect={setSelectedRows}
+                        onClose={() => setDataTableClosedFor(panelsKey)}
+                      />
                     )}
                   </TableSettingsWorkspaceContext.Provider>
                 );
