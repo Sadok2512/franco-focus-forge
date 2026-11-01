@@ -1,4 +1,4 @@
 # Roadmap
 
-- [ ] Finir bouton « Ajouter une métrique » dans le popup colonnes Signaling (en cours)
-- [ ] Restaurer le panneau Paramètres RF sur la carte (supprimé à la demande, à rétablir)
+- [x] Bouton « Ajouter une métrique » dans le popup colonnes Signaling (catalogue, colonnes persistées, 7 tests)
+- [x] Restaurer le panneau Paramètres RF sur la carte (restauré depuis ad94620, 17+15 tests OK, build OK)
