@@ -663,6 +663,11 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   border-color: #8dbaf7;
   box-shadow: 0 0 0 1px #bad5fb66;
 }
+/* Glisser-déposer : la carte visée se souligne pendant le survol d'un dépôt. */
+.kpi-graph-card.is-drop-target {
+  border-color: #8dbaf7;
+  box-shadow: 0 0 0 2px #8dbaf788;
+}
 .kpi-card-header {
   padding: 12px 10px 7px;
   display: flex;
