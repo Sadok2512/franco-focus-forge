@@ -695,13 +695,7 @@ function MetricMap({
   // Signaling map — nothing floats over the map itself.
   const legend = (
     <div className="space-y-1" data-testid="metric-map-legend">
-      {closed ? (
-        <MapLegendReopen
-          label={`${label}${unit ? ` · ${unit}` : ""}`}
-          openLabel={translate("mapWorkspace.legendReopen")}
-          onOpen={() => setClosed(false)}
-        />
-      ) : (
+      {closed ? null : (
         <MapLegendSection
           title={`${label}${unit ? ` · ${unit}` : ""}`}
           action={

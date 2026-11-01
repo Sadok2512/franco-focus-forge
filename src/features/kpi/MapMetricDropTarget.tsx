@@ -159,20 +159,14 @@ function AddedMetric({
           className="space-y-2 border-t border-border pt-2"
           data-map-added-metric={metric.code}
         >
-          {closed ? (
-            <MapLegendReopen
-              label={metric.label}
-              openLabel={t("mapWorkspace.legendReopen")}
-              onOpen={() => setClosed(false)}
-            />
-          ) : (
+          {(
             <MapLegendSection
               title={`${metric.label}${metric.unit ? ` · ${metric.unit}` : ""}`}
               action={
                 <MapLegendHeaderActions
                   visible={visible}
                   onToggleVisible={() => setVisible((v) => !v)}
-                  onClose={() => setClosed(true)}
+                  onClose={onRemove}
                   visibilityLabel={t("mapWorkspace.legendVisibility", { metric: metric.label })}
                   closeLabel={t("mapWorkspace.legendClose", { metric: metric.label })}
                 />

@@ -180,20 +180,14 @@ export function KpiMeasurementMap({
   // unmounting the layer, so the camera, filters and selection survive.
   useEffect(() => {
     if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
-    map.setLayoutProperty(KPI_MEASURES_LAYER, "visibility", visible ? "visible" : "none");
-  }, [map, visible, colored]);
+    map.setLayoutProperty(KPI_MEASURES_LAYER, "visibility", visible && !closed ? "visible" : "none");
+  }, [map, visible, closed, colored]);
 
   const fmtNum = (n: number) => (Number.isFinite(n) ? Number(n.toPrecision(3)).toString() : "");
   const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
   const legendLabel = label ?? code;
   const legend = classes.length ? (
-    closed ? (
-      <MapLegendReopen
-        label={`${legendLabel}${unit ? ` (${unit})` : ""}`}
-        openLabel={translate("mapWorkspace.legendReopen")}
-        onOpen={() => setClosed(false)}
-      />
-    ) : (
+    closed ? null : (
       <MapLegendSection
         title={`${legendLabel}${unit ? ` (${unit})` : ""}`}
         action={
