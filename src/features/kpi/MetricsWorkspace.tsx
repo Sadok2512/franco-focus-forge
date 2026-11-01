@@ -517,6 +517,7 @@ function MetricMap({
   onRetry: () => void;
   routeCoordinates?: Array<[number, number]> | undefined;
   dropContext?: { selection: string; workspaceId: string; filters: KpiQueryFilters };
+  heightKey?: string;
 }) {
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
