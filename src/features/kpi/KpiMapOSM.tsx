@@ -15,7 +15,6 @@ import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } fro
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 import { NetworkMapChrome } from "./NetworkMapChrome";
-import { MapRfPanelProvider } from "./map-rf-panel";
 import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
 // Start the map runtime as soon as the KPI map module is evaluated. Waiting
@@ -330,7 +329,6 @@ export function KpiMapOSM({
   }, [full]);
 
   return (
-    <MapRfPanelProvider>
     <div
       style={
         premium && !full && !workspace
@@ -545,6 +543,5 @@ export function KpiMapOSM({
         </div>
       )}
     </div>
-    </MapRfPanelProvider>
   );
 }
