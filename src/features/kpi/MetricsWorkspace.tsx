@@ -363,6 +363,7 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
     map.addLayer({
       id: `metric-cell-links-v1-${confidence}`,
       type: "line",
+      layout: { "line-cap": "round", "line-join": "round" },
       source: "metric-cell-links-v1",
       filter: ["==", ["get", "confidence"], confidence],
       paint: {

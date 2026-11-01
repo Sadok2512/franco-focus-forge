@@ -462,6 +462,7 @@ export function DriveRsrpLayer({
           map.addLayer({
             id: spec.id,
             type: "line",
+            layout: { "line-cap": "round", "line-join": "round" },
             source: LINK_SOURCE,
             filter,
             paint: {
