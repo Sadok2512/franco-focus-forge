@@ -1446,8 +1446,28 @@ export function SignalingPage({
       </span>
     );
   };
-  const renderCell = (c: ColKey, r: SignalingLine) => {
-    switch (c) {
+  const metricCell = (selector: string, t: number | null) => {
+    const meta = colConfig.metrics.find((m) => m.selector === selector);
+    const r = radioAt(metricSeriesMap.get(selector), t);
+    if (!r) return <span className="text-muted-foreground">—</span>;
+    const exact = r.dtS === 0;
+    return (
+      <span
+        className={exact ? undefined : "sig-radio-prev"}
+        title={
+          exact
+            ? t("sigTable.metricExact", { seq: r.seq, t: r.t.toFixed(3) })
+            : t("sigTable.metricPrev", { seq: r.seq, t: r.t.toFixed(3), dt: r.dtS.toFixed(3) })
+        }
+      >
+        {fmtRadio(r.value)}
+        {meta?.unit ? ` ${meta.unit}` : ""}
+      </span>
+    );
+  };
+  const renderCell = (c: string, r: SignalingLine) => {
+    if (isMetricCol(c)) return metricCell(metricSelector(c), r.t_rel_s);
+    switch (c as ColKey) {
       case "seq":
         return r.seq;
       case "t_rel_s":
