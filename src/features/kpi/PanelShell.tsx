@@ -5,6 +5,10 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
+export const MapPanelWidthContext = createContext<{
+  wide: boolean;
+  toggle: () => void;
+} | null>(null);
 import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp, Columns2, Copy, GripVertical, Pencil } from "lucide-react";
 import { effectivePanelSpan, panelColumns, sunkPanelOrder } from "./workspace-grid";
@@ -157,7 +161,12 @@ export function PanelShell({
           }}
         />
       )}
-      {children(title)}
+      <MapPanelWidthContext.Provider value={{
+        wide: panelColumns(span, cols) === cols,
+        toggle: () => update((p) => ({ ...p, span: { ...p.span, [id]: panelColumns(span, cols) === cols ? 1 : cols as PanelSpan } })),
+      }}>
+        {children(title)}
+      </MapPanelWidthContext.Provider>
       {!bare && !collapsed && (
         <span
           className="kpi-panel-resize"

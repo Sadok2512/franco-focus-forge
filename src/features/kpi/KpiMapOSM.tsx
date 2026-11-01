@@ -9,7 +9,10 @@ import { useTranslation } from "react-i18next";
 // Centre par défaut : centroid approximatif FR métropolitaine. Si le
 // projet a un `center` validé, utiliser `project.center` à la place.
 // -----------------------------------------------------------------------
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Button } from "@/components/ui/button";
+import { useMapFullscreen } from "@/lib/map-fullscreen";
+import { MapPanelWidthContext } from "./PanelShell";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
@@ -42,6 +45,10 @@ function SitesLayerHarness({
   workspace = false,
   fullscreen = false,
   onToggleFullscreen,
+  fullscreenLevel = 0,
+  onRestore,
+  wide = false,
+  onToggleWide,
   onRecenter,
   layersLegend,
 }: {
@@ -50,6 +57,10 @@ function SitesLayerHarness({
   workspace?: boolean;
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  fullscreenLevel?: number;
+  onRestore?: () => void;
+  wide?: boolean;
+  onToggleWide?: () => void;
   onRecenter?: () => void;
 }) {
   const { t } = useTranslation();
@@ -122,6 +133,10 @@ function SitesLayerHarness({
         sitesFeatures={enabled ? status.sites?.features : []}
         cellsFeatures={cellsEnabled ? status.cells?.features : []}
         fullscreen={fullscreen}
+        fullscreenLevel={fullscreenLevel}
+        onRestore={onRestore}
+        wide={wide}
+        onToggleWide={onToggleWide}
         {...(onToggleFullscreen ? { onToggleFullscreen } : {})}
         {...(onRecenter ? { onRecenter } : {})}
         layersLegend={layersLegend}
@@ -184,8 +199,17 @@ export function KpiMapOSM({
   const [baseVisible, setBaseVisible] = useState(true);
   const [ready, setReady] = useState(false);
   const [tileError, setTileError] = useState(false);
-  const [localFull, setLocalFull] = useState(false);
-  const full = fullscreen ?? localFull;
+  const mapFullscreen = useMapFullscreen(fullscreen);
+  const full = mapFullscreen.expanded;
+  const panelWidth = useContext(MapPanelWidthContext);
+  const [wide, setWide] = useState(false);
+  const [wideBounds, setWideBounds] = useState({ top: 56, height: 280 });
+  const toggleWide = () => {
+    if (panelWidth) { panelWidth.toggle(); return; }
+    const bounds = mapFullscreen.ref.current?.getBoundingClientRect();
+    if (bounds) setWideBounds({ top: Math.max(56, bounds.top), height: bounds.height });
+    setWide((value) => !value);
+  };
   const routeSignature = useMemo(() => {
     if (!routeCoordinates.length) return "";
     const first = routeCoordinates[0]!;
@@ -213,13 +237,7 @@ export function KpiMapOSM({
     }
     instance.flyTo({ center, zoom, duration: 350 });
   }, [center, routeCoordinates, zoom]);
-  const setFull = useCallback(
-    (value: boolean) => {
-      setLocalFull(value);
-      onFullscreenChange?.(value);
-    },
-    [onFullscreenChange],
-  );
+  useEffect(() => { onFullscreenChange?.(full); }, [full, onFullscreenChange]);
 
   useEffect(() => {
     let disposed = false;
@@ -333,33 +351,30 @@ export function KpiMapOSM({
     };
   }, []);
 
-  // Esc → sortie fullscreen
-  useEffect(() => {
-    if (!full) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setFull(false);
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [full, setFull]);
-
   // Resize map quand on bascule fullscreen
   useEffect(() => {
     const id = setTimeout(() => map.current?.resize(), 50);
     return () => clearTimeout(id);
-  }, [full]);
+  }, [full, mapFullscreen.active, wide, panelWidth?.wide]);
 
   return (
     <MapRfPanelProvider>
     <div
+      ref={mapFullscreen.ref}
+      data-map-expanded={full || wide ? "true" : undefined}
+      data-map-level={mapFullscreen.level}
       style={
-        premium && !full && !workspace
+        wide && !full
+          ? { top: wideBounds.top, height: wideBounds.height }
+          : premium && !full && !workspace
           ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
           : undefined
       }
       className={
         full
-          ? "fixed inset-0 z-[60] bg-background"
+          ? "bc4-map-expanded bg-background"
+          : wide
+            ? "fixed inset-x-0 z-40 bg-background"
           : workspace
             ? flush
               ? "relative h-full min-h-[280px] w-full overflow-hidden"
@@ -496,13 +511,18 @@ export function KpiMapOSM({
         </div>
       )}
       {children}
+      {mapFullscreen.failed && <div role="alert" className="absolute bottom-10 right-3 z-10 max-w-64 rounded border border-border bg-card p-2 text-xs">{translate("common.fullscreenFailed")}</div>}
       {/* 2.0.0 (SA2–SA4) — Site layer MapLibre controls + layer. */}
       {sitesLayerEnabled && ready && (
         <SitesLayerHarness
           map={map.current}
           workspace={workspace}
           fullscreen={full}
-          onToggleFullscreen={() => setFull(!full)}
+          fullscreenLevel={mapFullscreen.level}
+          onToggleFullscreen={() => void mapFullscreen.advance()}
+          onRestore={() => void mapFullscreen.restore()}
+          wide={panelWidth?.wide ?? wide}
+          onToggleWide={toggleWide}
           onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
           layersLegend={layersLegend}
         />
@@ -529,21 +549,16 @@ export function KpiMapOSM({
       )}
       {/* Bouton plein écran ⤢ en haut à droite (le rail du mode workspace en a un). */}
       {!workspace && (
-        <button
-          onClick={() => setFull(!full)}
-          aria-label={
-            full
-              ? translate("kpi.3645da627202")
-              : premium
-                ? translate("kpi.2668a681be64")
-                : translate("kpi.dee312b0129c")
-          }
-          title={full ? translate("kpi.0d8f484c8af1") : translate("kpi.dee312b0129c")}
-          className="absolute right-[50px] top-2 z-10 inline-flex h-7 w-7 items-center justify-center rounded border border-[#E2E8F0] bg-card/95 shadow-sm hover:bg-muted"
+        <Button
+          variant="outline" size="icon"
+          onClick={() => void mapFullscreen.advance()}
+          aria-label={translate(mapFullscreen.level === 2 ? "mapWorkspace.exitFullscreen" : full ? "mapWorkspace.totalFullscreen" : "mapWorkspace.frameFullscreen")}
+          className="absolute right-[50px] top-2 z-10 h-7 w-7 bg-card/95"
         >
-          {full ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
-        </button>
+          {mapFullscreen.level === 2 ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />}
+        </Button>
       )}
+      {!workspace && full && <Button variant="outline" size="icon" className="absolute right-[82px] top-2 z-10 h-7 w-7 bg-card/95" aria-label={translate("mapWorkspace.restoreMap")} title={translate("mapWorkspace.restoreMap")} onClick={() => void mapFullscreen.restore()}><Minimize2 className="h-3.5 w-3.5" /></Button>}
       {/* Légende opérateur en bas à gauche — couleurs de marque BC4. */}
       {showOperatorLegend && !workspace && (
         <div className="absolute bottom-2 left-2 z-10 rounded border border-[#E2E8F0] bg-card/95 px-2 py-1 text-[10px] shadow-sm">

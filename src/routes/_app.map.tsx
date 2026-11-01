@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_app/map")({
       { property: "og:title", content: `${i18n.t("mapWorkspace.title")} — BC4` },
       { property: "og:description", content: i18n.t("mapWorkspace.description") },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: MapWorkspacePage,
