@@ -470,6 +470,9 @@ function MetricTimePlot({
   code,
   label,
   unit,
+  color,
+  plot,
+  extra,
   syncId,
   timeAxisMode,
   eventsCaptureId,
@@ -478,6 +481,9 @@ function MetricTimePlot({
   code: string;
   label: string;
   unit: string;
+  color: string;
+  plot: MetricPlot;
+  extra: GraphSeries[];
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
@@ -493,12 +499,38 @@ function MetricTimePlot({
     retry: false,
   });
   const captureId = captures.data?.[0]?.capture_id;
+  // Séries de la carte : la métrique de base + celles ajoutées par dépôt.
+  const codes = useMemo(() => [code, ...extra.map((s) => s.code)], [code, extra]);
   const series = useQuery({
-    queryKey: ["metric-series", projectId, captureId, code],
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, [code], signal),
+    queryKey: ["metric-series", projectId, captureId, codes],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, codes, signal),
     enabled: !!captureId,
     retry: false,
   });
+  // Une ligne par échantillon (seq partagé par toutes les séries de la même
+  // capture) : aucune interpolation, une série sans échantillon à ce seq est
+  // simplement absente.
+  const rows = useMemo(() => {
+    const bySeq = new Map<number, Record<string, number>>();
+    for (const s of series.data?.series ?? []) {
+      for (const p of s.points ?? []) {
+        if (typeof p.value !== "number") continue;
+        const row = bySeq.get(p.seq) ?? { t_rel_s: p.t_rel_s };
+        row[s.code] = p.value;
+        bySeq.set(p.seq, row);
+      }
+    }
+    return [...bySeq.entries()]
+      .sort((a, b) => a[0] - b[0])
+      .map(([seq, row]) => ({ seq, ...row }));
+  }, [series.data]);
+  const units = [unit, ...extra.map((s) => s.unit)];
+  const seriesList = [
+    { code, label, unit, color },
+    ...extra.map((s) => ({ code: s.code, label: s.label, unit: s.unit, color: s.color })),
+  ];
+  const axisFor = (value: string) => axisOf(units, value) ?? "left";
+  const rightAxis = seriesList.some((s) => axisFor(s.unit) === "right");
 
   const plotRef = useRef<HTMLDivElement>(null);
   const renderProbe = useRef({ updateAt: 0, startedAt: 0 });
@@ -661,8 +693,8 @@ function MetricTimePlot({
       data-n-points={points.length}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={points}
+        <ComposedChart
+          data={rows}
           margin={{ top: 10, right: 14, left: 4, bottom: 24 }}
           {...(syncId ? { syncId } : {})}
         >
@@ -677,11 +709,30 @@ function MetricTimePlot({
               typeof v === "number" ? formatTimeTick(v, mode, timeMeta) : String(v)
             }
           />
-          <YAxis width={54} domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} />
+          <YAxis
+            yAxisId="left"
+            width={54}
+            domain={["auto", "auto"]}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+          />
+          {rightAxis && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              width={54}
+              domain={["auto", "auto"]}
+              tick={{ fontSize: 10, fill: "#64748b" }}
+            />
+          )}
+          {seriesList.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} iconSize={9} />}
           <Tooltip
             cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
             contentStyle={{ fontSize: 11, padding: "4px 8px" }}
-            formatter={(value: number) => [`${value}${unit ? " " + unit : ""}`, label]}
+            formatter={(value: number, name: string) => {
+              const found = seriesList.find((s) => s.label === name);
+              const u = found?.unit ?? unit;
+              return [`${value}${u ? " " + u : ""}`, name];
+            }}
             labelFormatter={(l: number) => {
               if (typeof l !== "number") return String(l);
               const trip = tooltipTriple(l, timeMeta);
@@ -694,15 +745,41 @@ function MetricTimePlot({
               return parts.join(" · ");
             }}
           />
-          <Line
-            type="linear"
-            dataKey="value"
-            stroke="#1d4ed8"
-            strokeWidth={1.2}
-            dot={false}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
+          {seriesList.map((s) =>
+            plot === "bar" ? (
+              <Bar
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                dataKey={s.code}
+                name={s.label}
+                fill={s.color}
+                barSize={6}
+                isAnimationActive={false}
+              />
+            ) : plot === "point" ? (
+              <Scatter
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                dataKey={s.code}
+                name={s.label}
+                fill={s.color}
+                isAnimationActive={false}
+              />
+            ) : (
+              <Line
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                type="linear"
+                dataKey={s.code}
+                name={s.label}
+                stroke={s.color}
+                strokeWidth={1.2}
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            ),
+          )}
           {activeEvents
             .filter(
               (e) =>
@@ -711,6 +788,7 @@ function MetricTimePlot({
             .map((e) => (
               <ReferenceLine
                 key={e.id}
+                yAxisId="left"
                 x={e.t_rel_s}
                 stroke={e.color}
                 strokeWidth={2}
@@ -728,7 +806,7 @@ function MetricTimePlot({
               fill="#f1f5f9"
             />
           ) : null}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
