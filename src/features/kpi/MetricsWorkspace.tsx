@@ -587,7 +587,9 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        metricColorExpression(minValue, maxValue, preferences.palette),
+        categories
+          ? categoryColorExpression(categories)
+          : metricColorExpression(minValue, maxValue, preferences.palette),
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -603,8 +605,33 @@ function MetricMap({
         preferences.palette,
         preferences.pointSize,
       );
+      if (categories && typeof map.setPaintProperty === "function")
+        map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
     }
-  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
+    // Legend controls: hidden categories are filtered out and the visibility
+    // switch hides every point without unmounting the layer.
+    if (typeof map.setFilter === "function")
+      map.setFilter(
+        "metrics-v3",
+        hiddenCategories.length
+          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+          : null,
+      );
+    if (typeof map.setLayoutProperty === "function")
+      map.setLayoutProperty("metrics-v3", "visibility", visible ? "visible" : "none");
+  }, [
+    map,
+    features,
+    links,
+    minValue,
+    maxValue,
+    preferences.palette,
+    preferences.pointSize,
+    categories,
+    hiddenCategories,
+    visible,
+  ]);
+
   useEffect(() => {
     if (!map) return;
     const click = (e: import("maplibre-gl").MapLayerMouseEvent) => {
