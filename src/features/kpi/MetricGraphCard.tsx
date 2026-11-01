@@ -6,10 +6,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import {
+  Bar,
   Brush,
   CartesianGrid,
+  ComposedChart,
+  Legend,
   Line,
-  LineChart,
   LabelList,
   ReferenceLine,
   ResponsiveContainer,
@@ -19,12 +21,47 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, ChartNoAxesCombined, MapPin, Maximize2, Table2, X } from "lucide-react";
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  CircleDot,
+  MapPin,
+  Maximize2,
+  Palette,
+  Table2,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
+import {
+  addGraphSeries,
+  axisOf,
+  readGraphSeries,
+  writeGraphSeries,
+  type GraphSeries,
+} from "./graph-series-drop";
+import {
+  DEFAULT_METRIC_STYLE,
+  METRIC_COLORS,
+  METRIC_PLOTS,
+  type MetricPlot,
+  type MetricStyle,
+} from "./metric-styles";
+
+const METRIC_PLOT_ICONS: Record<MetricPlot, typeof BarChart3> = {
+  line: TrendingUp,
+  bar: BarChart3,
+  point: CircleDot,
+};
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
 import { SharePanelMenuItem } from "./SharePanelMenuItem";
 import { QueryErrorState } from "./QueryErrorState";
