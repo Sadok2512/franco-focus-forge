@@ -3,7 +3,6 @@
  * state: no second map implementation, no fabricated counters. */
 import type { GeoJSONSource, Map as MlMap, MapMouseEvent } from "maplibre-gl";
 import {
-  BarChart3,
   ChevronDown,
   ChevronLeft,
   Crosshair,
@@ -33,6 +32,7 @@ import {
   type BasemapId,
 } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
+import { MAP_HEIGHT_OPTIONS, type MapHeightSetting } from "./map-height";
 import { BeamDisplayControls } from "./BeamDisplayControls";
 import { useMapRfPanel } from "./map-rf-panel";
 import {
@@ -70,6 +70,9 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   status?: SitesLayerControlsProps["status"];
   /** Metric legend (classes, colours, counts) shown first in the Layers panel. */
   layersLegend?: ReactNode;
+  /** Workspace map height preference shown in the Settings dialog. */
+  mapHeight?: MapHeightSetting;
+  onMapHeightChange?: (value: MapHeightSetting) => void;
 };
 
 type MeasureMode = "none" | "distance" | "area";
