@@ -49,6 +49,7 @@ describe("KPI Header V2", () => {
   it("renders the compact V2 controls in the restored toolbar order", () => {
     const onScopeChange = vi.fn();
     const onEventsVisibleChange = vi.fn();
+    const onChange = vi.fn();
     const context = {
       templates: [],
       activeTemplate: null,
@@ -79,12 +80,25 @@ describe("KPI Header V2", () => {
           loading={false}
           error={false}
           onRetry={vi.fn()}
-          onChange={vi.fn()}
+          onChange={onChange}
           onApply={vi.fn()}
           onReset={vi.fn()}
           scope={{ type: "capture", captureId: "cap-a" }}
           captures={[{ capture_id: "cap-a", label: "Capture A" }]}
-          superstreams={[]}
+          superstreams={[
+            {
+              id: "stream-a",
+              projectId: "p",
+              name: "Route A",
+              logIds: ["log-a"],
+              captureIds: ["cap-a"],
+              positions: [0],
+              members: [{ position: 0, captureId: "cap-a", captureName: "Capture A" }],
+              revision: 1,
+              createdAt: "2026-11-01T00:00:00Z",
+              updatedAt: "2026-11-01T00:00:00Z",
+            },
+          ]}
           sourcesLoading={false}
           onScopeChange={onScopeChange}
           eventsVisible
@@ -112,7 +126,22 @@ describe("KPI Header V2", () => {
     expect(screen.getByRole("button", { name: "LTE + NR" })).toBeDisabled();
     expect(screen.getByRole("button", { name: /Operator.*Orange.*Free/ })).toBeInTheDocument();
     const source = screen.getByTestId("kpi-source-selector");
-    expect(source.querySelector("optgroup")?.label).toBe("Streams / Captures");
+    expect(Array.from(source.querySelectorAll("optgroup"), (group) => group.label)).toEqual([
+      "Streams / Captures",
+      "Superstreams",
+    ]);
+    fireEvent.click(screen.getByRole("button", { name: /Operator.*Orange.*Free/ }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Free" }));
+    expect(onChange).toHaveBeenCalledWith({
+      values: { rat: ["LTE"], operator: ["Orange"] },
+      enabledGeo: [],
+    });
+    fireEvent.change(source, { target: { value: "superstream:stream-a" } });
+    expect(onScopeChange).toHaveBeenCalledWith({
+      type: "superstream",
+      superstreamId: "stream-a",
+      revision: 1,
+    });
     expect(screen.queryByText("Band")).not.toBeInTheDocument();
     expect(screen.queryByText("Geographic Area")).not.toBeInTheDocument();
     expect(screen.queryByText("Period")).not.toBeInTheDocument();
