@@ -14,7 +14,7 @@ import { KpiMapOSM } from "./KpiMapOSM";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
-import { ActiveEventsContext, eventsAt, useActiveEventsState } from "./active-events";
+import { eventsAt, useActiveEvents } from "./active-events";
 import {
   DropdownMenuItem,
   DropdownMenuCheckboxItem,
@@ -63,13 +63,13 @@ function fmtLatLng(v: number | null | undefined): string {
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
-type MetricPane = "charts" | "table" | "overlay";
+export type MetricPane = "charts" | "table" | "overlay";
 
-function metricPaneStorageKey(workspaceId?: string) {
+export function metricPaneStorageKey(workspaceId?: string) {
   return workspaceId ? `bc3.metrics.pane.${workspaceId}` : "bc3.metrics.pane";
 }
 
-function readMetricPane(workspaceId?: string): MetricPane {
+export function readMetricPane(workspaceId?: string): MetricPane {
   try {
     const stored = localStorage.getItem(metricPaneStorageKey(workspaceId));
     if (stored === "charts" || stored === "table" || stored === "overlay") return stored;
@@ -77,6 +77,15 @@ function readMetricPane(workspaceId?: string): MetricPane {
     /* storage unavailable */
   }
   return "charts";
+}
+
+export function writeMetricPane(workspaceId: string, pane: MetricPane) {
+  try {
+    localStorage.setItem(metricPaneStorageKey(workspaceId), pane);
+  } catch {
+    /* storage unavailable */
+  }
+  window.dispatchEvent(new CustomEvent("bc4-metric-pane", { detail: workspaceId }));
 }
 const LABELS: Record<View, string> = {
   get table() {
@@ -152,23 +161,23 @@ const MAP_PALETTES = {
   viridis: ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"],
   ocean: ["#172554", "#1e40af", "#0284c7", "#06b6d4", "#a7f3d0"],
 } as const;
-type MetricMapPalette = keyof typeof MAP_PALETTES;
+export type MetricMapPalette = keyof typeof MAP_PALETTES;
 type MetricLinkKind = CellLinkKind;
-type MetricMapPreferences = {
+export type MetricMapPreferences = {
   palette: MetricMapPalette;
   pointSize: number;
   links: Record<MetricLinkKind, boolean>;
 };
-const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
+export const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
   palette: "coverage",
   pointSize: 3,
   links: { serving: true, neighbour: true, nr_anchor: true },
 };
-function metricMapPreferenceKey(workspaceId: string, selection: string) {
+export function metricMapPreferenceKey(workspaceId: string, selection: string) {
   return `bc4.metric-map.v1.${workspaceId}.${selection}`;
 }
 
-function readMetricMapPreferences(workspaceId: string, selection: string): MetricMapPreferences {
+export function readMetricMapPreferences(workspaceId: string, selection: string): MetricMapPreferences {
   try {
     const value = JSON.parse(
       localStorage.getItem(metricMapPreferenceKey(workspaceId, selection)) ?? "null",
@@ -185,6 +194,24 @@ function readMetricMapPreferences(workspaceId: string, selection: string): Metri
   } catch {
     return DEFAULT_MAP_PREFERENCES;
   }
+}
+
+export function writeMetricMapPreferences(
+  workspaceId: string,
+  selection: string,
+  preferences: MetricMapPreferences,
+) {
+  try {
+    localStorage.setItem(
+      metricMapPreferenceKey(workspaceId, selection),
+      JSON.stringify(preferences),
+    );
+  } catch {
+    /* storage unavailable */
+  }
+  window.dispatchEvent(
+    new CustomEvent("bc4-metric-map-preferences", { detail: { workspaceId, selection } }),
+  );
 }
 
 export function metricMapNumericExtent(data: MetricMapData): [number, number] {
@@ -760,6 +787,17 @@ function MetricMapCard({
     readMetricMapPreferences(workspaceId, selection),
   );
   useEffect(() => {
+    const onTemplatePreferences = (event: Event) => {
+      const detail = (event as CustomEvent<{ workspaceId: string; selection: string }>).detail;
+      if (detail?.workspaceId === workspaceId && detail.selection === selection) {
+        setPreferences(readMetricMapPreferences(workspaceId, selection));
+      }
+    };
+    window.addEventListener("bc4-metric-map-preferences", onTemplatePreferences);
+    return () =>
+      window.removeEventListener("bc4-metric-map-preferences", onTemplatePreferences);
+  }, [selection, workspaceId]);
+  useEffect(() => {
     try {
       localStorage.setItem(
         metricMapPreferenceKey(workspaceId, selection),
@@ -837,6 +875,9 @@ export function MetricsWorkspace({
   onRemove,
   onVisualization,
   mapFillsAvailable = false,
+  showEvents = true,
+  scopeLabel,
+  panelIdSuffix = "",
 }: {
   projectId: string;
   captureId: string | undefined;
@@ -857,6 +898,9 @@ export function MetricsWorkspace({
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
   mapFillsAvailable?: boolean;
+  showEvents?: boolean;
+  scopeLabel?: string | undefined;
+  panelIdSuffix?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
   const reasonLabel = useReasonLabel();
@@ -884,6 +928,15 @@ export function MetricsWorkspace({
   // Keep its state per tab and make it available before query activation is
   // computed so a restored table can never remain on an inert loading state.
   const [pane, setPaneRaw] = useState<MetricPane>(() => readMetricPane(_workspaceId));
+  useEffect(() => {
+    const onTemplatePane = (event: Event) => {
+      if ((event as CustomEvent).detail === _workspaceId) {
+        setPaneRaw(readMetricPane(_workspaceId));
+      }
+    };
+    window.addEventListener("bc4-metric-pane", onTemplatePane);
+    return () => window.removeEventListener("bc4-metric-pane", onTemplatePane);
+  }, [_workspaceId]);
   const tablePanelRef = useRef<HTMLDivElement>(null);
   const tableOnlyDismissed = useRef(false);
   const setPane = (next: MetricPane) => {
@@ -1309,18 +1362,18 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphSelections.length, parsedSelections.length, pane]);
-  const activeEvents = useActiveEventsState(`${_workspaceId ?? "metrics"}:${captureId ?? ""}`);
+  const activeEvents = useActiveEvents();
   return (
-    <ActiveEventsContext.Provider value={activeEvents}>
       <article
         className="kpi-metrics-table-premium kpi-unified-contents"
         data-pane={pane}
         data-testid="metrics-v3-workspace"
       >
+        {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
         {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
           Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
           continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
-        {captureId && parsedSelections.length > 0 && (
+        {showEvents && captureId && parsedSelections.length > 0 && (
           <MetricsEventsRibbon
             projectId={projectId}
             captureId={captureId}
@@ -1350,7 +1403,7 @@ export function MetricsWorkspace({
                 <PanelShell
                   key={s.full}
                   workspaceId={_workspaceId ?? "metrics"}
-                  id={`metric:${s.full}`}
+                  id={`metric:${s.full}${panelIdSuffix}`}
                   natural={100 + i}
                   defaultTitle={`${i + 1}. ${title}`}
                   fullRow={mapFillsAvailable && metricView === "map"}
@@ -1826,6 +1879,5 @@ export function MetricsWorkspace({
           )
         )}
       </article>
-    </ActiveEventsContext.Provider>
   );
 }

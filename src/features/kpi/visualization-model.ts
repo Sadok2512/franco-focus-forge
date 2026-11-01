@@ -6,7 +6,9 @@ export type VisualizationType =
   "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter" | "chronogram";
 export type CurveType = "points" | "line" | "line_points";
 export type ChartConfig = {
-  curveType?: CurveType;
+  // API templates may omit the field; explicit `undefined` is accepted by
+  // Zod-inferred objects under exactOptionalPropertyTypes.
+  curveType?: CurveType | undefined;
   kpiCode: string;
   visualization: VisualizationType;
   xMetric: KpiGroupBy;

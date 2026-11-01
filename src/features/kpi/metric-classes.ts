@@ -77,31 +77,47 @@ export function classOf(classes: MetricClass[], value: number): MetricClass | un
 
 const KEY = "bc4.map.metricLegend.v1";
 
+export function readMetricLegendSettings(code: string): MetricLegendSettings {
+  try {
+    const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
+      string,
+      MetricLegendSettings
+    >;
+    return { ...DEFAULT_LEGEND_SETTINGS, ...all[code] };
+  } catch {
+    return DEFAULT_LEGEND_SETTINGS;
+  }
+}
+
+export function writeMetricLegendSettings(code: string, next: MetricLegendSettings) {
+  try {
+    const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
+      string,
+      MetricLegendSettings
+    >;
+    localStorage.setItem(KEY, JSON.stringify({ ...all, [code]: next }));
+  } catch {
+    /* storage unavailable: caller retains its in-memory value */
+  }
+  window.dispatchEvent(new CustomEvent("bc4-metric-legend-settings", { detail: code }));
+}
+
 /** Legend settings persisted per metric code. */
 export function useMetricLegendSettings(code: string) {
-  const [settings, setSettings] = useState<MetricLegendSettings>(DEFAULT_LEGEND_SETTINGS);
+  const [settings, setSettings] = useState<MetricLegendSettings>(() =>
+    readMetricLegendSettings(code),
+  );
   useEffect(() => {
-    try {
-      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
-        string,
-        MetricLegendSettings
-      >;
-      setSettings({ ...DEFAULT_LEGEND_SETTINGS, ...all[code] });
-    } catch {
-      setSettings(DEFAULT_LEGEND_SETTINGS);
-    }
+    setSettings(readMetricLegendSettings(code));
+    const onChange = (event: Event) => {
+      if ((event as CustomEvent).detail === code) setSettings(readMetricLegendSettings(code));
+    };
+    window.addEventListener("bc4-metric-legend-settings", onChange);
+    return () => window.removeEventListener("bc4-metric-legend-settings", onChange);
   }, [code]);
   const save = (next: MetricLegendSettings) => {
     setSettings(next);
-    try {
-      const all = JSON.parse(localStorage.getItem(KEY) ?? "{}") as Record<
-        string,
-        MetricLegendSettings
-      >;
-      localStorage.setItem(KEY, JSON.stringify({ ...all, [code]: next }));
-    } catch {
-      /* storage unavailable: keep in memory */
-    }
+    writeMetricLegendSettings(code, next);
   };
   return [settings, save] as const;
 }

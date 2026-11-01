@@ -7,6 +7,7 @@ import {
 } from "@/lib/analytics-bootstrap";
 import { useTranslation } from "react-i18next";
 import { useCaptureContext } from "@/lib/capture-context";
+import { analysisScopeSearch, type AnalysisScope } from "@/lib/analysis-scope";
 import { VisualizationItems } from "./VisualizationMenu";
 import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -21,6 +22,15 @@ import {
   getMetricMap,
   getProjectKpi,
 } from "@/lib/api/client";
+import { listSuperstreams } from "@/lib/api/superstreams";
+import {
+  createWorkspaceTemplate,
+  deleteWorkspaceTemplate,
+  listWorkspaceTemplates,
+  renameWorkspaceTemplate,
+  updateWorkspaceTemplate,
+  type WorkspaceTemplate,
+} from "@/lib/api/workspace-templates";
 import { useActiveProject } from "@/lib/activeProject";
 import { useFilters } from "@/lib/filters";
 import { NoActiveProject } from "@/components/bc4/NoActiveProject";
@@ -79,6 +89,15 @@ import {
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
 import { PanelShell } from "./PanelShell";
 import { WorkspaceGrid } from "./WorkspaceGrid";
+import { ActiveEventsProvider } from "./active-events";
+import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
+import { WorkspaceTemplatesProvider } from "./workspace-templates-context";
+import {
+  restoreWorkspaceTemplate,
+  snapshotWorkspaceTemplate,
+  workspaceTemplateSignature,
+} from "./workspace-template-state";
+import { loadTableSettings } from "./table-settings";
 import "./workspace.css";
 
 export function KpiWorkspace() {
@@ -91,7 +110,6 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
   const { t: translate } = useTranslation();
   // Project/filter-keyed requests can finish into the cache after navigation.
   const catalog = useQuery(kpiCatalogQuery(projectId));
-  const dimensions = useQuery(kpiFiltersQuery(projectId));
   const project = useQuery(analyticsProjectQuery(projectId));
   if (catalog.isPending)
     return (
@@ -114,10 +132,6 @@ function ProjectWorkspace({ projectId }: { projectId: string }) {
       catalog={catalog.data}
       catalogLoading={catalog.isFetching && catalog.data.tree.length === 0}
       projectId={projectId}
-      dimensions={dimensions.data}
-      dimensionsLoading={dimensions.isPending}
-      dimensionsError={dimensions.isError}
-      retryDimensions={() => void dimensions.refetch()}
       period={
         project.data?.periodStart && project.data?.periodEnd
           ? `${project.data.periodStart} — ${project.data.periodEnd}`
@@ -131,20 +145,12 @@ function Workspace({
   catalog,
   catalogLoading,
   projectId,
-  dimensions,
-  dimensionsLoading,
-  dimensionsError,
-  retryDimensions,
   period,
   projectCenter,
 }: {
   catalog: ProjectKpiCatalog;
   catalogLoading: boolean;
   projectId: string;
-  dimensions?: ProjectKpiFilters | undefined;
-  dimensionsLoading: boolean;
-  dimensionsError: boolean;
-  retryDimensions: () => void;
   period: string | null;
   projectCenter?: [number, number] | undefined;
 }) {
@@ -205,6 +211,27 @@ function Workspace({
   const currentTab = pickActiveTab(tabsState);
   const codes = currentTab.codes;
   const active = currentTab.activeCode;
+  const eventsPreferenceKey = `bc4.kpi.events.${projectId}.${currentTab.id}`;
+  const [eventsPreference, setEventsPreference] = useState(() => ({
+    tabId: currentTab.id,
+    visible: localStorage.getItem(eventsPreferenceKey) !== "0",
+  }));
+  if (eventsPreference.tabId !== currentTab.id) {
+    setEventsPreference({
+      tabId: currentTab.id,
+      visible: localStorage.getItem(eventsPreferenceKey) !== "0",
+    });
+  }
+  const eventsVisible = eventsPreference.visible;
+  const setEventsVisible = (visible: boolean) => {
+    setEventsPreference({ tabId: currentTab.id, visible });
+    try {
+      localStorage.setItem(eventsPreferenceKey, visible ? "1" : "0");
+    } catch {
+      /* storage unavailable */
+    }
+    requestAnimationFrame(() => window.dispatchEvent(new CustomEvent("bc4:workspace-resize")));
+  };
   const persistTabs = (next: WorkspaceTabsState) => {
     setTabsStateRaw(next);
     const encoded = encodeTabs(next);
@@ -232,6 +259,78 @@ function Workspace({
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
   const queryClient = useQueryClient();
+  const [captureId, setCaptureId] = useCaptureContext(projectId);
+  const metricsCapturesQuery = useQuery({
+    queryKey: metricCapturesKey(projectId),
+    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
+    staleTime: API_LEAN_STALE_MS,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+  });
+  const superstreamsQuery = useQuery({
+    queryKey: ["superstreams", projectId],
+    queryFn: ({ signal }) => listSuperstreams(projectId, signal),
+    staleTime: 30_000,
+  });
+  const requestedSuperstream =
+    search["analysis_scope"] === "superstream" && typeof search["superstream_id"] === "string"
+      ? superstreamsQuery.data?.find((stream) => stream.id === search["superstream_id"])
+      : undefined;
+  const requestedCapture =
+    search["analysis_scope"] === "capture" && typeof search["capture_id"] === "string"
+      ? search["capture_id"]
+      : captureId;
+  const analysisScope: AnalysisScope | null = requestedSuperstream
+    ? {
+        type: "superstream",
+        superstreamId: requestedSuperstream.id,
+        revision: requestedSuperstream.revision,
+      }
+    : requestedCapture
+      ? { type: "capture", captureId: requestedCapture }
+      : null;
+  const scopeCaptureIds = requestedSuperstream
+    ? requestedSuperstream.captureIds
+    : requestedCapture
+      ? [requestedCapture]
+      : [];
+  const dimensionsQuery = useQuery(kpiFiltersQuery(projectId, scopeCaptureIds));
+  const dimensions = dimensionsQuery.data;
+  const dimensionsLoading = dimensionsQuery.isPending;
+  const dimensionsError = dimensionsQuery.isError;
+  const retryDimensions = () => void dimensionsQuery.refetch();
+  const templatesQuery = useQuery({
+    queryKey: ["workspace-templates", projectId],
+    queryFn: ({ signal }) => listWorkspaceTemplates(projectId, signal),
+    staleTime: 30_000,
+  });
+
+  useEffect(() => {
+    if (analysisScope || !metricsCapturesQuery.data?.[0]) return;
+    setCaptureId(metricsCapturesQuery.data[0].capture_id);
+  }, [analysisScope, metricsCapturesQuery.data, setCaptureId]);
+
+  const changeAnalysisScope = (next: AnalysisScope) => {
+    void queryClient.cancelQueries({
+      predicate: (query) => query.queryKey.some((part) => part === projectId),
+    });
+    if (next.type === "capture") setCaptureId(next.captureId);
+    else {
+      const stream = superstreamsQuery.data?.find((candidate) => candidate.id === next.superstreamId);
+      const first = stream?.captureIds[0];
+      if (first) setCaptureId(first);
+    }
+    void navigate({
+      to: ".",
+      search: (previous: Record<string, unknown>) => ({
+        ...previous,
+        ...analysisScopeSearch(next),
+      }),
+      replace: true,
+    } as never);
+    void queryClient.invalidateQueries({ queryKey: ["project-kpi", "catalog", projectId] });
+    void queryClient.invalidateQueries({ queryKey: ["project-metrics", projectId] });
+  };
   const readConfigs = (tabId: string): Record<string, ChartConfig> => {
     try {
       const tabKey = `bc4.kpi.visualizations.${projectId}.${tabId}`;
@@ -301,16 +400,8 @@ function Workspace({
     }));
     setSelectedRows(new Set());
   };
-  const [captureId, setCaptureId] = useCaptureContext(projectId);
   // 1.92.0 — captureKind depuis /metrics/captures (back 0.76.1) pour badge
   // "Scanner" + désactivation UE cell_scoped metrics dans le catalogue.
-  const metricsCapturesQuery = useQuery({
-    queryKey: metricCapturesKey(projectId),
-    queryFn: ({ signal }) => getMetricCaptures(projectId, {}, signal),
-    staleTime: API_LEAN_STALE_MS,
-    refetchOnMount: false,
-    refetchOnWindowFocus: false,
-  });
   const captureKind =
     metricsCapturesQuery.data?.find((c) => c.capture_id === captureId)?.kind ?? null;
   // 1.49.0 (F2) — second catalogue : Métriques Nemo brutes depuis
@@ -446,6 +537,30 @@ function Workspace({
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
 
   const [draft, setDraft] = useState(() => fromSearch(search));
+  const autoDetectedScope = useRef("");
+  const scopeIdentity = analysisScope
+    ? analysisScope.type === "capture"
+      ? `capture:${analysisScope.captureId}`
+      : `superstream:${analysisScope.superstreamId}:${analysisScope.revision}`
+    : "none";
+  useEffect(() => {
+    if (!dimensions || !analysisScope || autoDetectedScope.current === scopeIdentity) return;
+    const availableRats = (dimensions.rats?.values ?? []).filter(
+      (value): value is "LTE" | "NR" => value === "LTE" || value === "NR",
+    );
+    const availableOperators = new Set(dimensions.operators?.values ?? []);
+    const current = fromSearch(search);
+    const values = { ...current.values, rat: availableRats };
+    const selectedOperators = current.values.operator?.filter((value) =>
+      availableOperators.has(value),
+    );
+    if (selectedOperators?.length) values.operator = selectedOperators;
+    else delete values.operator;
+    const detected = { ...current, values };
+    autoDetectedScope.current = scopeIdentity;
+    setDraft(detected);
+    setSharedFilters(toSearch(appliedPayload(detected, dimensions)) as never);
+  }, [analysisScope, dimensions, scopeIdentity, search, setSharedFilters]);
   // URL is the applied shared state; edits stay local until Apply.
   const urlDraft = useMemo(() => fromSearch(search), [search]);
   const applied = useMemo(
@@ -537,17 +652,32 @@ function Workspace({
   const catalogSearch = useRef<HTMLInputElement>(null);
   const effectiveActive = codes.includes(active ?? "") ? active : (codes[0] ?? null);
   const visibleCodes = codes;
+  const analyticCaptureIds = scopeCaptureIds.length
+    ? scopeCaptureIds
+    : captureId
+      ? [captureId]
+      : [];
+  const kpiRequests = analyticCaptureIds.flatMap((memberCaptureId, memberPosition) =>
+    visibleCodes.map((code) => ({ code, memberCaptureId, memberPosition })),
+  );
   const queries = useQueries({
-    queries: visibleCodes.map((code) => ({
+    queries: kpiRequests.map(({ code, memberCaptureId, memberPosition }) => ({
       queryKey: [
         "project-kpi",
         "detail",
         projectId,
         code,
-        { ...applied, group_by: configFor(code).groupBy },
+        scopeIdentity,
+        memberPosition,
+        { ...applied, capture_id: memberCaptureId, group_by: configFor(code).groupBy },
       ],
       queryFn: ({ signal }) =>
-        getProjectKpi(projectId, code, { ...applied, group_by: configFor(code).groupBy }, signal),
+        getProjectKpi(
+          projectId,
+          code,
+          { ...applied, capture_id: memberCaptureId, group_by: configFor(code).groupBy },
+          signal,
+        ),
       enabled: !dimensionsLoading && !dimensionsError,
       staleTime: 60_000,
       retry: false,
@@ -555,12 +685,18 @@ function Workspace({
       refetchOnWindowFocus: false,
     })),
   });
-  const panels = visibleCodes.flatMap((code, index) => {
-    const entry = entries.find((e) => e.item.code === code),
-      query = queries[index];
+  const panels = kpiRequests.flatMap(({ code, memberCaptureId, memberPosition }, index) => {
+    const entry = entries.find((e) => e.item.code === code), query = queries[index];
     if (!entry || !query) return [];
     const stat = chosenStatistic(query.data, configFor(code).statistic ?? undefined);
-    return [{ entry, query, stat, rows: query.data ? analyticRows(query.data, stat) : [] }];
+    return [{
+      entry,
+      query,
+      stat,
+      rows: query.data ? analyticRows(query.data, stat) : [],
+      memberCaptureId,
+      memberPosition,
+    }];
   });
   const rows = panels
     .filter((panel) => !configFor(panel.entry.item.code).visualization.startsWith("task_"))
@@ -633,7 +769,150 @@ function Workspace({
       else next.add(id);
       return next;
     });
+  const activeTemplateStorageKey = `bc4.kpi.activeTemplate.${projectId}.${currentTab.id}`;
+  const readActiveTemplateId = () => {
+    try {
+      return localStorage.getItem(activeTemplateStorageKey);
+    } catch {
+      return null;
+    }
+  };
+  const [activeTemplateState, setActiveTemplateState] = useState(() => ({
+    tabId: currentTab.id,
+    id: readActiveTemplateId(),
+  }));
+  if (activeTemplateState.tabId !== currentTab.id) {
+    setActiveTemplateState({ tabId: currentTab.id, id: readActiveTemplateId() });
+  }
+  const activeTemplate =
+    templatesQuery.data?.find((template) => template.id === activeTemplateState.id) ?? null;
+  const [templateStateRevision, setTemplateStateRevision] = useState(0);
+  useEffect(() => {
+    const changed = () => setTemplateStateRevision((value) => value + 1);
+    window.addEventListener("bc4-panel-layout", changed);
+    window.addEventListener("bc4-table-settings", changed);
+    window.addEventListener("bc4-metric-map-preferences", changed);
+    window.addEventListener("bc4-metric-legend-settings", changed);
+    window.addEventListener("bc4-metric-pane", changed);
+    return () => {
+      window.removeEventListener("bc4-panel-layout", changed);
+      window.removeEventListener("bc4-table-settings", changed);
+      window.removeEventListener("bc4-metric-map-preferences", changed);
+      window.removeEventListener("bc4-metric-legend-settings", changed);
+      window.removeEventListener("bc4-metric-pane", changed);
+    };
+  }, []);
+  const currentTemplateConfiguration = () =>
+    snapshotWorkspaceTemplate(currentTab, configs, metricViews);
+  const currentTemplateSignature = workspaceTemplateSignature(currentTemplateConfiguration());
+  const workspaceTemplateDirty = activeTemplate
+    ? currentTemplateSignature !== workspaceTemplateSignature(activeTemplate.configuration)
+    : codes.length > 0 || selectedMetrics.length > 0 || templateStateRevision > 0;
+  const rememberActiveTemplate = (templateId: string | null) => {
+    setActiveTemplateState({ tabId: currentTab.id, id: templateId });
+    try {
+      if (templateId) localStorage.setItem(activeTemplateStorageKey, templateId);
+      else localStorage.removeItem(activeTemplateStorageKey);
+    } catch {
+      /* storage unavailable */
+    }
+  };
+  const cacheTemplate = (template: WorkspaceTemplate) => {
+    queryClient.setQueryData<WorkspaceTemplate[]>(["workspace-templates", projectId], (previous) => {
+      const rest = (previous ?? []).filter((candidate) => candidate.id !== template.id);
+      return [template, ...rest].sort((left, right) =>
+        right.updatedAt.localeCompare(left.updatedAt),
+      );
+    });
+    rememberActiveTemplate(template.id);
+  };
+  const templateContext = {
+    templates: templatesQuery.data ?? [],
+    activeTemplate,
+    loading: templatesQuery.isPending,
+    error: templatesQuery.error instanceof Error ? templatesQuery.error : null,
+    workspaceDirty: workspaceTemplateDirty,
+    currentConfiguration: currentTemplateConfiguration,
+    retry: () => void templatesQuery.refetch(),
+    apply: async (template: WorkspaceTemplate) => {
+      const restored = restoreWorkspaceTemplate(
+        currentTab.id,
+        template.configuration,
+        loadTableSettings(currentTab.id).search,
+      );
+      persistTabs(updateTab(tabsState, currentTab.id, restored.tab));
+      setConfigsState({ tabId: currentTab.id, configs: restored.chartConfigurations });
+      setViewsState({ tabId: currentTab.id, views: restored.metricViews });
+      rememberActiveTemplate(template.id);
+      setSelectedRows(new Set());
+      setTemplateStateRevision((value) => value + 1);
+    },
+    create: async (name: string, description: string | null) => {
+      const created = await createWorkspaceTemplate(projectId, {
+        name,
+        description,
+        configuration: currentTemplateConfiguration(),
+      });
+      cacheTemplate(created);
+    },
+    update: async () => {
+      if (!activeTemplate) throw new Error("Aucun template actif.");
+      const updated = await updateWorkspaceTemplate(
+        projectId,
+        activeTemplate,
+        activeTemplate.description,
+        currentTemplateConfiguration(),
+      );
+      cacheTemplate(updated);
+    },
+    rename: async (name: string) => {
+      if (!activeTemplate) throw new Error("Aucun template actif.");
+      cacheTemplate(await renameWorkspaceTemplate(projectId, activeTemplate, name));
+    },
+    remove: async () => {
+      if (!activeTemplate) throw new Error("Aucun template actif.");
+      await deleteWorkspaceTemplate(projectId, activeTemplate);
+      queryClient.setQueryData<WorkspaceTemplate[]>(["workspace-templates", projectId], (previous) =>
+        (previous ?? []).filter((candidate) => candidate.id !== activeTemplate.id),
+      );
+      rememberActiveTemplate(null);
+    },
+  };
+  const availableRats = new Set(dimensions?.rats?.values ?? []);
+  const catalogueNodesBySelection = new Map(
+    (metricsCatalog.data?.nodes ?? [])
+      .filter((node) => node.selection)
+      .map((node) => [node.selection!, node]),
+  );
+  const metricInfoByCode = new Map(
+    (metricsCatalog.data?.metrics ?? []).map((metric) => [metric.code, metric]),
+  );
+  const unavailableTemplateSelections = [
+    ...codes
+      .filter((code) => !entries.some((entry) => entry.item.code === code))
+      .map((code) => ({ code, reason: translate("workspaceTemplates.kpiMissing") })),
+    ...selectedMetrics.flatMap((code) => {
+      const node = catalogueNodesBySelection.get(code);
+      const baseCode = code.split("@", 1)[0] ?? code;
+      const info = metricInfoByCode.get(code) ?? metricInfoByCode.get(baseCode);
+      if (node && !node.selectable) {
+        return [{ code, reason: node.reason ?? translate("workspaceTemplates.metricUnavailable") }];
+      }
+      if (!node && !measuredMetricCodes.has(code) && !info) {
+        return [{ code, reason: translate("workspaceTemplates.metricMissing") }];
+      }
+      if (info?.tech === "LTE" && !availableRats.has("LTE")) {
+        return [{ code, reason: translate("workspaceTemplates.lteMissing") }];
+      }
+      if (info?.tech === "NR" && !availableRats.has("NR")) {
+        return [{ code, reason: translate("workspaceTemplates.nrMissing") }];
+      }
+      return [];
+    }),
+  ];
   return (
+    <WorkspaceTemplatesProvider value={templateContext}>
+    <ActiveEventsProvider resetKey={`${currentTab.id}:${scopeIdentity}`}>
     <main className="kpi-workspace" aria-label="KPI Analytics">
       <KpiFilters
         draft={draft}
@@ -647,7 +926,33 @@ function Workspace({
         onChange={setDraft}
         onApply={apply}
         onReset={reset}
+        scope={analysisScope}
+        captures={metricsCapturesQuery.data ?? []}
+        superstreams={superstreamsQuery.data ?? []}
+        sourcesLoading={metricsCapturesQuery.isPending || superstreamsQuery.isPending}
+        onScopeChange={changeAnalysisScope}
+        eventsVisible={eventsVisible}
+        onEventsVisibleChange={setEventsVisible}
       />
+      {eventsVisible && scopeCaptureIds.length > 0 && (
+        <section className="kpi-events-scope" data-testid="kpi-events-scope">
+          {scopeCaptureIds.map((memberCaptureId, memberPosition) => (
+            <div key={memberCaptureId} data-member-position={memberPosition}>
+              {analysisScope?.type === "superstream" && (
+                <p className="kpi-capture-boundary">
+                  Capture {memberPosition + 1} · {memberCaptureId}
+                </p>
+              )}
+              <MetricsEventsRibbon
+                projectId={projectId}
+                captureId={memberCaptureId}
+                filters={{ ...applied, capture_id: memberCaptureId }}
+                syncId={`kpi-workspace-${currentTab.id}-${memberCaptureId}`}
+              />
+            </div>
+          ))}
+        </section>
+      )}
       <ResizablePanelGroup orientation="horizontal" className="kpi-workspace-panels">
         <ResizablePanel
           id="kpi-catalog-panel"
@@ -896,6 +1201,22 @@ function Workspace({
                 {limitMessage}
               </p>
             )}
+            {unavailableTemplateSelections.length > 0 && (
+              <div
+                role="alert"
+                className="m-2 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950"
+                data-testid="workspace-unavailable-metrics"
+              >
+                <strong>{translate("workspaceTemplates.unavailable")}</strong>
+                <ul className="mt-1 list-disc pl-4">
+                  {unavailableTemplateSelections.map((item) => (
+                    <li key={`${item.code}:${item.reason}`}>
+                      {item.code} — {item.reason}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {/* 1.92.0 — bandeau Scanner visible dès que la capture active est
                 un scanner, même sans métrique sélectionnée. Jamais caché. */}
             {activeCatalog === "metrics" && captureKind === "scanner" && (
@@ -911,7 +1232,7 @@ function Workspace({
                 (never hidden). Future "Scanner view" lot open — see CHANGELOG back 0.76.1.
               </div>
             )}
-            {currentTab.overlay && panels.length >= 2 ? (
+            {analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2 ? (
               <KpiOverlayCard
                 panels={panels.map((p) => ({ entry: p.entry, rows: p.rows }))}
                 onDisable={() => setOverlay(tabsState.activeTabId, false)}
@@ -920,25 +1241,25 @@ function Workspace({
             <WorkspaceGrid
               count={panels.length + graphMetricCount + (metricsTablePane ? 1 : 0)}
               layout={currentTab.layout}
-              hidden={currentTab.overlay && panels.length >= 2}
+              hidden={analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2}
               fillAvailable={mapOnlyWorkspace}
             >
               <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                {panels.map(({ entry, query, stat, rows: graphRows }, natural) => (
+                {panels.map(({ entry, query, stat, rows: graphRows, memberCaptureId, memberPosition }, natural) => (
                   <PanelShell
-                    key={entry.item.code}
+                    key={`${memberCaptureId}:${entry.item.code}`}
                     workspaceId={tabsState.activeTabId}
-                    id={`kpi:${entry.item.code}`}
+                    id={`kpi:${entry.item.code}${analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""}`}
                     natural={natural}
-                    defaultTitle={entry.item.name}
+                    defaultTitle={analysisScope?.type === "superstream" ? `${memberPosition + 1}. ${entry.item.name} · ${memberCaptureId}` : entry.item.name}
                     fullRow={configFor(entry.item.code).visualization === "table"}
                   >
                     {(panelTitle) => (
                       <KpiGraphCard
                         projectId={projectId}
                         workspaceId={tabsState.activeTabId}
-                        appliedFilters={applied}
-                        captureId={captureId}
+                        appliedFilters={{ ...applied, capture_id: memberCaptureId }}
+                        captureId={memberCaptureId}
                         onCaptureChange={setCaptureId}
                         entry={
                           panelTitle === entry.item.name
@@ -994,32 +1315,49 @@ function Workspace({
                   </PanelShell>
                 ))}
                 {selectedMetrics.length > 0 && (
-                  <MetricsWorkspace
-                    key={currentTab.id}
-                    projectId={projectId}
-                    captureId={captureId}
-                    onCaptureChange={setCaptureId}
-                    selections={selectedMetrics}
-                    catalog={metricsCatalog.data?.metrics ?? []}
-                    filters={applied}
-                    view={metricsView}
-                    onViewChange={setMetricsView}
-                    onTablePaneChange={setMetricsTablePane}
-                    views={metricViews}
-                    onVisualization={visualizeMetric}
-                    mapFillsAvailable={mapOnlyWorkspace}
-                    workspaceId={tabsState.activeTabId}
-                    projectCenter={projectCenter}
-                    onColumnsChange={setTableColumns}
-                    paneRequest={metricsPaneRequest.n}
-                    cardViewRequest={cardViewRequest}
-                    onClear={() => {
-                      setSelectedMetrics([]);
-                    }}
-                    onRemove={(code: string) =>
-                      setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
-                    }
-                  />
+                  <>
+                    {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                      <MetricsWorkspace
+                        key={`${currentTab.id}:${memberCaptureId}`}
+                        projectId={projectId}
+                        captureId={memberCaptureId}
+                        onCaptureChange={(nextCaptureId) => {
+                          if (analysisScope?.type !== "superstream") {
+                            changeAnalysisScope({ type: "capture", captureId: nextCaptureId });
+                          }
+                        }}
+                        selections={selectedMetrics}
+                        catalog={metricsCatalog.data?.metrics ?? []}
+                        filters={{ ...applied, capture_id: memberCaptureId }}
+                        view={metricsView}
+                        onViewChange={setMetricsView}
+                        onTablePaneChange={setMetricsTablePane}
+                        views={metricViews}
+                        onVisualization={visualizeMetric}
+                        mapFillsAvailable={mapOnlyWorkspace && analyticCaptureIds.length === 1}
+                        workspaceId={tabsState.activeTabId}
+                        projectCenter={projectCenter}
+                        showEvents={false}
+                        scopeLabel={
+                          analysisScope?.type === "superstream"
+                            ? `Capture ${memberPosition + 1} · ${memberCaptureId}`
+                            : undefined
+                        }
+                        panelIdSuffix={
+                          analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""
+                        }
+                        onColumnsChange={setTableColumns}
+                        paneRequest={metricsPaneRequest.n}
+                        cardViewRequest={cardViewRequest}
+                        onClear={() => {
+                          setSelectedMetrics([]);
+                        }}
+                        onRemove={(code: string) =>
+                          setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
+                        }
+                      />
+                    ))}
+                  </>
                 )}
               </TableSettingsWorkspaceContext.Provider>
             </WorkspaceGrid>
@@ -1067,11 +1405,22 @@ function Workspace({
                   }));
                 if (rawMetrics.length > 0) {
                   return (
-                    <KpiRawDataTable
-                      projectId={projectId}
-                      captureId={captureId}
-                      metrics={rawMetrics}
-                    />
+                    <>
+                      {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                        <section key={memberCaptureId}>
+                          {analysisScope?.type === "superstream" && (
+                            <p className="kpi-capture-boundary">
+                              Capture {memberPosition + 1} · {memberCaptureId}
+                            </p>
+                          )}
+                          <KpiRawDataTable
+                            projectId={projectId}
+                            captureId={memberCaptureId}
+                            metrics={rawMetrics}
+                          />
+                        </section>
+                      ))}
+                    </>
                   );
                 }
                 if (
@@ -1088,7 +1437,24 @@ function Workspace({
                 }
                 return (
                   <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                    <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                    {analysisScope?.type === "superstream" ? (
+                      analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                        <section key={memberCaptureId}>
+                          <p className="kpi-capture-boundary">
+                            Capture {memberPosition + 1} · {memberCaptureId}
+                          </p>
+                          <KpiDataTable
+                            rows={panels
+                              .filter((panel) => panel.memberCaptureId === memberCaptureId)
+                              .flatMap((panel) => panel.rows)}
+                            selected={selectedRows}
+                            onSelect={setSelectedRows}
+                          />
+                        </section>
+                      ))
+                    ) : (
+                      <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                    )}
                   </TableSettingsWorkspaceContext.Provider>
                 );
               })()}
@@ -1109,5 +1475,7 @@ function Workspace({
         onOverlayToggle={setOverlay}
       />
     </main>
+    </ActiveEventsProvider>
+    </WorkspaceTemplatesProvider>
   );
 }

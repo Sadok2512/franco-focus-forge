@@ -1870,3 +1870,92 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   flex: 1;
   min-height: 0;
 }
+
+/* Header V2: one compact responsive toolbar in the normative control order. */
+.kpi-header-v2 {
+  display: block;
+  min-width: 0;
+  padding: 6px 10px;
+  overflow: visible;
+}
+.kpi-header-v2-controls {
+  display: grid;
+  grid-template-columns:
+    minmax(190px, 1.4fr)
+    minmax(190px, 1fr)
+    minmax(150px, 1fr)
+    minmax(150px, 1fr)
+    auto auto auto;
+  align-items: end;
+  gap: 6px;
+  min-width: 0;
+}
+.kpi-header-field {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+.kpi-header-field > span:first-child {
+  overflow: hidden;
+  color: var(--muted-foreground);
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0.04em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.kpi-header-field select,
+.kpi-header-control {
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+}
+.kpi-header-field select {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--background);
+  padding: 2px 7px;
+  color: var(--foreground);
+  font-size: 11px;
+  text-overflow: ellipsis;
+}
+.kpi-events-toggle {
+  align-items: center;
+}
+.kpi-header-v2 > .kpi-dirty,
+.kpi-header-v2 > [role="alert"] {
+  display: block;
+  margin-top: 4px;
+}
+.kpi-events-scope {
+  flex: 0 0 auto;
+  max-height: 220px;
+  overflow-y: auto;
+  border-bottom: 1px solid var(--border);
+  background: var(--background);
+}
+.kpi-capture-boundary {
+  margin: 0;
+  padding: 3px 10px;
+  border-top: 1px solid var(--border);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 650;
+}
+@media (max-width: 1280px) {
+  .kpi-header-v2-controls {
+    grid-template-columns: repeat(4, minmax(150px, 1fr));
+  }
+}
+@media (max-width: 760px) {
+  .kpi-header-v2-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .kpi-header-v2-controls > .kpi-button {
+    width: 100%;
+  }
+}

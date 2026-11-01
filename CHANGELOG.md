@@ -1,3 +1,19 @@
+## 1.129.0 (minor) — KPI Header V2 and Workspace Templates — 2026-11-01 (BC4)
+
+- Replaces the KPI Analytics upper filter bar with the compact normative
+  Stream/Capture, Technology, Operator, Templates, Events, Reset and Apply
+  sequence; source dimensions come only from the selected capture members.
+- Adds capture/Superstream source selection with canonical member ordering and
+  separate per-capture analytical rendering, preserving `(project_id,
+  capture_id, seq)` provenance without timestamp fusion.
+- Events can be hidden without unmounting analytical panels; timeline state is
+  retained and the recovered vertical space is resized immediately.
+- Adds durable Workspace Template create/list/read/apply/update/rename/delete
+  UI, dirty-workspace confirmation, preview, unavailable-metric reporting and
+  active-workspace-only restoration of panels, layout, table, graph and map
+  presentation settings.
+- SemVer front: **MINOR 1.129.0**.
+
 ## 1.128.1 (patch) — Frontend RC2 reconciliation — 2026-11-01 (BC4)
 
 - Reconciles the RC2 Superstream analysis-scope navigation with the production

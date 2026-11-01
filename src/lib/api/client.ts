@@ -271,7 +271,12 @@ export {
 } from "./dict-v2";
 
 // Project-scoped KPI Analytics adapters (shared UI entry point).
-export { getProjectKpi, getProjectKpiCatalog, getProjectKpiFilters } from "./project-kpi";
+export {
+  getProjectKpi,
+  getProjectKpiCatalog,
+  getProjectKpiFilters,
+  getProjectKpiFiltersForCaptures,
+} from "./project-kpi";
 export { getDictTemplates, getDictTemplateSummary } from "./dict-templates";
 export { updateDictTemplate } from "./dict-templates";
 

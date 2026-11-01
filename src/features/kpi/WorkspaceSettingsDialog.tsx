@@ -20,6 +20,7 @@ import {
   type TableColors,
   type TableSettings,
 } from "./table-settings";
+import { WorkspaceTemplateSettings } from "./WorkspaceTemplateSettings";
 
 function Row({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -486,6 +487,7 @@ export function WorkspaceSettingsDialog({
             </Button>
           </TabsContent>
         </Tabs>
+        <WorkspaceTemplateSettings />
         </div>
 
         <div className="flex items-center justify-between gap-2 border-t border-border bg-background px-1 pt-3 pb-1">

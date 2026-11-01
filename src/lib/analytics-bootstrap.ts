@@ -4,6 +4,7 @@ import {
   getProject,
   getProjectKpiCatalog,
   getProjectKpiFilters,
+  getProjectKpiFiltersForCaptures,
 } from "@/lib/api/client";
 import { getMetrics } from "@/lib/api/metrics";
 
@@ -193,10 +194,13 @@ export const kpiCatalogQuery = (projectId: string) =>
     ),
     queryKey: ["project-kpi", "catalog", projectId],
   });
-export const kpiFiltersQuery = (projectId: string) =>
+export const kpiFiltersQuery = (projectId: string, captureIds: string[] = []) =>
   queryOptions({
-    queryKey: ["project-kpi", "filters", projectId],
-    queryFn: () => getProjectKpiFilters(projectId),
+    queryKey: ["project-kpi", "filters", projectId, [...captureIds]],
+    queryFn: ({ signal }) =>
+      captureIds.length
+        ? getProjectKpiFiltersForCaptures(projectId, captureIds, signal)
+        : getProjectKpiFilters(projectId, signal),
     staleTime: 60_000,
   });
 export const metricsCatalogQuery = (projectId: string) => shaKeyedMetricsQuery(projectId);

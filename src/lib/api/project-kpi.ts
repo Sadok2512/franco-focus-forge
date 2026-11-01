@@ -202,6 +202,26 @@ export async function getProjectKpiFilters(
   });
 }
 
+/** Source-scoped dimensions for Header V2. Repeated capture_id parameters
+ * represent ordered Superstream members without merging their identities. */
+export async function getProjectKpiFiltersForCaptures(
+  projectId: string,
+  captureIds: string[],
+  signal?: AbortSignal,
+): Promise<ProjectKpiFilters> {
+  if (!captureIds.length) return getProjectKpiFilters(projectId, signal);
+  if (isApiMode()) {
+    const query = new URLSearchParams();
+    for (const captureId of captureIds) query.append("capture_id", captureId);
+    return kpiFetch(
+      `/projects/${encode(projectId)}/kpi/filters?${query}`,
+      ProjectKpiFiltersSchema,
+      signal,
+    );
+  }
+  return getProjectKpiFilters(projectId, signal);
+}
+
 /** GET /projects/{project_id}/kpi/{code}?operator[]=... */
 export async function getProjectKpi(
   projectId: string,
