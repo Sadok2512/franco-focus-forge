@@ -95,7 +95,7 @@ await page.locator('[role="menu"]').last().getByRole("menuitem", { name: /Map|Ca
 const map = page.locator('article[data-code="LTE_RACH_FAILURES"]');
 await map.waitFor({ timeout: 120_000 });
 await map.locator("canvas").first().waitFor({ timeout: 120_000 });
-await map.getByText(/geolocated|géolocalisées/).waitFor({ timeout: 120_000 });
+await map.getByTestId("procedure-map-count").waitFor({ timeout: 120_000 });
 await page.screenshot({ path: `${out}03-procedure-map.png`, fullPage: true });
 
 const result = {

@@ -146,6 +146,17 @@ export function ProcedureMap({
             </Button>
           </div>
         )}
+        {!query.isPending && !query.isError && (
+          <div
+            data-testid="procedure-map-count"
+            className="pointer-events-none absolute bottom-7 left-1/2 z-10 -translate-x-1/2 rounded border bg-card/95 px-2 py-1 text-[10px] shadow-sm"
+          >
+            {t("procedures.geolocated", {
+              count: features.length,
+              total: query.data?.total ?? 0,
+            })}
+          </div>
+        )}
       </KpiMapOSM>
     </div>
   );
