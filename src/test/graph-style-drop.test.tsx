@@ -100,17 +100,14 @@ async function mountedCard(views?: MetricViews) {
   })) as HTMLElement;
 }
 
-// Le ⋮ et son sous-menu Style sont rouverts à chaque interaction : Radix ferme
-// le menu dès qu'une entrée est choisie.
-async function openStyleMenu(card: HTMLElement) {
+// Le ⋮ s'ouvre au clavier en jsdom ; le sous-menu Style reste ouvert après un
+// choix (preventDefault) pour enchaîner tracé puis couleur.
+function openStyleMenu(card: HTMLElement) {
   const trigger = within(card).getByTestId("workspace-panel-menu");
   // jsdom ne connaît pas les pointeurs de Radix : le menu s'ouvre au clavier,
   // et seulement si le déclencheur a le focus.
   trigger.focus();
   fireEvent.keyDown(trigger, { key: "Enter" });
-  console.log("DBG state", trigger.getAttribute("data-state"), "items", screen.queryAllByRole("menuitem").length, "sub", !!screen.queryByTestId("metric-style-sub"));
-  // Le contenu est lu immédiatement : attendre un tour de boucle laisse Radix
-  // refermer le menu avant la lecture.
   fireEvent.click(screen.getByTestId("metric-style-sub"));
 }
 
@@ -118,13 +115,12 @@ describe("style de graphe", () => {
   it("le sous-menu Style change le tracé et la couleur, et les mémorise par onglet", async () => {
     // Histogramme : le tracé temporel animé fermerait le menu en jsdom.
     const card = await mountedCard({ "cell_rsrp@0": "histogram" });
-    await openStyleMenu(card);
-    fireEvent.click(await screen.findByTestId("metric-plot-bar"));
+    openStyleMenu(card);
+    fireEvent.click(screen.getByTestId("metric-plot-bar"));
     expect(JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}")).toEqual({
       "cell_rsrp@0": { plot: "bar", color: "#1d4ed8" },
     });
-    await openStyleMenu(card);
-    fireEvent.click(await screen.findByTestId("metric-color-#0f766e"));
+    fireEvent.click(screen.getByTestId("metric-color-#0f766e"));
     expect(JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}")).toEqual({
       "cell_rsrp@0": { plot: "bar", color: "#0f766e" },
     });
