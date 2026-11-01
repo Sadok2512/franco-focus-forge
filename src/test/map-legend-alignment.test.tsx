@@ -44,8 +44,9 @@ function expectRsrpRowStructure(row: Element, withCheckbox = true) {
   const body = row.querySelector(withCheckbox ? "label" : "span");
   expect(body).not.toBeNull();
   if (withCheckbox) expect(body!.querySelector('input[type="checkbox"]')).not.toBeNull();
+  // Class rows carry a filled dot, link rows a line, position rows a ring.
   const swatch = body!.querySelector<HTMLElement>("span[style]");
-  expect(swatch?.style.background).toBeTruthy();
+  expect(swatch?.style.background || swatch?.style.borderColor).toBeTruthy();
   expect(body!.querySelector(".flex-1")).not.toBeNull();
   expect(body!.querySelector(".tabular-nums.text-muted-foreground")).not.toBeNull();
 }
@@ -176,8 +177,9 @@ describe("Map legends share the RSRP structure", () => {
     await waitFor(() => expect(map.addLayer).toHaveBeenCalledOnce());
     const section = container.querySelector("[data-map-added-metric]");
     expect(section?.querySelector(".font-semibold")?.textContent).toBe("RSRQ · dB");
+    // The legend fills with one row per class once the metric data arrives.
+    await waitFor(() => expect(legendRows(section!, "RSRQ").length).toBeGreaterThan(0));
     const rows = legendRows(section!, "RSRQ");
-    expect(rows.length).toBeGreaterThan(0);
     for (const row of rows) expectRsrpRowStructure(row);
 
     // Unchecking a class hides exactly that class on the map.
