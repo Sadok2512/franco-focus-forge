@@ -63,43 +63,85 @@ export const DEFAULT_VISIBLE: readonly ColKey[] = [
   "size_bytes",
 ];
 
-export type ColumnConfig = { order: ColKey[]; visible: ColKey[] };
+// ---------- Metric columns: user-added catalogue metrics ----------
+/** A metric column added from the catalogue; `selector` is the semantic selector (`code@event`). */
+export type MetricCol = { selector: string; label: string; unit: string };
+export const METRIC_COL_PREFIX = "metric:";
+export const metricColId = (selector: string) => `${METRIC_COL_PREFIX}${selector}`;
+export const isMetricCol = (id: string) => id.startsWith(METRIC_COL_PREFIX);
+export const metricSelector = (id: string) => id.slice(METRIC_COL_PREFIX.length);
+
+export type ColumnConfig = { order: string[]; visible: string[]; metrics: MetricCol[] };
 export const COLUMNS_STORAGE_KEY = "bc4-signaling-columns-v10";
 export const defaultColumns = (): ColumnConfig => ({
   order: [...DEFAULT_ORDER],
   visible: [...DEFAULT_VISIBLE],
+  metrics: [],
 });
 
 /** Restores a saved config, dropping unknown keys and appending new catalog columns. */
 export function parseColumns(raw: string | null): ColumnConfig {
   if (!raw) return defaultColumns();
   try {
-    const value = JSON.parse(raw) as Partial<ColumnConfig>;
-    const known = new Set<string>(DEFAULT_ORDER);
+    const value = JSON.parse(raw) as Partial<ColumnConfig> & { metrics?: unknown };
+    const metrics: MetricCol[] = (Array.isArray(value.metrics) ? value.metrics : [])
+      .filter(
+        (m): m is MetricCol =>
+          !!m &&
+          typeof (m as MetricCol).selector === "string" &&
+          typeof (m as MetricCol).label === "string",
+      )
+      .map((m) => ({ selector: m.selector, label: m.label, unit: String(m.unit ?? "") }));
+    const known = new Set<string>([...DEFAULT_ORDER, ...metrics.map((m) => metricColId(m.selector))]);
     const order = (Array.isArray(value.order) ? value.order : []).filter(
-      (k): k is ColKey => known.has(k),
+      (k): k is string => typeof k === "string" && known.has(k),
     );
     const unique = [...new Set(order)];
     for (const k of DEFAULT_ORDER) if (!unique.includes(k)) unique.push(k);
+    for (const m of metrics) {
+      const id = metricColId(m.selector);
+      if (!unique.includes(id)) unique.push(id);
+    }
     const visible = (Array.isArray(value.visible) ? value.visible : []).filter(
-      (k): k is ColKey => known.has(k),
+      (k): k is string => typeof k === "string" && known.has(k),
     );
     for (const k of MANDATORY_COLS) if (!visible.includes(k)) visible.push(k);
-    return { order: unique, visible: [...new Set(visible)] };
+    return { order: unique, visible: [...new Set(visible)], metrics };
   } catch {
     return defaultColumns();
   }
 }
 
-export function toggleColumn(config: ColumnConfig, key: ColKey): ColumnConfig {
-  if (MANDATORY_COLS.includes(key)) return config;
+export function toggleColumn(config: ColumnConfig, key: string): ColumnConfig {
+  if ((MANDATORY_COLS as readonly string[]).includes(key)) return config;
   const visible = config.visible.includes(key)
     ? config.visible.filter((k) => k !== key)
     : [...config.visible, key];
   return { ...config, visible };
 }
 
-export function moveColumn(config: ColumnConfig, key: ColKey, delta: -1 | 1): ColumnConfig {
+/** Adds a metric column (or re-shows it when already present). */
+export function addMetricColumn(config: ColumnConfig, col: MetricCol): ColumnConfig {
+  const id = metricColId(col.selector);
+  if (config.metrics.some((m) => m.selector === col.selector))
+    return config.visible.includes(id) ? config : { ...config, visible: [...config.visible, id] };
+  return {
+    order: [...config.order, id],
+    visible: [...config.visible, id],
+    metrics: [...config.metrics, col],
+  };
+}
+
+export function removeMetricColumn(config: ColumnConfig, selector: string): ColumnConfig {
+  const id = metricColId(selector);
+  return {
+    order: config.order.filter((k) => k !== id),
+    visible: config.visible.filter((k) => k !== id),
+    metrics: config.metrics.filter((m) => m.selector !== selector),
+  };
+}
+
+export function moveColumn(config: ColumnConfig, key: string, delta: -1 | 1): ColumnConfig {
   const i = config.order.indexOf(key);
   const j = i + delta;
   if (i < 0 || j < 0 || j >= config.order.length) return config;
