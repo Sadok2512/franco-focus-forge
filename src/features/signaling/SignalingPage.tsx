@@ -88,6 +88,7 @@ import {
   defaultColumns,
   isMetricCol,
   messageInfo,
+  metricColId,
   metricSelector,
   moveColumn,
   pageItems,
