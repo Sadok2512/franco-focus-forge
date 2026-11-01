@@ -286,7 +286,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           onClick={() => setTechnos(["4G", "LTE"])}
         />
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.bands")}>
+      <LegendRow>
         {NETWORK_BANDS.map((b) => (
           <Swatch
             key={b.key}
