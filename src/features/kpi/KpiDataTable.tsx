@@ -20,7 +20,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   type AnalyticRow,
   exportRows,
@@ -189,7 +188,7 @@ export function KpiDataTable({
         <div className="ml-auto flex items-center gap-1">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="kpi-icon-button" aria-label={translate("kpi.tableMenu")}>
+              <button className="kpi-button px-1.5" aria-label={translate("kpi.tableMenu")}>
                 <MoreVertical size={15} />
               </button>
             </DropdownMenuTrigger>
@@ -229,7 +228,7 @@ export function KpiDataTable({
           </DropdownMenu>
           {onClose && (
             <button
-              className="kpi-icon-button"
+              className="kpi-button px-1.5"
               aria-label={translate("kpi.tableClose")}
               onClick={onClose}
             >
