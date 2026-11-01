@@ -275,6 +275,8 @@
     "7f626224ba1f": "Aucune métrique ne correspond à cette recherche.",
     "activeOnly": "Actifs uniquement",
     "showUnavailable": "Afficher les non disponibles",
+    "servingCells": "Cellules serving",
+    "neighbourCells": "Cellules voisines",
     "footerCatalogDecoder": "Catalogue {{catalog}} · Décodeur {{decoder}}",
     "footerLegacy": "Catalogue métriques — legacy ({{reason}})"
   },

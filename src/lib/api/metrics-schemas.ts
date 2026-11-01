@@ -77,6 +77,8 @@ const MetricCatalogNodePayloadSchema = z
     cell_label: z.string().nullable().optional(),
     cell_system: z.enum(["LTE", "NR"]).nullable().optional(),
     raw_cell_type: z.number().int().nullable().optional(),
+    cell_relation: z.enum(["serving", "neighbour"]).nullable().optional(),
+    technical_label: z.string().nullable().optional(),
     availability_status: z
       .enum(["available", "no_data", "not_projected", "not_applicable"])
       .nullable()
@@ -437,8 +439,7 @@ export const MetricAnalysisSchema = z.preprocess((value) => {
   const rows = Array.isArray(payload["rows"]) ? payload["rows"] : [];
   const pageSize =
     typeof payload["page_size"] === "number" ? payload["page_size"] : Math.max(rows.length, 1);
-  const totalRows =
-    typeof payload["total_rows"] === "number" ? payload["total_rows"] : rows.length;
+  const totalRows = typeof payload["total_rows"] === "number" ? payload["total_rows"] : rows.length;
   return {
     ...payload,
     page: typeof payload["page"] === "number" ? payload["page"] : 1,

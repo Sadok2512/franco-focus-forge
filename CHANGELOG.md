@@ -43,6 +43,10 @@
   the same search and bottom availability controls.
 - Metric rows only expand/collapse. Graph, Table and Map creation remains in
   the cell leaf `⋮` menu so a catalogue click cannot create a panel by accident.
+- Adds the certified Technology → Metric → Serving/Neighbour → Cell level for
+  RF metrics while preserving the direct Metric → Cell layout elsewhere.
+- Uses backend `cell_relation` metadata derived from event/system/raw cell enum,
+  never display text, PCI/EARFCN or occurrence indexes.
 - SemVer front: **MINOR 1.130.0**.
 
 ## 1.129.4 (patch) — Metrics catalogue sidebar and table overflow — 2026-11-01 (BC1 + BC4)

@@ -90,7 +90,8 @@ export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNo
   const grouped = new Map<string, Map<string, MetricCatalogNode[]>>();
   for (const leaf of deduplicated.values()) {
     const technology = technologyOf(leaf);
-    const metricLabel = leaf.metric_label ?? cleanLabel(leaf.label).split(" @ ", 1)[0] ?? leaf.label;
+    const metricLabel =
+      leaf.metric_label ?? cleanLabel(leaf.label).split(" @ ", 1)[0] ?? leaf.label;
     const metricIdentity = `${leaf.event ?? ""}:${leaf.source_column ?? leaf.metric_id ?? leaf.node_id}:${metricLabel}`;
     const metrics = grouped.get(technology) ?? new Map<string, MetricCatalogNode[]>();
     metrics.set(metricIdentity, [...(metrics.get(metricIdentity) ?? []), leaf]);
@@ -101,8 +102,7 @@ export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNo
   const technologies = [...grouped].sort(
     ([a], [b]) =>
       (technologyOrder.indexOf(a) < 0 ? 99 : technologyOrder.indexOf(a)) -
-        (technologyOrder.indexOf(b) < 0 ? 99 : technologyOrder.indexOf(b)) ||
-      a.localeCompare(b),
+        (technologyOrder.indexOf(b) < 0 ? 99 : technologyOrder.indexOf(b)) || a.localeCompare(b),
   );
   technologies.forEach(([technology, metrics], technologyIndex) => {
     const techId = `normalized:technology:${technology}`;
@@ -149,22 +149,55 @@ export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNo
           selectable: false,
           reason: null,
         });
-        leaves
-          .sort(
-            (a, b) =>
-              (a.raw_cell_type ?? Number.MAX_SAFE_INTEGER) -
-                (b.raw_cell_type ?? Number.MAX_SAFE_INTEGER) ||
-              (a.cell_label ?? a.label).localeCompare(b.cell_label ?? b.label),
-          )
-          .forEach((leaf, cellIndex) =>
+        const sortedLeaves = leaves.sort(
+          (a, b) =>
+            (a.raw_cell_type ?? Number.MAX_SAFE_INTEGER) -
+              (b.raw_cell_type ?? Number.MAX_SAFE_INTEGER) ||
+            (a.cell_label ?? a.label).localeCompare(b.cell_label ?? b.label),
+        );
+        const relations = new Set(
+          sortedLeaves.flatMap((leaf) => (leaf.cell_relation ? [leaf.cell_relation] : [])),
+        );
+        const splitByRelation = relations.has("serving") && relations.has("neighbour");
+        const addLeaves = (relationLeaves: MetricCatalogNode[], parentId: string) =>
+          relationLeaves.forEach((leaf, cellIndex) =>
             result.push({
               ...leaf,
               node_id: `normalized:leaf:${leaf.node_id}`,
-              parent_id: metricId,
+              parent_id: parentId,
               order: cellIndex,
               label: leaf.cell_label ?? (leaf.cell ? leaf.cell : "No cell scope"),
             }),
           );
+        if (!splitByRelation) {
+          addLeaves(sortedLeaves, metricId);
+          return;
+        }
+        (["serving", "neighbour"] as const).forEach((relation, relationIndex) => {
+          const relationLeaves = sortedLeaves.filter((leaf) => leaf.cell_relation === relation);
+          if (!relationLeaves.length) return;
+          const relationId = `${metricId}:relation:${relation}`;
+          result.push({
+            ...first,
+            node_id: relationId,
+            parent_id: metricId,
+            order: relationIndex,
+            label: relation === "serving" ? "Serving Cells" : "Neighbour Cells",
+            node_type: "group",
+            selection: null,
+            cell: null,
+            cell_relation: relation,
+            technical_label: null,
+            n: relationLeaves.reduce((total, leaf) => total + (leaf.selectable ? leaf.n : 0), 0),
+            selectable: false,
+            reason: null,
+          });
+          addLeaves(relationLeaves, relationId);
+        });
+        addLeaves(
+          sortedLeaves.filter((leaf) => !leaf.cell_relation),
+          metricId,
+        );
       });
   });
   return result;
@@ -192,7 +225,10 @@ function measuredMetricNodes(entries: Entry[]): MetricCatalogNode[] {
     cell_label: "No cell scope",
     cell_system: null,
     raw_cell_type: null,
-    availability_status: item.status === "AVAILABLE" ? "available" as const : "no_data" as const,
+    cell_relation: null,
+    technical_label: null,
+    availability_status:
+      item.status === "AVAILABLE" ? ("available" as const) : ("no_data" as const),
     n: 0,
     proof: item.source ?? "measured-catalog",
     selectable: item.status === "AVAILABLE",
@@ -254,7 +290,8 @@ export function MetricsCatalogSidebar({
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
   const query = useQuery({ ...metricsCatalogQuery(projectId, captureIds), retry: false });
   const normalizedNodes = useMemo(
-    () => buildMetricCellTree([...(query.data?.nodes ?? []), ...measuredMetricNodes(measuredEntries)]),
+    () =>
+      buildMetricCellTree([...(query.data?.nodes ?? []), ...measuredMetricNodes(measuredEntries)]),
     [measuredEntries, query.data?.nodes],
   );
   const byParent = useMemo(() => {
@@ -411,7 +448,10 @@ export function MetricsCatalogSidebar({
     const scannerBlocked = captureKind === "scanner" && node.cell != null;
     const disabled = (node.node_type === "leaf" && !node.selectable) || scannerBlocked;
     const scannerTooltip = scannerBlocked ? "no UE cell metrics in scanner capture" : null;
-    const label = cleanLabel(node.label);
+    const label =
+      node.node_type === "group" && node.cell_relation
+        ? t(node.cell_relation === "serving" ? "metrics.servingCells" : "metrics.neighbourCells")
+        : cleanLabel(node.label);
     const measured = node.source === "measured-catalog";
     const selectedForNode = measured ? measuredSelected : selected;
     const isSelected = node.selectable && selectedForNode.includes(node.selection ?? "");
@@ -419,8 +459,7 @@ export function MetricsCatalogSidebar({
     const canToggle =
       (node.selectable && node.selection
         ? isSelected || (selectionCount ?? selected.length) < MAX_METRICS
-        : false) &&
-      !scannerBlocked;
+        : false) && !scannerBlocked;
     const statusClass =
       node.selectable && node.n > 0
         ? "status-available"
@@ -502,7 +541,7 @@ export function MetricsCatalogSidebar({
       <li key={node.node_id}>
         <div
           className={`kpi-tree-leaf ${isActive ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
-          title={scannerTooltip ?? node.reason ?? node.source ?? label}
+          title={scannerTooltip ?? node.reason ?? node.technical_label ?? node.source ?? label}
         >
           <span
             className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
@@ -532,7 +571,8 @@ export function MetricsCatalogSidebar({
               </span>
               {search && (
                 <span className="text-[10px] text-muted-foreground">
-                  {node.source ??
+                  {node.technical_label ??
+                    node.source ??
                     (/@(lte|nr)-type-\d+$/.test(node.metric_id ?? "") ? "" : node.metric_id) ??
                     ""}
                 </span>
@@ -768,6 +808,18 @@ export function MetricsCatalogSidebar({
                 <>
                   <dt className="text-muted-foreground">cell</dt>
                   <dd className="font-mono">{info.cell}</dd>
+                </>
+              )}
+              {info.cell_relation && (
+                <>
+                  <dt className="text-muted-foreground">relation</dt>
+                  <dd>{info.cell_relation}</dd>
+                </>
+              )}
+              {info.technical_label && (
+                <>
+                  <dt className="text-muted-foreground">display_name</dt>
+                  <dd className="break-all font-mono">{info.technical_label}</dd>
                 </>
               )}
               {info.unit && (

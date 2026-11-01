@@ -24,6 +24,8 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
   cell_label: "PCell",
   cell_system: "LTE",
   raw_cell_type: 0,
+  cell_relation: "serving",
+  technical_label: "LTE_Serving_RSRP_PCell",
   availability_status: "available",
   n: 4935,
   proof: "documented-2.50",
@@ -44,7 +46,7 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
     );
   });
 
-  it("groups cells under one metric and removes legacy category/event levels", () => {
+  it("keeps direct cells when a metric has no certified neighbour distinction", () => {
     const nodes = buildMetricCellTree([
       leaf({}),
       leaf({
@@ -64,6 +66,32 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
       ["leaf", "SCell 1"],
     ]);
     expect(nodes.filter((node) => node.node_type === "metric")).toHaveLength(1);
+  });
+
+  it("splits a certified CELLMEAS metric into serving and neighbour groups", () => {
+    const nodes = buildMetricCellTree([
+      leaf({}),
+      leaf({
+        node_id: "rsrp-neighbour",
+        metric_id: "cell_rsrp@lte-type-1",
+        selection: "cell_rsrp@lte-type-1",
+        cell: "lte-type-1",
+        cell_label: "Listed LTE neighbour",
+        raw_cell_type: 1,
+        cell_relation: "neighbour",
+        technical_label: "LTE_Neighbor_RSRP_ListedLTEneighbour",
+        n: 105,
+      }),
+    ]);
+    expect(nodes.map((node) => [node.node_type, node.label])).toEqual([
+      ["tech", "LTE"],
+      ["metric", "RSRP"],
+      ["group", "Serving Cells"],
+      ["leaf", "PCell"],
+      ["group", "Neighbour Cells"],
+      ["leaf", "Listed LTE neighbour"],
+    ]);
+    expect(nodes.find((node) => node.label === "PCell")?.selection).toBe("cell_rsrp@lte-type-0");
   });
 
   it("does not merge LTE and NR or confuse cell type with physical identity", () => {
