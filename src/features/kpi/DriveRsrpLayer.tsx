@@ -14,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
+import { SelectedPointCard } from "./SelectedPointCard";
+import { RfParametersPanel } from "./RfParametersPanel";
+import { useMapRfPanel, type RfPointMetric } from "./map-rf-panel";
 import { metricRadius, metricRingRadius, useMetricSize } from "./metric-display";
 import {
   RSRP_CLASSES,
@@ -31,6 +34,7 @@ import {
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
   pointCellLinks,
+  pointDetails,
   type CellLinkKind,
   type RadioCellLink,
 } from "./measurement-point-popup";
@@ -147,6 +151,7 @@ export function DriveRsrpLayer({
   onSelectedChange,
   legendHost,
   selectionLayerId,
+  pointMetrics,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -167,7 +172,10 @@ export function DriveRsrpLayer({
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
   selectionLayerId?: string | undefined;
+  /** Host-map metric values for an exact sequence, listed in RF Parameters → Metrics. */
+  pointMetrics?: ((seq: number) => RfPointMetric[]) | undefined;
 }) {
+  const rfPanel = useMapRfPanel();
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
@@ -783,11 +791,23 @@ export function DriveRsrpLayer({
   useEffect(() => {
     onSelectedChange?.(selectedPoint);
   }, [onSelectedChange, selectedPoint]);
+  const notifyRf = rfPanel?.notifySelection;
+  const selectedSeq = selectedPoint?.seq;
+  useEffect(() => {
+    if (selectedSeq !== undefined) notifyRf?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSeq]);
 
   const clearSelection = () => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
   };
+
+  const selectedDetails = useMemo(() => {
+    if (!selectedPoint) return null;
+    const point = drivePoints.find((candidate) => candidate.seq === selectedPoint.seq);
+    return point ? pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm") : null;
+  }, [drivePoints, selectedPoint, t]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
@@ -938,12 +958,31 @@ export function DriveRsrpLayer({
       )
     : null;
 
+  const rfHost = rfPanel?.host ?? null;
+  const rfPortal =
+    rfHost && selectedDetails
+      ? createPortal(
+          <RfParametersPanel
+            key={selectedDetails.seq}
+            details={selectedDetails}
+            position={selectedPoint ? [selectedPoint.lng, selectedPoint.lat] : undefined}
+            metrics={pointMetrics?.(selectedDetails.seq) ?? []}
+            onClose={clearSelection}
+          />,
+          rfHost,
+        )
+      : null;
+
   return (
     <>
       {legendPanel}
+      {rfPortal}
       <div
         className={`absolute bottom-12 z-20 flex w-60 max-w-[calc(100%-1rem)] flex-col items-stretch gap-2 ${embedded ? "right-2" : "right-14"}`}
       >
+        {selectedDetails && !rfHost && (
+          <SelectedPointCard details={selectedDetails} onClose={clearSelection} />
+        )}
         {!hideControls && (
           <div className="rounded-lg border bg-card/95 text-[11px] shadow-md">
             <div className="flex items-center justify-between gap-2 px-3 py-2">
