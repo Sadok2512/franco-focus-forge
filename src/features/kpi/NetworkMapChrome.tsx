@@ -680,7 +680,16 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           {props.fullscreenLevel === 2 ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
         </Button>
         {props.fullscreen && props.onRestore && <Button variant="ghost" size="icon" className={railBtn()} aria-label={t("mapWorkspace.restoreMap")} title={t("mapWorkspace.restoreMap")} onClick={props.onRestore}><Minimize2 className="h-4 w-4" /></Button>}
-        <Button variant="ghost" size="icon" className={railBtn(settingsOpen)} aria-label={t("mapWorkspace.mapSettings")} title={t("mapWorkspace.mapSettings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><SlidersHorizontal className="h-4 w-4" /></Button>
+        <button
+          type="button"
+          className={railBtn(settingsOpen)}
+          aria-label={t("mapWorkspace.mapSettings")}
+          title={t("mapWorkspace.mapSettings")}
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen((value) => !value)}
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+        </button>
         <button
           type="button"
           className={railBtn()}
@@ -738,6 +747,29 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {settingsOpen && <div role="dialog" aria-label={t("mapWorkspace.mapSettings")} className={`pointer-events-auto absolute right-14 top-3 w-56 rounded-lg p-3 ${glass}`}>
         <div className="mb-2 flex items-center justify-between gap-2"><strong className="text-xs">{t("mapWorkspace.mapSettings")}</strong><Button variant="ghost" size="icon" className="h-6 w-6" aria-label={t("mapWorkspace.closeSettings")} onClick={() => setSettingsOpen(false)}><X className="h-4 w-4" /></Button></div>
         <Button variant="outline" size="sm" className="w-full text-xs" disabled={props.fullscreen || !props.onToggleWide} aria-pressed={props.wide ?? false} onClick={props.onToggleWide}><ArrowLeftRight className="h-4 w-4" />{t(props.wide ? "mapWorkspace.restoreWidth" : "mapWorkspace.increaseWidth")}</Button>
+        {props.onMapHeightChange && (
+          <div className="mt-2 border-t border-border/60 pt-2">
+            <p className="mb-1.5 text-[11px] font-semibold">{t("mapWorkspace.mapHeight")}</p>
+            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label={t("mapWorkspace.mapHeight")}>
+              {MAP_HEIGHT_OPTIONS.map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  role="radio"
+                  aria-checked={(props.mapHeight ?? "default") === option}
+                  onClick={() => props.onMapHeightChange?.(option)}
+                  className={`rounded-md border px-2 py-1 text-[11px] transition ${
+                    (props.mapHeight ?? "default") === option
+                      ? "border-primary bg-primary/10 font-semibold"
+                      : "border-border hover:bg-muted"
+                  }`}
+                >
+                  {t(`mapWorkspace.mapHeightOption.${option}`)}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>}
 
       {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
