@@ -2179,6 +2179,21 @@ export function SignalingPage({
                               </button>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          <Dialog open={metricPickerOpen} onOpenChange={setMetricPickerOpen}>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>{t("sigTable.addMetricTitle")}</DialogTitle>
+                              </DialogHeader>
+                              <div className="max-h-[60vh] overflow-y-auto">
+                                <MetricsCatalogSidebar
+                                  projectId={projectId}
+                                  selected={colConfig.metrics.map((m) => m.selector)}
+                                  onToggle={toggleMetricColumn}
+                                  searchRef={metricSearchRef}
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           <button
                             type="button"
                             className="sig-tool sig-tool-icon"
