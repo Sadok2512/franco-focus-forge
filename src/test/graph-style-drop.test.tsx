@@ -115,6 +115,11 @@ describe("glisser-déposer sur un graphe", () => {
     fireEvent.dragOver(card, { dataTransfer });
     expect(card.className).toContain("is-drop-target");
     fireEvent.drop(card, { dataTransfer });
+    console.log("CALLS", JSON.stringify(vi.mocked(getMetricSeries).mock.calls.map((c) => c.slice(0, 3))));
+    console.log("LS", window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0"));
+    await new Promise((r) => setTimeout(r, 300));
+    console.log("CALLS2", JSON.stringify(vi.mocked(getMetricSeries).mock.calls.map((c) => c.slice(0, 3))));
+    console.log("LS2", window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0"));
     await waitFor(() =>
       expect(getMetricSeries).toHaveBeenCalledWith(
         "4b7bfd50ddb6",
