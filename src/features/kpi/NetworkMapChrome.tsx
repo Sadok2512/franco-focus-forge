@@ -32,6 +32,7 @@ import {
 } from "./basemaps";
 import { OPERATORS, type SitesLayerControlsProps } from "./SitesLayerControls";
 import { BeamDisplayControls } from "./BeamDisplayControls";
+import { useMapRfPanel } from "./map-rf-panel";
 import {
   BAND_CODES,
   LTE_COLOR,
