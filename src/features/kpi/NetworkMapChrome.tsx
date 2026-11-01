@@ -71,8 +71,8 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   /** Metric legend (classes, colours, counts) shown first in the Layers panel. */
   layersLegend?: ReactNode;
   /** Workspace map height preference shown in the Settings dialog. */
-  mapHeight?: MapHeightSetting;
-  onMapHeightChange?: (value: MapHeightSetting) => void;
+  mapHeight?: MapHeightSetting | undefined;
+  onMapHeightChange?: ((value: MapHeightSetting) => void) | undefined;
 };
 
 type MeasureMode = "none" | "distance" | "area";
