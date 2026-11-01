@@ -713,30 +713,6 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   white-space: nowrap;
   font-size: 11px;
 }
-.kpi-metric-map-legend-title {
-  display: flex;
-  min-width: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 5px;
-}
-.kpi-metric-map-legend-title strong {
-  min-width: 0;
-}
-.kpi-metric-map-legend-title button {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 5px;
-}
-.kpi-metric-map-legend-title button:hover,
-.kpi-metric-map-legend-title button[aria-expanded="true"] {
-  background: var(--muted);
-}
 .kpi-metric-map-scale {
   display: block;
   height: 7px;
