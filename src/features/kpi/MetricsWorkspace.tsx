@@ -1495,6 +1495,19 @@ export function MetricsWorkspace({
   }, [catalog]);
   // 1.101.0 — une métrique demandée en « Tableau » dans le catalogue ⋮ n'a pas
   // de carte graphique : elle n'existe que dans le grand tableau des mesures.
+  // Style de graphe (tracé + couleur) par métrique, mémorisé par onglet de
+  // workspace — le même pattern que les visualisations.
+  const [styles, setStyles] = useState<MetricStyles>(() => readMetricStyles(_workspaceId));
+  useEffect(() => {
+    setStyles(readMetricStyles(_workspaceId));
+  }, [_workspaceId]);
+  const writeStyle = (code: string, style: MetricStyle) => {
+    setStyles((prev) => {
+      const next = { ...prev, [code]: style };
+      writeMetricStyles(_workspaceId, next);
+      return next;
+    });
+  };
   const graphSelections = useMemo(
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
@@ -1608,6 +1621,9 @@ export function MetricsWorkspace({
                       syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                       timeAxisMode={effectiveTimeAxisMode}
                       eventsCaptureId={captureId}
+                      workspaceId={_workspaceId}
+                      style={styles[s.full]}
+                      onStyleChange={(next) => writeStyle(s.full, next)}
                     />
                   )
                 }
