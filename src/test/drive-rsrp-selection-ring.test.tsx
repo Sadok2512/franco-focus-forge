@@ -88,8 +88,8 @@ describe("Selection ring of a drive point", () => {
 
     const paint = selectedPaint(map);
     expect(paint).toBeDefined();
-    // The point underneath is never repainted: the ring itself has no fill.
-    expect(paint?.["circle-color"]).toBe("transparent");
+    // The selected point grows slightly, filled with its own colour (never blue).
+    expect(paint?.["circle-color"]).toEqual(paint?.["circle-stroke-color"]);
     // Its outline is the point's own class colour, not the cyan serving link.
     const stroke = paint?.["circle-stroke-color"] as unknown[];
     expect(stroke[0]).toBe("match");
@@ -98,7 +98,7 @@ describe("Selection ring of a drive point", () => {
     // And it sits outside the point instead of enlarging it.
     const radius = paint?.["circle-radius"] as unknown[];
     expect(radius[0]).toBe("+");
-    expect(radius[2]).toBe(4);
+    expect(radius[2]).toBe(2);
   });
 
   it("lets the host map supply the ring colour of the point it shows", async () => {

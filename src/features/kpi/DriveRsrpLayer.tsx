@@ -462,6 +462,7 @@ export function DriveRsrpLayer({
           map.addLayer({
             id: spec.id,
             type: "line",
+            layout: { "line-cap": "round", "line-join": "round" },
             source: LINK_SOURCE,
             filter,
             paint: {
@@ -537,8 +538,9 @@ export function DriveRsrpLayer({
             // A hollow ring drawn just outside the point: the point itself is
             // never repainted nor enlarged, and the ring borrows its colour.
             "circle-radius": metricRingRadius(metricSize),
-            "circle-color": "transparent",
-            "circle-stroke-width": 2.5,
+            // Selected point grows slightly, filled with its own colour.
+            "circle-color": selectedRingColor ?? RSRP_COLOR_EXPRESSION,
+            "circle-stroke-width": 3,
             "circle-stroke-color": selectedRingColor ?? RSRP_COLOR_EXPRESSION,
             "circle-opacity": 1,
           },
@@ -625,15 +627,19 @@ export function DriveRsrpLayer({
       map.moveLayer(SERVING_SITE_LAYER);
       if (!site) return;
       const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      let pulse = 0;
+      // Smooth "radar" pulse: the ring expands and fades, then restarts.
+      const STEPS = 12;
+      let step = 0;
       const paint = () => {
         if (!map.getLayer(SERVING_SITE_LAYER)) return;
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 15 : 10);
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.35 : 1);
-        pulse = pulse ? 0 : 1;
+        const t = step / STEPS;
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", 9 + t * 13);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", 1 - t * 0.85);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-opacity", 0.35 * (1 - t));
+        step = (step + 1) % (STEPS + 1);
       };
       paint();
-      if (!reduced) timer = window.setInterval(paint, 500);
+      if (!reduced) timer = window.setInterval(paint, 80);
     };
     if (map.getStyle?.() || map.isStyleLoaded()) install();
     else map.once("load", install);

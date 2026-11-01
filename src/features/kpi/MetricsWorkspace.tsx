@@ -338,8 +338,7 @@ export function installMetricMapSource(
       "circle-radius": metricRadiusExpression(pointSize),
       "circle-opacity": 1,
       "circle-color": metricColorExpression(minValue, maxValue, palette),
-      "circle-stroke-color": "rgba(15,23,42,0.55)",
-      "circle-stroke-width": 0.5,
+            "circle-stroke-width": 0,
     },
   });
 }
@@ -364,6 +363,7 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
     map.addLayer({
       id: `metric-cell-links-v1-${confidence}`,
       type: "line",
+      layout: { "line-cap": "round", "line-join": "round" },
       source: "metric-cell-links-v1",
       filter: ["==", ["get", "confidence"], confidence],
       paint: {
