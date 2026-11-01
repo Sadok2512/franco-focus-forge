@@ -7,6 +7,7 @@ import {
   getProjectKpiFiltersForCaptures,
 } from "@/lib/api/client";
 import { getMetrics } from "@/lib/api/metrics";
+import { applyReferenceHierarchy } from "@/features/kpi/metrics-tree-reference";
 
 // 1.103.3 — Persist large project-scoped catalogues in localStorage so the
 // 2nd visit (reload inclus) affiche la UI immédiatement, puis refetch
@@ -204,8 +205,17 @@ export const kpiFiltersQuery = (projectId: string, captureIds: string[] = []) =>
         : getProjectKpiFilters(projectId, signal),
     staleTime: 60_000,
   });
-export const metricsCatalogQuery = (projectId: string, captureIds: string[] = []) =>
-  shaKeyedMetricsQuery(projectId, captureIds);
+export const metricsCatalogQuery = (projectId: string, captureIds: string[] = []) => {
+  // BC5 — reparent RF leaves into the certified reference hierarchy
+  // (Technology → Category → Group → Metric → Cell), bijective sur les
+  // 6 082 feuilles RF cell-scopées du catalogue 2.60.0. Les nœuds non-RF
+  // (CAPTURE file metadata) et les sélecteurs API sont préservés tels quels.
+  // Compatible BC1 RC multi-capture scoping : la query d'origine conserve son
+  // 2e paramètre `captureIds`, le `select` est appliqué à la réponse quel que
+  // soit le scope.
+  const base = shaKeyedMetricsQuery(projectId, captureIds);
+  return { ...base, select: applyReferenceHierarchy };
+};
 export const analyticsProjectQuery = (projectId: string) =>
   queryOptions({
     queryKey: ["project", projectId],

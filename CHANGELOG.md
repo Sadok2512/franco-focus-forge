@@ -1,3 +1,58 @@
+## 1.131.0 (minor) — Map controls + Metrics cell catalogue + reference hierarchy — 2026-11-01 (BC1 RC + Agent BC5)
+
+Consolidates the BC1 RC Metrics-and-Map candidate (1.130.0) with the Agent BC5
+reference hierarchy transform (1.129.6). Zero backend change on top of
+BC1 RC back `5fe5419` (0.122.0). Zero CSS, colour, typography, icon or
+dimension modified.
+
+- Carries forward from BC1 RC 1.130.0:
+  - Metrics catalogue structured as Technology → Metric → Serving/Neighbour →
+    Cell from backend enum metadata, capture/superstream-scoped availability.
+  - 6 104 catalogue definitions + 90 certified relation leaves preserved;
+    Graph and Table share the same selection + availability contract.
+  - Leaf ⋮ menu is the only path to Graph / Table / Map panels; wide
+    Measurements tables stay in their own horizontal scroller.
+  - Six Map UI corrections, four persisted per-workspace heights, responsive
+    MapLibre resize behaviour, centred workspace status bar.
+- Adds the Agent BC5 reference-hierarchy transform (front-side pure):
+  - Reparents 6 082 RF cell-scoped leaves of catalog_2.60.0 into the
+    certified reference hierarchy published at tree.html sha256
+    `f4057ccc5332cebd329063287b23ab05343038ac78cfd902404fdf0801af2cda`.
+    Bijection : 6 077 match 1:1 on `(cleaned_name, event, cell_type, band)`;
+    5 ambiguous cases resolved by the catalogue leaf's tech chain.
+  - Exposes four technology roots: LTE (3 674), NR (1 618), EN-DC (72),
+    QUARANTAINE (744 — labelled with a discrete « Review » text badge
+    reusing the existing `.kpi-count` style; no new CSS). CAPTURE / Shared /
+    Other are preserved under their original hierarchy; the 2 653 non-RF
+    leaves keep their original parent chain unchanged. 26 reference entries
+    without catalogue counterpart (SCells raw 10..13 CELLMEAS PCI/RSRP/RSRQ,
+    SCG SCell 17 raw 117, 2 PHRATE) are flagged as coverage gaps of the
+    catalogue, never invented.
+  - All API selectors (`metric_id`, `selection`), availability counts (`n`),
+    selectable flags, proof and reason are preserved verbatim on every
+    reparented leaf; only `parent_id`, `order` and (for groups/categories)
+    the display label change. Group labels bilingual via i18n keys
+    `metrics.treeGroup.serving` / `.neighbour` / `.toLabel`,
+    `metrics.treeCategory.uncategorized`, `metrics.quarantineBadge` —
+    added to both en.json and fr.json in the same commit.
+- SemVer front: **MINOR 1.131.0** (adds the reference-hierarchy structure
+  on top of the Map controls + Metrics cell catalogue carried from
+  1.130.0).
+
+## 1.130.0 (minor) — Map controls and Metrics cell catalogue — 2026-11-01 (BC1 + BC4)
+
+- Preserves every production 1.129.5 table/graph and map behaviour while
+  integrating the Metrics catalogue and map-control candidates.
+- Structures Metrics as Technology → Metric → Serving/Neighbour → Cell from
+  backend enum metadata, with capture/superstream-scoped availability.
+- Keeps all 6,104 catalogue definitions and the 90 certified relation leaves;
+  Graph and Table use the same selection and availability contract.
+- Requires the leaf ⋮ menu to create Graph, Table or Map panels and contains
+  wide Measurements tables in their own horizontal scroller.
+- Keeps the six Map UI corrections, four persisted per-workspace heights and
+  responsive MapLibre resize behaviour from the server implementation.
+- SemVer front: **MINOR 1.130.0**.
+
 ## 1.129.5 (patch) — Table/graph separation, legend removal, grey GPS points — 2026-11-01 (BC4)
 
 - Table and graphs never share the screen: ⋮ → Tableau hides the graph cards

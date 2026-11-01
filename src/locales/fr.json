@@ -134,6 +134,15 @@
       "pci": "Filtrer PCI",
       "arfcn": "Filtrer ARFCN"
     },
+    "treeGroup": {
+      "serving": "Serving",
+      "neighbour": "Voisines",
+      "toLabel": "À étiqueter"
+    },
+    "treeCategory": {
+      "uncategorized": "Non catégorisé"
+    },
+    "quarantineBadge": "Review",
     "tableShowing": "Lignes {{from}}–{{to}} sur {{total}}",
     "a78f2051e6c9": "Export CSV",
     "b62d901f4a73": "Plein écran",

@@ -448,10 +448,27 @@ export function MetricsCatalogSidebar({
     const scannerBlocked = captureKind === "scanner" && node.cell != null;
     const disabled = (node.node_type === "leaf" && !node.selectable) || scannerBlocked;
     const scannerTooltip = scannerBlocked ? "no UE cell metrics in scanner capture" : null;
+    // BC5 — reference hierarchy labels : groupes et catégorie bilingues via i18n.
+    // Préserve aussi la bascule BC1 RC `cell_relation` pour les groupes serving/
+    // neighbour hérités du back `_cell_relation_for_tree`.
+    const groupKey: Record<string, string> = {
+      Serving: "metrics.treeGroup.serving",
+      Voisines: "metrics.treeGroup.neighbour",
+      "À étiqueter": "metrics.treeGroup.toLabel",
+    };
+    const categoryKey: Record<string, string> = {
+      "Non catégorisé": "metrics.treeCategory.uncategorized",
+    };
+    const rawLabel = cleanLabel(node.label);
     const label =
       node.node_type === "group" && node.cell_relation
         ? t(node.cell_relation === "serving" ? "metrics.servingCells" : "metrics.neighbourCells")
-        : cleanLabel(node.label);
+        : node.node_type === "group" && groupKey[rawLabel]
+          ? t(groupKey[rawLabel])
+          : node.node_type === "category" && categoryKey[rawLabel]
+            ? t(categoryKey[rawLabel])
+            : rawLabel;
+    const quarantineBadge = node.node_type === "tech" && rawLabel === "QUARANTAINE";
     const measured = node.source === "measured-catalog";
     const selectedForNode = measured ? measuredSelected : selected;
     const isSelected = node.selectable && selectedForNode.includes(node.selection ?? "");
@@ -483,6 +500,11 @@ export function MetricsCatalogSidebar({
           >
             {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             {label}
+            {quarantineBadge && (
+              <span className="kpi-count ml-2" aria-label="review">
+                {t("metrics.quarantineBadge")}
+              </span>
+            )}
           </button>
           {expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
