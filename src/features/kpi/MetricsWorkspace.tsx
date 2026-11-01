@@ -20,6 +20,12 @@ import {
 } from "./map-legend";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
+import {
+  readMetricStyles,
+  writeMetricStyles,
+  type MetricStyle,
+  type MetricStyles,
+} from "./metric-styles";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { eventsAt, useActiveEvents } from "./active-events";
 import {
@@ -28,6 +34,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { SharePanelMenuItem } from "./SharePanelMenuItem";
 import { PanelShell } from "./PanelShell";
 import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
@@ -965,6 +972,8 @@ function MetricMapCard({
         <WorkspacePanelMenu label={`${title} · actions`}>
           <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
           <DropdownMenuSeparator />
+          <SharePanelMenuItem projectId={projectId} testId="metric-map-share" />
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={onRemove}>
             <X size={14} />
             Fermer
@@ -1492,6 +1501,19 @@ export function MetricsWorkspace({
   }, [catalog]);
   // 1.101.0 — une métrique demandée en « Tableau » dans le catalogue ⋮ n'a pas
   // de carte graphique : elle n'existe que dans le grand tableau des mesures.
+  // Style de graphe (tracé + couleur) par métrique, mémorisé par onglet de
+  // workspace — le même pattern que les visualisations.
+  const [styles, setStyles] = useState<MetricStyles>(() => readMetricStyles(_workspaceId));
+  useEffect(() => {
+    setStyles(readMetricStyles(_workspaceId));
+  }, [_workspaceId]);
+  const writeStyle = (code: string, style: MetricStyle) => {
+    setStyles((prev) => {
+      const next = { ...prev, [code]: style };
+      writeMetricStyles(_workspaceId, next);
+      return next;
+    });
+  };
   const graphSelections = useMemo(
     () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
     [parsedSelections, viewsProp],
@@ -1502,7 +1524,8 @@ export function MetricsWorkspace({
   // Une carte carte (map) n'est pas un graphe : elle reste visible.
   const tableOpen = pane === "table";
   const visibleGridSelections = useMemo(
-    () => (tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections),
+    () =>
+      tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections,
     [graphSelections, tableOpen, viewsProp],
   );
 
@@ -1549,7 +1572,6 @@ export function MetricsWorkspace({
       {captureId && visibleGridSelections.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
           {visibleGridSelections.map((s, i) => {
-
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
             const metricView = viewsProp?.[s.full] ?? "graph";
@@ -1605,6 +1627,9 @@ export function MetricsWorkspace({
                       syncId={captureId ? `metrics-charts-${captureId}` : undefined}
                       timeAxisMode={effectiveTimeAxisMode}
                       eventsCaptureId={captureId}
+                      workspaceId={_workspaceId}
+                      style={styles[s.full]}
+                      onStyleChange={(next) => writeStyle(s.full, next)}
                     />
                   )
                 }

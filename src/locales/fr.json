@@ -5,6 +5,12 @@
     "loading": "Chargement de {{metric}}",
     "noGps": "Aucune observation géolocalisée pour cette capture."
   },
+  "graphSeries": {
+    "added": "{{metric}} ajoutée à ce graphe",
+    "duplicate": "Cette métrique est déjà sur ce graphe",
+    "axis": "Ce graphe porte déjà deux unités — ouvrez un graphe séparé",
+    "kpiUnsupported": "Les graphes acceptent les métriques du catalogue Metrics, pas les KPI"
+  },
   "passwordChange": {
     "title": "Changer mon mot de passe",
     "description": "Choisissez un nouveau mot de passe d’au moins 12 caractères.",
@@ -865,6 +871,16 @@
     "expand": "Déplier",
     "resize": "Glisser pour changer la hauteur",
     "remove": "Fermer le panneau",
+    "share": "Copier le lien",
+    "shareCopied": "Lien copié dans le presse-papiers",
+    "shareFailed": "Copie impossible — sélectionnez l'adresse dans la barre et copiez-la",
+    "style": "Style",
+    "plot": "Type de tracé",
+    "plot_line": "Ligne",
+    "plot_bar": "Barres",
+    "plot_point": "Points",
+    "color": "Couleur",
+    "series": "Séries",
     "open_metrics_table": "Afficher le tableau des métriques",
     "layout": "Disposition",
     "add_chronogram": "Ajouter un Chronogram",

@@ -20,6 +20,7 @@ import {
   getDictV2Distribution,
   getMetricCaptures,
   getMetricMap,
+  getProject,
   getProjectKpi,
 } from "@/lib/api/client";
 import { listSuperstreams } from "@/lib/api/superstreams";
@@ -102,7 +103,21 @@ import "./workspace.css";
 
 export function KpiWorkspace() {
   useTranslation();
-  const { activeProject } = useActiveProject();
+  const { activeProject, setActiveProject } = useActiveProject();
+  // Un lien partagé porte le projet dans l'URL : on l'ouvre si ce n'est pas
+  // déjà le projet actif. Un lien inaccessible laisse l'utilisateur où il est.
+  const search = useSearch({ strict: false }) as Record<string, unknown>;
+  const shared = typeof search["project"] === "string" ? search["project"] : "";
+  const opening = useRef("");
+  useEffect(() => {
+    if (!shared || shared === activeProject?.id || opening.current === shared) return;
+    opening.current = shared;
+    void getProject(shared)
+      .then((project) => setActiveProject({ id: project.id, name: project.name }))
+      .catch(() => {
+        /* projet inaccessible depuis ce compte : on reste sur le projet courant */
+      });
+  }, [shared, activeProject?.id, setActiveProject]);
   if (!activeProject) return <NoActiveProject scope="KPI Analytics" />;
   return <ProjectWorkspace key={activeProject.id} projectId={activeProject.id} />;
 }

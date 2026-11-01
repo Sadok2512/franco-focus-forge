@@ -34,6 +34,9 @@ export const Route = createFileRoute("/_app/kpi")({
       ? search["metrics"].filter((v): v is string => typeof v === "string")
       : undefined,
     kpi: typeof search["kpi"] === "string" ? search["kpi"] : undefined,
+    // Lien partagé : le projet n'est pas dans l'URL par défaut (il vit dans le
+    // localStorage du poste), donc « Copier le lien » l'y ajoute.
+    project: typeof search["project"] === "string" ? search["project"] : undefined,
     kpis: Array.isArray(search["kpis"])
       ? search["kpis"].filter((v): v is string => typeof v === "string")
       : undefined,

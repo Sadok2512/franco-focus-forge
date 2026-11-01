@@ -6,10 +6,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import {
+  Bar,
   Brush,
   CartesianGrid,
+  ComposedChart,
+  Legend,
   Line,
-  LineChart,
   LabelList,
   ReferenceLine,
   ResponsiveContainer,
@@ -19,13 +21,49 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { BarChart3, ChartNoAxesCombined, MapPin, Maximize2, Table2, X } from "lucide-react";
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  CircleDot,
+  MapPin,
+  Maximize2,
+  Palette,
+  Table2,
+  TrendingUp,
+  X,
+} from "lucide-react";
 import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
+import {
+  addGraphSeries,
+  axisOf,
+  readGraphSeries,
+  writeGraphSeries,
+  type GraphSeries,
+} from "./graph-series-drop";
+import {
+  DEFAULT_METRIC_STYLE,
+  METRIC_COLORS,
+  METRIC_PLOTS,
+  type MetricPlot,
+  type MetricStyle,
+} from "./metric-styles";
+
+const METRIC_PLOT_ICONS: Record<MetricPlot, typeof BarChart3> = {
+  line: TrendingUp,
+  bar: BarChart3,
+  point: CircleDot,
+};
 import { WorkspacePanelMenu } from "./WorkspacePanelMenu";
+import { SharePanelMenuItem } from "./SharePanelMenuItem";
 import { QueryErrorState } from "./QueryErrorState";
 import { useActiveEvents } from "./active-events";
 import { usePanelTableSettings } from "./table-settings";
@@ -98,6 +136,9 @@ export function MetricGraphCard({
   // le compute (nmf_start_at + origin_ts + utc_offset_min). Undefined =
   // "capture" (comportement 1.97.0).
   timeAxisMode,
+  workspaceId,
+  style: styleProp,
+  onStyleChange,
 }: {
   projectId: string;
   code: string;
@@ -114,6 +155,9 @@ export function MetricGraphCard({
   syncId?: string | undefined;
   eventsCaptureId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
+  workspaceId?: string | undefined;
+  style?: MetricStyle | undefined;
+  onStyleChange?: ((style: MetricStyle) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -123,13 +167,61 @@ export function MetricGraphCard({
     onViewChange?.(v);
   };
   const cardRef = useRef<HTMLElement>(null);
+  // Style du graphe (tracé + couleur) : mémorisé par onglet par le parent.
+  const style = styleProp ?? DEFAULT_METRIC_STYLE;
+  const setStyle = (next: MetricStyle) => onStyleChange?.(next);
+  // Séries ajoutées par glisser-déposer : propres à cette carte, mémorisées.
+  const [extra, setExtra] = useState<GraphSeries[]>(() => readGraphSeries(workspaceId, code));
+  const [over, setOver] = useState(false);
+  const saveExtra = (next: GraphSeries[]) => {
+    setExtra(next);
+    writeGraphSeries(workspaceId, code, next);
+  };
+  const dropMetric = (raw: string) => {
+    const metric = readMapMetric(raw);
+    if (!metric) return;
+    if (metric.kind !== "metric") {
+      toast.error(translate("graphSeries.kpiUnsupported"));
+      return;
+    }
+    const result = addGraphSeries(
+      extra,
+      { code: metric.code, label: metric.label, unit: metric.unit },
+      { code, unit },
+    );
+    if (!result.ok) {
+      toast.error(
+        translate(result.reason === "duplicate" ? "graphSeries.duplicate" : "graphSeries.axis"),
+      );
+      return;
+    }
+    saveExtra(result.series);
+    toast.success(translate("graphSeries.added", { metric: metric.label }));
+  };
   return (
     <article
       ref={cardRef}
       id={`metric-graph-${code}`}
-      className="kpi-graph-card"
+      className={`kpi-graph-card ${over ? "is-drop-target" : ""}`}
       data-metric-code={code}
       data-view={view}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "copy";
+        setOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setOver(false);
+        dropMetric(event.dataTransfer.getData(MAP_METRIC_MIME));
+      }}
     >
       <header className="kpi-card-header">
         <div className="min-w-0">
@@ -164,10 +256,79 @@ export function MetricGraphCard({
                 <Table2 size={14} /> {translate("panel.open_metrics_table")}
               </DropdownMenuItem>
             )}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger data-testid="metric-style-sub">
+                <Palette size={14} /> {translate("panel.style")}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-[190px]" data-testid="metric-style-menu">
+                <DropdownMenuLabel>{translate("panel.plot")}</DropdownMenuLabel>
+                {METRIC_PLOTS.map((mode) => {
+                  const Icon = METRIC_PLOT_ICONS[mode];
+                  return (
+                    <DropdownMenuItem
+                      key={mode}
+                      data-testid={`metric-plot-${mode}`}
+                      onSelect={(event) => {
+                        // Le menu reste ouvert : la couleur se choisit juste en
+                        // dessous, sans devoir tout rouvrir.
+                        event.preventDefault();
+                        setStyle({ ...style, plot: mode });
+                      }}
+                    >
+                      <Icon size={14} />
+                      {translate(`panel.plot_${mode}`)}
+                      {mode === style.plot ? " ✓" : ""}
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>{translate("panel.color")}</DropdownMenuLabel>
+                <div className="grid grid-cols-4 gap-1.5 px-2 pb-1.5">
+                  {METRIC_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      data-testid={`metric-color-${color}`}
+                      aria-label={color}
+                      title={color}
+                      onClick={() => setStyle({ ...style, color })}
+                      className="h-5 w-5 rounded-sm border border-border"
+                      style={{
+                        background: color,
+                        outline: color === style.color ? "2px solid currentColor" : "none",
+                        outlineOffset: 1,
+                      }}
+                    />
+                  ))}
+                </div>
+                {extra.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>{translate("panel.series")}</DropdownMenuLabel>
+                    {extra.map((s) => (
+                      <DropdownMenuItem
+                        key={s.code}
+                        data-testid={`metric-series-remove-${s.code}`}
+                        onSelect={() => saveExtra(extra.filter((x) => x.code !== s.code))}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                          style={{ background: s.color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                        <X size={13} />
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
               <Maximize2 size={14} /> {translate("panel.fullscreen")}
             </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <SharePanelMenuItem projectId={projectId} testId="metric-share-graph" />
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={onRemove}>
               <X size={14} /> {translate("panel.remove")}
@@ -189,6 +350,9 @@ export function MetricGraphCard({
           code={code}
           label={label}
           unit={unit}
+          color={style.color}
+          plot={style.plot}
+          extra={extra}
           syncId={syncId}
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
@@ -467,6 +631,9 @@ function MetricTimePlot({
   code,
   label,
   unit,
+  color,
+  plot,
+  extra,
   syncId,
   timeAxisMode,
   eventsCaptureId,
@@ -475,6 +642,9 @@ function MetricTimePlot({
   code: string;
   label: string;
   unit: string;
+  color: string;
+  plot: MetricPlot;
+  extra: GraphSeries[];
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
@@ -490,12 +660,36 @@ function MetricTimePlot({
     retry: false,
   });
   const captureId = captures.data?.[0]?.capture_id;
+  // Séries de la carte : la métrique de base + celles ajoutées par dépôt.
+  const codes = useMemo(() => [code, ...extra.map((s) => s.code)], [code, extra]);
   const series = useQuery({
-    queryKey: ["metric-series", projectId, captureId, code],
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, [code], signal),
+    queryKey: ["metric-series", projectId, captureId, codes],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, codes, signal),
     enabled: !!captureId,
     retry: false,
   });
+  // Une ligne par échantillon (seq partagé par toutes les séries de la même
+  // capture) : aucune interpolation, une série sans échantillon à ce seq est
+  // simplement absente.
+  const rows = useMemo(() => {
+    const bySeq = new Map<number, Record<string, number>>();
+    for (const s of series.data?.series ?? []) {
+      for (const p of s.points ?? []) {
+        if (typeof p.value !== "number") continue;
+        const row = bySeq.get(p.seq) ?? { t_rel_s: p.t_rel_s };
+        row[s.code] = p.value;
+        bySeq.set(p.seq, row);
+      }
+    }
+    return [...bySeq.entries()].sort((a, b) => a[0] - b[0]).map(([seq, row]) => ({ seq, ...row }));
+  }, [series.data]);
+  const units = [unit, ...extra.map((s) => s.unit)];
+  const seriesList = [
+    { code, label, unit, color },
+    ...extra.map((s) => ({ code: s.code, label: s.label, unit: s.unit, color: s.color })),
+  ];
+  const axisFor = (value: string) => axisOf(units, value) ?? "left";
+  const rightAxis = seriesList.some((s) => axisFor(s.unit) === "right");
 
   const plotRef = useRef<HTMLDivElement>(null);
   const renderProbe = useRef({ updateAt: 0, startedAt: 0 });
@@ -658,8 +852,8 @@ function MetricTimePlot({
       data-n-points={points.length}
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart
-          data={points}
+        <ComposedChart
+          data={rows}
           margin={{ top: 10, right: 14, left: 4, bottom: 24 }}
           {...(syncId ? { syncId } : {})}
         >
@@ -674,11 +868,30 @@ function MetricTimePlot({
               typeof v === "number" ? formatTimeTick(v, mode, timeMeta) : String(v)
             }
           />
-          <YAxis width={54} domain={["auto", "auto"]} tick={{ fontSize: 10, fill: "#64748b" }} />
+          <YAxis
+            yAxisId="left"
+            width={54}
+            domain={["auto", "auto"]}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+          />
+          {rightAxis && (
+            <YAxis
+              yAxisId="right"
+              orientation="right"
+              width={54}
+              domain={["auto", "auto"]}
+              tick={{ fontSize: 10, fill: "#64748b" }}
+            />
+          )}
+          {seriesList.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} iconSize={9} />}
           <Tooltip
             cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
             contentStyle={{ fontSize: 11, padding: "4px 8px" }}
-            formatter={(value: number) => [`${value}${unit ? " " + unit : ""}`, label]}
+            formatter={(value: number, name: string) => {
+              const found = seriesList.find((s) => s.label === name);
+              const u = found?.unit ?? unit;
+              return [`${value}${u ? " " + u : ""}`, name];
+            }}
             labelFormatter={(l: number) => {
               if (typeof l !== "number") return String(l);
               const trip = tooltipTriple(l, timeMeta);
@@ -691,15 +904,41 @@ function MetricTimePlot({
               return parts.join(" · ");
             }}
           />
-          <Line
-            type="linear"
-            dataKey="value"
-            stroke="#1d4ed8"
-            strokeWidth={1.2}
-            dot={false}
-            connectNulls={false}
-            isAnimationActive={false}
-          />
+          {seriesList.map((s) =>
+            plot === "bar" ? (
+              <Bar
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                dataKey={s.code}
+                name={s.label}
+                fill={s.color}
+                barSize={6}
+                isAnimationActive={false}
+              />
+            ) : plot === "point" ? (
+              <Scatter
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                dataKey={s.code}
+                name={s.label}
+                fill={s.color}
+                isAnimationActive={false}
+              />
+            ) : (
+              <Line
+                key={s.code}
+                yAxisId={axisFor(s.unit)}
+                type="linear"
+                dataKey={s.code}
+                name={s.label}
+                stroke={s.color}
+                strokeWidth={1.2}
+                dot={false}
+                connectNulls={false}
+                isAnimationActive={false}
+              />
+            ),
+          )}
           {activeEvents
             .filter(
               (e) =>
@@ -708,6 +947,7 @@ function MetricTimePlot({
             .map((e) => (
               <ReferenceLine
                 key={e.id}
+                yAxisId="left"
                 x={e.t_rel_s}
                 stroke={e.color}
                 strokeWidth={2}
@@ -725,7 +965,7 @@ function MetricTimePlot({
               fill="#f1f5f9"
             />
           ) : null}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </div>
   );
