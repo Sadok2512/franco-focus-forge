@@ -4,7 +4,7 @@ import { useMapFullscreen } from "@/lib/map-fullscreen";
 
 describe("two-level map fullscreen", () => {
   let current: Element | null;
-  let request: ReturnType<typeof vi.fn>;
+  let request: ReturnType<typeof vi.fn<(this: Element) => Promise<void>>>;
   beforeEach(() => {
     current = null;
     Object.defineProperty(document, "fullscreenElement", { configurable: true, get: () => current });
