@@ -1375,7 +1375,7 @@ function Workspace({
             )}
             <div id="kpi-workspace-data">
               {(() => {
-                if (!panels.length) return null;
+                if (!panels.length || dataTableClosedFor === panelsKey) return null;
                 // A map card never brings a data table with it (user request).
                 if (
                   panels.every((panel) => {
@@ -1451,11 +1451,17 @@ function Workspace({
                               .flatMap((panel) => panel.rows)}
                             selected={selectedRows}
                             onSelect={setSelectedRows}
+                            onClose={() => setDataTableClosedFor(panelsKey)}
                           />
                         </section>
                       ))
                     ) : (
-                      <KpiDataTable rows={rows} selected={selectedRows} onSelect={setSelectedRows} />
+                      <KpiDataTable
+                        rows={rows}
+                        selected={selectedRows}
+                        onSelect={setSelectedRows}
+                        onClose={() => setDataTableClosedFor(panelsKey)}
+                      />
                     )}
                   </TableSettingsWorkspaceContext.Provider>
                 );
