@@ -20,8 +20,12 @@ import {
   getDictV2Distribution,
   getMetricCaptures,
   getMetricMap,
+  getProcedureCatalog,
+  getProcedureKpi,
   getProject,
   getProjectKpi,
+  procedureCatalogAsKpiCatalog,
+  type ProcedureRow,
 } from "@/lib/api/client";
 import { listSuperstreams } from "@/lib/api/superstreams";
 import {
@@ -42,6 +46,7 @@ import type {
   ProjectKpiFilters,
 } from "@/lib/api/project-kpi-schemas";
 import { KpiCatalogSidebar } from "./KpiCatalogSidebar";
+import { ProcedureExplorer } from "./ProcedureExplorer";
 import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
@@ -74,6 +79,7 @@ import {
   chosenStatistic,
   exportRows,
   fromSearch,
+  mergeKpiCatalogs,
   toSearch,
   toggleCode,
 } from "./workspace-model";
@@ -174,8 +180,6 @@ function Workspace({
   const search = useSearch({ strict: false }) as Record<string, unknown>;
   const navigate = useNavigate();
   const { set: setSharedFilters } = useFilters();
-  const entries = useMemo(() => catalogEntries(catalog), [catalog]);
-  const classifiedCatalogs = useMemo(() => classifyKpiCatalog(catalog), [catalog]);
   const cataloguePanel = useRef<PanelImperativeHandle>(null);
   const cataloguePreferenceKey = `bc4.kpi.catalogueCollapsed.${projectId}`;
   const [dataTableClosedFor, setDataTableClosedFor] = useState<string | null>(null);
@@ -311,6 +315,28 @@ function Workspace({
     : requestedCapture
       ? [requestedCapture]
       : [];
+  const procedureCatalogQuery = useQuery({
+    queryKey: ["procedure-catalog", projectId, scopeCaptureIds],
+    queryFn: ({ signal }) => getProcedureCatalog(projectId, scopeCaptureIds, signal),
+    enabled: scopeCaptureIds.length > 0,
+    staleTime: 60_000,
+    retry: false,
+  });
+  const mergedCatalog = useMemo(
+    () =>
+      mergeKpiCatalogs(
+        catalog,
+        procedureCatalogQuery.data
+          ? procedureCatalogAsKpiCatalog(procedureCatalogQuery.data)
+          : undefined,
+      ),
+    [catalog, procedureCatalogQuery.data],
+  );
+  const entries = useMemo(() => catalogEntries(mergedCatalog), [mergedCatalog]);
+  const classifiedCatalogs = useMemo(
+    () => classifyKpiCatalog(mergedCatalog),
+    [mergedCatalog],
+  );
   const dimensionsQuery = useQuery(kpiFiltersQuery(projectId, scopeCaptureIds));
   const dimensions = dimensionsQuery.data;
   const dimensionsLoading = dimensionsQuery.isPending;
@@ -675,6 +701,10 @@ function Workspace({
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [limitMessage, setLimitMessage] = useState("");
   const catalogSearch = useRef<HTMLInputElement>(null);
+  const [procedureExplorerCode, setProcedureExplorerCode] = useState<string | null>(null);
+  const procedureExplorerEntry = entries.find(
+    (entry) => entry.item.code === procedureExplorerCode,
+  );
   const effectiveActive = codes.includes(active ?? "") ? active : (codes[0] ?? null);
   const visibleCodes = codes;
   const analyticCaptureIds = scopeCaptureIds.length
@@ -696,13 +726,16 @@ function Workspace({
         memberPosition,
         { ...applied, capture_id: memberCaptureId, group_by: configFor(code).groupBy },
       ],
-      queryFn: ({ signal }) =>
-        getProjectKpi(
-          projectId,
-          code,
-          { ...applied, capture_id: memberCaptureId, group_by: configFor(code).groupBy },
-          signal,
-        ),
+      queryFn: ({ signal }) => {
+        const filters = {
+          ...applied,
+          capture_id: memberCaptureId,
+          group_by: configFor(code).groupBy,
+        };
+        return code.startsWith("PROC_")
+          ? getProcedureKpi(projectId, code, filters, signal)
+          : getProjectKpi(projectId, code, filters, signal);
+      },
       enabled: !dimensionsLoading && !dimensionsError,
       staleTime: 60_000,
       retry: false,
@@ -1112,8 +1145,12 @@ function Workspace({
                 onVisualization={visualize}
                 searchRef={catalogSearch}
                 loading={
-                  catalogLoading || (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)
+                  catalogLoading ||
+                  procedureCatalogQuery.isPending ||
+                  (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)
                 }
+                onViewProcedures={setProcedureExplorerCode}
+                onOpenSignaling={setProcedureExplorerCode}
               />
             ) : activeCatalog === "metrics" ? (
               <MetricsCatalogSidebar
@@ -1484,6 +1521,27 @@ function Workspace({
           </div>
         </ResizablePanel>
       </ResizablePanelGroup>
+      <ProcedureExplorer
+        projectId={projectId}
+        captureIds={analyticCaptureIds}
+        name={procedureExplorerEntry?.item.name ?? ""}
+        procedureTypes={procedureExplorerEntry?.item.procedure_types ?? []}
+        open={procedureExplorerEntry != null}
+        onOpenChange={(open) => {
+          if (!open) setProcedureExplorerCode(null);
+        }}
+        onOpenSignaling={(row: ProcedureRow) => {
+          setProcedureExplorerCode(null);
+          void navigate({
+            to: "/signaling",
+            search: {
+              analysis_scope: "capture",
+              capture_id: row.capture_id,
+              seq: row.start_seq,
+            },
+          } as never);
+        }}
+      />
       <WorkspaceTabsBar
         columns={tableColumns}
         tabs={tabsState.tabs}

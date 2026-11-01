@@ -279,6 +279,13 @@ export {
 } from "./project-kpi";
 export { getDictTemplates, getDictTemplateSummary } from "./dict-templates";
 export { updateDictTemplate } from "./dict-templates";
+export {
+  getProcedureCatalog,
+  getProcedureKpi,
+  getProcedures,
+  procedureCatalogAsKpiCatalog,
+} from "./procedures";
+export type { ProcedureCatalog, ProcedureList, ProcedureRow } from "./procedures";
 
 export {
   getProjectTasks,

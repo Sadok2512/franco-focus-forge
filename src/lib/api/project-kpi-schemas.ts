@@ -52,6 +52,17 @@ export const KpiCatalogItemSchema = z
     category: z.string().nullable().optional(),
     metric_sources: z.array(z.string()).optional(),
     available: z.boolean().optional(),
+    procedure_types: z.array(z.string()).optional(),
+    minimum_evidence: z.string().optional(),
+    map_supported: z.boolean().optional(),
+    procedure_counts: z
+      .object({
+        attempts: z.number().int().nonnegative(),
+        success: z.number().int().nonnegative(),
+        failures: z.number().int().nonnegative(),
+        unknown: z.number().int().nonnegative(),
+      })
+      .optional(),
   })
   .passthrough();
 

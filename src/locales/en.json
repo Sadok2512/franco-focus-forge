@@ -1399,5 +1399,34 @@
     "nrMissing": "NR is absent from the selected source",
     "reload": "Reload",
     "saveHint": "Saves the current graphs, maps and table with their settings."
+  },
+  "procedures": {
+    "title": "Procedures — {{name}}",
+    "description": "{{count}} reconstructed procedures. Each row retains its capture, sequence and source evidence.",
+    "loading": "Reconstructing procedures…",
+    "retry": "Retry",
+    "empty": "No certified procedure evidence in this capture scope.",
+    "page": "Page {{page}} / {{pages}}",
+    "previous": "Previous",
+    "next": "Next",
+    "graph": "Graph",
+    "table": "Table",
+    "map": "Map",
+    "view": "View Procedures",
+    "signaling": "Open Signaling / Call Flow",
+    "loadingMap": "Loading geolocated procedure evidence…",
+    "geolocated": "{{count}} geolocated / {{total}} procedures",
+    "columns": {
+      "time": "NMF time / provenance",
+      "ue": "UE / session",
+      "procedure": "Procedure",
+      "result": "Result",
+      "cause": "Cause",
+      "source": "Source cell",
+      "target": "Target cell",
+      "bearer": "Bearer / QoS / Slice",
+      "evidence": "Evidence",
+      "proof": "Source events"
+    }
   }
 }

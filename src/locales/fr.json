@@ -1398,5 +1398,34 @@
     "nrMissing": "NR absent de la source sélectionnée",
     "reload": "Recharger",
     "saveHint": "Enregistre les graphes, cartes et tableau actuels avec leurs réglages."
+  },
+  "procedures": {
+    "title": "Procédures — {{name}}",
+    "description": "{{count}} procédures reconstruites. Chaque ligne conserve sa capture, sa séquence et ses événements sources.",
+    "loading": "Reconstruction des procédures…",
+    "retry": "Réessayer",
+    "empty": "Aucune preuve de procédure certifiée dans ce périmètre de captures.",
+    "page": "Page {{page}} / {{pages}}",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "graph": "Graph",
+    "table": "Table",
+    "map": "Carte",
+    "view": "Voir les procédures",
+    "signaling": "Ouvrir Signaling / Call Flow",
+    "loadingMap": "Chargement des preuves de procédures géolocalisées…",
+    "geolocated": "{{count}} procédures géolocalisées sur {{total}}",
+    "columns": {
+      "time": "Heure NMF / provenance",
+      "ue": "UE / session",
+      "procedure": "Procédure",
+      "result": "Résultat",
+      "cause": "Cause",
+      "source": "Cellule source",
+      "target": "Cellule cible",
+      "bearer": "Bearer / QoS / Slice",
+      "evidence": "Preuve",
+      "proof": "Événements sources"
+    }
   }
 }

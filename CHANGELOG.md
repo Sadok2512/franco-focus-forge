@@ -5789,3 +5789,15 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 
 - The Signaling and Map RSRP layers draw a thin line from each positioned RSRP observation to its serving cell when the API provides an exact CHI-to-ECI reference match.
 - RSRP popups identify the proven serving cell, site, and CHI sequence. Captures without that proof keep their measurement points without a fabricated line.
+## 1.130.0 (minor) — certified procedures in KPI Analytics — 2026-11-01 (BC4)
+
+- Merges the source-scoped procedure catalogue into the existing KPI tab
+  without replacing canonical KPI definitions or changing Metrics/Parameters.
+- Procedure leaves open only from their ⋮ menu and offer Graph, Table,
+  geolocated Map when supported, procedure evidence and Signaling navigation.
+- The procedure table preserves NMF time, anonymised session, capture/sequence,
+  result, cause, RF cells, bearer/QoS/slice fields, evidence level and exact
+  source-event references; unsupported leaves remain visibly unvalidated.
+- Procedure maps render only real GPS evidence and link a selected marker to
+  the original Signaling sequence; no position or RF value is fabricated.
+- SemVer front: **MINOR 1.130.0**.

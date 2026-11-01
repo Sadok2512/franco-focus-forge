@@ -103,6 +103,48 @@ export function metricsPresentationCatalog(catalog: ProjectKpiCatalog): ProjectK
     ),
   };
 }
+
+/** Merge an independently versioned procedure catalogue into the existing KPI
+ * tree without replacing canonical KPI definitions. A code already owned by
+ * the main catalogue wins, preventing duplicate leaves and silent formula
+ * changes. */
+export function mergeKpiCatalogs(
+  primary: ProjectKpiCatalog,
+  procedures: ProjectKpiCatalog | undefined,
+): ProjectKpiCatalog {
+  if (!procedures) return primary;
+  const seen = new Set(catalogEntries(primary).map((entry) => entry.item.code));
+  const tree = primary.tree.map((technology) => ({
+    ...technology,
+    families: technology.families.map((family) => ({ ...family, kpis: [...family.kpis] })),
+  }));
+  for (const procedureTechnology of procedures.tree) {
+    let technology = tree.find((candidate) => candidate.techno === procedureTechnology.techno);
+    if (!technology) {
+      technology = { ...procedureTechnology, families: [] };
+      tree.push(technology);
+    }
+    for (const procedureFamily of procedureTechnology.families) {
+      let family = technology.families.find(
+        (candidate) => candidate.family === procedureFamily.family,
+      );
+      if (!family) {
+        family = { family: procedureFamily.family, kpis: [] };
+        technology.families.push(family);
+      }
+      for (const item of procedureFamily.kpis) {
+        if (seen.has(item.code)) continue;
+        seen.add(item.code);
+        family.kpis.push(item);
+      }
+    }
+  }
+  return {
+    ...primary,
+    catalog_version: `${primary.catalog_version}+${procedures.catalog_version}`,
+    tree,
+  };
+}
 export type Statistic = "value" | "p10" | "p50" | "p90";
 export const STAT_LABELS: Record<Statistic, string> = {
   get value() {

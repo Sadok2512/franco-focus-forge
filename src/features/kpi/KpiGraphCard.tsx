@@ -1,6 +1,7 @@
 import { KpiInlineRawTable } from "./KpiInlineRawTable";
 import { useTranslation } from "react-i18next";
 import { KpiMeasurementMap } from "./KpiMeasurementMap";
+import { ProcedureMap } from "./ProcedureMap";
 import { Chronogram } from "./Chronogram";
 import { MetricVsTimeChart } from "./MetricVsTimeChart";
 import { TaskScatter } from "./TaskScatter";
@@ -321,16 +322,25 @@ export function KpiGraphCard({
   const body = (
     <>
       {config.visualization === "map" ? (
-        <KpiMeasurementMap
-          projectId={projectId}
-          code={entry.item.code}
-          label={entry.item.name}
-          declaredUnit={entry.item.unit}
-          captureId={captureId}
-          onCaptureChange={onCaptureChange}
-          filters={appliedFilters}
-          workspaceId={workspaceId}
-        />
+        entry.item.procedure_types?.length ? (
+          <ProcedureMap
+            projectId={projectId}
+            captureId={captureId}
+            procedureTypes={entry.item.procedure_types}
+            label={entry.item.name}
+          />
+        ) : (
+          <KpiMeasurementMap
+            projectId={projectId}
+            code={entry.item.code}
+            label={entry.item.name}
+            declaredUnit={entry.item.unit}
+            captureId={captureId}
+            onCaptureChange={onCaptureChange}
+            filters={appliedFilters}
+            workspaceId={workspaceId}
+          />
+        )
       ) : taskView && blockedReason ? (
         <div className="kpi-chart-state" role="status">
           {blockedReason}

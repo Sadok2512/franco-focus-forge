@@ -8,7 +8,18 @@ import {
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { useEffect, useState, type RefObject } from "react";
-import { BarChart3, ChevronDown, ChevronRight, Search, MoreVertical } from "lucide-react";
+import {
+  BarChart3,
+  ChevronDown,
+  ChevronRight,
+  ExternalLink,
+  ListTree,
+  MapPin,
+  Search,
+  MoreVertical,
+  Table2,
+} from "lucide-react";
+import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import type { ProjectKpiCatalog } from "@/lib/api/project-kpi-schemas";
 import { APP_VERSION } from "@/lib/version";
 import { MAP_METRIC_MIME } from "./map-metric-drop";
@@ -27,6 +38,8 @@ export function KpiCatalogSidebar({
   embedded = false,
   onVisibleCountChange,
   loading = false,
+  onViewProcedures,
+  onOpenSignaling,
 }: {
   catalog: ProjectKpiCatalog;
   selected: string[];
@@ -39,6 +52,8 @@ export function KpiCatalogSidebar({
   embedded?: boolean;
   onVisibleCountChange?: (count: number) => void;
   loading?: boolean;
+  onViewProcedures?: (code: string) => void;
+  onOpenSignaling?: (code: string) => void;
 }) {
   const { t: translate } = useTranslation();
   const heading = title ?? translate("kpi.3ad34a87a145");
@@ -136,6 +151,7 @@ export function KpiCatalogSidebar({
                       {familyOpen &&
                         f.kpis.map((item) => {
                           const isSelected = selected.includes(item.code);
+                          const isProcedure = item.code.startsWith("PROC_");
                           const canAdd = isSelected || selected.length < MAX_GRAPHS;
                           return (
                             <div
@@ -160,7 +176,7 @@ export function KpiCatalogSidebar({
                               <button
                                 type="button"
                                 className="flex min-w-0 flex-1 items-center gap-2 text-left bg-transparent border-0 p-0"
-                                onClick={() => canAdd && onToggle(item.code)}
+                                onClick={() => canAdd && !isProcedure && onToggle(item.code)}
                                 disabled={!canAdd}
                                 aria-pressed={isSelected}
                                 aria-label={translate("kpi.46d8d72f28dd", { v0: item.name })}
@@ -194,11 +210,51 @@ export function KpiCatalogSidebar({
                                   <DropdownMenuLabel>
                                     {translate("kpi.af3aaf87ff99")}
                                   </DropdownMenuLabel>
-                                  <VisualizationItems
-                                    excludeGraph
-                                    throughput={item.unit === "Mbit/s"}
-                                    onChange={(mode) => onVisualization(item.code, mode)}
-                                  />
+                                  {isProcedure ? (
+                                    <>
+                                      <DropdownMenuItem
+                                        disabled={!canAdd || item.status !== "AVAILABLE"}
+                                        onSelect={() => onVisualization(item.code, "graph")}
+                                      >
+                                        <BarChart3 size={14} /> {translate("procedures.graph")}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={!item.procedure_types?.length}
+                                        onSelect={() => onViewProcedures?.(item.code)}
+                                      >
+                                        <Table2 size={14} /> {translate("procedures.table")}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={
+                                          !item.map_supported ||
+                                          !canAdd ||
+                                          item.status !== "AVAILABLE"
+                                        }
+                                        onSelect={() => onVisualization(item.code, "map")}
+                                      >
+                                        <MapPin size={14} /> {translate("procedures.map")}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem
+                                        disabled={!item.procedure_types?.length}
+                                        onSelect={() => onViewProcedures?.(item.code)}
+                                      >
+                                        <ListTree size={14} /> {translate("procedures.view")}
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        disabled={!item.procedure_types?.length}
+                                        onSelect={() => onOpenSignaling?.(item.code)}
+                                      >
+                                        <ExternalLink size={14} /> {translate("procedures.signaling")}
+                                      </DropdownMenuItem>
+                                    </>
+                                  ) : (
+                                    <VisualizationItems
+                                      excludeGraph
+                                      throughput={item.unit === "Mbit/s"}
+                                      onChange={(mode) => onVisualization(item.code, mode)}
+                                    />
+                                  )}
                                 </DropdownMenuContent>
                               </DropdownMenu>
                             </div>
