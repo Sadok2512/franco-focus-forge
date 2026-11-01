@@ -917,20 +917,6 @@ export function DriveRsrpLayer({
             />
           ))}
         </MapLegendList>
-        <div
-          className="measurement-link-style-legend pt-1"
-          data-testid="measurement-link-style-legend"
-        >
-          <strong>{t("mapPointPopup.lineStyles")}</strong>
-          <span>
-            <i className="measurement-popup-line is-proven" />
-            {t("mapPointPopup.solid")}
-          </span>
-          <span>
-            <i className="measurement-popup-line is-probable" />
-            {t("mapPointPopup.dashed")}
-          </span>
-        </div>
       </MapLegendSettings>
     </div>
   );

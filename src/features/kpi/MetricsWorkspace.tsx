@@ -820,20 +820,6 @@ function MetricMap({
                   </label>
                 ))}
               </fieldset>
-              <div
-                className="measurement-link-style-legend"
-                data-testid="measurement-link-style-legend"
-              >
-                <strong>{translate("mapPointPopup.lineStyles")}</strong>
-                <span>
-                  <i className="measurement-popup-line is-proven" />
-                  {translate("mapPointPopup.solid")}
-                </span>
-                <span>
-                  <i className="measurement-popup-line is-probable" />
-                  {translate("mapPointPopup.dashed")}
-                </span>
-              </div>
             </div>
           )}
         </MapLegendSection>
