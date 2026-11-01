@@ -385,11 +385,11 @@ export function KpiMapOSM({
     };
   }, []);
 
-  // Resize map quand on bascule fullscreen
+  // Resize map quand on bascule fullscreen ou qu'on change la hauteur choisie
   useEffect(() => {
     const id = setTimeout(() => map.current?.resize(), 50);
     return () => clearTimeout(id);
-  }, [full, mapFullscreen.active, wide, panelWidth?.wide, frameInsets]);
+  }, [full, mapFullscreen.active, wide, panelWidth?.wide, frameInsets, mapHeight]);
 
   return (
     <MapRfPanelProvider>
@@ -401,9 +401,11 @@ export function KpiMapOSM({
         expandedStyle ??
         (wide && !full
           ? { top: wideBounds.top, height: wideBounds.height }
-          : premium && !full && !workspace
-            ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
-            : undefined)
+          : heightPx
+            ? { height: heightPx }
+            : premium && !full && !workspace
+              ? { height: "var(--rrc-map-height, clamp(350px, 42vh, 450px))" }
+              : undefined)
       }
       className={
         full
@@ -560,6 +562,8 @@ export function KpiMapOSM({
           onToggleWide={toggleWide}
           onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
           layersLegend={layersLegend}
+          mapHeight={mapHeight}
+          {...(heightKey ? { onMapHeightChange: changeMapHeight } : {})}
         />
       )}
       {/* Compact empty-measurement status; attribution remains on the map. */}
