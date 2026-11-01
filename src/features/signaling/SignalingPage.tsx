@@ -54,9 +54,11 @@ import {
   MapPinOff,
   Maximize,
   Minimize,
+  Plus,
   RadioTower,
   Search,
   SlidersHorizontal,
+  X,
   ListTree,
   LineChart,
 } from "lucide-react";
@@ -67,6 +69,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
+import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 import { DecoderTree } from "./DecoderTree";
 import { DecodePanel } from "@/features/projects/DecodePanel";
 import { provenStates } from "./state-evidence";
@@ -74,12 +84,17 @@ import {
   COLUMNS,
   COLUMNS_STORAGE_KEY,
   MANDATORY_COLS,
+  addMetricColumn,
   defaultColumns,
+  isMetricCol,
   messageInfo,
+  metricColId,
+  metricSelector,
   moveColumn,
   pageItems,
   parseColumns,
   radioAt,
+  removeMetricColumn,
   rrcStateAt,
   toggleColumn,
   visibleColumns,
@@ -87,6 +102,7 @@ import {
   type ColKey,
   type ColumnConfig,
   type MessageInfo,
+  type MetricCol,
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
 import { SignalingMetricsSection } from "./SignalingMetricsSection";
@@ -1148,6 +1164,48 @@ export function SignalingPage({
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
   });
   const capture = selectSignalingCapture(caps.data?.captures ?? [], sharedCapture);
+  // Metric columns added from the catalogue: picker dialog + per-selector series.
+  const [metricPickerOpen, setMetricPickerOpen] = useState(false);
+  const metricSearchRef = useRef<HTMLInputElement | null>(null);
+  const metricCatalog = useQuery({
+    ...metricsCatalogQuery(projectId),
+    enabled: metricPickerOpen,
+    retry: false,
+  });
+  const toggleMetricColumn = (selector: string) => {
+    setColConfig((old) => {
+      if (old.metrics.some((m) => m.selector === selector))
+        return removeMetricColumn(old, selector);
+      const node = metricCatalog.data?.nodes.find((n) => n.selection === selector);
+      const label = (node?.label ?? selector)
+        .replace(/★/g, "")
+        .replace(/\s*\[[A-Z][A-Z0-9]*\s+#\d+\]\s*/g, "")
+        .trim();
+      return addMetricColumn(old, { selector, label, unit: node?.unit ?? "" });
+    });
+  };
+  const metricSelectors = colConfig.metrics.map((m) => m.selector);
+  const metricColSeries = useQuery({
+    queryKey: ["signaling-metric-cols", projectId, capture, metricSelectors],
+    enabled: !!capture && metricSelectors.length > 0,
+    queryFn: ({ signal }) => getMetricSeries(projectId, capture!, metricSelectors, signal),
+    staleTime: 60000,
+    retry: false,
+  });
+  const metricSeriesMap = useMemo(() => {
+    const map = new Map<string, { seq: number; t_rel_s: number; value: number | string }[]>();
+    for (const sel of metricSelectors) {
+      const code = sel.split("@", 1)[0];
+      const entry = metricColSeries.data?.series.find(
+        (s) => s.code === sel || s.code === code || `${s.code}@${s.cell}` === sel,
+      );
+      map.set(
+        sel,
+        [...(entry?.points ?? [])].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq),
+      );
+    }
+    return map;
+  }, [metricColSeries.data, metricSelectors]);
   const signalingSummary = useQuery({
     queryKey: ["signaling-rf-summary", projectId, capture],
     enabled: !!capture,
@@ -1389,8 +1447,28 @@ export function SignalingPage({
       </span>
     );
   };
-  const renderCell = (c: ColKey, r: SignalingLine) => {
-    switch (c) {
+  const metricCell = (selector: string, time: number | null) => {
+    const meta = colConfig.metrics.find((m) => m.selector === selector);
+    const r = radioAt(metricSeriesMap.get(selector), time);
+    if (!r) return <span className="text-muted-foreground">—</span>;
+    const exact = r.dtS === 0;
+    return (
+      <span
+        className={exact ? undefined : "sig-radio-prev"}
+        title={
+          exact
+            ? t("sigTable.metricExact", { seq: r.seq, t: r.t.toFixed(3) })
+            : t("sigTable.metricPrev", { seq: r.seq, t: r.t.toFixed(3), dt: r.dtS.toFixed(3) })
+        }
+      >
+        {fmtRadio(r.value)}
+        {meta?.unit ? ` ${meta.unit}` : ""}
+      </span>
+    );
+  };
+  const renderCell = (c: string, r: SignalingLine) => {
+    if (isMetricCol(c)) return metricCell(metricSelector(c), r.t_rel_s);
+    switch (c as ColKey) {
       case "seq":
         return r.seq;
       case "t_rel_s":
@@ -1420,7 +1498,7 @@ export function SignalingPage({
       case "rsrp":
       case "rsrq":
       case "sinr":
-        return radioCell(c, r.t_rel_s);
+        return radioCell(c as "rsrp" | "rsrq" | "sinr", r.t_rel_s);
       case "size_bytes":
         return shown(r.size_bytes);
       case "ecgi":
@@ -1916,14 +1994,6 @@ export function SignalingPage({
                       aria-label={t("sigTable.title")}
                     >
                       <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b px-2.5 py-1.5">
-                        <h2 className="sig-count mr-1" data-testid="signaling-total">
-                          {listing.data
-                            ? t("sigTable.count", {
-                                count: listing.data.total,
-                                n: fmtInt(listing.data.total),
-                              })
-                            : t("sigTable.countPending")}
-                        </h2>
                         <label className="sig-search">
                           <Search size={14} aria-hidden="true" />
                           <input
@@ -2008,8 +2078,14 @@ export function SignalingPage({
                             <DropdownMenuContent align="end" className="w-72">
                               <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
                               {knownOrder(colConfig).map((c, i) => {
-                                const mandatory = MANDATORY_COLS.includes(c);
-                                const def = COLUMNS.find((d) => d.key === c)!;
+                                const metricMeta = isMetricCol(c)
+                                  ? colConfig.metrics.find(
+                                      (m) => metricColId(m.selector) === c,
+                                    )
+                                  : undefined;
+                                const mandatory =
+                                  !metricMeta && MANDATORY_COLS.includes(c as ColKey);
+                                const def = COLUMNS.find((d) => d.key === c);
                                 return (
                                   <div
                                     key={c}
@@ -2023,8 +2099,14 @@ export function SignalingPage({
                                         onChange={() => setColConfig((old) => toggleColumn(old, c))}
                                         data-testid={`signaling-column-${c}`}
                                       />
-                                      <span className="truncate">{t(`sigTable.col.${c}`)}</span>
-                                      {!def.available && (
+                                      <span className="truncate">
+                                        {metricMeta
+                                          ? metricMeta.unit
+                                            ? `${metricMeta.label} (${metricMeta.unit})`
+                                            : metricMeta.label
+                                          : t(`sigTable.col.${c}`)}
+                                      </span>
+                                      {def && !def.available && (
                                         <span className="ml-auto shrink-0 text-[10px] text-muted-foreground">
                                           {t("sigTable.notSupplied")}
                                         </span>
@@ -2035,12 +2117,29 @@ export function SignalingPage({
                                         </span>
                                       )}
                                     </label>
+                                    {metricMeta && (
+                                      <button
+                                        type="button"
+                                        className="sig-move"
+                                        aria-label={t("sigTable.removeMetric", {
+                                          col: metricMeta.label,
+                                        })}
+                                        data-testid={`signaling-remove-metric-${metricMeta.selector}`}
+                                        onClick={() =>
+                                          setColConfig((old) =>
+                                            removeMetricColumn(old, metricMeta.selector),
+                                          )
+                                        }
+                                      >
+                                        <X size={12} />
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       className="sig-move"
                                       disabled={i === 0}
                                       aria-label={t("sigTable.moveUp", {
-                                        col: t(`sigTable.col.${c}`),
+                                        col: metricMeta ? metricMeta.label : t(`sigTable.col.${c}`),
                                       })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
                                     >
@@ -2051,7 +2150,7 @@ export function SignalingPage({
                                       className="sig-move"
                                       disabled={i === colConfig.order.length - 1}
                                       aria-label={t("sigTable.moveDown", {
-                                        col: t(`sigTable.col.${c}`),
+                                        col: metricMeta ? metricMeta.label : t(`sigTable.col.${c}`),
                                       })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
                                     >
@@ -2063,6 +2162,16 @@ export function SignalingPage({
                               <DropdownMenuSeparator />
                               <button
                                 type="button"
+                                onClick={() => setMetricPickerOpen(true)}
+                                className="flex w-full items-center gap-2 px-2 py-1 text-left text-xs hover:bg-accent"
+                                data-testid="signaling-add-metric"
+                              >
+                                <Plus size={12} aria-hidden="true" />
+                                {t("sigTable.addMetric")}
+                              </button>
+                              <DropdownMenuSeparator />
+                              <button
+                                type="button"
                                 onClick={() => setColConfig(defaultColumns())}
                                 className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
                               >
@@ -2070,6 +2179,21 @@ export function SignalingPage({
                               </button>
                             </DropdownMenuContent>
                           </DropdownMenu>
+                          <Dialog open={metricPickerOpen} onOpenChange={setMetricPickerOpen}>
+                            <DialogContent className="max-w-md">
+                              <DialogHeader>
+                                <DialogTitle>{t("sigTable.addMetricTitle")}</DialogTitle>
+                              </DialogHeader>
+                              <div className="max-h-[60vh] overflow-y-auto">
+                                <MetricsCatalogSidebar
+                                  projectId={projectId}
+                                  selected={colConfig.metrics.map((m) => m.selector)}
+                                  onToggle={toggleMetricColumn}
+                                  searchRef={metricSearchRef}
+                                />
+                              </div>
+                            </DialogContent>
+                          </Dialog>
                           <button
                             type="button"
                             className="sig-tool sig-tool-icon"
@@ -2137,8 +2261,21 @@ export function SignalingPage({
                           <thead>
                             <tr>
                               {shownCols.map((c) => {
-                                const def = COLUMNS.find((d) => d.key === c)!;
-                                const label = t(`sigTable.col.${c}`);
+                                const metricMeta = isMetricCol(c)
+                                  ? colConfig.metrics.find(
+                                      (m) => metricColId(m.selector) === c,
+                                    )
+                                  : undefined;
+                                const def = COLUMNS.find((d) => d.key === c) ?? {
+                                  key: c as ColKey,
+                                  available: true,
+                                  numeric: true,
+                                };
+                                const label = metricMeta
+                                  ? metricMeta.unit
+                                    ? `${metricMeta.label} (${metricMeta.unit})`
+                                    : metricMeta.label
+                                  : t(`sigTable.col.${c}`);
                                 const active = def.sortKey && sort === def.sortKey;
                                 return (
                                   <th
@@ -2212,7 +2349,13 @@ export function SignalingPage({
                                       key={c}
                                       data-col={c}
                                       className={
-                                        COLUMNS.find((d) => d.key === c)!.numeric
+                                        (
+                                          COLUMNS.find((d) => d.key === c) ?? {
+                                            key: c as ColKey,
+                                            available: true,
+                                            numeric: true,
+                                          }
+                                        ).numeric
                                           ? "num"
                                           : undefined
                                       }

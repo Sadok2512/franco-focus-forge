@@ -309,7 +309,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   // only. The "site colour = operator" row is removed by design.
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
-      <LegendRow title={t("mapWorkspace.technology")}>
+      <LegendRow>
         <Swatch
           color={NR_COLOR}
           label="5G NR"
@@ -323,7 +323,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           onClick={() => setTechnos(["4G", "LTE"])}
         />
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.bands")}>
+      <LegendRow>
         {NETWORK_BANDS.map((b) => (
           <Swatch
             key={b.key}
@@ -335,7 +335,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           />
         ))}
       </LegendRow>
-      <LegendRow title={t("mapWorkspace.symbols")}>
+      <LegendRow>
         <button
           type="button"
           aria-pressed={enabled}
@@ -816,17 +816,17 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom — legend (left) + status bar; one row so they never overlap. */}
+      {/* Bottom — status (left), Metrics (true centre), state dot (right). */}
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 flex items-end gap-3 ${compact ? "right-3 justify-center" : "right-[150px] justify-between"}`}
+        className={`pointer-events-none absolute bottom-3 left-3 grid grid-cols-[1fr_auto_1fr] items-end gap-3 ${compact ? "right-3" : "right-[150px]"}`}
       >
         <div
           data-testid="map-workspace-statusbar"
-          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-3 overflow-x-auto whitespace-nowrap rounded-xl px-3 py-1.5 text-[11px] ${glass}`}
+          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] justify-self-start ${glass}`}
         >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
-          <span className="h-6 w-px bg-border" />
+          <span className="h-5 w-px bg-border" />
           <span className="tabular-nums">
             <span className="text-muted-foreground">Z </span>
             <strong className="text-sm">{zoom.toFixed(1)}</strong>
@@ -844,12 +844,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             {scale.label}
             <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
           </span>
-          <span
-            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
-            title={
-              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
-            }
-          />
+        </div>
+        <div
+          className={`pointer-events-auto flex items-center rounded-xl px-1.5 py-0.5 text-[11px] justify-self-center ${glass}`}
+        >
           <Dropdown
             up
             open={menu === "metrics"}
@@ -877,10 +875,19 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
               </p>
             </div>
           </Dropdown>
+        </div>
+        <div
+          className={`pointer-events-auto flex items-center rounded-xl px-2.5 py-1 justify-self-end ${glass}`}
+        >
           {/* MAP UI V1 — the measure/recenter tools live only in the right
               rail; the duplicated Tools dropdown is removed. */}
+          <span
+            className={`h-2 w-2 rounded-full ${status?.loading ? "animate-pulse bg-primary" : status?.error ? "bg-destructive" : "bg-muted-foreground/40"}`}
+            title={
+              status?.error ?? (status?.loading ? t("mapSites.loading") : t("mapWorkspace.ready"))
+            }
+          />
         </div>
-        {!compact && <span className="w-0 shrink" />}
       </div>
     </div>
   );
@@ -1019,9 +1026,9 @@ function MenuCheck({
 
 function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <span className="flex flex-col items-center leading-tight">
+    <span className="flex items-baseline gap-1 leading-none">
       <strong className="text-sm tabular-nums">{value}</strong>
-      <span className="text-[10px] text-muted-foreground">{label}</span>
+      <span className="text-[10px] text-muted-foreground">: {label}</span>
     </span>
   );
 }
@@ -1035,10 +1042,9 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function LegendRow({ title, children }: { title: string; children: ReactNode }) {
+function LegendRow({ children }: { children: ReactNode }) {
   return (
     <div>
-      <p className="mb-0.5 font-semibold">{title}</p>
       <div className="flex flex-wrap gap-x-2 gap-y-0.5">{children}</div>
     </div>
   );
