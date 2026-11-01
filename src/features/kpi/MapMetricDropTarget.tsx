@@ -110,6 +110,8 @@ function AddedMetric({
       }),
     [query.data, classes],
   );
+  // A different class split (new capture, new colour count) shows every class again.
+  useEffect(() => setHidden([]), [classes.length]);
   useEffect(() => {
     if (!map) return;
     const data = { type: "FeatureCollection" as const, features };
