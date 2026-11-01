@@ -24,9 +24,16 @@ vi.mock("@/lib/api/client", async () => {
     getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
   };
 });
-vi.mock("@/lib/api/metrics", () => ({
-  getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
-  getMetricSeries: vi.fn().mockResolvedValue({
+vi.mock("@/lib/api/metrics", async () => {
+  const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
+  return {
+    getMetrics: vi.fn().mockResolvedValue([]),
+    metricRequestQuery: () => "",
+    getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
+    getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
+    getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
+    getMetricMap: vi.fn().mockResolvedValue({ points: [] }),
+    getMetricSeries: vi.fn().mockResolvedValue({
     series: [
       {
         code: "cell_rsrp@0",
