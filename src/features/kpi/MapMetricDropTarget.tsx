@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
-import { Eye, EyeOff, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getMetricMap } from "@/lib/api/client";
 import { getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
@@ -15,8 +14,24 @@ import {
   useMetricLegendSettings,
   MIN_CLASSES,
   MAX_CLASSES,
+  type MetricClass,
 } from "./metric-classes";
 import { addMapMetric, MAP_METRIC_MIME, readMapMetric, type MapMetric } from "./map-metric-drop";
+import {
+  MapLegendHeaderActions,
+  MapLegendList,
+  MapLegendReopen,
+  MapLegendRow,
+  MapLegendSection,
+  MapLegendSettings,
+} from "./map-legend";
+
+function classRange(c: MetricClass): string {
+  if (c.min === -Infinity && c.max === Infinity) return "all";
+  if (c.min === -Infinity) return `< ${Number(c.max.toPrecision(3))}`;
+  if (c.max === Infinity) return `≥ ${Number(c.min.toPrecision(3))}`;
+  return `${Number(c.min.toPrecision(3))} – ${Number(c.max.toPrecision(3))}`;
+}
 
 function AddedMetric({
   metric,
@@ -37,6 +52,8 @@ function AddedMetric({
 }) {
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
+  const [hidden, setHidden] = useState<string[]>([]);
+  const [closed, setClosed] = useState(false);
   const [settings, setSettings] = useMetricLegendSettings(metric.code);
   const id = `bc4-dropped-${metric.kind}-${encodeURIComponent(metric.code)}`;
   const query = useQuery({
@@ -102,6 +119,10 @@ function AddedMetric({
       }),
     [query.data, classes],
   );
+  // A new class set invalidates the rows the technician had hidden.
+  useEffect(() => {
+    setHidden([]);
+  }, [classes.length]);
   useEffect(() => {
     if (!map) return;
     const data = { type: "FeatureCollection" as const, features };
@@ -117,7 +138,8 @@ function AddedMetric({
       });
     }
     map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
-  }, [map, id, features, visible]);
+    map.setFilter(id, hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null);
+  }, [map, id, features, visible, hidden]);
   useEffect(
     () => () => {
       if (!map) return;
@@ -132,99 +154,102 @@ function AddedMetric({
   );
   return legendHost
     ? createPortal(
-        <section className="border-t border-border pt-2" data-map-added-metric={metric.code}>
-          <div className="flex items-center gap-1">
-            <span className="min-w-0 flex-1 break-words font-semibold">
-              {metric.label}
-              {metric.unit ? ` · ${metric.unit}` : ""}
-            </span>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 shrink-0"
-              aria-label={t("mapMetricDrop.visibility", { metric: metric.label })}
-              aria-pressed={visible}
-              onClick={() => setVisible((v) => !v)}
-            >
-              {visible ? <Eye size={14} /> : <EyeOff size={14} />}
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 shrink-0"
-              aria-label={t("mapMetricDrop.remove", { metric: metric.label })}
-              onClick={onRemove}
-            >
-              <X size={14} />
-            </Button>
-          </div>
-          {query.isFetching && (
-            <div
-              role="progressbar"
-              aria-label={t("mapMetricDrop.loading", { metric: metric.label })}
-              className="h-1 animate-pulse bg-primary"
+        <section className="space-y-2 border-t border-border pt-2" data-map-added-metric={metric.code}>
+          {closed ? (
+            <MapLegendReopen
+              label={metric.label}
+              openLabel={t("mapWorkspace.legendReopen")}
+              onOpen={() => setClosed(false)}
             />
-          )}
-          {query.isError && (
-            <div role="alert">
-              <span>{query.error.message}</span>
-              <Button variant="ghost" size="sm" onClick={() => void query.refetch()}>
-                {t("common.retry")}
-              </Button>
-            </div>
-          )}
-          {!query.isFetching && !query.isError && !features.length && (
-            <span className="text-muted-foreground">{t("mapMetricDrop.noGps")}</span>
-          )}
-          {[...classes].reverse().map((c, reverseIndex) => (
-            <div key={c.id} className="flex items-center gap-2 text-xs">
-              <input
-                type="color"
-                aria-label={`${t("mapWorkspace.legendSettings")} · ${metric.label} · ${reverseIndex + 1}`}
-                value={c.color}
-                onChange={(e) =>
-                  setSettings({
-                    ...settings,
-                    colors: {
-                      ...settings.colors,
-                      [classes.length - 1 - reverseIndex]: e.target.value,
-                    },
-                  })
-                }
-                className="h-4 w-4 border-0 p-0"
-              />
-              <span className="flex-1">
-                {c.min === -Infinity && c.max === Infinity
-                  ? t("common.all")
-                  : c.min === -Infinity
-                    ? `< ${Number(c.max.toPrecision(3))}`
-                    : c.max === Infinity
-                      ? `≥ ${Number(c.min.toPrecision(3))}`
-                      : `${Number(c.min.toPrecision(3))} – ${Number(c.max.toPrecision(3))}`}
-              </span>
-              <span className="tabular-nums">
-                {features.filter((f) => f.properties.cls === c.id).length}
-              </span>
-            </div>
-          ))}
-          {classes.length > 0 && (
-            <label className="flex items-center justify-between gap-2 text-xs">
-              {t("mapWorkspace.legendCount")}
-              <select
-                className="border border-border bg-background"
-                value={settings.count ?? 5}
-                onChange={(e) => setSettings({ count: Number(e.target.value), colors: {} })}
-              >
-                {Array.from(
-                  { length: MAX_CLASSES - MIN_CLASSES + 1 },
-                  (_, i) => i + MIN_CLASSES,
-                ).map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
+          ) : (
+            <MapLegendSection
+              title={`${metric.label}${metric.unit ? ` · ${metric.unit}` : ""}`}
+              action={
+                <MapLegendHeaderActions
+                  visible={visible}
+                  onToggleVisible={() => setVisible((v) => !v)}
+                  onClose={() => setClosed(true)}
+                  visibilityLabel={t("mapWorkspace.legendVisibility", { metric: metric.label })}
+                  closeLabel={t("mapWorkspace.legendClose", { metric: metric.label })}
+                />
+              }
+            >
+              {query.isFetching && (
+                <div
+                  role="progressbar"
+                  aria-label={t("mapMetricDrop.loading", { metric: metric.label })}
+                  className="h-1 animate-pulse bg-primary"
+                />
+              )}
+              {query.isError && (
+                <div role="alert">
+                  <span>{query.error.message}</span>
+                  <Button variant="ghost" size="sm" onClick={() => void query.refetch()}>
+                    {t("common.retry")}
+                  </Button>
+                </div>
+              )}
+              {!query.isFetching && !query.isError && !features.length && (
+                <span className="text-muted-foreground">{t("mapMetricDrop.noGps")}</span>
+              )}
+              <MapLegendList label={metric.label}>
+                {[...classes].reverse().map((c) => (
+                  <MapLegendRow
+                    key={c.id}
+                    color={c.color}
+                    label={classRange(c)}
+                    meta={features.filter((f) => f.properties.cls === c.id).length}
+                    checked={!hidden.includes(c.id)}
+                    onToggle={() =>
+                      setHidden((h) =>
+                        h.includes(c.id) ? h.filter((x) => x !== c.id) : [...h, c.id],
+                      )
+                    }
+                  />
                 ))}
-              </select>
-            </label>
+              </MapLegendList>
+              {classes.length > 0 && (
+                <MapLegendSettings title={t("mapWorkspace.legendSettings")}>
+                  <label className="flex items-center justify-between gap-2 text-xs">
+                    {t("mapWorkspace.legendCount")}
+                    <select
+                      className="border border-border bg-background"
+                      value={settings.count ?? 5}
+                      onChange={(e) => setSettings({ count: Number(e.target.value), colors: {} })}
+                    >
+                      {Array.from(
+                        { length: MAX_CLASSES - MIN_CLASSES + 1 },
+                        (_, i) => i + MIN_CLASSES,
+                      ).map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flex flex-wrap gap-1">
+                    {classes.map((c, i) => (
+                      <input
+                        key={c.id}
+                        type="color"
+                        aria-label={`${t("mapWorkspace.legendSettings")} · ${metric.label} · ${i + 1}`}
+                        value={c.color}
+                        onChange={(e) =>
+                          setSettings({
+                            ...settings,
+                            colors: { ...settings.colors, [i]: e.target.value },
+                          })
+                        }
+                        className="h-4 w-4 border-0 p-0"
+                      />
+                    ))}
+                  </div>
+                  <Button variant="ghost" size="sm" className="px-0 text-xs" onClick={onRemove}>
+                    {t("mapMetricDrop.remove", { metric: metric.label })}
+                  </Button>
+                </MapLegendSettings>
+              )}
+            </MapLegendSection>
           )}
         </section>,
         legendHost,
