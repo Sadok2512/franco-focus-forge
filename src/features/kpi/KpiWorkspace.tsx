@@ -70,6 +70,7 @@ import {
   analyticRows,
   catalogEntries,
   classifyKpiCatalog,
+  metricsPresentationCatalog,
   chosenStatistic,
   exportRows,
   fromSearch,

@@ -543,7 +543,8 @@ export function MetricsCatalogSidebar({
           className={`kpi-tree-leaf ${isActive ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
           title={scannerTooltip ?? node.reason ?? node.technical_label ?? node.source ?? label}
         >
-          <span
+          <button
+            type="button"
             className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
             onClick={() => setInfo(node)}
             disabled={disabled}
@@ -578,7 +579,7 @@ export function MetricsCatalogSidebar({
                 </span>
               )}
             </span>
-          </span>
+          </button>
           {/* 1.79.1 — nombre d'observations (node.n) à droite du label,
               aligné sur le pattern KPI tree-root "LTE 84 · 26 AVAIL" */}
           {!measured && (
@@ -689,31 +690,6 @@ export function MetricsCatalogSidebar({
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
-        <label
-          className="mt-2 flex items-center gap-2 text-[11px] text-muted-foreground"
-          data-testid="metrics-show-unavailable"
-        >
-          <input
-            type="checkbox"
-            role="switch"
-            checked={showUnavailable}
-            onChange={(event) => setShowUnavailable(event.target.checked)}
-            className="h-3 w-3"
-          />
-          {t("metrics.showUnavailable")}
-        </label>
-        <label
-          className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground"
-          data-testid="metrics-active-only"
-        >
-          <input
-            type="checkbox"
-            checked={activeOnly}
-            onChange={(e) => setActiveOnly(e.target.checked)}
-            className="h-3 w-3"
-          />
-          {t("metrics.activeOnly")}
-        </label>
       </header>
       {/* The catalogue is prefetched at app start, so a tab opened later joins an
           already-finished request: show the bar for any in-flight fetch, not only
@@ -739,6 +715,33 @@ export function MetricsCatalogSidebar({
       )}
       <div className="kpi-tree" data-testid="unified-metrics-tree">
         <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
+      </div>
+      <div className="kpi-catalog-controls" data-testid="metrics-catalog-controls">
+        <label
+          className="flex items-center gap-2 text-[11px] text-muted-foreground"
+          data-testid="metrics-show-unavailable"
+        >
+          <input
+            type="checkbox"
+            role="switch"
+            checked={showUnavailable}
+            onChange={(event) => setShowUnavailable(event.target.checked)}
+            className="h-3 w-3"
+          />
+          {t("metrics.showUnavailable")}
+        </label>
+        <label
+          className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground"
+          data-testid="metrics-active-only"
+        >
+          <input
+            type="checkbox"
+            checked={activeOnly}
+            onChange={(event) => setActiveOnly(event.target.checked)}
+            className="h-3 w-3"
+          />
+          {t("metrics.activeOnly")}
+        </label>
       </div>
       {/* 1.107.0 — Footer lit l'enveloppe `catalog_release` + `decoder_version`
           du back 0.80.0. Jamais en dur. Fallback explicite "legacy" quand

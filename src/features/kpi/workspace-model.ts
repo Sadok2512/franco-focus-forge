@@ -57,6 +57,52 @@ export function classifyKpiCatalog(catalog: ProjectKpiCatalog) {
   };
   return { kpi: pick("kpi"), metrics: pick("metrics") };
 }
+
+/** Hide calculated KPI and aggregate branches from the Metrics presentation.
+ * The API remains the classification authority; saved selections are untouched. */
+export function metricsPresentationCatalog(catalog: ProjectKpiCatalog): ProjectKpiCatalog {
+  const isKpiNature = (item: KpiCatalogItem) =>
+    [item.nature, item.category ?? ""].some((value) =>
+      /(^|[^a-z])kpi([^a-z]|$)/i.test(value),
+    );
+  const tree = catalog.tree
+    .filter((technology) => technology.techno.trim().toUpperCase() !== "AGGREGATE")
+    .map((technology) => ({
+      ...technology,
+      families: technology.families
+        .map((family) => ({
+          ...family,
+          kpis: family.kpis.filter((item) => !isKpiNature(item)),
+        }))
+        .filter((family) => family.kpis.length > 0),
+    }))
+    .filter((technology) => technology.families.length > 0);
+  const items = tree.flatMap((technology) =>
+    technology.families.flatMap((family) => family.kpis),
+  );
+  const statuses = [...new Set(items.map((item) => item.status))];
+  return {
+    ...catalog,
+    tree,
+    counts_by_status: Object.fromEntries(
+      statuses.map((status) => [status, items.filter((item) => item.status === status).length]),
+    ),
+    counts_by_techno: Object.fromEntries(
+      tree.map((technology) => {
+        const technologyItems = technology.families.flatMap((family) => family.kpis);
+        return [
+          technology.techno,
+          Object.fromEntries(
+            statuses.map((status) => [
+              status,
+              technologyItems.filter((item) => item.status === status).length,
+            ]),
+          ),
+        ];
+      }),
+    ),
+  };
+}
 export type Statistic = "value" | "p10" | "p50" | "p90";
 export const STAT_LABELS: Record<Statistic, string> = {
   get value() {
