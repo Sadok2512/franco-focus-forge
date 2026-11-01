@@ -20,7 +20,6 @@ import { addMapMetric, MAP_METRIC_MIME, readMapMetric, type MapMetric } from "./
 import {
   MapLegendHeaderActions,
   MapLegendList,
-  MapLegendReopen,
   MapLegendRow,
   MapLegendSection,
   MapLegendSettings,
@@ -53,7 +52,6 @@ function AddedMetric({
   const { t } = useTranslation();
   const [visible, setVisible] = useState(true);
   const [hidden, setHidden] = useState<string[]>([]);
-  const [closed, setClosed] = useState(false);
   const [settings, setSettings] = useMetricLegendSettings(metric.code);
   const id = `bc4-dropped-${metric.kind}-${encodeURIComponent(metric.code)}`;
   const query = useQuery({
@@ -159,20 +157,14 @@ function AddedMetric({
           className="space-y-2 border-t border-border pt-2"
           data-map-added-metric={metric.code}
         >
-          {closed ? (
-            <MapLegendReopen
-              label={metric.label}
-              openLabel={t("mapWorkspace.legendReopen")}
-              onOpen={() => setClosed(false)}
-            />
-          ) : (
+          {(
             <MapLegendSection
               title={`${metric.label}${metric.unit ? ` · ${metric.unit}` : ""}`}
               action={
                 <MapLegendHeaderActions
                   visible={visible}
                   onToggleVisible={() => setVisible((v) => !v)}
-                  onClose={() => setClosed(true)}
+                  onClose={onRemove}
                   visibilityLabel={t("mapWorkspace.legendVisibility", { metric: metric.label })}
                   closeLabel={t("mapWorkspace.legendClose", { metric: metric.label })}
                 />

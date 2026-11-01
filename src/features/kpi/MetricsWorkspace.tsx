@@ -15,7 +15,6 @@ import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import {
   MapLegendHeaderActions,
   MapLegendList,
-  MapLegendReopen,
   MapLegendRow,
   MapLegendSection,
 } from "./map-legend";
@@ -620,7 +619,7 @@ function MetricMap({
           : null,
       );
     if (typeof map.setLayoutProperty === "function") {
-      map.setLayoutProperty("metrics-v3", "visibility", visible ? "visible" : "none");
+      map.setLayoutProperty("metrics-v3", "visibility", visible && !closed ? "visible" : "none");
     }
   }, [
     map,
@@ -633,6 +632,7 @@ function MetricMap({
     categories,
     hiddenCategories,
     visible,
+    closed,
   ]);
   useEffect(() => {
     if (!map) return;
@@ -695,13 +695,7 @@ function MetricMap({
   // Signaling map — nothing floats over the map itself.
   const legend = (
     <div className="space-y-1" data-testid="metric-map-legend">
-      {closed ? (
-        <MapLegendReopen
-          label={`${label}${unit ? ` · ${unit}` : ""}`}
-          openLabel={translate("mapWorkspace.legendReopen")}
-          onOpen={() => setClosed(false)}
-        />
-      ) : (
+      {closed ? null : (
         <MapLegendSection
           title={`${label}${unit ? ` · ${unit}` : ""}`}
           action={
@@ -826,20 +820,6 @@ function MetricMap({
                   </label>
                 ))}
               </fieldset>
-              <div
-                className="measurement-link-style-legend"
-                data-testid="measurement-link-style-legend"
-              >
-                <strong>{translate("mapPointPopup.lineStyles")}</strong>
-                <span>
-                  <i className="measurement-popup-line is-proven" />
-                  {translate("mapPointPopup.solid")}
-                </span>
-                <span>
-                  <i className="measurement-popup-line is-probable" />
-                  {translate("mapPointPopup.dashed")}
-                </span>
-              </div>
             </div>
           )}
         </MapLegendSection>
