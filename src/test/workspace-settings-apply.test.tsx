@@ -8,19 +8,16 @@ const WS = "ws-apply-test";
 const KEY = `bc4.tableSettings.${WS}`;
 const HEADER_BG = i18n.t("wss.color_headerBg");
 
-function openDialog(onLayoutChange = vi.fn()) {
+function openDialog() {
   localStorage.removeItem(KEY);
   render(
     <WorkspaceSettingsDialog
       open
       onOpenChange={vi.fn()}
       workspaceId={WS}
-      layout="auto"
-      onLayoutChange={onLayoutChange}
       columns={[{ code: "a", label: "Col A" }]}
     />,
   );
-  return onLayoutChange;
 }
 
 const applyBtn = () => screen.getByTestId("workspace-settings-apply");
@@ -42,23 +39,5 @@ describe("workspace settings apply button", () => {
     fireEvent.change(colorInput(), { target: { value: "#abcdef" } });
     fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.cancel") }));
     expect(localStorage.getItem(KEY)).toBeNull();
-  });
-
-  it.each([1, 2, 3])("applies %i graph columns only on Apply", (n) => {
-    const onLayoutChange = openDialog();
-    // Radix tabs activate on focus, not on click.
-    fireEvent.click(screen.getByRole("button", { name: i18n.t("wss.perRow", { n }) }));
-    expect(onLayoutChange).not.toHaveBeenCalled();
-    fireEvent.click(applyBtn());
-    expect(onLayoutChange).toHaveBeenCalledWith(String(n));
-  });
-  it("applies Auto after an explicit layout only on Apply", () => {
-    const onLayoutChange = vi.fn();
-    render(<WorkspaceSettingsDialog open onOpenChange={vi.fn()} workspaceId={WS}
-      layout="3" onLayoutChange={onLayoutChange} columns={[]} />);
-    fireEvent.click(screen.getByTestId("workspace-layout-auto"));
-    expect(onLayoutChange).not.toHaveBeenCalled();
-    fireEvent.click(applyBtn());
-    expect(onLayoutChange).toHaveBeenCalledWith("auto");
   });
 });
