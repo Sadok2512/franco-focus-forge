@@ -7,13 +7,7 @@ import { toast } from "sonner";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { buildShareUrl, copyText } from "./share-link";
 
-export function SharePanelMenuItem({
-  projectId,
-  testId,
-}: {
-  projectId: string;
-  testId: string;
-}) {
+export function SharePanelMenuItem({ projectId, testId }: { projectId: string; testId: string }) {
   const { t: translate } = useTranslation();
   const copy = async () => {
     const ok = await copyText(buildShareUrl(projectId));

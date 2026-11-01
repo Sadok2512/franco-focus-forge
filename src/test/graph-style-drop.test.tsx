@@ -35,33 +35,33 @@ vi.mock("@/lib/api/metrics", async () => {
     getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
     getMetricMap: vi.fn().mockResolvedValue({ points: [] }),
     getMetricSeries: vi.fn().mockResolvedValue({
-    series: [
-      {
-        code: "cell_rsrp@0",
-        label: "RSRP · PCell",
-        unit: "dBm",
-        kind: "numeric",
-        points: [
-          { seq: 1, t_rel_s: 0, value: -100 },
-          { seq: 2, t_rel_s: 1, value: -101 },
-        ],
-      },
-      {
-        code: "cell_rsrq@0",
-        label: "RSRQ",
-        unit: "dB",
-        kind: "numeric",
-        points: [
-          { seq: 1, t_rel_s: 0, value: -12 },
-          { seq: 2, t_rel_s: 1, value: -13 },
-        ],
-      },
-    ],
-    origin_ts: "10:33:20.980",
-    nmf_start_at: null,
-    utc_offset_min: null,
-    capture_date: null,
-  }),
+      series: [
+        {
+          code: "cell_rsrp@0",
+          label: "RSRP · PCell",
+          unit: "dBm",
+          kind: "numeric",
+          points: [
+            { seq: 1, t_rel_s: 0, value: -100 },
+            { seq: 2, t_rel_s: 1, value: -101 },
+          ],
+        },
+        {
+          code: "cell_rsrq@0",
+          label: "RSRQ",
+          unit: "dB",
+          kind: "numeric",
+          points: [
+            { seq: 1, t_rel_s: 0, value: -12 },
+            { seq: 2, t_rel_s: 1, value: -13 },
+          ],
+        },
+      ],
+      origin_ts: "10:33:20.980",
+      nmf_start_at: null,
+      utc_offset_min: null,
+      capture_date: null,
+    }),
     getMetricAggregate: vi.fn().mockResolvedValue({ groups: [] }),
   };
 });
@@ -151,9 +151,7 @@ describe("glisser-déposer sur un graphe", () => {
     // recopié, la série est déjà identifiée par son code.
     expect(
       JSON.parse(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0") ?? "[]"),
-    ).toEqual([
-      { code: "cell_rsrq@0", label: "RSRQ", unit: "dB", color: expect.any(String) },
-    ]);
+    ).toEqual([{ code: "cell_rsrq@0", label: "RSRQ", unit: "dB", color: expect.any(String) }]);
     // La série ajoutée est retirable depuis le sous-menu Style.
     await openStyleMenu(card);
     fireEvent.click(await screen.findByTestId("metric-series-remove-cell_rsrq@0"));

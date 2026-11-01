@@ -1524,7 +1524,8 @@ export function MetricsWorkspace({
   // Une carte carte (map) n'est pas un graphe : elle reste visible.
   const tableOpen = pane === "table";
   const visibleGridSelections = useMemo(
-    () => (tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections),
+    () =>
+      tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections,
     [graphSelections, tableOpen, viewsProp],
   );
 
@@ -1571,7 +1572,6 @@ export function MetricsWorkspace({
       {captureId && visibleGridSelections.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
           {visibleGridSelections.map((s, i) => {
-
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
             const metricView = viewsProp?.[s.full] ?? "graph";

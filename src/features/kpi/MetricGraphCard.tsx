@@ -681,9 +681,7 @@ function MetricTimePlot({
         bySeq.set(p.seq, row);
       }
     }
-    return [...bySeq.entries()]
-      .sort((a, b) => a[0] - b[0])
-      .map(([seq, row]) => ({ seq, ...row }));
+    return [...bySeq.entries()].sort((a, b) => a[0] - b[0]).map(([seq, row]) => ({ seq, ...row }));
   }, [series.data]);
   const units = [unit, ...extra.map((s) => s.unit)];
   const seriesList = [

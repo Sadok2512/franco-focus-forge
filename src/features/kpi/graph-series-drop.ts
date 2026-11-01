@@ -84,8 +84,7 @@ export function axisOf(units: string[], unit: string): "left" | "right" | null {
 }
 
 export type DropResult =
-  | { ok: true; series: GraphSeries[] }
-  | { ok: false; reason: "duplicate" | "axis" };
+  { ok: true; series: GraphSeries[] } | { ok: false; reason: "duplicate" | "axis" };
 
 /** Ajoute une métrique déposée à la carte : jamais la carte elle-même, jamais
  * deux fois la même, jamais une 3e unité. */
