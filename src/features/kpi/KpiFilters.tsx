@@ -61,12 +61,10 @@ export function KpiFilters({
   const rats = (dimensions?.rats?.values ?? []).filter(
     (value): value is "LTE" | "NR" => value === "LTE" || value === "NR",
   );
-  const technologyOptions = [
-    ...(rats.includes("LTE") ? [{ label: "LTE", values: ["LTE"] }] : []),
-    ...(rats.includes("NR") ? [{ label: "NR", values: ["NR"] }] : []),
-    ...(rats.includes("LTE") && rats.includes("NR")
-      ? [{ label: "LTE + NR", values: ["LTE", "NR"] }]
-      : []),
+  const technologyOptions: { label: string; values: ("LTE" | "NR")[] }[] = [
+    { label: "LTE", values: ["LTE"] },
+    { label: "NR", values: ["NR"] },
+    { label: "LTE + NR", values: ["LTE", "NR"] },
   ];
   const operators = dimensions?.operators;
   const source = scopeValue(scope);
@@ -74,50 +72,7 @@ export function KpiFilters({
   return (
     <section className="kpi-filterbar kpi-header-v2" aria-label="KPI Analytics Header V2">
       <div className="kpi-header-v2-controls">
-        <label className="kpi-header-field kpi-header-source">
-          <span>{t("workspaceTemplates.source")}</span>
-          <select
-            value={source}
-            disabled={sourcesLoading || (!captures.length && !superstreams.length)}
-            onChange={(event) => {
-              const [type, id] = event.target.value.split(":", 2);
-              if (!id) return;
-              if (type === "capture") onScopeChange({ type: "capture", captureId: id });
-              else {
-                const stream = superstreams.find((candidate) => candidate.id === id);
-                if (stream) {
-                  onScopeChange({
-                    type: "superstream",
-                    superstreamId: stream.id,
-                    revision: stream.revision,
-                  });
-                }
-              }
-            }}
-            data-testid="kpi-source-selector"
-          >
-            {!source && <option value="">{t("workspaceTemplates.selectSource")}</option>}
-            <optgroup label={t("workspaceTemplates.streams")}>
-              {captures.map((capture) => (
-                <option key={capture.capture_id} value={`capture:${capture.capture_id}`}>
-                  {capture.label}
-                </option>
-              ))}
-            </optgroup>
-            {superstreams.length > 0 && (
-              <optgroup label={t("workspaceTemplates.superstreams")}>
-                {superstreams.map((stream) => (
-                  <option key={stream.id} value={`superstream:${stream.id}`}>
-                    {stream.name} · {stream.captureIds.length} captures
-                  </option>
-                ))}
-              </optgroup>
-            )}
-          </select>
-        </label>
-
-        <div className="kpi-header-field">
-          <span>{t("workspaceTemplates.technology")}</span>
+        <div className="kpi-header-technology" data-testid="kpi-header-technology">
           <div className="kpi-tech-filter" role="group" aria-label="Technology">
             {technologyOptions.map((option) => {
               const selected =
@@ -130,21 +85,17 @@ export function KpiFilters({
                   type="button"
                   key={option.label}
                   aria-pressed={selected}
-                  disabled={loading}
+                  disabled={loading || !option.values.every((value) => rats.includes(value))}
                   onClick={() => update("rat", option.values)}
                 >
                   {option.label}
                 </button>
               );
             })}
-            {!loading && technologyOptions.length === 0 && (
-              <span className="kpi-unavailable-filter">{t("workspaceTemplates.noTechnology")}</span>
-            )}
           </div>
         </div>
 
-        <div className="kpi-header-field">
-          <span>{t("workspaceTemplates.operator")}</span>
+        <div className="kpi-header-operator" data-testid="kpi-header-operator">
           {operators?.available ? (
             <FilterSelect
               label="Operator"
@@ -168,13 +119,51 @@ export function KpiFilters({
           )}
         </div>
 
-        <div className="kpi-header-field">
-          <span>{t("workspaceTemplates.templates")}</span>
+        <label className="kpi-header-source" data-testid="kpi-header-source">
+          <select
+            aria-label={t("workspaceTemplates.source")}
+            value={source}
+            disabled={sourcesLoading || (!captures.length && !superstreams.length)}
+            onChange={(event) => {
+              const [type, id] = event.target.value.split(":", 2);
+              if (!id) return;
+              if (type === "capture") onScopeChange({ type: "capture", captureId: id });
+              else {
+                const stream = superstreams.find((candidate) => candidate.id === id);
+                if (stream) {
+                  onScopeChange({
+                    type: "superstream",
+                    superstreamId: stream.id,
+                    revision: stream.revision,
+                  });
+                }
+              }
+            }}
+            data-testid="kpi-source-selector"
+          >
+            {!source && <option value="">{t("workspaceTemplates.selectSource")}</option>}
+            <optgroup label={t("workspaceTemplates.captures")}>
+              {captures.map((capture) => (
+                <option key={capture.capture_id} value={`capture:${capture.capture_id}`}>
+                  {capture.label}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={t("workspaceTemplates.superstreams")}>
+              {superstreams.map((stream) => (
+                <option key={stream.id} value={`superstream:${stream.id}`}>
+                  {stream.name} · {stream.captureIds.length} captures
+                </option>
+              ))}
+            </optgroup>
+          </select>
+        </label>
+
+        <div className="kpi-header-templates" data-testid="kpi-header-templates">
           <WorkspaceTemplatesMenu />
         </div>
 
-        <label className="kpi-header-field kpi-events-toggle">
-          <span>{t("workspaceTemplates.events")}</span>
+        <label className="kpi-events-toggle" data-testid="kpi-header-events">
           <span className="flex items-center gap-2 text-xs font-medium">
             <Switch
               checked={eventsVisible}
@@ -186,7 +175,12 @@ export function KpiFilters({
           </span>
         </label>
 
-        <button type="button" className="kpi-button" onClick={onReset}>
+        <button
+          type="button"
+          className="kpi-button"
+          onClick={onReset}
+          data-testid="kpi-header-reset"
+        >
           <RotateCcw size={13} /> {t("workspaceTemplates.reset")}
         </button>
         <button
@@ -194,14 +188,22 @@ export function KpiFilters({
           className="kpi-button primary"
           disabled={loading || error || !dirty}
           onClick={onApply}
+          data-testid="kpi-header-apply"
         >
           <Check size={14} /> {t("workspaceTemplates.apply")}
         </button>
       </div>
-      {dirty && <span role="status" className="kpi-dirty">{t("workspaceTemplates.filtersModified")}</span>}
+      {dirty && (
+        <span role="status" className="kpi-dirty">
+          {t("workspaceTemplates.filtersModified")}
+        </span>
+      )}
       {error && (
         <div role="alert" className="text-xs text-destructive">
-          {t("workspaceTemplates.dimensionsUnavailable")} <button className="underline" onClick={onRetry}>{t("workspaceTemplates.retry")}</button>
+          {t("workspaceTemplates.dimensionsUnavailable")}{" "}
+          <button className="underline" onClick={onRetry}>
+            {t("workspaceTemplates.retry")}
+          </button>
         </div>
       )}
     </section>

@@ -1291,6 +1291,7 @@
     "events": "Events",
     "selectSource": "Select…",
     "streams": "Streams",
+    "captures": "Streams / Captures",
     "superstreams": "Superstreams",
     "noTechnology": "No technology",
     "noOperator": "No operator",

@@ -46,7 +46,7 @@ const configuration = (): WorkspaceTemplateConfiguration => ({
 describe("KPI Header V2", () => {
   beforeEach(() => localStorage.clear());
 
-  it("renders the normative order and only detected technologies/operators", () => {
+  it("renders the compact V2 controls in the restored toolbar order", () => {
     const onScopeChange = vi.fn();
     const onEventsVisibleChange = vi.fn();
     const context = {
@@ -92,13 +92,27 @@ describe("KPI Header V2", () => {
         />
       </WorkspaceTemplatesProvider>,
     );
-    const text = container.textContent ?? "";
-    const labels = ["Stream / Capture", "Technology", "Operator", "Templates", "Events"];
-    expect(labels.map((label) => text.indexOf(label))).toEqual(
-      [...labels.map((label) => text.indexOf(label))].sort((a, b) => a - b),
-    );
+    const order = [
+      "kpi-header-technology",
+      "kpi-header-operator",
+      "kpi-header-source",
+      "kpi-header-templates",
+      "kpi-header-events",
+      "kpi-header-reset",
+      "kpi-header-apply",
+    ].map((testId) => screen.getByTestId(testId));
+    order.slice(1).forEach((node, index) => {
+      expect(
+        order[index]!.compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+    });
+    expect(container.querySelectorAll(".kpi-header-field")).toHaveLength(0);
     expect(screen.getByRole("button", { name: "LTE" })).toBeEnabled();
-    expect(screen.queryByRole("button", { name: "NR" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "NR" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: "LTE + NR" })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Operator.*Orange.*Free/ })).toBeInTheDocument();
+    const source = screen.getByTestId("kpi-source-selector");
+    expect(source.querySelector("optgroup")?.label).toBe("Streams / Captures");
     expect(screen.queryByText("Band")).not.toBeInTheDocument();
     expect(screen.queryByText("Geographic Area")).not.toBeInTheDocument();
     expect(screen.queryByText("Period")).not.toBeInTheDocument();

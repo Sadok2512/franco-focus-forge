@@ -1,3 +1,12 @@
+## 1.129.2 (patch) — KPI Header V2 compact toolbar — 2026-11-01 (BC1)
+
+- Restores the original one-row KPI toolbar chrome and mandatory Technology,
+  Operator, Stream/Capture, Templates, Events, Reset, Apply order without
+  removing any Header V2 feature.
+- Keeps detected technology availability, multi-operator colour badges and
+  capture/Superstream hierarchy while wrapping safely on narrow viewports.
+- SemVer front: **PATCH 1.129.2**.
+
 ## 1.129.1 (patch) — Measurements table states — 2026-11-01 (BC1)
 
 - Makes the measurements-table loading state explicit and visibly animated,

@@ -1905,59 +1905,75 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-height: 0;
 }
 
-/* Header V2: one compact responsive toolbar in the normative control order. */
+/* Header V2 keeps the original compact toolbar chrome while retaining V2 controls. */
 .kpi-header-v2 {
   display: block;
   min-width: 0;
-  padding: 6px 10px;
+  min-height: 36px;
+  padding: 4px 10px;
   overflow: visible;
 }
 .kpi-header-v2-controls {
-  display: grid;
-  grid-template-columns:
-    minmax(190px, 1.4fr)
-    minmax(190px, 1fr)
-    minmax(150px, 1fr)
-    minmax(150px, 1fr)
-    auto auto auto;
-  align-items: end;
-  gap: 6px;
-  min-width: 0;
-}
-.kpi-header-field {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   min-width: 0;
-  flex-direction: column;
-  gap: 2px;
 }
-.kpi-header-field > span:first-child {
+.kpi-header-technology,
+.kpi-header-operator,
+.kpi-header-source,
+.kpi-header-templates,
+.kpi-events-toggle {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+.kpi-header-technology,
+.kpi-events-toggle,
+.kpi-header-v2-controls > .kpi-button {
+  flex: 0 0 auto;
+}
+.kpi-header-operator {
+  flex: 0 1 auto;
+  max-width: min(340px, 30vw);
+}
+.kpi-header-operator > .rrc-control {
+  max-width: 100%;
   overflow: hidden;
-  color: var(--muted-foreground);
-  font-size: 9px;
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: 0.04em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
 }
-.kpi-header-field select,
+.kpi-header-operator > .rrc-control > span {
+  flex-wrap: nowrap;
+  overflow: hidden;
+}
+.kpi-header-source {
+  flex: 1 1 210px;
+  max-width: 360px;
+}
+.kpi-header-templates {
+  flex: 0 1 210px;
+  min-width: 130px;
+  max-width: 260px;
+}
+.kpi-header-source select,
 .kpi-header-control {
   width: 100%;
   min-width: 0;
   height: 28px;
 }
-.kpi-header-field select {
+.kpi-header-source select {
   border: 1px solid var(--border);
-  border-radius: 5px;
+  border-radius: 7px;
   background: var(--background);
-  padding: 2px 7px;
+  padding: 2px 26px 2px 8px;
   color: var(--foreground);
   font-size: 11px;
   text-overflow: ellipsis;
 }
 .kpi-events-toggle {
-  align-items: center;
+  min-height: 28px;
+  padding-inline: 3px;
 }
 .kpi-header-v2 > .kpi-dirty,
 .kpi-header-v2 > [role="alert"] {
@@ -1980,16 +1996,13 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   font-size: 10px;
   font-weight: 650;
 }
-@media (max-width: 1280px) {
-  .kpi-header-v2-controls {
-    grid-template-columns: repeat(4, minmax(150px, 1fr));
-  }
-}
 @media (max-width: 760px) {
-  .kpi-header-v2-controls {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .kpi-header-operator {
+    max-width: 100%;
   }
-  .kpi-header-v2-controls > .kpi-button {
-    width: 100%;
+  .kpi-header-source,
+  .kpi-header-templates {
+    flex: 1 1 180px;
+    max-width: none;
   }
 }
