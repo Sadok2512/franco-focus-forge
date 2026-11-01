@@ -576,115 +576,118 @@ function MetricMap({
   // The metric legend lives in the Layers panel's Legend tab, like the
   // Signaling map — nothing floats over the map itself.
   const legend = (
-    <div className="space-y-1" data-testid="metric-map-legend">
-      <div className="kpi-metric-map-legend-title">
-          <strong>
-            {label}
-            {unit ? ` · ${unit}` : ""}
-          </strong>
-          <button
-            type="button"
-            aria-label={translate("metrics.mapSettings")}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((open) => !open)}
-          >
-            <Settings2 size={14} />
-          </button>
-        </div>
-        {categories ? (
-          <ul className="space-y-1" data-testid="metric-map-categories">
-            {categories.map((c) => (
-              <li key={c.value} className="flex items-center gap-2 text-xs">
-                <span
-                  aria-hidden="true"
-                  className="inline-block h-3 w-3 rounded-full"
-                  style={{ background: c.color }}
-                />
-                <span className="flex-1">{fmt(c.value)}</span>
-                <span className="tabular-nums text-muted-foreground">{c.count}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <>
-            <span
-              className="kpi-metric-map-scale"
-              aria-hidden="true"
-              style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
-            />
-            <span className="kpi-metric-map-scale-labels">
-              <span>{fmt(minValue)}</span>
-              <span>{fmt(maxValue)}</span>
-            </span>
-          </>
-        )}
-        {settingsOpen && (
-          <div className="kpi-metric-map-settings" data-testid="metric-map-settings">
-            <label>
-              {translate("metrics.mapPalette")}
-              <select
-                value={preferences.palette}
-                onChange={(event) =>
-                  onPreferences({ ...preferences, palette: event.target.value as MetricMapPalette })
-                }
-              >
-                <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
-                <option value="viridis">Viridis</option>
-                <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
-              </select>
-            </label>
-            <label>
-              {translate("metrics.mapPointSize")} · {preferences.pointSize}
-              <input
-                type="range"
-                min="1"
-                max="10"
-                step="1"
-                value={preferences.pointSize}
-                onChange={(event) =>
-                  onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+    <MapLegendSection
+      data-testid="metric-map-legend"
+      title={`${label}${unit ? ` · ${unit}` : ""}`}
+      action={
+        <button
+          type="button"
+          aria-label={translate("metrics.mapSettings")}
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen((open) => !open)}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[5px] hover:bg-muted aria-expanded:bg-muted"
+        >
+          <Settings2 size={14} />
+        </button>
+      }
+    >
+      {categories ? (
+        <MapLegendList data-testid="metric-map-categories" label={label}>
+          {categories.map((c) => {
+            const off = hiddenCategories.includes(c.value);
+            return (
+              <MapLegendRow
+                key={c.value}
+                color={c.color}
+                label={fmt(c.value)}
+                meta={c.count}
+                checked={!off}
+                onToggle={() =>
+                  setHiddenCategories((h) =>
+                    off ? h.filter((x) => x !== c.value) : [...h, c.value],
+                  )
                 }
               />
-            </label>
-            <fieldset>
-              <legend>{translate("metrics.mapCellLinks")}</legend>
-              {CELL_LINK_KINDS.map((kind) => (
-                <label key={kind}>
-                  <input
-                    type="checkbox"
-                    checked={preferences.links[kind]}
-                    onChange={(event) =>
-                      onPreferences({
-                        ...preferences,
-                        links: { ...preferences.links, [kind]: event.target.checked },
-                      })
-                    }
-                  />
-                  <span
-                    className="kpi-metric-map-link-swatch"
-                    style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
-                  />
-                  {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
-                </label>
-              ))}
-            </fieldset>
-            <div
-              className="measurement-link-style-legend"
-              data-testid="measurement-link-style-legend"
+            );
+          })}
+        </MapLegendList>
+      ) : (
+        <>
+          <span
+            className="kpi-metric-map-scale"
+            aria-hidden="true"
+            style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+          />
+          <span className="kpi-metric-map-scale-labels">
+            <span>{fmt(minValue)}</span>
+            <span>{fmt(maxValue)}</span>
+          </span>
+        </>
+      )}
+      {settingsOpen && (
+        <div className="kpi-metric-map-settings" data-testid="metric-map-settings">
+          <label>
+            {translate("metrics.mapPalette")}
+            <select
+              value={preferences.palette}
+              onChange={(event) =>
+                onPreferences({ ...preferences, palette: event.target.value as MetricMapPalette })
+              }
             >
-              <strong>{translate("mapPointPopup.lineStyles")}</strong>
-              <span>
-                <i className="measurement-popup-line is-proven" />
-                {translate("mapPointPopup.solid")}
-              </span>
-              <span>
-                <i className="measurement-popup-line is-probable" />
-                {translate("mapPointPopup.dashed")}
-              </span>
-            </div>
+              <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
+              <option value="viridis">Viridis</option>
+              <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
+            </select>
+          </label>
+          <label>
+            {translate("metrics.mapPointSize")} · {preferences.pointSize}
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={preferences.pointSize}
+              onChange={(event) =>
+                onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+              }
+            />
+          </label>
+          <fieldset>
+            <legend>{translate("metrics.mapCellLinks")}</legend>
+            {CELL_LINK_KINDS.map((kind) => (
+              <label key={kind}>
+                <input
+                  type="checkbox"
+                  checked={preferences.links[kind]}
+                  onChange={(event) =>
+                    onPreferences({
+                      ...preferences,
+                      links: { ...preferences.links, [kind]: event.target.checked },
+                    })
+                  }
+                />
+                <span
+                  className="kpi-metric-map-link-swatch"
+                  style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
+                />
+                {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
+              </label>
+            ))}
+          </fieldset>
+          <div className="measurement-link-style-legend" data-testid="measurement-link-style-legend">
+            <strong>{translate("mapPointPopup.lineStyles")}</strong>
+            <span>
+              <i className="measurement-popup-line is-proven" />
+              {translate("mapPointPopup.solid")}
+            </span>
+            <span>
+              <i className="measurement-popup-line is-probable" />
+              {translate("mapPointPopup.dashed")}
+            </span>
           </div>
-        )}
-    </div>
+        </div>
+      )}
+    </MapLegendSection>
   );
   const content = (addedLegend: ReactNode) => (
     <KpiMapOSM
