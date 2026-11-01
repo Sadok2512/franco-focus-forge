@@ -1030,6 +1030,13 @@
     "closeSettings": "Fermer les réglages de la carte",
     "increaseWidth": "Augmenter la taille horizontale",
     "restoreWidth": "Restaurer la taille horizontale",
+    "mapHeight": "Hauteur de la carte",
+    "mapHeightOption": {
+      "compact": "Compacte · 300 px",
+      "default": "Par défaut",
+      "large": "Grande · 600 px",
+      "xl": "Très grande · 800 px"
+    },
     "zoomIn": "Zoom avant",
     "zoomOut": "Zoom arrière",
     "center": "Recentrer la carte",

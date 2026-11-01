@@ -1029,6 +1029,13 @@
     "closeSettings": "Close map settings",
     "increaseWidth": "Increase horizontal size",
     "restoreWidth": "Restore horizontal size",
+    "mapHeight": "Map height",
+    "mapHeightOption": {
+      "compact": "Compact · 300 px",
+      "default": "Default",
+      "large": "Large · 600 px",
+      "xl": "Extra Large · 800 px"
+    },
     "zoomIn": "Zoom in",
     "zoomOut": "Zoom out",
     "center": "Center map",
