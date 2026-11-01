@@ -44,7 +44,8 @@ describe("dbg4", () => {
     fireEvent.click(screen.getByTestId("metric-style-sub"));
     fireEvent.click(screen.getByTestId("metric-plot-bar"));
     console.log("AFTER PLOT state", trigger.getAttribute("data-state"), "ls", window.localStorage.getItem("bc3.metrics.styles.t1"));
-    console.log("OPEN2", open());
+    console.log("PROBE sub", !!screen.queryByTestId("metric-style-sub"), "plotbar", !!screen.queryByTestId("metric-plot-bar"), "color", !!screen.queryByTestId("metric-color-#0f766e"), "items", screen.queryAllByRole("menuitem").length);
+    if (screen.queryByTestId("metric-style-sub")) { fireEvent.click(screen.getByTestId("metric-style-sub")); console.log("RECLICK sub -> color", !!screen.queryByTestId("metric-color-#0f766e")); }
     fireEvent.click(screen.getByTestId("metric-style-sub"));
     fireEvent.click(screen.getByTestId("metric-color-#0f766e"));
     console.log("AFTER COLOR ls", window.localStorage.getItem("bc3.metrics.styles.t1"));
