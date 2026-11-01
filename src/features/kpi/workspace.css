@@ -1635,8 +1635,7 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 .kpi-panel-tools:focus-within {
   opacity: 1;
 }
-.kpi-panel-tools button,
-.kpi-panel-grip {
+.kpi-panel-tools button {
   display: inline-flex;
   align-items: center;
   gap: 1px;
@@ -1649,9 +1648,6 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 }
 .kpi-panel-tools small {
   font-size: 9px;
-}
-.kpi-panel-grip {
-  cursor: grab;
 }
 .kpi-panel-rename {
   position: absolute;
