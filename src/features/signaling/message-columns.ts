@@ -151,14 +151,20 @@ export function moveColumn(config: ColumnConfig, key: string, delta: -1 | 1): Co
 }
 
 const KNOWN_COLS = new Set<string>(COLUMNS.map((c) => c.key));
+const knownIds = (config: ColumnConfig) =>
+  new Set<string>([...KNOWN_COLS, ...config.metrics.map((m) => metricColId(m.selector))]);
 
 /** Ordered visible columns; keys absent from the catalog are ignored. */
-export const visibleColumns = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k) && config.visible.includes(k));
+export const visibleColumns = (config: ColumnConfig) => {
+  const known = knownIds(config);
+  return config.order.filter((k) => known.has(k) && config.visible.includes(k));
+};
 
 /** Configured order restricted to catalog columns. */
-export const knownOrder = (config: ColumnConfig) =>
-  config.order.filter((k) => KNOWN_COLS.has(k));
+export const knownOrder = (config: ColumnConfig) => {
+  const known = knownIds(config);
+  return config.order.filter((k) => known.has(k));
+};
 
 // ---------- Info: backend procedures only ----------
 type Proc = {
