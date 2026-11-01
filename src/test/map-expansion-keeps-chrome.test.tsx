@@ -137,6 +137,6 @@ describe("map expansion keeps the app chrome", () => {
     expect(map.style.top).toBe("56px");
     expect(map.style.right).toBe("0px");
     expect(map.style.bottom).toBe("0px");
-    expect(document.fullscreenElement).toBeNull();
+    expect(document.fullscreenElement ?? null).toBeNull();
   });
 });
