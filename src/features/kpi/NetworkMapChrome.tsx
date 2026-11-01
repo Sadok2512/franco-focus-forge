@@ -272,7 +272,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   // only. The "site colour = operator" row is removed by design.
   const legend = (
     <div className={compact ? "space-y-1.5 text-[10px]" : "flex gap-4 text-[10px]"}>
-      <LegendRow title={t("mapWorkspace.technology")}>
+      <LegendRow>
         <Swatch
           color={NR_COLOR}
           label="5G NR"
