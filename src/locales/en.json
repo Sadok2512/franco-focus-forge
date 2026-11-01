@@ -782,10 +782,10 @@
   "wss": {
     "title": "Workspace settings",
     "graphs": "Graphs",
-    "tables": "Tables",
+    "tabSettings": "Settings",
+    "layoutLabel": "Layout",
     "graphLayout": "Graph layout",
     "perRow": "{{n}} per row",
-    "layout": "Table layout",
     "tablesPerRow": "{{n}} table(s) per row",
     "autoFit": "Auto-fit table width",
     "equalHeights": "Equal table heights",

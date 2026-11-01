@@ -140,8 +140,6 @@ export function WorkspaceTabsBar({
             open={settingsOpen}
             onOpenChange={setSettingsOpen}
             workspaceId={activeTab.id}
-            layout={activeTab.layout}
-            onLayoutChange={(l) => onLayoutChange(activeTab.id, l)}
             columns={columns}
           />
           <button
@@ -162,16 +160,16 @@ export function WorkspaceTabsBar({
             Overlay
           </button>
           <label className="kpi-tab-layout" data-testid="workspace-layout-select">
-            <span className="text-[10px] text-muted-foreground">Layout</span>
+            <span className="text-[10px] text-muted-foreground">{t("wss.layoutLabel")}</span>
             <select
               value={activeTab.layout}
               onChange={(e) => onLayoutChange(activeTab.id, e.target.value as WorkspaceLayout)}
-              aria-label="Panel layout"
+              aria-label={t("wss.layoutLabel")}
             >
-              <option value="auto">Auto</option>
-              <option value="1">1 column</option>
-              <option value="2">2 columns</option>
-              <option value="3">3 columns</option>
+              <option value="auto">{t("wss.opt_auto")}</option>
+              <option value="1">{t("wss.perRow", { n: 1 })}</option>
+              <option value="2">{t("wss.perRow", { n: 2 })}</option>
+              <option value="3">{t("wss.perRow", { n: 3 })}</option>
             </select>
           </label>
         </>

@@ -782,10 +782,10 @@
   "wss": {
     "title": "Réglages du workspace",
     "graphs": "Graphiques",
-    "tables": "Tableaux",
+    "tabSettings": "Réglages",
+    "layoutLabel": "Disposition",
     "graphLayout": "Disposition des graphiques",
     "perRow": "{{n}} par ligne",
-    "layout": "Disposition des tableaux",
     "tablesPerRow": "{{n}} tableau(x) par ligne",
     "autoFit": "Largeur auto du tableau",
     "equalHeights": "Hauteurs égales",
