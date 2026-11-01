@@ -168,10 +168,7 @@ export function DriveRsrpLayer({
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
   selectionLayerId?: string | undefined;
-  /** Host-map metric values for an exact sequence, listed in RF Parameters → Metrics. */
-  pointMetrics?: ((seq: number) => RfPointMetric[]) | undefined;
 }) {
-  const rfPanel = useMapRfPanel();
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
