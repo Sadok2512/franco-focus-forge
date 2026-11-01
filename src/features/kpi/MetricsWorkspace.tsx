@@ -13,6 +13,11 @@ import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/me
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import {
+  MapLegendList,
+  MapLegendRow,
+  MapLegendSection,
+} from "./map-legend";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -453,6 +458,8 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  // Classes unchecked in the legend are hidden on the map, never deleted.
+  const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
   // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
   // same wiring as the Signaling and KPI measurement maps.
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
@@ -467,6 +474,8 @@ function MetricMap({
     () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
     [data, label],
   );
+  // A new capture or a new metric shows every class again.
+  useEffect(() => setHiddenCategories([]), [categories]);
   const metricCoordinates = useMemo(
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
