@@ -56,11 +56,12 @@ export function useMapFrameInsets<T extends HTMLElement>(
       });
     };
     measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(panel);
+    const observer =
+      typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
+    observer?.observe(panel);
     window.addEventListener("resize", measure);
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       window.removeEventListener("resize", measure);
     };
   }, [active, ref]);
