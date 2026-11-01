@@ -10,7 +10,7 @@
 
 # Roadmap — en cours
 
-- [ ] 7. Menu ⋮ des cartes métriques : action « Copier le lien » (lien = workspace + filtres + projet)
-- [ ] 8. Styles de graphe : couleur + type de tracé (ligne / barres / points) par carte
-- [ ] 9. Glisser-déposer sur les graphes (déposer une métrique sur un graphe existant)
-- [ ] 10. Validation : tests + vérification dans l'aperçu
+- [x] 7. Menu ⋮ des cartes métriques : action « Copier le lien » (lien = workspace + filtres + projet)
+- [x] 8. Styles de graphe : couleur + type de tracé (ligne / barres / points) par carte
+- [x] 9. Glisser-déposer sur les graphes (déposer une métrique sur un graphe existant)
+- [x] 10. Validation : 561 tests passés ; aperçu réel non revérifié (accès serveur BC4 indisponible)
