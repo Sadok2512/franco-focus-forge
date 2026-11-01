@@ -397,6 +397,7 @@ export function KpiMapOSM({
       ref={mapFullscreen.ref}
       data-map-expanded={full || wide ? "true" : undefined}
       data-map-level={mapFullscreen.level}
+      data-map-height={heightKey ? (mapHeight === "xl" ? "extra-large" : mapHeight) : undefined}
       style={
         expandedStyle ??
         (wide && !full
