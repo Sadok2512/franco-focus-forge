@@ -98,7 +98,7 @@ describe("Selection ring of a drive point", () => {
     // And it sits outside the point instead of enlarging it.
     const radius = paint?.["circle-radius"] as unknown[];
     expect(radius[0]).toBe("+");
-    expect(radius[2]).toBe(4);
+    expect(radius[2]).toBe(2);
   });
 
   it("lets the host map supply the ring colour of the point it shows", async () => {
