@@ -1815,13 +1815,68 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 /* Measurements loading stays compact; no fabricated progress percentage. */
 .kpi-measurements-loading {
   flex: 0 0 auto;
-  padding: 10px;
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
 }
-.kpi-measurements-loading h3 {
-  margin: 0 0 10px;
+.kpi-measurements-loading-label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   font-size: 13px;
   font-weight: 600;
   color: var(--foreground);
+}
+.kpi-measurements-loading-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--primary);
+  animation: kpi-spin 800ms linear infinite;
+}
+.kpi-measurements-refresh-label {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  z-index: 1;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: var(--card);
+  padding: 3px 9px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--foreground);
+  box-shadow: 0 1px 4px color-mix(in oklab, var(--foreground) 12%, transparent);
+}
+.kpi-measurements-empty {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.kpi-measurements-empty > svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+.kpi-measurements-empty span,
+.kpi-measurements-empty small {
+  display: block;
+}
+.kpi-measurements-empty strong {
+  color: var(--foreground);
+  font-size: 13px;
+}
+.kpi-measurements-empty small {
+  margin-top: 2px;
+  font-size: 11px;
 }
 .kpi-measurements-progress {
   position: relative;
@@ -1854,6 +1909,9 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .kpi-measurements-loading-icon {
+    animation: kpi-spin 2s linear infinite !important;
+  }
   .kpi-measurements-progress span {
     left: 0;
     animation: kpi-measurements-progress 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;

@@ -1,4 +1,4 @@
-import { Columns3, Download, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
+import { Columns3, Download, Inbox, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -1493,10 +1493,15 @@ export function MetricsWorkspace({
         ) : pane !== "table" ? null : query.isPending ? (
           <div
             className="kpi-measurements-loading"
+            role="status"
             aria-busy="true"
             style={{ order: TABLE_PANEL_ORDER }}
+            data-testid="metrics-table-loading"
           >
-            <h3>{translate("metrics.tablePanel")}</h3>
+            <div className="kpi-measurements-loading-label">
+              <LoaderCircle className="kpi-measurements-loading-icon" aria-hidden="true" />
+              <span>{translate("metrics.eb724a908f1f")}</span>
+            </div>
             <div
               className="kpi-measurements-progress"
               role="progressbar"
@@ -1516,28 +1521,23 @@ export function MetricsWorkspace({
         ) : (
           data && (
             <>
-              {/* 1.80.0 — bandeau explicite quand colonnes > 0 et rows = 0 :
-                la réponse back est valide (200 Zod) mais vide. On remonte
-                la raison si fournie par le back (connected_reason) sinon
-                un fallback générique traçable. Jamais vide muet. */}
-              {data.columns.length > 0 && data.rows.length === 0 && (
+              {/* Une réponse 200 sans ligne est un état métier compact. Les
+                détails de projection restent dans l'API et les journaux. */}
+              {data.rows.length === 0 && (
                 <div
-                  role="alert"
-                  className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-                  data-testid="metrics-empty-banner"
+                  role="status"
+                  className="kpi-measurements-empty"
+                  data-testid="metrics-empty-state"
                   style={{ order: TABLE_PANEL_ORDER }}
                 >
-                  <strong>Aucune donnée pour cette sélection.</strong>{" "}
-                  {data.connected_reason
-                    ? `Raison : ${data.connected_reason}.`
-                    : "La capture est décodée mais la projection cell_second est vide pour ces métriques × cellule. Lancer bc4 project-cell-second --capture <id> ou --missing côté back."}
-                  <br />
-                  <span className="font-mono text-[10px] text-amber-700">
-                    capture_id={data.capture_id} · result_id={String(data.result_id).slice(0, 8)}
+                  <Inbox aria-hidden="true" />
+                  <span>
+                    <strong>{translate("metrics.emptyTitle")}</strong>
+                    <small>{translate("metrics.emptyDescription")}</small>
                   </span>
                 </div>
               )}
-              {view === "table" ? (
+              {data.rows.length > 0 && (view === "table" ? (
                 <div
                   className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative"
                   data-testid="metrics-table-panel"
@@ -1547,6 +1547,9 @@ export function MetricsWorkspace({
                 >
                   {refreshing && (
                     <div className="kpi-panel-veil" data-testid="metrics-table-refreshing">
+                      <span className="kpi-measurements-refresh-label" role="status">
+                        {translate("metrics.eb724a908f1f")}
+                      </span>
                       <div
                         className="kpi-measurements-progress kpi-measurements-progress-overlay"
                         role="progressbar"
@@ -1854,7 +1857,7 @@ export function MetricsWorkspace({
                   option={option}
                   label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
                 />
-              )}
+              ))}
               {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
                 <div className="p-3 text-xs">
                   <p>

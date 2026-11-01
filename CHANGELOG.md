@@ -1,3 +1,11 @@
+## 1.129.1 (patch) — Measurements table states — 2026-11-01 (BC1)
+
+- Makes the measurements-table loading state explicit and visibly animated,
+  including during rapid metric changes, then removes it when the request ends.
+- Replaces the empty full-height table and backend projection instructions with
+  a compact user-facing empty state; API failures retain the Retry action.
+- SemVer front: **PATCH 1.129.1**.
+
 ## 1.129.0 (minor) — KPI Header V2 and Workspace Templates — 2026-11-01 (BC4)
 
 - Replaces the KPI Analytics upper filter bar with the compact normative

@@ -236,6 +236,8 @@
     "b84f9613287b": "Exporter CSV",
     "568f4197970b": "Sélectionnez la capture à analyser.",
     "eb724a908f1f": "Chargement des mesures…",
+    "emptyTitle": "Aucune mesure pour cette sélection",
+    "emptyDescription": "Cette métrique et cette cellule ne sont pas enregistrées dans la capture sélectionnée.",
     "59623fc4cc6e": "Rechercher dans les secondes…",
     "5da2cea99150": "Rechercher Métriques tableau",
     "cefbbf406bba": "{{v0}} Métriques",

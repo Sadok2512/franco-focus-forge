@@ -235,6 +235,8 @@
     "b84f9613287b": "Export CSV",
     "568f4197970b": "Select the capture to analyse.",
     "eb724a908f1f": "Loading measurements…",
+    "emptyTitle": "No measurements for this selection",
+    "emptyDescription": "This metric and cell were not recorded in the selected capture.",
     "59623fc4cc6e": "Search time intervals…",
     "5da2cea99150": "Search metrics table",
     "cefbbf406bba": "{{v0}} Metrics",
