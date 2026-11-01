@@ -85,12 +85,14 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       ],
     } satisfies MetricCatalogResponse);
     const onToggle = vi.fn();
+    const onVisualization = vi.fn();
     render(
       <QueryClientProvider client={new QueryClient()}>
         <MetricsCatalogSidebar
           projectId="TEST2"
           selected={[]}
           onToggle={onToggle}
+          onVisualization={onVisualization}
           searchRef={createRef<HTMLInputElement>()}
         />
       </QueryClientProvider>,
@@ -120,11 +122,22 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     const pscellLeaf = screen.getByText("RSRP — PSCell").closest(".kpi-tree-leaf");
     expect(pscellLeaf).toHaveClass("opacity-45");
 
-    // Leaf = button[aria-pressed] with aria-label="Select <label>".
-    const pcellButton = screen.getByRole("button", { name: /Select RSRP — PCell/i });
-    expect(pcellButton).toHaveAttribute("aria-pressed", "false");
-    fireEvent.click(pcellButton);
-    expect(onToggle).toHaveBeenCalledWith("cell_rsrp@0");
+    // Une feuille n'ajoute plus de Graph au clic direct : seul son menu ⋮
+    // déclenche une visualisation.
+    fireEvent.click(screen.getByTestId("metric-label-pcell"));
+    expect(onToggle).not.toHaveBeenCalled();
+
+    const menu = screen.getByTestId("metric-menu-pcell");
+    for (const mode of ["Graph", "Table", "Map"] as const) {
+      fireEvent.keyDown(menu, { key: "Enter" });
+      fireEvent.click(await screen.findByText(mode));
+    }
+    expect(onVisualization.mock.calls).toEqual([
+      ["cell_rsrp@0", "graph"],
+      ["cell_rsrp@0", "table"],
+      ["cell_rsrp@0", "map"],
+    ]);
+    expect(onToggle).not.toHaveBeenCalled();
   });
 
   it("shows the compact loading bar while a catalogue request is in flight, never the empty message", async () => {

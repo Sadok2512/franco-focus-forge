@@ -27,6 +27,19 @@
   reopen, with the map canvas resized and its camera/layers/selection kept.
 - Removes the floating "Zoom in to see cells" overlay; zoom thresholds and
   cell/sector/beam rendering conditions are unchanged.
+
+## 1.129.4 (patch) — Metrics catalogue sidebar and table overflow — 2026-11-01 (BC1 + BC4)
+
+- Keeps the Metrics search fixed at the top while only the catalogue tree
+  scrolls; Show unavailable, Active only and the catalogue/decoder footer stay
+  visible at the bottom, including the 760 px responsive layout.
+- Hides aggregate and calculated KPI branches from the Metrics presentation
+  using structured catalogue fields, without deleting definitions or changing
+  saved metric selections, workspaces, graphs, tables or maps.
+- Makes the Metrics catalogue leaf label inert so only its ⋮ menu can add a
+  Graph, Table or Map, without changing category expansion or existing panels.
+- Keeps wide Measurements tables inside their panel with a dedicated horizontal
+  scrollbar, natural readable column widths and a shared header/body table.
 - SemVer front: **PATCH 1.129.4**.
 
 ## 1.129.3 (patch) — Lovable legend controls reconciliation — 2026-11-01 (BC4)

@@ -1374,11 +1374,17 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   padding: 0 8px 8px;
 }
 .kpi-metrics-table-body .kpi-table-scroll {
-  overflow: auto;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: auto;
   max-height: 600px;
+  overscroll-behavior-x: contain;
 }
 .kpi-metrics-table-body table {
-  width: 100%;
+  width: max-content;
+  min-width: 100%;
   border-collapse: collapse;
   font-size: 11.5px;
 }
@@ -1438,8 +1444,8 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 
 /* V3 §4 : table largeur naturelle. Pas d'étirement à 100%. */
 .kpi-metrics-table-body table {
-  width: auto !important;
-  min-width: 650px;
+  width: max-content !important;
+  min-width: max(650px, 100%);
 }
 .kpi-metrics-table-body .col-time {
   width: 200px;

@@ -347,13 +347,9 @@ export function MetricsCatalogSidebar({
           }}
           title={scannerTooltip ?? node.reason ?? node.source ?? label}
         >
-          <button
-            type="button"
+          <span
             className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
-            onClick={() => canToggle && node.selection && onToggle(node.selection)}
-            disabled={!canToggle && !isSelected}
-            aria-pressed={isSelected}
-            aria-label={t("metrics.46d8d72f28dd", { v0: label })}
+            data-testid={`metric-label-${node.node_id}`}
           >
             <span
               className={`kpi-status-dot ${statusClass}`}
@@ -381,7 +377,7 @@ export function MetricsCatalogSidebar({
                 </span>
               )}
             </span>
-          </button>
+          </span>
           {/* 1.79.1 — nombre d'observations (node.n) à droite du label,
               aligné sur le pattern KPI tree-root "LTE 84 · 26 AVAIL" */}
           <span
@@ -398,6 +394,8 @@ export function MetricsCatalogSidebar({
                   aria-label={`Visualisation ${label}`}
                   disabled={!isSelected && selected.length >= MAX_METRICS}
                   data-testid={`metric-menu-${node.node_id}`}
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => event.stopPropagation()}
                 >
                   <MoreVertical size={15} />
                 </button>
@@ -443,8 +441,8 @@ export function MetricsCatalogSidebar({
       </li>
     );
     // branchChecked intentionnellement ignoré ici : les leaves gèrent leur
-    // propre sélection via onToggle(node.selection) ; toggleBranch reste
-    // disponible via le branch-level menu (groupe/metric parent).
+    // L'ajout d'une feuille passe exclusivement par son menu ⋮ ; toggleBranch
+    // reste disponible pour un éventuel menu de branche.
     // Référencer branchChecked pour satisfaire le linter si besoin :
     void branchChecked;
     void toggleBranch;
