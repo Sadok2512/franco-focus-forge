@@ -850,13 +850,13 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </div>
       )}
 
-      {/* Bottom — status (left), Metrics (true centre), state dot (right). */}
+      {/* Bottom — status bar centred horizontally, state dot at the right. */}
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 grid grid-cols-[1fr_auto_1fr] items-end gap-3 ${compact ? "right-3" : "right-[150px]"}`}
+        className={`pointer-events-none absolute bottom-3 left-3 flex items-end justify-center ${compact ? "right-14" : "right-[150px]"}`}
       >
         <div
           data-testid="map-workspace-statusbar"
-          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] justify-self-start ${glass}`}
+          className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] ${glass}`}
         >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
