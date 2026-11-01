@@ -1096,7 +1096,11 @@
     "legendCount": "Nombre de couleurs",
     "legendReset": "Réinitialiser les couleurs",
     "legendSettings": "Réglages des couleurs",
+    "legendVisibility": "Afficher / masquer {{metric}} sur la carte",
+    "legendClose": "Fermer la légende {{metric}}",
+    "legendReopen": "Rouvrir la légende",
     "closeLegend": "Fermer la légende",
+
     "signalingPoints": "Points signalisation",
     "gpsRoute": "Trajet GPS",
     "selectedPosition": "Position sélectionnée",

@@ -1,12 +1,15 @@
 import { type HTMLAttributes, type ReactNode } from "react";
+import { Eye, EyeOff, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 /**
  * Shared map-legend building blocks.
  *
  * The drive RSRP legend is the reference for every map legend in the app: a
- * bold section title, one row per class (optional checkbox to hide/show it, a
- * small colour swatch, the class name, then the value and count right-aligned
- * in muted tabular figures) and a bordered settings block underneath.
+ * bold section title with its visibility and close controls, one row per class
+ * (optional checkbox to hide/show it, a small colour swatch, the class name,
+ * then the value and count right-aligned in muted tabular figures) and a
+ * bordered settings block underneath.
  */
 
 /** Swatch shapes: a filled class dot, a link line, or a hollow position ring. */
@@ -118,17 +121,76 @@ export function MapLegendRow({
 }
 
 /** Bordered controls block below the rows (class count, colours, links). */
-export function MapLegendSettings({
-  title,
-  children,
-}: {
-  title: ReactNode;
-  children: ReactNode;
-}) {
+export function MapLegendSettings({ title, children }: { title: ReactNode; children: ReactNode }) {
   return (
     <fieldset className="space-y-1 border-t pt-2">
       <legend className="font-semibold">{title}</legend>
       {children}
     </fieldset>
+  );
+}
+
+/**
+ * Header controls every map legend carries: a visibility switch (the metric
+ * points stay on the map or disappear) and a close button (the legend block
+ * collapses to a single reopen button).
+ */
+export function MapLegendHeaderActions({
+  visible,
+  onToggleVisible,
+  onClose,
+  visibilityLabel,
+  closeLabel,
+}: {
+  visible: boolean;
+  onToggleVisible: () => void;
+  onClose: () => void;
+  visibilityLabel: string;
+  closeLabel: string;
+}) {
+  return (
+    <>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
+        aria-label={visibilityLabel}
+        aria-pressed={visible}
+        onClick={onToggleVisible}
+      >
+        {visible ? <Eye size={14} /> : <EyeOff size={14} />}
+      </Button>
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 shrink-0"
+        aria-label={closeLabel}
+        onClick={onClose}
+      >
+        <X size={14} />
+      </Button>
+    </>
+  );
+}
+
+/** Compact replacement for a closed legend block, so it stays recoverable. */
+export function MapLegendReopen({
+  label,
+  onOpen,
+  openLabel,
+}: {
+  label: ReactNode;
+  onOpen: () => void;
+  openLabel: string;
+}) {
+  return (
+    <button
+      type="button"
+      className="flex w-full items-center justify-between gap-2 rounded border border-border bg-background px-2 py-1 text-left text-xs"
+      onClick={onOpen}
+    >
+      <span className="min-w-0 truncate font-semibold">{label}</span>
+      <span className="shrink-0 font-medium text-primary underline">{openLabel}</span>
+    </button>
   );
 }
