@@ -514,7 +514,7 @@ function MetricAggregatePlot({
   return (
     <div
       className="kpi-plot"
-      style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
+      style={{ minHeight: "var(--kpi-panel-chart-height, 235px)" }}
       ref={host}
       role="img"
       data-testid="metric-aggregate-plot"
@@ -802,7 +802,7 @@ function MetricTimePlot({
       <div
         ref={plotRef}
         className="w-full"
-        style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
+        style={{ minHeight: "var(--kpi-panel-chart-height, 235px)" }}
         data-testid="metric-categorical-plot"
         data-capture-id={captureId}
         data-n-points={categoricalPoints.length}
@@ -846,7 +846,7 @@ function MetricTimePlot({
     <div
       ref={plotRef}
       className="w-full"
-      style={{ height: "var(--kpi-panel-chart-height, 235px)" }}
+      style={{ minHeight: "var(--kpi-panel-chart-height, 235px)" }}
       data-testid="metric-time-plot"
       data-capture-id={captureId}
       data-n-points={points.length}
