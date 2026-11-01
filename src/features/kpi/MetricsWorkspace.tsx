@@ -657,6 +657,10 @@ function MetricMap({
         hideControls
         legendHost={driveLegendHost}
         selectionLayerId="metrics-v3"
+        pointMetrics={(seq) => {
+          const point = data?.map_points.find((candidate) => candidate.seq === seq);
+          return point ? [{ label, unit, value: point.value, active: true }] : [];
+        }}
       />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
