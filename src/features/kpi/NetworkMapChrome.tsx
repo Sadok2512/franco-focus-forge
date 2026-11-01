@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Crosshair,
+  ArrowLeftRight,
   Layers,
   List,
   LocateFixed,
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 import {
   BASEMAPS,
   BASEMAP_PREVIEW,
@@ -60,6 +62,10 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   cellsFeatures?: SearchableFeature[] | undefined;
   fullscreen?: boolean;
   onToggleFullscreen?: () => void;
+  fullscreenLevel?: number;
+  onRestore?: (() => void) | undefined;
+  wide?: boolean;
+  onToggleWide?: (() => void) | undefined;
   onRecenter?: () => void;
   status?: SitesLayerControlsProps["status"];
   /** Metric legend (classes, colours, counts) shown first in the Layers panel. */
@@ -138,6 +144,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const [mode, setMode] = useState<MeasureMode>("none");
   const [points, setPoints] = useState<Array<[number, number]>>([]);
   const [basemapOpen, setBasemapOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const fullscreenLabel = t(props.fullscreenLevel === 2 ? "mapWorkspace.exitFullscreen" : props.fullscreen ? "mapWorkspace.totalFullscreen" : "mapWorkspace.frameFullscreen");
   const [basemap, setBasemap] = useState<BasemapId>(() => readBasemap());
   const chooseBasemap = (id: BasemapId) => {
     setBasemap(id);
@@ -674,16 +682,17 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             <Search className="h-4 w-4" />
           </button>
         )}
-        <button
-          type="button"
+        <Button
+          variant="ghost" size="icon"
           className={railBtn(props.fullscreen)}
-          aria-label={
-            props.fullscreen ? t("mapWorkspace.exitFullscreen") : t("mapWorkspace.fullscreen")
-          }
+          aria-label={fullscreenLabel}
+          title={fullscreenLabel}
           onClick={props.onToggleFullscreen}
         >
-          {props.fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-        </button>
+          {props.fullscreenLevel === 2 ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+        </Button>
+        {props.fullscreen && props.onRestore && <Button variant="ghost" size="icon" className={railBtn()} aria-label={t("mapWorkspace.restoreMap")} title={t("mapWorkspace.restoreMap")} onClick={props.onRestore}><Minimize2 className="h-4 w-4" /></Button>}
+        <Button variant="ghost" size="icon" className={railBtn(settingsOpen)} aria-label={t("mapWorkspace.mapSettings")} title={t("mapWorkspace.mapSettings")} aria-expanded={settingsOpen} onClick={() => setSettingsOpen((value) => !value)}><SlidersHorizontal className="h-4 w-4" /></Button>
         <button
           type="button"
           className={railBtn()}
@@ -737,6 +746,11 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           <Layers className="h-4 w-4" />
         </button>
       </div>
+
+      {settingsOpen && <div role="dialog" aria-label={t("mapWorkspace.mapSettings")} className={`pointer-events-auto absolute right-14 top-3 w-56 rounded-lg p-3 ${glass}`}>
+        <div className="mb-2 flex items-center justify-between gap-2"><strong className="text-xs">{t("mapWorkspace.mapSettings")}</strong><Button variant="ghost" size="icon" className="h-6 w-6" aria-label={t("mapWorkspace.closeSettings")} onClick={() => setSettingsOpen(false)}><X className="h-4 w-4" /></Button></div>
+        <Button variant="outline" size="sm" className="w-full text-xs" disabled={props.fullscreen || !props.onToggleWide} aria-pressed={props.wide ?? false} onClick={props.onToggleWide}><ArrowLeftRight className="h-4 w-4" />{t(props.wide ? "mapWorkspace.restoreWidth" : "mapWorkspace.increaseWidth")}</Button>
+      </div>}
 
       {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
       {basemapOpen && (

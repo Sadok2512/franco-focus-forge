@@ -10,6 +10,7 @@
 <!-- LOVABLE:END -->
 
 ## Architecture rules
+- Shared maps use `useMapFullscreen` for local frame expansion then native element fullscreen; horizontal widening uses the enclosing panel layout when present, preserving the mounted map, camera and data queries.
 - Existing KPI/metric maps accept catalogue drops through a dedicated metric MIME payload and per-map/per-workspace presentation membership; each added layer queries only its metric on the current capture, preserving existing panels, tables, filters and camera.
 - Map metric size uses a shared external presentation store so layer controls and drive overlays stay synchronized without refetching; selection is a separate sequence-filtered circle layer with reduced-motion-aware pulsing.
 - Project listing and detail pages use fluid full-width containers; the shared header keeps navigation in a shrinkable grid track and controls fixed-size, so screen resizing expands the workspace without causing page-level horizontal overflow.
