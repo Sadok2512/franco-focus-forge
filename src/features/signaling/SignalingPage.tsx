@@ -1916,14 +1916,6 @@ export function SignalingPage({
                       aria-label={t("sigTable.title")}
                     >
                       <header className="sig-toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b px-2.5 py-1.5">
-                        <h2 className="sig-count mr-1" data-testid="signaling-total">
-                          {listing.data
-                            ? t("sigTable.count", {
-                                count: listing.data.total,
-                                n: fmtInt(listing.data.total),
-                              })
-                            : t("sigTable.countPending")}
-                        </h2>
                         <label className="sig-search">
                           <Search size={14} aria-hidden="true" />
                           <input
