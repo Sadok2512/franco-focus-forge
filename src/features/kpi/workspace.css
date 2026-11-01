@@ -422,7 +422,9 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-height: 0;
   height: 100%;
   align-items: stretch;
-  grid-template-rows: auto minmax(0, 1fr);
+  /* A lone map panel is the only grid item: give it the whole row so it
+     fills the workspace instead of collapsing to its 280px minimum. */
+  grid-template-rows: minmax(0, 1fr);
   row-gap: 4px;
 }
 .kpi-workspace-grid-viewport.is-map-only .kpi-panel-shell,
