@@ -184,8 +184,12 @@ describe("Map legends share the RSRP structure", () => {
     const firstCheckbox = rows[0]!.querySelector<HTMLInputElement>('input[type="checkbox"]')!;
     fireEvent.click(firstCheckbox);
     await waitFor(() => expect(map.setFilter).toHaveBeenCalled());
-    const applied = JSON.stringify(map.setFilter.mock.calls.at(-1));
-    expect(applied).toContain("cls");
-    expect(applied).toContain(RSRP_CLASSES.length ? "c0" : "c0");
+    const [layerId, filter] = map.setFilter.mock.calls.at(-1)!;
+    expect(layerId).toMatch(/^bc4-dropped-/);
+    expect(JSON.stringify(filter)).toContain("cls");
+    expect(JSON.stringify(filter)).toMatch(/"c\d+"/);
+    // Re-checking the class brings its points back.
+    fireEvent.click(firstCheckbox);
+    await waitFor(() => expect(map.setFilter.mock.calls.at(-1)?.[1]).toBeNull());
   });
 });
