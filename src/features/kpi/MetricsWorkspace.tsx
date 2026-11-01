@@ -11,6 +11,8 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
+import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import { MapLegendList, MapLegendRow, MapLegendSection } from "./map-legend";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -177,7 +179,10 @@ export function metricMapPreferenceKey(workspaceId: string, selection: string) {
   return `bc4.metric-map.v1.${workspaceId}.${selection}`;
 }
 
-export function readMetricMapPreferences(workspaceId: string, selection: string): MetricMapPreferences {
+export function readMetricMapPreferences(
+  workspaceId: string,
+  selection: string,
+): MetricMapPreferences {
   try {
     const value = JSON.parse(
       localStorage.getItem(metricMapPreferenceKey(workspaceId, selection)) ?? "null",
@@ -317,6 +322,55 @@ export function activeMetricMapServingLink(
         },
       ]
     : [];
+}
+
+/** Distinct categorical colours (one per code, e.g. DCI format). */
+export const CATEGORY_COLORS = [
+  "#2563eb",
+  "#16a34a",
+  "#f59e0b",
+  "#dc2626",
+  "#9333ea",
+  "#0891b2",
+  "#db2777",
+  "#65a30d",
+  "#ea580c",
+  "#475569",
+];
+
+/** Code-valued metrics (DCI format…) are categories, not a quality scale. */
+export function isCategoricalMetric(label: string): boolean {
+  return /\bformat\b/i.test(label);
+}
+
+export function metricCategories(
+  data: MetricMapData,
+): Array<{ value: number; count: number; color: string }> {
+  const counts = new Map<number, number>();
+  for (const point of data.map_points) {
+    if (typeof point.value === "number" && Number.isFinite(point.value)) {
+      counts.set(point.value, (counts.get(point.value) ?? 0) + 1);
+    }
+  }
+  return [...counts.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([value, count], index) => ({
+      value,
+      count,
+      color: CATEGORY_COLORS[index % CATEGORY_COLORS.length]!,
+    }));
+}
+
+export function categoryColorExpression(
+  categories: Array<{ value: number; color: string }>,
+): ExpressionSpecification {
+  if (!categories.length) return "#94a3b8" as unknown as ExpressionSpecification;
+  return [
+    "match",
+    ["to-number", ["get", "value"], -99999],
+    ...categories.flatMap((category) => [category.value, category.color]),
+    "#94a3b8",
+  ] as unknown as ExpressionSpecification;
 }
 
 function metricColorExpression(
@@ -462,6 +516,11 @@ function MetricMap({
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
+  // Classes unchecked in the legend are hidden on the map, never deleted.
+  const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
+  // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
+  // same wiring as the Signaling and KPI measurement maps.
+  const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
   const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
   useEffect(() => {
@@ -490,6 +549,12 @@ function MetricMap({
     [data],
   );
   const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
+  const categories = useMemo(
+    () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
+    [data, label],
+  );
+  // A new capture or a new metric shows every class again.
+  useEffect(() => setHiddenCategories([]), [categories]);
   const metricCoordinates = useMemo(
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
@@ -515,7 +580,9 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        metricColorExpression(minValue, maxValue, preferences.palette),
+        categories
+          ? categoryColorExpression(categories)
+          : metricColorExpression(minValue, maxValue, preferences.palette),
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -531,8 +598,29 @@ function MetricMap({
         preferences.palette,
         preferences.pointSize,
       );
+      if (categories)
+        map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
     }
-  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize]);
+    // Classes unchecked in the legend disappear from the map; the measurements
+    // themselves are untouched.
+    if (categories && typeof map.setFilter === "function")
+      map.setFilter(
+        "metrics-v3",
+        hiddenCategories.length
+          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+          : null,
+      );
+  }, [
+    map,
+    features,
+    links,
+    minValue,
+    maxValue,
+    preferences.palette,
+    preferences.pointSize,
+    categories,
+    hiddenCategories,
+  ]);
   useEffect(() => {
     if (!map) return;
     const click = (e: import("maplibre-gl").MapLayerMouseEvent) => {
@@ -593,115 +681,139 @@ function MetricMap({
   // The metric legend lives in the Layers panel's Legend tab, like the
   // Signaling map — nothing floats over the map itself.
   const legend = (
-    <div className="space-y-1" data-testid="metric-map-legend">
-      <div className="kpi-metric-map-legend-title">
-          <strong>
-            {label}
-            {unit ? ` · ${unit}` : ""}
-          </strong>
-          <button
-            ref={settingsButtonRef}
-            type="button"
-            aria-label={translate("metrics.mapSettings")}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((open) => !open)}
-          >
-            <Settings2 size={14} />
-          </button>
-        </div>
-        <span
-          className="kpi-metric-map-scale"
-          aria-hidden="true"
-          style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
-        />
-        <span className="kpi-metric-map-scale-labels">
-          <span>{fmt(minValue)}</span>
-          <span>{fmt(maxValue)}</span>
-        </span>
-        {settingsOpen && (
-          <div
-            ref={settingsRef}
-            className="kpi-metric-map-settings"
-            data-testid="metric-map-settings"
-          >
-            <div className="kpi-metric-map-settings-head">
-              <strong>{translate("mapWorkspace.legendSettings")}</strong>
-              <button
-                type="button"
-                aria-label={translate("mapWorkspace.closeLegend")}
-                onClick={() => {
-                  setSettingsOpen(false);
-                  settingsButtonRef.current?.focus();
-                }}
-              >
-                <X size={13} />
-              </button>
-            </div>
-            <label>
-              {translate("metrics.mapPalette")}
-              <select
-                value={preferences.palette}
-                onChange={(event) =>
-                  onPreferences({ ...preferences, palette: event.target.value as MetricMapPalette })
-                }
-              >
-                <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
-                <option value="viridis">Viridis</option>
-                <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
-              </select>
-            </label>
-            <label>
-              {translate("metrics.mapPointSize")} · {preferences.pointSize}
-              <input
-                type="range"
-                min="1"
-                max="10"
-                step="1"
-                value={preferences.pointSize}
-                onChange={(event) =>
-                  onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+    <MapLegendSection
+      data-testid="metric-map-legend"
+      title={`${label}${unit ? ` · ${unit}` : ""}`}
+      action={
+        <button
+          ref={settingsButtonRef}
+          type="button"
+          aria-label={translate("metrics.mapSettings")}
+          aria-expanded={settingsOpen}
+          onClick={() => setSettingsOpen((open) => !open)}
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[5px] hover:bg-muted aria-expanded:bg-muted"
+        >
+          <Settings2 size={14} />
+        </button>
+      }
+    >
+      {categories ? (
+        <MapLegendList data-testid="metric-map-categories" label={label}>
+          {categories.map((c) => {
+            const off = hiddenCategories.includes(c.value);
+            return (
+              <MapLegendRow
+                key={c.value}
+                color={c.color}
+                label={fmt(c.value)}
+                meta={c.count}
+                checked={!off}
+                onToggle={() =>
+                  setHiddenCategories((h) =>
+                    off ? h.filter((x) => x !== c.value) : [...h, c.value],
+                  )
                 }
               />
-            </label>
-            <fieldset>
-              <legend>{translate("metrics.mapCellLinks")}</legend>
-              {CELL_LINK_KINDS.map((kind) => (
-                <label key={kind}>
-                  <input
-                    type="checkbox"
-                    checked={preferences.links[kind]}
-                    onChange={(event) =>
-                      onPreferences({
-                        ...preferences,
-                        links: { ...preferences.links, [kind]: event.target.checked },
-                      })
-                    }
-                  />
-                  <span
-                    className="kpi-metric-map-link-swatch"
-                    style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
-                  />
-                  {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
-                </label>
-              ))}
-            </fieldset>
-            <div
-              className="measurement-link-style-legend"
-              data-testid="measurement-link-style-legend"
+            );
+          })}
+        </MapLegendList>
+      ) : (
+        <>
+          <span
+            className="kpi-metric-map-scale"
+            aria-hidden="true"
+            style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+          />
+          <span className="kpi-metric-map-scale-labels">
+            <span>{fmt(minValue)}</span>
+            <span>{fmt(maxValue)}</span>
+          </span>
+        </>
+      )}
+      {settingsOpen && (
+        <div
+          ref={settingsRef}
+          className="kpi-metric-map-settings"
+          data-testid="metric-map-settings"
+        >
+          <div className="kpi-metric-map-settings-head">
+            <strong>{translate("mapWorkspace.legendSettings")}</strong>
+            <button
+              type="button"
+              aria-label={translate("mapWorkspace.closeLegend")}
+              onClick={() => {
+                setSettingsOpen(false);
+                settingsButtonRef.current?.focus();
+              }}
             >
-              <strong>{translate("mapPointPopup.lineStyles")}</strong>
-              <span>
-                <i className="measurement-popup-line is-proven" />
-                {translate("mapPointPopup.solid")}
-              </span>
-              <span>
-                <i className="measurement-popup-line is-probable" />
-                {translate("mapPointPopup.dashed")}
-              </span>
-            </div>
+              <X size={13} />
+            </button>
           </div>
-        )}
-    </div>
+          <label>
+            {translate("metrics.mapPalette")}
+            <select
+              value={preferences.palette}
+              onChange={(event) =>
+                onPreferences({ ...preferences, palette: event.target.value as MetricMapPalette })
+              }
+            >
+              <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
+              <option value="viridis">Viridis</option>
+              <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
+            </select>
+          </label>
+          <label>
+            {translate("metrics.mapPointSize")} · {preferences.pointSize}
+            <input
+              type="range"
+              min="1"
+              max="10"
+              step="1"
+              value={preferences.pointSize}
+              onChange={(event) =>
+                onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+              }
+            />
+          </label>
+          <fieldset>
+            <legend>{translate("metrics.mapCellLinks")}</legend>
+            {CELL_LINK_KINDS.map((kind) => (
+              <label key={kind}>
+                <input
+                  type="checkbox"
+                  checked={preferences.links[kind]}
+                  onChange={(event) =>
+                    onPreferences({
+                      ...preferences,
+                      links: { ...preferences.links, [kind]: event.target.checked },
+                    })
+                  }
+                />
+                <span
+                  className="kpi-metric-map-link-swatch"
+                  style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
+                />
+                {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
+              </label>
+            ))}
+          </fieldset>
+          <div
+            className="measurement-link-style-legend"
+            data-testid="measurement-link-style-legend"
+          >
+            <strong>{translate("mapPointPopup.lineStyles")}</strong>
+            <span>
+              <i className="measurement-popup-line is-proven" />
+              {translate("mapPointPopup.solid")}
+            </span>
+            <span>
+              <i className="measurement-popup-line is-probable" />
+              {translate("mapPointPopup.dashed")}
+            </span>
+          </div>
+        </div>
+      )}
+    </MapLegendSection>
   );
   const content = (addedLegend: ReactNode) => (
     <KpiMapOSM
@@ -710,6 +822,7 @@ function MetricMap({
         <>
           {legend}
           {addedLegend}
+          <div ref={setDriveLegendHost} />
         </>
       }
       zoom={first ? 13 : 5}
@@ -721,6 +834,20 @@ function MetricMap({
       routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
       measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
     >
+      <DriveRsrpLayer
+        map={map}
+        projectId={projectId}
+        activeCaptureId={captureId}
+        autoFrame={false}
+        hidePoints
+        hideControls
+        legendHost={driveLegendHost}
+        selectionLayerId="metrics-v3"
+        pointMetrics={(seq) => {
+          const point = data?.map_points.find((candidate) => candidate.seq === seq);
+          return point ? [{ label, unit, value: point.value, active: true }] : [];
+        }}
+      />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
           <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}
@@ -794,8 +921,7 @@ function MetricMapCard({
       }
     };
     window.addEventListener("bc4-metric-map-preferences", onTemplatePreferences);
-    return () =>
-      window.removeEventListener("bc4-metric-map-preferences", onTemplatePreferences);
+    return () => window.removeEventListener("bc4-metric-map-preferences", onTemplatePreferences);
   }, [selection, workspaceId]);
   useEffect(() => {
     try {
@@ -1364,180 +1490,181 @@ export function MetricsWorkspace({
   }, [graphSelections.length, parsedSelections.length, pane]);
   const activeEvents = useActiveEvents();
   return (
-      <article
-        className="kpi-metrics-table-premium kpi-unified-contents"
-        data-pane={pane}
-        data-testid="metrics-v3-workspace"
-      >
-        {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
-        {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
+    <article
+      className="kpi-metrics-table-premium kpi-unified-contents"
+      data-pane={pane}
+      data-testid="metrics-v3-workspace"
+    >
+      {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
+      {/* 1.99.1 (lot C axe X temps) — Switcher Clock (local) / Clock (UTC) /
           Capture time (s) retiré à la demande (1.105.3) : le mode mémorisé
           continue de piloter les ticks, sans barre visible au-dessus des cartes. */}
-        {showEvents && captureId && parsedSelections.length > 0 && (
-          <MetricsEventsRibbon
-            projectId={projectId}
-            captureId={captureId}
-            filters={filters}
-            syncId={`metrics-charts-${captureId}`}
-            timeAxisMode={effectiveTimeAxisMode}
-            timeMeta={timeMeta}
-          />
-        )}
-        {captureId && parsedSelections.length === 0 && (
-          <p className="kpi-chart-state" data-testid="metrics-no-selection">
-            {translate("metrics.pickFromCatalogue")}
-          </p>
-        )}
-        {captureId && graphSelections.length > 0 && (
-          <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
-            {graphSelections.map((s, i) => {
-              const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
-              const title = info?.label ?? s.code;
-              const metricView = viewsProp?.[s.full] ?? "graph";
-              const remove = () => {
-                const next = selections.filter((x) => x !== s.full);
-                if (!next.length) onClear();
-                else onRemove?.(s.full);
-              };
-              return (
-                <PanelShell
-                  key={s.full}
-                  workspaceId={_workspaceId ?? "metrics"}
-                  id={`metric:${s.full}${panelIdSuffix}`}
-                  natural={100 + i}
-                  defaultTitle={`${i + 1}. ${title}`}
-                  fullRow={mapFillsAvailable && metricView === "map"}
-                  bare={metricView === "map"}
-                >
-                  {(panelTitle) =>
-                    metricView === "map" ? (
-                      <MetricMapCard
-                        selection={s.full}
-                        filters={filters}
-                        projectId={projectId}
-                        captureId={captureId!}
-                        title={title}
-                        unit={info?.unit ?? ""}
-                        data={mapQuery.data as MetricMapData | undefined}
-                        loading={mapQuery.isPending}
-                        error={mapQuery.isError ? mapQuery.error : null}
-                        onRetry={() => void mapQuery.refetch()}
-                        onRemove={remove}
-                        workspaceId={_workspaceId ?? "metrics"}
-                        projectCenter={projectCenter}
-                        routeCoordinates={captureRouteCoordinates}
-                      />
-                    ) : (
-                      <MetricGraphCard
-                        projectId={projectId}
-                        code={s.full}
-                        label={panelTitle}
-                        unit={info?.unit ?? ""}
-                        tech={info?.tech ?? ""}
-                        category={info?.category_label ?? null}
-                        eventCode={info?.event_code ?? s.code}
-                        appliedFilters={filters}
-                        onRemove={remove}
-                        view={metricView}
-                        onViewChange={(next) => {
-                          onVisualization?.(s.full, next);
-                        }}
-                        onOpenTable={() => setPane("table")}
-                        syncId={captureId ? `metrics-charts-${captureId}` : undefined}
-                        timeAxisMode={effectiveTimeAxisMode}
-                        eventsCaptureId={captureId}
-                      />
-                    )
-                  }
-                </PanelShell>
-              );
-            })}
-          </section>
-        )}
-        {isScannerCapture && (
-          <div
-            role="alert"
-            className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-            data-testid="metrics-scanner-banner"
-          >
-            <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche) not
-            available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
-            <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
-            sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
-            RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
-          </div>
-        )}
-        {!captureId ? (
-          // 1.105.4 — Si captureQuery pending ou >=1 capture dispo, l'auto-select
-          // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
-          // un petit loader discret au lieu du prompt "Select capture". Prompt
-          // visible uniquement si captures vraiment vides (projet jamais ingéré).
-          captureQuery.isError ? (
-            <QueryErrorState
-              error={captureQuery.error}
-              title={translate("metrics.d854ce90120a")}
-              onRetry={() => void captureQuery.refetch()}
-            />
-          ) : captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
-            <div className="kpi-chart-state" role="status" aria-busy="true">
-              <span
-                className="kpi-measurements-progress"
-                aria-label={translate("metrics.eb724a908f1f")}
+      {showEvents && captureId && parsedSelections.length > 0 && (
+        <MetricsEventsRibbon
+          projectId={projectId}
+          captureId={captureId}
+          filters={filters}
+          syncId={`metrics-charts-${captureId}`}
+          timeAxisMode={effectiveTimeAxisMode}
+          timeMeta={timeMeta}
+        />
+      )}
+      {captureId && parsedSelections.length === 0 && (
+        <p className="kpi-chart-state" data-testid="metrics-no-selection">
+          {translate("metrics.pickFromCatalogue")}
+        </p>
+      )}
+      {captureId && graphSelections.length > 0 && (
+        <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
+          {graphSelections.map((s, i) => {
+            const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
+            const title = info?.label ?? s.code;
+            const metricView = viewsProp?.[s.full] ?? "graph";
+            const remove = () => {
+              const next = selections.filter((x) => x !== s.full);
+              if (!next.length) onClear();
+              else onRemove?.(s.full);
+            };
+            return (
+              <PanelShell
+                key={s.full}
+                workspaceId={_workspaceId ?? "metrics"}
+                id={`metric:${s.full}${panelIdSuffix}`}
+                natural={100 + i}
+                defaultTitle={`${i + 1}. ${title}`}
+                fullRow={mapFillsAvailable && metricView === "map"}
+                bare={metricView === "map"}
               >
-                <span />
-              </span>
-            </div>
-          ) : (
-            <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
-          )
-        ) : pane !== "table" ? null : query.isPending ? (
-          <div
-            className="kpi-measurements-loading"
-            role="status"
-            aria-busy="true"
-            style={{ order: TABLE_PANEL_ORDER }}
-            data-testid="metrics-table-loading"
-          >
-            <div className="kpi-measurements-loading-label">
-              <LoaderCircle className="kpi-measurements-loading-icon" aria-hidden="true" />
-              <span>{translate("metrics.eb724a908f1f")}</span>
-            </div>
-            <div
+                {(panelTitle) =>
+                  metricView === "map" ? (
+                    <MetricMapCard
+                      selection={s.full}
+                      filters={filters}
+                      projectId={projectId}
+                      captureId={captureId!}
+                      title={title}
+                      unit={info?.unit ?? ""}
+                      data={mapQuery.data as MetricMapData | undefined}
+                      loading={mapQuery.isPending}
+                      error={mapQuery.isError ? mapQuery.error : null}
+                      onRetry={() => void mapQuery.refetch()}
+                      onRemove={remove}
+                      workspaceId={_workspaceId ?? "metrics"}
+                      projectCenter={projectCenter}
+                      routeCoordinates={captureRouteCoordinates}
+                    />
+                  ) : (
+                    <MetricGraphCard
+                      projectId={projectId}
+                      code={s.full}
+                      label={panelTitle}
+                      unit={info?.unit ?? ""}
+                      tech={info?.tech ?? ""}
+                      category={info?.category_label ?? null}
+                      eventCode={info?.event_code ?? s.code}
+                      appliedFilters={filters}
+                      onRemove={remove}
+                      view={metricView}
+                      onViewChange={(next) => {
+                        onVisualization?.(s.full, next);
+                      }}
+                      onOpenTable={() => setPane("table")}
+                      syncId={captureId ? `metrics-charts-${captureId}` : undefined}
+                      timeAxisMode={effectiveTimeAxisMode}
+                      eventsCaptureId={captureId}
+                    />
+                  )
+                }
+              </PanelShell>
+            );
+          })}
+        </section>
+      )}
+      {isScannerCapture && (
+        <div
+          role="alert"
+          className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+          data-testid="metrics-scanner-banner"
+        >
+          <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput par couche) not
+          available in scanner mode — captures Ibflex-Scanner exposent uniquement les events
+          <code> SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code>. Les cellules UE du catalogue
+          sont désactivées (jamais cachées). Un lot "Scanner view" dédié est ouvert pour exposer
+          RSRP/RSRQ par PCI scanné + OFDM power — voir CHANGELOG back 0.76.1.
+        </div>
+      )}
+      {!captureId ? (
+        // 1.105.4 — Si captureQuery pending ou >=1 capture dispo, l'auto-select
+        // useEffect:502 va piquer la 1re capture dans la même frame. Affiche
+        // un petit loader discret au lieu du prompt "Select capture". Prompt
+        // visible uniquement si captures vraiment vides (projet jamais ingéré).
+        captureQuery.isError ? (
+          <QueryErrorState
+            error={captureQuery.error}
+            title={translate("metrics.d854ce90120a")}
+            onRetry={() => void captureQuery.refetch()}
+          />
+        ) : captureQuery.isPending || (captureQuery.data?.length ?? 0) > 0 ? (
+          <div className="kpi-chart-state" role="status" aria-busy="true">
+            <span
               className="kpi-measurements-progress"
-              role="progressbar"
               aria-label={translate("metrics.eb724a908f1f")}
             >
               <span />
-            </div>
-          </div>
-        ) : query.isError ? (
-          <div style={{ order: TABLE_PANEL_ORDER }}>
-            <QueryErrorState
-              error={query.error}
-              title={translate("metrics.f1d7675032b2")}
-              onRetry={() => void query.refetch()}
-            />
+            </span>
           </div>
         ) : (
-          data && (
-            <>
-              {/* Une réponse 200 sans ligne est un état métier compact. Les
+          <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
+        )
+      ) : pane !== "table" ? null : query.isPending ? (
+        <div
+          className="kpi-measurements-loading"
+          role="status"
+          aria-busy="true"
+          style={{ order: TABLE_PANEL_ORDER }}
+          data-testid="metrics-table-loading"
+        >
+          <div className="kpi-measurements-loading-label">
+            <LoaderCircle className="kpi-measurements-loading-icon" aria-hidden="true" />
+            <span>{translate("metrics.eb724a908f1f")}</span>
+          </div>
+          <div
+            className="kpi-measurements-progress"
+            role="progressbar"
+            aria-label={translate("metrics.eb724a908f1f")}
+          >
+            <span />
+          </div>
+        </div>
+      ) : query.isError ? (
+        <div style={{ order: TABLE_PANEL_ORDER }}>
+          <QueryErrorState
+            error={query.error}
+            title={translate("metrics.f1d7675032b2")}
+            onRetry={() => void query.refetch()}
+          />
+        </div>
+      ) : (
+        data && (
+          <>
+            {/* Une réponse 200 sans ligne est un état métier compact. Les
                 détails de projection restent dans l'API et les journaux. */}
-              {data.rows.length === 0 && (
-                <div
-                  role="status"
-                  className="kpi-measurements-empty"
-                  data-testid="metrics-empty-state"
-                  style={{ order: TABLE_PANEL_ORDER }}
-                >
-                  <Inbox aria-hidden="true" />
-                  <span>
-                    <strong>{translate("metrics.emptyTitle")}</strong>
-                    <small>{translate("metrics.emptyDescription")}</small>
-                  </span>
-                </div>
-              )}
-              {data.rows.length > 0 && (view === "table" ? (
+            {data.rows.length === 0 && (
+              <div
+                role="status"
+                className="kpi-measurements-empty"
+                data-testid="metrics-empty-state"
+                style={{ order: TABLE_PANEL_ORDER }}
+              >
+                <Inbox aria-hidden="true" />
+                <span>
+                  <strong>{translate("metrics.emptyTitle")}</strong>
+                  <small>{translate("metrics.emptyDescription")}</small>
+                </span>
+              </div>
+            )}
+            {data.rows.length > 0 &&
+              (view === "table" ? (
                 <div
                   className="kpi-data-table kpi-metrics-table-body kpi-panel-enter relative"
                   data-testid="metrics-table-panel"
@@ -1858,29 +1985,29 @@ export function MetricsWorkspace({
                   label={translate("metrics.cefbbf406bba", { v0: LABELS[view] })}
                 />
               ))}
-              {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
-                <div className="p-3 text-xs">
-                  <p>
-                    {" "}
-                    {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
-                    {data.connected_reason}
+            {view === "histogram" && data.columns.some((c) => c.kind === "event") && (
+              <div className="p-3 text-xs">
+                <p>
+                  {" "}
+                  {translate("metrics.91b5e7f9e272")} {fmt(data.connected_seconds)} s{" "}
+                  {data.connected_reason}
+                </p>
+                {data.pair_rates.map((p) => (
+                  <p key={p.type}>
+                    {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
+                    {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
                   </p>
-                  {data.pair_rates.map((p) => (
-                    <p key={p.type}>
-                      {p.type} : {p.success}/{p.known_outcomes} {translate("metrics.8df97de2b567")}{" "}
-                      {fmt(p.success_pct)} % · {p.attempts} {translate("metrics.5ed4837057bd")}{" "}
-                    </p>
-                  ))}
-                </div>
-              )}
-              {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
+                ))}
+              </div>
+            )}
+            {/* 1.83.1 — Panel "Information · #UUID" supprimé partout (Charts,
                 Table, Overlay). Les métadonnées (result_id, aggregation,
                 time_policy, pairing, decoder_version, decode_level, gaps)
                 restent accessibles côté API /metrics/table response et
                 via le tooltip title du row (`seq N–M · t_rel Xs`). */}
-            </>
-          )
-        )}
-      </article>
+          </>
+        )
+      )}
+    </article>
   );
 }

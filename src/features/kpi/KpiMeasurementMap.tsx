@@ -16,6 +16,7 @@ import {
 } from "./metric-classes";
 import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
+import { MapLegendList, MapLegendRow, MapLegendSection, MapLegendSettings } from "./map-legend";
 
 const KPI_MEASURES_LAYER = "kpi-measures";
 
@@ -169,42 +170,29 @@ export function KpiMeasurementMap({
   const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
   const legendLabel = label ?? code;
   const legend = classes.length ? (
-    <div className="space-y-0.5">
-      <div className="font-semibold">
-        {legendLabel}
-        {unit ? ` (${unit})` : ""}
-      </div>
-      {[...classes].reverse().map((c, ri) => {
-        const index = classes.length - 1 - ri;
-        const off = hidden.includes(c.id);
-        const range =
-          c.min === -Infinity
-            ? `< ${fmtNum(c.max)}`
-            : c.max === Infinity
-              ? `≥ ${fmtNum(c.min)}`
-              : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
-        return (
-          <button
-            key={c.id}
-            type="button"
-            aria-pressed={!off}
-            onClick={() => setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))}
-            className={`flex w-full items-center gap-2 rounded px-1 py-0.5 text-left hover:bg-muted ${off ? "opacity-40" : ""}`}
-          >
-            <span
-              className="h-3 w-3 shrink-0 rounded-full"
-              style={{ background: c.color }}
-              data-index={index}
+    <MapLegendSection title={`${legendLabel}${unit ? ` (${unit})` : ""}`}>
+      <MapLegendList label={legendLabel}>
+        {[...classes].reverse().map((c) => {
+          const off = hidden.includes(c.id);
+          const range =
+            c.min === -Infinity
+              ? `< ${fmtNum(c.max)}`
+              : c.max === Infinity
+                ? `≥ ${fmtNum(c.min)}`
+                : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
+          return (
+            <MapLegendRow
+              key={c.id}
+              color={c.color}
+              label={range}
+              meta={(counts.get(c.id) ?? 0).toLocaleString()}
+              checked={!off}
+              onToggle={() => setHidden((h) => (off ? h.filter((x) => x !== c.id) : [...h, c.id]))}
             />
-            <span className="flex-1">{range}</span>
-            <span className="tabular-nums text-muted-foreground">
-              {(counts.get(c.id) ?? 0).toLocaleString()}
-            </span>
-          </button>
-        );
-      })}
-      <div className="mt-2 space-y-1 border-t pt-2">
-        <div className="font-semibold">{translate("mapWorkspace.legendSettings")}</div>
+          );
+        })}
+      </MapLegendList>
+      <MapLegendSettings title={translate("mapWorkspace.legendSettings")}>
         <label className="flex items-center justify-between gap-2">
           {translate("mapWorkspace.legendCount")}
           <select
@@ -245,8 +233,8 @@ export function KpiMeasurementMap({
         >
           {translate("mapWorkspace.legendReset")}
         </button>
-      </div>
-    </div>
+      </MapLegendSettings>
+    </MapLegendSection>
   ) : null;
   // No measurement popup: clicking a point must not open an info card (user request).
   const message = !allowed
