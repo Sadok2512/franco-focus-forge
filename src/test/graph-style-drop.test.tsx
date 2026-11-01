@@ -141,9 +141,13 @@ describe("glisser-déposer sur un graphe", () => {
         expect.any(AbortSignal),
       ),
     );
+    // writeGraphSeries ne garde que code/label/unit/couleur : kind n'est pas
+    // recopié, la série est déjà identifiée par son code.
     expect(
       JSON.parse(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0") ?? "[]"),
-    ).toEqual([{ ...added, color: expect.any(String) }]);
+    ).toEqual([
+      { code: "cell_rsrq@0", label: "RSRQ", unit: "dB", color: expect.any(String) },
+    ]);
     // La série ajoutée est retirable depuis le sous-menu Style.
     await openStyleMenu(card);
     fireEvent.click(await screen.findByTestId("metric-series-remove-cell_rsrq@0"));
