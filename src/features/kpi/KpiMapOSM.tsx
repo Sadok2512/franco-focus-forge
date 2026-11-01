@@ -18,6 +18,7 @@ import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } fro
 import { CELLS_VISIBLE_ZOOM, MAP_INITIAL_ZOOM, MAP_MIN_ZOOM, useSitesLayer } from "./SitesLayer";
 import { SitesLayerControls, useSitesLayerState } from "./SitesLayerControls";
 import { NetworkMapChrome } from "./NetworkMapChrome";
+import { MAP_HEIGHT_PX, readMapHeight, writeMapHeight, type MapHeightSetting } from "./map-height";
 import { MapRfPanelProvider } from "./map-rf-panel";
 import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
@@ -51,6 +52,8 @@ function SitesLayerHarness({
   onToggleWide,
   onRecenter,
   layersLegend,
+  mapHeight,
+  onMapHeightChange,
 }: {
   layersLegend?: ReactNode;
   map: MlMap | null;
@@ -62,6 +65,8 @@ function SitesLayerHarness({
   wide?: boolean;
   onToggleWide?: () => void;
   onRecenter?: () => void;
+  mapHeight?: MapHeightSetting;
+  onMapHeightChange?: (value: MapHeightSetting) => void;
 }) {
   const { t } = useTranslation();
   const {
@@ -140,6 +145,8 @@ function SitesLayerHarness({
         {...(onToggleFullscreen ? { onToggleFullscreen } : {})}
         {...(onRecenter ? { onRecenter } : {})}
         layersLegend={layersLegend}
+        mapHeight={mapHeight}
+        onMapHeightChange={onMapHeightChange}
       />
     );
   return <SitesLayerControls {...controls} />;
