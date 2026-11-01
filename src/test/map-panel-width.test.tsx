@@ -14,9 +14,9 @@ describe("map horizontal size", () => {
   it("widens only its map panel to the available grid width and restores one column", () => {
     render(<PanelGridContext.Provider value={{ cols: 3 }}><PanelShell workspaceId="width-test" id="map" natural={0} defaultTitle="map" bare>{() => <WidthControl />}</PanelShell></PanelGridContext.Provider>);
     fireEvent.click(screen.getByRole("button", { name: "width" }));
-    expect(loadLayout("width-test").span.map).toBe(3);
-    expect(loadLayout("width-test").span.other).toBeUndefined();
+    expect(loadLayout("width-test").span["map"]).toBe(3);
+    expect(loadLayout("width-test").span["other"]).toBeUndefined();
     fireEvent.click(screen.getByRole("button", { name: "width" }));
-    expect(loadLayout("width-test").span.map).toBe(1);
+    expect(loadLayout("width-test").span["map"]).toBe(1);
   });
 });
