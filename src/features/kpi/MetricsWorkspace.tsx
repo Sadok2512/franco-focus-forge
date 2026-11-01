@@ -11,7 +11,6 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { DriveRsrpLayer } from "./DriveRsrpLayer";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import { pickGraphSelections, type MetricViews } from "./metric-views";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
@@ -434,9 +433,6 @@ function MetricMap({
   const { t: translate } = useTranslation();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
-  // same wiring as the Signaling and KPI measurement maps.
-  const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
   const settingsButtonRef = useRef<HTMLButtonElement>(null);
   const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
@@ -690,7 +686,6 @@ function MetricMap({
         <>
           {legend}
           {addedLegend}
-          <div ref={setDriveLegendHost} />
         </>
       }
       zoom={first ? 13 : 5}
@@ -702,22 +697,6 @@ function MetricMap({
       routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
       measurementStatus={!loading && data && !first ? translate("metrics.59d5ea1eb6a5") : null}
     >
-      {/* Same drive layer as Signaling View: serving/neighbour lines to the
-      API-published cells and the blinking serving site on point selection. */}
-      <DriveRsrpLayer
-        map={map}
-        projectId={projectId}
-        activeCaptureId={captureId}
-        autoFrame={false}
-        hidePoints
-        hideControls
-        legendHost={driveLegendHost}
-        selectionLayerId="metrics-v3"
-        pointMetrics={(seq) => {
-          const point = data?.map_points.find((candidate) => candidate.seq === seq);
-          return point ? [{ label, unit, value: point.value, active: true }] : [];
-        }}
-      />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">
           <LoaderCircle className="animate-spin" size={15} /> {translate("metrics.eb724a908f1f")}

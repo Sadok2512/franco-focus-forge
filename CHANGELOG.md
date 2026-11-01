@@ -4,6 +4,8 @@
   1.126.14 KPI, Map Serving, Task Bar and workspace implementation.
 - Keeps the production map legend labels and single selected serving-link
   contract; no GitHub-only visual change is imported implicitly.
+- KPI Metrics reuses its already-loaded `/metrics/map` payload for points,
+  popup and serving link instead of mounting a second drive-data requester.
 - SemVer front: **PATCH 1.128.1**.
 
 ## 1.128.0 (minor) — Superstream SS-03 analysis scope preparation — 2026-10-31 (BC4)
