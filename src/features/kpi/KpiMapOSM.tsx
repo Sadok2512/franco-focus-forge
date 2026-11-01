@@ -9,9 +9,9 @@ import { useTranslation } from "react-i18next";
 // Centre par défaut : centroid approximatif FR métropolitaine. Si le
 // projet a un `center` validé, utiliser `project.center` à la place.
 // -----------------------------------------------------------------------
-import { useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useCallback, useContext, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
-import { useMapFullscreen } from "@/lib/map-fullscreen";
+import { useMapFrameInsets, useMapFullscreen } from "@/lib/map-fullscreen";
 import { MapPanelWidthContext } from "./PanelShell";
 import type { Map as MlMap } from "maplibre-gl";
 import { Map as MapIcon, Maximize2, Minimize2, Search, LocateFixed, Layers } from "lucide-react";
