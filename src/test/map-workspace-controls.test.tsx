@@ -82,7 +82,9 @@ describe("Map workspace chrome", () => {
     const sectors = screen.getByRole("checkbox", { name: "Cell sectors" });
     expect(sectors).toBeChecked();
     expect(sectors).not.toBeDisabled();
-    expect(screen.getByText("Zoom in to see cells")).toBeInTheDocument();
+    // BC4 MAP UI corrections: the floating "Zoom in to see cells" overlay is
+    // removed; zoom thresholds and cell rendering conditions are unchanged.
+    expect(screen.queryByText("Zoom in to see cells")).toBeNull();
   });
 
   it("restores the sidebar preference and opens/closes the real legend tab", () => {
