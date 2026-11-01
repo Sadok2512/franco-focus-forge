@@ -2162,6 +2162,16 @@ export function SignalingPage({
                               <DropdownMenuSeparator />
                               <button
                                 type="button"
+                                onClick={() => setMetricPickerOpen(true)}
+                                className="flex w-full items-center gap-2 px-2 py-1 text-left text-xs hover:bg-accent"
+                                data-testid="signaling-add-metric"
+                              >
+                                <Plus size={12} aria-hidden="true" />
+                                {t("sigTable.addMetric")}
+                              </button>
+                              <DropdownMenuSeparator />
+                              <button
+                                type="button"
                                 onClick={() => setColConfig(defaultColumns())}
                                 className="w-full px-2 py-1 text-left text-xs hover:bg-accent"
                               >
