@@ -14,9 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { RsrpDiagnosisDialog } from "./RsrpDiagnosisDialog";
-import { SelectedPointCard } from "./SelectedPointCard";
-import { RfParametersPanel } from "./RfParametersPanel";
-import { useMapRfPanel, type RfPointMetric } from "./map-rf-panel";
 import { metricRadius, metricRingRadius, useMetricSize } from "./metric-display";
 import {
   RSRP_CLASSES,
@@ -151,7 +148,6 @@ export function DriveRsrpLayer({
   onSelectedChange,
   legendHost,
   selectionLayerId,
-  pointMetrics,
 }: {
   map: MlMap | null;
   projectId: string;
