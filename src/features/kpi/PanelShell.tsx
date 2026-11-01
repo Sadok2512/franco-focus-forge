@@ -10,7 +10,7 @@ export const MapPanelWidthContext = createContext<{
   toggle: () => void;
 } | null>(null);
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronUp, Columns2, Copy, Pencil } from "lucide-react";
+
 import { effectivePanelSpan, panelColumns, sunkPanelOrder } from "./workspace-grid";
 import {
   movePanel,
@@ -90,43 +90,6 @@ export function PanelShell({
         if ((e.target as HTMLElement).closest("h3")) setEditing(true);
       }}
     >
-      {!bare && <div className="kpi-panel-tools">
-        <button
-          type="button"
-          title={t("panel.rename")}
-          aria-label={t("panel.rename")}
-          onClick={() => setEditing(true)}
-        >
-          <Pencil size={11} />
-        </button>
-        {!fullRow && <button
-          type="button"
-          title={t("panel.width")}
-          aria-label={t("panel.width")}
-          onClick={() => update((p) => ({ ...p, span: { ...p.span, [id]: nextSpan() } }))}
-        >
-          <Columns2 size={11} />
-          <small>{span === "full" ? "↔" : span}</small>
-        </button>}
-        {onDuplicate && (
-          <button
-            type="button"
-            title={t("panel.duplicate")}
-            aria-label={t("panel.duplicate")}
-            onClick={onDuplicate}
-          >
-            <Copy size={11} />
-          </button>
-        )}
-        <button
-          type="button"
-          title={t(collapsed ? "panel.expand" : "panel.collapse")}
-          aria-label={t(collapsed ? "panel.expand" : "panel.collapse")}
-          onClick={() => update((p) => ({ ...p, collapsed: { ...p.collapsed, [id]: !collapsed } }))}
-        >
-          {collapsed ? <ChevronDown size={11} /> : <ChevronUp size={11} />}
-        </button>
-      </div>}
       {!bare && editing && (
         <input
           autoFocus
