@@ -1,4 +1,4 @@
-// Common panel frame: drag to move, width span, height resize, collapse,
+// Common panel frame: width span, height resize, collapse,
 // rename (double-click the title), duplicate when supported. Wraps the
 // existing KPI/Metrics cards so their header, Chart Settings, export and
 // fullscreen stay the single source of truth.
@@ -10,7 +10,7 @@ export const MapPanelWidthContext = createContext<{
   toggle: () => void;
 } | null>(null);
 import { useTranslation } from "react-i18next";
-import { ChevronDown, ChevronUp, Columns2, Copy, GripVertical, Pencil } from "lucide-react";
+import { ChevronDown, ChevronUp, Columns2, Copy, Pencil } from "lucide-react";
 import { effectivePanelSpan, panelColumns, sunkPanelOrder } from "./workspace-grid";
 import {
   movePanel,
@@ -91,18 +91,6 @@ export function PanelShell({
       }}
     >
       {!bare && <div className="kpi-panel-tools">
-        <span
-          draggable
-          className="kpi-panel-grip"
-          title={t("panel.move")}
-          aria-label={t("panel.move")}
-          onDragStart={(e) => {
-            e.dataTransfer.setData("application/x-bc4-panel", id);
-            e.dataTransfer.effectAllowed = "move";
-          }}
-        >
-          <GripVertical size={12} />
-        </span>
         <button
           type="button"
           title={t("panel.rename")}
