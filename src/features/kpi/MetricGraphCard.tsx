@@ -99,6 +99,9 @@ export function MetricGraphCard({
   // le compute (nmf_start_at + origin_ts + utc_offset_min). Undefined =
   // "capture" (comportement 1.97.0).
   timeAxisMode,
+  workspaceId,
+  style: styleProp,
+  onStyleChange,
 }: {
   projectId: string;
   code: string;
@@ -115,6 +118,9 @@ export function MetricGraphCard({
   syncId?: string | undefined;
   eventsCaptureId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
+  workspaceId?: string | undefined;
+  style?: MetricStyle | undefined;
+  onStyleChange?: ((style: MetricStyle) => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -124,13 +130,61 @@ export function MetricGraphCard({
     onViewChange?.(v);
   };
   const cardRef = useRef<HTMLElement>(null);
+  // Style du graphe (tracé + couleur) : mémorisé par onglet par le parent.
+  const style = styleProp ?? DEFAULT_METRIC_STYLE;
+  const setStyle = (next: MetricStyle) => onStyleChange?.(next);
+  // Séries ajoutées par glisser-déposer : propres à cette carte, mémorisées.
+  const [extra, setExtra] = useState<GraphSeries[]>(() => readGraphSeries(workspaceId, code));
+  const [over, setOver] = useState(false);
+  const saveExtra = (next: GraphSeries[]) => {
+    setExtra(next);
+    writeGraphSeries(workspaceId, code, next);
+  };
+  const dropMetric = (raw: string) => {
+    const metric = readMapMetric(raw);
+    if (!metric) return;
+    if (metric.kind !== "metric") {
+      toast.error(translate("graphSeries.kpiUnsupported"));
+      return;
+    }
+    const result = addGraphSeries(
+      extra,
+      { code: metric.code, label: metric.label, unit: metric.unit },
+      { code, unit },
+    );
+    if (!result.ok) {
+      toast.error(
+        translate(result.reason === "duplicate" ? "graphSeries.duplicate" : "graphSeries.axis"),
+      );
+      return;
+    }
+    saveExtra(result.series);
+    toast.success(translate("graphSeries.added", { metric: metric.label }));
+  };
   return (
     <article
       ref={cardRef}
       id={`metric-graph-${code}`}
-      className="kpi-graph-card"
+      className={`kpi-graph-card ${over ? "is-drop-target" : ""}`}
       data-metric-code={code}
       data-view={view}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = "copy";
+        setOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setOver(false);
+      }}
+      onDrop={(event) => {
+        if (!event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        setOver(false);
+        dropMetric(event.dataTransfer.getData(MAP_METRIC_MIME));
+      }}
     >
       <header className="kpi-card-header">
         <div className="min-w-0">
@@ -165,6 +219,68 @@ export function MetricGraphCard({
                 <Table2 size={14} /> {translate("panel.open_metrics_table")}
               </DropdownMenuItem>
             )}
+            <DropdownMenuSub>
+              <DropdownMenuSubTrigger data-testid="metric-style-sub">
+                <Palette size={14} /> {translate("panel.style")}
+              </DropdownMenuSubTrigger>
+              <DropdownMenuSubContent className="w-[190px]" data-testid="metric-style-menu">
+                <DropdownMenuLabel>{translate("panel.plot")}</DropdownMenuLabel>
+                {METRIC_PLOTS.map((mode) => {
+                  const Icon = METRIC_PLOT_ICONS[mode];
+                  return (
+                    <DropdownMenuItem
+                      key={mode}
+                      data-testid={`metric-plot-${mode}`}
+                      onSelect={() => setStyle({ ...style, plot: mode })}
+                    >
+                      <Icon size={14} />
+                      {translate(`panel.plot_${mode}`)}
+                      {mode === style.plot ? " ✓" : ""}
+                    </DropdownMenuItem>
+                  );
+                })}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>{translate("panel.color")}</DropdownMenuLabel>
+                <div className="grid grid-cols-4 gap-1.5 px-2 pb-1.5">
+                  {METRIC_COLORS.map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      data-testid={`metric-color-${color}`}
+                      aria-label={color}
+                      title={color}
+                      onClick={() => setStyle({ ...style, color })}
+                      className="h-5 w-5 rounded-sm border border-border"
+                      style={{
+                        background: color,
+                        outline: color === style.color ? "2px solid currentColor" : "none",
+                        outlineOffset: 1,
+                      }}
+                    />
+                  ))}
+                </div>
+                {extra.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>{translate("panel.series")}</DropdownMenuLabel>
+                    {extra.map((s) => (
+                      <DropdownMenuItem
+                        key={s.code}
+                        data-testid={`metric-series-remove-${s.code}`}
+                        onSelect={() => saveExtra(extra.filter((x) => x.code !== s.code))}
+                      >
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-sm"
+                          style={{ background: s.color }}
+                        />
+                        <span className="min-w-0 flex-1 truncate">{s.label}</span>
+                        <X size={13} />
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+              </DropdownMenuSubContent>
+            </DropdownMenuSub>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
               <Maximize2 size={14} /> {translate("panel.fullscreen")}
@@ -192,6 +308,9 @@ export function MetricGraphCard({
           code={code}
           label={label}
           unit={unit}
+          color={style.color}
+          plot={style.plot}
+          extra={extra}
           syncId={syncId}
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
