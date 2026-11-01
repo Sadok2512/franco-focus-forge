@@ -10,6 +10,7 @@ import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import { getMetricSeries } from "@/lib/api/metrics";
 import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import { addGraphSeries, normalizeUnit } from "@/features/kpi/graph-series-drop";
+import type { MetricViews } from "@/features/kpi/metric-views";
 import "@/lib/i18n";
 
 // La carte graphe demande ses captures/séries via @/lib/api/metrics, le
@@ -69,7 +70,7 @@ vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
 }));
 
-function mount() {
+function mount(views?: MetricViews) {
   window.localStorage.clear();
   return render(
     <QueryClientProvider
@@ -84,13 +85,14 @@ function mount() {
         filters={{}}
         onClear={() => {}}
         workspaceId="t1"
+        views={views}
       />
     </QueryClientProvider>,
   );
 }
 
-async function mountedCard() {
-  mount();
+async function mountedCard(views?: MetricViews) {
+  mount(views);
   return (await waitFor(() => {
     const element = document.querySelector('[data-metric-code="cell_rsrp@0"]');
     expect(element).not.toBeNull();
@@ -111,7 +113,8 @@ async function openStyleMenu(card: HTMLElement) {
 
 describe("style de graphe", () => {
   it("le sous-menu Style change le tracé et la couleur, et les mémorise par onglet", async () => {
-    const card = await mountedCard();
+    // Histogramme : le tracé temporel animé fermerait le menu en jsdom.
+    const card = await mountedCard({ "cell_rsrp@0": "histogram" });
     await openStyleMenu(card);
     fireEvent.click(await screen.findByTestId("metric-plot-bar"));
     expect(JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}")).toEqual({
