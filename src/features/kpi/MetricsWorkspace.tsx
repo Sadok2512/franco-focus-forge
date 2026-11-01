@@ -666,30 +666,68 @@ function MetricMap({
   // Signaling map — nothing floats over the map itself.
   const legend = (
     <div className="space-y-1" data-testid="metric-map-legend">
-      <div className="kpi-metric-map-legend-title">
-          <strong>
-            {label}
-            {unit ? ` · ${unit}` : ""}
-          </strong>
-          <button
-            ref={settingsButtonRef}
-            type="button"
-            aria-label={translate("metrics.mapSettings")}
-            aria-expanded={settingsOpen}
-            onClick={() => setSettingsOpen((open) => !open)}
-          >
-            <Settings2 size={14} />
-          </button>
-        </div>
-        <span
-          className="kpi-metric-map-scale"
-          aria-hidden="true"
-          style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+      {closed ? (
+        <MapLegendReopen
+          label={`${label}${unit ? ` · ${unit}` : ""}`}
+          openLabel={translate("mapWorkspace.legendReopen")}
+          onOpen={() => setClosed(false)}
         />
-        <span className="kpi-metric-map-scale-labels">
-          <span>{fmt(minValue)}</span>
-          <span>{fmt(maxValue)}</span>
-        </span>
+      ) : (
+        <MapLegendSection
+          title={`${label}${unit ? ` · ${unit}` : ""}`}
+          action={
+            <>
+              <MapLegendHeaderActions
+                visible={visible}
+                onToggleVisible={() => setVisible((v) => !v)}
+                onClose={() => setClosed(true)}
+                visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: label })}
+                closeLabel={translate("mapWorkspace.legendClose", { metric: label })}
+              />
+              <button
+                ref={settingsButtonRef}
+                type="button"
+                aria-label={translate("metrics.mapSettings")}
+                aria-expanded={settingsOpen}
+                onClick={() => setSettingsOpen((open) => !open)}
+              >
+                <Settings2 size={14} />
+              </button>
+            </>
+          }
+        >
+
+          {categories ? (
+            <MapLegendList label={translate("mapWorkspace.metricLegend")}>
+              {categories.map((c) => (
+                <MapLegendRow
+                  key={c.value}
+                  color={c.color}
+                  label={fmt(c.value)}
+                  meta={c.count}
+                  checked={!hiddenCategories.includes(c.value)}
+                  onToggle={() =>
+                    setHiddenCategories((h) =>
+                      h.includes(c.value) ? h.filter((x) => x !== c.value) : [...h, c.value],
+                    )
+                  }
+                />
+              ))}
+            </MapLegendList>
+          ) : (
+            <>
+              <span
+                className="kpi-metric-map-scale"
+                aria-hidden="true"
+                style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
+              />
+              <span className="kpi-metric-map-scale-labels">
+                <span>{fmt(minValue)}</span>
+                <span>{fmt(maxValue)}</span>
+              </span>
+            </>
+          )}
+
         {settingsOpen && (
           <div
             ref={settingsRef}
@@ -773,8 +811,11 @@ function MetricMap({
             </div>
           </div>
         )}
+        </MapLegendSection>
+      )}
     </div>
   );
+
   const content = (addedLegend: ReactNode) => (
     <KpiMapOSM
       center={center ?? (first ? [first.lng, first.lat] : [2.4, 46.6])}
