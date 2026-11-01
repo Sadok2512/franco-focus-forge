@@ -63,7 +63,6 @@ export function MetricsCatalogSidebar({
   search: controlledSearch,
   onSearchChange,
   selectionCount,
-  measuredTree,
   onVisibleCountChange,
   // 1.92.0 — captureKind : si 'scanner', les métriques UE cell_scoped sont
   // désactivées + tooltip "no UE cell metrics in scanner capture". Jamais
@@ -79,7 +78,6 @@ export function MetricsCatalogSidebar({
   search?: string;
   onSearchChange?: (value: string) => void;
   selectionCount?: number;
-  measuredTree?: ReactNode;
   onVisibleCountChange?: (count: number) => void;
   captureKind?: "ue" | "scanner" | null;
 }) {
@@ -537,7 +535,6 @@ export function MetricsCatalogSidebar({
         </div>
       )}
       <div className="kpi-tree" data-testid="unified-metrics-tree">
-        {measuredTree}
         <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
       </div>
       {/* 1.107.0 — Footer lit l'enveloppe `catalog_release` + `decoder_version`

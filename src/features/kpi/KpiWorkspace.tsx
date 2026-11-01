@@ -441,21 +441,14 @@ function Workspace({
     [classifiedCatalogs.metrics],
   );
   const [metricsSearch, setMetricsSearch] = useState("");
-  const [visibleMeasuredMetricCount, setVisibleMeasuredMetricCount] = useState(
-    measuredMetricCodes.size,
-  );
   const [visibleCatalogMetricCount, setVisibleCatalogMetricCount] = useState(
     catalogSelectableMetricCount,
-  );
-  const updateVisibleMeasuredMetricCount = useCallback(
-    (count: number) => setVisibleMeasuredMetricCount(count),
-    [],
   );
   const updateVisibleCatalogMetricCount = useCallback(
     (count: number) => setVisibleCatalogMetricCount(count),
     [],
   );
-  const selectableMetricCount = visibleMeasuredMetricCount + visibleCatalogMetricCount;
+  const selectableMetricCount = visibleCatalogMetricCount;
   const metricsCatalogLoading = metricsCatalog.isPending && !metricsCatalog.data;
   const selectedMetrics = currentTab.metricCodes ?? [];
   const setSelectedMetrics = (next: string[]) =>
@@ -1129,24 +1122,8 @@ function Workspace({
                 searchRef={catalogSearch}
                 search={metricsSearch}
                 onSearchChange={setMetricsSearch}
-                selectionCount={
-                  selectedMetrics.length +
-                  codes.filter((code) => measuredMetricCodes.has(code)).length
-                }
+                selectionCount={selectedMetrics.length}
                 onVisibleCountChange={updateVisibleCatalogMetricCount}
-                measuredTree={
-                  <KpiCatalogSidebar
-                    catalog={classifiedCatalogs.metrics}
-                    selected={codes}
-                    active={effectiveActive}
-                    onToggle={onCatalogToggle}
-                    onVisualization={visualize}
-                    searchRef={catalogSearch}
-                    searchValue={metricsSearch}
-                    embedded
-                    onVisibleCountChange={updateVisibleMeasuredMetricCount}
-                  />
-                }
                 captureKind={captureKind}
               />
             ) : (
