@@ -96,8 +96,21 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   const compact = width < 760;
   const [panelOpen, setPanelOpen] = useState<boolean | null>(null);
   const showPanel = panelOpen ?? !compact;
-  const [panelTab, setPanelTab] = useState<"layers" | "legend">("layers");
-  const tab = props.layersLegend ? panelTab : "layers";
+  const rfPanel = useMapRfPanel();
+  const [panelTab, setPanelTab] = useState<"layers" | "legend" | "rf">("layers");
+  const tabs = [
+    "layers" as const,
+    ...(props.layersLegend ? (["legend"] as const) : []),
+    ...(rfPanel ? (["rf"] as const) : []),
+  ];
+  const tab = tabs.includes(panelTab) ? panelTab : "layers";
+  // A new point selection brings its RF details forward in the same sidebar.
+  const selectionTick = rfPanel?.selectionTick ?? 0;
+  useEffect(() => {
+    if (selectionTick === 0) return;
+    setPanelTab("rf");
+    setPanelOpen(true);
+  }, [selectionTick]);
   const [menu, setMenu] = useState<null | "bands" | "metrics">(null);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -320,21 +333,28 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {showPanel ? (
         <aside
           aria-label={t("mapWorkspace.layers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex w-56 flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[76px]"}`}
+          className={`pointer-events-auto absolute left-3 top-3 flex w-64 max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[76px]"}`}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
-            {props.layersLegend ? (
-              <div role="tablist" className="flex gap-1 text-xs font-semibold">
-                {(["layers", "legend"] as const).map((id) => (
+            {tabs.length > 1 ? (
+              <div role="tablist" className="flex min-w-0 gap-1 text-xs font-semibold">
+                {tabs.map((id) => (
                   <button
                     key={id}
                     type="button"
                     role="tab"
                     aria-selected={tab === id}
+                    data-testid={`map-panel-tab-${id}`}
                     onClick={() => setPanelTab(id)}
-                    className={`rounded px-2 py-0.5 ${tab === id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
+                    className={`whitespace-nowrap rounded px-2 py-0.5 ${tab === id ? "bg-primary text-primary-foreground" : "hover:bg-muted"}`}
                   >
-                    {t(id === "layers" ? "mapWorkspace.layers" : "mapWorkspace.legend")}
+                    {t(
+                      id === "layers"
+                        ? "mapWorkspace.layers"
+                        : id === "legend"
+                          ? "mapWorkspace.legend"
+                          : "mapWorkspace.rfTab",
+                    )}
                   </button>
                 ))}
               </div>
@@ -351,7 +371,16 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
             </button>
           </div>
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-2 text-[11px]">
-            {tab === "legend" ? (
+            {/* RF host stays mounted so the selected point survives tab switches. */}
+            {rfPanel && (
+              <div className={tab === "rf" ? "" : "hidden"} data-testid="map-rf-panel">
+                <div ref={rfPanel.setHost} className="peer" />
+                <p className="hidden text-muted-foreground peer-empty:block">
+                  {t("mapWorkspace.rfEmpty")}
+                </p>
+              </div>
+            )}
+            {tab === "rf" ? null : tab === "legend" ? (
               props.layersLegend
             ) : (
               <>
