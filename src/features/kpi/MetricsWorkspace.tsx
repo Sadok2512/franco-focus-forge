@@ -522,7 +522,26 @@ function MetricMap({
       if (categories)
         map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
     }
-  }, [map, features, links, minValue, maxValue, preferences.palette, preferences.pointSize, categories]);
+    // Classes unchecked in the legend disappear from the map; the measurements
+    // themselves are untouched.
+    if (categories && typeof map.setFilter === "function")
+      map.setFilter(
+        "metrics-v3",
+        hiddenCategories.length
+          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+          : null,
+      );
+  }, [
+    map,
+    features,
+    links,
+    minValue,
+    maxValue,
+    preferences.palette,
+    preferences.pointSize,
+    categories,
+    hiddenCategories,
+  ]);
   useEffect(() => {
     if (!map) return;
     let disposed = false;
