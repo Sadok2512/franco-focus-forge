@@ -204,7 +204,7 @@ export function RfParametersPanel({
             <Row
               key={m.label}
               label={m.label}
-              highlight={m.active}
+              highlight={m.active === true}
               value={
                 m.value === null || m.value === undefined || m.value === ""
                   ? ND
