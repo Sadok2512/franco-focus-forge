@@ -30,7 +30,7 @@ describe("analytics startup", () => {
     expect(getProjectKpiCatalog).not.toHaveBeenCalled();
     boot.rerender({ id: "TEST-A" });
     await waitFor(() => expect(getProjectKpiCatalog).toHaveBeenCalledTimes(1));
-    expect(getMetrics).toHaveBeenCalledWith("TEST-A");
+    expect(getMetrics).toHaveBeenCalledWith("TEST-A", [], expect.any(AbortSignal));
     expect(getProjectKpiFilters).toHaveBeenCalledWith("TEST-A", expect.any(AbortSignal));
     expect(getProject).toHaveBeenCalledWith("TEST-A");
     const page = renderHook(({ id }) => useQuery(kpiCatalogQuery(id)), {
