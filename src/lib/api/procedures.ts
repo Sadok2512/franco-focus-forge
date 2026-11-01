@@ -64,6 +64,7 @@ const ProcedureCatalogItemSchema = z.object({
   reason: z.string().nullable(),
   available: z.boolean(),
   map_supported: z.boolean(),
+  replaces_code: z.string().nullable(),
   counts: z.object({
     attempts: z.number().int().nonnegative(),
     success: z.number().int().nonnegative(),
@@ -177,6 +178,8 @@ export function procedureCatalogAsKpiCatalog(catalog: ProcedureCatalog): Project
           minimum_evidence: item.minimum_evidence,
           map_supported: item.map_supported,
           procedure_counts: item.counts,
+          procedure_code: item.code,
+          replaces_code: item.replaces_code ?? undefined,
         })),
       })),
     })),

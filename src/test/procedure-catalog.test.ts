@@ -27,6 +27,7 @@ const procedureCatalog = ProcedureCatalogSchema.parse({
               reason: null,
               available: true,
               map_supported: true,
+              replaces_code: null,
               counts: { attempts: 5, success: 5, failures: 0, unknown: 0 },
             },
           ],
@@ -99,5 +100,23 @@ describe("procedure KPI catalogue adapter", () => {
     );
     expect(matches).toHaveLength(1);
     expect(matches[0]?.formula).toBe("success / attempts");
+  });
+
+  it("enriches an explicitly replaced canonical leaf without duplicating it", () => {
+    const replacement = structuredClone(procedureCatalog);
+    const item = replacement.tree[0]!.families[0]!.kpis[0]!;
+    item.replaces_code = "RRC_RATE";
+    const merged = mergeKpiCatalogs(primary, procedureCatalogAsKpiCatalog(replacement));
+    const items = merged.tree.flatMap((technology) =>
+      technology.families.flatMap((family) => family.kpis),
+    );
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({
+      code: "RRC_RATE",
+      name: "RRC Rate",
+      procedure_code: "PROC_LTE_HO_SUCCESS_RATE",
+      source: "procedure-v1",
+      status: "AVAILABLE",
+    });
   });
 });

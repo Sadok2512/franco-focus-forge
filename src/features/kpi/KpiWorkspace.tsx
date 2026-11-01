@@ -732,8 +732,10 @@ function Workspace({
           capture_id: memberCaptureId,
           group_by: configFor(code).groupBy,
         };
-        return code.startsWith("PROC_")
-          ? getProcedureKpi(projectId, code, filters, signal)
+        const procedureCode = entries.find((entry) => entry.item.code === code)?.item
+          .procedure_code;
+        return procedureCode
+          ? getProcedureKpi(projectId, procedureCode, filters, signal)
           : getProjectKpi(projectId, code, filters, signal);
       },
       enabled: !dimensionsLoading && !dimensionsError,

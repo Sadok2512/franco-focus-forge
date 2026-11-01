@@ -133,6 +133,21 @@ export function mergeKpiCatalogs(
         technology.families.push(family);
       }
       for (const item of procedureFamily.kpis) {
+        if (item.replaces_code) {
+          const replacement = tree
+            .flatMap((candidate) => candidate.families)
+            .flatMap((candidate) => candidate.kpis)
+            .find((candidate) => candidate.code === item.replaces_code);
+          if (replacement) {
+            const canonical = {
+              code: replacement.code,
+              name: replacement.name,
+              analytics_tab: replacement.analytics_tab,
+            };
+            Object.assign(replacement, item, canonical);
+            continue;
+          }
+        }
         if (seen.has(item.code)) continue;
         seen.add(item.code);
         family.kpis.push(item);

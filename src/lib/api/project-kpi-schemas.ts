@@ -53,6 +53,8 @@ export const KpiCatalogItemSchema = z
     metric_sources: z.array(z.string()).optional(),
     available: z.boolean().optional(),
     procedure_types: z.array(z.string()).optional(),
+    procedure_code: z.string().optional(),
+    replaces_code: z.string().optional(),
     minimum_evidence: z.string().optional(),
     map_supported: z.boolean().optional(),
     procedure_counts: z

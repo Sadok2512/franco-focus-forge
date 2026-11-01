@@ -151,7 +151,8 @@ export function KpiCatalogSidebar({
                       {familyOpen &&
                         f.kpis.map((item) => {
                           const isSelected = selected.includes(item.code);
-                          const isProcedure = item.code.startsWith("PROC_");
+                          const isProcedure =
+                            !!item.procedure_code || item.code.startsWith("PROC_");
                           const canAdd = isSelected || selected.length < MAX_GRAPHS;
                           return (
                             <div
