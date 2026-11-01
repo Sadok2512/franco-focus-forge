@@ -7,18 +7,30 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
-import { getMetricSeries } from "@/lib/api/client";
+import { getMetricSeries } from "@/lib/api/metrics";
 import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import { addGraphSeries, normalizeUnit } from "@/features/kpi/graph-series-drop";
 import "@/lib/i18n";
 
+// La carte graphe demande ses captures/séries via @/lib/api/metrics, le
+// workspace charge l'analyse via @/lib/api/client : les deux sont simulés.
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
-  const series = {
+  return {
+    getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
+    getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
+    getMetricMap: vi.fn().mockResolvedValue({ points: [] }),
+    getSignaling: vi.fn().mockResolvedValue({ points: [] }),
+    getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
+  };
+});
+vi.mock("@/lib/api/metrics", () => ({
+  getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
+  getMetricSeries: vi.fn().mockResolvedValue({
     series: [
       {
         code: "cell_rsrp@0",
-        label: "RSRP",
+        label: "RSRP · PCell",
         unit: "dBm",
         kind: "numeric",
         points: [
@@ -37,21 +49,13 @@ vi.mock("@/lib/api/client", async () => {
         ],
       },
     ],
-    origin_ts: "2023-06-26T10:33:20Z",
+    origin_ts: "10:33:20.980",
     nmf_start_at: null,
     utc_offset_min: null,
     capture_date: null,
-  };
-  return {
-    getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
-    getMetricCaptures: vi
-      .fn()
-      .mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
-    getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
-    getMetricSeries: vi.fn().mockResolvedValue(series),
-    getMetricAggregate: vi.fn().mockResolvedValue({ groups: [] }),
-  };
-});
+  }),
+  getMetricAggregate: vi.fn().mockResolvedValue({ groups: [] }),
+}));
 vi.mock("maplibre-gl", () => ({ Map: vi.fn(), Popup: vi.fn(), NavigationControl: vi.fn() }));
 vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
@@ -77,44 +81,40 @@ function mount() {
   );
 }
 
-async function openCardMenu() {
-  mount();
-  const card = (await waitFor(() => {
+async function mountedCard() {
+  return (await waitFor(() => {
     const element = document.querySelector('[data-metric-code="cell_rsrp@0"]');
     expect(element).not.toBeNull();
     return element as HTMLElement;
   })) as HTMLElement;
-  fireEvent.keyDown(within(card).getByTestId("workspace-panel-menu"), { key: "Enter" });
-  return card;
 }
 
-// La carte démarre en Histogramme : le graphe (et donc la demande de série)
-// n'apparaît qu'après ⋮ → Graphe.
-async function openGraphView() {
-  const card = await openCardMenu();
-  fireEvent.click(await screen.findByTestId("metric-view-graph"));
-  await waitFor(() => expect(getMetricSeries).toHaveBeenCalled());
-  return card;
+// Le ⋮ et son sous-menu Style sont rouverts à chaque interaction : Radix ferme
+// le menu dès qu'une entrée est choisie.
+async function openStyleMenu(card: HTMLElement) {
+  fireEvent.keyDown(within(card).getByTestId("workspace-panel-menu"), { key: "Enter" });
+  fireEvent.click(await screen.findByTestId("metric-style-sub"));
 }
 
 describe("style de graphe", () => {
   it("le sous-menu Style change le tracé et la couleur, et les mémorise par onglet", async () => {
-    await openCardMenu();
-    fireEvent.click(await screen.findByTestId("metric-style-sub"));
+    const card = await mountedCard();
+    await openStyleMenu(card);
     fireEvent.click(await screen.findByTestId("metric-plot-bar"));
-    expect(
-      JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}"),
-    ).toEqual({ "cell_rsrp@0": { plot: "bar", color: "#1d4ed8" } });
+    expect(JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}")).toEqual({
+      "cell_rsrp@0": { plot: "bar", color: "#1d4ed8" },
+    });
+    await openStyleMenu(card);
     fireEvent.click(await screen.findByTestId("metric-color-#0f766e"));
-    expect(
-      JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}"),
-    ).toEqual({ "cell_rsrp@0": { plot: "bar", color: "#0f766e" } });
+    expect(JSON.parse(window.localStorage.getItem("bc3.metrics.styles.t1") ?? "{}")).toEqual({
+      "cell_rsrp@0": { plot: "bar", color: "#0f766e" },
+    });
   });
 });
 
 describe("glisser-déposer sur un graphe", () => {
   it("déposer une métrique l'ajoute comme série du graphe et élargit la demande", async () => {
-    const card = await openGraphView();
+    const card = await mountedCard();
     const added = { kind: "metric", code: "cell_rsrq@0", label: "RSRQ", unit: "dB" };
     const dataTransfer = {
       types: [MAP_METRIC_MIME],
@@ -136,9 +136,8 @@ describe("glisser-déposer sur un graphe", () => {
       JSON.parse(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0") ?? "[]"),
     ).toEqual([{ ...added, color: expect.any(String) }]);
     // La série ajoutée est retirable depuis le sous-menu Style.
-    fireEvent.click(await screen.findByTestId("metric-style-sub"));
-    const row = await screen.findByTestId("metric-series-remove-cell_rsrq@0");
-    fireEvent.click(row);
+    await openStyleMenu(card);
+    fireEvent.click(await screen.findByTestId("metric-series-remove-cell_rsrq@0"));
     expect(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0")).toBe("[]");
   });
 
