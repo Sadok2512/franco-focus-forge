@@ -54,9 +54,11 @@ import {
   MapPinOff,
   Maximize,
   Minimize,
+  Plus,
   RadioTower,
   Search,
   SlidersHorizontal,
+  X,
   ListTree,
   LineChart,
 } from "lucide-react";
@@ -67,6 +69,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
+import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 import { DecoderTree } from "./DecoderTree";
 import { DecodePanel } from "@/features/projects/DecodePanel";
 import { provenStates } from "./state-evidence";
@@ -74,12 +84,16 @@ import {
   COLUMNS,
   COLUMNS_STORAGE_KEY,
   MANDATORY_COLS,
+  addMetricColumn,
   defaultColumns,
+  isMetricCol,
   messageInfo,
+  metricSelector,
   moveColumn,
   pageItems,
   parseColumns,
   radioAt,
+  removeMetricColumn,
   rrcStateAt,
   toggleColumn,
   visibleColumns,
@@ -87,6 +101,7 @@ import {
   type ColKey,
   type ColumnConfig,
   type MessageInfo,
+  type MetricCol,
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
 import { SignalingMetricsSection } from "./SignalingMetricsSection";
