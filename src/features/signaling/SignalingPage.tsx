@@ -2139,7 +2139,7 @@ export function SignalingPage({
                                       className="sig-move"
                                       disabled={i === 0}
                                       aria-label={t("sigTable.moveUp", {
-                                        col: t(`sigTable.col.${c}`),
+                                        col: metricMeta ? metricMeta.label : t(`sigTable.col.${c}`),
                                       })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, -1))}
                                     >
@@ -2150,7 +2150,7 @@ export function SignalingPage({
                                       className="sig-move"
                                       disabled={i === colConfig.order.length - 1}
                                       aria-label={t("sigTable.moveDown", {
-                                        col: t(`sigTable.col.${c}`),
+                                        col: metricMeta ? metricMeta.label : t(`sigTable.col.${c}`),
                                       })}
                                       onClick={() => setColConfig((old) => moveColumn(old, c, 1))}
                                     >
