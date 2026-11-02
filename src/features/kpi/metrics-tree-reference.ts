@@ -352,6 +352,60 @@ export function applyReferenceHierarchy(
     return visibleOriginalIds.has(node.node_id);
   });
 
+  // Visual consistency pass: for every Metric node where the Serving
+  // group hosts at least one real cell leaf, ensure the full roster
+  // of serving cells (PCell + SCell 1..6 + SCG SCell 0 + PSCell for
+  // NR) is represented. Missing cells become greyed-out placeholder
+  // leaves (selectable=false, n=0, availability_status="no_data")
+  // so a user never sees PCell + SCell 1 + SCell 5 + SCell 6 without
+  // SCell 2 / 3 / 4 — the gap always matches "the probe never
+  // recorded this cell", not "the sidebar silently dropped it".
+  const SERVING_LTE_ROSTER: Array<[number, string]> = [
+    [0, "PCell"], [10, "SCell 1"], [11, "SCell 2"], [12, "SCell 3"],
+    [13, "SCell 4"], [14, "SCell 5"], [15, "SCell 6"],
+  ];
+  const SERVING_NR_ROSTER: Array<[number, string]> = [
+    [0, "PCell"], [1, "SCell 1"], [2, "SCell 2"], [3, "SCell 3"],
+    [4, "SCell 4"], [5, "SCell 5"], [6, "SCell 6"],
+    [100, "SCG SCell 0"], [199, "PSCell"],
+  ];
+  const placeholderLeaves: MetricCatalogNode[] = [];
+  const byMetricParent = new Map<string, MetricCatalogNode[]>();
+  for (const leaf of remappedLeaves) {
+    if (!leaf.parent_id) continue;
+    (byMetricParent.get(leaf.parent_id) ?? byMetricParent.set(leaf.parent_id, []).get(leaf.parent_id)!).push(leaf);
+  }
+  for (const [metId, siblings] of byMetricParent) {
+    // Only pad Serving groups (ref:met:<tech>/.../Serving/...)
+    if (!/\/Serving\//.test(metId)) continue;
+    const techMatch = metId.match(/^ref:met:(LTE|NR)\//);
+    if (!techMatch) continue;
+    const tech = techMatch[1] as "LTE" | "NR";
+    const roster = tech === "LTE" ? SERVING_LTE_ROSTER : SERVING_NR_ROSTER;
+    const seenRaws = new Set(siblings.map((l) => l.raw_cell_type ?? -1));
+    const seenRoles = new Set(siblings.map((l) => (l.label ?? "").trim()));
+    const sample = siblings[0]!;
+    for (const [raw, role] of roster) {
+      if (seenRaws.has(raw) || seenRoles.has(role)) continue;
+      placeholderLeaves.push({
+        ...sample,
+        node_id: `ref:placeholder:${metId}@${raw}`,
+        parent_id: metId,
+        label: role,
+        metric_id: null,
+        selection: null,
+        selectable: false,
+        n: 0,
+        proof: "oracle-placeholder-no-data",
+        reason: "No observations recorded by the probe on this cell",
+        availability_status: "no_data",
+        cell: null,
+        raw_cell_type: raw,
+        cell_label: role,
+      });
+    }
+  }
+
   return {
     ...response,
     nodes: [
@@ -359,6 +413,7 @@ export function applyReferenceHierarchy(
       ...synthetic.values(),
       ...remappedLeaves,
       ...reparentedUncategorised,
+      ...placeholderLeaves,
     ],
   };
 }

@@ -1,3 +1,23 @@
+## 1.133.12 (patch) — Serving cells full roster placeholders — 2026-11-02 (Agent BC5)
+
+- Visual consistency: every Metric node under a Serving group now
+  carries the full standard roster of Serving cells, with greyed-out
+  placeholder leaves (`availability_status="no_data"`,
+  `selectable=false`, `n=0`, `reason="No observations recorded by the
+  probe on this cell"`) inserted for cells the oracle itself omits
+  because the probe never recorded them.
+    LTE Serving  : PCell + SCell 1..6 (raws 0, 10..15)
+    NR  Serving  : PCell + SCell 1..6 + SCG SCell 0 + PSCell
+  A user never sees PCell + SCell 1 + SCell 5 without SCell 2/3/4
+  again: the missing cells either carry data or stay as explicit
+  placeholders.
+- Placeholder leaves are non-selectable (no Graph / Table / Map
+  spawn), carry a reserved `node_id=ref:placeholder:<metric>@<raw>`
+  so they never collide with a real backend id, and the oracle
+  reference remains the single source of truth for cells that
+  actually have data.
+- SemVer front: **PATCH 1.133.12**; backend remains **0.123.2**.
+
 ## 1.133.11 (patch) — Full observed-cell audit, 0 silent drops — 2026-11-02 (Agent BC5)
 
 - Comprehensive audit across LTE, NR, EN-DC, QUARANTAINE on the 3
