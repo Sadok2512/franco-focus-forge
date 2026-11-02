@@ -230,11 +230,31 @@ export function mergeMetricCatalogTrees(
       .filter((node) => node.node_type === "tech")
       .map((node) => [node.node_id, cleanLabel(node.label)]),
   );
+  // Oracle discipline: when the certified reference hierarchy is present
+  // the LTE / NR / EN-DC / QUARANTAINE branches must mirror tree.html
+  // (sha f4057ccc5332cebd329063287b23ab05343038ac78cfd902404fdf0801af2cda)
+  // exactly — i.e. 6 108 RF cell-scoped leaves with their oracle role as
+  // display label. Measured catalogue entries whose root technology lands
+  // on one of those four oracle techs are therefore NOT reparented into
+  // ref:tech:* (they would otherwise show as « No cell scope » project-
+  // level KPIs beside PCell / SCell N / PSCell, which the oracle never
+  // emits). They remain available in the dedicated KPI tab; measured
+  // techs that are not in the oracle (AGGREGATED KPIS, VOICE, …) still
+  // surface here under their own root so no selectable value is lost.
+  const measuredById = new Map(measuredTree.map((node) => [node.node_id, node]));
+  const measuredRootTechLabel = (node: MetricCatalogNode): string | undefined => {
+    let current: MetricCatalogNode | undefined = node;
+    while (current) {
+      if (current.node_type === "tech") return cleanLabel(current.label);
+      current = current.parent_id ? measuredById.get(current.parent_id) : undefined;
+    }
+    return undefined;
+  };
   const attachedMeasured = measuredTree.flatMap((node) => {
     if (node.node_type === "tech") return referenceTech.has(cleanLabel(node.label)) ? [] : [node];
-    const technology = node.parent_id ? measuredTechIds.get(node.parent_id) : undefined;
-    const referenceParent = technology ? referenceTech.get(technology) : undefined;
-    return [{ ...node, parent_id: referenceParent ?? node.parent_id }];
+    const rootTech = measuredRootTechLabel(node);
+    if (rootTech && referenceTech.has(rootTech)) return [];
+    return [node];
   });
   return [...catalogNodes, ...attachedMeasured];
 }

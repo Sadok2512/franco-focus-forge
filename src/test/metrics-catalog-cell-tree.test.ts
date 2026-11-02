@@ -115,6 +115,14 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
       [measured],
     );
 
+    // Oracle discipline (tree.html sha f4057ccc…): LTE / NR / EN-DC /
+    // QUARANTAINE branches of the Metrics sidebar must mirror the
+    // certified reference exactly. Measured catalogue entries whose root
+    // tech lands on one of those four oracle techs are therefore no
+    // longer reparented beneath ref:tech:* — they would otherwise show
+    // as « No cell scope » project-level KPIs beside PCell / SCell N /
+    // PSCell and break the 1:1 oracle alignment. They remain available
+    // in the dedicated KPI tab.
     expect(nodes.filter((node) => node.node_type === "tech").map((node) => node.label)).toEqual([
       "LTE",
       "QUARANTAINE",
@@ -122,13 +130,7 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
     expect(nodes.find((node) => node.node_id === quarantineLeaf.node_id)?.parent_id).toBe(
       quarantineMetric.node_id,
     );
-    expect(nodes.find((node) => node.selection === "LTE_RF_RSRP")?.parent_id).toContain(
-      "normalized:technology:LTE:metric:",
-    );
-    expect(
-      nodes.find((node) => node.node_type === "metric" && node.node_id.includes("LTE_RF_RSRP"))
-        ?.parent_id,
-    ).toBe(lteTech.node_id);
+    expect(nodes.find((node) => node.selection === "LTE_RF_RSRP")).toBeUndefined();
   });
 
   it("splits a certified CELLMEAS metric into serving and neighbour groups", () => {

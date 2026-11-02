@@ -1,3 +1,39 @@
+## 1.133.2 (patch) — Metrics Tree 1:1 oracle alignment — 2026-11-02 (Agent BC5)
+
+- Aligns the Metrics sidebar leaf display 1-to-1 with the certified
+  reference `tree.html` (sha
+  `f4057ccc5332cebd329063287b23ab05343038ac78cfd902404fdf0801af2cda`).
+- `applyReferenceHierarchy` now uses the oracle `m` field as the Metric
+  level label (e.g. `#Params/cell`, `#Serving cells`, `RSRP`, `RSRQ`,
+  `PCI`) and the oracle `role` field as the cell leaf label
+  (`PCell`, `SCell 1` … `SCell 6`, `SCG SCell 0`, `PSCell`,
+  `Listed neighbour`, `Detected neighbour`, `Listed NR neighbour`,
+  `Detected NR neighbour`, `Scanner NR neighbour`, `LTE cell type 3/4`).
+  Backend-provided `node.label` (`RSRP (LTE) @ Serving` …) is no longer
+  displayed at the leaf level — selectors, availability counts,
+  selectable flag, proof and reason are preserved verbatim so Graph /
+  Table / Map resolve the exact same backend series.
+- `metrics-tree-reference.json` enriched with the oracle metric name
+  (`m`), `raw_cell_type` and event (`e`) for every mapped leaf. Keys
+  are unchanged (backend `node_id`) so no cache invalidation beyond
+  the normal catalog_release sha rotation is required.
+- Unmapped LTE / NR leaves reparented under « À étiqueter » now also
+  use `cell_label` as display label (same oracle convention) instead
+  of the verbose backend `label`.
+- `mergeMetricCatalogTrees` stops reparenting measured KPI catalogue
+  entries whose root technology is `LTE`, `NR`, `EN-DC` or
+  `QUARANTAINE`. These project-level KPIs (`No cell scope`, `LTE CQI`,
+  `LTE DL BLER` …) remain available in the dedicated KPI tab;
+  removing them from the Metrics tab stops the pollution of the ref
+  branches so the sidebar mirrors the oracle exactly. Measured techs
+  that are not in the oracle (AGGREGATED KPIS, VOICE, …) still
+  surface here under their own root — no selectable value is lost.
+- Live verified on Test_6 capture `ikea_26Jun10_172354.2.nmf`:
+  `LTE → Serving radio → Serving → RSRP → PCell (n=200, selectable)`,
+  SCell 5 / SCell 6 (`n=0, no_data`), zero `No cell scope` leaf.
+- Zero API change, zero RF value touched, zero new metric invented.
+- SemVer front: **PATCH 1.133.2**; backend remains **0.123.1**.
+
 ## 1.133.1 (patch) — Metrics Tree first-view auto-expand — 2026-11-02 (Agent BC5)
 
 - Fixes the Metrics tab reading as empty on first render: every visible

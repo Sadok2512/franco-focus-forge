@@ -35,6 +35,13 @@ type RefMeta = {
   o: number;
   role: string;
   hn: string;
+  // Oracle metric name and event, enriched from tree.html (sha
+  // f4057ccc5332cebd329063287b23ab05343038ac78cfd902404fdf0801af2cda).
+  // Used to label the metric level and the cell leaf exactly like the
+  // certified reference instead of the verbose backend label.
+  m?: string;
+  raw?: number;
+  e?: string;
 };
 
 type StructureEntry = Record<string, number>;
@@ -179,7 +186,13 @@ export function applyReferenceHierarchy(
     if (node.node_type !== "leaf") continue;
     const meta = mapping[node.node_id];
     if (meta) {
-      const metricName = metricNameFromLabel(node.label);
+      // Oracle alignment: the Metric level uses the oracle `m` field
+      // (e.g. "#Params/cell", "#Serving cells", "RSRP") and the cell leaf
+      // displays the oracle `role` (PCell / SCell N / PSCell / Listed
+      // neighbour / Detected neighbour / …). Fallbacks keep behaviour
+      // safe for mapping entries that predate the oracle enrichment.
+      const metricName = meta.m ?? metricNameFromLabel(node.label);
+      const cellLabel = meta.role || node.cell_label || node.label;
       const techNode = synthesizeTech(meta.t);
       const catNode = synthesizeCategory(meta.t, meta.cat);
       const grpNode = synthesizeGroup(meta.t, meta.cat, meta.g);
@@ -189,12 +202,14 @@ export function applyReferenceHierarchy(
       ensureSynthetic(grpNode);
       ensureSynthetic(metNode);
       // Preserve metric_id, selection, selectable, n, proof, reason, cell;
-      // only parent_id and order change. Label is kept so the sidebar
-      // still shows the cell leaf as the back labelled it.
+      // only parent_id, order and the display label change — labels
+      // follow the certified oracle, selectors stay untouched so Graph /
+      // Table / Map keep resolving the same backend series.
       remappedLeaves.push({
         ...node,
         parent_id: metNode.node_id,
         order: roundOrder(meta.o),
+        label: cellLabel,
       });
     } else {
       keptLeaves.push(node);
@@ -234,7 +249,15 @@ export function applyReferenceHierarchy(
       ensureSynthetic(catNode);
       ensureSynthetic(grpNode);
       ensureSynthetic(metNode);
-      reparentedUncategorised.push({ ...leaf, parent_id: metNode.node_id });
+      // Same oracle alignment as mapped leaves: when the backend provides a
+      // cell_label (PCell / SCell N / PSCell / neighbour …) use it as the
+      // leaf display. Keeps the "À étiqueter" bucket readable instead of
+      // repeating the verbose "<Metric> (LTE) @ <scope>" label.
+      reparentedUncategorised.push({
+        ...leaf,
+        parent_id: metNode.node_id,
+        label: leaf.cell_label ?? leaf.label,
+      });
     } else {
       stillKept.push(leaf);
     }
