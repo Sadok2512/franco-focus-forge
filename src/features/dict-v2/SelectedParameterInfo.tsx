@@ -23,7 +23,11 @@ export function SelectedParameterInfo({
   refreshing: boolean;
   locallyFiltered: boolean;
 }) {
-  const [closed, setClosed] = useState<Set<string>>(new Set());
+  // 1.131.0 — « Informations techniques » compact par défaut :
+  // - section racine : <details> replié par défaut (toggle utilisateur) ;
+  // - cartes par paramètre : repliées par défaut (set `opened` au lieu
+  //   de `closed` : évite d'afficher tout en expansion sur un clic sidebar).
+  const [opened, setOpened] = useState<Set<string>>(new Set());
   const [more, setMore] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [notice, setNotice] = useState("");
@@ -70,19 +74,24 @@ export function SelectedParameterInfo({
   );
   return (
     <section className="rrc-selected-info" aria-label="Informations des paramètres sélectionnés">
-      <header>
-        <h2>Infos — Paramètres sélectionnés ({selected.length})</h2>
-      </header>
+      {/* 1.131.0 — section racine en <details> pour éviter que les
+          informations techniques occupent la totalité de la hauteur
+          sous le Graph. Fermé par défaut ; l'utilisateur l'ouvre
+          explicitement quand il a besoin du contexte RRC/ASN.1. */}
+      <details className="rrc-info-panel">
+        <summary className="rrc-info-panel-summary">
+          <h2>Informations techniques ({selected.length})</h2>
+        </summary>
       {selected.length ? (
         <>
           <div className="rrc-info-tools">
-            <button className="rrc-control" onClick={() => setClosed(new Set())}>
-              Tout développer
-            </button>
             <button
               className="rrc-control"
-              onClick={() => setClosed(new Set(selected.map(selectionId)))}
+              onClick={() => setOpened(new Set(selected.map(selectionId)))}
             >
+              Tout développer
+            </button>
+            <button className="rrc-control" onClick={() => setOpened(new Set())}>
               Tout réduire
             </button>
             {selected.length > 1 && (
@@ -144,11 +153,11 @@ export function SelectedParameterInfo({
                 Comparabilité: locallyFiltered ? null : block?.comparability,
               };
               return (
-                <details key={id} data-testid="rrc-info-card" open={!closed.has(id)}>
+                <details key={id} data-testid="rrc-info-card" open={opened.has(id)}>
                   <summary
                     onClick={(e) => {
                       e.preventDefault();
-                      setClosed((prev) => {
+                      setOpened((prev) => {
                         const next = new Set(prev);
                         if (next.has(id)) next.delete(id);
                         else next.add(id);
@@ -251,6 +260,7 @@ export function SelectedParameterInfo({
           Sélectionnez un paramètre dans l’arbre pour afficher ses informations.
         </p>
       )}
+      </details>
     </section>
   );
 }

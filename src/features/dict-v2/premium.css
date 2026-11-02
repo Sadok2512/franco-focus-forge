@@ -577,6 +577,42 @@
   background: var(--muted);
   padding: 8px;
 }
+/* 1.131.0 — section Informations techniques repliée par défaut dans un
+   <details> pour densifier la vue Parameters sous le Graph + Table. */
+.rrc-info-panel {
+  border-top: 1px solid var(--border);
+}
+.rrc-info-panel > summary {
+  cursor: pointer;
+  padding: 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  list-style: revert;
+  user-select: none;
+}
+.rrc-info-panel > summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+.rrc-info-panel > summary::marker {
+  color: var(--muted-foreground);
+}
+.rrc-info-panel[open] > summary {
+  border-bottom: 1px solid var(--border);
+}
+/* Grille 2 colonnes pour les cartes de paramètres au-dessus de 980 px :
+   diminue la hauteur occupée quand plusieurs paramètres sont sélectionnés. */
+@media (min-width: 980px) {
+  .rrc-info-panel[open] .rrc-info-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+}
 .rrc-info-tools {
   display: flex;
   flex-wrap: wrap;

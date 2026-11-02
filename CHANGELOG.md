@@ -1,3 +1,26 @@
+## 1.131.2 (patch) — Compact Parameters layout — 2026-11-02 (Agent BC5)
+
+- KPI Analytics → Parameters tab is now vertically compact: the whole
+  « Informations techniques » section is wrapped in a top-level
+  `<details>` **closed by default**, so the Graph + Values Table sit
+  directly under the catalog without the technical block pushing the
+  Map and other workspace panels below the fold.
+- Each individual parameter card inside the Technical Information block
+  is now also closed by default. The « Tout développer » / « Tout
+  réduire » buttons semantics are inverted accordingly so the user can
+  still expand all cards in one click. Values, occurrences, distinct
+  counts and dominant value are unchanged ; only presentation.
+- When the Technical Information panel is open and the viewport is
+  ≥ 980 px, parameter cards are laid out on 2 columns to reduce the
+  vertical footprint when several parameters are selected. Below
+  980 px the single-column fallback is unchanged.
+- Zero change to backend/API, zero change to RF values, aggregations,
+  occurrences, selectable flags or API selectors. Zero change to the
+  Parameters tree, Search, Show unavailable, Active only, scroll,
+  Graph interactions, Values Table (sort/CSV/columns/search), Map,
+  Workspace layout or any other KPI/Metrics tab.
+- SemVer front: **PATCH 1.131.2**.
+
 ## 1.131.1 (patch) — Preserve the certified Metrics hierarchy — 2026-11-01 (BC1)
 
 - Keeps the BC5 Technology → Category → Group → Metric → Cell hierarchy when
