@@ -360,15 +360,34 @@ export function applyReferenceHierarchy(
   // so a user never sees PCell + SCell 1 + SCell 5 + SCell 6 without
   // SCell 2 / 3 / 4 — the gap always matches "the probe never
   // recorded this cell", not "the sidebar silently dropped it".
-  const SERVING_LTE_ROSTER: Array<[number, string]> = [
-    [0, "PCell"], [10, "SCell 1"], [11, "SCell 2"], [12, "SCell 3"],
-    [13, "SCell 4"], [14, "SCell 5"], [15, "SCell 6"],
+  const SERVING_LTE_ROSTER: Array<[number, string, string]> = [
+    [0, "PCell", "PCELL"],
+    [10, "SCell 1", "SCELL1"],
+    [11, "SCell 2", "SCELL2"],
+    [12, "SCell 3", "SCELL3"],
+    [13, "SCell 4", "SCELL4"],
+    [14, "SCell 5", "SCELL5"],
+    [15, "SCell 6", "SCELL6"],
   ];
-  const SERVING_NR_ROSTER: Array<[number, string]> = [
-    [0, "PCell"], [1, "SCell 1"], [2, "SCell 2"], [3, "SCell 3"],
-    [4, "SCell 4"], [5, "SCell 5"], [6, "SCell 6"],
-    [100, "SCG SCell 0"], [199, "PSCell"],
+  const SERVING_NR_ROSTER: Array<[number, string, string]> = [
+    [0, "PCell", "PCELL"],
+    [1, "SCell 1", "SCELL1"],
+    [2, "SCell 2", "SCELL2"],
+    [3, "SCell 3", "SCELL3"],
+    [4, "SCell 4", "SCELL4"],
+    [5, "SCell 5", "SCELL5"],
+    [6, "SCell 6", "SCELL6"],
+    [100, "SCG SCell 0", "SCGSCELL0"],
+    [199, "PSCell", "PSCELL"],
   ];
+  // Known hn suffixes that correspond to a cell role; used to strip the
+  // suffix from a sibling leaf's hn label so we can swap in the missing
+  // role's suffix for the placeholder label.
+  const HN_ROLE_SUFFIXES = new Set([
+    "PCELL", "PSCELL", "SCGSCELL0",
+    "SCELL1", "SCELL2", "SCELL3", "SCELL4", "SCELL5", "SCELL6",
+    "LISTED", "DETECTED", "SCANNER", "CELLTYPE3", "CELLTYPE4",
+  ]);
   const placeholderLeaves: MetricCatalogNode[] = [];
   const byMetricParent = new Map<string, MetricCatalogNode[]>();
   for (const leaf of remappedLeaves) {
@@ -385,13 +404,34 @@ export function applyReferenceHierarchy(
     const seenRaws = new Set(siblings.map((l) => l.raw_cell_type ?? -1));
     const seenRoles = new Set(siblings.map((l) => (l.label ?? "").trim()));
     const sample = siblings[0]!;
-    for (const [raw, role] of roster) {
+    // Derive the oracle hn prefix from the sample sibling label by
+    // stripping any trailing `_<ROLE>` segment (PCELL, SCELL1 … SCELL6,
+    // PSCELL, SCGSCELL0, …). The remaining base lets the placeholder
+    // reuse the same hn-style identifier (e.g. a sample
+    // `LTE_SERVING_PATHLOSS_PCELL` yields the base
+    // `LTE_SERVING_PATHLOSS`, so SCell 2's placeholder reads
+    // `LTE_SERVING_PATHLOSS_SCELL2` instead of the bare `SCell 2`
+    // the user would otherwise see.
+    const sampleLabel = (sample.label ?? "").trim();
+    let hnBase = sampleLabel;
+    const underscoreIdx = sampleLabel.lastIndexOf("_");
+    if (underscoreIdx > 0) {
+      const suffix = sampleLabel.slice(underscoreIdx + 1).toUpperCase();
+      if (HN_ROLE_SUFFIXES.has(suffix)) {
+        hnBase = sampleLabel.slice(0, underscoreIdx);
+      }
+    }
+    const hnLooksSynthetic = /^[A-Z0-9_]+$/.test(hnBase);
+    for (const [raw, role, hnSuffix] of roster) {
       if (seenRaws.has(raw) || seenRoles.has(role)) continue;
+      const placeholderLabel = hnLooksSynthetic
+        ? `${hnBase}_${hnSuffix}`
+        : role;
       placeholderLeaves.push({
         ...sample,
         node_id: `ref:placeholder:${metId}@${raw}`,
         parent_id: metId,
-        label: role,
+        label: placeholderLabel,
         metric_id: null,
         selection: null,
         selectable: false,

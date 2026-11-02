@@ -1,3 +1,17 @@
+## 1.133.14 (patch) — Placeholder labels follow oracle hn format — 2026-11-02 (Agent BC5)
+
+- Serving cell placeholders synthesised in 1.133.12 now carry the
+  oracle hn-style label (e.g. `LTE_SERVING_PATHLOSS_SCELL2` instead
+  of the bare `SCell 2`). The placeholder derives the hn base from a
+  sibling leaf by stripping the trailing `_<ROLE>` suffix (PCELL,
+  SCELL1 … SCELL6, PSCELL, SCGSCELL0, LISTED, DETECTED, SCANNER,
+  CELLTYPE3, CELLTYPE4) and re-attaches the missing role's suffix.
+- When the sibling label is not an all-uppercase hn (e.g. the metric
+  branch is still rendered with a human label), the placeholder
+  falls back to the plain role name so the sidebar never shows an
+  invented hn when none is appropriate.
+- SemVer front: **PATCH 1.133.14**; backend remains **0.123.2**.
+
 ## 1.133.13 (patch) — Metrics sidebar search covers hn / id / cell — 2026-11-02 (Agent BC5)
 
 - Metrics sidebar search now walks a broader surface: label (oracle
