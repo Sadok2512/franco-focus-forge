@@ -98,10 +98,17 @@ await map.waitFor({ timeout: 120_000 });
 await map.locator("canvas").first().waitFor({ timeout: 120_000 });
 await map.getByTestId("procedure-map-count").waitFor({ timeout: 120_000 });
 const mapCount = await map.getByTestId("procedure-map-count").innerText();
-// The sole failed RACH procedure has no GPS fix.  The map must keep the
-// certified procedure count while refusing to invent a marker.
-if (!/^(?:0 geolocated \/ 1 procedures|0 procédures géolocalisées sur 1)$/.test(mapCount))
+// The sole failed RACH procedure retains the real GPS fix published at its
+// start event. No extra marker or inferred coordinate may appear.
+if (!/^(?:1 geolocated \/ 1 procedures|1 procédures géolocalisées sur 1)$/.test(mapCount))
   throw new Error(`failure map population mismatch: ${mapCount}`);
+await page.getByRole("button", { name: /Show layers|Afficher les calques/ }).last().click();
+await page.getByRole("tab", { name: /Legend|Légende/ }).last().click();
+const incidentLegend = map.getByText(/Procedure events|Événements de procédure/).locator("..");
+await incidentLegend.waitFor({ timeout: 30_000 });
+const incidentLegendText = await incidentLegend.innerText();
+if (!incidentLegendText.includes("3/3") || !incidentLegendText.includes("0/0"))
+  throw new Error(`incident layer counts missing: ${incidentLegendText}`);
 await page.screenshot({ path: `${out}03-procedure-map.png`, fullPage: true });
 
 const result = {
@@ -112,6 +119,7 @@ const result = {
   directClickPanelsAfter: afterDirectClick,
   tableRows,
   mapCount,
+  incidentLegendText,
   procedureResponses,
   apiErrors,
   consoleErrors,
