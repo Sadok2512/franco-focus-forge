@@ -52,6 +52,7 @@ import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey } from "./query-keys";
 import type { MetricView } from "./MetricGraphCard";
+import { newMetricCardPanel } from "./metric-card-panels";
 import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
 import { TreePanel, type TreePanelView } from "@/features/dict-v2/TreePanel";
 import { ValueExplorer } from "@/features/dict-v2/ValueExplorer";
@@ -524,11 +525,8 @@ function Workspace({
     setViewsState({ tabId: tabsState.activeTabId, views: next });
     writeMetricViews(tabsState.activeTabId, next);
   };
-  const graphMetricCount = selectedMetrics.filter((code) => metricViews[code] !== "table").length;
-  // 1.130.0 — pendant que le tableau des mesures est ouvert, les cartes graphe
-  // sont masquées (jamais supprimées) : seules les cartes carte restent visibles.
-  const mapMetricCount = selectedMetrics.filter((code) => metricViews[code] === "map").length;
-  const visibleGraphMetricCount = metricsTablePane ? mapMetricCount : graphMetricCount;
+  const [metricCardPanelCount, setMetricCardPanelCount] = useState(0);
+  const visibleGraphMetricCount = metricCardPanelCount;
   const tableOnlyWorkspace =
     selectedMetrics.length > 0 &&
     codes.length === 0 &&
@@ -537,6 +535,7 @@ function Workspace({
 
   const mapOnlyWorkspace =
     !metricsTablePane &&
+    metricCardPanelCount === 1 &&
     ((codes.length === 0 &&
       selectedMetrics.length === 1 &&
       metricViews[selectedMetrics[0]!] === "map") ||
@@ -544,7 +543,7 @@ function Workspace({
         codes.length === 1 &&
         configFor(codes[0]!).visualization === "map"));
   const [cardViewRequest, setCardViewRequest] = useState<
-    { code: string; view: MetricView; n: number } | undefined
+    { workspaceId: string; id: string; code: string; view: MetricView; n: number } | undefined
   >();
   const prefetchMetricMap = (code: string) => {
     if (!captureId) return;
@@ -560,29 +559,27 @@ function Workspace({
     });
   };
   const visualizeMetric = (code: string, view: MetricView) => {
-    // 1.130.0 — le tableau et les graphes ne s'affichent jamais en même temps :
-    // ⋮ → Tableau garde la carte graphe de la métrique en mémoire (jamais
-    // supprimée) mais ne la montre pas tant que le tableau est ouvert.
-    const keepsCard =
-      view === "table" && selectedMetrics.includes(code) && metricViews[code] !== "table";
-
-    const nextViews = keepsCard ? metricViews : { ...metricViews, [code]: view };
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
       : [...selectedMetrics, code];
     // Start the lean request in the menu event, before MapLibre's workspace
     // mounts. useQuery below adopts the same in-flight promise by key.
     if (view === "map") prefetchMetricMap(code);
-    if (!keepsCard) writeViews(nextViews);
     if (!selectedMetrics.includes(code)) setSelectedMetrics(nextSelected);
     if (view === "table") {
       setMetricsTablePane(true);
       setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
       return;
     }
-    // 1.102.2 — un graphe ajouté ne change jamais la vue du tableau des
-    // mesures : sinon le tableau devenait un graphe unique de toutes les métriques.
-    setCardViewRequest((r) => ({ code, view, n: (r?.n ?? 0) + 1 }));
+    // Each catalogue action creates a new card. The legacy view map retains
+    // the latest choice for old templates, but no longer identifies a panel.
+    writeViews({ ...metricViews, [code]: view });
+    const panel = newMetricCardPanel(code, view);
+    setCardViewRequest((r) => ({
+      workspaceId: currentTab.id,
+      ...panel,
+      n: (r?.n ?? 0) + 1,
+    }));
   };
   // 1.49.5 — mode de visualisation par métrique (histogram | graph | table | map),
   // piloté soit par le menu de la carte, soit par le `…` du MetricsCatalogSidebar.
@@ -1387,6 +1384,7 @@ function Workspace({
                         view={metricsView}
                         onViewChange={setMetricsView}
                         onTablePaneChange={setMetricsTablePane}
+                        onCardPanelCountChange={setMetricCardPanelCount}
                         views={metricViews}
                         onVisualization={visualizeMetric}
                         mapFillsAvailable={mapOnlyWorkspace && analyticCaptureIds.length === 1}

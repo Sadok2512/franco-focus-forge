@@ -23,6 +23,7 @@ vi.mock("@/lib/api/client", async () => {
   };
 });
 vi.mock("maplibre-gl", () => ({ Map: vi.fn(), Popup: vi.fn(), NavigationControl: vi.fn() }));
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
 }));

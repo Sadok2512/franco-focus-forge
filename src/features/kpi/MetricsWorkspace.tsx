@@ -19,7 +19,14 @@ import {
   MapLegendSection,
 } from "./map-legend";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
-import { pickGraphSelections, type MetricViews } from "./metric-views";
+import type { MetricViews } from "./metric-views";
+import {
+  legacyMetricCardPanels,
+  readMetricCardPanels,
+  writeMetricCardPanels,
+  type MetricCardPanel,
+  type MetricCardView,
+} from "./metric-card-panels";
 import {
   readMetricStyles,
   writeMetricStyles,
@@ -47,12 +54,10 @@ import {
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
+  automaticTimeAxisMode,
   formatTick,
-  isClockAvailable,
-  readTimeAxisMode,
   timeAxisLabel,
   tooltipTriple,
-  writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
 } from "./time-axis";
@@ -1018,6 +1023,7 @@ export function MetricsWorkspace({
   // conflits avec le Time/GPS lot). Si nécessaire plus tard, implémenter
   // le state cardViews + onRemove dans un lot dédié.
   onTablePaneChange,
+  onCardPanelCountChange,
   views: viewsProp,
   workspaceId: _workspaceId,
   projectCenter,
@@ -1041,12 +1047,15 @@ export function MetricsWorkspace({
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
   onTablePaneChange?: ((open: boolean) => void) | undefined;
+  onCardPanelCountChange?: ((count: number) => void) | undefined;
   views?: MetricViews | undefined;
   workspaceId?: string;
   projectCenter?: [number, number] | undefined;
   onColumnsChange?: unknown;
   paneRequest?: number;
-  cardViewRequest?: { code: string; view: string; n: number } | undefined;
+  cardViewRequest?:
+    | { workspaceId: string; id: string; code: string; view: string; n: number }
+    | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
   mapFillsAvailable?: boolean;
@@ -1105,18 +1114,51 @@ export function MetricsWorkspace({
   };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
-  const [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
-  const setTimeAxisMode = useCallback((mode: TimeAxisMode) => {
-    setTimeAxisModeRaw(mode);
-    writeTimeAxisMode(mode);
-  }, []);
+  const cardPanelWorkspace = _workspaceId ?? "metrics";
+  const loadCardPanels = () => {
+    const stored = readMetricCardPanels(cardPanelWorkspace);
+    if (stored) return stored;
+    // A catalogue action can select the first metric and mount this workspace
+    // in the same React batch. In that case the request below is the source of
+    // truth; migrating the just-written legacy view as well would create the
+    // same panel twice.
+    if (cardViewRequest?.workspaceId === cardPanelWorkspace) return [];
+    return legacyMetricCardPanels(selections, viewsProp ?? {});
+  };
+  const [cardPanelState, setCardPanelState] = useState<{
+    workspaceId: string;
+    panels: MetricCardPanel[];
+  }>(() => ({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() }));
+  if (cardPanelState.workspaceId !== cardPanelWorkspace) {
+    setCardPanelState({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() });
+  }
+  const cardPanels = cardPanelState.panels;
+  const saveCardPanels = useCallback(
+    (next: MetricCardPanel[]) => {
+      setCardPanelState({ workspaceId: cardPanelWorkspace, panels: next });
+      writeMetricCardPanels(cardPanelWorkspace, next);
+    },
+    [cardPanelWorkspace],
+  );
+  useEffect(() => {
+    const allowed = new Set(selections);
+    const next = cardPanels.filter((panel) => allowed.has(panel.code));
+    if (next.length !== cardPanels.length) saveCardPanels(next);
+  }, [cardPanels, saveCardPanels, selections]);
+  useEffect(() => {
+    onCardPanelCountChange?.(cardPanels.length);
+  }, [cardPanels.length, onCardPanelCountChange]);
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
   const [cellPciFilter, setCellPciFilter] = useState("");
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
-  const mapSelections = selections.filter((selection) => viewsProp?.[selection] === "map");
-  const onlyMapSelections = selections.length > 0 && mapSelections.length === selections.length;
+  const mapSelections = [
+    ...new Set(
+      cardPanels.filter((panel) => panel.view === "map").map((panel) => panel.code),
+    ),
+  ];
+  const onlyMapSelections = cardPanels.length > 0 && cardPanels.every((panel) => panel.view === "map");
   const captureRouteQuery = useQuery({
     queryKey: ["metrics-map-route", projectId, captureId],
     queryFn: ({ signal }) => getSignaling(projectId, "points", { capture_id: captureId! }, signal),
@@ -1249,10 +1291,9 @@ export function MetricsWorkspace({
         capture_date: data.capture_date ?? null,
       }
     : undefined;
-  const clockOk = isClockAvailable(timeMeta);
   // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
   // pas de meta #START/#UT (null). Jamais une heure inventée.
-  const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+  const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);
   const timeScatter = x === "" || x === "t_rel_s";
   const option = useMemo<EChartsOption>(() => {
     if (!data) return {};
@@ -1533,15 +1574,31 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
-  // 1.130.0 — une demande de graphe (⋮ → Graphe / Histogramme) ferme le tableau :
-  // les deux ne s'affichent jamais en même temps. La carte graphe n'est pas
-  // supprimée, elle revient dès que le tableau est refermé.
   const cardViewRequestRef = useRef<number>(-1);
   useEffect(() => {
-    if (!cardViewRequest || cardViewRequest.n === cardViewRequestRef.current) return;
+    if (
+      !cardViewRequest ||
+      cardViewRequest.workspaceId !== cardPanelWorkspace ||
+      cardViewRequest.n === cardViewRequestRef.current
+    )
+      return;
     cardViewRequestRef.current = cardViewRequest.n;
-    if (cardViewRequest.view !== "table" && cardViewRequest.view !== "map") setPane("charts");
-  }, [cardViewRequest]);
+    if (cardPanels.some((panel) => panel.id === cardViewRequest.id)) return;
+    if (
+      cardViewRequest.view === "graph" ||
+      cardViewRequest.view === "histogram" ||
+      cardViewRequest.view === "map"
+    ) {
+      saveCardPanels([
+        ...cardPanels,
+        {
+          id: cardViewRequest.id,
+          code: cardViewRequest.code,
+          view: cardViewRequest.view,
+        },
+      ]);
+    }
+  }, [cardPanelWorkspace, cardPanels, cardViewRequest, saveCardPanels]);
   // 1.101.0 — le mode mémorisé à l'ouverture de l'onglet est signalé au parent
 
   // (le compteur de panneaux de KpiWorkspace part du tableau des mesures).
@@ -1574,19 +1631,17 @@ export function MetricsWorkspace({
       return next;
     });
   };
-  const graphSelections = useMemo(
-    () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
-    [parsedSelections, viewsProp],
-  );
-  // 1.130.0 — le tableau des mesures et les cartes graphique ne s'affichent
-  // jamais en même temps. Pendant que le tableau est ouvert, les graphes sont
-  // retirés de la vue mais jamais supprimés : refermer le tableau les ramène.
-  // Une carte carte (map) n'est pas un graphe : elle reste visible.
-  const tableOpen = pane === "table";
-  const visibleGridSelections = useMemo(
+  const visibleGridPanels = useMemo(
     () =>
-      tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections,
-    [graphSelections, tableOpen, viewsProp],
+      cardPanels.map((panel) => ({
+        panel,
+        selection: parseMetricSelection(panel.code) ?? {
+          full: panel.code,
+          code: panel.code,
+          cell: "all",
+        },
+      })),
+    [cardPanels],
   );
 
   // 1.105.1 — plus de message « The selected metrics are shown in the
@@ -1594,15 +1649,19 @@ export function MetricsWorkspace({
   // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
   // n'est pas rouverte tant qu'aucun graphe ne revient.
   useEffect(() => {
-    if (graphSelections.length > 0) {
+    if (cardPanels.length > 0) {
       tableOnlyDismissed.current = false;
       return;
     }
+    // An explicit Graph/Map action selects the metric and creates its card in
+    // the same commit. Do not let the legacy "selection without graph" helper
+    // flash/open a table while that card request is being applied.
+    if (cardViewRequest?.workspaceId === cardPanelWorkspace) return;
     if (parsedSelections.length > 0 && pane !== "table" && !tableOnlyDismissed.current) {
       setPane("table");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphSelections.length, parsedSelections.length, pane]);
+  }, [cardPanelWorkspace, cardPanels.length, cardViewRequest, parsedSelections.length, pane]);
   const activeEvents = useActiveEvents();
   return (
     <article
@@ -1611,37 +1670,6 @@ export function MetricsWorkspace({
       data-testid="metrics-v3-workspace"
     >
       {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
-      {captureId && parsedSelections.length > 0 && (
-        <div className="kpi-time-axis-switcher" data-testid="time-axis-switcher">
-          <span className="kpi-time-axis-switcher__label">
-            {translate("metrics.timeAxis.label")}
-          </span>
-          {(
-            [
-              ["clock-local", translate("metrics.timeAxis.local")],
-              ["clock-utc", translate("metrics.timeAxis.utc")],
-              ["capture", translate("metrics.timeAxis.capture")],
-            ] as Array<[TimeAxisMode, string]>
-          ).map(([m, label]) => (
-            <button
-              key={m}
-              type="button"
-              className="kpi-time-axis-switcher__pill"
-              aria-pressed={effectiveTimeAxisMode === m}
-              disabled={!clockOk && m !== "capture"}
-              onClick={() => setTimeAxisMode(m)}
-              data-active={effectiveTimeAxisMode === m ? "true" : "false"}
-            >
-              {label}
-            </button>
-          ))}
-          {!clockOk && (
-            <span className="kpi-time-axis-switcher__hint" role="note">
-              {translate("metrics.timeAxis.clockUnavailable")}
-            </span>
-          )}
-        </div>
-      )}
       {showEvents && captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
@@ -1657,22 +1685,26 @@ export function MetricsWorkspace({
           {translate("metrics.pickFromCatalogue")}
         </p>
       )}
-      {captureId && visibleGridSelections.length > 0 && (
+      {captureId && visibleGridPanels.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
-          {visibleGridSelections.map((s, i) => {
+          {visibleGridPanels.map(({ panel, selection: s }, i) => {
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
-            const metricView = viewsProp?.[s.full] ?? "graph";
+            const metricView = panel.view;
             const remove = () => {
-              const next = selections.filter((x) => x !== s.full);
-              if (!next.length) onClear();
-              else onRemove?.(s.full);
+              const next = cardPanels.filter((candidate) => candidate.id !== panel.id);
+              saveCardPanels(next);
+              if (!next.some((candidate) => candidate.code === s.full) && pane !== "table") {
+                const remaining = selections.filter((code) => code !== s.full);
+                if (!remaining.length) onClear();
+                else onRemove?.(s.full);
+              }
             };
             return (
               <PanelShell
-                key={s.full}
+                key={panel.id}
                 workspaceId={_workspaceId ?? "metrics"}
-                id={`metric:${s.full}${panelIdSuffix}`}
+                id={`${panel.id}${panelIdSuffix}`}
                 natural={100 + i}
                 defaultTitle={`${i + 1}. ${title}`}
                 fullRow={mapFillsAvailable && metricView === "map"}
@@ -1709,7 +1741,17 @@ export function MetricsWorkspace({
                       onRemove={remove}
                       view={metricView}
                       onViewChange={(next) => {
-                        onVisualization?.(s.full, next);
+                        if (next === "table") {
+                          setPane("table");
+                          return;
+                        }
+                        saveCardPanels(
+                          cardPanels.map((candidate) =>
+                            candidate.id === panel.id
+                              ? { ...candidate, view: next as MetricCardView }
+                              : candidate,
+                          ),
+                        );
                       }}
                       onOpenTable={() => setPane("table")}
                       syncId={captureId ? `metrics-charts-${captureId}` : undefined}

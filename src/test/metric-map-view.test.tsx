@@ -39,6 +39,7 @@ vi.mock("@/features/kpi/KpiMapOSM", () => ({
   },
 }));
 vi.mock("@/features/kpi/DriveRsrpLayer", () => ({ DriveRsrpLayer: () => null }));
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
   return {
@@ -93,12 +94,11 @@ describe("Map selection keeps its own panel", () => {
     );
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrp@0");
     expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("cell_rsrq@0");
-    // 1.130.0 — le tableau est ouvert : aucune carte graphe n'est rendue.
-    expect(renderers.graph.mock.calls.map(([props]) => props.code)).not.toContain("ci_rs_snr@1");
+    expect(renderers.graph.mock.calls.map(([props]) => props.code)).toContain("ci_rs_snr@1");
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
     expect(localStorage.getItem("bc3.metrics.pane.map-test")).toBe("table");
     expect(screen.queryByTestId("metrics-capture-sheet-open")).toBeNull();
-    // 1.130.0 — le graphe n'est pas supprimé : refermer le tableau le rend.
+    // Closing the table removes only that panel; graph and map stay mounted.
     fireEvent.keyDown(
       within(screen.getByTestId("metrics-table-panel")).getByTestId("workspace-panel-menu"),
       { key: "Enter" },

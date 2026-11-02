@@ -1,5 +1,4 @@
-// 1.130.0 — le tableau des mesures et les cartes graphe ne s'affichent jamais
-// en même temps : ouvert, le tableau masque les graphes sans les supprimer.
+// The measurements table is a full-row panel below independent graph cards.
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
@@ -22,6 +21,7 @@ vi.mock("maplibre-gl", () => ({
   Popup: vi.fn(),
   NavigationControl: vi.fn(),
 }));
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
 }));
@@ -37,7 +37,8 @@ if (!("ResizeObserver" in window)) {
 }
 
 describe("measurements table position", () => {
-  it("masque les cartes graphe pendant que le tableau est ouvert", async () => {
+  it("garde les cartes graphe au-dessus du tableau ouvert", async () => {
+    localStorage.removeItem("bc4.metrics.card-panels.table-below-graphs");
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     render(
       <QueryClientProvider client={client}>
@@ -59,15 +60,16 @@ describe("measurements table position", () => {
     const table = await screen.findByTestId("metrics-table-panel");
     const workspace = table.parentElement;
     expect(Number(table.style.order)).toBe(TABLE_PANEL_ORDER);
-    // 1.130.0 — tableau ouvert : les cartes graphe sont masquées, pas supprimées.
-    expect(document.querySelectorAll('[data-testid^="panel-metric:"]')).toHaveLength(0);
-    await removeTable();
-    const cards = await screen.findAllByTestId(/^panel-metric:/);
+    const cards = Array.from(
+      document.querySelectorAll<HTMLElement>('[data-panel-id^="legacy:"]'),
+    );
     expect(cards).toHaveLength(2);
     for (const card of cards) {
       expect(card.style.gridColumn).toBe("span 1");
     }
-    // La règle CSS « pleine largeur » vise les enfants directs du conteneur.
+    await removeTable();
+    expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
+    expect(document.querySelectorAll('[data-panel-id^="legacy:"]')).toHaveLength(2);
     expect(workspace?.dataset["testid"]).toBe("metrics-v3-workspace");
   });
 
@@ -85,4 +87,3 @@ async function removeTable() {
   fe.keyDown(wi(panel).getByTestId("workspace-panel-menu"), { key: "Enter" });
   fe.click(await sc.findByTestId("metrics-table-remove"));
 }
-

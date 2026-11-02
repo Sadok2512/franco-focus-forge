@@ -27,13 +27,14 @@ vi.mock("maplibre-gl", () => ({
   Popup: vi.fn(),
   NavigationControl: vi.fn(),
 }));
+vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("echarts", () => ({
   init: vi.fn(() => ({ setOption: vi.fn(), dispose: vi.fn(), resize: vi.fn() })),
 }));
 
 function mount(props: {
   paneRequest?: number;
-  cardViewRequest?: { code: string; view: string; n: number };
+  cardViewRequest?: { workspaceId: string; id: string; code: string; view: string; n: number };
   view?: "table" | "graph" | "histogram" | "scatter" | "map";
 }) {
   return render(
@@ -55,8 +56,9 @@ function mount(props: {
 }
 
 describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)", () => {
-  it("⋮ → Tableau (paneRequest) ouvre le grand tableau et retire les cartes graphe", async () => {
+  it("⋮ → Tableau (paneRequest) ouvre le grand tableau sans retirer les cartes graphe", async () => {
     window.localStorage.removeItem("bc3.metrics.pane");
+    window.localStorage.removeItem("bc4.metrics.card-panels.metrics");
     mount({ paneRequest: 1 });
     await waitFor(
       () => {
@@ -64,8 +66,8 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
       },
       { timeout: 3000 },
     );
-    // 1.130.0 — tableau et graphes ne s'affichent jamais en même temps.
-    expect(screen.queryByTestId("metrics-charts-grid")).toBeNull();
+    expect(screen.getByTestId("metrics-charts-grid")).toBeVisible();
+    expect(screen.queryByTestId("time-axis-switcher")).toBeNull();
   });
 
   it("closing the table panel keeps the graphs", async () => {
@@ -79,25 +81,30 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
     expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
   });
 
-  it("⋮ → Tableau depuis un graphe ouvre le tableau, et le graphe revient à sa fermeture", async () => {
+  it("⋮ → Tableau depuis un graphe garde le graphe visible", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "charts");
     mount({});
     const graph = await screen.findByTestId("metrics-charts-grid");
     fireEvent.keyDown(within(graph).getByTestId("workspace-panel-menu"), { key: "Enter" });
     fireEvent.click(await screen.findByTestId("metric-open-table"));
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible());
-    // La carte graphe n'est pas supprimée : elle est seulement masquée.
-    expect(screen.queryByTestId("metrics-charts-grid")).toBeNull();
+    expect(screen.getByTestId("metrics-charts-grid")).toBeVisible();
     await removeTable();
     expect(screen.getByTestId("metrics-charts-grid")).toBeVisible();
   });
 
 
-  it("⋮ → Graphique (cardViewRequest) ramène les cartes alors que le mode mémorisé est table", async () => {
+  it("⋮ → Graphique ajoute une carte tout en conservant le tableau", async () => {
     window.localStorage.setItem("bc3.metrics.pane", "table");
+    window.localStorage.removeItem("bc4.metrics.card-panels.metrics");
     mount({
-      view: "graph",
-      cardViewRequest: { code: "cell_rsrp", view: "graph", n: 1 },
+      cardViewRequest: {
+        workspaceId: "metrics",
+        id: "metric-panel:test",
+        code: "cell_rsrp@0",
+        view: "graph",
+        n: 1,
+      },
     });
     await waitFor(
       () => {
@@ -105,7 +112,9 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
       },
       { timeout: 3000 },
     );
-    expect(screen.queryByTestId("metrics-table-pager")).toBeNull();
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), {
+      timeout: 3000,
+    });
   });
 });
 
