@@ -1,7 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Archive, Copy, Download, History, Pencil, Plus, Search } from "lucide-react";
 import { useState } from "react";
-import { createKpi, getApiPermissions, getKpiCatalogSettings, patchKpi } from "@/lib/api/client";
+import {
+  createKpi,
+  getApiPermissions,
+  getKpiCatalogSettings,
+  getMetrics,
+  getProjects,
+  patchKpi,
+} from "@/lib/api/client";
+import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import { exportMetadata } from "@/lib/api/settings";
 import {
   KPI_STATUS_LABEL,
@@ -93,6 +101,93 @@ export function KpiCatalogPanel() {
     a.click();
   };
 
+  // Full oracle metrics catalog export (~6082 KPIs). Settings has no
+  // project context, but the oracle catalog is release-wide: picking
+  // any accessible project returns the same catalog_release/nodes.
+  // Pulled on-demand so the Settings page doesn't pay the cost on mount.
+  const [oracleExport, setOracleExport] = useState<{ pending: boolean; error: string | null }>({
+    pending: false,
+    error: null,
+  });
+  const exportOracleMetricsCsv = async () => {
+    setOracleExport({ pending: true, error: null });
+    try {
+      const projects = await getProjects();
+      if (!projects.length) throw new Error("No project available — the oracle catalog needs any project context");
+      const metrics = await getMetrics(projects[0]!.id);
+      const byId = new Map<string, MetricCatalogNode>(
+        metrics.nodes.map((n) => [n.node_id, n]),
+      );
+      const pathOf = (leaf: MetricCatalogNode) => {
+        let tech = "";
+        let cat = "";
+        let grp = "";
+        let met = "";
+        let current: MetricCatalogNode | undefined = leaf.parent_id
+          ? byId.get(leaf.parent_id)
+          : undefined;
+        while (current) {
+          if (current.node_type === "metric") met ||= current.label ?? "";
+          else if (current.node_type === "group") grp ||= current.label ?? "";
+          else if (current.node_type === "category") cat ||= current.label ?? "";
+          else if (current.node_type === "tech") tech ||= current.label ?? "";
+          current = current.parent_id ? byId.get(current.parent_id) : undefined;
+        }
+        return { tech, cat, grp, met };
+      };
+      const meta = exportMetadata();
+      const releaseVer = metrics.catalog_release?.version ?? "legacy";
+      const header = `# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""} — catalog_release ${releaseVer}`;
+      const cols = [
+        "Technology",
+        "Category",
+        "Group",
+        "Metric",
+        "Cell",
+        "hn / label",
+        "Event",
+        "Source column",
+        "Metric id",
+        "Raw cell type",
+        "n",
+        "Selectable",
+        "Availability",
+        "Reason",
+      ];
+      const rows: Array<Array<string | number>> = [];
+      for (const node of metrics.nodes) {
+        if (node.node_type !== "leaf") continue;
+        const { tech, cat, grp, met } = pathOf(node);
+        rows.push([
+          tech,
+          cat,
+          grp,
+          met,
+          node.cell_label ?? "",
+          node.label ?? "",
+          node.event ?? "",
+          node.source_column ?? "",
+          node.metric_id ?? "",
+          node.raw_cell_type ?? "",
+          node.n ?? 0,
+          node.selectable ? "yes" : "no",
+          node.availability_status ?? "",
+          node.reason ?? "",
+        ]);
+      }
+      const csv = [[header], cols, ...rows]
+        .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+        .join("\n");
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+      a.download = `bc4-metrics-catalog-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      setOracleExport({ pending: false, error: null });
+    } catch (e) {
+      setOracleExport({ pending: false, error: errMsg(e) });
+    }
+  };
+
   return (
     <SettingsSection
       title="Catalogue KPI"
@@ -126,10 +221,21 @@ export function KpiCatalogPanel() {
             className={btn}
             onClick={exportCsv}
             disabled={!items.length}
-            aria-label="Exporter le catalogue KPI en CSV"
+            aria-label="Exporter les KPI définis dans ce panneau en CSV"
+            title={`${items.length} KPI(s) définis sur ce panneau`}
           >
             <Download className="h-3.5 w-3.5" />
-            Exporter CSV
+            Exporter KPI
+          </button>
+          <button
+            className={btn}
+            onClick={exportOracleMetricsCsv}
+            disabled={oracleExport.pending}
+            aria-label="Exporter tout le catalogue des métriques (oracle) en CSV"
+            title="Toutes les métriques oracle (~6082) avec Technology, Category, Group, Metric, Cell, hn, event, n"
+          >
+            <Download className="h-3.5 w-3.5" />
+            {oracleExport.pending ? "Export…" : "Exporter métriques"}
           </button>
           {write && (
             <button className={btnPrimary} onClick={() => setEdit({ base: null })}>
@@ -148,6 +254,11 @@ export function KpiCatalogPanel() {
       {archive.isError && (
         <p role="alert" className="text-xs text-destructive">
           {errMsg(archive.error)}
+        </p>
+      )}
+      {oracleExport.error && (
+        <p role="alert" className="text-xs text-destructive">
+          Export métriques : {oracleExport.error}
         </p>
       )}
       <div className="overflow-x-auto rounded-lg border bg-card">

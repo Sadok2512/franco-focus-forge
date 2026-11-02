@@ -1,3 +1,26 @@
+## 1.133.24 (patch) — Export métriques (oracle) on /settings/kpi-catalog — 2026-11-02 (Agent BC5)
+
+- The 1.133.22 Settings export only covered the 3 KPI definitions in
+  this panel; 1.133.23 put the full oracle export in the Metrics
+  workspace sidebar. The ask was: the full oracle export on Settings,
+  next to the KPI button. 1.133.24 lands exactly that.
+- `/settings/kpi-catalog` actions row now carries two Export buttons:
+  - **Exporter KPI** — the 3 (or N) KPI definitions edited on this
+    panel (code, name, famille, techno, unité, statut, version,
+    événements source, description, formule). Unchanged from 1.133.22.
+  - **Exporter métriques** — the full oracle catalog (~6082 KPIs).
+    Fetches `/projects/{first-accessible}/metrics` on-demand and
+    builds the CSV with Technology / Category / Group / Metric /
+    Cell / hn / Event / Source column / Metric id / Raw cell type /
+    n / Selectable / Availability / Reason. First line stamps the
+    `catalog_release` version.
+- The oracle catalog is release-wide, so any project works as the
+  context; we take the first project returned by `getProjects()`.
+  If no project is accessible, the button surfaces the error inline
+  instead of silently failing.
+- Button shows `Export…` while in-flight.
+- SemVer front: **PATCH 1.133.24**; backend remains **0.123.3**.
+
 ## 1.133.23 (patch) — Export full metrics catalog from sidebar — 2026-11-02 (Agent BC5)
 
 - User still wasn't finding the right export: `/settings/kpi-catalog`
