@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { KeyRound, Pencil, Plus, Power, Search } from "lucide-react";
+import { Download, KeyRound, Pencil, Plus, Power, Search } from "lucide-react";
 import { useState } from "react";
 import { createUser, getUsers, patchUser, resetPassword } from "@/lib/api/client";
+import { exportMetadata } from "@/lib/api/settings";
 import {
   ROLE_LABEL,
   RoleSchema,
@@ -68,6 +69,34 @@ export function UsersPanel() {
     `${u.login} ${u.display_name}`.toLowerCase().includes(search.toLowerCase()),
   );
 
+  const exportCsv = () => {
+    const meta = exportMetadata();
+    const header = `# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""}`;
+    const cols = [
+      "Identifiant",
+      "Nom affiché",
+      "Rôle",
+      "Statut",
+      "Créé le",
+      "Dernière connexion",
+    ];
+    const rowsCsv = rows.map((u) => [
+      u.login,
+      u.display_name,
+      ROLE_LABEL[u.role],
+      u.active ? "Actif" : "Inactif",
+      u.created_at ?? "",
+      u.last_login_at ?? "",
+    ]);
+    const csv = [[header], cols, ...rowsCsv]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `bc4-utilisateurs-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
   return (
     <SettingsSection
       title="Utilisateurs"
@@ -84,6 +113,15 @@ export function UsersPanel() {
               className={`${inputCls} w-52 pl-8`}
             />
           </div>
+          <button
+            className={btn}
+            onClick={exportCsv}
+            disabled={!rows.length}
+            aria-label="Exporter la liste des utilisateurs en CSV"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exporter CSV
+          </button>
           {write && (
             <button className={btnPrimary} onClick={() => setEdit("new")}>
               <Plus className="h-3.5 w-3.5" />

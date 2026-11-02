@@ -1,3 +1,15 @@
+## 1.133.18 (patch) — Export CSV on /settings/users — 2026-11-02 (Agent BC5)
+
+- Adds an `Exporter CSV` button on `/settings/users` (actions row, next
+  to `Ajouter`) that downloads the currently-filtered users table as a
+  CSV. Columns mirror the on-screen table: `Identifiant`,
+  `Nom affiché`, `Rôle`, `Statut`, `Créé le`, `Dernière connexion`.
+- First line is the standard BC4 export header (`# BC4 vX.Y.Z` plus the
+  organisation name if configured, via `exportMetadata()`), consistent
+  with the other CSV exports in the app (dictionary, metrics table).
+- Button is disabled when the current filter yields no rows.
+- SemVer front: **PATCH 1.133.18**; backend remains **0.123.3**.
+
 ## 1.133.17 (patch) — Metrics sidebar search O(n→1) per keystroke — 2026-11-02 (Agent BC5)
 
 - Users reported perceptible lag when typing in the Metrics sidebar
