@@ -1,3 +1,25 @@
+## 1.133.15 (patch) — Dedup remapped leaves — 2026-11-02 (Agent BC5)
+
+- Fixes a duplicate-label bug introduced by the fallback matcher being
+  liberal enough to let two independent backend leaves land on the same
+  oracle meta: typically the static catalog variant
+  (`lf_cqi_req_rate_c0`, `n=0`) and the dynamic observed variant
+  (`lf_observed_cqi_lte-type-0_cqi_req_rate`, `n=2909`) both resolving
+  to `LTE_CQI_REQ_RATE_PCELL`. Before this patch the sidebar rendered
+  the hn twice under the same metric node — once with 0 samples, once
+  with the real count.
+- New dedup pass in `applyReferenceHierarchy`: group `remappedLeaves`
+  by `(parent_id, raw_cell_type)`, keep the leaf with the highest `n`,
+  break ties by preferring the `lf_observed_*` variant (it carries the
+  actual capture series). The dropped variant is still available from
+  the raw `/metrics` response — the Parameters tab is untouched.
+- Observed on the audit: duplicates on `NR_SERVING_RSSI_PSCELL`,
+  `LTE_CQI_REQ_RATE_*`, `LTE_CQI_WB/SB_*`, `LTE_DCI_*`, `LTE_MAC_DL_*`,
+  `LTE_PHY_DL_PBCH_*`, `LTE_PHY_DL_PDSCH_*`, `LTE_PDSCH_PERCENTAGE_*`,
+  with up to four duplicates on `LTE_PDSCH_MCS1_*` and
+  `LTE_PDSCH_TBS0/1_*` (two static variants + two observed).
+- SemVer front: **PATCH 1.133.15**; backend remains **0.123.2**.
+
 ## 1.133.14 (patch) — Placeholder labels follow oracle hn format — 2026-11-02 (Agent BC5)
 
 - Serving cell placeholders synthesised in 1.133.12 now carry the

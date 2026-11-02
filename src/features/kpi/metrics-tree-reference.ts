@@ -303,6 +303,35 @@ export function applyReferenceHierarchy(
     }
   }
 
+  // Dedup pass. Two independent backend leaves can resolve to the same
+  // oracle meta — typically the static catalog variant
+  // (`lf_cqi_req_rate_c0`, n=0) and the dynamic observed variant
+  // (`lf_observed_cqi_lte-type-0_cqi_req_rate`, n=2909) both landing on
+  // `LTE_CQI_REQ_RATE_PCELL`. Without this pass the sidebar renders the
+  // same hn label twice under the same metric node, with one count 0 and
+  // one count N. Keep a single leaf per (metric node, raw cell) pair,
+  // preferring the one with the most samples (and the `lf_observed_*`
+  // variant on ties, since that one carries the actual capture series).
+  const dedupKey = new Map<string, MetricCatalogNode>();
+  for (const leaf of remappedLeaves) {
+    if (!leaf.parent_id) continue;
+    const key = `${leaf.parent_id}@${leaf.raw_cell_type ?? -1}`;
+    const existing = dedupKey.get(key);
+    if (!existing) {
+      dedupKey.set(key, leaf);
+      continue;
+    }
+    const existingN = existing.n ?? 0;
+    const leafN = leaf.n ?? 0;
+    if (leafN > existingN) {
+      dedupKey.set(key, leaf);
+    } else if (leafN === existingN && leaf.node_id.startsWith("lf_observed_")) {
+      dedupKey.set(key, leaf);
+    }
+  }
+  remappedLeaves.length = 0;
+  for (const leaf of dedupKey.values()) remappedLeaves.push(leaf);
+
   // Climb to find a leaf's original tech ancestor label.
   const originalTechOf = (leaf: MetricCatalogNode): string | null => {
     let current: MetricCatalogNode | undefined = leaf;
