@@ -1,3 +1,15 @@
+## 1.133.25 (patch) — Resizable Map and Histogram panels — 2026-11-02 (BC4)
+
+- KPI Analytics Map panels now retain the shared vertical resize handle even
+  when their title chrome is intentionally hidden; `bare` no longer disables
+  resizing.
+- Map, Histogram and Graph heights use the same per-Workspace persisted panel
+  layout. Existing MapLibre and ECharts `ResizeObserver` hooks redraw content
+  during resize without changing queries or RF values.
+- Adds a focused interaction test for both Histogram and titleless Map panels,
+  including persisted heights.
+- Front SemVer: **PATCH 1.133.25**; backend unchanged.
+
 ## 1.133.24 (patch) — Export métriques (oracle) on /settings/kpi-catalog — 2026-11-02 (Agent BC5)
 
 - The 1.133.22 Settings export only covered the 3 KPI definitions in

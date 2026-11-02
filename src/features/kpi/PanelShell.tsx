@@ -1,7 +1,9 @@
 // Common panel frame: width span, height resize, collapse,
 // rename (double-click the title), duplicate when supported. Wraps the
 // existing KPI/Metrics cards so their header, Chart Settings, export and
-// fullscreen stay the single source of truth.
+// fullscreen stay the single source of truth. `bare` suppresses only the
+// shell chrome: maps still use the same persisted resize affordance as
+// graphs and histograms.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
@@ -118,7 +120,7 @@ export function PanelShell({
       }}>
         {children(title)}
       </MapPanelWidthContext.Provider>
-      {!bare && !collapsed && (
+      {!collapsed && (
         <span
           className="kpi-panel-resize"
           title={t("panel.resize")}
