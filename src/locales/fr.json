@@ -1,4 +1,25 @@
 {
+  "mapLegend": {
+    "expandAll": "Tout déplier",
+    "collapseAll": "Tout replier",
+    "expandMetric": "Déplier la légende de la métrique",
+    "collapseMetric": "Replier la légende de la métrique",
+    "openSettings": "Réglages de la légende métrique",
+    "settingsFor": "Réglages de {{metric}}",
+    "mode": "Mode",
+    "auto": "Automatique",
+    "custom": "Personnalisé",
+    "min": "Min",
+    "max": "Max",
+    "threshold": "Seuil {{index}}",
+    "removeThreshold": "Supprimer le seuil {{index}}",
+    "addRange": "Ajouter une plage",
+    "classColour": "Couleur de la plage {{index}}",
+    "showCount": "Afficher Count",
+    "showPercent": "Afficher %",
+    "gradient": "Gradient",
+    "closeSettings": "Fermer les réglages"
+  },
   "mapMetricDrop": {
     "visibility": "Afficher / masquer {{metric}}",
     "remove": "Retirer {{metric}} de cette carte",

@@ -1,4 +1,25 @@
 {
+  "mapLegend": {
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "expandMetric": "Expand metric legend",
+    "collapseMetric": "Collapse metric legend",
+    "openSettings": "Metric legend settings",
+    "settingsFor": "{{metric}} settings",
+    "mode": "Mode",
+    "auto": "Automatic",
+    "custom": "Custom",
+    "min": "Min",
+    "max": "Max",
+    "threshold": "Threshold {{index}}",
+    "removeThreshold": "Remove threshold {{index}}",
+    "addRange": "Add range",
+    "classColour": "Range {{index}} colour",
+    "showCount": "Show Count",
+    "showPercent": "Show %",
+    "gradient": "Gradient",
+    "closeSettings": "Close settings"
+  },
   "mapMetricDrop": {
     "visibility": "Show / hide {{metric}}",
     "remove": "Remove {{metric}} from this map",

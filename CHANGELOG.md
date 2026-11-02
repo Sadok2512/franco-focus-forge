@@ -1,3 +1,18 @@
+## 1.133.19 (patch) — Interactive multi-metric Map legend — 2026-11-02 (Agent BC1)
+
+- Restores one compact, internally scrollable Map legend containing the base
+  metric and every metric dropped from the catalogue, without replacing
+  existing layers or moving the camera.
+- Each dropped/base KPI metric independently persists expand/collapse,
+  layer visibility, selected colour ranges, automatic/custom thresholds,
+  class colours, Count/% and gradient settings per project/workspace/map.
+- Range Count and percentages are computed from the real geolocated metric
+  population before presentation filtering; unchecked ranges change only the
+  MapLibre layer filter and never modify RF values or API requests.
+- Restores discreet chevron, eye, settings and remove actions plus global
+  Expand all / Collapse all controls; settings stay closed by default.
+- SemVer front: **PATCH 1.133.19**; backend and catalogue unchanged.
+
 ## 1.133.18 (patch) — Export CSV on /settings/users — 2026-11-02 (Agent BC5)
 
 - Adds an `Exporter CSV` button on `/settings/users` (actions row, next

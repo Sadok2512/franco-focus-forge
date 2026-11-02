@@ -1,6 +1,14 @@
 export const MAP_METRIC_MIME = "application/x-bc4-map-metric";
 export type MapMetric = { kind: "kpi" | "metric"; code: string; label: string; unit: string };
 
+export function mapLegendScope(
+  projectId: string,
+  workspaceId: string,
+  base: Pick<MapMetric, "kind" | "code">,
+) {
+  return `${projectId}.${workspaceId}.${base.kind}.${base.code}`;
+}
+
 export function readMapMetric(raw: string): MapMetric | null {
   try {
     const value: unknown = JSON.parse(raw);
