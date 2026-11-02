@@ -13,7 +13,14 @@
 // KpiCatalogSidebar : header p-2, pas d'eyebrow, pas d'Expand/Collapse,
 // chevron intégré dans la row, status dot, ⋮ menu MoreVertical.
 import { useTranslation } from "react-i18next";
-import { useEffect, useMemo, useState, type ReactNode, type RefObject } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BarChart3,
@@ -333,6 +340,13 @@ export function MetricsCatalogSidebar({
   const { t, i18n } = useTranslation();
   const [localSearch, setLocalSearch] = useState("");
   const search = controlledSearch ?? localSearch;
+  // `useDeferredValue` lets React keep the input responsive while the
+  // 5000+ node tree re-filters. The input updates on every keystroke;
+  // the deferred value drives the (expensive) `matching` useMemo, so
+  // React can skip filtering intermediate states if the user is still
+  // typing. On a cold tree a plain `.filter` over all nodes with a
+  // 10-field haystack built per node was costing a frame per keystroke.
+  const deferredSearch = useDeferredValue(search);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
@@ -400,41 +414,52 @@ export function MetricsCatalogSidebar({
     }
     return visible;
   }, [normalizedNodes, showUnavailable]);
+  // Pre-compute a lowercase haystack per node once (keyed on
+  // normalizedNodes), together with the by-id lookup used by the
+  // ancestor / descendant walks in `matching`. Everything that doesn't
+  // depend on the search needle is lifted out of the per-keystroke path:
+  // typing used to re-run `.filter` on all nodes, re-build an array of
+  // 10 fields per node, join + lowercase both sides, re-build the by-id
+  // map — all on every keystroke on 5000+ nodes.
+  const nodeIndex = useMemo(() => {
+    const haystacks = new Array<string>(normalizedNodes.length);
+    const byId = new Map<string, MetricCatalogNode>();
+    for (let i = 0; i < normalizedNodes.length; i += 1) {
+      const node = normalizedNodes[i]!;
+      byId.set(node.node_id, node);
+      // Oracle search surface — include every text field the user is
+      // likely to type: oracle `hn` (now carried as `label` on remapped
+      // leaves), the backend `metric_id` (e.g. `cell_rsrp@lte-type-0`),
+      // the technical label, the cell label (`PCell`, `SCell 1`,
+      // `Listed neighbour`, …), the metric label (`RSRP`, `SINR`, …),
+      // and the raw backend `source_column` / `event` / `selection` /
+      // `cell`. Lower-cased once and concatenated so a single `includes`
+      // call covers every match path.
+      let hay = "";
+      if (node.label) hay += node.label + " ";
+      if (node.source) hay += node.source + " ";
+      if (node.event) hay += node.event + " ";
+      if (node.metric_id) hay += node.metric_id + " ";
+      if (node.technical_label) hay += node.technical_label + " ";
+      if (node.cell_label) hay += node.cell_label + " ";
+      if (node.metric_label) hay += node.metric_label + " ";
+      if (node.source_column) hay += node.source_column + " ";
+      if (node.selection) hay += node.selection + " ";
+      if (node.cell) hay += node.cell + " ";
+      haystacks[i] = hay.toLocaleLowerCase();
+    }
+    return { haystacks, byId };
+  }, [normalizedNodes]);
   const matching = useMemo(() => {
-    if (!search.trim()) return null;
-    const needle = search.trim().toLocaleLowerCase();
-    // Oracle search surface — include every text field the user is
-    // likely to type: oracle `hn` (now carried as `label` on remapped
-    // leaves), the backend `metric_id` (e.g. `cell_rsrp@lte-type-0`),
-    // the technical label, the cell label (`PCell`, `SCell 1`,
-    // `Listed neighbour`, …), the metric label (`RSRP`, `SINR`, …),
-    // and the raw backend `source_column` / `event`. Everything is
-    // lower-cased once and concatenated so one `includes` call covers
-    // every match path (hn, metric id, cell role, event, …).
-    const own = new Set(
-      normalizedNodes
-        .filter((node) =>
-          [
-            node.label,
-            node.source,
-            node.event,
-            node.metric_id,
-            node.technical_label,
-            node.cell_label,
-            node.metric_label,
-            node.source_column,
-            node.selection,
-            node.cell,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLocaleLowerCase()
-            .includes(needle),
-        )
-        .map((node) => node.node_id),
-    );
+    const trimmed = deferredSearch.trim();
+    if (!trimmed) return null;
+    const needle = trimmed.toLocaleLowerCase();
+    const { haystacks, byId } = nodeIndex;
+    const own = new Set<string>();
+    for (let i = 0; i < normalizedNodes.length; i += 1) {
+      if (haystacks[i]!.includes(needle)) own.add(normalizedNodes[i]!.node_id);
+    }
     const visible = new Set(own);
-    const byId = new Map(normalizedNodes.map((node) => [node.node_id, node]));
     const descendants = [...own];
     while (descendants.length) {
       const parent = descendants.pop()!;
@@ -452,7 +477,7 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [byParent, normalizedNodes, search]);
+  }, [byParent, deferredSearch, nodeIndex, normalizedNodes]);
   // Oracle rendering parity (tree.html sha f4057ccc…):
   //   - at every Technology summary, show "<X> avec valeurs / <Y>"
   //     where X = selectable leaves descendant of this tech, Y = total

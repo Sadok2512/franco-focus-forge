@@ -1,3 +1,26 @@
+## 1.133.17 (patch) — Metrics sidebar search O(n→1) per keystroke — 2026-11-02 (Agent BC5)
+
+- Users reported perceptible lag when typing in the Metrics sidebar
+  search box (and the auxiliary observation: "I cannot find earfcn",
+  which is a Parameters-tab entry, not an RF KPI — the oracle
+  "onlyKpi" discipline drops `lf_cellscan_earfcn`,
+  `lf_cellscan_nr_earfcn`, `lf_rrcsm_earfcn` from the Metrics tree
+  intentionally; EARFCN surfaces in the RF Parameters panel).
+- Search was rebuilding an array of 10 text fields per node, joining,
+  lowercasing, and running `.includes` — on every keystroke, over
+  5000+ nodes. The `byId` Map used by the ancestor walk was also
+  rebuilt per keystroke inside the same memo.
+- 1.133.17 pre-computes a single lowercased haystack string per node
+  once (keyed on `normalizedNodes`), together with the `byId` lookup.
+  Typing only runs one `.toLocaleLowerCase` on the needle and
+  one `.includes` per node — no allocations per keystroke beyond the
+  result set.
+- The search input value is also wrapped in `useDeferredValue`, so
+  React keeps the input responsive while the tree re-filters, and
+  intermediate states are skipped during fast typing.
+- No oracle discipline change, no backend contract change.
+- SemVer front: **PATCH 1.133.17**; backend remains **0.123.2**.
+
 ## 1.133.16 (patch) — Dedup by label after placeholder pass — 2026-11-02 (Agent BC5)
 
 - 1.133.15 only deduped two static+observed collisions keyed by
