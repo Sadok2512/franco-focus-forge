@@ -1,4 +1,4 @@
-import { Columns3, Download, Inbox, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
+import { Columns3, Download, Inbox, LoaderCircle, Maximize2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -17,7 +17,16 @@ import {
   MapLegendList,
   MapLegendRow,
   MapLegendSection,
+  MetricLegendSettingsPanel,
 } from "./map-legend";
+import {
+  classOf,
+  metricClasses,
+  useMetricLegendPresentation,
+  useMetricLegendSettings,
+  type MetricClass,
+} from "./metric-classes";
+import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import type { MetricViews } from "./metric-views";
 import {
@@ -84,6 +93,12 @@ function fmtLatLng(v: number | null | undefined): string {
   return v == null ? "" : v.toFixed(6);
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
+function metricClassRange(item: MetricClass): string {
+  if (item.min === -Infinity && item.max === Infinity) return "all";
+  if (item.min === -Infinity) return `< ${Number(item.max.toPrecision(3))}`;
+  if (item.max === Infinity) return `≥ ${Number(item.min.toPrecision(3))}`;
+  return `${Number(item.min.toPrecision(3))} – ${Number(item.max.toPrecision(3))}`;
+}
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
 export type MetricPane = "charts" | "table" | "overlay";
 
@@ -537,11 +552,16 @@ function MetricMap({
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   // Classes unchecked in the legend are hidden on the map, never deleted.
   const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
-  const [visible, setVisible] = useState(true);
   const [closed, setClosed] = useState(false);
+  const metricCode = dropContext?.selection ?? label;
+  const legendScope = mapLegendScope(projectId, dropContext?.workspaceId ?? heightKey ?? "map", {
+    kind: "metric",
+    code: metricCode,
+  });
+  const [presentation, setPresentation] = useMetricLegendPresentation(legendScope, metricCode);
+  const [legendSettings, setLegendSettings] = useMetricLegendSettings(metricCode, legendScope);
   // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
   // same wiring as the Signaling and KPI measurement maps.
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
@@ -551,14 +571,13 @@ function MetricMap({
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (!settingsRef.current?.contains(target) && !settingsButtonRef.current?.contains(target)) {
+      if (!settingsRef.current?.contains(target)) {
         setSettingsOpen(false);
       }
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSettingsOpen(false);
-        settingsButtonRef.current?.focus();
       }
     };
     document.addEventListener("pointerdown", outside, true);
@@ -577,6 +596,40 @@ function MetricMap({
     () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
     [data, label],
   );
+  const numericClasses = useMemo(
+    () =>
+      categories
+        ? []
+        : metricClasses(
+            metricCode,
+            features.map((feature) => Number(feature.properties.value)),
+            legendSettings,
+          ),
+    [categories, features, legendSettings, metricCode],
+  );
+  const mapFeaturesWithClasses = useMemo(
+    () =>
+      categories
+        ? features
+        : features.flatMap((feature) => {
+            const item = classOf(numericClasses, Number(feature.properties.value));
+            return item
+              ? [
+                  {
+                    ...feature,
+                    properties: { ...feature.properties, color: item.color, cls: item.id },
+                  },
+                ]
+              : [];
+          }),
+    [categories, features, numericClasses],
+  );
+  useEffect(() => {
+    if (presentation.hidden.some((id) => !numericClasses.some((item) => item.id === id)))
+      setPresentation({ ...presentation, hidden: [] });
+    // Only stale class identifiers are reset; valid user filters persist.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numericClasses.length]);
   // A new capture or a new metric shows every class again.
   useEffect(() => setHiddenCategories([]), [categories]);
   const metricCoordinates = useMemo(
@@ -593,7 +646,7 @@ function MetricMap({
   );
   useEffect(() => {
     if (!map) return;
-    const geo = { type: "FeatureCollection" as const, features };
+    const geo = { type: "FeatureCollection" as const, features: mapFeaturesWithClasses };
     const linkGeo = { type: "FeatureCollection" as const, features: links };
     const linkSource = map.getSource("metric-cell-links-v1") as GeoJSONSource | undefined;
     if (linkSource) linkSource.setData(linkGeo);
@@ -604,9 +657,7 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        categories
-          ? categoryColorExpression(categories)
-          : metricColorExpression(minValue, maxValue, preferences.palette),
+        categories ? categoryColorExpression(categories) : ["get", "color"],
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -616,7 +667,7 @@ function MetricMap({
     } else {
       installMetricMapSource(
         map,
-        features,
+        mapFeaturesWithClasses,
         minValue,
         maxValue,
         preferences.palette,
@@ -624,21 +675,30 @@ function MetricMap({
       );
       if (categories)
         map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
+      else map.setPaintProperty("metrics-v3", "circle-color", ["get", "color"]);
     }
     // Legend controls affect presentation only; the measurements stay mounted.
     if (typeof map.setFilter === "function")
       map.setFilter(
         "metrics-v3",
-        hiddenCategories.length
-          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
-          : null,
+        categories
+          ? hiddenCategories.length
+            ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+            : null
+          : presentation.hidden.length
+            ? ["!", ["in", ["get", "cls"], ["literal", presentation.hidden]]]
+            : null,
       );
     if (typeof map.setLayoutProperty === "function") {
-      map.setLayoutProperty("metrics-v3", "visibility", visible && !closed ? "visible" : "none");
+      map.setLayoutProperty(
+        "metrics-v3",
+        "visibility",
+        presentation.visible && !closed ? "visible" : "none",
+      );
     }
   }, [
     map,
-    features,
+    mapFeaturesWithClasses,
     links,
     minValue,
     maxValue,
@@ -646,7 +706,8 @@ function MetricMap({
     preferences.pointSize,
     categories,
     hiddenCategories,
-    visible,
+    presentation.hidden,
+    presentation.visible,
     closed,
   ]);
   useEffect(() => {
@@ -698,7 +759,6 @@ function MetricMap({
     setSelectedPoint(null);
   }, [captureId, map, projectId]);
   const first = data?.map_points[0];
-  const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
     (counts, feature) => ({
       ...counts,
@@ -716,25 +776,25 @@ function MetricMap({
           action={
             <>
               <MapLegendHeaderActions
-                visible={visible}
-                onToggleVisible={() => setVisible((v) => !v)}
+                expanded={presentation.expanded}
+                onToggleExpanded={() =>
+                  setPresentation({ ...presentation, expanded: !presentation.expanded })
+                }
+                visible={presentation.visible}
+                onToggleVisible={() =>
+                  setPresentation({ ...presentation, visible: !presentation.visible })
+                }
+                settingsOpen={settingsOpen}
+                onToggleSettings={() => setSettingsOpen((open) => !open)}
+                settingsLabel={translate("metrics.mapSettings")}
                 onClose={() => setClosed(true)}
                 visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: label })}
                 closeLabel={translate("mapWorkspace.legendClose", { metric: label })}
               />
-              <button
-                ref={settingsButtonRef}
-                type="button"
-                aria-label={translate("metrics.mapSettings")}
-                aria-expanded={settingsOpen}
-                onClick={() => setSettingsOpen((open) => !open)}
-              >
-                <Settings2 size={14} />
-              </button>
             </>
           }
         >
-          {categories ? (
+          {presentation.expanded && categories ? (
             <MapLegendList label={translate("mapWorkspace.metricLegend")}>
               {categories.map((c) => (
                 <MapLegendRow
@@ -751,90 +811,139 @@ function MetricMap({
                 />
               ))}
             </MapLegendList>
-          ) : (
+          ) : presentation.expanded ? (
             <>
-              <span
-                className="kpi-metric-map-scale"
-                aria-hidden="true"
-                style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
-              />
-              <span className="kpi-metric-map-scale-labels">
-                <span>{fmt(minValue)}</span>
-                <span>{fmt(maxValue)}</span>
-              </span>
-            </>
-          )}
-
-          {settingsOpen && (
-            <div
-              ref={settingsRef}
-              className="kpi-metric-map-settings"
-              data-testid="metric-map-settings"
-            >
-              <div className="kpi-metric-map-settings-head">
-                <strong>{translate("mapWorkspace.legendSettings")}</strong>
-                <button
-                  type="button"
-                  aria-label={translate("mapWorkspace.closeLegend")}
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    settingsButtonRef.current?.focus();
-                  }}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-              <label>
-                {translate("metrics.mapPalette")}
-                <select
-                  value={preferences.palette}
-                  onChange={(event) =>
-                    onPreferences({
-                      ...preferences,
-                      palette: event.target.value as MetricMapPalette,
-                    })
-                  }
-                >
-                  <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
-                  <option value="viridis">Viridis</option>
-                  <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
-                </select>
-              </label>
-              <label>
-                {translate("metrics.mapPointSize")} · {preferences.pointSize}
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={preferences.pointSize}
-                  onChange={(event) =>
-                    onPreferences({ ...preferences, pointSize: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <fieldset>
-                <legend>{translate("metrics.mapCellLinks")}</legend>
-                {CELL_LINK_KINDS.map((kind) => (
-                  <label key={kind}>
-                    <input
-                      type="checkbox"
-                      checked={preferences.links[kind]}
-                      onChange={(event) =>
-                        onPreferences({
-                          ...preferences,
-                          links: { ...preferences.links, [kind]: event.target.checked },
+              <MapLegendList label={label}>
+                {[...numericClasses].reverse().map((item) => {
+                  const count = mapFeaturesWithClasses.filter(
+                    (feature) => "cls" in feature.properties && feature.properties.cls === item.id,
+                  ).length;
+                  const meta = [];
+                  if (legendSettings.showCount) meta.push(count.toLocaleString());
+                  if (legendSettings.showPercent)
+                    meta.push(
+                      `${mapFeaturesWithClasses.length ? ((count / mapFeaturesWithClasses.length) * 100).toFixed(1) : "0.0"}%`,
+                    );
+                  return (
+                    <MapLegendRow
+                      key={item.id}
+                      color={item.color}
+                      label={metricClassRange(item)}
+                      meta={meta.join(" · ")}
+                      checked={!presentation.hidden.includes(item.id)}
+                      onToggle={() =>
+                        setPresentation({
+                          ...presentation,
+                          hidden: presentation.hidden.includes(item.id)
+                            ? presentation.hidden.filter((id) => id !== item.id)
+                            : [...presentation.hidden, item.id],
                         })
                       }
                     />
-                    <span
-                      className="kpi-metric-map-link-swatch"
-                      style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
-                    />
-                    {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
-                  </label>
-                ))}
-              </fieldset>
+                  );
+                })}
+              </MapLegendList>
+              {legendSettings.gradient && numericClasses.length > 0 && (
+                <span
+                  className="kpi-metric-map-scale"
+                  aria-hidden="true"
+                  style={{
+                    background: `linear-gradient(90deg, ${numericClasses.map((item) => item.color).join(", ")})`,
+                  }}
+                />
+              )}
+            </>
+          ) : null}
+
+          {settingsOpen && (
+            <div ref={settingsRef} className="space-y-2" data-testid="metric-map-settings">
+              {!categories && (
+                <MetricLegendSettingsPanel
+                  metric={label}
+                  classes={numericClasses}
+                  settings={legendSettings}
+                  onChange={setLegendSettings}
+                  onClose={() => setSettingsOpen(false)}
+                />
+              )}
+              <div className="kpi-metric-map-settings">
+                <div className="kpi-metric-map-settings-head">
+                  <strong>{translate("mapWorkspace.legendSettings")}</strong>
+                  <button
+                    type="button"
+                    aria-label={translate("mapWorkspace.closeLegend")}
+                    onClick={() => {
+                      setSettingsOpen(false);
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <label>
+                  {translate("metrics.mapPalette")}
+                  <select
+                    value={preferences.palette}
+                    onChange={(event) => {
+                      const paletteName = event.target.value as MetricMapPalette;
+                      const colours = MAP_PALETTES[paletteName];
+                      setLegendSettings({
+                        ...legendSettings,
+                        colors: Object.fromEntries(
+                          numericClasses.map((_, index) => [
+                            index,
+                            colours[
+                              Math.round(
+                                (index * (colours.length - 1)) /
+                                  Math.max(1, numericClasses.length - 1),
+                              )
+                            ]!,
+                          ]),
+                        ) as Record<number, string>,
+                      });
+                      onPreferences({ ...preferences, palette: paletteName });
+                    }}
+                  >
+                    <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
+                    <option value="viridis">Viridis</option>
+                    <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
+                  </select>
+                </label>
+                <label>
+                  {translate("metrics.mapPointSize")} · {preferences.pointSize}
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={preferences.pointSize}
+                    onChange={(event) =>
+                      onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <fieldset>
+                  <legend>{translate("metrics.mapCellLinks")}</legend>
+                  {CELL_LINK_KINDS.map((kind) => (
+                    <label key={kind}>
+                      <input
+                        type="checkbox"
+                        checked={preferences.links[kind]}
+                        onChange={(event) =>
+                          onPreferences({
+                            ...preferences,
+                            links: { ...preferences.links, [kind]: event.target.checked },
+                          })
+                        }
+                      />
+                      <span
+                        className="kpi-metric-map-link-swatch"
+                        style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
+                      />
+                      {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
+                    </label>
+                  ))}
+                </fieldset>
+              </div>
             </div>
           )}
         </MapLegendSection>

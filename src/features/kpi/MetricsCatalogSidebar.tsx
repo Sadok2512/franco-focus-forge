@@ -48,6 +48,7 @@ import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
 import { toUserMessage } from "@/lib/api/http";
+import { MAP_METRIC_MIME } from "./map-metric-drop";
 
 const rootKey = "__root__";
 const STAR = "★";
@@ -541,8 +542,7 @@ export function MetricsCatalogSidebar({
       normalizedNodes
         .filter(
           (node) =>
-            node.node_type === "tech" &&
-            (!availableTree || availableTree.has(node.node_id)),
+            node.node_type === "tech" && (!availableTree || availableTree.has(node.node_id)),
         )
         .map((node) => node.node_id),
     [normalizedNodes, availableTree],
@@ -769,6 +769,21 @@ export function MetricsCatalogSidebar({
     return (
       <li key={node.node_id}>
         <div
+          draggable={node.selectable && Boolean(node.selection)}
+          onDragStart={(event) => {
+            if (!node.selectable || !node.selection) return;
+            event.stopPropagation();
+            event.dataTransfer.effectAllowed = "copy";
+            event.dataTransfer.setData(
+              MAP_METRIC_MIME,
+              JSON.stringify({
+                kind: "metric",
+                code: node.selection,
+                label,
+                unit: node.unit ?? "",
+              }),
+            );
+          }}
           className={`kpi-tree-leaf ${isActive ? "is-active" : ""} ${isSelected ? "is-selected" : ""} ${!canToggle && !isSelected ? "is-disabled" : ""} ${disabled ? "opacity-45" : ""}`}
           title={scannerTooltip ?? node.reason ?? node.technical_label ?? node.source ?? label}
         >

@@ -11,6 +11,9 @@
   MapLibre layer filter and never modify RF values or API requests.
 - Restores discreet chevron, eye, settings and remove actions plus global
   Expand all / Collapse all controls; settings stay closed by default.
+- Restores the shared Map drag payload on selectable leaves of the Metrics
+  catalogue and gives the primary Metrics Map layer the same persistent
+  Count/%, range filtering and settings controls as dropped layers.
 - SemVer front: **PATCH 1.133.19**; backend and catalogue unchanged.
 
 ## 1.133.18 (patch) — Export CSV on /settings/users — 2026-11-02 (Agent BC5)

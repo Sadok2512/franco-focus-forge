@@ -328,6 +328,7 @@ export function MapLegendHeaderActions({
   onToggleVisible,
   settingsOpen,
   onToggleSettings,
+  settingsLabel,
   onClose,
   visibilityLabel,
   closeLabel,
@@ -338,6 +339,7 @@ export function MapLegendHeaderActions({
   onToggleVisible: () => void;
   settingsOpen?: boolean;
   onToggleSettings?: () => void;
+  settingsLabel?: string;
   onClose: () => void;
   visibilityLabel: string;
   closeLabel: string;
@@ -372,7 +374,7 @@ export function MapLegendHeaderActions({
           size="icon"
           variant="ghost"
           className="h-7 w-7 shrink-0"
-          aria-label={t("mapLegend.openSettings")}
+          aria-label={settingsLabel ?? t("mapLegend.openSettings")}
           aria-expanded={settingsOpen}
           onClick={onToggleSettings}
         >
