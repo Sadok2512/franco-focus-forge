@@ -1,3 +1,25 @@
+## 1.133.23 (patch) — Export full metrics catalog from sidebar — 2026-11-02 (Agent BC5)
+
+- User still wasn't finding the right export: `/settings/kpi-catalog`
+  only contains 3 user-defined KPIs, not the ~6082 oracle RF metrics
+  rendered in the Metrics sidebar. 1.133.23 lands the latter.
+- `MetricsCatalogSidebar.tsx` header now carries a small ⬇ **Download**
+  icon-button (next to the selection count). Clicking downloads a
+  semicolon-delimited CSV of every leaf under the normalized tree with
+  path columns resolved via the by-id lookup:
+  `Technology`, `Category`, `Group`, `Metric`, `Cell`, `hn / label`,
+  `Event`, `Source column`, `Metric id`, `Raw cell type`, `n`,
+  `Selectable`, `Availability`, `Reason`.
+- First line is the standard BC4 export header plus the
+  `catalog_release` version (so the CSV self-identifies which oracle
+  version the dump came from — matters because dedup and placeholder
+  passes evolve per release).
+- Filename `bc4-metrics-catalog-YYYY-MM-DD.csv`.
+- No oracle discipline change; the export reads the exact nodes the
+  sidebar already renders (including placeholders), so what you see in
+  the UI is what you get in the CSV.
+- SemVer front: **PATCH 1.133.23**; backend remains **0.123.3**.
+
 ## 1.133.22 (patch) — Export KPI catalogue CSV on /settings/kpi-catalog — 2026-11-02 (Agent BC5)
 
 - 1.133.18 shipped a *users* CSV export on `/settings/users` by mistake;
