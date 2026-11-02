@@ -1,3 +1,29 @@
+## 1.133.8 (patch) — Oracle fallback tech-aware + 61 missing KPI entries — 2026-11-02 (Agent BC5)
+
+- The `(event, raw_cell_type, metric_label)` fallback introduced in
+  1.133.7 was tech-blind. On CELLMEAS raw=0 both LTE and NR declare a
+  PCell leaf, so an observed NR leaf like
+  `lf_observed_cellmeas_nr-type-0_cell_rsrp` ended up being relabelled
+  as `LTE_SERVING_RSRP_PCELL`, producing a visible duplicate of the
+  LTE PCell under RSRP (one with n=4,935, one with n=3).
+- The fallback index key is now `(t, event, raw_cell_type, metric)` and
+  a helper `inferTech(node)` derives the technology from `cell_system`
+  then from the `node_id` prefix (`_lte-type-N` / `_nr-type-N` /
+  `_f12_` for NR frequency 12). An observed leaf whose tech cannot be
+  inferred is left unmapped rather than mis-attributed.
+- `metrics-tree-reference.json` enriched with 61 synthetic oracle KPI
+  entries that were missing from the earlier mapping (SCell 1-3 under
+  LTE_SERVING_RSRP / RSRQ / Pathloss, LTE PLAID TBS 0/1 and MCS 1
+  per SCell, LTE TXPC TX power headroom per SCell, NR CELLMEAS RSRP
+  / RSRQ edge raws, NR PHRATE PDSCH sch bitrate). Synthetic keys are
+  prefixed `oracle:<hn>` so they never collide with a real backend
+  node id but still feed the tech-aware fallback.
+- Resulting live view on Test_6 under `LTE / Serving radio / Serving
+  / RSRP (CELLMEAS)` surfaces the full oracle serving cells —
+  PCell + SCell 1 (n=1 343) + SCell 2 (n=459) + SCell 3 (n=384) +
+  SCell 5 + SCell 6 — in a single column with no duplicate PCell.
+- SemVer front: **PATCH 1.133.8**; backend remains **0.123.2**.
+
 ## 1.133.7 (patch) — Oracle fallback match for observed cell leaves — 2026-11-02 (Agent BC5)
 
 - `applyReferenceHierarchy` now matches backend ids that are not in

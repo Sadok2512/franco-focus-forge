@@ -74,11 +74,26 @@ const fallbackByEventRawMetric: Map<string, RefMeta> = (() => {
   for (const meta of Object.values(mapping)) {
     if (meta.k !== "KPI") continue;
     if (meta.e == null || meta.raw == null || meta.m == null) continue;
-    const key = `${meta.e}|${meta.raw}|${meta.m.toLowerCase()}`;
+    // Oracle discipline: `(event, raw_cell_type, metric_label)` collides
+    // between LTE and NR CELLMEAS on raw=0 (both call it PCell). The
+    // technology must be part of the key so an observed NR leaf never
+    // gets re-labelled with the LTE hn (and vice versa).
+    const key = `${meta.t}|${meta.e}|${meta.raw}|${meta.m.toLowerCase()}`;
     if (!result.has(key)) result.set(key, meta);
   }
   return result;
 })();
+// Helper: infer the technology of a backend leaf from `cell_system` and
+// fall back to the `node_id` prefix (`lf_*_lte-type-N`, `lf_*_nr-type-N`,
+// `_f12_` for NR frequency 12). Returns null when nothing in the node
+// hints at a tech — in which case the fallback does not attempt to match.
+const inferTech = (node: MetricCatalogNode): string | null => {
+  if (node.cell_system === "LTE" || node.cell_system === "NR") return node.cell_system;
+  const id = node.node_id ?? "";
+  if (/_lte-type-\d+/.test(id)) return "LTE";
+  if (/_nr-type-\d+/.test(id) || /_f12_/.test(id)) return "NR";
+  return null;
+};
 
 export const REFERENCE_TECH_ORDER = ["LTE", "NR", "EN-DC", "QUARANTAINE"] as const;
 
@@ -224,7 +239,9 @@ export function applyReferenceHierarchy(
     const direct = mapping[node.node_id];
     if (direct) return direct;
     if (node.event != null && node.raw_cell_type != null && node.metric_label) {
-      const key = `${node.event}|${node.raw_cell_type}|${node.metric_label.toLowerCase()}`;
+      const tech = inferTech(node);
+      if (!tech) return undefined;
+      const key = `${tech}|${node.event}|${node.raw_cell_type}|${node.metric_label.toLowerCase()}`;
       return fallbackByEventRawMetric.get(key);
     }
     return undefined;
