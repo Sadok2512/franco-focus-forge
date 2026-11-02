@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
@@ -105,8 +105,10 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       </QueryClientProvider>,
     );
 
+    // Technology roots auto-expand on first data arrival so the sidebar
+    // is never read as empty. Groups and metrics still expand on demand.
     const lte = await screen.findByRole("button", { name: "LTE" });
-    fireEvent.click(lte);
+    await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
     const rsrpFam = screen.getByRole("button", { name: /^RSRP/ });
     expect(rsrpFam).toHaveAttribute("aria-expanded", "false");
     fireEvent.click(rsrpFam);
@@ -118,6 +120,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
 
     // The existing grey rendering is restored by the opt-in switch.
     fireEvent.click(screen.getByRole("switch", { name: "Show unavailable" }));
+    // NR appears once unavailable leaves are revealed; the user still expands
+    // it manually because auto-expand only fires while the open set is empty.
     fireEvent.click(screen.getByRole("button", { name: "NR" }));
     fireEvent.click(screen.getAllByRole("button", { name: /^RSRP/ })[1]!);
     expect(screen.getByText("PSCell")).toBeVisible();
@@ -221,7 +225,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       </QueryClientProvider>,
     );
 
-    fireEvent.click(await screen.findByRole("button", { name: "LTE" }));
+    // LTE auto-expanded on first render; drill directly to the RSRP family.
+    await screen.findByRole("button", { name: "LTE" });
     fireEvent.click(screen.getByRole("button", { name: /RSRP/ }));
     expect(screen.getByText("Detected LTE neighbour")).toBeVisible();
     expect(screen.queryByText(/1675|PCI 196/)).toBeNull();
@@ -264,5 +269,70 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(screen.getByText("Raw RSRP")).toBeVisible();
     expect(screen.queryByText("Measured RSRP")).toBeNull();
     expect(screen.queryByText("Measured SINR")).toBeNull();
+  });
+
+  it("auto-expands every visible Technology root so the Metrics tree is never read as empty", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "2.60.0",
+      title: "Nemo metrics",
+      header: "LTE + NR",
+      decoder_version: "1.9.0",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("pcell", "legacy-event", "RSRP (LTE) @ Serving", 0, {
+          metric_id: "cell_rsrp@lte-type-0",
+          selection: "cell_rsrp@lte-type-0",
+          event: "CELLMEAS",
+          source_column: "cell_rsrp",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-0",
+          cell_label: "PCell",
+          cell_system: "LTE",
+          raw_cell_type: 0,
+          availability_status: "available",
+          n: 12,
+          selectable: true,
+        }),
+        node("pci", "legacy-event", "PCI (NR) @ Serving", 1, {
+          metric_id: "cell_pci@nr-type-0",
+          selection: "cell_pci@nr-type-0",
+          event: "CELLMEAS",
+          source_column: "cell_pci",
+          technology: "NR",
+          metric_label: "PCI",
+          cell: "nr-type-0",
+          cell_label: "PCell",
+          cell_system: "NR",
+          raw_cell_type: 0,
+          availability_status: "available",
+          n: 8,
+          selectable: true,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+
+    const lte = await screen.findByRole("button", { name: "LTE" });
+    const nr = screen.getByRole("button", { name: "NR" });
+    await waitFor(() => {
+      expect(lte).toHaveAttribute("aria-expanded", "true");
+      expect(nr).toHaveAttribute("aria-expanded", "true");
+    });
+    // A root the user collapses explicitly must stay collapsed on the next
+    // re-render — the auto-expand only kicks in while the open set is empty.
+    fireEvent.click(lte);
+    expect(lte).toHaveAttribute("aria-expanded", "false");
+    expect(nr).toHaveAttribute("aria-expanded", "true");
   });
 });

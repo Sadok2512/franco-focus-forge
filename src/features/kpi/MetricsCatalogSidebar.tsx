@@ -401,6 +401,27 @@ export function MetricsCatalogSidebar({
     () => onVisibleCountChange?.(visibleSelectableCount),
     [onVisibleCountChange, visibleSelectableCount],
   );
+  // Reveal the certified Technology roots on first data arrival: without this
+  // the sidebar reads as empty because every root (LTE/NR/CAPTURE/…) is
+  // collapsed and no leaf count is drawn next to it. Only runs while the
+  // open set is empty so a user who manually collapses a root keeps control
+  // on subsequent renders. Scoped to tech level — categories, groups and
+  // metrics still expand on demand.
+  const visibleTechIds = useMemo(
+    () =>
+      normalizedNodes
+        .filter(
+          (node) =>
+            node.node_type === "tech" &&
+            (!availableTree || availableTree.has(node.node_id)),
+        )
+        .map((node) => node.node_id),
+    [normalizedNodes, availableTree],
+  );
+  useEffect(() => {
+    if (visibleTechIds.length === 0) return;
+    setOpen((previous) => (previous.size ? previous : new Set(visibleTechIds)));
+  }, [visibleTechIds]);
   const descendantSelections = useMemo(() => {
     const cache = new Map<string, string[]>();
     const collect = (id: string): string[] => {

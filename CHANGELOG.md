@@ -1,3 +1,25 @@
+## 1.133.1 (patch) — Metrics Tree first-view auto-expand — 2026-11-02 (Agent BC5)
+
+- Fixes the Metrics tab reading as empty on first render: every visible
+  Technology root (CAPTURE / LTE / NR / Shared / Other / QUARANTAINE /
+  EN-DC — scoped by `availableTree`) now auto-expands on first data
+  arrival. Categories, groups, metrics and leaves still expand on
+  demand, so the catalogue stays responsive. Behaviour restored
+  intentionally and scoped tighter than the historical pre-6277186
+  auto-expand (which opened every category and became costly after the
+  2.50.5 catalogue grew to 8 735 leaves).
+- A root a user collapses manually stays collapsed on subsequent
+  renders — the auto-expand only fires while the open set is empty, so
+  user intent is never overridden.
+- Zero API change, zero RF value touched, zero new metric invented;
+  reference hierarchy transform, `applyReferenceHierarchy`, availability
+  counts, selectable flags, proofs, filters (Show unavailable / Active
+  only) and ⋮ Graph/Table/Map menu all unchanged.
+- Regression test added to `metrics-catalog-v6.test.tsx`: asserts both
+  LTE and NR tech roots render with `aria-expanded="true"` on first
+  render and that an explicit collapse by the user is preserved.
+- SemVer front: **PATCH 1.133.1**; backend remains **0.123.1**.
+
 ## 1.133.0 (minor) — Procedure incident Map layers (Map Failures) — 2026-11-02 (Agent BC5 North Star D)
 
 - Adds four certified procedure incident Map layers on top of 1.132.0:
