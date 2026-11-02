@@ -1,3 +1,25 @@
+## 1.133.16 (patch) — Dedup by label after placeholder pass — 2026-11-02 (Agent BC5)
+
+- 1.133.15 only deduped two static+observed collisions keyed by
+  `(parent_id, raw_cell_type)`. The audit against the live Test_6
+  payload immediately after deploy exposed a second class of
+  collision: the placeholder generator synthesizes a label (e.g.
+  `LTE_CQI_N_PARAMS_SCELL1`) for every roster slot whose `raw`
+  number is missing from the siblings, but the LTE roster uses the
+  oracle cell_type codes (10..15 for SCell 1..6) while backend
+  observed leaves emit 1..6. The slot looks "missing" even when the
+  real sibling exists, and the synthesized hn collides with it.
+  Result: 1100 placeholder+observed duplicates survived 1.133.15.
+- 1.133.16 moves the dedup pass to run *after* placeholder generation
+  and re-keys by `(parent_id, lowercased label)` — the actual
+  dimension the user perceives as "duplicate". Tie-break: drop any
+  `ref:placeholder:*` when a non-placeholder competes; otherwise
+  keep the leaf with the most samples; final tie prefers the
+  `lf_observed_*` variant. Audit result on live /metrics now reads
+  `total leaves 5374 / distinct (parent,label) 5374 / duplicate
+  groups 0`.
+- SemVer front: **PATCH 1.133.16**; backend remains **0.123.2**.
+
 ## 1.133.15 (patch) — Dedup remapped leaves — 2026-11-02 (Agent BC5)
 
 - Fixes a duplicate-label bug introduced by the fallback matcher being

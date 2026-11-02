@@ -303,35 +303,6 @@ export function applyReferenceHierarchy(
     }
   }
 
-  // Dedup pass. Two independent backend leaves can resolve to the same
-  // oracle meta — typically the static catalog variant
-  // (`lf_cqi_req_rate_c0`, n=0) and the dynamic observed variant
-  // (`lf_observed_cqi_lte-type-0_cqi_req_rate`, n=2909) both landing on
-  // `LTE_CQI_REQ_RATE_PCELL`. Without this pass the sidebar renders the
-  // same hn label twice under the same metric node, with one count 0 and
-  // one count N. Keep a single leaf per (metric node, raw cell) pair,
-  // preferring the one with the most samples (and the `lf_observed_*`
-  // variant on ties, since that one carries the actual capture series).
-  const dedupKey = new Map<string, MetricCatalogNode>();
-  for (const leaf of remappedLeaves) {
-    if (!leaf.parent_id) continue;
-    const key = `${leaf.parent_id}@${leaf.raw_cell_type ?? -1}`;
-    const existing = dedupKey.get(key);
-    if (!existing) {
-      dedupKey.set(key, leaf);
-      continue;
-    }
-    const existingN = existing.n ?? 0;
-    const leafN = leaf.n ?? 0;
-    if (leafN > existingN) {
-      dedupKey.set(key, leaf);
-    } else if (leafN === existingN && leaf.node_id.startsWith("lf_observed_")) {
-      dedupKey.set(key, leaf);
-    }
-  }
-  remappedLeaves.length = 0;
-  for (const leaf of dedupKey.values()) remappedLeaves.push(leaf);
-
   // Climb to find a leaf's original tech ancestor label.
   const originalTechOf = (leaf: MetricCatalogNode): string | null => {
     let current: MetricCatalogNode | undefined = leaf;
@@ -475,14 +446,59 @@ export function applyReferenceHierarchy(
     }
   }
 
+  // Dedup pass over every KPI leaf under a metric node. Multiple
+  // independent pathways can land on the same hn-style label under the
+  // same parent:
+  //   1. The static catalog variant (`lf_cqi_req_rate_c0`, n=0) and the
+  //      dynamic observed variant
+  //      (`lf_observed_cqi_lte-type-0_cqi_req_rate`, n=2909) both
+  //      resolve to `LTE_CQI_REQ_RATE_PCELL` via the fallback matcher.
+  //   2. The placeholder generator synthesizes a label for every roster
+  //      slot whose `raw_cell_type` number is missing from the siblings
+  //      (the LTE roster uses 10..15 for SCell 1..6 — matching the
+  //      oracle cell_type codes — while the backend observed leaves
+  //      emit 1..6, so the slot looks "missing" even when a real cell
+  //      is already present). The placeholder label collides with the
+  //      real sibling's label.
+  // We key the dedup by `(parent_id, lowercased label)` — the dimension
+  // the user actually perceives as "duplicate". The leaf with the most
+  // samples wins; ties prefer the `lf_observed_*` variant (actual
+  // capture series) and drop `ref:placeholder:*` whenever a real leaf
+  // competes.
+  const allKpiLeaves = [...remappedLeaves, ...placeholderLeaves];
+  const dedupByLabel = new Map<string, MetricCatalogNode>();
+  for (const leaf of allKpiLeaves) {
+    if (!leaf.parent_id) continue;
+    const key = `${leaf.parent_id}@@${(leaf.label ?? "").trim().toLowerCase()}`;
+    const existing = dedupByLabel.get(key);
+    if (!existing) {
+      dedupByLabel.set(key, leaf);
+      continue;
+    }
+    const existingN = existing.n ?? 0;
+    const leafN = leaf.n ?? 0;
+    const existingIsPlaceholder = existing.node_id.startsWith("ref:placeholder:");
+    const leafIsPlaceholder = leaf.node_id.startsWith("ref:placeholder:");
+    if (existingIsPlaceholder && !leafIsPlaceholder) {
+      dedupByLabel.set(key, leaf);
+      continue;
+    }
+    if (leafIsPlaceholder && !existingIsPlaceholder) continue;
+    if (leafN > existingN) {
+      dedupByLabel.set(key, leaf);
+    } else if (leafN === existingN && leaf.node_id.startsWith("lf_observed_")) {
+      dedupByLabel.set(key, leaf);
+    }
+  }
+  const dedupedKpiLeaves = [...dedupByLabel.values()];
+
   return {
     ...response,
     nodes: [
       ...keptOriginalNodes,
       ...synthetic.values(),
-      ...remappedLeaves,
       ...reparentedUncategorised,
-      ...placeholderLeaves,
+      ...dedupedKpiLeaves,
     ],
   };
 }
