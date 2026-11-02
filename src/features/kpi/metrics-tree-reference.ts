@@ -133,11 +133,19 @@ function synthesizeMetric(
   category: string,
   group: string,
   metricName: string,
+  event: string,
 ): MetricCatalogNode {
   const order = structure.metrics[`${tech}/${category}/${group}/${metricName}`];
+  // Oracle discipline: the reference tree keys the Metric level on
+  // `(m, e)`. Different events sharing the same metric name (e.g.
+  // RSSI/CELLMEAS and RSSI/CI) therefore become two sibling Metric
+  // nodes with the same label but different ids, each carrying its own
+  // cells. Collapsing them on the metric name alone would duplicate
+  // every cell role.
+  const idKey = event ? `${tech}/${category}/${group}/${metricName}@${event}` : `${tech}/${category}/${group}/${metricName}`;
   return {
     ...DEFAULT_NODE,
-    node_id: syntheticId("met", `${tech}/${category}/${group}/${metricName}`),
+    node_id: syntheticId("met", idKey),
     parent_id: syntheticId("grp", `${tech}/${category}/${group}`),
     label: metricName,
     order: roundOrder(order ?? 1e6),
@@ -212,7 +220,7 @@ export function applyReferenceHierarchy(
       const techNode = synthesizeTech(meta.t);
       const catNode = synthesizeCategory(meta.t, meta.cat);
       const grpNode = synthesizeGroup(meta.t, meta.cat, meta.g);
-      const metNode = synthesizeMetric(meta.t, meta.cat, meta.g, metricName);
+      const metNode = synthesizeMetric(meta.t, meta.cat, meta.g, metricName, meta.e ?? "");
       ensureSynthetic(techNode);
       ensureSynthetic(catNode);
       ensureSynthetic(grpNode);

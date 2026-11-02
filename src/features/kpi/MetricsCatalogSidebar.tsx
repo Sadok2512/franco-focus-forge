@@ -552,6 +552,13 @@ export function MetricsCatalogSidebar({
   // vers "pcell"/"scell*".
   const perCellBadge = (node: MetricCatalogNode): string | null => {
     if (node.node_type !== "leaf") return null;
+    // Oracle-remapped leaves already display the cell role (PCell /
+    // SCell N / PSCell / …) as their label; adding the legacy "PER
+    // CELL" badge would show the same role twice (PCellPCell …). The
+    // badge is a leftover from the pre-oracle verbose labels and is
+    // only needed for leaves still rendered with their raw backend
+    // label (CAPTURE / Shared / Other branches).
+    if (node.parent_id?.startsWith("ref:met:")) return null;
     // A physical neighbour appends ``!ARFCN:PCI`` to the semantic selector.
     // That identity is already the leaf label and must never leak into the
     // legacy PER CELL badge (nor be mistaken for an internal cell index).

@@ -1,3 +1,24 @@
+## 1.133.5 (patch) — Oracle metric names + no duplicate cell leaves — 2026-11-02 (Agent BC5)
+
+- `synthesizeMetric` now keys the Metric node on `(t, cat, g, m, e)`
+  instead of `(t, cat, g, m)`, matching the oracle's own
+  `m + '|' + e` grouping. A metric name that appears on two events
+  (e.g. `RSSI` on `CELLMEAS` and on `CI`, `C/I per TSL` across
+  `CELLMEAS` / `CI`) now surfaces as two sibling Metric nodes, each
+  with its own cell leaves — exactly like `tree.html` renders them.
+  This removes the duplicate `PCell / SCell 5 / SCell 6` leaves that
+  were visible under the collapsed RSSI metric.
+- Leaf display: for oracle-remapped leaves (parent id starts with
+  `ref:met:`) the legacy "PER CELL" badge is suppressed. The leaf
+  label is already the oracle `role` (`PCell`, `SCell 1 … 6`,
+  `PSCell`, `SCG SCell 0`, `Listed neighbour`, `Detected neighbour`,
+  `Scanner neighbour`); the badge would duplicate it (`PCellPCell`,
+  `SCell 1SCell 1`, …). CAPTURE / Shared / Other leaves still carry
+  the badge since they render the raw backend label.
+- No API change, no new metric invented, no selector touched; all
+  that moves is label + metric node id.
+- SemVer front: **PATCH 1.133.5**; backend remains **0.123.1**.
+
 ## 1.133.4 (patch) — Oracle visual parity (title + counts + KPI filter) — 2026-11-02 (Agent BC5)
 
 - Sidebar header renamed to « Arbre des métriques par cellule » /
