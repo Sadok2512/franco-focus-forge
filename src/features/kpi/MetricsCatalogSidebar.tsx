@@ -432,6 +432,42 @@ export function MetricsCatalogSidebar({
     }
     return visible;
   }, [byParent, normalizedNodes, search]);
+  // Oracle rendering parity (tree.html sha f4057ccc…):
+  //   - at every Technology summary, show "<X> avec valeurs / <Y>"
+  //     where X = selectable leaves descendant of this tech, Y = total
+  //     oracle leaves under this tech.
+  //   - at every Category summary, show "<N> métriques · <M> cellules"
+  //     where N = distinct Metric names in this category, M = total
+  //     cell leaves in this category.
+  // Strings are kept verbatim from the oracle (French) so the sidebar
+  // reads exactly like the reference file; no translation shim.
+  const descendantStats = useMemo(() => {
+    type Stat = { total: number; selectable: number; metrics: Set<string> };
+    const empty = (): Stat => ({ total: 0, selectable: 0, metrics: new Set() });
+    const stats = new Map<string, Stat>();
+    const byIdLocal = new Map<string, MetricCatalogNode>();
+    for (const node of normalizedNodes) {
+      stats.set(node.node_id, empty());
+      byIdLocal.set(node.node_id, node);
+    }
+    for (const node of normalizedNodes) {
+      if (node.node_type !== "leaf") continue;
+      const parent = node.parent_id ? byIdLocal.get(node.parent_id) : undefined;
+      const metricLabel =
+        parent?.node_type === "metric" ? cleanLabel(parent.label) : cleanLabel(node.label);
+      let current: MetricCatalogNode | undefined = node;
+      while (current) {
+        const s = stats.get(current.node_id);
+        if (s) {
+          s.total += 1;
+          if (node.selectable) s.selectable += 1;
+          s.metrics.add(metricLabel);
+        }
+        current = current.parent_id ? byIdLocal.get(current.parent_id) : undefined;
+      }
+    }
+    return stats;
+  }, [normalizedNodes]);
   const visibleSelectableCount = useMemo(
     () =>
       normalizedNodes.filter(
@@ -593,7 +629,10 @@ export function MetricsCatalogSidebar({
     // 1.107.0 — TECH (racine Technology LTE / NR / Shared / Other).
     // Rendu kpi-tree-root (top-level) ; les catégories deviennent children
     // family. Préserve le design actuel (chevron intégré, bar-click = expand).
+    const stat = descendantStats.get(node.node_id);
     if (node.node_type === "tech") {
+      // Oracle tech badge "<X> avec valeurs / <Y>" — exact copy of
+      // tree.html rendering so the sidebar reads 1:1 with the reference.
       return (
         <li key={node.node_id}>
           <button
@@ -608,6 +647,11 @@ export function MetricsCatalogSidebar({
                 {t("metrics.quarantineBadge")}
               </span>
             )}
+            {stat && stat.total > 0 && (
+              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                {stat.selectable} avec valeurs / {stat.total}
+              </span>
+            )}
           </button>
           {expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
@@ -620,6 +664,8 @@ export function MetricsCatalogSidebar({
     // (évite de dupliquer le niveau racine quand l'arbre est "flat").
     if (node.node_type === "category") {
       const underTech = node.parent_id && byParent.has(node.parent_id);
+      // Oracle category badge "<N> métriques · <M> cellules" — exact
+      // copy of tree.html rendering.
       return (
         <li key={node.node_id}>
           <button
@@ -629,6 +675,11 @@ export function MetricsCatalogSidebar({
           >
             {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
             {label}
+            {stat && stat.total > 0 && (
+              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+                {stat.metrics.size} métriques · {stat.total} cellules
+              </span>
+            )}
           </button>
           {expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>

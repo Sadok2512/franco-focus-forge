@@ -77,11 +77,11 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
       makeLeaf({ node_id: "cat_LTE_serving_radio", parent_id: "tech_LTE", node_type: "category", label: "Serving radio" }),
       makeLeaf({ node_id: "ev_cellmeas", parent_id: "cat_LTE_serving_radio", node_type: "event", label: "CELLMEAS" }),
       makeLeaf({
-        node_id: "lf_cellmeas_params_cell_c0",
+        node_id: "lf_cellmeas_rsrp_c0",
         parent_id: "ev_cellmeas",
-        label: "#Params/cell (LTE) @ Serving",
-        metric_id: "cellmeas_params_cell@0",
-        selection: "cellmeas_params_cell@0",
+        label: "RSRP (LTE) @ Serving",
+        metric_id: "cell_rsrp@lte-type-0",
+        selection: "cell_rsrp@lte-type-0",
         event: "CELLMEAS",
         selectable: true,
         n: 42,
@@ -89,10 +89,10 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
       }),
     ];
     const out = applyReferenceHierarchy(makeResponse(input));
-    const leaf = out.nodes.find((n) => n.node_id === "lf_cellmeas_params_cell_c0");
+    const leaf = out.nodes.find((n) => n.node_id === "lf_cellmeas_rsrp_c0");
     expect(leaf).toBeDefined();
-    expect(leaf!.metric_id).toBe("cellmeas_params_cell@0");
-    expect(leaf!.selection).toBe("cellmeas_params_cell@0");
+    expect(leaf!.metric_id).toBe("cell_rsrp@lte-type-0");
+    expect(leaf!.selection).toBe("cell_rsrp@lte-type-0");
     expect(leaf!.n).toBe(42);
     expect(leaf!.selectable).toBe(true);
     expect(leaf!.proof).toBe("documented-2.50");
@@ -111,30 +111,23 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
 
   it("expose les 4 racines référence quand une entrée reclassée de chaque tech est fournie", () => {
     const input: MetricCatalogNode[] = [
+      // LTE KPI (RSRP is a real KPI in the oracle)
       makeLeaf({
-        node_id: "lf_cellmeas_params_cell_c0",
-        label: "#Params/cell (LTE) @ Serving",
-        metric_id: "cellmeas_params_cell@0",
+        node_id: "lf_cellmeas_rsrp_c0",
+        label: "RSRP (LTE) @ Serving",
+        metric_id: "cell_rsrp@lte-type-0",
         event: "CELLMEAS",
         selectable: true,
       }),
-      // SCELLMOD LTE and NR → EN-DC
+      // NR KPI (TO on SCG SCell 0 is a real KPI)
       makeLeaf({
-        node_id: "lf_scellmod_band_c0",
-        label: "Band (bloc LTE and NR) @ PCell",
-        metric_id: "scellmod_band@0",
-        event: "SCELLMOD",
-        selectable: true,
-      }),
-      // bloc NR dans un event LTE → NR (via mapping)
-      makeLeaf({
-        node_id: "lf_cellmeas_params_cell_f4_c100",
-        label: "#Params/cell (bloc NR) @ SCG SCell 0",
-        metric_id: "cellmeas_params_cell_f4@100",
+        node_id: "lf_cellmeas_to_c100",
+        label: "TO (bloc NR) @ SCG SCell 0",
+        metric_id: "cell_to@nr-type-100",
         event: "CELLMEAS",
         selectable: true,
       }),
-      // CI (foreign tech) → QUARANTAINE
+      // QUARANTAINE KPI (C/I foreign tech)
       makeLeaf({
         node_id: "lf_ci_c_i_c0",
         label: "C/I (bloc GSM) @ PCell",
@@ -145,7 +138,11 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
     ];
     const out = applyReferenceHierarchy(makeResponse(input));
     const roots = out.nodes.filter((n) => n.node_type === "tech").map((n) => n.label).sort();
-    expect(roots).toEqual(["EN-DC", "LTE", "NR", "QUARANTAINE"]);
+    // EN-DC is intentionally absent: the certified oracle has only
+    // STRUCT / DIM entries under EN-DC (no KPI), so the k === "KPI"
+    // filter leaves this branch empty — a strict mirror of tree.html's
+    // "onlyKpi" view.
+    expect(roots).toEqual(["LTE", "NR", "QUARANTAINE"]);
   });
 
   it("ne crée aucun leaf supplémentaire, ne supprime aucun leaf", () => {

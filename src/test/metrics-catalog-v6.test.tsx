@@ -111,8 +111,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     // by default (showUnavailable = true), including techs whose current
     // capture only exposes no_data leaves. LTE AND NR are both present
     // on first render.
-    const lte = await screen.findByRole("button", { name: "LTE" });
-    const nr = screen.getByRole("button", { name: "NR" });
+    const lte = await screen.findByRole("button", { name: /^LTE\b/ });
+    const nr = screen.getByRole("button", { name: /^NR\b/ });
     await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
     await waitFor(() => expect(nr).toHaveAttribute("aria-expanded", "true"));
     const rsrpFams = screen.getAllByRole("button", { name: /^RSRP/ });
@@ -229,7 +229,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     );
 
     // LTE auto-expanded on first render; drill directly to the RSRP family.
-    await screen.findByRole("button", { name: "LTE" });
+    await screen.findByRole("button", { name: /^LTE\b/ });
     fireEvent.click(screen.getByRole("button", { name: /RSRP/ }));
     expect(screen.getByText("Detected LTE neighbour")).toBeVisible();
     expect(screen.queryByText(/1675|PCI 196/)).toBeNull();
@@ -326,8 +326,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       </QueryClientProvider>,
     );
 
-    const lte = await screen.findByRole("button", { name: "LTE" });
-    const nr = screen.getByRole("button", { name: "NR" });
+    const lte = await screen.findByRole("button", { name: /^LTE\b/ });
+    const nr = screen.getByRole("button", { name: /^NR\b/ });
     await waitFor(() => {
       expect(lte).toHaveAttribute("aria-expanded", "true");
       expect(nr).toHaveAttribute("aria-expanded", "true");

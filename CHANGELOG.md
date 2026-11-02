@@ -1,3 +1,29 @@
+## 1.133.4 (patch) — Oracle visual parity (title + counts + KPI filter) — 2026-11-02 (Agent BC5)
+
+- Sidebar header renamed to « Arbre des métriques par cellule » /
+  « Metrics tree per cell » — same wording as the oracle `tree.html`
+  `<title>` / `<h1>` so the panel reads exactly like the reference.
+- Each Technology summary now carries the oracle count badge
+  `<X> avec valeurs / <Y>` (X = selectable leaves descendant of this
+  tech, Y = total oracle leaves beneath it).
+- Each Category summary now carries the oracle count badge
+  `<N> métriques · <M> cellules` (N = distinct metrics inside the
+  category, M = total cell leaves).
+- Strings kept verbatim from the oracle (French) so the sidebar
+  reads 1:1 with the reference artefact; no translation shim.
+- Counts are computed from the live catalog `/metrics` response via
+  a single O(n) descendants pass, memoised against `normalizedNodes`;
+  no extra network call, no new backend contract.
+- Mirrors the oracle `onlyKpi` filter: STRUCT and DIM entries of the
+  mapping are dropped from the Metrics sidebar so counts match
+  tree.html exactly (NR 487 cellules et pas 1 618, LTE 2 330 cellules
+  et pas 3 674, QUARANTAINE 744, EN-DC branche vide puisque l'oracle
+  n'y publie que des STRUCT/DIM). STRUCT/DIM leaves remain accessible
+  via the Parameters tab and the raw `/metrics` response.
+- Mapping JSON enriched with the oracle `k` field
+  (STRUCT / DIM / KPI).
+- SemVer front: **PATCH 1.133.4**; backend remains **0.123.1**.
+
 ## 1.133.3 (patch) — Metrics Tree full oracle view by default — 2026-11-02 (Agent BC5)
 
 - `showUnavailable` default flipped from `false` to `true`: the Metrics

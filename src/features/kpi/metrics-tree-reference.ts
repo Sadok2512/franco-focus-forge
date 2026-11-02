@@ -42,6 +42,13 @@ type RefMeta = {
   m?: string;
   raw?: number;
   e?: string;
+  // Oracle `k` field: STRUCT (structural fields), DIM (dimensions),
+  // KPI (actual KPI metric). The oracle view hides STRUCT and DIM
+  // when `onlyKpi` is on; we mirror that by only remapping k === "KPI"
+  // leaves into the ref hierarchy. STRUCT and DIM leaves of mapped
+  // backend ids are dropped from the Metrics sidebar — they remain in
+  // the backend `/metrics` response and in the Parameters tab.
+  k?: string;
 };
 
 type StructureEntry = Record<string, number>;
@@ -182,9 +189,18 @@ export function applyReferenceHierarchy(
     if (!synthetic.has(node.node_id)) synthetic.set(node.node_id, node);
   };
 
+  // Track backend ids that are mapped but not KPI (STRUCT / DIM) so we can
+  // drop them from the Metrics tree exactly like the oracle does when its
+  // "onlyKpi" filter is on. These leaves stay accessible under the
+  // Parameters tab and inside the raw /metrics response.
+  const droppedNonKpi = new Set<string>();
   for (const node of nodes) {
     if (node.node_type !== "leaf") continue;
     const meta = mapping[node.node_id];
+    if (meta && meta.k && meta.k !== "KPI") {
+      droppedNonKpi.add(node.node_id);
+      continue;
+    }
     if (meta) {
       // Oracle alignment: the Metric level uses the oracle `m` field
       // (e.g. "#Params/cell", "#Serving cells", "RSRP") and the cell leaf
@@ -226,42 +242,20 @@ export function applyReferenceHierarchy(
     return null;
   };
 
-  // Un-remapped leaves whose tech is LTE or NR must still be reparented into
-  // the synthetic LTE/NR tree so the sidebar never shows two "LTE" roots
-  // (one synthetic + one leftover). They land under the "Non catégorisé"
-  // category of the matching tech, mirroring the reference artifact's own
-  // bucket for undocumented metrics.
-  const reparentedUncategorised: MetricCatalogNode[] = [];
+  // Oracle "onlyKpi" discipline: un-mapped LTE/NR backend leaves are not
+  // part of the certified reference (tree.html publishes only the 6 082
+  // RF cell-scoped KPIs). They are dropped from the Metrics tree so the
+  // sidebar reads 1:1 with the oracle view (no "Non catégorisé /
+  // À étiqueter" synthetic bucket). The raw /metrics response still
+  // carries them for the Parameters tab and anyone hitting the API
+  // directly.
   const stillKept: MetricCatalogNode[] = [];
   for (const leaf of keptLeaves) {
     const tech = originalTechOf(leaf);
-    if (tech === "LTE" || tech === "NR") {
-      const techNode = synthesizeTech(tech);
-      const catNode = synthesizeCategory(tech, "Non catégorisé");
-      const grpNode = synthesizeGroup(tech, "Non catégorisé", "À étiqueter");
-      const metNode = synthesizeMetric(
-        tech,
-        "Non catégorisé",
-        "À étiqueter",
-        metricNameFromLabel(leaf.label),
-      );
-      ensureSynthetic(techNode);
-      ensureSynthetic(catNode);
-      ensureSynthetic(grpNode);
-      ensureSynthetic(metNode);
-      // Same oracle alignment as mapped leaves: when the backend provides a
-      // cell_label (PCell / SCell N / PSCell / neighbour …) use it as the
-      // leaf display. Keeps the "À étiqueter" bucket readable instead of
-      // repeating the verbose "<Metric> (LTE) @ <scope>" label.
-      reparentedUncategorised.push({
-        ...leaf,
-        parent_id: metNode.node_id,
-        label: leaf.cell_label ?? leaf.label,
-      });
-    } else {
-      stillKept.push(leaf);
-    }
+    if (tech === "LTE" || tech === "NR") continue;
+    stillKept.push(leaf);
   }
+  const reparentedUncategorised: MetricCatalogNode[] = [];
 
   // Keep non-leaf nodes only if they lead to a leaf that is still kept
   // (CAPTURE / Shared / Other hierarchies). Walk ancestors of each still-kept
@@ -275,8 +269,10 @@ export function applyReferenceHierarchy(
     }
   }
 
+  const stillKeptIds = new Set(stillKept.map((l) => l.node_id));
   const keptOriginalNodes = nodes.filter((node) => {
-    if (node.node_type === "leaf") return stillKept.some((l) => l.node_id === node.node_id);
+    if (droppedNonKpi.has(node.node_id)) return false;
+    if (node.node_type === "leaf") return stillKeptIds.has(node.node_id);
     return visibleOriginalIds.has(node.node_id);
   });
 
