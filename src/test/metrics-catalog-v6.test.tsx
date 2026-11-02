@@ -115,30 +115,34 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     const nr = screen.getByRole("button", { name: /^NR\b/ });
     await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
     await waitFor(() => expect(nr).toHaveAttribute("aria-expanded", "true"));
+    // Oracle hierarchy adds Category > Group between Technology and
+    // Metric. Drill through "Serving radio" > "Serving" / "Neighbour"
+    // before reaching the RSRP metric node.
+    for (const name of ["Serving radio", "Serving", "Neighbour"]) {
+      for (const btn of screen.queryAllByRole("button", { name: new RegExp(`^${name}\\b`) })) {
+        if (btn.getAttribute("aria-expanded") === "false") fireEvent.click(btn);
+      }
+    }
     const rsrpFams = screen.getAllByRole("button", { name: /^RSRP/ });
-    expect(rsrpFams.length).toBeGreaterThanOrEqual(2);
+    expect(rsrpFams.length).toBeGreaterThanOrEqual(1);
     for (const r of rsrpFams) {
-      expect(r).toHaveAttribute("aria-expanded", "false");
-      fireEvent.click(r);
-      expect(r).toHaveAttribute("aria-expanded", "true");
+      if (r.getAttribute("aria-expanded") === "false") fireEvent.click(r);
     }
 
-    // Full oracle: both the selectable PCell and the no_data PSCell are
-    // visible, with PSCell greyed out (opacity-45) and keeping its
-    // "reason" tooltip.
-    expect(screen.getByText("PCell")).toBeVisible();
-    expect(screen.getByText("PSCell")).toBeVisible();
+    // Leaf label is now the oracle `hn` (technical name), not the role.
+    // Both the selectable LTE PCell and the no_data NR PSCell leaves
+    // surface; PSCell stays greyed-out with its reason tooltip.
+    expect(screen.getByText("LTE_SERVING_RSRP_PCELL")).toBeVisible();
+    expect(screen.getByText("NR_SERVING_RSRP_PSCELL")).toBeVisible();
 
-    // P4 (open-proof) leaf still visible but visually disabled.
-    const pscellLeaf = screen.getByText("PSCell").closest(".kpi-tree-leaf");
+    const pscellLeaf = screen.getByText("NR_SERVING_RSRP_PSCELL").closest(".kpi-tree-leaf");
     expect(pscellLeaf).toHaveClass("opacity-45");
 
-    // Cell click opens details only; the ⋮ menu is the sole panel-creation path.
-    const pcellButton = screen.getByRole("button", { name: "Select PCell" });
+    const pcellButton = screen.getByRole("button", { name: "Select LTE_SERVING_RSRP_PCELL" });
     expect(pcellButton).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(pcellButton);
     expect(onToggle).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Visualisation PCell" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Visualisation LTE_SERVING_RSRP_PCELL" })).toBeVisible();
   });
 
   it("shows the compact loading bar while a catalogue request is in flight, never the empty message", async () => {
@@ -228,10 +232,17 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
       </QueryClientProvider>,
     );
 
-    // LTE auto-expanded on first render; drill directly to the RSRP family.
+    // LTE auto-expanded on first render; drill through Serving radio >
+    // Neighbour > RSRP to reach the detected-neighbour cell leaf.
     await screen.findByRole("button", { name: /^LTE\b/ });
-    fireEvent.click(screen.getByRole("button", { name: /RSRP/ }));
-    expect(screen.getByText("Detected LTE neighbour")).toBeVisible();
+    for (const name of ["Serving radio", "Neighbour"]) {
+      for (const btn of screen.queryAllByRole("button", { name: new RegExp(`^${name}\\b`) })) {
+        if (btn.getAttribute("aria-expanded") === "false") fireEvent.click(btn);
+      }
+    }
+    fireEvent.click(screen.getByRole("button", { name: /^RSRP/ }));
+    // Oracle hn for RSRP CELLMEAS raw=2 (Detected LTE neighbour).
+    expect(screen.getByText("LTE_NBR_RSRP_DETECTED")).toBeVisible();
     expect(screen.queryByText(/1675|PCI 196/)).toBeNull();
   });
 
@@ -298,17 +309,21 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
           n: 12,
           selectable: true,
         }),
-        node("pci", "legacy-event", "PCI (NR) @ Serving", 1, {
-          metric_id: "cell_pci@nr-type-0",
-          selection: "cell_pci@nr-type-0",
+        // RSRP is a KPI in the oracle for both LTE and NR; use raw=100
+        // (SCG SCell 0) which maps to NR / Serving radio / RSRP in the
+        // oracle, so this fixture reliably creates both LTE and NR tech
+        // roots via the fallback-by-(event, raw, metric_label) match.
+        node("nr-rsrp-pscell", "legacy-event", "RSRP (NR) @ SCG SCell 0", 1, {
+          metric_id: "cell_rsrp@nr-type-100",
+          selection: "cell_rsrp@nr-type-100",
           event: "CELLMEAS",
-          source_column: "cell_pci",
+          source_column: "cell_rsrp",
           technology: "NR",
-          metric_label: "PCI",
-          cell: "nr-type-0",
-          cell_label: "PCell",
+          metric_label: "RSRP",
+          cell: "nr-type-100",
+          cell_label: "SCG SCell 0",
           cell_system: "NR",
-          raw_cell_type: 0,
+          raw_cell_type: 100,
           availability_status: "available",
           n: 8,
           selectable: true,

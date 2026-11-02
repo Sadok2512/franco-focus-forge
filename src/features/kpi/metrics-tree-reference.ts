@@ -62,6 +62,24 @@ type Structure = {
 const mapping: Record<string, RefMeta> = mappingJson as Record<string, RefMeta>;
 const structure: Structure = structureJson as Structure;
 
+// Fallback index for backend ids that are not keyed by the oracle `lf_*`
+// identifier (typically dynamically-generated leaves like
+// `lf_observed_cellmeas_lte-type-10_cell_rsrp` emitted when a cell is
+// observed only in a specific capture). We match them by
+// `(event, raw_cell_type, metric_label)` against the mapping so they
+// still land under the correct oracle Metric / Role instead of being
+// dropped from the Metrics sidebar.
+const fallbackByEventRawMetric: Map<string, RefMeta> = (() => {
+  const result = new Map<string, RefMeta>();
+  for (const meta of Object.values(mapping)) {
+    if (meta.k !== "KPI") continue;
+    if (meta.e == null || meta.raw == null || meta.m == null) continue;
+    const key = `${meta.e}|${meta.raw}|${meta.m.toLowerCase()}`;
+    if (!result.has(key)) result.set(key, meta);
+  }
+  return result;
+})();
+
 export const REFERENCE_TECH_ORDER = ["LTE", "NR", "EN-DC", "QUARANTAINE"] as const;
 
 const DEFAULT_NODE: Omit<MetricCatalogNode, "node_id" | "parent_id" | "label" | "order" | "node_type"> = {
@@ -202,9 +220,18 @@ export function applyReferenceHierarchy(
   // "onlyKpi" filter is on. These leaves stay accessible under the
   // Parameters tab and inside the raw /metrics response.
   const droppedNonKpi = new Set<string>();
+  const resolveMeta = (node: MetricCatalogNode): RefMeta | undefined => {
+    const direct = mapping[node.node_id];
+    if (direct) return direct;
+    if (node.event != null && node.raw_cell_type != null && node.metric_label) {
+      const key = `${node.event}|${node.raw_cell_type}|${node.metric_label.toLowerCase()}`;
+      return fallbackByEventRawMetric.get(key);
+    }
+    return undefined;
+  };
   for (const node of nodes) {
     if (node.node_type !== "leaf") continue;
-    const meta = mapping[node.node_id];
+    const meta = resolveMeta(node);
     if (meta && meta.k && meta.k !== "KPI") {
       droppedNonKpi.add(node.node_id);
       continue;

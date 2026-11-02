@@ -1,3 +1,16 @@
+## 1.133.7 (patch) — Oracle fallback match for observed cell leaves — 2026-11-02 (Agent BC5)
+
+- `applyReferenceHierarchy` now matches backend ids that are not in
+  the `lf_*` mapping via a secondary index keyed on
+  `(event, raw_cell_type, metric_label)`. Dynamically generated
+  observed-cell leaves like
+  `lf_observed_cellmeas_lte-type-10_cell_rsrp` (SCell 1, n=104),
+  `lf_observed_cellmeas_lte-type-11_cell_rsrp` (SCell 2, n=107) are
+  now reparented into the oracle hierarchy at the correct Metric
+  node instead of being dropped. Fixes the "only PCell has values"
+  display reported on `parcours_26Jun10_155941.8.nmf`.
+- SemVer front: **PATCH 1.133.7**; backend remains **0.123.1**.
+
 ## 1.133.6 (patch) — Hide EN-DC + use oracle hn as leaf label — 2026-11-02 (Agent BC5)
 
 - EN-DC branch dropped from the Metrics sidebar: tree.html publishes
