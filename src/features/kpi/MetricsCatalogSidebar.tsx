@@ -403,10 +403,31 @@ export function MetricsCatalogSidebar({
   const matching = useMemo(() => {
     if (!search.trim()) return null;
     const needle = search.trim().toLocaleLowerCase();
+    // Oracle search surface — include every text field the user is
+    // likely to type: oracle `hn` (now carried as `label` on remapped
+    // leaves), the backend `metric_id` (e.g. `cell_rsrp@lte-type-0`),
+    // the technical label, the cell label (`PCell`, `SCell 1`,
+    // `Listed neighbour`, …), the metric label (`RSRP`, `SINR`, …),
+    // and the raw backend `source_column` / `event`. Everything is
+    // lower-cased once and concatenated so one `includes` call covers
+    // every match path (hn, metric id, cell role, event, …).
     const own = new Set(
       normalizedNodes
         .filter((node) =>
-          `${node.label} ${node.source ?? ""} ${node.event ?? ""}`
+          [
+            node.label,
+            node.source,
+            node.event,
+            node.metric_id,
+            node.technical_label,
+            node.cell_label,
+            node.metric_label,
+            node.source_column,
+            node.selection,
+            node.cell,
+          ]
+            .filter(Boolean)
+            .join(" ")
             .toLocaleLowerCase()
             .includes(needle),
         )

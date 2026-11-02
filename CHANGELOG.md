@@ -1,3 +1,15 @@
+## 1.133.13 (patch) — Metrics sidebar search covers hn / id / cell — 2026-11-02 (Agent BC5)
+
+- Metrics sidebar search now walks a broader surface: label (oracle
+  `hn` for remapped leaves), `metric_id`, `technical_label`,
+  `cell_label`, `metric_label`, `source_column`, `selection`, `cell`,
+  on top of the previous `label + source + event`. One lower-cased
+  `includes` covers every match path — a user can type `PCell`,
+  `SCell 1`, `cell_rsrp`, `cell_rsrp@lte-type-0`,
+  `LTE_SERVING_SINR_PCELL`, `CELLMEAS`, …, and reach the same leaf.
+- No oracle discipline change, no backend contract change.
+- SemVer front: **PATCH 1.133.13**; backend remains **0.123.2**.
+
 ## 1.133.12 (patch) — Serving cells full roster placeholders — 2026-11-02 (Agent BC5)
 
 - Visual consistency: every Metric node under a Serving group now
