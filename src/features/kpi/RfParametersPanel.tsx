@@ -148,55 +148,44 @@ export function RfParametersPanel({
         <Row label={t("mapWorkspace.rf.eventId")} value={`#${details.seq}`} />
       </Section>
 
-      <Section title={t("mapWorkspace.rf.radioInfo")}>
-        <Row label={t("mapWorkspace.rf.technology")} value={<Badge>{tech}</Badge>} />
-        <Row label={t("mapWorkspace.rf.band")} value={ND} />
-        <Row label={t("mapWorkspace.rf.bandwidth")} value={ND} />
-        <Row label={t("mapWorkspace.rf.ca")} value={ND} />
-        <Row
-          label="NR"
-          value={anchor ? <Badge tone="nr">{t("mapPointPopup.nrAnchor")}</Badge> : ND}
-        />
-        {anchor && (
-          <>
-            <Row label="NR PCI" value={text(anchor.pci)} />
-            <Row label="NRARFCN" value={text(anchor.arfcn)} />
-          </>
-        )}
-      </Section>
+      {anchor && (
+        <Section title={t("mapWorkspace.rf.radioInfo")}>
+          <Row label={t("mapWorkspace.rf.technology")} value={<Badge>{tech}</Badge>} />
+          <Row
+            label="NR"
+            value={<Badge tone="nr">{t("mapPointPopup.nrAnchor")}</Badge>}
+          />
+          <Row label="NR PCI" value={text(anchor.pci)} />
+          <Row label="NRARFCN" value={text(anchor.arfcn)} />
+        </Section>
+      )}
 
-      <Section
-        title={t("mapPointPopup.serving")}
-        aside={serving ? <Confidence link={serving} /> : undefined}
-      >
-        {serving ? (
-          <>
-            <Row label={t("mapWorkspace.rf.servingTech")} value={<Badge>LTE PCell</Badge>} />
-            <Row label="PCI" value={text(serving.pci)} />
-            <Row label="EARFCN" value={text(serving.arfcn)} />
-            <Row label={t("mapWorkspace.rf.site")} value={text(serving.siteName)} />
-            <Row
-              label={t("mapWorkspace.distanceUeSite")}
-              value={formatDistance(serving.distanceM)}
-              className="text-primary"
-            />
-            <Row label={t("mapWorkspace.rf.azimuth")} value={azimuth} />
-          </>
-        ) : (
-          <p className="text-muted-foreground">{t("mapWorkspace.rf.noServing")}</p>
-        )}
-        {details.neighbours.length > 0 && (
-          <Row label={t("mapWorkspace.rf.neighbours")} value={String(details.neighbours.length)} />
-        )}
-      </Section>
+      {serving && (
+        <Section
+          title={t("mapPointPopup.serving")}
+          aside={<Confidence link={serving} />}
+        >
+          <Row label={t("mapWorkspace.rf.servingTech")} value={<Badge>LTE PCell</Badge>} />
+          <Row label="PCI" value={text(serving.pci)} />
+          <Row label="EARFCN" value={text(serving.arfcn)} />
+          <Row label={t("mapWorkspace.rf.site")} value={text(serving.siteName)} />
+          <Row
+            label={t("mapWorkspace.distanceUeSite")}
+            value={formatDistance(serving.distanceM)}
+            className="text-primary"
+          />
+          <Row label={t("mapWorkspace.rf.azimuth")} value={azimuth} />
+          {details.neighbours.length > 0 && (
+            <Row label={t("mapWorkspace.rf.neighbours")} value={String(details.neighbours.length)} />
+          )}
+        </Section>
+      )}
 
-      <Section title={t("mapWorkspace.rf.measurements")}>
-        {rsrp !== null ? (
-          <Row label="RSRP" value={`${rsrp} dBm`} className={rsrpTone(rsrp)} />
-        ) : (
-          <p className="text-muted-foreground">{ND}</p>
-        )}
-      </Section>
+      {rsrp !== null && (
+        <Section title={t("mapWorkspace.rf.measurements")}>
+          <Row label="RSRP" value={`${rsrp.toFixed(2)} dBm`} className={rsrpTone(rsrp)} />
+        </Section>
+      )}
 
       <Section title={t("mapWorkspace.rf.metrics")}>
         {metrics.length ? (

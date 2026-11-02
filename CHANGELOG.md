@@ -1,3 +1,30 @@
+## 1.133.21 (patch) — RF Parameters: drop empty sections, round RSRP — 2026-11-02 (Agent BC5)
+
+- Users reported that `/metrics` map `Selected point` panel showed a
+  Radio information section with every row N/D
+  (`Band=N/D Bandwidth=N/D CA=N/D NR=N/D`) and a Serving cell section
+  reading `No serving cell published for this point.` — "information
+  are empty". Also RSRP rendered as `-82.94999999999999 dBm` (raw
+  float).
+- `RfParametersPanel.tsx` now:
+  - Omits the Radio information section entirely unless an NR anchor is
+    attached. The deleted rows (Band, Bandwidth, CA, LTE-only "NR N/D")
+    were hard-coded to N/D and never carried any real data.
+  - Omits the Serving cell section when no cell is published, instead
+    of rendering the "No serving cell" placeholder.
+  - Omits the Measurements section when no RSRP is available, instead
+    of rendering a lone "N/D" line.
+  - Rounds the RSRP value with `.toFixed(2)` → `-82.95 dBm`.
+- Rows that legitimately miss data (Position when the caller doesn't
+  pass coordinates, Serving site when published without name) still
+  render N/D — the discipline is "no fake values", not "no N/D at all".
+  Only whole sections that would read N/D top-to-bottom are dropped.
+- Test `rf-parameters-panel.test.tsx` updated to assert the new
+  semantics (no `-82.9499999... dBm` trail, no `Bandwidth` label,
+  no `No serving cell` string; N/D still present via the Position
+  fallback).
+- SemVer front: **PATCH 1.133.21**; backend remains **0.123.3**.
+
 ## 1.133.20 (patch) — Reconcile DnD + map legend lots — 2026-11-02 (Agent BC5)
 
 - Single-commit reconciliation of two parallel 1.133.19 candidates:
