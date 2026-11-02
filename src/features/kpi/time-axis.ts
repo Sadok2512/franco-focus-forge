@@ -57,6 +57,11 @@ export function isClockAvailable(meta: TimeAxisMeta | undefined | null): boolean
   return parseOriginSecondsOfDay(meta.origin_ts) !== null;
 }
 
+/** The workspace has no global time-axis control: certified NMF clock wins. */
+export function automaticTimeAxisMode(meta: TimeAxisMeta | undefined | null): TimeAxisMode {
+  return isClockAvailable(meta) ? "clock-local" : "capture";
+}
+
 export function timeAxisLabel(mode: TimeAxisMode, meta: TimeAxisMeta | undefined): string {
   if (mode === "capture") return "Capture time (s) · origin: capture start";
   if (!meta || !isClockAvailable(meta)) return "Capture time (s) · clock unavailable";

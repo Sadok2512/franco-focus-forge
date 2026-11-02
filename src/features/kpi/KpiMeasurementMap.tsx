@@ -8,20 +8,20 @@ import { getKpiCaptures, getKpiTimeSeries } from "@/lib/api/kpi-timeseries";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import {
-  MAX_CLASSES,
-  MIN_CLASSES,
   classOf,
   metricClasses,
   useMetricLegendSettings,
+  useMetricLegendPresentation,
 } from "./metric-classes";
 import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
+import { mapLegendScope } from "./map-metric-drop";
 import {
   MapLegendHeaderActions,
   MapLegendList,
   MapLegendRow,
   MapLegendSection,
-  MapLegendSettings,
+  MetricLegendSettingsPanel,
 } from "./map-legend";
 
 const KPI_MEASURES_LAYER = "kpi-measures";
@@ -99,11 +99,12 @@ export function KpiMeasurementMap({
       { padding: 40, maxZoom: 15, duration: 0 },
     );
   };
-  const [hidden, setHidden] = useState<string[]>([]);
-  const [visible, setVisible] = useState(true);
+  const legendScope = mapLegendScope(projectId, workspaceId, { kind: "kpi", code });
+  const [presentation, setPresentation] = useMetricLegendPresentation(legendScope, code);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [closed, setClosed] = useState(false);
 
-  const [legendSettings, setLegendSettings] = useMetricLegendSettings(code);
+  const [legendSettings, setLegendSettings] = useMetricLegendSettings(code, legendScope);
   const classes = useMemo(
     () =>
       metricClasses(
@@ -113,7 +114,11 @@ export function KpiMeasurementMap({
       ),
     [code, features, legendSettings],
   );
-  useEffect(() => setHidden([]), [classes.length]);
+  useEffect(() => {
+    if (presentation.hidden.some((id) => !classes.some((item) => item.id === id)))
+      setPresentation({ ...presentation, hidden: [] });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [classes.length]);
   const colored = useMemo(
     () =>
       features.flatMap((f) => {
@@ -172,15 +177,21 @@ export function KpiMeasurementMap({
     if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
     map.setFilter(
       KPI_MEASURES_LAYER,
-      hidden.length ? ["!", ["in", ["get", "cls"], ["literal", hidden]]] : null,
+      presentation.hidden.length
+        ? ["!", ["in", ["get", "cls"], ["literal", presentation.hidden]]]
+        : null,
     );
-  }, [map, hidden, colored]);
+  }, [map, presentation.hidden, colored]);
   // The legend's visibility switch hides every measurement point without
   // unmounting the layer, so the camera, filters and selection survive.
   useEffect(() => {
     if (!map?.getLayer(KPI_MEASURES_LAYER)) return;
-    map.setLayoutProperty(KPI_MEASURES_LAYER, "visibility", visible && !closed ? "visible" : "none");
-  }, [map, visible, closed, colored]);
+    map.setLayoutProperty(
+      KPI_MEASURES_LAYER,
+      "visibility",
+      presentation.visible && !closed ? "visible" : "none",
+    );
+  }, [map, presentation.visible, closed, colored]);
 
   const fmtNum = (n: number) => (Number.isFinite(n) ? Number(n.toPrecision(3)).toString() : "");
   const unit = features[0]?.properties.unit ?? declaredUnit ?? "";
@@ -191,78 +202,80 @@ export function KpiMeasurementMap({
         title={`${legendLabel}${unit ? ` (${unit})` : ""}`}
         action={
           <MapLegendHeaderActions
-            visible={visible}
-            onToggleVisible={() => setVisible((v) => !v)}
+            expanded={presentation.expanded}
+            onToggleExpanded={() =>
+              setPresentation({ ...presentation, expanded: !presentation.expanded })
+            }
+            visible={presentation.visible}
+            onToggleVisible={() =>
+              setPresentation({ ...presentation, visible: !presentation.visible })
+            }
+            settingsOpen={settingsOpen}
+            onToggleSettings={() => setSettingsOpen((open) => !open)}
             onClose={() => setClosed(true)}
             visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: legendLabel })}
             closeLabel={translate("mapWorkspace.legendClose", { metric: legendLabel })}
           />
         }
       >
-        <MapLegendList label={translate("mapWorkspace.metricLegend")}>
-          {[...classes].reverse().map((c) => {
-            const range =
-              c.min === -Infinity
-                ? `< ${fmtNum(c.max)}`
-                : c.max === Infinity
-                  ? `≥ ${fmtNum(c.min)}`
-                  : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
-            return (
-              <MapLegendRow
-                key={c.id}
-                color={c.color}
-                label={range}
-                meta={(counts.get(c.id) ?? 0).toLocaleString()}
-                checked={!hidden.includes(c.id)}
-                onToggle={() =>
-                  setHidden((h) => (h.includes(c.id) ? h.filter((x) => x !== c.id) : [...h, c.id]))
-                }
+        {presentation.expanded && (
+          <>
+            <MapLegendList label={translate("mapWorkspace.metricLegend")}>
+              {[...classes].reverse().map((c) => {
+                const range =
+                  c.min === -Infinity
+                    ? `< ${fmtNum(c.max)}`
+                    : c.max === Infinity
+                      ? `≥ ${fmtNum(c.min)}`
+                      : `${fmtNum(c.min)} – ${fmtNum(c.max)}`;
+                return (
+                  <MapLegendRow
+                    key={c.id}
+                    color={c.color}
+                    label={range}
+                    meta={(() => {
+                      const count = counts.get(c.id) ?? 0;
+                      const parts = [];
+                      if (legendSettings.showCount) parts.push(count.toLocaleString());
+                      if (legendSettings.showPercent)
+                        parts.push(
+                          `${colored.length ? ((count / colored.length) * 100).toFixed(1) : "0.0"}%`,
+                        );
+                      return parts.join(" · ");
+                    })()}
+                    checked={!presentation.hidden.includes(c.id)}
+                    onToggle={() =>
+                      setPresentation({
+                        ...presentation,
+                        hidden: presentation.hidden.includes(c.id)
+                          ? presentation.hidden.filter((x) => x !== c.id)
+                          : [...presentation.hidden, c.id],
+                      })
+                    }
+                  />
+                );
+              })}
+            </MapLegendList>
+            {legendSettings.gradient && (
+              <div
+                className="h-1.5 rounded"
+                aria-hidden="true"
+                style={{
+                  background: `linear-gradient(90deg, ${classes.map((item) => item.color).join(",")})`,
+                }}
               />
-            );
-          })}
-        </MapLegendList>
-        <MapLegendSettings title={translate("mapWorkspace.legendSettings")}>
-          <label className="flex items-center justify-between gap-2">
-            {translate("mapWorkspace.legendCount")}
-            <select
-              className="rounded border bg-background px-1 py-0.5"
-              value={classes.length}
-              onChange={(e) => setLegendSettings({ count: Number(e.target.value), colors: {} })}
-            >
-              {Array.from({ length: MAX_CLASSES - MIN_CLASSES + 1 }, (_, i) => i + MIN_CLASSES).map(
-                (n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ),
-              )}
-            </select>
-          </label>
-          <div className="flex flex-wrap gap-1">
-            {classes.map((c, i) => (
-              <input
-                key={c.id}
-                type="color"
-                aria-label={c.id}
-                value={c.color}
-                onChange={(e) =>
-                  setLegendSettings({
-                    ...legendSettings,
-                    colors: { ...legendSettings.colors, [i]: e.target.value },
-                  })
-                }
-                className="h-5 w-6 cursor-pointer rounded border p-0"
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            className="text-primary underline"
-            onClick={() => setLegendSettings({ count: null, colors: {} })}
-          >
-            {translate("mapWorkspace.legendReset")}
-          </button>
-        </MapLegendSettings>
+            )}
+          </>
+        )}
+        {settingsOpen && (
+          <MetricLegendSettingsPanel
+            metric={legendLabel}
+            classes={classes}
+            settings={legendSettings}
+            onChange={setLegendSettings}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
       </MapLegendSection>
     )
   ) : null;

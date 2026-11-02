@@ -158,7 +158,70 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     );
     fireEvent.click(pcellButton);
     expect(onToggle).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Visualisation LTE_SERVING_RSRP_PCELL" })).toBeVisible();
+    expect(
+      screen.getByRole("button", { name: "Visualisation LTE_SERVING_RSRP_PCELL" }),
+    ).toBeVisible();
+  });
+
+  it("exports a selectable Metrics leaf through the shared Map drag contract", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "v6",
+      title: "Nemo metrics",
+      header: "LTE",
+      decoder_version: "1.9.0",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("pcell-drag", "legacy-event", "RSRQ (LTE) @ Serving", 0, {
+          metric_id: "cell_rsrq@lte-type-0",
+          selection: "cell_rsrq@lte-type-0",
+          event: "CELLMEAS",
+          source_column: "cell_rsrq",
+          technology: "LTE",
+          metric_label: "RSRQ",
+          cell: "lte-type-0",
+          cell_label: "PCell",
+          cell_system: "LTE",
+          raw_cell_type: 0,
+          availability_status: "available",
+          unit: "dB",
+          n: 12,
+          selectable: true,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+    const lte = await screen.findByRole("button", { name: /^LTE\b/ });
+    await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
+    for (const name of ["Serving radio", "Serving"]) {
+      for (const button of screen.queryAllByRole("button", { name: new RegExp(`^${name}\\b`) }))
+        if (button.getAttribute("aria-expanded") === "false") fireEvent.click(button);
+    }
+    fireEvent.click(screen.getByRole("button", { name: /^RSRQ/ }));
+    const leaf = screen.getByText("LTE_SERVING_RSRQ_PCELL").closest(".kpi-tree-leaf");
+    expect(leaf).toHaveAttribute("draggable", "true");
+    const setData = vi.fn();
+    fireEvent.dragStart(leaf!, {
+      dataTransfer: { effectAllowed: "none", setData },
+    });
+    expect(setData).toHaveBeenCalledWith(
+      MAP_METRIC_MIME,
+      JSON.stringify({
+        kind: "metric",
+        code: "cell_rsrq@lte-type-0",
+        label: "LTE_SERVING_RSRQ_PCELL",
+        unit: "dB",
+      }),
+    );
   });
 
   it("shows the compact loading bar while a catalogue request is in flight, never the empty message", async () => {
@@ -250,7 +313,8 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
 
     // LTE auto-expanded on first render; drill through Serving radio >
     // Neighbour > RSRP to reach the detected-neighbour cell leaf.
-    await screen.findByRole("button", { name: /^LTE\b/ });
+    const lte = await screen.findByRole("button", { name: /^LTE\b/ });
+    await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
     for (const name of ["Serving radio", "Neighbour"]) {
       for (const btn of screen.queryAllByRole("button", { name: new RegExp(`^${name}\\b`) })) {
         if (btn.getAttribute("aria-expanded") === "false") fireEvent.click(btn);

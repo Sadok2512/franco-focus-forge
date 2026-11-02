@@ -1,4 +1,4 @@
-import { Columns3, Download, Inbox, LoaderCircle, Maximize2, Settings2, X } from "lucide-react";
+import { Columns3, Download, Inbox, LoaderCircle, Maximize2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -17,9 +17,25 @@ import {
   MapLegendList,
   MapLegendRow,
   MapLegendSection,
+  MetricLegendSettingsPanel,
 } from "./map-legend";
+import {
+  classOf,
+  metricClasses,
+  useMetricLegendPresentation,
+  useMetricLegendSettings,
+  type MetricClass,
+} from "./metric-classes";
+import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
-import { pickGraphSelections, type MetricViews } from "./metric-views";
+import type { MetricViews } from "./metric-views";
+import {
+  legacyMetricCardPanels,
+  readMetricCardPanels,
+  writeMetricCardPanels,
+  type MetricCardPanel,
+  type MetricCardView,
+} from "./metric-card-panels";
 import {
   readMetricStyles,
   writeMetricStyles,
@@ -47,9 +63,8 @@ import {
   type CellLinkKind,
 } from "./measurement-point-popup";
 import {
+  automaticTimeAxisMode,
   formatTick,
-  isClockAvailable,
-  readTimeAxisMode,
   timeAxisLabel,
   tooltipTriple,
   type TimeAxisMeta,
@@ -79,6 +94,12 @@ function fmtLatLng(v: number | null | undefined): string {
   return v == null ? "" : v.toFixed(6);
 }
 const COLORS = ["#60a5fa", "#34d399", "#fbbf24", "#c084fc", "#fb7185", "#22d3ee", "#fb923c"];
+function metricClassRange(item: MetricClass): string {
+  if (item.min === -Infinity && item.max === Infinity) return "all";
+  if (item.min === -Infinity) return `< ${Number(item.max.toPrecision(3))}`;
+  if (item.max === Infinity) return `≥ ${Number(item.min.toPrecision(3))}`;
+  return `${Number(item.min.toPrecision(3))} – ${Number(item.max.toPrecision(3))}`;
+}
 export type View = "table" | "graph" | "histogram" | "scatter" | "map";
 export type MetricPane = "charts" | "table" | "overlay";
 
@@ -532,11 +553,16 @@ function MetricMap({
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
-  const settingsButtonRef = useRef<HTMLButtonElement>(null);
   // Classes unchecked in the legend are hidden on the map, never deleted.
   const [hiddenCategories, setHiddenCategories] = useState<number[]>([]);
-  const [visible, setVisible] = useState(true);
   const [closed, setClosed] = useState(false);
+  const metricCode = dropContext?.selection ?? label;
+  const legendScope = mapLegendScope(projectId, dropContext?.workspaceId ?? heightKey ?? "map", {
+    kind: "metric",
+    code: metricCode,
+  });
+  const [presentation, setPresentation] = useMetricLegendPresentation(legendScope, metricCode);
+  const [legendSettings, setLegendSettings] = useMetricLegendSettings(metricCode, legendScope);
   // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
   // same wiring as the Signaling and KPI measurement maps.
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
@@ -546,14 +572,13 @@ function MetricMap({
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
       const target = event.target as Node;
-      if (!settingsRef.current?.contains(target) && !settingsButtonRef.current?.contains(target)) {
+      if (!settingsRef.current?.contains(target)) {
         setSettingsOpen(false);
       }
     };
     const escape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setSettingsOpen(false);
-        settingsButtonRef.current?.focus();
       }
     };
     document.addEventListener("pointerdown", outside, true);
@@ -572,6 +597,40 @@ function MetricMap({
     () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
     [data, label],
   );
+  const numericClasses = useMemo(
+    () =>
+      categories
+        ? []
+        : metricClasses(
+            metricCode,
+            features.map((feature) => Number(feature.properties.value)),
+            legendSettings,
+          ),
+    [categories, features, legendSettings, metricCode],
+  );
+  const mapFeaturesWithClasses = useMemo(
+    () =>
+      categories
+        ? features
+        : features.flatMap((feature) => {
+            const item = classOf(numericClasses, Number(feature.properties.value));
+            return item
+              ? [
+                  {
+                    ...feature,
+                    properties: { ...feature.properties, color: item.color, cls: item.id },
+                  },
+                ]
+              : [];
+          }),
+    [categories, features, numericClasses],
+  );
+  useEffect(() => {
+    if (presentation.hidden.some((id) => !numericClasses.some((item) => item.id === id)))
+      setPresentation({ ...presentation, hidden: [] });
+    // Only stale class identifiers are reset; valid user filters persist.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [numericClasses.length]);
   // A new capture or a new metric shows every class again.
   useEffect(() => setHiddenCategories([]), [categories]);
   const metricCoordinates = useMemo(
@@ -588,7 +647,7 @@ function MetricMap({
   );
   useEffect(() => {
     if (!map) return;
-    const geo = { type: "FeatureCollection" as const, features };
+    const geo = { type: "FeatureCollection" as const, features: mapFeaturesWithClasses };
     const linkGeo = { type: "FeatureCollection" as const, features: links };
     const linkSource = map.getSource("metric-cell-links-v1") as GeoJSONSource | undefined;
     if (linkSource) linkSource.setData(linkGeo);
@@ -599,9 +658,7 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-color",
-        categories
-          ? categoryColorExpression(categories)
-          : metricColorExpression(minValue, maxValue, preferences.palette),
+        categories ? categoryColorExpression(categories) : ["get", "color"],
       );
       map.setPaintProperty(
         "metrics-v3",
@@ -611,7 +668,7 @@ function MetricMap({
     } else {
       installMetricMapSource(
         map,
-        features,
+        mapFeaturesWithClasses,
         minValue,
         maxValue,
         preferences.palette,
@@ -619,21 +676,30 @@ function MetricMap({
       );
       if (categories)
         map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
+      else map.setPaintProperty("metrics-v3", "circle-color", ["get", "color"]);
     }
     // Legend controls affect presentation only; the measurements stay mounted.
     if (typeof map.setFilter === "function")
       map.setFilter(
         "metrics-v3",
-        hiddenCategories.length
-          ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
-          : null,
+        categories
+          ? hiddenCategories.length
+            ? ["!", ["in", ["to-number", ["get", "value"], -99999], ["literal", hiddenCategories]]]
+            : null
+          : presentation.hidden.length
+            ? ["!", ["in", ["get", "cls"], ["literal", presentation.hidden]]]
+            : null,
       );
     if (typeof map.setLayoutProperty === "function") {
-      map.setLayoutProperty("metrics-v3", "visibility", visible && !closed ? "visible" : "none");
+      map.setLayoutProperty(
+        "metrics-v3",
+        "visibility",
+        presentation.visible && !closed ? "visible" : "none",
+      );
     }
   }, [
     map,
-    features,
+    mapFeaturesWithClasses,
     links,
     minValue,
     maxValue,
@@ -641,7 +707,8 @@ function MetricMap({
     preferences.pointSize,
     categories,
     hiddenCategories,
-    visible,
+    presentation.hidden,
+    presentation.visible,
     closed,
   ]);
   useEffect(() => {
@@ -693,7 +760,6 @@ function MetricMap({
     setSelectedPoint(null);
   }, [captureId, map, projectId]);
   const first = data?.map_points[0];
-  const palette = MAP_PALETTES[preferences.palette];
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
     (counts, feature) => ({
       ...counts,
@@ -711,25 +777,25 @@ function MetricMap({
           action={
             <>
               <MapLegendHeaderActions
-                visible={visible}
-                onToggleVisible={() => setVisible((v) => !v)}
+                expanded={presentation.expanded}
+                onToggleExpanded={() =>
+                  setPresentation({ ...presentation, expanded: !presentation.expanded })
+                }
+                visible={presentation.visible}
+                onToggleVisible={() =>
+                  setPresentation({ ...presentation, visible: !presentation.visible })
+                }
+                settingsOpen={settingsOpen}
+                onToggleSettings={() => setSettingsOpen((open) => !open)}
+                settingsLabel={translate("metrics.mapSettings")}
                 onClose={() => setClosed(true)}
                 visibilityLabel={translate("mapWorkspace.legendVisibility", { metric: label })}
                 closeLabel={translate("mapWorkspace.legendClose", { metric: label })}
               />
-              <button
-                ref={settingsButtonRef}
-                type="button"
-                aria-label={translate("metrics.mapSettings")}
-                aria-expanded={settingsOpen}
-                onClick={() => setSettingsOpen((open) => !open)}
-              >
-                <Settings2 size={14} />
-              </button>
             </>
           }
         >
-          {categories ? (
+          {presentation.expanded && categories ? (
             <MapLegendList label={translate("mapWorkspace.metricLegend")}>
               {categories.map((c) => (
                 <MapLegendRow
@@ -746,90 +812,139 @@ function MetricMap({
                 />
               ))}
             </MapLegendList>
-          ) : (
+          ) : presentation.expanded ? (
             <>
-              <span
-                className="kpi-metric-map-scale"
-                aria-hidden="true"
-                style={{ background: `linear-gradient(90deg, ${palette.join(", ")})` }}
-              />
-              <span className="kpi-metric-map-scale-labels">
-                <span>{fmt(minValue)}</span>
-                <span>{fmt(maxValue)}</span>
-              </span>
-            </>
-          )}
-
-          {settingsOpen && (
-            <div
-              ref={settingsRef}
-              className="kpi-metric-map-settings"
-              data-testid="metric-map-settings"
-            >
-              <div className="kpi-metric-map-settings-head">
-                <strong>{translate("mapWorkspace.legendSettings")}</strong>
-                <button
-                  type="button"
-                  aria-label={translate("mapWorkspace.closeLegend")}
-                  onClick={() => {
-                    setSettingsOpen(false);
-                    settingsButtonRef.current?.focus();
-                  }}
-                >
-                  <X size={13} />
-                </button>
-              </div>
-              <label>
-                {translate("metrics.mapPalette")}
-                <select
-                  value={preferences.palette}
-                  onChange={(event) =>
-                    onPreferences({
-                      ...preferences,
-                      palette: event.target.value as MetricMapPalette,
-                    })
-                  }
-                >
-                  <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
-                  <option value="viridis">Viridis</option>
-                  <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
-                </select>
-              </label>
-              <label>
-                {translate("metrics.mapPointSize")} · {preferences.pointSize}
-                <input
-                  type="range"
-                  min="1"
-                  max="10"
-                  step="1"
-                  value={preferences.pointSize}
-                  onChange={(event) =>
-                    onPreferences({ ...preferences, pointSize: Number(event.target.value) })
-                  }
-                />
-              </label>
-              <fieldset>
-                <legend>{translate("metrics.mapCellLinks")}</legend>
-                {CELL_LINK_KINDS.map((kind) => (
-                  <label key={kind}>
-                    <input
-                      type="checkbox"
-                      checked={preferences.links[kind]}
-                      onChange={(event) =>
-                        onPreferences({
-                          ...preferences,
-                          links: { ...preferences.links, [kind]: event.target.checked },
+              <MapLegendList label={label}>
+                {[...numericClasses].reverse().map((item) => {
+                  const count = mapFeaturesWithClasses.filter(
+                    (feature) => "cls" in feature.properties && feature.properties.cls === item.id,
+                  ).length;
+                  const meta = [];
+                  if (legendSettings.showCount) meta.push(count.toLocaleString());
+                  if (legendSettings.showPercent)
+                    meta.push(
+                      `${mapFeaturesWithClasses.length ? ((count / mapFeaturesWithClasses.length) * 100).toFixed(1) : "0.0"}%`,
+                    );
+                  return (
+                    <MapLegendRow
+                      key={item.id}
+                      color={item.color}
+                      label={metricClassRange(item)}
+                      meta={meta.join(" · ")}
+                      checked={!presentation.hidden.includes(item.id)}
+                      onToggle={() =>
+                        setPresentation({
+                          ...presentation,
+                          hidden: presentation.hidden.includes(item.id)
+                            ? presentation.hidden.filter((id) => id !== item.id)
+                            : [...presentation.hidden, item.id],
                         })
                       }
                     />
-                    <span
-                      className="kpi-metric-map-link-swatch"
-                      style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
-                    />
-                    {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
-                  </label>
-                ))}
-              </fieldset>
+                  );
+                })}
+              </MapLegendList>
+              {legendSettings.gradient && numericClasses.length > 0 && (
+                <span
+                  className="kpi-metric-map-scale"
+                  aria-hidden="true"
+                  style={{
+                    background: `linear-gradient(90deg, ${numericClasses.map((item) => item.color).join(", ")})`,
+                  }}
+                />
+              )}
+            </>
+          ) : null}
+
+          {settingsOpen && (
+            <div ref={settingsRef} className="space-y-2" data-testid="metric-map-settings">
+              {!categories && (
+                <MetricLegendSettingsPanel
+                  metric={label}
+                  classes={numericClasses}
+                  settings={legendSettings}
+                  onChange={setLegendSettings}
+                  onClose={() => setSettingsOpen(false)}
+                />
+              )}
+              <div className="kpi-metric-map-settings">
+                <div className="kpi-metric-map-settings-head">
+                  <strong>{translate("mapWorkspace.legendSettings")}</strong>
+                  <button
+                    type="button"
+                    aria-label={translate("mapWorkspace.closeLegend")}
+                    onClick={() => {
+                      setSettingsOpen(false);
+                    }}
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <label>
+                  {translate("metrics.mapPalette")}
+                  <select
+                    value={preferences.palette}
+                    onChange={(event) => {
+                      const paletteName = event.target.value as MetricMapPalette;
+                      const colours = MAP_PALETTES[paletteName];
+                      setLegendSettings({
+                        ...legendSettings,
+                        colors: Object.fromEntries(
+                          numericClasses.map((_, index) => [
+                            index,
+                            colours[
+                              Math.round(
+                                (index * (colours.length - 1)) /
+                                  Math.max(1, numericClasses.length - 1),
+                              )
+                            ]!,
+                          ]),
+                        ) as Record<number, string>,
+                      });
+                      onPreferences({ ...preferences, palette: paletteName });
+                    }}
+                  >
+                    <option value="coverage">{translate("metrics.mapPaletteCoverage")}</option>
+                    <option value="viridis">Viridis</option>
+                    <option value="ocean">{translate("metrics.mapPaletteOcean")}</option>
+                  </select>
+                </label>
+                <label>
+                  {translate("metrics.mapPointSize")} · {preferences.pointSize}
+                  <input
+                    type="range"
+                    min="1"
+                    max="10"
+                    step="1"
+                    value={preferences.pointSize}
+                    onChange={(event) =>
+                      onPreferences({ ...preferences, pointSize: Number(event.target.value) })
+                    }
+                  />
+                </label>
+                <fieldset>
+                  <legend>{translate("metrics.mapCellLinks")}</legend>
+                  {CELL_LINK_KINDS.map((kind) => (
+                    <label key={kind}>
+                      <input
+                        type="checkbox"
+                        checked={preferences.links[kind]}
+                        onChange={(event) =>
+                          onPreferences({
+                            ...preferences,
+                            links: { ...preferences.links, [kind]: event.target.checked },
+                          })
+                        }
+                      />
+                      <span
+                        className="kpi-metric-map-link-swatch"
+                        style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
+                      />
+                      {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
+                    </label>
+                  ))}
+                </fieldset>
+              </div>
             </div>
           )}
         </MapLegendSection>
@@ -1018,6 +1133,7 @@ export function MetricsWorkspace({
   // conflits avec le Time/GPS lot). Si nécessaire plus tard, implémenter
   // le state cardViews + onRemove dans un lot dédié.
   onTablePaneChange,
+  onCardPanelCountChange,
   views: viewsProp,
   workspaceId: _workspaceId,
   projectCenter,
@@ -1041,12 +1157,15 @@ export function MetricsWorkspace({
   view?: View | undefined;
   onViewChange?: ((v: View) => void) | undefined;
   onTablePaneChange?: ((open: boolean) => void) | undefined;
+  onCardPanelCountChange?: ((count: number) => void) | undefined;
   views?: MetricViews | undefined;
   workspaceId?: string;
   projectCenter?: [number, number] | undefined;
   onColumnsChange?: unknown;
   paneRequest?: number;
-  cardViewRequest?: { code: string; view: string; n: number } | undefined;
+  cardViewRequest?:
+    | { workspaceId: string; id: string; code: string; view: string; n: number }
+    | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricView) => void) | undefined;
   mapFillsAvailable?: boolean;
@@ -1106,14 +1225,51 @@ export function MetricsWorkspace({
   };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
-  const [timeAxisMode] = useState<TimeAxisMode>(() => readTimeAxisMode());
+  const cardPanelWorkspace = _workspaceId ?? "metrics";
+  const loadCardPanels = () => {
+    const stored = readMetricCardPanels(cardPanelWorkspace);
+    if (stored) return stored;
+    // A catalogue action can select the first metric and mount this workspace
+    // in the same React batch. In that case the request below is the source of
+    // truth; migrating the just-written legacy view as well would create the
+    // same panel twice.
+    if (cardViewRequest?.workspaceId === cardPanelWorkspace) return [];
+    return legacyMetricCardPanels(selections, viewsProp ?? {});
+  };
+  const [cardPanelState, setCardPanelState] = useState<{
+    workspaceId: string;
+    panels: MetricCardPanel[];
+  }>(() => ({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() }));
+  if (cardPanelState.workspaceId !== cardPanelWorkspace) {
+    setCardPanelState({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() });
+  }
+  const cardPanels = cardPanelState.panels;
+  const saveCardPanels = useCallback(
+    (next: MetricCardPanel[]) => {
+      setCardPanelState({ workspaceId: cardPanelWorkspace, panels: next });
+      writeMetricCardPanels(cardPanelWorkspace, next);
+    },
+    [cardPanelWorkspace],
+  );
+  useEffect(() => {
+    const allowed = new Set(selections);
+    const next = cardPanels.filter((panel) => allowed.has(panel.code));
+    if (next.length !== cardPanels.length) saveCardPanels(next);
+  }, [cardPanels, saveCardPanels, selections]);
+  useEffect(() => {
+    onCardPanelCountChange?.(cardPanels.length);
+  }, [cardPanels.length, onCardPanelCountChange]);
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
   const [cellPciFilter, setCellPciFilter] = useState("");
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
-  const mapSelections = selections.filter((selection) => viewsProp?.[selection] === "map");
-  const onlyMapSelections = selections.length > 0 && mapSelections.length === selections.length;
+  const mapSelections = [
+    ...new Set(
+      cardPanels.filter((panel) => panel.view === "map").map((panel) => panel.code),
+    ),
+  ];
+  const onlyMapSelections = cardPanels.length > 0 && cardPanels.every((panel) => panel.view === "map");
   const captureRouteQuery = useQuery({
     queryKey: ["metrics-map-route", projectId, captureId],
     queryFn: ({ signal }) => getSignaling(projectId, "points", { capture_id: captureId! }, signal),
@@ -1246,10 +1402,9 @@ export function MetricsWorkspace({
         capture_date: data.capture_date ?? null,
       }
     : undefined;
-  const clockOk = isClockAvailable(timeMeta);
   // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
   // pas de meta #START/#UT (null). Jamais une heure inventée.
-  const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+  const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);
   const timeScatter = x === "" || x === "t_rel_s";
   const option = useMemo<EChartsOption>(() => {
     if (!data) return {};
@@ -1530,15 +1685,31 @@ export function MetricsWorkspace({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [paneRequest]);
-  // 1.130.0 — une demande de graphe (⋮ → Graphe / Histogramme) ferme le tableau :
-  // les deux ne s'affichent jamais en même temps. La carte graphe n'est pas
-  // supprimée, elle revient dès que le tableau est refermé.
   const cardViewRequestRef = useRef<number>(-1);
   useEffect(() => {
-    if (!cardViewRequest || cardViewRequest.n === cardViewRequestRef.current) return;
+    if (
+      !cardViewRequest ||
+      cardViewRequest.workspaceId !== cardPanelWorkspace ||
+      cardViewRequest.n === cardViewRequestRef.current
+    )
+      return;
     cardViewRequestRef.current = cardViewRequest.n;
-    if (cardViewRequest.view !== "table" && cardViewRequest.view !== "map") setPane("charts");
-  }, [cardViewRequest]);
+    if (cardPanels.some((panel) => panel.id === cardViewRequest.id)) return;
+    if (
+      cardViewRequest.view === "graph" ||
+      cardViewRequest.view === "histogram" ||
+      cardViewRequest.view === "map"
+    ) {
+      saveCardPanels([
+        ...cardPanels,
+        {
+          id: cardViewRequest.id,
+          code: cardViewRequest.code,
+          view: cardViewRequest.view,
+        },
+      ]);
+    }
+  }, [cardPanelWorkspace, cardPanels, cardViewRequest, saveCardPanels]);
   // 1.101.0 — le mode mémorisé à l'ouverture de l'onglet est signalé au parent
 
   // (le compteur de panneaux de KpiWorkspace part du tableau des mesures).
@@ -1571,19 +1742,17 @@ export function MetricsWorkspace({
       return next;
     });
   };
-  const graphSelections = useMemo(
-    () => pickGraphSelections(parsedSelections, viewsProp ?? {}),
-    [parsedSelections, viewsProp],
-  );
-  // 1.130.0 — le tableau des mesures et les cartes graphique ne s'affichent
-  // jamais en même temps. Pendant que le tableau est ouvert, les graphes sont
-  // retirés de la vue mais jamais supprimés : refermer le tableau les ramène.
-  // Une carte carte (map) n'est pas un graphe : elle reste visible.
-  const tableOpen = pane === "table";
-  const visibleGridSelections = useMemo(
+  const visibleGridPanels = useMemo(
     () =>
-      tableOpen ? graphSelections.filter((s) => viewsProp?.[s.full] === "map") : graphSelections,
-    [graphSelections, tableOpen, viewsProp],
+      cardPanels.map((panel) => ({
+        panel,
+        selection: parseMetricSelection(panel.code) ?? {
+          full: panel.code,
+          code: panel.code,
+          cell: "all",
+        },
+      })),
+    [cardPanels],
   );
 
   // 1.105.1 — plus de message « The selected metrics are shown in the
@@ -1591,15 +1760,19 @@ export function MetricsWorkspace({
   // grand tableau s'ouvre seul, en haut du workspace. Une fermeture volontaire
   // n'est pas rouverte tant qu'aucun graphe ne revient.
   useEffect(() => {
-    if (graphSelections.length > 0) {
+    if (cardPanels.length > 0) {
       tableOnlyDismissed.current = false;
       return;
     }
+    // An explicit Graph/Map action selects the metric and creates its card in
+    // the same commit. Do not let the legacy "selection without graph" helper
+    // flash/open a table while that card request is being applied.
+    if (cardViewRequest?.workspaceId === cardPanelWorkspace) return;
     if (parsedSelections.length > 0 && pane !== "table" && !tableOnlyDismissed.current) {
       setPane("table");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphSelections.length, parsedSelections.length, pane]);
+  }, [cardPanelWorkspace, cardPanels.length, cardViewRequest, parsedSelections.length, pane]);
   const activeEvents = useActiveEvents();
   return (
     <article
@@ -1646,22 +1819,26 @@ export function MetricsWorkspace({
           {translate("metrics.pickFromCatalogue")}
         </p>
       )}
-      {captureId && visibleGridSelections.length > 0 && (
+      {captureId && visibleGridPanels.length > 0 && (
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
-          {visibleGridSelections.map((s, i) => {
+          {visibleGridPanels.map(({ panel, selection: s }, i) => {
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
             const title = info?.label ?? s.code;
-            const metricView = viewsProp?.[s.full] ?? "graph";
+            const metricView = panel.view;
             const remove = () => {
-              const next = selections.filter((x) => x !== s.full);
-              if (!next.length) onClear();
-              else onRemove?.(s.full);
+              const next = cardPanels.filter((candidate) => candidate.id !== panel.id);
+              saveCardPanels(next);
+              if (!next.some((candidate) => candidate.code === s.full) && pane !== "table") {
+                const remaining = selections.filter((code) => code !== s.full);
+                if (!remaining.length) onClear();
+                else onRemove?.(s.full);
+              }
             };
             return (
               <PanelShell
-                key={s.full}
+                key={panel.id}
                 workspaceId={_workspaceId ?? "metrics"}
-                id={`metric:${s.full}${panelIdSuffix}`}
+                id={`${panel.id}${panelIdSuffix}`}
                 natural={100 + i}
                 defaultTitle={`${i + 1}. ${title}`}
                 fullRow={mapFillsAvailable && metricView === "map"}
@@ -1698,7 +1875,17 @@ export function MetricsWorkspace({
                       onRemove={remove}
                       view={metricView}
                       onViewChange={(next) => {
-                        onVisualization?.(s.full, next);
+                        if (next === "table") {
+                          setPane("table");
+                          return;
+                        }
+                        saveCardPanels(
+                          cardPanels.map((candidate) =>
+                            candidate.id === panel.id
+                              ? { ...candidate, view: next as MetricCardView }
+                              : candidate,
+                          ),
+                        );
                       }}
                       onOpenTable={() => setPane("table")}
                       syncId={captureId ? `metrics-charts-${captureId}` : undefined}

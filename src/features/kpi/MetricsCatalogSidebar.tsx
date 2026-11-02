@@ -542,8 +542,7 @@ export function MetricsCatalogSidebar({
       normalizedNodes
         .filter(
           (node) =>
-            node.node_type === "tech" &&
-            (!availableTree || availableTree.has(node.node_id)),
+            node.node_type === "tech" && (!availableTree || availableTree.has(node.node_id)),
         )
         .map((node) => node.node_id),
     [normalizedNodes, availableTree],

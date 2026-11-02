@@ -109,6 +109,21 @@ describe("Shared legend header controls", () => {
 });
 
 describe("Metric map legend controls", () => {
+  it("renders interactive Count/% classes for the base numeric metric", async () => {
+    renderers.map.mockClear();
+    renderMetricMap("legend-numeric", "cell_rsrp@0", "RSRP (LTE) @ Serving", "dBm");
+    const legend = await legendOf();
+    const ranges = within(legend).getAllByRole("checkbox");
+    expect(ranges.length).toBeGreaterThanOrEqual(2);
+    expect(legend).toHaveTextContent("%");
+    fireEvent.click(ranges[0]!);
+    expect(ranges[0]).not.toBeChecked();
+    fireEvent.click(within(legend).getByRole("button", { name: "Collapse metric legend" }));
+    expect(within(legend).queryAllByRole("checkbox")).toHaveLength(0);
+    fireEvent.click(within(legend).getByRole("button", { name: "Expand metric legend" }));
+    expect(within(legend).getAllByRole("checkbox")[0]).not.toBeChecked();
+  });
+
   it("closing the legend removes it without a reopen button", async () => {
     renderers.map.mockClear();
     renderMetricMap("legend-close", "cell_rsrp@0", "RSRP (LTE) @ Serving", "dBm");

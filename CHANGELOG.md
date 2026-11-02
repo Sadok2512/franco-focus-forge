@@ -1,3 +1,45 @@
+## 1.133.20 (patch) — Reconcile DnD + map legend lots — 2026-11-02 (Agent BC5)
+
+- Single-commit reconciliation of two parallel 1.133.19 candidates:
+  1. `483f669` — DnD lot: sidebar drag-and-drop onto Table / Map / Graph
+     / Histogram panels + drop-zone highlights, `Loading measurements`
+     animation, removal of the global Time Axis selector.
+  2. Merge of `bc1/map-legend-restore` — interactive multi-metric Map
+     legend, independent persistent Graph / Table / Map panels per
+     project/workspace, shared drag payload on sidebar leaves,
+     Chronogram/Workspace time axis switched to automatic
+     (`automaticTimeAxisMode(timeMeta)`).
+- Merge conflicts resolved: HEAD's defensive `disabled` guard kept on
+  the sidebar drag handler; both time-axis state (DnD) and card-panel
+  machinery (bc1) kept — then the orphan `timeAxisMode` state was
+  dropped since bc1 drives the axis fully from `timeMeta`.
+- Follows rule n°5 (2026-10-17 incident): one commit, one build, one
+  image, matching package.json 1.133.20 → tag `1.133.20-<sha>`.
+- SemVer front: **PATCH 1.133.20**; backend remains **0.123.3**.
+
+## 1.133.19 (patch) — Interactive multi-metric Map legend — 2026-11-02 (Agent BC1)
+
+- Restores one compact, internally scrollable Map legend containing the base
+  metric and every metric dropped from the catalogue, without replacing
+  existing layers or moving the camera.
+- Each dropped/base KPI metric independently persists expand/collapse,
+  layer visibility, selected colour ranges, automatic/custom thresholds,
+  class colours, Count/% and gradient settings per project/workspace/map.
+- Range Count and percentages are computed from the real geolocated metric
+  population before presentation filtering; unchecked ranges change only the
+  MapLibre layer filter and never modify RF values or API requests.
+- Restores discreet chevron, eye, settings and remove actions plus global
+  Expand all / Collapse all controls; settings stay closed by default.
+- Restores the shared Map drag payload on selectable leaves of the Metrics
+  catalogue and gives the primary Metrics Map layer the same persistent
+  Count/%, range filtering and settings controls as dropped layers.
+- Keeps Graph, Table and Map panels independent and persistent: adding a
+  panel never replaces an existing panel, including after workspace changes
+  and browser reloads.
+- Removes the global Time Axis toolbar while preserving each visualization's
+  timestamps, zoom, brush and tooltips.
+- SemVer front: **PATCH 1.133.19**; backend and catalogue unchanged.
+
 ## 1.133.18 (patch) — Export CSV on /settings/users — 2026-11-02 (Agent BC5)
 
 - Adds an `Exporter CSV` button on `/settings/users` (actions row, next

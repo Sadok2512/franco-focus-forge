@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  automaticTimeAxisMode,
   formatTick,
   isClockAvailable,
   tooltipTriple,
@@ -24,6 +25,11 @@ const WITHOUT_START: TimeAxisMeta = {
 };
 
 describe("time-axis helpers", () => {
+  it("automatically prefers certified local NMF clock, otherwise capture time", () => {
+    expect(automaticTimeAxisMode(BCNE_META)).toBe("clock-local");
+    expect(automaticTimeAxisMode(WITHOUT_START)).toBe("capture");
+  });
+
   it("isClockAvailable requires nmf_start_at and utc_offset_min", () => {
     expect(isClockAvailable(BCNE_META)).toBe(true);
     expect(isClockAvailable(WITHOUT_START)).toBe(false);

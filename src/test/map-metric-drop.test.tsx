@@ -2,7 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MapMetricDropTarget } from "@/features/kpi/MapMetricDropTarget";
-import { MAP_METRIC_MIME, addMapMetric, readMapMetric } from "@/features/kpi/map-metric-drop";
+import {
+  MAP_METRIC_MIME,
+  addMapMetric,
+  readMapMetric,
+  type MapMetric,
+} from "@/features/kpi/map-metric-drop";
 import { getMetricMap } from "@/lib/api/client";
 import "@/lib/i18n";
 
@@ -96,5 +101,75 @@ describe("Add a metric to the existing map", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /Remove RSRQ/ }));
     expect(container.querySelector("[data-map-added-metric]")).toBeNull();
+  });
+
+  it("keeps collapse, visibility, range selection and settings independent and persistent", async () => {
+    localStorage.clear();
+    const layers = new Set<string>();
+    const map = {
+      getSource: vi.fn(),
+      addSource: vi.fn(),
+      addLayer: vi.fn((layer: { id: string }) => layers.add(layer.id)),
+      setLayoutProperty: vi.fn(),
+      setFilter: vi.fn(),
+      getLayer: vi.fn((id: string) => (layers.has(id) ? {} : undefined)),
+      removeLayer: vi.fn(),
+      removeSource: vi.fn(),
+    };
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const ui = () => (
+      <QueryClientProvider client={client}>
+        <MapMetricDropTarget
+          base={base}
+          map={map as never}
+          projectId="p1"
+          captureId="cap1"
+          filters={{}}
+          workspaceId="persisted-map"
+        >
+          {(legend) => <article>{legend}</article>}
+        </MapMetricDropTarget>
+      </QueryClientProvider>
+    );
+    const first = render(ui());
+    const target = first.container.querySelector("[data-map-drop-target]")!;
+    const dataTransfer = {
+      types: [MAP_METRIC_MIME],
+      getData: () => JSON.stringify(added),
+      dropEffect: "",
+    };
+    fireEvent.drop(target, { dataTransfer });
+    await screen.findByRole("button", { name: /Collapse metric legend/ });
+    fireEvent.click(await screen.findByRole("checkbox", { name: /100\.0%/ }));
+    expect(map.setFilter).toHaveBeenLastCalledWith(
+      expect.any(String),
+      expect.arrayContaining(["!"]),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /Collapse metric legend/ }));
+    expect(screen.queryByRole("checkbox", { name: /100\.0%/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /Show \/ hide RSRQ/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Metric legend settings/ }));
+    expect(screen.getByTestId("metric-legend-settings")).toBeInTheDocument();
+    first.unmount();
+
+    render(ui());
+    await screen.findByRole("button", { name: /Expand metric legend/ });
+    expect(screen.getByRole("button", { name: /Show \/ hide RSRQ/ })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Expand all" }));
+    expect(await screen.findByRole("checkbox", { name: /100\.0%/ })).not.toBeChecked();
+  });
+
+  it("adds three distinct metrics without replacing the existing map", () => {
+    const metrics = [
+      { ...added, code: "cell_rsrp@0", label: "RSRP" },
+      added,
+      { ...added, code: "cell_rssi@0", label: "RSSI", unit: "dBm" },
+    ];
+    expect(
+      metrics.reduce<MapMetric[]>((all, metric) => addMapMetric(all, metric, base), []),
+    ).toEqual(metrics);
   });
 });

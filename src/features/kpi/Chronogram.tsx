@@ -24,9 +24,8 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { toUserMessage } from "@/lib/api/http";
 import { DecodePanel } from "@/features/projects/DecodePanel";
 import {
+  automaticTimeAxisMode,
   formatTick,
-  isClockAvailable,
-  readTimeAxisMode,
   timeAxisLabel,
   tooltipTriple,
   type TimeAxisMeta,
@@ -358,8 +357,7 @@ export const Chronogram = forwardRef<
     [stacked, setStacked] = useState(true),
     [taskId, setTaskId] = useState(""),
     [unknownEvent, setUnknownEvent] = useState("CHI"),
-    [unknownOpen, setUnknownOpen] = useState(false),
-    [timeAxisMode] = useState<TimeAxisMode>(() => readTimeAxisMode());
+    [unknownOpen, setUnknownOpen] = useState(false);
   const metrics = useQuery({
     queryKey: ["metrics", projectId],
     staleTime: 300_000,
@@ -616,8 +614,7 @@ export const Chronogram = forwardRef<
           utc_offset_min: data.utc_offset_min ?? null,
           capture_date: data.capture_date ?? null,
         };
-        const clockOk = isClockAvailable(timeMeta);
-        const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
+        const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);
         return (
         <>
           <p className="text-xs">
