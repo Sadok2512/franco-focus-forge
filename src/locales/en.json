@@ -1416,6 +1416,14 @@
     "signaling": "Open Signaling / Call Flow",
     "loadingMap": "Loading geolocated procedure evidence…",
     "geolocated": "{{count}} geolocated / {{total}} procedures",
+    "layers": {
+      "title": "Procedure events",
+      "drops": "Drops",
+      "rlf": "RLF",
+      "hoFailures": "HO Failures",
+      "scgFailures": "SCG Failures",
+      "countHint": "geolocated / detected"
+    },
     "columns": {
       "time": "NMF time / provenance",
       "ue": "UE / session",

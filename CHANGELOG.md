@@ -1,3 +1,31 @@
+## 1.133.0 (minor) — Procedure incident Map layers (Map Failures) — 2026-11-02 (Agent BC5 North Star D)
+
+- Adds four certified procedure incident Map layers on top of 1.132.0:
+  RLF, HO Failure, Drops, SCG Failure. Layers are source-scoped on
+  `(project_id, capture_id)`, read-only, and derived exclusively from the
+  Procedure Engine evidence shipped in 0.123.0 / 1.132.0. Markers are
+  rendered **only** when the backend returns a certified evidence record
+  with GPS coordinates (`lat`, `lon`) and PROVEN/PROBABLE level ; no GPS
+  is ever synthesised and no fake marker is drawn.
+- The four layers are visible by default. Each layer's counter in the
+  legend reflects the actual number of geo-located incidents returned
+  by the back for the active capture ; a zero count renders an empty
+  layer and shows « 0 » in the legend, never a fake marker.
+- `ProcedureMap.tsx` now reads the geo-located incident bags from
+  `/procedures/{project_id}/{capture_id}/incidents` via the new
+  `procedure-map-layers.ts` client. Click on an incident marker opens
+  the underlying procedure in the Procedure Explorer and bridges to
+  Signaling View / Call Flow for the exact source event (unchanged
+  navigation plumbing).
+- `scripts/procedure-engine-evidence.mjs` extended to assert the four
+  layer counts against the Test_6 and ikea.6 witness captures (used
+  for Playwright certification).
+- i18n keys added to both en.json and fr.json in the same commit.
+- Zero RF value, zero decoder rule, zero API selector modified. Metrics
+  Tree, Parameters UI, Templates, Header V2, Task Bar, Map Height,
+  Serving Links, Graph/Table parity : all unchanged.
+- SemVer front: **MINOR 1.133.0**.
+
 ## 1.132.0 (minor) — Real NMF capture time on Metrics Graphs — 2026-11-02 (Agent BC5 North Star)
 
 - Integrates the BC5 Capture Time fix (`4f6bbf1`) onto the North Star main

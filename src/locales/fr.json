@@ -1415,6 +1415,14 @@
     "signaling": "Ouvrir Signaling / Call Flow",
     "loadingMap": "Chargement des preuves de procédures géolocalisées…",
     "geolocated": "{{count}} procédures géolocalisées sur {{total}}",
+    "layers": {
+      "title": "Événements de procédure",
+      "drops": "Drops",
+      "rlf": "RLF",
+      "hoFailures": "Échecs HO",
+      "scgFailures": "Échecs SCG",
+      "countHint": "géolocalisés / détectés"
+    },
     "columns": {
       "time": "Heure NMF / provenance",
       "ue": "UE / session",
