@@ -1,3 +1,22 @@
+## 1.133.9 (patch) — SCell 1/2/3 SINR LTE visible in sidebar — 2026-11-02 (Agent BC5)
+
+- Mapping JSON enriched with 3 synthetic entries covering the live
+  observed cells that the oracle itself does not publish:
+    LTE_SERVING_SINR_SCELL1  (raw=10)
+    LTE_SERVING_SINR_SCELL2  (raw=11)
+    LTE_SERVING_SINR_SCELL3  (raw=12)
+  Keys prefixed `oracle-observed:<hn>` so they feed the tech-aware
+  fallback introduced in 1.133.8 without colliding with real backend
+  node ids.
+- The DB has these values (nmf_event_light_group, 757/358/235 rows
+  with cell_sinr) and the back exposes
+  `lf_observed_cellmeas_lte-type-10/11/12_cell_sinr` leaves; before
+  this patch the sidebar dropped them because no mapping entry
+  matched `(LTE, CELLMEAS, 10, sinr)`. After this patch the sidebar
+  surfaces PCell + SCell 1-3 + SCell 5-6 under
+  LTE / Serving radio / Serving / SINR.
+- SemVer front: **PATCH 1.133.9**; backend remains **0.123.2**.
+
 ## 1.133.8 (patch) — Oracle fallback tech-aware + 61 missing KPI entries — 2026-11-02 (Agent BC5)
 
 - The `(event, raw_cell_type, metric_label)` fallback introduced in
