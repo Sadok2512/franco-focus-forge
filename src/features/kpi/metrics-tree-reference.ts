@@ -216,7 +216,9 @@ export function applyReferenceHierarchy(
       // neighbour / Detected neighbour / …). Fallbacks keep behaviour
       // safe for mapping entries that predate the oracle enrichment.
       const metricName = meta.m ?? metricNameFromLabel(node.label);
-      const cellLabel = meta.role || node.cell_label || node.label;
+      // Leaf label = oracle `hn` (technical name like LTE_PUSCH_AVG_UL_TBS_PCELL),
+      // not just the role, so each leaf carries its unique oracle identifier.
+      const cellLabel = meta.hn || meta.role || node.cell_label || node.label;
       const techNode = synthesizeTech(meta.t);
       const catNode = synthesizeCategory(meta.t, meta.cat);
       const grpNode = synthesizeGroup(meta.t, meta.cat, meta.g);
@@ -261,6 +263,11 @@ export function applyReferenceHierarchy(
   for (const leaf of keptLeaves) {
     const tech = originalTechOf(leaf);
     if (tech === "LTE" || tech === "NR") continue;
+    // Oracle has 0 KPI entries under EN-DC (only STRUCT / DIM in the
+    // reference). The onlyKpi view therefore shows no EN-DC branch at
+    // all — hide any backend-origin EN-DC leaves to keep the Metrics
+    // sidebar strictly aligned with tree.html's publishable rows.
+    if (tech === "EN-DC") continue;
     stillKept.push(leaf);
   }
   const reparentedUncategorised: MetricCatalogNode[] = [];

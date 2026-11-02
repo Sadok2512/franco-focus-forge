@@ -1,3 +1,20 @@
+## 1.133.6 (patch) — Hide EN-DC + use oracle hn as leaf label — 2026-11-02 (Agent BC5)
+
+- EN-DC branch dropped from the Metrics sidebar: tree.html publishes
+  zero KPI entries under EN-DC (72 entries, all STRUCT / DIM), so the
+  oracle's `onlyKpi` view shows no EN-DC root. The sidebar now
+  mirrors that — backend-origin EN-DC leaves are stripped alongside
+  the dropped STRUCT / DIM mapped leaves. CAPTURE / Shared / Other
+  branches remain untouched (file metadata, services, legacy).
+- Leaf label switched from the oracle `role` (`PCell`, `SCell 1`, …)
+  to the oracle `hn` (`LTE_PUSCH_AVG_UL_TBS_PCELL`,
+  `LTE_PDSCH_BLER2_SCELL1`, …) so each leaf carries its unique
+  technical identifier as published by the reference artefact. The
+  per-cell badge is still suppressed for oracle-remapped leaves to
+  avoid showing the role twice.
+- No API change, no RF value touched, selectors unchanged.
+- SemVer front: **PATCH 1.133.6**; backend remains **0.123.1**.
+
 ## 1.133.5 (patch) — Oracle metric names + no duplicate cell leaves — 2026-11-02 (Agent BC5)
 
 - `synthesizeMetric` now keys the Metric node on `(t, cat, g, m, e)`
