@@ -4,6 +4,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import { ApiHttpError } from "@/lib/api/http";
+import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import fixture from "./fixtures/metrics-analysis-44621571bccc.json";
 import "@/lib/i18n";
 
@@ -48,7 +49,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function mount(captureId = "cap-a") {
+function mount(captureId = "cap-a", onVisualization = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const view = render(
     <QueryClientProvider client={client}>
@@ -62,10 +63,11 @@ function mount(captureId = "cap-a") {
         onClear={() => {}}
         view="table"
         paneRequest={1}
+        onVisualization={onVisualization}
       />
     </QueryClientProvider>,
   );
-  return { ...view, client };
+  return { ...view, client, onVisualization };
 }
 
 describe("Measurements table request states", () => {
@@ -94,6 +96,28 @@ describe("Measurements table request states", () => {
     expect(empty).toHaveTextContent("No measurements for this selection");
     expect(empty).not.toHaveTextContent(/cell_second|backend|command/i);
     expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
+  });
+
+  it("accepts a catalogue metric dropped on the measurements table", async () => {
+    api.analysis.mockResolvedValue(response("cap-a"));
+    const { onVisualization } = mount();
+    await screen.findByTestId("metrics-table-panel");
+    const target = screen.getByTestId("metrics-v3-workspace");
+    const metric = {
+      kind: "metric",
+      code: "cell_rsrq@lte-type-0",
+      label: "RSRQ",
+      unit: "dB",
+    };
+    const dataTransfer = {
+      types: [MAP_METRIC_MIME],
+      getData: (type: string) => (type === MAP_METRIC_MIME ? JSON.stringify(metric) : ""),
+      dropEffect: "",
+    };
+    fireEvent.dragOver(target, { dataTransfer });
+    expect(target).toHaveClass("is-table-drop-target");
+    fireEvent.drop(target, { dataTransfer });
+    expect(onVisualization).toHaveBeenCalledWith(metric.code, "table");
   });
 
   it("renders ERROR with Retry and succeeds after retry", async () => {

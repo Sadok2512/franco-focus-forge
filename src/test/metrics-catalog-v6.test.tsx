@@ -3,6 +3,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
+import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
 
@@ -140,6 +141,21 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
 
     const pcellButton = screen.getByRole("button", { name: "Select LTE_SERVING_RSRP_PCELL" });
     expect(pcellButton).toHaveAttribute("aria-pressed", "false");
+    const pcellLeaf = pcellButton.closest(".kpi-tree-leaf");
+    expect(pcellLeaf).toHaveAttribute("draggable", "true");
+    const setData = vi.fn();
+    fireEvent.dragStart(pcellLeaf!, {
+      dataTransfer: { effectAllowed: "", setData },
+    });
+    expect(setData).toHaveBeenCalledWith(
+      MAP_METRIC_MIME,
+      JSON.stringify({
+        kind: "metric",
+        code: "cell_rsrp@lte-type-0",
+        label: "LTE_SERVING_RSRP_PCELL",
+        unit: "",
+      }),
+    );
     fireEvent.click(pcellButton);
     expect(onToggle).not.toHaveBeenCalled();
     expect(screen.getByRole("button", { name: "Visualisation LTE_SERVING_RSRP_PCELL" })).toBeVisible();

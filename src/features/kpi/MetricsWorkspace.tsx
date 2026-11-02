@@ -52,11 +52,11 @@ import {
   readTimeAxisMode,
   timeAxisLabel,
   tooltipTriple,
-  writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
 } from "./time-axis";
 import { parseMetricSelection } from "./metric-selection";
+import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -1090,6 +1090,7 @@ export function MetricsWorkspace({
     return () => window.removeEventListener("bc4-metric-pane", onTemplatePane);
   }, [_workspaceId]);
   const tablePanelRef = useRef<HTMLDivElement>(null);
+  const [tableDropOver, setTableDropOver] = useState(false);
   const tableOnlyDismissed = useRef(false);
   const setPane = (next: MetricPane) => {
     if (next !== "table") tableOnlyDismissed.current = true;
@@ -1105,11 +1106,7 @@ export function MetricsWorkspace({
   };
   const [groupBy, setGroupBy] = useState("operator");
   const [x, setX] = useState("");
-  const [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
-  const setTimeAxisMode = useCallback((mode: TimeAxisMode) => {
-    setTimeAxisModeRaw(mode);
-    writeTimeAxisMode(mode);
-  }, []);
+  const [timeAxisMode] = useState<TimeAxisMode>(() => readTimeAxisMode());
   const [search, setSearch] = useState("");
   const [pageSize, setPageSize] = useState<25 | 50 | 100>(25);
   const [page, setPage] = useState(1);
@@ -1606,42 +1603,34 @@ export function MetricsWorkspace({
   const activeEvents = useActiveEvents();
   return (
     <article
-      className="kpi-metrics-table-premium kpi-unified-contents"
+      className={`kpi-metrics-table-premium kpi-unified-contents ${tableDropOver ? "is-table-drop-target" : ""}`}
       data-pane={pane}
       data-testid="metrics-v3-workspace"
+      data-table-drop-target={pane === "table" ? "true" : undefined}
+      onDragOver={(event) => {
+        if (pane !== "table" || !event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        const metric = readMapMetric(event.dataTransfer.getData(MAP_METRIC_MIME));
+        if (metric && metric.kind !== "metric") return;
+        event.preventDefault();
+        event.dataTransfer.dropEffect = "copy";
+        setTableDropOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+          setTableDropOver(false);
+        }
+      }}
+      onDrop={(event) => {
+        if (pane !== "table" || !event.dataTransfer.types.includes(MAP_METRIC_MIME)) return;
+        const metric = readMapMetric(event.dataTransfer.getData(MAP_METRIC_MIME));
+        setTableDropOver(false);
+        if (!metric || metric.kind !== "metric" || !onVisualization) return;
+        event.preventDefault();
+        event.stopPropagation();
+        onVisualization(metric.code, "table");
+      }}
     >
       {scopeLabel && <p className="kpi-capture-boundary">{scopeLabel}</p>}
-      {captureId && parsedSelections.length > 0 && (
-        <div className="kpi-time-axis-switcher" data-testid="time-axis-switcher">
-          <span className="kpi-time-axis-switcher__label">
-            {translate("metrics.timeAxis.label")}
-          </span>
-          {(
-            [
-              ["clock-local", translate("metrics.timeAxis.local")],
-              ["clock-utc", translate("metrics.timeAxis.utc")],
-              ["capture", translate("metrics.timeAxis.capture")],
-            ] as Array<[TimeAxisMode, string]>
-          ).map(([m, label]) => (
-            <button
-              key={m}
-              type="button"
-              className="kpi-time-axis-switcher__pill"
-              aria-pressed={effectiveTimeAxisMode === m}
-              disabled={!clockOk && m !== "capture"}
-              onClick={() => setTimeAxisMode(m)}
-              data-active={effectiveTimeAxisMode === m ? "true" : "false"}
-            >
-              {label}
-            </button>
-          ))}
-          {!clockOk && (
-            <span className="kpi-time-axis-switcher__hint" role="note">
-              {translate("metrics.timeAxis.clockUnavailable")}
-            </span>
-          )}
-        </div>
-      )}
       {showEvents && captureId && parsedSelections.length > 0 && (
         <MetricsEventsRibbon
           projectId={projectId}
@@ -1773,6 +1762,11 @@ export function MetricsWorkspace({
           <div className="kpi-measurements-loading-label">
             <LoaderCircle className="kpi-measurements-loading-icon" aria-hidden="true" />
             <span>{translate("metrics.eb724a908f1f")}</span>
+            <span className="kpi-loading-dots" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+            </span>
           </div>
           <div
             className="kpi-measurements-progress"

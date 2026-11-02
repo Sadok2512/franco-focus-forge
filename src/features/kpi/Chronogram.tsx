@@ -29,7 +29,6 @@ import {
   readTimeAxisMode,
   timeAxisLabel,
   tooltipTriple,
-  writeTimeAxisMode,
   type TimeAxisMeta,
   type TimeAxisMode,
 } from "./time-axis";
@@ -360,11 +359,7 @@ export const Chronogram = forwardRef<
     [taskId, setTaskId] = useState(""),
     [unknownEvent, setUnknownEvent] = useState("CHI"),
     [unknownOpen, setUnknownOpen] = useState(false),
-    [timeAxisMode, setTimeAxisModeRaw] = useState<TimeAxisMode>(() => readTimeAxisMode());
-  const setTimeAxisMode = (mode: TimeAxisMode) => {
-    setTimeAxisModeRaw(mode);
-    writeTimeAxisMode(mode);
-  };
+    [timeAxisMode] = useState<TimeAxisMode>(() => readTimeAxisMode());
   const metrics = useQuery({
     queryKey: ["metrics", projectId],
     staleTime: 300_000,
@@ -625,35 +620,6 @@ export const Chronogram = forwardRef<
         const effectiveTimeAxisMode: TimeAxisMode = clockOk ? timeAxisMode : "capture";
         return (
         <>
-          <div className="kpi-time-axis-switcher" data-testid="time-axis-switcher">
-            <span className="kpi-time-axis-switcher__label">
-              {translateInline("metrics.timeAxis.label")}
-            </span>
-            {(
-              [
-                ["clock-local", translateInline("metrics.timeAxis.local")],
-                ["clock-utc", translateInline("metrics.timeAxis.utc")],
-                ["capture", translateInline("metrics.timeAxis.capture")],
-              ] as Array<[TimeAxisMode, string]>
-            ).map(([m, label]) => (
-              <button
-                key={m}
-                type="button"
-                className="kpi-time-axis-switcher__pill"
-                aria-pressed={effectiveTimeAxisMode === m}
-                disabled={!clockOk && m !== "capture"}
-                onClick={() => setTimeAxisMode(m)}
-                data-active={effectiveTimeAxisMode === m ? "true" : "false"}
-              >
-                {label}
-              </button>
-            ))}
-            {!clockOk && (
-              <span className="kpi-time-axis-switcher__hint" role="note">
-                {translateInline("metrics.timeAxis.clockUnavailable")}
-              </span>
-            )}
-          </div>
           <p className="text-xs">
             Capture {data.capture_id} {i18n.t("metrics.21ebc78f9d73")} {data.origin_ts} (seq{" "}
             {data.origin_seq}) · {data.duration_s} s

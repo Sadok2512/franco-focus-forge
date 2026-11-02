@@ -737,6 +737,19 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   border-color: #8dbaf7;
   box-shadow: 0 0 0 2px #8dbaf788;
 }
+.kpi-tree-leaf[draggable="true"] {
+  cursor: grab;
+}
+.kpi-tree-leaf[draggable="true"]:active {
+  cursor: grabbing;
+}
+.kpi-metrics-table-premium.is-table-drop-target .kpi-data-table,
+.kpi-metrics-table-premium.is-table-drop-target .kpi-measurements-loading,
+.kpi-metrics-table-premium.is-table-drop-target .kpi-measurements-empty {
+  outline: 2px dashed var(--primary, #2563eb);
+  outline-offset: -3px;
+  background: color-mix(in oklab, var(--primary) 7%, var(--card));
+}
 .kpi-card-header {
   padding: 12px 10px 7px;
   display: flex;
@@ -1883,12 +1896,40 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   font-size: 13px;
   font-weight: 600;
   color: var(--foreground);
+  animation: kpi-loading-breathe 1.8s ease-in-out infinite;
 }
 .kpi-measurements-loading-icon {
   width: 16px;
   height: 16px;
   color: var(--primary);
   animation: kpi-spin 800ms linear infinite;
+}
+.kpi-loading-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  height: 12px;
+}
+.kpi-loading-dots i {
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: currentColor;
+  animation: kpi-loading-dot 900ms ease-in-out infinite;
+}
+.kpi-loading-dots i:nth-child(2) {
+  animation-delay: 120ms;
+}
+.kpi-loading-dots i:nth-child(3) {
+  animation-delay: 240ms;
+}
+@keyframes kpi-loading-breathe {
+  0%, 100% { opacity: 0.72; }
+  50% { opacity: 1; }
+}
+@keyframes kpi-loading-dot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
+  30% { transform: translateY(-3px); opacity: 1; }
 }
 .kpi-measurements-refresh-label {
   position: absolute;
@@ -1965,6 +2006,12 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 @media (prefers-reduced-motion: reduce) {
   .kpi-measurements-loading-icon {
     animation: kpi-spin 2s linear infinite !important;
+  }
+  .kpi-measurements-loading-label {
+    animation-duration: 3.6s !important;
+  }
+  .kpi-loading-dots i {
+    animation-duration: 1.8s !important;
   }
   .kpi-measurements-progress span {
     left: 0;
