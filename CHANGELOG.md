@@ -1,3 +1,23 @@
+## 1.133.10 (patch) — Systemic observed-cell coverage — 2026-11-02 (Agent BC5)
+
+- Mapping JSON now carries 22 synthetic `oracle-observed:` entries
+  that cover every backend observed cell leaf currently emitted on
+  the 3 project captures with real data:
+    LTE SINR / RSSI / Timing / Band / Ch / PCI × SCell 1-3
+    NR PCI / NR-ARFCN × observed cells
+  These were silently dropped before because the oracle itself does
+  not declare SCell 1-3 for every metric (documentation gap) and the
+  backend's dynamic observed-cell leaves had no mapping entry.
+- Fallback matcher now accepts both the raw `metric_label` and a
+  `cell_` prefix-stripped variant (`cell_sinr` ↔ `SINR`) so NR
+  observed leaves that use column-style labels resolve to the same
+  oracle meta as their LTE counterparts.
+- Resulting sidebar on Test_6 under LTE / Serving radio / Serving:
+  RSRP, RSRQ, SINR, RSSI, Band, Ch, Timing, PCI, Pathloss all
+  surface PCell + SCell 1-3 (where probe recorded them) + SCell 5-6
+  as empty placeholders per oracle convention.
+- SemVer front: **PATCH 1.133.10**; backend remains **0.123.2**.
+
 ## 1.133.9 (patch) — SCell 1/2/3 SINR LTE visible in sidebar — 2026-11-02 (Agent BC5)
 
 - Mapping JSON enriched with 3 synthetic entries covering the live

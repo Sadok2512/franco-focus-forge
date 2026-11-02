@@ -241,8 +241,20 @@ export function applyReferenceHierarchy(
     if (node.event != null && node.raw_cell_type != null && node.metric_label) {
       const tech = inferTech(node);
       if (!tech) return undefined;
-      const key = `${tech}|${node.event}|${node.raw_cell_type}|${node.metric_label.toLowerCase()}`;
-      return fallbackByEventRawMetric.get(key);
+      // Try the raw label first, then a normalized variant that strips
+      // the `cell_` prefix the backend sometimes emits for dynamic
+      // observed leaves (e.g. metric_label="cell_sinr" vs oracle "SINR",
+      // "cell_band" vs "Band"). Both key the same (tech, event, raw)
+      // triple so no risk of silent cross-metric collision.
+      const raw = node.metric_label.toLowerCase();
+      const stripped = raw.startsWith("cell_") ? raw.slice(5) : raw;
+      const candidates = raw === stripped ? [raw] : [raw, stripped];
+      for (const label of candidates) {
+        const hit = fallbackByEventRawMetric.get(
+          `${tech}|${node.event}|${node.raw_cell_type}|${label}`,
+        );
+        if (hit) return hit;
+      }
     }
     return undefined;
   };
