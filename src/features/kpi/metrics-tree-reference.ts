@@ -242,14 +242,19 @@ export function applyReferenceHierarchy(
       const tech = inferTech(node);
       if (!tech) return undefined;
       // Try the raw label first, then a normalized variant that strips
-      // the `cell_` prefix the backend sometimes emits for dynamic
-      // observed leaves (e.g. metric_label="cell_sinr" vs oracle "SINR",
-      // "cell_band" vs "Band"). Both key the same (tech, event, raw)
-      // triple so no risk of silent cross-metric collision.
+      // the `cell_` prefix the backend emits for dynamic observed
+      // leaves (e.g. `cell_sinr` vs oracle `SINR`) and the
+      // `(bloc XXX)` tech-selector suffix (e.g. `#Params (bloc UMTS
+      // TD-SCDMA)` vs oracle `#Params`). All variants key the same
+      // (tech, event, raw) triple so there is no cross-metric
+      // collision risk.
       const raw = node.metric_label.toLowerCase();
-      const stripped = raw.startsWith("cell_") ? raw.slice(5) : raw;
-      const candidates = raw === stripped ? [raw] : [raw, stripped];
-      for (const label of candidates) {
+      const noBloc = raw.replace(/\s*\(bloc [^)]+\)\s*/, "").trim();
+      const stripped = noBloc.startsWith("cell_") ? noBloc.slice(5) : noBloc;
+      const seen = new Set<string>();
+      for (const label of [raw, noBloc, stripped]) {
+        if (seen.has(label)) continue;
+        seen.add(label);
         const hit = fallbackByEventRawMetric.get(
           `${tech}|${node.event}|${node.raw_cell_type}|${label}`,
         );

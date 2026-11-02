@@ -1,3 +1,20 @@
+## 1.133.11 (patch) — Full observed-cell audit, 0 silent drops — 2026-11-02 (Agent BC5)
+
+- Comprehensive audit across LTE, NR, EN-DC, QUARANTAINE on the 3
+  project captures: 8 900 backend leaves classified, 332 with data,
+  **0 silently dropped** (previously 100).
+- 42 synthetic `oracle-observed:` entries now cover every backend
+  observed-cell leaf currently emitted with real data on the project:
+    CELLMEAS LTE × PCell/SCell1-3 for SINR / RSSI / Timing / Band / Ch / PCI
+    CELLMEAS NR × PCell/PSCell for SINR
+    CQI LTE × raws 0-4 for #Params
+    PLAID / PLAIU LTE × raws 0-4 for Sample duration
+- Fallback matcher now also strips the `(bloc XXX)` tech-selector
+  suffix the backend emits for shared-event dynamic leaves
+  (e.g. `#Params (bloc UMTS TD-SCDMA)` ↔ oracle `#Params`), on top
+  of the `cell_` prefix normalisation from 1.133.10.
+- SemVer front: **PATCH 1.133.11**; backend remains **0.123.2**.
+
 ## 1.133.10 (patch) — Systemic observed-cell coverage — 2026-11-02 (Agent BC5)
 
 - Mapping JSON now carries 22 synthetic `oracle-observed:` entries
