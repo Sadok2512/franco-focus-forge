@@ -14,6 +14,11 @@
 - Restores the shared Map drag payload on selectable leaves of the Metrics
   catalogue and gives the primary Metrics Map layer the same persistent
   Count/%, range filtering and settings controls as dropped layers.
+- Keeps Graph, Table and Map panels independent and persistent: adding a
+  panel never replaces an existing panel, including after workspace changes
+  and browser reloads.
+- Removes the global Time Axis toolbar while preserving each visualization's
+  timestamps, zoom, brush and tooltips.
 - SemVer front: **PATCH 1.133.19**; backend and catalogue unchanged.
 
 ## 1.133.18 (patch) — Export CSV on /settings/users — 2026-11-02 (Agent BC5)
