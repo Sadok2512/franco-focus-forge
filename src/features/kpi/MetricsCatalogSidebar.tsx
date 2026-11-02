@@ -336,10 +336,16 @@ export function MetricsCatalogSidebar({
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
-  // "Afficher les non disponibles" est volontairement OFF au chargement :
-  // l'arbre nominal ne contient que les feuilles consommables. L'option les
-  // réintroduit sans changer leur rendu grisé ni leur tooltip de cause.
-  const [showUnavailable, setShowUnavailable] = useState(false);
+  // Oracle discipline (tree.html sha f4057ccc…): the Metrics sidebar must
+  // mirror the certified reference 1:1 — every tech, category, group,
+  // metric and cell leaf of the oracle is shown by default, including
+  // leaves the current capture never observed. Those stay greyed-out and
+  // keep their "no_data" tooltip + reason, so the user can still read the
+  // full oracle structure without having to toggle a switch. The
+  // "Show unavailable" control is kept for symmetry with earlier versions
+  // but is now ON by default; a user who prefers the compact view can
+  // still turn it OFF to hide the non-selectable leaves.
+  const [showUnavailable, setShowUnavailable] = useState(true);
   const [activeOnly, setActiveOnly] = useState(false);
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
@@ -363,12 +369,33 @@ export function MetricsCatalogSidebar({
     const nodes = normalizedNodes;
     const byId = new Map(nodes.map((node) => [node.node_id, node]));
     const visible = new Set<string>();
+    // Pass 1 — ancestors of every selectable leaf: a Metric that holds at
+    // least one measured cell leaf (n > 0) is visible all the way up to
+    // the Technology root.
     for (const leaf of nodes) {
       if (leaf.node_type !== "leaf" || !leaf.selectable) continue;
       let current: MetricCatalogNode | undefined = leaf;
       while (current && !visible.has(current.node_id)) {
         visible.add(current.node_id);
         current = current.parent_id ? byId.get(current.parent_id) : undefined;
+      }
+    }
+    // Pass 2 — cell siblings under a visible Metric: the certified oracle
+    // (tree.html sha f4057ccc…) lists every cell role (PCell / SCell 1 …
+    // SCell 6 / SCG SCell 0 / PSCell / Listed neighbour / Detected
+    // neighbour / …) under each metric, regardless of whether the current
+    // capture observed them. Showing only the selectable leaf makes the
+    // Metrics sidebar look like a strict subset of the oracle. Instead,
+    // once a Metric node is visible, surface all its cell children as
+    // greyed-out "no data" entries (keeping their reason tooltip + grey
+    // rendering) so the tree mirrors the oracle. Non-leaf siblings are
+    // left out: only cell leaves gain this exposure.
+    for (const node of nodes) {
+      if (node.node_type !== "leaf") continue;
+      if (visible.has(node.node_id)) continue;
+      if (node.parent_id && visible.has(node.parent_id)) {
+        const parent = byId.get(node.parent_id);
+        if (parent?.node_type === "metric") visible.add(node.node_id);
       }
     }
     return visible;

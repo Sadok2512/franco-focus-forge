@@ -107,23 +107,26 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
 
     // Technology roots auto-expand on first data arrival so the sidebar
     // is never read as empty. Groups and metrics still expand on demand.
+    // Oracle discipline: every tech of the certified reference is shown
+    // by default (showUnavailable = true), including techs whose current
+    // capture only exposes no_data leaves. LTE AND NR are both present
+    // on first render.
     const lte = await screen.findByRole("button", { name: "LTE" });
+    const nr = screen.getByRole("button", { name: "NR" });
     await waitFor(() => expect(lte).toHaveAttribute("aria-expanded", "true"));
-    const rsrpFam = screen.getByRole("button", { name: /^RSRP/ });
-    expect(rsrpFam).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(rsrpFam);
-    expect(rsrpFam).toHaveAttribute("aria-expanded", "true");
+    await waitFor(() => expect(nr).toHaveAttribute("aria-expanded", "true"));
+    const rsrpFams = screen.getAllByRole("button", { name: /^RSRP/ });
+    expect(rsrpFams.length).toBeGreaterThanOrEqual(2);
+    for (const r of rsrpFams) {
+      expect(r).toHaveAttribute("aria-expanded", "false");
+      fireEvent.click(r);
+      expect(r).toHaveAttribute("aria-expanded", "true");
+    }
 
-    // Default tree contains only the selectable leaf.
+    // Full oracle: both the selectable PCell and the no_data PSCell are
+    // visible, with PSCell greyed out (opacity-45) and keeping its
+    // "reason" tooltip.
     expect(screen.getByText("PCell")).toBeVisible();
-    expect(screen.queryByText("PSCell")).toBeNull();
-
-    // The existing grey rendering is restored by the opt-in switch.
-    fireEvent.click(screen.getByRole("switch", { name: "Show unavailable" }));
-    // NR appears once unavailable leaves are revealed; the user still expands
-    // it manually because auto-expand only fires while the open set is empty.
-    fireEvent.click(screen.getByRole("button", { name: "NR" }));
-    fireEvent.click(screen.getAllByRole("button", { name: /^RSRP/ })[1]!);
     expect(screen.getByText("PSCell")).toBeVisible();
 
     // P4 (open-proof) leaf still visible but visually disabled.

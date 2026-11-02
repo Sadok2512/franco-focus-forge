@@ -1,3 +1,23 @@
+## 1.133.3 (patch) — Metrics Tree full oracle view by default — 2026-11-02 (Agent BC5)
+
+- `showUnavailable` default flipped from `false` to `true`: the Metrics
+  sidebar now shows every oracle leaf on first render so the tree is
+  a strict 1:1 copy of `tree.html`
+  (sha `f4057ccc5332cebd329063287b23ab05343038ac78cfd902404fdf0801af2cda`),
+  not a subset filtered by the current capture's observations. Cells
+  the capture never observed stay rendered with the existing greyed-
+  out appearance (`opacity-45` + `.status-unavailable` dot) and keep
+  their `reason` tooltip; selectability, selectors, counts and proofs
+  are untouched.
+- The « Show unavailable » toggle is kept for symmetry; a user who
+  prefers the compact view can still turn it off to hide the no_data
+  leaves.
+- Oracle discipline (established in 1.133.2) is preserved:
+  `applyReferenceHierarchy` still relabels Metric and Cell leaves with
+  the oracle `m` and `role` fields, and `mergeMetricCatalogTrees`
+  still skips KPI measured entries whose root tech is in the oracle.
+- SemVer front: **PATCH 1.133.3**; backend remains **0.123.1**.
+
 ## 1.133.2 (patch) — Metrics Tree 1:1 oracle alignment — 2026-11-02 (Agent BC5)
 
 - Aligns the Metrics sidebar leaf display 1-to-1 with the certified
