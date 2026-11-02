@@ -3,7 +3,6 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
-import { catalogEntries } from "@/features/kpi/workspace-model";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
 
@@ -254,7 +253,6 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
           onToggle={vi.fn()}
           searchRef={createRef<HTMLInputElement>()}
           selectionCount={0}
-          measuredEntries={catalogEntries(measuredCatalog)}
         />
       </QueryClientProvider>,
     );
