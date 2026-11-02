@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, Copy, History, Pencil, Plus, Search } from "lucide-react";
+import { Archive, Copy, Download, History, Pencil, Plus, Search } from "lucide-react";
 import { useState } from "react";
 import { createKpi, getApiPermissions, getKpiCatalogSettings, patchKpi } from "@/lib/api/client";
+import { exportMetadata } from "@/lib/api/settings";
 import {
   KPI_STATUS_LABEL,
   type Kpi,
@@ -55,6 +56,43 @@ export function KpiCatalogPanel() {
       (!status || k.status === status) &&
       `${k.code} ${k.name} ${k.family}`.toLowerCase().includes(search.toLowerCase()),
   );
+
+  const exportCsv = () => {
+    const meta = exportMetadata();
+    const header = `# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""}`;
+    const cols = [
+      "Code",
+      "Nom",
+      "Famille",
+      "Techno",
+      "Unité",
+      "Statut",
+      "Version",
+      "Événements source",
+      "Description",
+      "Formule",
+    ];
+    const rows = items.map((k) => [
+      k.code,
+      k.name,
+      k.family,
+      k.tech,
+      k.unit,
+      KPI_STATUS_LABEL[k.status],
+      k.version,
+      k.source_events.join("|"),
+      k.description,
+      k.formula,
+    ]);
+    const csv = [[header], cols, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+      .join("\n");
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+    a.download = `bc4-kpi-catalogue-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+  };
+
   return (
     <SettingsSection
       title="Catalogue KPI"
@@ -84,6 +122,15 @@ export function KpiCatalogPanel() {
               </option>
             ))}
           </select>
+          <button
+            className={btn}
+            onClick={exportCsv}
+            disabled={!items.length}
+            aria-label="Exporter le catalogue KPI en CSV"
+          >
+            <Download className="h-3.5 w-3.5" />
+            Exporter CSV
+          </button>
           {write && (
             <button className={btnPrimary} onClick={() => setEdit({ base: null })}>
               <Plus className="h-3.5 w-3.5" />

@@ -1,3 +1,22 @@
+## 1.133.22 (patch) — Export KPI catalogue CSV on /settings/kpi-catalog — 2026-11-02 (Agent BC5)
+
+- 1.133.18 shipped a *users* CSV export on `/settings/users` by mistake;
+  the ask was a *metric catalogue* export. 1.133.22 lands the right one.
+- Adds an `Exporter CSV` button (download icon, next to `Ajouter`) on
+  `/settings/kpi-catalog`. Downloads the currently-filtered KPI catalogue
+  as a semicolon-delimited CSV with columns: `Code`, `Nom`, `Famille`,
+  `Techno`, `Unité`, `Statut`, `Version`, `Événements source`,
+  `Description`, `Formule`. Multi-valued `source_events` is joined with
+  `|` so Excel keeps it in a single cell.
+- First line is the standard BC4 export header (`# BC4 vX.Y.Z` + the
+  organisation name if configured, via `exportMetadata()`).
+- Filename `bc4-kpi-catalogue-YYYY-MM-DD.csv`. Button is disabled when
+  the current filter yields no rows.
+- The 1.133.18 users CSV button stays on `/settings/users` — it is a
+  legitimate list export, just mislabelled in that lot. Users
+  management keeps its CSV; the metric export now has its own home.
+- SemVer front: **PATCH 1.133.22**; backend remains **0.123.3**.
+
 ## 1.133.21 (patch) — RF Parameters: drop empty sections, round RSRP — 2026-11-02 (Agent BC5)
 
 - Users reported that `/metrics` map `Selected point` panel showed a
