@@ -9,7 +9,14 @@ export const SETTINGS_TABS = [
   { to: "/settings/users", label: "Utilisateurs" },
   { to: "/settings/geography", label: "Géographie" },
   { to: "/settings/cellular-reference", label: "Référence cellulaire" },
-  { to: "/settings/kpi-catalog", label: "Catalogue KPI" },
+  // REPRISE 13 P2 (2026-11-03) — "Catalogue KPI" (legacy /projects/{pid}/kpi/catalog,
+  // service_v2.build_catalog_v2_response, 194 KPI figés avec « No successfully
+  // ingested NR NMF — REF = LTE only ») masqué du menu : il n'est plus la
+  // source de vérité du catalogue (remplacé par le workspace Métriques
+  // alimenté par /projects/{pid}/metrics catalog_release 2.66.x). La route
+  // reste accessible via URL directe pour audit (non référencée depuis le
+  // menu). À retirer complètement dans un lot ultérieur.
+  // { to: "/settings/kpi-catalog", label: "Catalogue KPI" },
   { to: "/settings/ai", label: "Assistant LLM" },
   { to: "/settings/appearance", label: "Apparence" },
   { to: "/settings/organization", label: "Organisation" },

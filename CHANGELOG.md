@@ -1,3 +1,13 @@
+## 1.135.0 (minor) — Settings > Catalogue KPI masqué du menu (REPRISE 13 P2) — 2026-11-03 (Agent BC5)
+
+- `src/features/settings/SettingsLayout.tsx:12` — entrée "Catalogue KPI"
+  commentée. Le legacy /projects/{pid}/kpi/catalog (service_v2.build_catalog_v2_response,
+  194 KPI figés avec "No successfully ingested NR NMF — REF = LTE only")
+  n'est plus accessible depuis le menu Settings. La route /settings/kpi-catalog
+  reste joignable par URL directe pour audit, mais ne figure plus dans la
+  navigation. À retirer complètement dans un lot ultérieur.
+- Compat back ≥ 0.128.2 recommandée (nouveau leaf chi_rrc_state_timeline).
+
 ## 1.134.0 (minor) — Export CSV avec colonne par capture (REPRISE 7 Lot 7) — 2026-11-03 (Agent BC2)
 
 - Front **1.133.25 → 1.134.0** (minor). Nécessite back ≥ 0.126.1.
