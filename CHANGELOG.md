@@ -1,3 +1,33 @@
+## 1.136.0 (minor) — Mobilité étape 3 : icônes + i18n events mobilité — 2026-11-03 (Agent BC5)
+
+- **Front 1.135.0 → 1.136.0** (minor — nouveaux event types reconnus).
+- `src/features/signaling/event-icons.tsx:22-51` — ajout des codes
+  **RRRE** (mobilité, icône `Repeat` warning), **PSCELL_CHANGE**
+  (`ArrowLeftRight` scg), **SCG_ADD** (`RadioTower` scg), **SCG_RELEASE**
+  (`RadioTower` warning), **RRF / TUF / LUF / PBF** (`TriangleAlert`
+  rouge), **CREL** (`PhoneOff` warning). Les anciens codes
+  (HOA/HOS/HOI/MEI/SCG via regex) conservent leur mapping.
+- i18n (`src/locales/en.json` + `src/locales/fr.json`, blocs
+  `signaling.types` et `signaling.tooltip`) :
+  - clés `types.HOA` ... `types.SCG_RELEASE` pour les 15 types mobilité
+    (labels courts pour légende carte/timeline).
+  - clés `tooltip.pci`, `tooltip.ecgi`, `tooltip.cause`, `tooltip.status`,
+    `tooltip.seq`, `tooltip.gpsGap`, `tooltip.subtype` pour l'infobulle
+    carte (backend attache déjà ces attrs sur `/signaling/events`).
+- **Design inchangé** : aucun composant Timeline/Map/Filter modifié
+  (les new types héritent du mapping `event-track.ts` via les lanes
+  `mobilite`/`acces`/`services`/`ca`). Les labels s'appuient sur les
+  clés i18n ajoutées.
+- **OUVERT** :
+  - Infobulle carte : nouveaux attrs backend (pci/ecgi/cause/status
+    /subtype/gps_seq_gap) présents mais popup actuelle ne les affiche
+    pas tous. Enrichissement UX dans un lot dédié.
+  - Filtre par type (vs lane) : `SignalingFilters.tsx` actuel filtre
+    par lane + success/échec ; filtre par type non ajouté.
+  - Screenshot de la carte Test_6 : non produit (pas de navigateur
+    dans cette session) — à produire manuellement après rebuild
+    front-v2.
+
 ## 1.135.0 (minor) — Settings > Catalogue KPI masqué du menu (REPRISE 13 P2) — 2026-11-03 (Agent BC5)
 
 - `src/features/settings/SettingsLayout.tsx:12` — entrée "Catalogue KPI"

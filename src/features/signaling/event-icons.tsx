@@ -18,15 +18,31 @@ export function eventIcon(event: RfEvent): { icon: LucideIcon; role: IconRole } 
     event.attrs.status === "FAILURE" ||
     /failure|failed|drop|\brlf\b/.test(name);
   if (failure) return { icon: track === "mobility" && /handover|\bho\b/.test(name) ? CircleX : TriangleAlert, role: "error" };
+  // Mobilité étape 3 — SCELLMOD split (PSCELL_CHANGE / SCG_ADD / SCG_RELEASE)
+  // retourne des types explicites : chacun garde son icône pour la carte.
+  const upper = event.type.toUpperCase();
+  if (upper === "PSCELL_CHANGE") return { icon: ArrowLeftRight, role: "scg" };
+  if (upper === "SCG_ADD") return { icon: RadioTower, role: "scg" };
+  if (upper === "SCG_RELEASE") return { icon: RadioTower, role: "warning" };
   if (/scg/.test(name)) return { icon: RadioTower, role: /release|remov/.test(name) ? "warning" : track === "mobility" ? "scg" : "event" };
+  // Mobilité étape 3 — échecs explicites NAS/RRC : TUF/LUF/PBF/RRF/CREL
+  // affichent une icône d'alerte en rouge (role=error géré au-dessus par le
+  // test `failure`, mais ces codes n'embarquent pas « fail » dans le name).
+  if (upper === "RRF" || upper === "TUF" || upper === "LUF" || upper === "PBF") {
+    return { icon: TriangleAlert, role: "error" };
+  }
+  if (upper === "CREL") return { icon: PhoneOff, role: "warning" };
   if (track === "mobility") {
     // VM mobility codes (HOA/HOS/HOI/MEI marks and `ho` procedure bars) arrive
     // without a name, so each keeps its own glyph and the lane stays readable.
+    // Mobilité étape 3 — RRRE ajoutée (RRC Re-Establishment) : status=3 →
+    // fail déjà traité au-dessus, status=1 ou 2 → info.
     const code = event.type.toUpperCase();
     if (code === "HOA") return { icon: Flag, role: "info" };
     if (code === "HOS") return { icon: CircleCheck, role: "info" };
     if (code === "HOI") return { icon: CircleDot, role: "info" };
     if (code === "MEI") return { icon: Radar, role: "info" };
+    if (code === "RRRE") return { icon: Repeat, role: "warning" };
     if (/inter.?rat/.test(name)) return { icon: Route, role: "event" };
     if (/inter.?freq|inter.*\bho\b/.test(name)) return { icon: Repeat, role: "warning" };
     if (/success/.test(name)) return { icon: CircleCheck, role: "success" };

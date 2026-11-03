@@ -628,6 +628,32 @@
       "services": "Services",
       "acces": "Access / failures",
       "contexte": "Context"
+    },
+    "types": {
+      "HOA": "HO attempt",
+      "HOS": "HO success",
+      "HOI": "HO info",
+      "RRRE": "RRC Re-establishment",
+      "RRF": "RRC setup failure",
+      "RRA": "RRC request",
+      "RRC": "RRC complete",
+      "RRD": "RRC release",
+      "TUF": "TAU failure",
+      "LUF": "LAU failure",
+      "PBF": "Packet bearer failure",
+      "CREL": "Cell release",
+      "PSCELL_CHANGE": "PSCell change",
+      "SCG_ADD": "SCG add",
+      "SCG_RELEASE": "SCG release"
+    },
+    "tooltip": {
+      "pci": "PCI",
+      "ecgi": "ECGI",
+      "cause": "Cause",
+      "status": "Status",
+      "seq": "Seq",
+      "gpsGap": "GPS gap (seq)",
+      "subtype": "Subtype"
     }
   },
   "rfTimeline": {

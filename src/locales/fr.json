@@ -628,6 +628,32 @@
       "services": "Services",
       "acces": "Accès / échecs",
       "contexte": "Contexte"
+    },
+    "types": {
+      "HOA": "HO tentative",
+      "HOS": "HO succès",
+      "HOI": "HO info",
+      "RRRE": "RRC re-établissement",
+      "RRF": "Échec setup RRC",
+      "RRA": "Demande RRC",
+      "RRC": "RRC complet",
+      "RRD": "Libération RRC",
+      "TUF": "Échec TAU",
+      "LUF": "Échec LAU",
+      "PBF": "Échec bearer paquet",
+      "CREL": "Libération cellule",
+      "PSCELL_CHANGE": "PSCell changement",
+      "SCG_ADD": "SCG ajout",
+      "SCG_RELEASE": "SCG libération"
+    },
+    "tooltip": {
+      "pci": "PCI",
+      "ecgi": "ECGI",
+      "cause": "Cause",
+      "status": "Statut",
+      "seq": "Seq",
+      "gpsGap": "Écart GPS (seq)",
+      "subtype": "Sous-type"
     }
   },
   "rfTimeline": {
