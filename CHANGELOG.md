@@ -1,3 +1,17 @@
+## 1.134.0 (minor) — Export CSV avec colonne par capture (REPRISE 7 Lot 7) — 2026-11-03 (Agent BC2)
+
+- Front **1.133.25 → 1.134.0** (minor). Nécessite back ≥ 0.126.1.
+- `MetricsCatalogSidebar.exportAllMetricsCsv` (`src/features/kpi/MetricsCatalogSidebar.tsx:490-516`)
+  ne reconstruit plus le CSV côté client. Il appelle désormais
+  l'endpoint back `GET /projects/{projectId}/metrics/catalog-csv` qui
+  renvoie un text/csv complet avec :
+  - en-tête `display_code, label, kind, unit, data_type, Technology,
+    Category, Group, Metric, Cell, Event, Source column, Metric id,
+    Raw cell type, Selectable, Availability, Reason` ;
+  - une colonne `n_<capture_id>` par capture du projet (serveur merge
+    toutes les captures par `display_code`).
+- Design UI inchangé — même bouton Export, même tooltip.
+
 ## 1.133.25 (patch) — Resizable Map and Histogram panels — 2026-11-02 (BC4)
 
 - KPI Analytics Map panels now retain the shared vertical resize handle even

@@ -34,6 +34,7 @@ import {
   Search,
 } from "lucide-react";
 import { exportMetadata } from "@/lib/api/settings";
+import { apiBase, getSession } from "@/lib/api/http";
 import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 import {
   DropdownMenu,
@@ -482,74 +483,36 @@ export function MetricsCatalogSidebar({
     return visible;
   }, [byParent, deferredSearch, nodeIndex, normalizedNodes]);
 
-  // Export every leaf under the normalized tree as a CSV. One row per
-  // leaf, path columns (Technology / Category / Group / Metric) resolved
-  // via the by-id lookup. Users asked for "export all metrics" — this is
-  // the full oracle catalog the sidebar renders (~6082 RF KPIs), not the
-  // three Settings-defined KPIs.
-  const exportAllMetricsCsv = () => {
-    const { byId } = nodeIndex;
-    const pathOf = (leaf: MetricCatalogNode) => {
-      let tech = "";
-      let cat = "";
-      let grp = "";
-      let met = "";
-      let current: MetricCatalogNode | undefined = leaf.parent_id ? byId.get(leaf.parent_id) : undefined;
-      while (current) {
-        if (current.node_type === "metric") met ||= current.label ?? "";
-        else if (current.node_type === "group") grp ||= current.label ?? "";
-        else if (current.node_type === "category") cat ||= current.label ?? "";
-        else if (current.node_type === "tech") tech ||= current.label ?? "";
-        current = current.parent_id ? byId.get(current.parent_id) : undefined;
-      }
-      return { tech, cat, grp, met };
-    };
-    const meta = exportMetadata();
-    const releaseVer = query.data?.catalog_release?.version ?? "legacy";
-    const header = `# ${meta.generator}${meta.organization ? ` — Organisation : ${meta.organization}` : ""} — catalog_release ${releaseVer}`;
-    const cols = [
-      "Technology",
-      "Category",
-      "Group",
-      "Metric",
-      "Cell",
-      "hn / label",
-      "Event",
-      "Source column",
-      "Metric id",
-      "Raw cell type",
-      "n",
-      "Selectable",
-      "Availability",
-      "Reason",
-    ];
-    const rows: Array<Array<string | number>> = [];
-    for (const node of normalizedNodes) {
-      if (node.node_type !== "leaf") continue;
-      const { tech, cat, grp, met } = pathOf(node);
-      rows.push([
-        tech,
-        cat,
-        grp,
-        met,
-        node.cell_label ?? "",
-        node.label ?? "",
-        node.event ?? "",
-        node.source_column ?? "",
-        node.metric_id ?? "",
-        node.raw_cell_type ?? "",
-        node.n ?? 0,
-        node.selectable ? "yes" : "no",
-        node.availability_status ?? "",
-        node.reason ?? "",
-      ]);
+  // 1.134.0 (REPRISE 7 Lot 7) — export CSV avec UNE colonne par capture +
+  // Kind / unit / data_type / display_code. Le back fournit l'endpoint
+  // `/projects/{pid}/metrics/catalog-csv` qui merge toutes les captures
+  // du projet par display_code et renvoie un text/csv direct — jamais
+  // de fallback silencieux, jamais de re-calcul côté front.
+  const exportAllMetricsCsv = async () => {
+    const session = getSession();
+    if (!session) {
+      alert(t("metrics.exportAllCsvAuth", "Session expirée — rechargez la page."));
+      return;
     }
-    const csv = [[header], cols, ...rows]
-      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
-      .join("\n");
+    const url = `${apiBase()}/projects/${encodeURIComponent(projectId)}/metrics/catalog-csv`;
+    const res = await fetch(url, {
+      headers: {
+        Accept: "text/csv",
+        Authorization: `Bearer ${session.token}`,
+      },
+    });
+    if (!res.ok) {
+      alert(
+        t("metrics.exportAllCsvError", "Export CSV échoué") +
+          ` (${res.status} ${res.statusText})`,
+      );
+      return;
+    }
+    const blob = await res.blob();
+    const releaseVer = query.data?.catalog_release?.version ?? "legacy";
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
-    a.download = `bc4-metrics-catalog-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.href = URL.createObjectURL(blob);
+    a.download = `bc4-metrics-catalog-${releaseVer}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
   };
   // Oracle rendering parity (tree.html sha f4057ccc…):
