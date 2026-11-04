@@ -1,6 +1,6 @@
 import { z } from "zod";
 export const MetricSchema = z.object({
-  event: z.string(),
+  event: z.string().nullable(),
   category_label: z.string(),
   root_notices: z.array(z.object({ label: z.string(), reason: z.string() })),
   cell_scoped: z.boolean(),
@@ -36,15 +36,15 @@ export const MetricSchema = z.object({
   code: z.string(),
   label: z.string(),
   unit: z.string(),
-  event_code: z.string(),
+  event_code: z.string().nullable(),
   decoder_version: z.string(),
   proof_ref: z.string(),
   source_table: z.string(),
-  source_column: z.string(),
+  source_column: z.string().nullable(),
   // 1.107.0 — tech vient de categories.yaml : "LTE", "NR", "Shared", "Other"
   // en 2.50.5. On accepte string libre, l'arbre est organisé par groupe tech.
   tech: z.string(),
-  kind: z.enum(["numeric", "categorical", "event"]),
+  kind: z.enum(["numeric", "categorical", "event", "KPI", "KPI_CATEGORICAL", "DIMENSION"]),
   n_in_project: z.number().int(),
   // 0.64.0 (F1 back) — champ YAML `category` du décodeur (14 catégories).
   category: z.string().nullable().optional(),
@@ -80,11 +80,11 @@ const MetricCatalogNodePayloadSchema = z
     cell_relation: z.enum(["serving", "neighbour"]).nullable().optional(),
     technical_label: z.string().nullable().optional(),
     availability_status: z
-      .enum(["available", "no_data", "not_projected", "not_applicable"])
+      .enum(["available", "no_data", "not_projected", "not_applicable", "not_available"])
       .nullable()
       .optional(),
     n: z.number().int(),
-    proof: z.string(),
+    proof: z.string().nullable(),
     selectable: z.boolean(),
     reason: z.string().nullable(),
   })

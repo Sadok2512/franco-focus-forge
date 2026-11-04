@@ -837,7 +837,7 @@ export function MetricsCatalogSidebar({
           >
             <span
               className={`kpi-status-dot ${statusClass}`}
-              title={node.proof}
+              title={node.proof ?? undefined}
               aria-hidden="true"
             />
             <span className="min-w-0 flex-1">
