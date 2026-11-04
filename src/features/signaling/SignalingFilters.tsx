@@ -245,7 +245,7 @@ export function SignalingFilters(props: {
                   onCheckedChange={(value) => props.onEventType(type, value === true)}
                 />
                 <span className="min-w-0 truncate">
-                  {t(`signaling.types.${type}`, { defaultValue: type })}
+                  {t(`timeNavigator.types.${type}`, { defaultValue: type })}
                 </span>
                 <span className="sig-occurrence">{count.toLocaleString()}</span>
               </label>
