@@ -1,3 +1,13 @@
+## 1.137.2 (patch) — Recherche Metrics fluide — 2026-11-04 (Agent BC1)
+
+- Conserve la saisie de recherche dans la sidebar afin qu'une frappe ne
+  rerende plus les panneaux Graph, Table et Map du Workspace.
+- Diffère de 180 ms le filtrage du catalogue tout en gardant la valeur, le
+  focus et le curseur synchrones ; aucun refetch n'est lié à la saisie.
+- Exclut la provenance générique `measured-catalog` de l'index textuel et
+  affiche explicitement l'état sans résultat.
+- SemVer front : **PATCH 1.137.2** ; backend et catalogue inchangés.
+
 ## 1.137.1 (patch) — Recherche complète du catalogue Metrics — 2026-11-04 (BC4)
 
 - La recherche du catalogue devient insensible à la casse avec un ET entre les mots sur le code lisible, le titre de groupe, le libellé, l'event et l'identifiant technique ; les filtres de disponibilité ne masquent plus les résultats de recherche et le badge affiche la version complète du catalogue.

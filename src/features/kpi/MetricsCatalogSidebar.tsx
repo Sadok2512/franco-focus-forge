@@ -14,7 +14,6 @@
 // chevron intégré dans la row, status dot, ⋮ menu MoreVertical.
 import { useTranslation } from "react-i18next";
 import {
-  useDeferredValue,
   useEffect,
   useMemo,
   useState,
@@ -56,6 +55,7 @@ import { MAP_METRIC_MIME } from "./map-metric-drop";
 const rootKey = "__root__";
 const STAR = "★";
 const MAX_METRICS = 64;
+const SEARCH_DEBOUNCE_MS = 180;
 // 1.78.1 — strip des badges source `[PHRATE #1]`, `[CI #2]`, `[CELLMEAS #5]`...
 // bakés dans node.label par le back (le back garde la source pour sa logique
 // de binding via SOURCE_RE ; côté UI on affiche le nom nu).
@@ -78,7 +78,7 @@ export function metricCatalogSearchText(node: MetricCatalogNode): string {
     node.event,
     node.metric_id,
     node.nom_court,
-    node.source,
+    node.source === "measured-catalog" ? undefined : node.source,
     node.technical_label,
     node.cell_label,
     node.metric_label,
@@ -350,8 +350,6 @@ export function MetricsCatalogSidebar({
   onVisualization,
   onVisualizationIntent,
   searchRef,
-  search: controlledSearch,
-  onSearchChange,
   selectionCount,
   measuredEntries = [],
   measuredSelected = [],
@@ -370,8 +368,6 @@ export function MetricsCatalogSidebar({
   onVisualization?: (code: string, view: MetricView) => void;
   onVisualizationIntent?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
-  search?: string;
-  onSearchChange?: (value: string) => void;
   selectionCount?: number;
   measuredEntries?: Entry[];
   measuredSelected?: string[];
@@ -382,15 +378,16 @@ export function MetricsCatalogSidebar({
   captureIds?: string[];
 }) {
   const { t, i18n } = useTranslation();
-  const [localSearch, setLocalSearch] = useState("");
-  const search = controlledSearch ?? localSearch;
-  // `useDeferredValue` lets React keep the input responsive while the
-  // 5000+ node tree re-filters. The input updates on every keystroke;
-  // the deferred value drives the (expensive) `matching` useMemo, so
-  // React can skip filtering intermediate states if the user is still
-  // typing. On a cold tree a plain `.filter` over all nodes with a
-  // 10-field haystack built per node was costing a frame per keystroke.
-  const deferredSearch = useDeferredValue(search);
+  // Search stays local to the sidebar: lifting each keystroke into
+  // KpiWorkspace rerendered every selected Graph/Table/Map panel. The input
+  // value remains synchronous (stable focus/caret), while only the catalogue
+  // filter is debounced.
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [search]);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
@@ -479,7 +476,7 @@ export function MetricsCatalogSidebar({
     return { haystacks, byId };
   }, [normalizedNodes]);
   const matching = useMemo(() => {
-    const trimmed = deferredSearch.trim();
+    const trimmed = debouncedSearch.trim();
     if (!trimmed) return null;
     const terms = metricCatalogSearchTerms(trimmed);
     const { haystacks, byId } = nodeIndex;
@@ -507,7 +504,7 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [byParent, deferredSearch, nodeIndex, normalizedNodes]);
+  }, [byParent, debouncedSearch, nodeIndex, normalizedNodes]);
 
   // 1.134.0 (REPRISE 7 Lot 7) — export CSV avec UNE colonne par capture +
   // Kind / unit / data_type / display_code. Le back fournit l'endpoint
@@ -998,10 +995,7 @@ export function MetricsCatalogSidebar({
           <input
             ref={searchRef}
             value={search}
-            onChange={(event) => {
-              setLocalSearch(event.target.value);
-              onSearchChange?.(event.target.value);
-            }}
+            onChange={(event) => setSearch(event.target.value)}
             placeholder={t("metrics.433e83817682")}
             aria-label={t("metrics.bf6a6c500977")}
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
@@ -1032,6 +1026,11 @@ export function MetricsCatalogSidebar({
       )}
       <div className="kpi-tree" data-testid="unified-metrics-tree">
         <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
+        {debouncedSearch.trim() && matching?.size === 0 && (
+          <p className="p-3 text-xs text-muted-foreground" role="status">
+            {t("metrics.7f626224ba1f")}
+          </p>
+        )}
       </div>
       <div className="kpi-catalog-controls" data-testid="metrics-catalog-controls">
         <label

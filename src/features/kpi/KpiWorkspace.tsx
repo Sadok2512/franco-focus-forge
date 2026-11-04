@@ -472,7 +472,6 @@ function Workspace({
     () => new Set(catalogEntries(classifiedCatalogs.metrics).map((entry) => entry.item.code)),
     [classifiedCatalogs.metrics],
   );
-  const [metricsSearch, setMetricsSearch] = useState("");
   const [visibleCatalogMetricCount, setVisibleCatalogMetricCount] = useState(
     catalogSelectableMetricCount,
   );
@@ -1161,8 +1160,6 @@ function Workspace({
                   if (view === "map") prefetchMetricMap(code);
                 }}
                 searchRef={catalogSearch}
-                search={metricsSearch}
-                onSearchChange={setMetricsSearch}
                 selectionCount={selectedMetrics.length}
                 onVisibleCountChange={updateVisibleCatalogMetricCount}
                 measuredEntries={catalogEntries(presentedMeasuredCatalog)}

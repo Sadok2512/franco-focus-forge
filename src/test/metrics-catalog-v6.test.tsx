@@ -437,9 +437,71 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(searches).toHaveLength(1);
     expect(screen.getByTestId("metrics-unified-selection-count")).toHaveTextContent("0 selected");
     fireEvent.change(searches[0]!, { target: { value: "RSRP" } });
-    expect(screen.getByText("Raw RSRP")).toBeVisible();
+    await waitFor(() => expect(screen.getByText("Raw RSRP")).toBeVisible());
     expect(screen.queryByText("Measured RSRP")).toBeNull();
     expect(screen.queryByText("Measured SINR")).toBeNull();
+  });
+
+  it("keeps focus, selected metrics and one API request while debouncing search", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "2.68.3",
+      title: "Nemo metrics",
+      header: "LTE",
+      decoder_version: "1.9.0",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("earfcn", "legacy-event", "EARFCN", 0, {
+          display_code_lisible: "LTE_EARFCN_SERVING_PCELL",
+          nom_court: "EARFCN",
+          metric_id: "cellmeas_ch@lte-type-0",
+          selection: "cellmeas_ch@lte-type-0",
+          event: "CELLMEAS",
+          source: "measured-catalog",
+          source_column: "cellmeas_ch",
+          technology: "LTE",
+          metric_label: "LTE_EARFCN_SERVING",
+          cell: "lte-type-0",
+          cell_label: "PCell",
+          cell_system: "LTE",
+          raw_cell_type: 0,
+          availability_status: "available",
+          n: 12,
+          selectable: true,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={["a", "b", "c", "d"]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+          selectionCount={4}
+        />
+      </QueryClientProvider>,
+    );
+
+    const input = await screen.findByRole("textbox", { name: "Search metrics" });
+    const callsBeforeTyping = getMetrics.mock.calls.length;
+    input.focus();
+    for (const value of ["e", "ea", "ear", "earf", "earfc", "earfcn"]) {
+      fireEvent.change(input, { target: { value } });
+      expect(input).toHaveFocus();
+      expect(input).toHaveValue(value);
+      expect((input as HTMLInputElement).selectionStart).toBe(value.length);
+    }
+    expect(screen.getByTestId("metrics-unified-selection-count")).toHaveTextContent("4 selected");
+    await waitFor(() => expect(screen.getByText("LTE_EARFCN_SERVING")).toBeVisible());
+    expect(getMetrics).toHaveBeenCalledTimes(callsBeforeTyping);
+
+    fireEvent.change(input, { target: { value: "measured-catalog" } });
+    await waitFor(() =>
+      expect(screen.getByText("No metrics match this search.")).toBeVisible(),
+    );
+    expect(input).toHaveFocus();
+    expect(getMetrics).toHaveBeenCalledTimes(callsBeforeTyping);
   });
 
   it("auto-expands every visible Technology root so the Metrics tree is never read as empty", async () => {
