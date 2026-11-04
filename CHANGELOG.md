@@ -1,3 +1,7 @@
+## 1.138.1 (patch) — Bouton d’ouverture visible sur la Map — 2026-11-04 (BC4)
+
+- Affiche directement sur chaque Map un bouton **Nouvel onglet**, avec icône et libellé, pour ouvrir la carte détachée sans passer par le menu `⋯`. L’action du menu reste disponible et la synchronisation entre onglets est inchangée.
+
 ## 1.138.0 (minor) — Synchronisation des points KPI entre panneaux et onglets — 2026-11-04 (BC4)
 
 - Ajoute un bouton **Sync** dans l’en-tête KPI Analytics. Lorsqu’il est actif, une sélection exacte `(projet, workspace, capture, seq)` faite sur une Map, un Graph ou une ligne de Table est propagée aux autres composants ; une ligne agrégée utilise uniquement sa plage `seq_first–seq_last` publiée par l’API.

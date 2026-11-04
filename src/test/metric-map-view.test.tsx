@@ -187,6 +187,10 @@ describe("Map selection keeps its own panel", () => {
     ).toBe(true);
     expect(screen.queryByRole("heading", { name: /1\. RSRP/ })).toBeNull();
     expect(screen.queryByText(/3k|887/)).toBeNull();
+    const openTab = screen.getByTestId("metric-map-open-tab-button");
+    expect(openTab).toBeVisible();
+    expect(openTab).toHaveTextContent("New tab");
+    expect(openTab).toHaveAccessibleName("Open Map in a new tab");
     const menu = screen.getByRole("button", { name: "RSRP (LTE) @ Serving · actions" });
     fireEvent.keyDown(menu, { key: "Enter" });
     const content = await screen.findByTestId("workspace-panel-menu-content");

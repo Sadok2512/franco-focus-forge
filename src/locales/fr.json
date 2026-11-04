@@ -961,6 +961,7 @@
     "pointSyncOn": "Sync activée",
     "pointSyncOff": "Sync désactivée",
     "openMapTab": "Ouvrir la Map dans un nouvel onglet",
+    "openMapTabShort": "Nouvel onglet",
     "layout": "Disposition",
     "add_chronogram": "Ajouter un Chronogram",
     "add_histogram": "Ajouter un Histogram",
