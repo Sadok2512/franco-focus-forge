@@ -60,6 +60,7 @@
     "project": "Project:",
     "activeProject": "Active project: {{name}}",
     "closeProject": "Close active project",
+    "openAppTab": "Open app in a new tab",
     "appFullscreen": "Full screen app",
     "exitAppFullscreen": "Exit full screen",
     "fullscreenUnavailable": "Full screen is unavailable in this browser or preview",

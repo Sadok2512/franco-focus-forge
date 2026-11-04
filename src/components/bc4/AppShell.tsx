@@ -31,9 +31,11 @@ import { getBackHealth } from "@/lib/api/project-kpi";
 import { useActiveProject } from "@/lib/activeProject";
 import { APP_VERSION } from "@/lib/version";
 import { AppFullscreenButton } from "./AppFullscreenButton";
+import { AppNewTabButton } from "./AppNewTabButton";
 import { HeaderFloatingButton } from "./HeaderFloatingButton";
 import { useAppFullscreen } from "@/lib/app-fullscreen";
 import { useHeaderFloating } from "@/lib/header-floating";
+import { isDetachedMapView } from "@/lib/app-tabs";
 
 const NAV = [
   { to: "/projects", label: "nav.projects" },
@@ -109,6 +111,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   });
   const navigate = useNavigate();
   const path = useRouterState({ select: (s) => s.location.pathname });
+  const searchString = useRouterState({ select: (s) => s.location.searchStr });
+  const detachedMap = isDetachedMapView(path, searchString);
   // 1.11.0 — Projet actif global (ex auto-sélection « premier projet »).
   // On NE sélectionne plus automatiquement : si l'utilisateur n'a pas
   // cliqué « Ouvrir », les pages scopées affichent un état vide clair.
@@ -175,6 +179,10 @@ export function AppShell({ children }: { children: ReactNode }) {
     .slice(0, 2)
     .toUpperCase();
 
+  if (detachedMap) {
+    return <main className="bc4-detached-map-shell">{children}</main>;
+  }
+
   return (
     <div className="flex min-h-dvh w-full min-w-0 flex-col overflow-x-clip bg-background">
       {fullscreen && floating && !headerOpen && (
@@ -223,6 +231,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         <div className="col-start-3 flex shrink-0 items-center gap-0.5 sm:gap-1">
           <HeaderFloatingButton />
           <AppFullscreenButton />
+          <AppNewTabButton />
           {activeProject && (
             <div
               aria-label={t("common.activeProject", { name: activeProject.name })}

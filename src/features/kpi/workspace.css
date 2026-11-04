@@ -855,6 +855,15 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-height: 0;
   background: var(--background, #fff);
 }
+.bc4-detached-map-shell {
+  --app-header-offset: 0px;
+  position: fixed;
+  inset: 0;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--background, #fff);
+}
 .kpi-metric-map-card.is-browser-tab > *:not(.kpi-metric-map-menu) {
   min-height: 0;
   height: 100%;
