@@ -35,6 +35,14 @@ function makeLeaf(partial: Partial<MetricCatalogNode> & { node_id: string }): Me
     proof: partial.proof ?? "",
     selectable: partial.selectable ?? false,
     reason: partial.reason ?? null,
+    tree_visible: partial.tree_visible ?? true,
+    display_code_lisible: partial.display_code_lisible,
+    nom_court: partial.nom_court,
+    display_branch: partial.display_branch,
+    kind: partial.kind,
+    metric_label: partial.metric_label,
+    cell_label: partial.cell_label,
+    raw_cell_type: partial.raw_cell_type,
   };
 }
 
@@ -51,6 +59,73 @@ function makeResponse(nodes: MetricCatalogNode[]): MetricCatalogResponse {
 }
 
 describe("applyReferenceHierarchy — bijection et préservation", () => {
+  it("construit la hiérarchie noms complets sans exposer les clés techniques", () => {
+    const input: MetricCatalogNode[] = [
+      makeLeaf({ node_id: "tech_LTE", node_type: "tech", label: "LTE" }),
+      makeLeaf({
+        node_id: "cat_LTE_serving_radio",
+        parent_id: "tech_LTE",
+        node_type: "category",
+        label: "Serving radio",
+      }),
+      makeLeaf({
+        node_id: "ev_cellmeas",
+        parent_id: "cat_LTE_serving_radio",
+        node_type: "event",
+        label: "CELLMEAS",
+      }),
+      makeLeaf({
+        node_id: "lf_cellmeas_ch_c0",
+        parent_id: "ev_cellmeas",
+        metric_id: "cellmeas_ch@0",
+        source_column: "cell_ch",
+        event: "CELLMEAS",
+        metric_label: "Ch",
+        cell_label: "PCell",
+        raw_cell_type: 0,
+        display_code_lisible: "LTE_EARFCN_SERVING_PCELL",
+        nom_court: "EARFCN_SERVING_PCELL",
+        display_branch: "LTE",
+        kind: "DIMENSION",
+        n: 12,
+      }),
+      makeLeaf({
+        node_id: "lf_cellmeas_ch_c10",
+        parent_id: "ev_cellmeas",
+        metric_id: "cell_ch@lte-type-10",
+        source_column: "cell_ch",
+        event: "CELLMEAS",
+        metric_label: "Ch",
+        cell_label: "SCell 1",
+        raw_cell_type: 10,
+        display_code_lisible: "LTE_EARFCN_SERVING_SCELL1",
+        nom_court: "EARFCN_SERVING_SCELL1",
+        display_branch: "LTE",
+        kind: "DIMENSION",
+        n: 4,
+      }),
+      makeLeaf({
+        node_id: "lf_cellmeas_ch_c3",
+        parent_id: "ev_cellmeas",
+        metric_id: "cellmeas_ch@3",
+        display_code_lisible: "LTE_EARFCN_SERVING_CELLTYPE3",
+        nom_court: "EARFCN_SERVING_CELLTYPE3",
+        display_branch: "LTE",
+        tree_visible: false,
+      }),
+    ];
+    const out = applyReferenceHierarchy(makeResponse(input));
+    expect(out.nodes.filter((node) => node.node_type === "tech").map((node) => node.label)).toEqual(
+      ["LTE"],
+    );
+    expect(out.nodes.find((node) => node.node_type === "metric")?.label).toBe(
+      "LTE_EARFCN_SERVING · Ch · CELLMEAS",
+    );
+    expect(out.nodes.filter((node) => node.node_type === "leaf").map((node) => node.label)).toEqual(
+      ["LTE_EARFCN_SERVING_PCELL", "LTE_EARFCN_SERVING_SCELL1"],
+    );
+  });
+
   it("ne modifie pas une réponse sans leaves RF (preserved CAPTURE path)", () => {
     const inputNodes: MetricCatalogNode[] = [
       makeLeaf({ node_id: "tech_CAPTURE", node_type: "tech", label: "CAPTURE" }),
@@ -74,8 +149,18 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
     // lf_cellmeas_params_cell_c0 : CELLMEAS raw=0 LTE Serving radio
     const input: MetricCatalogNode[] = [
       makeLeaf({ node_id: "tech_LTE", node_type: "tech", label: "LTE" }),
-      makeLeaf({ node_id: "cat_LTE_serving_radio", parent_id: "tech_LTE", node_type: "category", label: "Serving radio" }),
-      makeLeaf({ node_id: "ev_cellmeas", parent_id: "cat_LTE_serving_radio", node_type: "event", label: "CELLMEAS" }),
+      makeLeaf({
+        node_id: "cat_LTE_serving_radio",
+        parent_id: "tech_LTE",
+        node_type: "category",
+        label: "Serving radio",
+      }),
+      makeLeaf({
+        node_id: "ev_cellmeas",
+        parent_id: "cat_LTE_serving_radio",
+        node_type: "event",
+        label: "CELLMEAS",
+      }),
       makeLeaf({
         node_id: "lf_cellmeas_rsrp_c0",
         parent_id: "ev_cellmeas",
@@ -137,7 +222,10 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
       }),
     ];
     const out = applyReferenceHierarchy(makeResponse(input));
-    const roots = out.nodes.filter((n) => n.node_type === "tech").map((n) => n.label).sort();
+    const roots = out.nodes
+      .filter((n) => n.node_type === "tech")
+      .map((n) => n.label)
+      .sort();
     // EN-DC is intentionally absent: the certified oracle has only
     // STRUCT / DIM entries under EN-DC (no KPI), so the k === "KPI"
     // filter leaves this branch empty — a strict mirror of tree.html's
@@ -147,12 +235,29 @@ describe("applyReferenceHierarchy — bijection et préservation", () => {
 
   it("ne crée aucun leaf supplémentaire, ne supprime aucun leaf", () => {
     const input: MetricCatalogNode[] = [
-      makeLeaf({ node_id: "lf_a", label: "#Params/cell (LTE) @ Serving", metric_id: "cellmeas_params_cell@0", event: "CELLMEAS", selectable: true }),
-      makeLeaf({ node_id: "lf_b", label: "Log file name", metric_id: "cap_file_log_file_name", selectable: true }),
+      makeLeaf({
+        node_id: "lf_a",
+        label: "#Params/cell (LTE) @ Serving",
+        metric_id: "cellmeas_params_cell@0",
+        event: "CELLMEAS",
+        selectable: true,
+      }),
+      makeLeaf({
+        node_id: "lf_b",
+        label: "Log file name",
+        metric_id: "cap_file_log_file_name",
+        selectable: true,
+      }),
     ];
     const out = applyReferenceHierarchy(makeResponse(input));
-    const inputLeafIds = input.filter((n) => n.node_type === "leaf").map((n) => n.node_id).sort();
-    const outputLeafIds = out.nodes.filter((n) => n.node_type === "leaf").map((n) => n.node_id).sort();
+    const inputLeafIds = input
+      .filter((n) => n.node_type === "leaf")
+      .map((n) => n.node_id)
+      .sort();
+    const outputLeafIds = out.nodes
+      .filter((n) => n.node_type === "leaf")
+      .map((n) => n.node_id)
+      .sort();
     expect(outputLeafIds).toEqual(inputLeafIds);
   });
 });

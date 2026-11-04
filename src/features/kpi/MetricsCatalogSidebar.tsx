@@ -223,6 +223,12 @@ export function mergeMetricCatalogTrees(
   catalogNodes: MetricCatalogNode[],
   measuredNodes: MetricCatalogNode[],
 ): MetricCatalogNode[] {
+  // 2.68.3 full-name responses already contain the complete unified
+  // catalogue. Re-normalizing them would discard `tree_visible` and re-add
+  // the legacy measured panel as duplicate leaves.
+  if (catalogNodes.some((node) => node.node_id.startsWith("full:tech:"))) {
+    return catalogNodes;
+  }
   const referenceTech = new Map(
     catalogNodes
       .filter((node) => node.node_type === "tech" && node.node_id.startsWith("ref:tech:"))
@@ -441,6 +447,8 @@ export function MetricsCatalogSidebar({
       // call covers every match path.
       let hay = "";
       if (node.label) hay += node.label + " ";
+      if (node.display_code_lisible) hay += node.display_code_lisible + " ";
+      if (node.nom_court) hay += node.nom_court + " ";
       if (node.source) hay += node.source + " ";
       if (node.event) hay += node.event + " ";
       if (node.metric_id) hay += node.metric_id + " ";
@@ -503,8 +511,7 @@ export function MetricsCatalogSidebar({
     });
     if (!res.ok) {
       alert(
-        t("metrics.exportAllCsvError", "Export CSV échoué") +
-          ` (${res.status} ${res.statusText})`,
+        t("metrics.exportAllCsvError", "Export CSV échoué") + ` (${res.status} ${res.statusText})`,
       );
       return;
     }
@@ -853,14 +860,12 @@ export function MetricsCatalogSidebar({
                   </span>
                 )}
               </span>
-              {search && (
-                <span className="text-[10px] text-muted-foreground">
-                  {node.technical_label ??
-                    node.source ??
-                    (/@(lte|nr)-type-\d+$/.test(node.metric_id ?? "") ? "" : node.metric_id) ??
-                    ""}
-                </span>
-              )}
+              <span className="text-[10px] text-muted-foreground">
+                {[node.kind, node.unit].filter(Boolean).join(" · ")}
+                {search && (node.technical_label ?? node.source) ? (
+                  <> · {node.technical_label ?? node.source}</>
+                ) : null}
+              </span>
             </span>
           </button>
           {/* 1.79.1 — nombre d'observations (node.n) à droite du label,

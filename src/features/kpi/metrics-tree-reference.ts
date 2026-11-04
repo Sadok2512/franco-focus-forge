@@ -23,10 +23,7 @@
  */
 import mappingJson from "./metrics-tree-reference.json";
 import structureJson from "./metrics-tree-structure.json";
-import type {
-  MetricCatalogNode,
-  MetricCatalogResponse,
-} from "@/lib/api/metrics-schemas";
+import type { MetricCatalogNode, MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 
 type RefMeta = {
   t: string;
@@ -97,7 +94,10 @@ const inferTech = (node: MetricCatalogNode): string | null => {
 
 export const REFERENCE_TECH_ORDER = ["LTE", "NR", "EN-DC", "QUARANTAINE"] as const;
 
-const DEFAULT_NODE: Omit<MetricCatalogNode, "node_id" | "parent_id" | "label" | "order" | "node_type"> = {
+const DEFAULT_NODE: Omit<
+  MetricCatalogNode,
+  "node_id" | "parent_id" | "label" | "order" | "node_type"
+> = {
   note: null,
   source: null,
   analytics_tab: null,
@@ -112,6 +112,7 @@ const DEFAULT_NODE: Omit<MetricCatalogNode, "node_id" | "parent_id" | "label" | 
   proof: "",
   selectable: false,
   reason: null,
+  tree_visible: true,
 };
 
 function roundOrder(value: number): number {
@@ -175,7 +176,9 @@ function synthesizeMetric(
   // nodes with the same label but different ids, each carrying its own
   // cells. Collapsing them on the metric name alone would duplicate
   // every cell role.
-  const idKey = event ? `${tech}/${category}/${group}/${metricName}@${event}` : `${tech}/${category}/${group}/${metricName}`;
+  const idKey = event
+    ? `${tech}/${category}/${group}/${metricName}@${event}`
+    : `${tech}/${category}/${group}/${metricName}`;
   return {
     ...DEFAULT_NODE,
     node_id: syntheticId("met", idKey),
@@ -192,13 +195,157 @@ function metricNameFromLabel(label: string): string {
   const withoutCell = label.replace(/\s*@\s*[^@]+$/, "").trim();
   const bloc = withoutCell.match(/\(bloc\s+([^)]+)\)/);
   if (bloc) {
-    return (withoutCell.slice(0, bloc.index) + withoutCell.slice((bloc.index ?? 0) + bloc[0].length)).trim();
+    return (
+      withoutCell.slice(0, bloc.index) + withoutCell.slice((bloc.index ?? 0) + bloc[0].length)
+    ).trim();
   }
   const system = withoutCell.match(/\s*\((?:LTE|NR)\)\s*/);
   if (system) {
-    return (withoutCell.slice(0, system.index) + withoutCell.slice((system.index ?? 0) + system[0].length)).trim();
+    return (
+      withoutCell.slice(0, system.index) + withoutCell.slice((system.index ?? 0) + system[0].length)
+    ).trim();
   }
   return withoutCell;
+}
+
+function fullNameHierarchy(response: MetricCatalogResponse): MetricCatalogResponse | null {
+  const leaves = response.nodes.filter((node) => node.node_type === "leaf");
+  if (!leaves.length || leaves.some((node) => !node.display_code_lisible || !node.display_branch)) {
+    return null;
+  }
+  const byId = new Map(response.nodes.map((node) => [node.node_id, node]));
+  const categoryOf = (leaf: MetricCatalogNode): { label: string; order: number } => {
+    let current: MetricCatalogNode | undefined = leaf;
+    const seen = new Set<string>();
+    while (current && !seen.has(current.node_id)) {
+      seen.add(current.node_id);
+      if (current.node_type === "category") return { label: current.label, order: current.order };
+      current = current.parent_id ? byId.get(current.parent_id) : undefined;
+    }
+    return { label: "Other", order: Number.MAX_SAFE_INTEGER };
+  };
+  const branchOrder = new Map(
+    ["CAPTURE", "LTE", "NR", "IP / Services"].map((branch, index) => [branch, index]),
+  );
+  const cellOrder = (leaf: MetricCatalogNode): number => {
+    const label = leaf.cell_label ?? "";
+    if (/^PCell$/i.test(label)) return 0;
+    const scell = label.match(/^SCell\s+(\d+)$/i);
+    if (scell) return 10 + Number(scell[1]);
+    if (/PSCell/i.test(label) && !/SCG/i.test(label)) return 100;
+    const scg = label.match(/^SCG\s+SCell\s+(\d+)$/i);
+    if (scg) return 110 + Number(scg[1]);
+    if (/Listed/i.test(label)) return 900;
+    if (/Detected/i.test(label)) return 901;
+    if (/Scanner/i.test(label)) return 902;
+    return 500 + (leaf.raw_cell_type ?? leaf.order);
+  };
+  type Group = {
+    branch: string;
+    category: string;
+    categoryOrder: number;
+    metricLabel: string;
+    event: string;
+    leaves: MetricCatalogNode[];
+  };
+  const groups = new Map<string, Group>();
+  for (const leaf of leaves) {
+    if (leaf.tree_visible === false) continue;
+    const branch = leaf.display_branch!;
+    const category = categoryOf(leaf);
+    const metricLabel = leaf.metric_label ?? metricNameFromLabel(leaf.label);
+    const event = leaf.event ?? "";
+    const identity = leaf.source_column ?? leaf.metric_id?.split("@", 1)[0] ?? metricLabel;
+    const relation = leaf.cell_relation ?? "none";
+    const key = `${branch}|${category.label}|${event}|${identity}|${metricLabel}|${relation}`;
+    const group = groups.get(key) ?? {
+      branch,
+      category: category.label,
+      categoryOrder: category.order,
+      metricLabel,
+      event,
+      leaves: [],
+    };
+    group.leaves.push(leaf);
+    groups.set(key, group);
+  }
+  const commonPrefix = (values: string[]): string => {
+    let prefix = values[0] ?? "";
+    for (const value of values.slice(1)) {
+      while (prefix && !value.startsWith(prefix)) prefix = prefix.slice(0, -1);
+    }
+    return prefix.replace(/_+$/, "");
+  };
+  const output: MetricCatalogNode[] = [];
+  const branches = [...new Set([...groups.values()].map((group) => group.branch))].sort(
+    (a, b) => (branchOrder.get(a) ?? 99) - (branchOrder.get(b) ?? 99) || a.localeCompare(b),
+  );
+  for (const branch of branches) {
+    const techId = `full:tech:${branch}`;
+    output.push({
+      ...DEFAULT_NODE,
+      node_id: techId,
+      parent_id: null,
+      order: branchOrder.get(branch) ?? 99,
+      label: branch,
+      node_type: "tech",
+    });
+    const branchGroups = [...groups.values()].filter((group) => group.branch === branch);
+    const categories = [...new Set(branchGroups.map((group) => group.category))].sort((a, b) => {
+      const ao = branchGroups.find((group) => group.category === a)?.categoryOrder ?? 0;
+      const bo = branchGroups.find((group) => group.category === b)?.categoryOrder ?? 0;
+      return ao - bo || a.localeCompare(b);
+    });
+    for (const [categoryIndex, category] of categories.entries()) {
+      const categoryId = `full:cat:${branch}:${category}`;
+      output.push({
+        ...DEFAULT_NODE,
+        node_id: categoryId,
+        parent_id: techId,
+        order: categoryIndex,
+        label: category,
+        node_type: "category",
+      });
+      const metricGroups = branchGroups
+        .filter((group) => group.category === category)
+        .sort((a, b) => {
+          const ac = commonPrefix(a.leaves.map((leaf) => leaf.display_code_lisible!));
+          const bc = commonPrefix(b.leaves.map((leaf) => leaf.display_code_lisible!));
+          return ac.localeCompare(bc) || a.event.localeCompare(b.event);
+        });
+      metricGroups.forEach((group, groupIndex) => {
+        const codes = group.leaves.map((leaf) => leaf.display_code_lisible!);
+        const groupCode = commonPrefix(codes);
+        const groupId = `full:metric:${branch}:${category}:${group.event}:${groupCode}:${groupIndex}`;
+        output.push({
+          ...DEFAULT_NODE,
+          node_id: groupId,
+          parent_id: categoryId,
+          order: groupIndex,
+          label: [groupCode, group.metricLabel, group.event].filter(Boolean).join(" · "),
+          node_type: "metric",
+          event: group.event || null,
+          n: group.leaves.reduce((sum, leaf) => sum + leaf.n, 0),
+        });
+        group.leaves
+          .sort(
+            (a, b) =>
+              cellOrder(a) - cellOrder(b) ||
+              a.display_code_lisible!.localeCompare(b.display_code_lisible!),
+          )
+          .forEach((leaf, leafIndex) =>
+            output.push({
+              ...leaf,
+              node_id: `full:leaf:${leaf.node_id}`,
+              parent_id: groupId,
+              order: leafIndex,
+              label: leaf.display_code_lisible!,
+            }),
+          );
+      });
+    }
+  }
+  return { ...response, nodes: output };
 }
 
 /**
@@ -215,9 +362,9 @@ function metricNameFromLabel(label: string): string {
  *      hierarchy; their parent chain is retained in full.
  *   5. Returns a new response object; the input is not mutated.
  */
-export function applyReferenceHierarchy(
-  response: MetricCatalogResponse,
-): MetricCatalogResponse {
+export function applyReferenceHierarchy(response: MetricCatalogResponse): MetricCatalogResponse {
+  const named = fullNameHierarchy(response);
+  if (named) return named;
   const nodes = response.nodes;
   const byId = new Map<string, MetricCatalogNode>();
   for (const node of nodes) byId.set(node.node_id, node);
@@ -384,15 +531,29 @@ export function applyReferenceHierarchy(
   // suffix from a sibling leaf's hn label so we can swap in the missing
   // role's suffix for the placeholder label.
   const HN_ROLE_SUFFIXES = new Set([
-    "PCELL", "PSCELL", "SCGSCELL0",
-    "SCELL1", "SCELL2", "SCELL3", "SCELL4", "SCELL5", "SCELL6",
-    "LISTED", "DETECTED", "SCANNER", "CELLTYPE3", "CELLTYPE4",
+    "PCELL",
+    "PSCELL",
+    "SCGSCELL0",
+    "SCELL1",
+    "SCELL2",
+    "SCELL3",
+    "SCELL4",
+    "SCELL5",
+    "SCELL6",
+    "LISTED",
+    "DETECTED",
+    "SCANNER",
+    "CELLTYPE3",
+    "CELLTYPE4",
   ]);
   const placeholderLeaves: MetricCatalogNode[] = [];
   const byMetricParent = new Map<string, MetricCatalogNode[]>();
   for (const leaf of remappedLeaves) {
     if (!leaf.parent_id) continue;
-    (byMetricParent.get(leaf.parent_id) ?? byMetricParent.set(leaf.parent_id, []).get(leaf.parent_id)!).push(leaf);
+    (
+      byMetricParent.get(leaf.parent_id) ??
+      byMetricParent.set(leaf.parent_id, []).get(leaf.parent_id)!
+    ).push(leaf);
   }
   for (const [metId, siblings] of byMetricParent) {
     // Only pad Serving groups (ref:met:<tech>/.../Serving/...)
@@ -424,9 +585,7 @@ export function applyReferenceHierarchy(
     const hnLooksSynthetic = /^[A-Z0-9_]+$/.test(hnBase);
     for (const [raw, role, hnSuffix] of roster) {
       if (seenRaws.has(raw) || seenRoles.has(role)) continue;
-      const placeholderLabel = hnLooksSynthetic
-        ? `${hnBase}_${hnSuffix}`
-        : role;
+      const placeholderLabel = hnLooksSynthetic ? `${hnBase}_${hnSuffix}` : role;
       placeholderLeaves.push({
         ...sample,
         node_id: `ref:placeholder:${metId}@${raw}`,

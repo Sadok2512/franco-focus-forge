@@ -1,3 +1,8 @@
+## 1.137.0 (minor) — Arbre Metrics à noms complets — 2026-11-04 (BC4)
+
+- Affiche la hiérarchie Branche → Catégorie → groupe métrique → feuille avec les codes lisibles complets, le libellé Nemo, l'event, la nature, l'unité et le compteur, sans modifier le design de la sidebar.
+- La recherche couvre les codes lisibles et les titres de groupe ; les feuilles sont triées selon le rôle cellule structurel et les entrées explicitement masquées par le catalogue ne sont plus rendues.
+
 ## 1.136.1 (patch) — Mobilité 3b visible : attributs radio, infobulle carte et filtre par type — 2026-11-04 (BC4)
 
 - Affiche les événements mobilité avec leurs cellules source/cible, leur filtre par type dans Signaling et accepte le contrat du catalogue actif.
