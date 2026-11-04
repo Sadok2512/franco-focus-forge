@@ -1170,23 +1170,30 @@ function MetricMapCard({
           </DropdownMenuItem>
         </WorkspacePanelMenu>
       </div>
-      <MetricMap
-        data={metricData}
-        projectId={projectId}
-        captureId={captureId}
-        label={title}
-        unit={unit}
-        center={projectCenter}
-        preferences={preferences}
-        onPreferences={setPreferences}
-        loading={loading}
-        error={error}
-        onRetry={onRetry}
-        routeCoordinates={routeCoordinates}
-        dropContext={{ selection, workspaceId, filters }}
-        heightKey={workspaceId}
-        onOpenNewTab={detached ? undefined : openMapTab}
-      />
+      {loading && !metricData ? (
+        <div className="kpi-metric-map-placeholder" data-testid="metric-map-loading">
+          <LoaderCircle className="animate-spin" size={18} />
+          <span>{translate("metrics.eb724a908f1f")}</span>
+        </div>
+      ) : (
+        <MetricMap
+          data={metricData}
+          projectId={projectId}
+          captureId={captureId}
+          label={title}
+          unit={unit}
+          center={projectCenter}
+          preferences={preferences}
+          onPreferences={setPreferences}
+          loading={loading}
+          error={error}
+          onRetry={onRetry}
+          routeCoordinates={routeCoordinates}
+          dropContext={{ selection, workspaceId, filters }}
+          heightKey={workspaceId}
+          onOpenNewTab={detached ? undefined : openMapTab}
+        />
+      )}
     </article>
   );
 }

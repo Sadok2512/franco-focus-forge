@@ -1,3 +1,7 @@
+## 1.138.7 (patch) — Montage Map différé — 2026-11-04 (BC4)
+
+- Affiche immédiatement le panneau et son état de chargement, puis monte MapLibre seulement lorsque les mesures géographiques sont disponibles, afin que l’ajout ne bloque plus le clic et la fermeture du menu.
+
 ## 1.138.6 (patch) — Source Map unique — 2026-11-04 (BC4)
 
 - Évite de charger les milliers de mesures une seconde fois dans la source MapLibre interne de sélection : lorsque la Map hôte dessine déjà les points, la couche radio conserve uniquement le point actif nécessaire à l’anneau et aux paramètres RF.

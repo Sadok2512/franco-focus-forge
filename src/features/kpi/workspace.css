@@ -776,6 +776,16 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   box-shadow: none;
   background: transparent;
 }
+.kpi-metric-map-placeholder {
+  min-height: 320px;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  background: color-mix(in srgb, var(--card) 96%, var(--muted));
+}
 .kpi-metric-map-card.is-browser-tab {
   position: fixed;
   inset: var(--app-header-offset, 56px) 0 0;
