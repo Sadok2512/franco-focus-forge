@@ -98,6 +98,21 @@ export function getSession(): Session | null {
   return readSession();
 }
 
+/** Open a same-origin tab while preserving an intentionally non-persistent
+ * session. The token stays in tab memory: never in the URL or localStorage. */
+export function openAuthenticatedTab(url: string): Window | null {
+  if (typeof window === "undefined") return null;
+  const target = new URL(url, window.location.href);
+  if (target.origin !== window.location.origin) return null;
+  const popup = window.open("about:blank", "_blank");
+  if (!popup) return null;
+  const tabSession = window.sessionStorage.getItem(LS_SESSION);
+  if (tabSession) popup.sessionStorage.setItem(LS_SESSION, tabSession);
+  popup.opener = null;
+  popup.location.replace(target.toString());
+  return popup;
+}
+
 /** Évènement émis quand un 401 est intercepté — la UI écoute et bascule
  *  sur /login. Le même évènement est émis quand `logout()` est appelé. */
 export const UNAUTH_EVENT = "bc4:unauthenticated";

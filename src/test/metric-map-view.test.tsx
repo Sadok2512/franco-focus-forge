@@ -29,10 +29,24 @@ vi.mock("@/features/kpi/MetricGraphCard", async (original) => {
 vi.mock("@/features/kpi/KpiMapOSM", () => ({
   KpiMapOSM: (props: unknown) => {
     renderers.map(props);
-    const p = props as { children?: ReactNode; layersLegend?: ReactNode };
+    const p = props as {
+      children?: ReactNode;
+      layersLegend?: ReactNode;
+      onOpenNewTab?: () => void;
+    };
     return (
       <div data-testid="metric-map-mock">
         {p.layersLegend}
+        {p.onOpenNewTab && (
+          <button
+            type="button"
+            data-testid="metric-map-open-tab-button"
+            aria-label="Open Map in a new tab"
+            onClick={p.onOpenNewTab}
+          >
+            ↗
+          </button>
+        )}
         {p.children}
       </div>
     );
@@ -189,7 +203,6 @@ describe("Map selection keeps its own panel", () => {
     expect(screen.queryByText(/3k|887/)).toBeNull();
     const openTab = screen.getByTestId("metric-map-open-tab-button");
     expect(openTab).toBeVisible();
-    expect(openTab).toHaveTextContent("New tab");
     expect(openTab).toHaveAccessibleName("Open Map in a new tab");
     const menu = screen.getByRole("button", { name: "RSRP (LTE) @ Serving · actions" });
     fireEvent.keyDown(menu, { key: "Enter" });

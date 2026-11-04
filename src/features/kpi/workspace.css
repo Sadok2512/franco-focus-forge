@@ -804,28 +804,6 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   top: 12px;
   right: 56px;
   z-index: 45;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.kpi-map-open-tab-button {
-  display: inline-flex;
-  height: 30px;
-  align-items: center;
-  gap: 6px;
-  padding: 0 10px;
-  border: 1px solid #d8e1ec;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--card) 95%, transparent);
-  box-shadow: 0 1px 4px rgb(15 23 42 / 14%);
-  color: var(--foreground);
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.kpi-map-open-tab-button:hover {
-  background: color-mix(in srgb, var(--primary) 9%, var(--card));
-  border-color: color-mix(in srgb, var(--primary) 35%, #d8e1ec);
 }
 .kpi-metric-map-menu .kpi-icon {
   display: inline-flex;

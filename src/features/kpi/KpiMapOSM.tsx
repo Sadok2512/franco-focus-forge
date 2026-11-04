@@ -54,6 +54,7 @@ function SitesLayerHarness({
   layersLegend,
   mapHeight,
   onMapHeightChange,
+  onOpenNewTab,
 }: {
   layersLegend?: ReactNode;
   map: MlMap | null;
@@ -67,6 +68,7 @@ function SitesLayerHarness({
   onRecenter?: () => void;
   mapHeight?: MapHeightSetting;
   onMapHeightChange?: (value: MapHeightSetting) => void;
+  onOpenNewTab?: (() => void) | undefined;
 }) {
   const { t } = useTranslation();
   const {
@@ -147,6 +149,7 @@ function SitesLayerHarness({
         layersLegend={layersLegend}
         mapHeight={mapHeight}
         onMapHeightChange={onMapHeightChange}
+        onOpenNewTab={onOpenNewTab}
       />
     );
   return <SitesLayerControls {...controls} />;
@@ -174,6 +177,7 @@ export function KpiMapOSM({
   sitesLayerEnabled = true,
   workspace = false,
   layersLegend,
+  onOpenNewTab,
 }: {
   layersLegend?: ReactNode;
   center?: [number, number];
@@ -196,6 +200,7 @@ export function KpiMapOSM({
   heightKey?: string;
   sitesLayerEnabled?: boolean;
   workspace?: boolean;
+  onOpenNewTab?: (() => void) | undefined;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const readyCallback = useRef(onMapReady);
@@ -564,6 +569,7 @@ export function KpiMapOSM({
           onRecenter={() => (onRecenter ? onRecenter() : recenterMap())}
           layersLegend={layersLegend}
           mapHeight={mapHeight}
+          onOpenNewTab={onOpenNewTab}
           {...(heightKey ? { onMapHeightChange: changeMapHeight } : {})}
         />
       )}

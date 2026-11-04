@@ -1,3 +1,8 @@
+## 1.138.3 (patch) — Onglet Map authentifié et bouton dans le rail — 2026-11-04 (BC4)
+
+- Conserve aussi les sessions non persistantes lors de l’ouverture de la Map dans un nouvel onglet, sans placer le jeton dans l’URL ni dans `localStorage`.
+- Déplace l’action d’ouverture dans le rail d’outils de la Map, avec le bouton **Plein écran** ; l’action reste également disponible dans le menu `⋯`.
+
 ## 1.138.2 (patch) — Recherche Metrics interruptible — 2026-11-04 (Agent BC1)
 
 - Exécute le filtrage et le montage de l'arbre Metrics dans une transition

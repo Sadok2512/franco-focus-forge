@@ -73,6 +73,7 @@ import {
 import { parseMetricSelection } from "./metric-selection";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
 import { pointMatchesRange, usePointSync } from "./point-sync";
+import { openAuthenticatedTab } from "@/lib/api/http";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -534,6 +535,7 @@ function MetricMap({
   routeCoordinates = [],
   dropContext,
   heightKey,
+  onOpenNewTab,
 }: {
   data?: MetricMapData | undefined;
   projectId: string;
@@ -549,6 +551,7 @@ function MetricMap({
   routeCoordinates?: Array<[number, number]> | undefined;
   dropContext?: { selection: string; workspaceId: string; filters: KpiQueryFilters };
   heightKey?: string;
+  onOpenNewTab?: (() => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const pointSync = usePointSync();
@@ -1010,6 +1013,7 @@ function MetricMap({
       onMapReady={setMap}
       routeCoordinates={routeCoordinates.length ? routeCoordinates : metricCoordinates}
       measurementStatus={null}
+      onOpenNewTab={onOpenNewTab}
       {...(heightKey ? { heightKey } : {})}
     >
       <DriveRsrpLayer
@@ -1101,7 +1105,7 @@ function MetricMapCard({
     const url = new URL(window.location.href);
     url.searchParams.set("map_panel", selection);
     url.searchParams.set("map_workspace", workspaceId);
-    window.open(url.toString(), "_blank", "noopener,noreferrer");
+    openAuthenticatedTab(url.toString());
   };
   const [preferences, setPreferences] = useState(() =>
     readMetricMapPreferences(workspaceId, selection),
@@ -1142,17 +1146,6 @@ function MetricMapCard({
       data-point-count={metricData?.map_points.length ?? 0}
     >
       <div className="kpi-metric-map-menu">
-        <button
-          type="button"
-          className="kpi-map-open-tab-button"
-          aria-label={translate("panel.openMapTab")}
-          title={translate("panel.openMapTab")}
-          data-testid="metric-map-open-tab-button"
-          onClick={openMapTab}
-        >
-          <ExternalLink size={14} />
-          <span>{translate("panel.openMapTabShort")}</span>
-        </button>
         <WorkspacePanelMenu label={`${title} · actions`}>
           <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
           <DropdownMenuSeparator />
@@ -1184,6 +1177,7 @@ function MetricMapCard({
         routeCoordinates={routeCoordinates}
         dropContext={{ selection, workspaceId, filters }}
         heightKey={workspaceId}
+        onOpenNewTab={detached ? undefined : openMapTab}
       />
     </article>
   );

@@ -1,5 +1,12 @@
-import { beforeEach, describe, expect, it } from "vitest";
-import { getSession, login, rememberedLogin, setSession, type Session } from "@/lib/api/http";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+  getSession,
+  login,
+  openAuthenticatedTab,
+  rememberedLogin,
+  setSession,
+  type Session,
+} from "@/lib/api/http";
 
 const session: Session = {
   token: "test-session-not-a-real-token",
@@ -18,6 +25,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
 });
+afterEach(() => vi.restoreAllMocks());
 describe("Remember me", () => {
   it("keeps checked sessions after tab storage is cleared", () => {
     setSession(session, true);
@@ -53,5 +61,31 @@ describe("Remember me", () => {
     expect(rememberedLogin()).toBe("");
     expect(localStorage.getItem("bc4.session")).toBeNull();
     expect(getSession()?.user.email).toBe("demo");
+  });
+  it("copies a tab-only session into a same-origin popup without persisting it", () => {
+    setSession(session, false);
+    const popupStorage = { setItem: vi.fn() };
+    const replace = vi.fn();
+    const popup = {
+      sessionStorage: popupStorage,
+      location: { replace },
+      opener: window,
+    } as unknown as Window;
+    const open = vi.spyOn(window, "open").mockReturnValue(popup);
+
+    expect(openAuthenticatedTab("/kpi?map_panel=cell_rsrp%400")).toBe(popup);
+    expect(open).toHaveBeenCalledWith("about:blank", "_blank");
+    expect(popupStorage.setItem).toHaveBeenCalledWith(
+      "bc4.session",
+      sessionStorage.getItem("bc4.session"),
+    );
+    expect(popup.opener).toBeNull();
+    expect(replace).toHaveBeenCalledWith(expect.stringContaining("/kpi?map_panel="));
+    expect(localStorage.getItem("bc4.session")).toBeNull();
+  });
+  it("refuses to transfer a session to another origin", () => {
+    const open = vi.spyOn(window, "open");
+    expect(openAuthenticatedTab("https://example.invalid/kpi")).toBeNull();
+    expect(open).not.toHaveBeenCalled();
   });
 });

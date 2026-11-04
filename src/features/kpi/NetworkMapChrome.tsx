@@ -6,6 +6,7 @@ import {
   ChevronDown,
   ChevronLeft,
   Crosshair,
+  ExternalLink,
   ArrowLeftRight,
   Layers,
   List,
@@ -73,6 +74,8 @@ export type NetworkMapChromeProps = SitesLayerControlsProps & {
   /** Workspace map height preference shown in the Settings dialog. */
   mapHeight?: MapHeightSetting | undefined;
   onMapHeightChange?: ((value: MapHeightSetting) => void) | undefined;
+  /** Opens this metric map in its own authenticated browser tab. */
+  onOpenNewTab?: (() => void) | undefined;
 };
 
 type MeasureMode = "none" | "distance" | "area";
@@ -669,6 +672,19 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           >
             <Search className="h-4 w-4" />
           </button>
+        )}
+        {props.onOpenNewTab && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={railBtn()}
+            aria-label={t("panel.openMapTab")}
+            title={t("panel.openMapTab")}
+            data-testid="metric-map-open-tab-button"
+            onClick={props.onOpenNewTab}
+          >
+            <ExternalLink className="h-4 w-4" />
+          </Button>
         )}
         <Button
           variant="ghost" size="icon"
