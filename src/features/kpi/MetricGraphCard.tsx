@@ -70,6 +70,7 @@ import { usePanelTableSettings } from "./table-settings";
 import { getMetricAggregate, getMetricCaptures, getMetricSeries } from "@/lib/api/metrics";
 import { API_LEAN_STALE_MS, metricCapturesKey } from "./query-keys";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
+import type { ChronogramData } from "@/lib/api/metrics-schemas";
 import { operatorColor } from "./workspace-model";
 import {
   formatTick as formatTimeTick,
@@ -140,6 +141,11 @@ export function MetricGraphCard({
   workspaceId,
   style: styleProp,
   onStyleChange,
+  prefetchedSeries,
+  batchSeries = false,
+  prefetchedSeriesPending = false,
+  prefetchedSeriesError,
+  onPrefetchedSeriesRetry,
 }: {
   projectId: string;
   code: string;
@@ -159,6 +165,11 @@ export function MetricGraphCard({
   workspaceId?: string | undefined;
   style?: MetricStyle | undefined;
   onStyleChange?: ((style: MetricStyle) => void) | undefined;
+  prefetchedSeries?: ChronogramData | undefined;
+  batchSeries?: boolean | undefined;
+  prefetchedSeriesPending?: boolean | undefined;
+  prefetchedSeriesError?: unknown;
+  onPrefetchedSeriesRetry?: (() => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const [localView, setLocalView] = useState<MetricView>("histogram");
@@ -358,6 +369,11 @@ export function MetricGraphCard({
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
           workspaceId={workspaceId}
+          prefetchedSeries={prefetchedSeries}
+          batchSeries={batchSeries}
+          prefetchedSeriesPending={prefetchedSeriesPending}
+          prefetchedSeriesError={prefetchedSeriesError}
+          onPrefetchedSeriesRetry={onPrefetchedSeriesRetry}
         />
       ) : view === "table" ? (
         <MetricAggregateTable
@@ -640,6 +656,11 @@ function MetricTimePlot({
   timeAxisMode,
   eventsCaptureId,
   workspaceId,
+  prefetchedSeries,
+  batchSeries,
+  prefetchedSeriesPending,
+  prefetchedSeriesError,
+  onPrefetchedSeriesRetry,
 }: {
   projectId: string;
   code: string;
@@ -652,6 +673,11 @@ function MetricTimePlot({
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
   workspaceId?: string | undefined;
+  prefetchedSeries?: ChronogramData | undefined;
+  batchSeries: boolean;
+  prefetchedSeriesPending: boolean;
+  prefetchedSeriesError?: unknown;
+  onPrefetchedSeriesRetry?: (() => void) | undefined;
 }) {
   const { t: translate } = useTranslation();
   const pointSync = usePointSync();
@@ -670,15 +696,16 @@ function MetricTimePlot({
   const series = useQuery({
     queryKey: ["metric-series", projectId, captureId, codes],
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, codes, signal),
-    enabled: !!captureId,
+    enabled: !!captureId && (!batchSeries || extra.length > 0),
     retry: false,
   });
+  const seriesData = extra.length === 0 && prefetchedSeries ? prefetchedSeries : series.data;
   // Une ligne par échantillon (seq partagé par toutes les séries de la même
   // capture) : aucune interpolation, une série sans échantillon à ce seq est
   // simplement absente.
   const rows = useMemo(() => {
     const bySeq = new Map<number, Record<string, number>>();
-    for (const s of series.data?.series ?? []) {
+    for (const s of seriesData?.series ?? []) {
       for (const p of s.points ?? []) {
         if (typeof p.value !== "number") continue;
         const row = bySeq.get(p.seq) ?? { t_rel_s: p.t_rel_s };
@@ -687,7 +714,7 @@ function MetricTimePlot({
       }
     }
     return [...bySeq.entries()].sort((a, b) => a[0] - b[0]).map(([seq, row]) => ({ seq, ...row }));
-  }, [series.data]);
+  }, [seriesData]);
   const units = [unit, ...extra.map((s) => s.unit)];
   const seriesList = [
     { code, label, unit, color },
@@ -702,16 +729,16 @@ function MetricTimePlot({
     renderProbe.current = { updateAt: series.dataUpdatedAt, startedAt: performance.now() };
   }
 
-  const selectedSeries = series.data?.series?.[0];
+  const selectedSeries = seriesData?.series?.[0];
   const points = useMemo(() => {
-    const s = series.data?.series?.[0];
+    const s = seriesData?.series?.[0];
     if (!s) return [];
     return (s.points ?? [])
       .filter((p) => typeof p.value === "number")
       .map((p) => ({ t_rel_s: p.t_rel_s, value: p.value as number, seq: p.seq }));
-  }, [series.data]);
+  }, [seriesData]);
   const categoricalPoints = useMemo(() => {
-    const s = series.data?.series?.[0];
+    const s = seriesData?.series?.[0];
     if (!s || s.kind !== "categorical") return [];
     return (s.points ?? []).map((point) => ({
       t_rel_s: point.t_rel_s,
@@ -719,13 +746,13 @@ function MetricTimePlot({
       label: point.label ?? String(point.value),
       seq: point.seq,
     }));
-  }, [series.data]);
-  const timeMeta: TimeAxisMeta | undefined = series.data
+  }, [seriesData]);
+  const timeMeta: TimeAxisMeta | undefined = seriesData
     ? {
-        nmf_start_at: series.data.nmf_start_at ?? null,
-        origin_ts: series.data.origin_ts,
-        utc_offset_min: series.data.utc_offset_min ?? null,
-        capture_date: series.data.capture_date ?? null,
+        nmf_start_at: seriesData.nmf_start_at ?? null,
+        origin_ts: seriesData.origin_ts,
+        utc_offset_min: seriesData.utc_offset_min ?? null,
+        capture_date: seriesData.capture_date ?? null,
       }
     : undefined;
   const mode: TimeAxisMode = timeAxisMode ?? "capture";
@@ -818,8 +845,17 @@ function MetricTimePlot({
       </div>
     );
   }
-  if (series.isPending) return <ChartSpinner label={translate("metrics.d90f3037b488")} />;
-  if (series.isError)
+  if (!seriesData && (prefetchedSeriesPending || series.isPending))
+    return <ChartSpinner label={translate("metrics.d90f3037b488")} />;
+  if (!seriesData && prefetchedSeriesError)
+    return (
+      <QueryErrorState
+        error={prefetchedSeriesError}
+        title={translate("metrics.a0f3fe3387b3")}
+        onRetry={onPrefetchedSeriesRetry ?? (() => undefined)}
+      />
+    );
+  if (!seriesData && series.isError)
     return (
       <QueryErrorState
         error={series.error}

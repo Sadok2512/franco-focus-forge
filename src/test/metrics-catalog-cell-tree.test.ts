@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildMetricCellTree,
   mergeMetricCatalogTrees,
+  metricCellSortRank,
 } from "@/features/kpi/MetricsCatalogSidebar";
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
@@ -38,6 +39,20 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
 });
 
 describe("Metrics Technology -> Metric -> Cell tree", () => {
+  it("orders PCell and SCells numerically regardless of counts", () => {
+    const roles = ["SCELL5", "PCELL", "SCELL4", "SCELL1", "SCELL6"];
+    const ordered = roles
+      .map((role) => ({
+        role,
+        rank: metricCellSortRank(
+          leaf({ display_code_lisible: `LTE_SERVING_RSRP_${role}`, n: role === "SCELL4" ? 0 : 4 }),
+        ),
+      }))
+      .sort((a, b) => a.rank - b.rank)
+      .map(({ role }) => role);
+    expect(ordered).toEqual(["PCELL", "SCELL1", "SCELL4", "SCELL5", "SCELL6"]);
+  });
+
   it("isolates the catalogue cache by capture scope during rapid changes", () => {
     expect(metricsCatalogQuery("project", ["capture-a"]).queryKey).toEqual([
       "project-metrics",

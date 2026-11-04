@@ -1,10 +1,11 @@
-import { describe, expect, it, vi } from "vitest";
-import { getMetricMap, metricRequestQuery } from "@/lib/api/metrics";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getMetricMap, getMetricRadioSeries, metricRequestQuery } from "@/lib/api/metrics";
 
 vi.mock("@/lib/api/project-kpi", () => ({ kpiFetch: vi.fn() }));
 import { kpiFetch } from "@/lib/api/project-kpi";
 
 describe("Metrics request query contract", () => {
+  beforeEach(() => vi.clearAllMocks());
   it("emits capture_id exactly once when workspace filters already contain it", () => {
     const query = metricRequestQuery(
       "a4b0c321c52e",
@@ -33,6 +34,22 @@ describe("Metrics request query contract", () => {
     expect(query.get("codes")).toBe("cell_rsrp@lte-serving,cell_rsrq@lte-serving");
     expect(query.get("capture_id")).toBe("a4b0c321c52e");
     expect(query.get("operator")).toBe("Orange");
+    expect(query.get("compact")).toBe("true");
     expect(url).not.toContain("/metrics/table");
+  });
+
+  it("keeps Signaling radio selectors while requesting the compact contract", () => {
+    getMetricRadioSeries(
+      "project-a",
+      "a4b0c321c52e",
+      ["cell_rsrp", "cell_rsrq", "ci_rs_snr"],
+      new AbortController().signal,
+    );
+
+    const url = vi.mocked(kpiFetch).mock.calls[0]?.[0] ?? "";
+    const query = new URLSearchParams(url.split("?")[1]);
+    expect(query.get("codes")).toBe("cell_rsrp,cell_rsrq,ci_rs_snr");
+    expect(query.get("compact")).toBe("true");
+    expect(query.get("capture_id")).toBe("a4b0c321c52e");
   });
 });

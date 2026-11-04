@@ -17,6 +17,7 @@ import {
   getAllSignalingEvents,
   getSignaling,
   getAllSignalingRows,
+  getMetricRadioSeries,
   getMetricSeries,
   getProject,
 } from "@/lib/api/client";
@@ -108,7 +109,7 @@ import {
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
 import { SignalingMetricsSection } from "./SignalingMetricsSection";
-import { eventTypeCounts } from "./network-events";
+import { isAllowedNetworkEvent } from "./network-events";
 import {
   filterMessageRows,
   messageTypes,
@@ -1322,7 +1323,12 @@ export function SignalingPage({
     enabled: !!capture,
     queryFn: ({ signal }) => {
       if (!capture) throw new Error("Capture unavailable");
-      return getMetricSeries(projectId, capture, ["cell_rsrp", "cell_rsrq", "ci_rs_snr"], signal);
+      return getMetricRadioSeries(
+        projectId,
+        capture,
+        ["cell_rsrp", "cell_rsrq", "ci_rs_snr"],
+        signal,
+      );
     },
     staleTime: 60000,
   });
@@ -1426,21 +1432,34 @@ export function SignalingPage({
     enabled: !!capture,
     queryFn: ({ signal }) => getSignaling(projectId, "procedures", { capture_id: capture }, signal),
   });
+  const availableEventTypes = useMemo(
+    () =>
+      Object.entries(signalingSummary.data?.event_types ?? {})
+        .filter(([type]) => isAllowedNetworkEvent({ type, label: type }))
+        .sort(([left], [right]) => left.localeCompare(right))
+        .map(([type, count]) => ({ type, count })),
+    [signalingSummary.data?.event_types],
+  );
+  const mapEventTypes = useMemo(
+    () => availableEventTypes.map(({ type }) => type),
+    [availableEventTypes],
+  );
   const eventPopulation = useQuery({
-    queryKey: ["signaling-event-types", projectId, capture],
-    enabled: !!capture,
+    queryKey: ["signaling-map-events", projectId, capture, mapEventTypes],
+    enabled: !!capture && mapVisible && mapEventTypes.length > 0,
     queryFn: ({ signal }) =>
       getAllSignalingEvents(
         projectId,
-        { capture_id: capture, view: "legacy", limit: 2000 },
+        {
+          capture_id: capture,
+          view: "legacy",
+          types: mapEventTypes.join(","),
+          limit: 2000,
+        },
         signal,
       ),
     staleTime: 60000,
   });
-  const availableEventTypes = useMemo(
-    () => eventTypeCounts(eventPopulation.data?.events ?? []),
-    [eventPopulation.data?.events],
-  );
   const visibleMapEvents = useMemo(
     () =>
       (eventPopulation.data?.events ?? []).filter(
@@ -1450,7 +1469,10 @@ export function SignalingPage({
   );
   const points = useQuery({
     queryKey: ["signaling-points", projectId, filtered, timeWindow],
-    enabled: !!capture,
+    // Avoid the transient [0, 0] request made before overview/summary has
+    // supplied the real capture duration. It was immediately superseded by
+    // the full-window request and only added load to the API and browser.
+    enabled: !!capture && captureDuration > 0 && timeWindow[1] > timeWindow[0],
     queryFn: ({ signal }) =>
       getSignaling(
         projectId,

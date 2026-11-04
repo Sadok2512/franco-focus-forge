@@ -319,7 +319,7 @@ const MetricAnalysisPayloadSchema = z.object({
       code: z.string(),
       value: scalar,
       t_rel_s: z.number().nullable(),
-      tooltip: z.string(),
+      tooltip: z.string().optional().default(""),
       serving_cell_id: z.string().nullable().optional(),
       serving_cell_seq: z.number().nullable().optional(),
       serving_cell_ref_id: z.string().nullable().optional(),

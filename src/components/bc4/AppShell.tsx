@@ -1,4 +1,3 @@
-import { useAnalyticsBootstrap } from "@/lib/analytics-bootstrap";
 import { useTranslation } from "react-i18next";
 import { setLanguage } from "@/lib/i18n";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
@@ -115,7 +114,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   // cliqué « Ouvrir », les pages scopées affichent un état vide clair.
   // Un auto-set était un silent-guard — il masquait l'intention « choisir ».
   const { activeProject, clearActiveProject } = useActiveProject();
-  useAnalyticsBootstrap(activeProject?.id);
   const session = getSession();
   const [menu, setMenu] = useState(false);
 

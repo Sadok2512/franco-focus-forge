@@ -6,7 +6,13 @@ import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import type { Map as MlMap, GeoJSONSource, ExpressionSpecification } from "maplibre-gl";
-import { getMetricAnalysis, getMetricCaptures, getMetricMap, getSignaling } from "@/lib/api/client";
+import {
+  getMetricAnalysis,
+  getMetricCaptures,
+  getMetricMap,
+  getMetricSeries,
+  getSignaling,
+} from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } from "./query-keys";
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -275,7 +281,9 @@ export function metricMapFeatures(data: MetricMapData) {
       coordinates: [point.lng, point.lat] as [number, number],
     },
     properties: {
-      tooltip: point.tooltip,
+      tooltip:
+        point.tooltip ||
+        `${point.code} · seq ${point.seq} · ${String(point.value)}`,
       code: point.code,
       seq: point.seq,
       serving_cell_id: point.serving_cell_id,
@@ -1310,6 +1318,30 @@ export function MetricsWorkspace({
     setCardPanelState({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() });
   }
   const cardPanels = cardPanelState.panels;
+  const graphCodes = useMemo(
+    () => [...new Set(cardPanels.filter((panel) => panel.view === "graph").map((panel) => panel.code))],
+    [cardPanels],
+  );
+  // One endpoint call can return every visible graph series. Previously each
+  // MetricGraphCard mounted its own request, repeating capture clock/context
+  // work and producing a burst of parallel responses on workspace restore.
+  const sharedGraphSeries = useQuery({
+    queryKey: ["metric-series-workspace", projectId, captureId, graphCodes],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId!, graphCodes, signal),
+    enabled: Boolean(captureId) && graphCodes.length > 0,
+    retry: false,
+  });
+  const graphSeriesByCode = useMemo(() => {
+    const result = new Map<string, NonNullable<typeof sharedGraphSeries.data>>();
+    if (!sharedGraphSeries.data) return result;
+    for (const code of graphCodes) {
+      result.set(code, {
+        ...sharedGraphSeries.data,
+        series: sharedGraphSeries.data.series.filter((series) => series.code === code),
+      });
+    }
+    return result;
+  }, [graphCodes, sharedGraphSeries.data]);
   const saveCardPanels = useCallback(
     (next: MetricCardPanel[]) => {
       setCardPanelState({ workspaceId: cardPanelWorkspace, panels: next });
@@ -1960,6 +1992,11 @@ export function MetricsWorkspace({
                       workspaceId={_workspaceId}
                       style={styles[s.full]}
                       onStyleChange={(next) => writeStyle(s.full, next)}
+                      prefetchedSeries={graphSeriesByCode.get(s.full)}
+                      batchSeries
+                      prefetchedSeriesPending={sharedGraphSeries.isPending}
+                      prefetchedSeriesError={sharedGraphSeries.error}
+                      onPrefetchedSeriesRetry={() => void sharedGraphSeries.refetch()}
                     />
                   )
                 }

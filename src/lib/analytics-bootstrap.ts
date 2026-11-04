@@ -147,7 +147,10 @@ function shaKeyedMetricsQuery(pid: string, captureIds: string[] = []) {
       }
       return data;
     },
-    initialData: () => readValidMetricsCache(pid) as never,
+    // A project-wide catalogue is not a valid initial value for a
+    // capture-scoped query: availability/counts differ by capture and the
+    // synchronous multi-megabyte JSON.parse used to block the KPI route.
+    initialData: () => (captureIds.length === 0 ? (readValidMetricsCache(pid) as never) : undefined),
     initialDataUpdatedAt: 0,
     staleTime: 60_000,
   });
@@ -234,6 +237,9 @@ export const dictTreeQuery = (projectId: string, view: "catalog" | "raw", messag
     staleTime: Infinity,
   });
 
+/** Route-local warm-up helper kept for consumers that deliberately opt in.
+ * AppShell must not call it: doing so downloads every analytics catalogue on
+ * unrelated pages such as Projects. */
 export function useAnalyticsBootstrap(projectId: string | undefined) {
   const id = projectId ?? "";
   const enabled = Boolean(projectId);

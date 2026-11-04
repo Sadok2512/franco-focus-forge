@@ -84,6 +84,20 @@ export const getMetricSeries = (
     MetricSeriesSchema,
     signal,
   );
+
+/** Certified legacy series values without the CSV and verbose tooltips that
+ * Signaling never consumes. */
+export const getMetricRadioSeries = (
+  p: string,
+  capture: string,
+  codes: string[],
+  signal?: AbortSignal,
+) =>
+  kpiFetch(
+    `/projects/${encodeURIComponent(p)}/metrics/series?${metricRequestQuery(capture, {}, { codes: codes.join(","), max_points: "2000", compact: "true" })}`,
+    MetricSeriesSchema,
+    signal,
+  );
 export const getCaptureEvents = (
   p: string,
   capture: string,
@@ -128,7 +142,7 @@ export const getMetricMap = (
   signal?: AbortSignal,
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/map?${metricRequestQuery(capture, filters, { codes: codes.join(",") })}`,
+    `/projects/${encodeURIComponent(p)}/metrics/map?${metricRequestQuery(capture, filters, { codes: codes.join(","), compact: "true" })}`,
     MetricMapResponseSchema,
     signal,
   );

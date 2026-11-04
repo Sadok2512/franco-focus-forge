@@ -296,7 +296,13 @@ export {
   getTaskPoints,
 } from "./task-analytics";
 
-export { getMetrics, getMetricCaptures, getMetricSeries, getCaptureEvents } from "./metrics";
+export {
+  getMetrics,
+  getMetricCaptures,
+  getMetricSeries,
+  getMetricRadioSeries,
+  getCaptureEvents,
+} from "./metrics";
 
 export { getDecodeStatus, startDeepDecode, getUnknownMetrics } from "./decode";
 

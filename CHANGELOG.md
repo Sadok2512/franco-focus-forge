@@ -1,3 +1,9 @@
+## 1.138.4 (patch) — Durcissement des performances Analytics — 2026-11-04 (BC4)
+
+- Supprime le préchargement global des catalogues Analytics sur les pages qui ne les utilisent pas et interdit l’injection du cache projet dans une requête limitée à une capture.
+- Virtualise les résultats de recherche du catalogue Metrics, conserve l’ordre RF PCell/SCell, regroupe les séries Graph d’un Workspace en un appel et demande le contrat Map compact.
+- Évite la fenêtre Signaling `[0,0]` et ne charge pour la carte que les types d’événements réseau réellement nécessaires.
+
 ## 1.138.3 (patch) — Onglet Map authentifié et bouton dans le rail — 2026-11-04 (BC4)
 
 - Conserve aussi les sessions non persistantes lors de l’ouverture de la Map dans un nouvel onglet, sans placer le jeton dans l’URL ni dans `localStorage`.

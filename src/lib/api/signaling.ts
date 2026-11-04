@@ -239,6 +239,7 @@ export const signalingSchemas = {
     ...envelope,
     tracks: z.array(z.string()),
     counts: z.record(z.number()),
+    event_types: z.record(z.number()).optional().default({}),
     total: z.number(),
     seq_start: z.number().nullable(),
     seq_end: z.number().nullable(),

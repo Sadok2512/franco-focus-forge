@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
   type ReactNode,
@@ -100,6 +101,23 @@ export function metricCatalogMatchesSearch(node: MetricCatalogNode, query: strin
   if (!terms.length) return true;
   const haystack = metricCatalogSearchText(node);
   return terms.every((term) => haystack.includes(term));
+}
+
+/** RF cell order is semantic, never lexical (SCELL10 must not precede
+ * SCELL2) and never driven by availability/count. */
+export function metricCellSortRank(node: MetricCatalogNode): number {
+  const identity = (node.display_code_lisible || node.cell_label || node.cell || node.label)
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+  if (/(?:^|_)PCELL(?:$|_)/.test(identity) && !identity.includes("PSCELL")) return 0;
+  const scg = identity.match(/(?:^|_)SCG_?SCELL_?(\d+)(?:$|_)/);
+  if (scg) return 200 + Number(scg[1]);
+  const scell = identity.match(/(?:^|_)SCELL_?(\d+)(?:$|_)/);
+  if (scell) return 10 + Number(scell[1]);
+  if (/(?:^|_)PSCELL(?:$|_)/.test(identity)) return 100;
+  if (/NEIGHBOU?R/.test(identity)) return 300;
+  if (/SCANNER/.test(identity)) return 400;
+  return 1_000;
 }
 
 /** Normalize the release catalogue without using display text as identity.
@@ -399,6 +417,8 @@ export function MetricsCatalogSidebar({
     return () => window.clearTimeout(timer);
   }, [search, startSearchTransition]);
   const [open, setOpen] = useState<Set<string>>(new Set());
+  const treeScrollRef = useRef<HTMLDivElement>(null);
+  const [searchScrollTop, setSearchScrollTop] = useState(0);
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
   // Oracle discipline (tree.html sha f4057ccc…): the Metrics sidebar must
@@ -426,7 +446,14 @@ export function MetricsCatalogSidebar({
       const key = node.parent_id ?? rootKey;
       result.set(key, [...(result.get(key) ?? []), node]);
     }
-    for (const children of result.values()) children.sort((a, b) => a.order - b.order);
+    for (const children of result.values())
+      children.sort((a, b) => {
+        if (a.node_type === "leaf" && b.node_type === "leaf") {
+          const semantic = metricCellSortRank(a) - metricCellSortRank(b);
+          if (semantic) return semantic;
+        }
+        return a.order - b.order || cleanLabel(a.label).localeCompare(cleanLabel(b.label));
+      });
     return result;
   }, [normalizedNodes]);
   const availableTree = useMemo(() => {
@@ -515,6 +542,32 @@ export function MetricsCatalogSidebar({
     }
     return visible;
   }, [byParent, debouncedSearch, nodeIndex, normalizedNodes]);
+  const searchRows = useMemo(() => {
+    if (!matching) return [];
+    const rows: Array<{ node: MetricCatalogNode; depth: number }> = [];
+    const visit = (node: MetricCatalogNode, depth: number) => {
+      if (!matching.has(node.node_id)) return;
+      rows.push({ node, depth });
+      for (const child of byParent.get(node.node_id) ?? []) visit(child, depth + 1);
+    };
+    for (const root of byParent.get(rootKey) ?? []) visit(root, 0);
+    return rows;
+  }, [byParent, matching]);
+  useEffect(() => {
+    setSearchScrollTop(0);
+    if (treeScrollRef.current) treeScrollRef.current.scrollTop = 0;
+  }, [debouncedSearch]);
+  const SEARCH_ROW_HEIGHT = 34;
+  const searchWindow = useMemo(() => {
+    const viewport = treeScrollRef.current?.clientHeight || 640;
+    const overscan = 8;
+    const start = Math.max(0, Math.floor(searchScrollTop / SEARCH_ROW_HEIGHT) - overscan);
+    const end = Math.min(
+      searchRows.length,
+      Math.ceil((searchScrollTop + viewport) / SEARCH_ROW_HEIGHT) + overscan,
+    );
+    return { start, end };
+  }, [searchRows.length, searchScrollTop]);
 
   // 1.134.0 (REPRISE 7 Lot 7) — export CSV avec UNE colonne par capture +
   // Kind / unit / data_type / display_code. Le back fournit l'endpoint
@@ -690,7 +743,12 @@ export function MetricsCatalogSidebar({
     return suffix;
   };
 
-  const renderNode = (node: MetricCatalogNode): ReactNode => {
+  const renderNode = (
+    node: MetricCatalogNode,
+    renderChildren = true,
+    flatDepth?: number,
+    virtualTop?: number,
+  ): ReactNode => {
     // A content search spans the complete certified catalogue. Availability
     // controls apply only while browsing, never as a hidden search filter.
     if (!matching && availableTree && !availableTree.has(node.node_id)) return null;
@@ -757,7 +815,20 @@ export function MetricsCatalogSidebar({
       // Oracle tech badge "<X> avec valeurs / <Y>" — exact copy of
       // tree.html rendering so the sidebar reads 1:1 with the reference.
       return (
-        <li key={node.node_id}>
+        <li
+          key={node.node_id}
+          style={
+            flatDepth === undefined
+              ? undefined
+              : {
+                  position: "absolute",
+                  top: virtualTop,
+                  left: Math.min(flatDepth, 4) * 8,
+                  right: 0,
+                  height: SEARCH_ROW_HEIGHT,
+                }
+          }
+        >
           <button
             className="kpi-tree-root"
             aria-expanded={expanded}
@@ -776,7 +847,7 @@ export function MetricsCatalogSidebar({
               </span>
             )}
           </button>
-          {expanded && (
+          {renderChildren && expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
           )}
         </li>
@@ -790,7 +861,20 @@ export function MetricsCatalogSidebar({
       // Oracle category badge "<N> métriques · <M> cellules" — exact
       // copy of tree.html rendering.
       return (
-        <li key={node.node_id}>
+        <li
+          key={node.node_id}
+          style={
+            flatDepth === undefined
+              ? undefined
+              : {
+                  position: "absolute",
+                  top: virtualTop,
+                  left: Math.min(flatDepth, 4) * 8,
+                  right: 0,
+                  height: SEARCH_ROW_HEIGHT,
+                }
+          }
+        >
           <button
             className={underTech ? "kpi-tree-family" : "kpi-tree-root"}
             aria-expanded={expanded}
@@ -804,7 +888,7 @@ export function MetricsCatalogSidebar({
               </span>
             )}
           </button>
-          {expanded && (
+          {renderChildren && expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
           )}
         </li>
@@ -814,7 +898,20 @@ export function MetricsCatalogSidebar({
     // GROUP ou METRIC parent : même pattern que KPI family
     if (children.length > 0) {
       return (
-        <li key={node.node_id}>
+        <li
+          key={node.node_id}
+          style={
+            flatDepth === undefined
+              ? undefined
+              : {
+                  position: "absolute",
+                  top: virtualTop,
+                  left: Math.min(flatDepth, 4) * 8,
+                  right: 0,
+                  height: SEARCH_ROW_HEIGHT,
+                }
+          }
+        >
           <button
             className="kpi-tree-family"
             aria-expanded={expanded}
@@ -828,7 +925,7 @@ export function MetricsCatalogSidebar({
               </span>
             )}
           </button>
-          {expanded && (
+          {renderChildren && expanded && (
             <ul className="ml-2 space-y-1">{children.map((child) => renderNode(child))}</ul>
           )}
         </li>
@@ -837,7 +934,20 @@ export function MetricsCatalogSidebar({
 
     // LEAF : même pattern que KPI kpi-tree-leaf
     return (
-      <li key={node.node_id}>
+      <li
+        key={node.node_id}
+        style={
+          flatDepth === undefined
+            ? undefined
+            : {
+                position: "absolute",
+                top: virtualTop,
+                left: Math.min(flatDepth, 4) * 8,
+                right: 0,
+                height: SEARCH_ROW_HEIGHT,
+              }
+        }
+      >
         <div
           draggable={node.selectable && Boolean(node.selection) && !disabled}
           onDragStart={(event) => {
@@ -1035,11 +1145,34 @@ export function MetricsCatalogSidebar({
         </div>
       )}
       <div
+        ref={treeScrollRef}
         className="kpi-tree"
         data-testid="unified-metrics-tree"
         aria-busy={isSearchPending}
+        onScroll={(event) => {
+          if (matching) setSearchScrollTop(event.currentTarget.scrollTop);
+        }}
       >
-        <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
+        {matching ? (
+          <ul
+            className="relative mx-2"
+            style={{ height: searchRows.length * SEARCH_ROW_HEIGHT }}
+            data-testid="metrics-search-virtual-list"
+          >
+            {searchRows
+              .slice(searchWindow.start, searchWindow.end)
+              .map(({ node, depth }, index) =>
+                renderNode(
+                  node,
+                  false,
+                  depth,
+                  (searchWindow.start + index) * SEARCH_ROW_HEIGHT,
+                ),
+              )}
+          </ul>
+        ) : (
+          <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
+        )}
         {debouncedSearch.trim() && matching?.size === 0 && (
           <p className="p-3 text-xs text-muted-foreground" role="status">
             {t("metrics.7f626224ba1f")}
