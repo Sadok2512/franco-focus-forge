@@ -132,6 +132,11 @@ describe("Selection ring of a drive point", () => {
           serving_cell_lat: 48.91,
           serving_cell_lng: 2.21,
           serving_cell_source: "chi_previous_seq_cell_ref_exact",
+          nr_anchor_link: {
+            lat: 48.92,
+            lng: 2.22,
+            confidence: "proven",
+          },
         },
       ],
     });
@@ -154,10 +159,25 @@ describe("Selection ring of a drive point", () => {
     await waitFor(() =>
       expect(
         links?.setData.mock.calls.some(([data]) =>
-          JSON.stringify(data).includes('"coordinates":[[2.2,48.9],[2.21,48.91]]'),
+          JSON.stringify(data).includes('"link_type":"serving"'),
         ),
       ).toBe(true),
     );
+    expect(
+      links?.setData.mock.calls.some(([data]) =>
+        JSON.stringify(data).includes('"coordinates":[[2.2,48.9],[2.21,48.91]]'),
+      ),
+    ).toBe(true);
+    expect(
+      links?.setData.mock.calls.some(([data]) =>
+        JSON.stringify(data).includes('"coordinates":[[2.2,48.9],[2.22,48.92]]'),
+      ),
+    ).toBe(true);
+    expect(
+      links?.setData.mock.calls.some(([data]) =>
+        JSON.stringify(data).includes('"link_type":"nr_anchor"'),
+      ),
+    ).toBe(true);
     expect(
       map.setFilter.mock.calls.some(
         ([layer, filter]) => layer === SELECTED && JSON.stringify(filter).includes("67"),
