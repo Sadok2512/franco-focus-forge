@@ -159,6 +159,7 @@ export function DriveRsrpLayer({
   hideControls = false,
   selectedRingColor,
   onSelectedChange,
+  externalSelection,
   legendHost,
   selectionLayerId,
   pointMetrics,
@@ -178,6 +179,9 @@ export function DriveRsrpLayer({
   selectedRingColor?: string | undefined;
   /** The selected point with its position, so the host map can match colours. */
   onSelectedChange?: (selected: SelectedDrivePoint | null) => void;
+  /** Selection imposed by the KPI workspace sync contract. Undefined keeps
+   * this layer autonomous; null explicitly clears the shared selection. */
+  externalSelection?: SelectedDrivePoint | null | undefined;
   /** Host map legend panel element the RSRP rows are rendered into. */
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
@@ -211,6 +215,11 @@ export function DriveRsrpLayer({
     to: string;
   }>();
   useEffect(() => setPrefs(readPrefs(store, DEFAULT)), [store]);
+  useEffect(() => {
+    if (externalSelection === undefined) return;
+    selectedPointRef.current = externalSelection;
+    setSelectedPoint(externalSelection);
+  }, [externalSelection]);
   useEffect(() => {
     if (previousProjectId.current === projectId) return;
     previousProjectId.current = projectId;

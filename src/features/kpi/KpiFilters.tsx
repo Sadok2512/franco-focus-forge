@@ -1,4 +1,4 @@
-import { Check, RotateCcw } from "lucide-react";
+import { Check, Link2, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterSelect } from "@/features/dict-v2/FilterSelect";
 import { Switch } from "@/components/ui/switch";
@@ -7,6 +7,7 @@ import type { Superstream } from "@/lib/api/superstreams";
 import type { AnalysisScope } from "@/lib/analysis-scope";
 import type { FilterDraft, FilterKey } from "./workspace-model";
 import { WorkspaceTemplatesMenu } from "./WorkspaceTemplatesMenu";
+import { usePointSync } from "./point-sync";
 
 export type HeaderCapture = { capture_id: string; label: string };
 
@@ -56,6 +57,7 @@ export function KpiFilters({
   onEventsVisibleChange: (visible: boolean) => void;
 }) {
   const { t } = useTranslation();
+  const pointSync = usePointSync();
   const update = (key: FilterKey, values: string[]) =>
     onChange({ ...draft, values: { ...draft.values, [key]: values } });
   const rats = (dimensions?.rats?.values ?? []).filter(
@@ -162,6 +164,19 @@ export function KpiFilters({
         <div className="kpi-header-templates" data-testid="kpi-header-templates">
           <WorkspaceTemplatesMenu />
         </div>
+
+        <label className="kpi-events-toggle" data-testid="kpi-point-sync-control">
+          <span className="flex items-center gap-2 text-xs font-medium">
+            <Link2 size={14} aria-hidden="true" />
+            <Switch
+              checked={pointSync.enabled}
+              onCheckedChange={pointSync.setEnabled}
+              aria-label={t("panel.pointSync")}
+              data-testid="kpi-point-sync-toggle"
+            />
+            {t(pointSync.enabled ? "panel.pointSyncOn" : "panel.pointSyncOff")}
+          </span>
+        </label>
 
         <label className="kpi-events-toggle" data-testid="kpi-header-events">
           <span className="flex items-center gap-2 text-xs font-medium">

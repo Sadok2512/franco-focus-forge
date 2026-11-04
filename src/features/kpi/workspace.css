@@ -776,6 +776,29 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   box-shadow: none;
   background: transparent;
 }
+.kpi-metric-map-card.is-browser-tab {
+  position: fixed;
+  inset: var(--app-header-offset, 56px) 0 0;
+  z-index: 70;
+  width: 100vw;
+  height: calc(100dvh - var(--app-header-offset, 56px));
+  min-height: 0;
+  background: var(--background, #fff);
+}
+.kpi-metric-map-card.is-browser-tab > *:not(.kpi-metric-map-menu) {
+  min-height: 0;
+  height: 100%;
+}
+.kpi-metrics-table-body tbody tr[data-point-selected="true"] {
+  background: color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
+  box-shadow: inset 3px 0 0 var(--primary, #2563eb);
+}
+.kpi-metrics-table-body tbody tr {
+  cursor: default;
+}
+.kpi-point-sync-line {
+  pointer-events: none;
+}
 .kpi-metric-map-menu {
   position: absolute;
   top: 12px;

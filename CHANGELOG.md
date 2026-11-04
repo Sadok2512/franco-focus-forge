@@ -1,3 +1,9 @@
+## 1.138.0 (minor) — Synchronisation des points KPI entre panneaux et onglets — 2026-11-04 (BC4)
+
+- Ajoute un bouton **Sync** dans l’en-tête KPI Analytics. Lorsqu’il est actif, une sélection exacte `(projet, workspace, capture, seq)` faite sur une Map, un Graph ou une ligne de Table est propagée aux autres composants ; une ligne agrégée utilise uniquement sa plage `seq_first–seq_last` publiée par l’API.
+- La sélection est partagée entre onglets du même navigateur avec `BroadcastChannel`, strictement isolée par projet et Workspace. Sync désactivée supprime la sélection partagée et laisse chaque composant autonome.
+- Ajoute à chaque Map l’action **Ouvrir la Map dans un nouvel onglet**. Le nouvel onglet affiche la Map en plein espace et reste synchronisé avec l’onglet KPI d’origine quand Sync est active.
+
 ## 1.137.2 (patch) — Recherche Metrics fluide — 2026-11-04 (Agent BC1)
 
 - Conserve la saisie de recherche dans la sidebar afin qu'une frappe ne

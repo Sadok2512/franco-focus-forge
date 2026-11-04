@@ -99,6 +99,7 @@ import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
 import { PanelShell } from "./PanelShell";
 import { WorkspaceGrid } from "./WorkspaceGrid";
 import { ActiveEventsProvider } from "./active-events";
+import { PointSyncProvider } from "./point-sync";
 import { MetricsEventsRibbon } from "./MetricsEventsRibbon";
 import { WorkspaceTemplatesProvider } from "./workspace-templates-context";
 import {
@@ -971,6 +972,7 @@ function Workspace({
   return (
     <WorkspaceTemplatesProvider value={templateContext}>
     <ActiveEventsProvider resetKey={`${currentTab.id}:${scopeIdentity}`}>
+    <PointSyncProvider projectId={projectId} workspaceId={currentTab.id}>
     <main className="kpi-workspace" aria-label="KPI Analytics">
       <KpiFilters
         draft={draft}
@@ -1553,6 +1555,7 @@ function Workspace({
         onOverlayToggle={setOverlay}
       />
     </main>
+    </PointSyncProvider>
     </ActiveEventsProvider>
     </WorkspaceTemplatesProvider>
   );

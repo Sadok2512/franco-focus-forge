@@ -1,4 +1,4 @@
-import { Columns3, Download, Inbox, LoaderCircle, Maximize2, X } from "lucide-react";
+import { Columns3, Download, ExternalLink, Inbox, LoaderCircle, Maximize2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -72,6 +72,7 @@ import {
 } from "./time-axis";
 import { parseMetricSelection } from "./metric-selection";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
+import { pointMatchesRange, usePointSync } from "./point-sync";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -550,6 +551,7 @@ function MetricMap({
   heightKey?: string;
 }) {
   const { t: translate } = useTranslation();
+  const pointSync = usePointSync();
   const [map, setMap] = useState<MlMap | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -735,10 +737,22 @@ function MetricMap({
       if (!nextSelection) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
+        pointSync.select(null);
         return;
       }
       selectedPointRef.current = nextSelection;
       setSelectedPoint(nextSelection);
+      pointSync.select({
+        projectId,
+        workspaceId: dropContext?.workspaceId ?? heightKey ?? "map",
+        captureId,
+        seq,
+        seqLast: seq,
+        tRelS: point.t_rel_s,
+        lat: point.lat,
+        lng: point.lng,
+        source: "map",
+      });
     };
     const pointer = () => {
       map.getCanvas().style.cursor = "pointer";
@@ -754,12 +768,38 @@ function MetricMap({
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
     };
-  }, [captureId, data, label, map, projectId, unit]);
+  }, [captureId, data, dropContext?.workspaceId, heightKey, label, map, pointSync, projectId, unit]);
+  useEffect(() => {
+    if (!pointSync.enabled) return;
+    const shared = pointSync.selection;
+    if (!shared) {
+      selectedPointRef.current = null;
+      setSelectedPoint(null);
+      return;
+    }
+    if (shared.projectId !== projectId || shared.captureId !== captureId) return;
+    const sharedLast = shared.seqLast ?? shared.seq;
+    const point = data?.map_points.find(
+      (candidate) => candidate.seq >= shared.seq && candidate.seq <= sharedLast,
+    );
+    if (!point) return;
+    const next = { projectId, captureId, seq: point.seq, lng: point.lng, lat: point.lat };
+    selectedPointRef.current = next;
+    setSelectedPoint(next);
+  }, [captureId, data, pointSync.enabled, pointSync.selection, projectId]);
   useEffect(() => {
     selectedPointRef.current = null;
     setSelectedPoint(null);
   }, [captureId, map, projectId]);
   const first = data?.map_points[0];
+  const driveSelection = selectedPoint
+    ? (() => {
+        const point = data?.map_points.find((candidate) => candidate.seq === selectedPoint.seq);
+        return point
+          ? { ...selectedPoint, lng: point.lng, lat: point.lat }
+          : null;
+      })()
+    : null;
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
     (counts, feature) => ({
       ...counts,
@@ -981,6 +1021,7 @@ function MetricMap({
         hideControls
         legendHost={driveLegendHost}
         selectionLayerId="metrics-v3"
+        externalSelection={pointSync.enabled ? driveSelection : undefined}
         pointMetrics={(seq) => {
           const point = data?.map_points.find((candidate) => candidate.seq === seq);
           return point ? [{ label, unit, value: point.value, active: true }] : [];
@@ -1047,7 +1088,21 @@ function MetricMapCard({
   routeCoordinates?: Array<[number, number]> | undefined;
   filters: KpiQueryFilters;
 }) {
+  const { t: translate } = useTranslation();
   const panelRef = useRef<HTMLElement>(null);
+  const detached =
+    typeof window !== "undefined" &&
+    new URLSearchParams(window.location.search).get("map_panel") === selection;
+  useEffect(() => {
+    if (!detached) return;
+    panelRef.current?.scrollIntoView({ block: "start" });
+  }, [detached]);
+  const openMapTab = () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("map_panel", selection);
+    url.searchParams.set("map_workspace", workspaceId);
+    window.open(url.toString(), "_blank", "noopener,noreferrer");
+  };
   const [preferences, setPreferences] = useState(() =>
     readMetricMapPreferences(workspaceId, selection),
   );
@@ -1081,7 +1136,7 @@ function MetricMapCard({
   return (
     <article
       ref={panelRef}
-      className="kpi-graph-card kpi-metric-map-card"
+      className={`kpi-graph-card kpi-metric-map-card${detached ? " is-browser-tab" : ""}`}
       data-metric-code={selection}
       data-view="map"
       data-point-count={metricData?.map_points.length ?? 0}
@@ -1089,6 +1144,11 @@ function MetricMapCard({
       <div className="kpi-metric-map-menu">
         <WorkspacePanelMenu label={`${title} · actions`}>
           <DropdownMenuItem disabled>Paramètres</DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem data-testid="metric-map-open-tab" onSelect={openMapTab}>
+            <ExternalLink size={14} />
+            {translate("panel.openMapTab")}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <SharePanelMenuItem projectId={projectId} testId="metric-map-share" />
           <DropdownMenuSeparator />
@@ -1174,6 +1234,7 @@ export function MetricsWorkspace({
   panelIdSuffix?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
+  const pointSync = usePointSync();
   const reasonLabel = useReasonLabel();
   const legacyMapSelection = selections[0] ?? "metric";
   const [legacyMapPreferences, setLegacyMapPreferences] = useState(() =>
@@ -2161,6 +2222,54 @@ export function MetricsWorkspace({
                                 hit ? rowEvents.map((e) => e.id).join(" ") : undefined
                               }
                               title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
+                              aria-selected={
+                                pointSync.enabled &&
+                                pointMatchesRange(
+                                  pointSync.selection,
+                                  projectId,
+                                  captureId,
+                                  r.seq_first,
+                                  r.seq_last,
+                                )
+                              }
+                              data-point-selected={
+                                pointSync.enabled &&
+                                pointMatchesRange(
+                                  pointSync.selection,
+                                  projectId,
+                                  captureId,
+                                  r.seq_first,
+                                  r.seq_last,
+                                )
+                                  ? "true"
+                                  : undefined
+                              }
+                              onClick={() => {
+                                if (!pointSync.enabled) return;
+                                if (
+                                  pointMatchesRange(
+                                    pointSync.selection,
+                                    projectId,
+                                    captureId,
+                                    r.seq_first,
+                                    r.seq_last,
+                                  )
+                                ) {
+                                  pointSync.select(null);
+                                  return;
+                                }
+                                pointSync.select({
+                                  projectId,
+                                  workspaceId: _workspaceId ?? "metrics",
+                                  captureId,
+                                  seq: r.seq_first,
+                                  seqLast: r.seq_last,
+                                  tRelS: r.t_rel_s,
+                                  ...(r.lat != null ? { lat: r.lat } : {}),
+                                  ...(r.lon != null ? { lng: r.lon } : {}),
+                                  source: "table",
+                                });
+                              }}
                               style={
                                 hit
                                   ? {

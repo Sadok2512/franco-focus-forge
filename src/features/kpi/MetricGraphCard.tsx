@@ -77,6 +77,7 @@ import {
   type TimeAxisMeta,
   type TimeAxisMode,
 } from "./time-axis";
+import { usePointSync } from "./point-sync";
 
 const KPI_SERIES_RENDER_DEBUG = import.meta.env["VITE_KPI_SERIES_RENDER_DEBUG"] === "1";
 
@@ -356,6 +357,7 @@ export function MetricGraphCard({
           syncId={syncId}
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
+          workspaceId={workspaceId}
         />
       ) : view === "table" ? (
         <MetricAggregateTable
@@ -637,6 +639,7 @@ function MetricTimePlot({
   syncId,
   timeAxisMode,
   eventsCaptureId,
+  workspaceId,
 }: {
   projectId: string;
   code: string;
@@ -648,8 +651,10 @@ function MetricTimePlot({
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
+  workspaceId?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
+  const pointSync = usePointSync();
   const { active: activeEvents } = useActiveEvents();
   const captures = useQuery({
     queryKey: metricCapturesKey(projectId),
@@ -659,7 +664,7 @@ function MetricTimePlot({
     refetchOnWindowFocus: false,
     retry: false,
   });
-  const captureId = captures.data?.[0]?.capture_id;
+  const captureId = eventsCaptureId ?? captures.data?.[0]?.capture_id;
   // Séries de la carte : la métrique de base + celles ajoutées par dépôt.
   const codes = useMemo(() => [code, ...extra.map((s) => s.code)], [code, extra]);
   const series = useQuery({
@@ -724,6 +729,39 @@ function MetricTimePlot({
       }
     : undefined;
   const mode: TimeAxisMode = timeAxisMode ?? "capture";
+  const selectChartPoint = (state: unknown) => {
+    if (!pointSync.enabled || !captureId) return;
+    const active = state as {
+      activePayload?: Array<{ payload?: { seq?: unknown; t_rel_s?: unknown } }>;
+    };
+    const payload = active.activePayload?.[0]?.payload;
+    const seq = Number(payload?.seq);
+    const tRelS = Number(payload?.t_rel_s);
+    if (!Number.isFinite(seq)) return;
+    if (
+      pointSync.selection?.projectId === projectId &&
+      pointSync.selection.captureId === captureId &&
+      pointSync.selection.seq === seq
+    ) {
+      pointSync.select(null);
+      return;
+    }
+    pointSync.select({
+      projectId,
+      workspaceId: workspaceId ?? "metrics",
+      captureId,
+      seq,
+      seqLast: seq,
+      tRelS: Number.isFinite(tRelS) ? tRelS : null,
+      source: "graph",
+    });
+  };
+  const selectedTime =
+    pointSync.enabled &&
+    pointSync.selection?.projectId === projectId &&
+    pointSync.selection.captureId === captureId
+      ? pointSync.selection.tRelS
+      : null;
 
   useEffect(() => {
     if (!series.data || !plotRef.current || !renderProbe.current.startedAt) return;
@@ -808,7 +846,10 @@ function MetricTimePlot({
         data-n-points={categoricalPoints.length}
       >
         <ResponsiveContainer width="100%" height="100%">
-          <ScatterChart margin={{ top: 24, right: 14, left: 4, bottom: 24 }}>
+          <ScatterChart
+            margin={{ top: 24, right: 14, left: 4, bottom: 24 }}
+            onClick={selectChartPoint}
+          >
             <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
             <XAxis
               type="number"
@@ -837,6 +878,9 @@ function MetricTimePlot({
             <Scatter data={categoricalPoints} fill="#2563eb" shape="diamond">
               <LabelList dataKey="label" position="top" fontSize={9} fill="#334155" />
             </Scatter>
+            {typeof selectedTime === "number" && (
+              <ReferenceLine x={selectedTime} stroke="#2563eb" strokeWidth={2} />
+            )}
           </ScatterChart>
         </ResponsiveContainer>
       </div>
@@ -855,6 +899,7 @@ function MetricTimePlot({
         <ComposedChart
           data={rows}
           margin={{ top: 10, right: 14, left: 4, bottom: 24 }}
+          onClick={selectChartPoint}
           {...(syncId ? { syncId } : {})}
         >
           <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
@@ -956,6 +1001,15 @@ function MetricTimePlot({
                 label={{ value: e.label, position: "insideTopRight", fontSize: 9, fill: e.color }}
               />
             ))}
+          {typeof selectedTime === "number" && (
+            <ReferenceLine
+              yAxisId="left"
+              x={selectedTime}
+              stroke="#2563eb"
+              strokeWidth={2}
+              className="kpi-point-sync-line"
+            />
+          )}
           {points.length > 50 ? (
             <Brush
               dataKey="t_rel_s"
