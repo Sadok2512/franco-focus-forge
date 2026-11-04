@@ -2,6 +2,7 @@ import { Columns3, Download, ExternalLink, Inbox, LoaderCircle, Maximize2, X } f
 import { useTranslation } from "react-i18next";
 import i18n from "@/lib/i18n";
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { MapMetricDropTarget } from "./MapMetricDropTarget";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
@@ -1171,7 +1172,7 @@ function MetricMapCard({
         : undefined,
     [data, selection],
   );
-  return (
+  const card = (
     <article
       ref={panelRef}
       className={`kpi-graph-card kpi-metric-map-card${detached ? " is-browser-tab" : ""}`}
@@ -1222,6 +1223,7 @@ function MetricMapCard({
       )}
     </article>
   );
+  return detached && typeof document !== "undefined" ? createPortal(card, document.body) : card;
 }
 export function MetricsWorkspace({
   projectId,

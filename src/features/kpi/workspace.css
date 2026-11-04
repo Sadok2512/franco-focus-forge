@@ -848,10 +848,10 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 }
 .kpi-metric-map-card.is-browser-tab {
   position: fixed;
-  inset: var(--app-header-offset, 56px) 0 0;
+  inset: 0;
   z-index: 70;
   width: 100vw;
-  height: calc(100dvh - var(--app-header-offset, 56px));
+  height: 100dvh;
   min-height: 0;
   background: var(--background, #fff);
 }
