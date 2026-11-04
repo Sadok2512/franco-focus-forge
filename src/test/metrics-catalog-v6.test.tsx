@@ -2,7 +2,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
+import {
+  MetricsCatalogSidebar,
+  metricCatalogMatchesSearch,
+} from "@/features/kpi/MetricsCatalogSidebar";
 import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import type { MetricCatalogResponse } from "@/lib/api/metrics-schemas";
 import "@/lib/i18n";
@@ -50,6 +53,80 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
   // persistedQuery met le catalogue en cache localStorage : chaque test
   // repart d'un cache vide pour rester indépendant de l'ordre d'exécution.
   beforeEach(() => window.localStorage.clear());
+  it("matches every search word case-insensitively across catalogue content", () => {
+    const group = node("group", "lte", "LTE_RSRP_SERVING · RSRP · CELLMEAS", 0, {
+      node_type: "metric",
+      event: "CELLMEAS",
+    });
+    const leaf = node("earfcn", "group", "LTE_EARFCN_SERVING_PCELL", 0, {
+      display_code_lisible: "LTE_EARFCN_SERVING_PCELL",
+      metric_id: "cell_ch@lte-type-0",
+      event: "CELLMEAS",
+    });
+
+    expect(metricCatalogMatchesSearch(group, "rsrp serving")).toBe(true);
+    expect(metricCatalogMatchesSearch(group, "SERVING rsrp")).toBe(true);
+    expect(metricCatalogMatchesSearch(leaf, "earfcn")).toBe(true);
+    expect(metricCatalogMatchesSearch(leaf, "EARFCN")).toBe(true);
+    expect(metricCatalogMatchesSearch(leaf, "lte_earfcn_serving_pcell")).toBe(true);
+    expect(metricCatalogMatchesSearch(leaf, "earfcn missing")).toBe(false);
+  });
+
+  it("searches unavailable dimensions and shows the complete catalogue release", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "2.68.4",
+      title: "Nemo metrics",
+      header: "LTE",
+      decoder_version: "1.11.2",
+      reason: "from_catalog_release",
+      catalog_release: {
+        version: "2.68.4",
+        spec_version: "2.50",
+        decoder_min_version: "1.9.0",
+        sha256: "catalog-sha",
+        n_leaves: 8735,
+      },
+      metrics: [],
+      nodes: [
+        node("earfcn-scell5", "legacy-event", "legacy EARFCN", 0, {
+          display_code_lisible: "LTE_EARFCN_SERVING_SCELL5",
+          nom_court: "EARFCN_SERVING_SCELL5",
+          display_branch: "LTE",
+          tree_visible: true,
+          kind: "DIMENSION",
+          metric_id: "cell_ch@lte-type-14",
+          event: "CELLMEAS",
+          source_column: "cell_ch",
+          technology: "LTE",
+          metric_label: "Ch",
+          cell: "lte-type-14",
+          cell_label: "SCell 5",
+          cell_system: "LTE",
+          raw_cell_type: 14,
+          availability_status: "no_data",
+          reason: "No observations in project",
+          selectable: false,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText("V2.68.4")).toBeVisible();
+    fireEvent.click(screen.getByTestId("metrics-show-unavailable").querySelector("input")!);
+    fireEvent.change(screen.getByRole("textbox", { name: "Search metrics" }), {
+      target: { value: "earfcn serving" },
+    });
+    expect(await screen.findByText("LTE_EARFCN_SERVING_SCELL5")).toBeVisible();
+  });
   it("shows only selectable leaves by default and reveals unavailable leaves disabled", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "v6",

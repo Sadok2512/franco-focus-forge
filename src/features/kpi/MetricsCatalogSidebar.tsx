@@ -64,6 +64,40 @@ function cleanLabel(raw: string): string {
   return raw.replace(STAR, "").replace(SOURCE_BADGE_RE, "").trim();
 }
 
+/** Search is presentation-only and always spans the complete certified tree.
+ * Every whitespace-separated term must occur, case-insensitively, in one of
+ * the catalogue identity or display fields. */
+export function metricCatalogSearchTerms(query: string): string[] {
+  return query.trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+}
+
+export function metricCatalogSearchText(node: MetricCatalogNode): string {
+  return [
+    node.display_code_lisible,
+    node.label,
+    node.event,
+    node.metric_id,
+    node.nom_court,
+    node.source,
+    node.technical_label,
+    node.cell_label,
+    node.metric_label,
+    node.source_column,
+    node.selection,
+    node.cell,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .join(" ")
+    .toLocaleLowerCase();
+}
+
+export function metricCatalogMatchesSearch(node: MetricCatalogNode, query: string): boolean {
+  const terms = metricCatalogSearchTerms(query);
+  if (!terms.length) return true;
+  const haystack = metricCatalogSearchText(node);
+  return terms.every((term) => haystack.includes(term));
+}
+
 /** Normalize the release catalogue without using display text as identity.
  * The backend supplies technology, source_column and the semantic cell enum;
  * labels are presentation only.  Exact duplicate projections collapse to one
@@ -437,39 +471,23 @@ export function MetricsCatalogSidebar({
     for (let i = 0; i < normalizedNodes.length; i += 1) {
       const node = normalizedNodes[i]!;
       byId.set(node.node_id, node);
-      // Oracle search surface — include every text field the user is
-      // likely to type: oracle `hn` (now carried as `label` on remapped
-      // leaves), the backend `metric_id` (e.g. `cell_rsrp@lte-type-0`),
-      // the technical label, the cell label (`PCell`, `SCell 1`,
-      // `Listed neighbour`, …), the metric label (`RSRP`, `SINR`, …),
-      // and the raw backend `source_column` / `event` / `selection` /
-      // `cell`. Lower-cased once and concatenated so a single `includes`
-      // call covers every match path.
-      let hay = "";
-      if (node.label) hay += node.label + " ";
-      if (node.display_code_lisible) hay += node.display_code_lisible + " ";
-      if (node.nom_court) hay += node.nom_court + " ";
-      if (node.source) hay += node.source + " ";
-      if (node.event) hay += node.event + " ";
-      if (node.metric_id) hay += node.metric_id + " ";
-      if (node.technical_label) hay += node.technical_label + " ";
-      if (node.cell_label) hay += node.cell_label + " ";
-      if (node.metric_label) hay += node.metric_label + " ";
-      if (node.source_column) hay += node.source_column + " ";
-      if (node.selection) hay += node.selection + " ";
-      if (node.cell) hay += node.cell + " ";
-      haystacks[i] = hay.toLocaleLowerCase();
+      // The group title is `label`; leaf identity is
+      // `display_code_lisible`. Keep both plus the backend label, event and
+      // metric_id in the same precomputed search surface.
+      haystacks[i] = metricCatalogSearchText(node);
     }
     return { haystacks, byId };
   }, [normalizedNodes]);
   const matching = useMemo(() => {
     const trimmed = deferredSearch.trim();
     if (!trimmed) return null;
-    const needle = trimmed.toLocaleLowerCase();
+    const terms = metricCatalogSearchTerms(trimmed);
     const { haystacks, byId } = nodeIndex;
     const own = new Set<string>();
     for (let i = 0; i < normalizedNodes.length; i += 1) {
-      if (haystacks[i]!.includes(needle)) own.add(normalizedNodes[i]!.node_id);
+      if (terms.every((term) => haystacks[i]!.includes(term))) {
+        own.add(normalizedNodes[i]!.node_id);
+      }
     }
     const visible = new Set(own);
     const descendants = [...own];
@@ -564,9 +582,9 @@ export function MetricsCatalogSidebar({
         (node) =>
           node.node_type === "leaf" &&
           node.selectable &&
-          (!availableTree || availableTree.has(node.node_id)) &&
+          (!matching && availableTree ? availableTree.has(node.node_id) : true) &&
           (!matching || matching.has(node.node_id)) &&
-          (!activeOnly || node.n > 0),
+          (matching || !activeOnly || node.n > 0),
       ).length,
     [activeOnly, availableTree, matching, normalizedNodes],
   );
@@ -666,13 +684,15 @@ export function MetricsCatalogSidebar({
   };
 
   const renderNode = (node: MetricCatalogNode): ReactNode => {
-    if (availableTree && !availableTree.has(node.node_id)) return null;
+    // A content search spans the complete certified catalogue. Availability
+    // controls apply only while browsing, never as a hidden search filter.
+    if (!matching && availableTree && !availableTree.has(node.node_id)) return null;
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
     const expanded = Boolean(matching) || open.has(node.node_id);
     // Active only complète le filtre de disponibilité pour les rares feuilles
     // sélectionnables dont le compteur peut être nul après un refetch.
-    if (activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0) {
+    if (!matching && activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0) {
       return null;
     }
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
@@ -948,13 +968,11 @@ export function MetricsCatalogSidebar({
       <header className="p-2 border-b">
         <h2 className="flex items-center gap-2 font-semibold text-sm">
           <BarChart3 size={16} className="text-primary" /> {t("metrics.498227f2b5c6")}
-          {/* 1.111.0 BC3 — Version du catalog release visible dans le titre
-              (plus seulement dans le footer). Format V{major}.{minor}
-              (ex. V2.53 pour catalog_release 2.53.0). Rien si catalog_release
-              null (fallback legacy). */}
+          {/* 1.137.1 — Full release version, including the patch component,
+              read verbatim from the active catalogue envelope. */}
           {query.data?.catalog_release?.version && (
             <span className="text-[10px] font-medium text-muted-foreground tabular-nums">
-              V{query.data.catalog_release.version.split(".").slice(0, 2).join(".")}
+              V{query.data.catalog_release.version}
             </span>
           )}
           <span

@@ -1,3 +1,7 @@
+## 1.137.1 (patch) — Recherche complète du catalogue Metrics — 2026-11-04 (BC4)
+
+- La recherche du catalogue devient insensible à la casse avec un ET entre les mots sur le code lisible, le titre de groupe, le libellé, l'event et l'identifiant technique ; les filtres de disponibilité ne masquent plus les résultats de recherche et le badge affiche la version complète du catalogue.
+
 ## 1.137.0 (minor) — Arbre Metrics à noms complets — 2026-11-04 (BC4)
 
 - Affiche la hiérarchie Branche → Catégorie → groupe métrique → feuille avec les codes lisibles complets, le libellé Nemo, l'event, la nature, l'unité et le compteur, sans modifier le design de la sidebar.
