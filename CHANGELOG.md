@@ -1,3 +1,10 @@
+## 1.138.8 (patch) — Metrics Catalogue lisible et Active only — 2026-11-04 (BC4)
+
+- Remplace le curseur de déplacement par un pointeur sur les métriques de la sidebar, sans modifier leur glisser-déposer.
+- Stabilise les lignes du catalogue avec une hauteur adaptée, des libellés ellipsés et des colonnes réservées aux badges, compteurs et actions.
+- Rend `Active only` strict : seules les feuilles disponibles ayant `n > 0` et leurs parents nécessaires restent visibles, y compris pendant une recherche.
+- Aligne les combinaisons avec `Show unavailable` et supprime les groupes devenus vides.
+
 ## 1.138.7 (patch) — Montage Map différé — 2026-11-04 (BC4)
 
 - Affiche immédiatement le panneau et son état de chargement, puis monte MapLibre seulement lorsque les mesures géographiques sont disponibles, afin que l’ajout ne bloque plus le clic et la fermeture du menu.

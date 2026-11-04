@@ -103,6 +103,19 @@ export function metricCatalogMatchesSearch(node: MetricCatalogNode, query: strin
   return terms.every((term) => haystack.includes(term));
 }
 
+/** A catalogue leaf is active only when the scoped API explicitly exposes a
+ * selectable projection with at least one real observation. Older payloads
+ * may omit availability_status; selectable + n remains their compatibility
+ * contract. */
+export function metricCatalogLeafIsActive(node: MetricCatalogNode): boolean {
+  return (
+    node.node_type === "leaf" &&
+    node.selectable &&
+    node.n > 0 &&
+    (node.availability_status == null || node.availability_status === "available")
+  );
+}
+
 /** RF cell order is semantic, never lexical (SCELL10 must not precede
  * SCELL2) and never driven by availability/count. */
 export function metricCellSortRank(node: MetricCatalogNode): number {
@@ -457,41 +470,24 @@ export function MetricsCatalogSidebar({
     return result;
   }, [normalizedNodes]);
   const availableTree = useMemo(() => {
-    if (showUnavailable) return null;
+    if (!activeOnly && showUnavailable) return null;
     const nodes = normalizedNodes;
     const byId = new Map(nodes.map((node) => [node.node_id, node]));
     const visible = new Set<string>();
-    // Pass 1 — ancestors of every selectable leaf: a Metric that holds at
-    // least one measured cell leaf (n > 0) is visible all the way up to
-    // the Technology root.
+    // Keep only eligible leaves and the exact ancestor chain required to
+    // reach them. This also guarantees that no empty group/category remains.
     for (const leaf of nodes) {
-      if (leaf.node_type !== "leaf" || !leaf.selectable) continue;
+      if (leaf.node_type !== "leaf") continue;
+      const eligible = activeOnly ? metricCatalogLeafIsActive(leaf) : leaf.selectable;
+      if (!eligible) continue;
       let current: MetricCatalogNode | undefined = leaf;
       while (current && !visible.has(current.node_id)) {
         visible.add(current.node_id);
         current = current.parent_id ? byId.get(current.parent_id) : undefined;
       }
     }
-    // Pass 2 — cell siblings under a visible Metric: the certified oracle
-    // (tree.html sha f4057ccc…) lists every cell role (PCell / SCell 1 …
-    // SCell 6 / SCG SCell 0 / PSCell / Listed neighbour / Detected
-    // neighbour / …) under each metric, regardless of whether the current
-    // capture observed them. Showing only the selectable leaf makes the
-    // Metrics sidebar look like a strict subset of the oracle. Instead,
-    // once a Metric node is visible, surface all its cell children as
-    // greyed-out "no data" entries (keeping their reason tooltip + grey
-    // rendering) so the tree mirrors the oracle. Non-leaf siblings are
-    // left out: only cell leaves gain this exposure.
-    for (const node of nodes) {
-      if (node.node_type !== "leaf") continue;
-      if (visible.has(node.node_id)) continue;
-      if (node.parent_id && visible.has(node.parent_id)) {
-        const parent = byId.get(node.parent_id);
-        if (parent?.node_type === "metric") visible.add(node.node_id);
-      }
-    }
     return visible;
-  }, [normalizedNodes, showUnavailable]);
+  }, [activeOnly, normalizedNodes, showUnavailable]);
   // Pre-compute a lowercase haystack per node once (keyed on
   // normalizedNodes), together with the by-id lookup used by the
   // ancestor / descendant walks in `matching`. Everything that doesn't
@@ -519,6 +515,7 @@ export function MetricsCatalogSidebar({
     const { haystacks, byId } = nodeIndex;
     const own = new Set<string>();
     for (let i = 0; i < normalizedNodes.length; i += 1) {
+      if (availableTree && !availableTree.has(normalizedNodes[i]!.node_id)) continue;
       if (terms.every((term) => haystacks[i]!.includes(term))) {
         own.add(normalizedNodes[i]!.node_id);
       }
@@ -528,6 +525,7 @@ export function MetricsCatalogSidebar({
     while (descendants.length) {
       const parent = descendants.pop()!;
       for (const child of byParent.get(parent) ?? []) {
+        if (availableTree && !availableTree.has(child.node_id)) continue;
         if (visible.has(child.node_id)) continue;
         visible.add(child.node_id);
         descendants.push(child.node_id);
@@ -541,7 +539,7 @@ export function MetricsCatalogSidebar({
       }
     }
     return visible;
-  }, [byParent, debouncedSearch, nodeIndex, normalizedNodes]);
+  }, [availableTree, byParent, debouncedSearch, nodeIndex, normalizedNodes]);
   const searchRows = useMemo(() => {
     if (!matching) return [];
     const rows: Array<{ node: MetricCatalogNode; depth: number }> = [];
@@ -557,7 +555,7 @@ export function MetricsCatalogSidebar({
     setSearchScrollTop(0);
     if (treeScrollRef.current) treeScrollRef.current.scrollTop = 0;
   }, [debouncedSearch]);
-  const SEARCH_ROW_HEIGHT = 34;
+  const SEARCH_ROW_HEIGHT = 44;
   const searchWindow = useMemo(() => {
     const viewport = treeScrollRef.current?.clientHeight || 640;
     const overscan = 8;
@@ -628,7 +626,7 @@ export function MetricsCatalogSidebar({
         const s = stats.get(current.node_id);
         if (s) {
           s.total += 1;
-          if (node.selectable) s.selectable += 1;
+          if (metricCatalogLeafIsActive(node)) s.selectable += 1;
           s.metrics.add(metricLabel);
         }
         current = current.parent_id ? byIdLocal.get(current.parent_id) : undefined;
@@ -644,7 +642,7 @@ export function MetricsCatalogSidebar({
           node.selectable &&
           (!matching && availableTree ? availableTree.has(node.node_id) : true) &&
           (!matching || matching.has(node.node_id)) &&
-          (matching || !activeOnly || node.n > 0),
+          (!activeOnly || metricCatalogLeafIsActive(node)),
       ).length,
     [activeOnly, availableTree, matching, normalizedNodes],
   );
@@ -755,11 +753,6 @@ export function MetricsCatalogSidebar({
     if (matching && !matching.has(node.node_id)) return null;
     const children = byParent.get(node.node_id) ?? [];
     const expanded = Boolean(matching) || open.has(node.node_id);
-    // Active only complète le filtre de disponibilité pour les rares feuilles
-    // sélectionnables dont le compteur peut être nul après un refetch.
-    if (!matching && activeOnly && node.node_type === "leaf" && node.selectable && node.n === 0) {
-      return null;
-    }
     const branchSelections = children.length ? (descendantSelections.get(node.node_id) ?? []) : [];
     const branchChecked =
       branchSelections.length > 0 && branchSelections.every((value) => selected.includes(value));
@@ -835,14 +828,16 @@ export function MetricsCatalogSidebar({
             onClick={() => toggleOpen(node.node_id)}
           >
             {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            {label}
+            <span className="kpi-tree-row-label" title={label}>
+              {label}
+            </span>
             {quarantineBadge && (
               <span className="kpi-count ml-2" aria-label="review">
                 {t("metrics.quarantineBadge")}
               </span>
             )}
             {stat && stat.total > 0 && (
-              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+              <span className="kpi-tree-row-count text-[10px] tabular-nums text-muted-foreground">
                 {stat.selectable} avec valeurs / {stat.total}
               </span>
             )}
@@ -881,9 +876,11 @@ export function MetricsCatalogSidebar({
             onClick={() => toggleOpen(node.node_id)}
           >
             {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            {label}
+            <span className="kpi-tree-row-label" title={label}>
+              {label}
+            </span>
             {stat && stat.total > 0 && (
-              <span className="ml-auto text-[10px] tabular-nums text-muted-foreground">
+              <span className="kpi-tree-row-count text-[10px] tabular-nums text-muted-foreground">
                 {stat.metrics.size} métriques · {stat.total} cellules
               </span>
             )}
@@ -918,9 +915,11 @@ export function MetricsCatalogSidebar({
             onClick={() => toggleOpen(node.node_id)}
           >
             {expanded ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
-            <span className="truncate">{label}</span>
+            <span className="kpi-tree-row-label" title={label}>
+              {label}
+            </span>
             {branchSelections.length > 0 && (
-              <span className="ml-auto text-[10px] text-muted-foreground">
+              <span className="kpi-tree-row-count text-[10px] text-muted-foreground">
                 {branchSelections.length}
               </span>
             )}
@@ -972,7 +971,7 @@ export function MetricsCatalogSidebar({
         >
           <button
             type="button"
-            className="flex min-w-0 flex-1 items-center gap-2 border-0 bg-transparent p-0 text-left"
+            className="kpi-tree-leaf-main flex items-center gap-2 border-0 bg-transparent p-0 text-left"
             onClick={() => setInfo(node)}
             disabled={disabled}
             aria-pressed={isSelected}
@@ -984,20 +983,25 @@ export function MetricsCatalogSidebar({
               title={node.proof ?? undefined}
               aria-hidden="true"
             />
-            <span className="min-w-0 flex-1">
-              <span className="block truncate">
-                {label}
+            <span className="min-w-0 flex-1 overflow-hidden">
+              <span className="kpi-tree-leaf-title" title={label}>
+                <span className="kpi-tree-leaf-name">{label}</span>
                 {/* 1.107.0 — Badge PER CELL dérivé de metric_id@<cell_type> */}
                 {perCellBadge(node) && (
                   <span
-                    className="ml-1 inline-flex items-center rounded border border-primary/30 bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary"
+                    className="kpi-tree-leaf-badge inline-flex items-center rounded border border-primary/30 bg-primary/10 px-1 text-[9px] font-medium uppercase tracking-wide text-primary"
                     data-testid={`per-cell-${node.node_id}`}
                   >
                     {perCellBadge(node)}
                   </span>
                 )}
               </span>
-              <span className="text-[10px] text-muted-foreground">
+              <span
+                className="kpi-tree-leaf-subtitle text-[10px] text-muted-foreground"
+                title={[node.kind, node.unit, search ? (node.technical_label ?? node.source) : null]
+                  .filter(Boolean)
+                  .join(" · ")}
+              >
                 {[node.kind, node.unit].filter(Boolean).join(" · ")}
                 {search && (node.technical_label ?? node.source) ? (
                   <> · {node.technical_label ?? node.source}</>
@@ -1009,7 +1013,7 @@ export function MetricsCatalogSidebar({
               aligné sur le pattern KPI tree-root "LTE 84 · 26 AVAIL" */}
           {!measured && (
             <span
-              className="shrink-0 text-[10px] tabular-nums text-muted-foreground"
+              className="kpi-tree-leaf-count text-[10px] tabular-nums text-muted-foreground"
               data-testid={`metric-leaf-count-${node.node_id}`}
             >
               {node.n.toLocaleString(i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB")}
@@ -1162,12 +1166,7 @@ export function MetricsCatalogSidebar({
             {searchRows
               .slice(searchWindow.start, searchWindow.end)
               .map(({ node, depth }, index) =>
-                renderNode(
-                  node,
-                  false,
-                  depth,
-                  (searchWindow.start + index) * SEARCH_ROW_HEIGHT,
-                ),
+                renderNode(node, false, depth, (searchWindow.start + index) * SEARCH_ROW_HEIGHT),
               )}
           </ul>
         ) : (

@@ -72,7 +72,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(metricCatalogMatchesSearch(leaf, "earfcn missing")).toBe(false);
   });
 
-  it("searches unavailable dimensions and shows the complete catalogue release", async () => {
+  it("searches unavailable dimensions only while Show unavailable is enabled", async () => {
     getMetrics.mockResolvedValue({
       catalogue_version: "2.68.4",
       title: "Nemo metrics",
@@ -121,11 +121,107 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     );
 
     expect(await screen.findByText("V2.68.4")).toBeVisible();
-    fireEvent.click(screen.getByTestId("metrics-show-unavailable").querySelector("input")!);
     fireEvent.change(screen.getByRole("textbox", { name: "Search metrics" }), {
       target: { value: "earfcn serving" },
     });
     expect(await screen.findByText("LTE_EARFCN_SERVING_SCELL5")).toBeVisible();
+    fireEvent.click(screen.getByTestId("metrics-show-unavailable").querySelector("input")!);
+    await waitFor(() =>
+      expect(screen.queryByText("LTE_EARFCN_SERVING_SCELL5")).not.toBeInTheDocument(),
+    );
+  });
+
+  it("Active only keeps exactly available leaves with n > 0 and removes empty parents", async () => {
+    getMetrics.mockResolvedValue({
+      catalogue_version: "2.68.4",
+      title: "Nemo metrics",
+      header: "LTE",
+      decoder_version: "1.11.2",
+      reason: "",
+      metrics: [],
+      nodes: [
+        node("active", "legacy-event", "LTE_SERVING_RSRP_PCELL", 0, {
+          display_code_lisible: "LTE_SERVING_RSRP_PCELL",
+          metric_id: "cell_rsrp@lte-type-0",
+          selection: "cell_rsrp@lte-type-0",
+          event: "CELLMEAS",
+          source_column: "cell_rsrp",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-0",
+          cell_label: "PCell",
+          cell_system: "LTE",
+          raw_cell_type: 0,
+          availability_status: "available",
+          n: 12,
+          selectable: true,
+        }),
+        node("zero", "legacy-event", "LTE_SERVING_RSRP_SCELL1", 1, {
+          display_code_lisible: "LTE_SERVING_RSRP_SCELL1",
+          metric_id: "cell_rsrp@lte-type-10",
+          selection: "cell_rsrp@lte-type-10",
+          event: "CELLMEAS",
+          source_column: "cell_rsrp",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-10",
+          cell_label: "SCell 1",
+          cell_system: "LTE",
+          raw_cell_type: 10,
+          availability_status: "available",
+          n: 0,
+          selectable: true,
+        }),
+        node("unavailable", "legacy-event", "LTE_SERVING_RSRP_SCELL2", 2, {
+          display_code_lisible: "LTE_SERVING_RSRP_SCELL2",
+          metric_id: "cell_rsrp@lte-type-11",
+          event: "CELLMEAS",
+          source_column: "cell_rsrp",
+          technology: "LTE",
+          metric_label: "RSRP",
+          cell: "lte-type-11",
+          cell_label: "SCell 2",
+          cell_system: "LTE",
+          raw_cell_type: 11,
+          availability_status: "not_projected",
+          n: 12,
+          selectable: false,
+        }),
+      ],
+    } satisfies MetricCatalogResponse);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <MetricsCatalogSidebar
+          projectId="TEST2"
+          selected={[]}
+          onToggle={vi.fn()}
+          searchRef={createRef<HTMLInputElement>()}
+        />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.change(screen.getByRole("textbox", { name: "Search metrics" }), {
+      target: { value: "serving" },
+    });
+    expect(await screen.findByText("LTE_SERVING_RSRP_SCELL2")).toBeVisible();
+
+    fireEvent.click(screen.getByTestId("metrics-active-only").querySelector("input")!);
+    await waitFor(() => {
+      expect(screen.getByText("LTE_SERVING_RSRP_PCELL")).toBeVisible();
+      expect(screen.queryByText("LTE_SERVING_RSRP_SCELL1")).not.toBeInTheDocument();
+      expect(screen.queryByText("LTE_SERVING_RSRP_SCELL2")).not.toBeInTheDocument();
+    });
+
+    // Show unavailable is intentionally irrelevant while Active only is ON.
+    fireEvent.click(screen.getByTestId("metrics-show-unavailable").querySelector("input")!);
+    expect(screen.getByText("LTE_SERVING_RSRP_PCELL")).toBeVisible();
+
+    fireEvent.click(screen.getByTestId("metrics-active-only").querySelector("input")!);
+    await waitFor(() => {
+      expect(screen.getByText("LTE_SERVING_RSRP_PCELL")).toBeVisible();
+      expect(screen.getByText("LTE_SERVING_RSRP_SCELL1")).toBeVisible();
+      expect(screen.queryByText("LTE_SERVING_RSRP_SCELL2")).not.toBeInTheDocument();
+    });
   });
   it("shows only selectable leaves by default and reveals unavailable leaves disabled", async () => {
     getMetrics.mockResolvedValue({
@@ -497,9 +593,7 @@ describe("Metrics catalogue v6 tree (BC3 DOM)", () => {
     expect(getMetrics).toHaveBeenCalledTimes(callsBeforeTyping);
 
     fireEvent.change(input, { target: { value: "measured-catalog" } });
-    await waitFor(() =>
-      expect(screen.getByText("No metrics match this search.")).toBeVisible(),
-    );
+    await waitFor(() => expect(screen.getByText("No metrics match this search.")).toBeVisible());
     expect(input).toHaveFocus();
     expect(getMetrics).toHaveBeenCalledTimes(callsBeforeTyping);
   });

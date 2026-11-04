@@ -90,6 +90,22 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-height: 28px;
   font-size: 11px;
   font-weight: 650;
+  min-width: 0;
+  overflow: hidden;
+}
+.kpi-tree-row-label {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpi-tree-row-count {
+  flex: 0 0 auto;
+  max-width: 48%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .kpi-tree-root {
   background: #eff4fa;
@@ -100,16 +116,60 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   font-size: 12px;
 }
 .kpi-tree-leaf {
-  display: flex;
-  gap: 7px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(3ch, auto) 24px;
+  column-gap: 5px;
   align-items: center;
-  padding: 2px 6px 2px 16px;
-  min-height: 28px;
-  max-height: 32px;
+  padding: 4px 4px 4px 16px;
+  min-height: 40px;
   border-radius: 6px;
   font-size: 12px;
   cursor: pointer;
   border-left: 2px solid transparent;
+  min-width: 0;
+  overflow: hidden;
+}
+.kpi-tree-leaf-main {
+  grid-column: 1;
+  min-width: 0;
+}
+.kpi-tree-leaf-count {
+  grid-column: 2;
+  justify-self: end;
+  min-width: 3ch;
+  max-width: 8ch;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpi-tree-leaf .kpi-leaf-menu {
+  grid-column: 3;
+  justify-self: end;
+}
+.kpi-tree-leaf-title {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  line-height: 1.25;
+}
+.kpi-tree-leaf-name,
+.kpi-tree-leaf-subtitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.kpi-tree-leaf-name {
+  flex: 1 1 auto;
+}
+.kpi-tree-leaf-subtitle {
+  display: block;
+  line-height: 1.25;
+}
+.kpi-tree-leaf-badge {
+  flex: 0 0 auto;
 }
 .kpi-tree-leaf > button {
   padding: 0;
@@ -738,10 +798,10 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   box-shadow: 0 0 0 2px #8dbaf788;
 }
 .kpi-tree-leaf[draggable="true"] {
-  cursor: grab;
+  cursor: pointer;
 }
 .kpi-tree-leaf[draggable="true"]:active {
-  cursor: grabbing;
+  cursor: pointer;
 }
 .kpi-metrics-table-premium.is-table-drop-target .kpi-data-table,
 .kpi-metrics-table-premium.is-table-drop-target .kpi-measurements-loading,
@@ -1957,12 +2017,25 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   animation-delay: 240ms;
 }
 @keyframes kpi-loading-breathe {
-  0%, 100% { opacity: 0.72; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 @keyframes kpi-loading-dot {
-  0%, 60%, 100% { transform: translateY(0); opacity: 0.35; }
-  30% { transform: translateY(-3px); opacity: 1; }
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
 }
 .kpi-measurements-refresh-label {
   position: absolute;
