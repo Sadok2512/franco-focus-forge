@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getMetricMap, getMetricRadioSeries, metricRequestQuery } from "@/lib/api/metrics";
+import { metricMapKey } from "@/features/kpi/query-keys";
 
 vi.mock("@/lib/api/project-kpi", () => ({ kpiFetch: vi.fn() }));
 import { kpiFetch } from "@/lib/api/project-kpi";
@@ -36,6 +37,23 @@ describe("Metrics request query contract", () => {
     expect(query.get("operator")).toBe("Orange");
     expect(query.get("compact")).toBe("true");
     expect(url).not.toContain("/metrics/table");
+  });
+
+  it("shares one map cache key when capture_id is already carried by the request scope", () => {
+    const withoutDuplicatedCapture = metricMapKey(
+      "project-a",
+      "a4b0c321c52e",
+      ["cell_rsrp@lte-type-0"],
+      {},
+    );
+    const withDuplicatedCapture = metricMapKey(
+      "project-a",
+      "a4b0c321c52e",
+      ["cell_rsrp@lte-type-0"],
+      { capture_id: "a4b0c321c52e" },
+    );
+
+    expect(withDuplicatedCapture).toEqual(withoutDuplicatedCapture);
   });
 
   it("keeps Signaling radio selectors while requesting the compact contract", () => {

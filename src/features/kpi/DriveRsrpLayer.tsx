@@ -44,6 +44,7 @@ import {
   MapLegendSection,
   MapLegendSettings,
 } from "./map-legend";
+import { metricMapKey } from "./query-keys";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -264,7 +265,9 @@ export function DriveRsrpLayer({
   }, [captureId, captures.data, embedded, preferredCapture]);
   const effectiveCaptureId = activeCaptureId ?? captureId;
   const mapAnalysis = useQuery({
-    queryKey: ["drive-rsrp-map", projectId, effectiveCaptureId],
+    // Share the exact cache/in-flight request with a host metric map. The
+    // previous private key issued the same /metrics/map request twice.
+    queryKey: metricMapKey(projectId, effectiveCaptureId ?? null, [RSRP_SELECTION], {}),
     queryFn: ({ signal }) => {
       if (!effectiveCaptureId) throw new Error("Missing capture");
       return getMetricMap(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, signal);

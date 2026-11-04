@@ -7,7 +7,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
-import { getMetricSeries } from "@/lib/api/metrics";
+import { getMetricAggregate, getMetricSeries } from "@/lib/api/metrics";
+import {
+  getMetricAnalysis,
+  getMetricSeries as getWorkspaceMetricSeries,
+} from "@/lib/api/client";
 import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import { addGraphSeries, normalizeUnit } from "@/features/kpi/graph-series-drop";
 import type { MetricViews } from "@/features/kpi/metric-views";
@@ -21,6 +25,21 @@ vi.mock("@/lib/api/client", async () => {
     getMetricAnalysis: vi.fn().mockResolvedValue(fixture),
     getMetricCaptures: vi.fn().mockResolvedValue([{ capture_id: "44621571bccc", label: "M1" }]),
     getMetricMap: vi.fn().mockResolvedValue({ points: [] }),
+    getMetricSeries: vi.fn().mockResolvedValue({
+      series: [
+        {
+          code: "cell_rsrp@0",
+          label: "RSRP · PCell",
+          unit: "dBm",
+          kind: "numeric",
+          points: [{ seq: 1, t_rel_s: 0, value: -100 }],
+        },
+      ],
+      origin_ts: "10:33:20.980",
+      nmf_start_at: null,
+      utc_offset_min: null,
+      capture_date: null,
+    }),
     getSignaling: vi.fn().mockResolvedValue({ points: [] }),
     getCaptureEvents: vi.fn().mockResolvedValue({ events: [] }),
   };
@@ -112,6 +131,29 @@ function openStyleMenu(card: HTMLElement) {
 }
 
 describe("style de graphe", () => {
+  it("envoie le code métrique décodé à l'agrégat histogramme", async () => {
+    await mountedCard({ "cell_rsrp@0": "histogram" });
+
+    await waitFor(() =>
+      expect(getMetricAggregate).toHaveBeenCalledWith(
+        "4b7bfd50ddb6",
+        "cell_rsrp",
+        "operator",
+        {},
+        expect.any(AbortSignal),
+      ),
+    );
+  });
+
+  it("ne charge pas la table d'analyse pour une carte graphique", async () => {
+    vi.mocked(getMetricAnalysis).mockClear();
+    vi.mocked(getWorkspaceMetricSeries).mockClear();
+    await mountedCard({ "cell_rsrp@0": "graph" });
+
+    await waitFor(() => expect(getWorkspaceMetricSeries).toHaveBeenCalled());
+    expect(getMetricAnalysis).not.toHaveBeenCalled();
+  });
+
   it("le sous-menu Style change le tracé et la couleur, et les mémorise par onglet", async () => {
     // Histogramme : le tracé temporel animé fermerait le menu en jsdom.
     const card = await mountedCard({ "cell_rsrp@0": "histogram" });

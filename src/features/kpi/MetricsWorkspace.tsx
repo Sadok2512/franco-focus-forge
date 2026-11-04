@@ -1367,7 +1367,6 @@ export function MetricsWorkspace({
       cardPanels.filter((panel) => panel.view === "map").map((panel) => panel.code),
     ),
   ];
-  const onlyMapSelections = cardPanels.length > 0 && cardPanels.every((panel) => panel.view === "map");
   const captureRouteQuery = useQuery({
     queryKey: ["metrics-map-route", projectId, captureId],
     queryFn: ({ signal }) => getSignaling(projectId, "points", { capture_id: captureId! }, signal),
@@ -1475,7 +1474,10 @@ export function MetricsWorkspace({
       ),
     // A map-only workspace already has everything it needs in mapQuery. Keep
     // the table request dormant unless the user explicitly opens that pane.
-    enabled: !!captureId && selections.length > 0 && (!onlyMapSelections || pane === "table"),
+    // The analysis response feeds only the measurements table. Graph,
+    // histogram and map cards own lean endpoints and must never start this
+    // heavier request while their panel state is being committed.
+    enabled: !!captureId && selections.length > 0 && pane === "table",
     staleTime: 60_000,
     refetchOnMount: false,
     refetchOnWindowFocus: false,

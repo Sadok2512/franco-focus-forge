@@ -1,3 +1,9 @@
+## 1.138.5 (patch) — Ajout Analytics sans requêtes croisées — 2026-11-04 (BC4)
+
+- Envoie à l’agrégat Histogram le code métrique décodé, sans suffixe de cellule, afin d’éviter le HTTP 422 `unknown_metric`.
+- Réutilise une seule requête Map entre le panneau et sa couche radio, et supprime le second préchargement déclenché par le menu.
+- Ne charge la table de mesures que lorsque son panneau est réellement ouvert et mémorise l’intention Table avant de créer la sélection, évitant les appels Graph/Table transitoires.
+
 ## 1.138.4 (patch) — Durcissement des performances Analytics — 2026-11-04 (BC4)
 
 - Supprime le préchargement global des catalogues Analytics sur les pages qui ne les utilisent pas et interdit l’injection du cache projet dans une requête limitée à une capture.

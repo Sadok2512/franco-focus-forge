@@ -79,8 +79,14 @@ import {
   type TimeAxisMode,
 } from "./time-axis";
 import { usePointSync } from "./point-sync";
+import { parseMetricSelection } from "./metric-selection";
 
 const KPI_SERIES_RENDER_DEBUG = import.meta.env["VITE_KPI_SERIES_RENDER_DEBUG"] === "1";
+
+/** Aggregate routes accept a catalogue metric code, not the UI's
+ * code@cell selector used by series/map endpoints. */
+export const metricAggregateCode = (selection: string) =>
+  parseMetricSelection(selection)?.code ?? selection;
 
 /** 0.65.0 (F3) — Carte de rendu d'une métrique Nemo brute.
  *
@@ -410,10 +416,11 @@ function MetricAggregatePlot({
   appliedFilters: KpiQueryFilters;
 }) {
   const { t: translate } = useTranslation();
+  const aggregateCode = metricAggregateCode(code);
   const query = useQuery({
-    queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
+    queryKey: ["metric-aggregate", projectId, aggregateCode, "operator", appliedFilters],
     queryFn: ({ signal }) =>
-      getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+      getMetricAggregate(projectId, aggregateCode, "operator", appliedFilters, signal),
     retry: false,
   });
 
@@ -562,10 +569,11 @@ function MetricAggregateTable({
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const tableProps = usePanelTableSettings();
+  const aggregateCode = metricAggregateCode(code);
   const query = useQuery({
-    queryKey: ["metric-aggregate", projectId, code, "operator", appliedFilters],
+    queryKey: ["metric-aggregate", projectId, aggregateCode, "operator", appliedFilters],
     queryFn: ({ signal }) =>
-      getMetricAggregate(projectId, code, "operator", appliedFilters, signal),
+      getMetricAggregate(projectId, aggregateCode, "operator", appliedFilters, signal),
     retry: false,
   });
   if (query.isPending) return <ChartSpinner label={translate("metrics.fc725ec040f4")} />;

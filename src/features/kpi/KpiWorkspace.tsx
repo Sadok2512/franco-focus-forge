@@ -567,6 +567,10 @@ function Workspace({
     if (view === "map") prefetchMetricMap(code);
     if (!selectedMetrics.includes(code)) setSelectedMetrics(nextSelected);
     if (view === "table") {
+      // Persist the table intent in the same React batch as the selection.
+      // Otherwise the workspace briefly migrates a new selection as a graph
+      // and starts an unnecessary /metrics/series request.
+      writeViews({ ...metricViews, [code]: "table" });
       setMetricsTablePane(true);
       setMetricsPaneRequest((r) => ({ pane: "table", n: r.n + 1 }));
       return;
@@ -1158,9 +1162,6 @@ function Workspace({
                 selected={selectedMetrics}
                 onToggle={toggleMetric}
                 onVisualization={visualizeMetric}
-                onVisualizationIntent={(code, view) => {
-                  if (view === "map") prefetchMetricMap(code);
-                }}
                 searchRef={catalogSearch}
                 selectionCount={selectedMetrics.length}
                 onVisibleCountChange={updateVisibleCatalogMetricCount}

@@ -17,6 +17,6 @@ export const metricMapKey = (
   captureId: string | null,
   selections: string[],
   filters: KpiQueryFilters,
-) => ["metric-map", projectId, captureId, selections, filters] as const;
+) => ["metric-map", projectId, captureId, selections, captureFilters(filters)] as const;
 
 export const API_LEAN_STALE_MS = 300_000;
