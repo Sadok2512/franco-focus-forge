@@ -1,4 +1,4 @@
-import { Check, Link2, RotateCcw } from "lucide-react";
+import { Activity, Check, ChevronDown, ListVideo, Link2, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { FilterSelect } from "@/features/dict-v2/FilterSelect";
 import { Switch } from "@/components/ui/switch";
@@ -8,6 +8,13 @@ import type { AnalysisScope } from "@/lib/analysis-scope";
 import type { FilterDraft, FilterKey } from "./workspace-model";
 import { WorkspaceTemplatesMenu } from "./WorkspaceTemplatesMenu";
 import { usePointSync } from "./point-sync";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import type { SignalingPanelKind } from "./workspace-tabs";
 
 export type HeaderCapture = { capture_id: string; label: string };
 
@@ -36,6 +43,7 @@ export function KpiFilters({
   onScopeChange,
   eventsVisible,
   onEventsVisibleChange,
+  onAddSignalingPanel,
 }: {
   draft: FilterDraft;
   applied: KpiQueryFilters;
@@ -55,6 +63,7 @@ export function KpiFilters({
   onScopeChange: (scope: AnalysisScope) => void;
   eventsVisible: boolean;
   onEventsVisibleChange: (visible: boolean) => void;
+  onAddSignalingPanel?: (kind: SignalingPanelKind) => void;
 }) {
   const { t } = useTranslation();
   const pointSync = usePointSync();
@@ -164,6 +173,23 @@ export function KpiFilters({
         <div className="kpi-header-templates" data-testid="kpi-header-templates">
           <WorkspaceTemplatesMenu />
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" className="kpi-button" data-testid="kpi-display-menu">
+              <ListVideo size={14} aria-hidden="true" /> {t("panel.display")}
+              <ChevronDown size={13} aria-hidden="true" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onSelect={() => onAddSignalingPanel?.("signaling")}>
+              <ListVideo aria-hidden="true" /> {t("panel.signalingView")}
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onAddSignalingPanel?.("timeline")}>
+              <Activity aria-hidden="true" /> {t("panel.timeline")}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <label className="kpi-events-toggle" data-testid="kpi-point-sync-control">
           <span className="flex items-center gap-2 text-xs font-medium">

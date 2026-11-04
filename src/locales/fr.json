@@ -938,6 +938,9 @@
     "opt_blue": "Bleu technique"
   },
   "panel": {
+    "display": "Affichage",
+    "signalingView": "Vue Signaling",
+    "timeline": "Timeline",
     "collapse_catalogue": "Replier le catalogue",
     "expand_catalogue": "Déplier le catalogue",
     "rename": "Renommer",

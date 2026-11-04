@@ -2246,3 +2246,25 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
     max-width: none;
   }
 }
+
+.kpi-signaling-panel {
+  display: flex;
+  min-height: 620px;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--background);
+}
+.kpi-signaling-panel-header {
+  display: flex;
+  min-height: 38px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 8px 4px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.kpi-signaling-panel-header h3 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; font-weight: 650; }
+.kpi-signaling-panel-body { min-height: 0; flex: 1; overflow: hidden; }

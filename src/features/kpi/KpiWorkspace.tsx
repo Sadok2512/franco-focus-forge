@@ -13,7 +13,7 @@ import { defaultConfig, type ChartConfig, type VisualizationType } from "./visua
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw } from "lucide-react";
+import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import {
@@ -70,6 +70,7 @@ import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
 import { KpiOverlayCard } from "./KpiOverlayCard";
 import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
+import { SignalingPage } from "@/features/signaling/SignalingPage";
 import {
   MAX_GRAPHS,
   appliedPayload,
@@ -281,6 +282,24 @@ function Workspace({
     persistTabs(updateTab(tabsState, tabId, { layout }));
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
+  const addSignalingPanel = (kind: "signaling" | "timeline") => {
+    const panel = { id: `${kind}-${crypto.randomUUID()}`, kind };
+    persistTabs(
+      updateTab(tabsState, currentTab.id, {
+        signalingPanels: [...(currentTab.signalingPanels ?? []), panel],
+      }),
+    );
+  };
+  const removeSignalingPanel = (id: string) =>
+    persistTabs(
+      updateTab(tabsState, currentTab.id, {
+        signalingPanels: (currentTab.signalingPanels ?? []).filter((panel) => panel.id !== id),
+      }),
+    );
+  const duplicateSignalingPanel = (id: string) => {
+    const source = (currentTab.signalingPanels ?? []).find((panel) => panel.id === id);
+    if (source) addSignalingPanel(source.kind);
+  };
   const queryClient = useQueryClient();
   const [captureId, setCaptureId] = useCaptureContext(projectId);
   const metricsCapturesQuery = useQuery({
@@ -997,6 +1016,7 @@ function Workspace({
         onScopeChange={changeAnalysisScope}
         eventsVisible={eventsVisible}
         onEventsVisibleChange={setEventsVisible}
+        onAddSignalingPanel={addSignalingPanel}
       />
       {eventsVisible && scopeCaptureIds.length > 0 && (
         <section className="kpi-events-scope" data-testid="kpi-events-scope">
@@ -1291,7 +1311,7 @@ function Workspace({
               />
             ) : null}
             <WorkspaceGrid
-              count={panels.length + visibleGraphMetricCount + (metricsTablePane ? 1 : 0)}
+              count={panels.length + visibleGraphMetricCount + (metricsTablePane ? 1 : 0) + (currentTab.signalingPanels?.length ?? 0)}
               layout={currentTab.layout}
               hidden={analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2}
               fillAvailable={mapOnlyWorkspace}
@@ -1412,9 +1432,34 @@ function Workspace({
                     ))}
                   </>
                 )}
+                {(currentTab.signalingPanels ?? []).map((signalingPanel, index) => (
+                  <PanelShell
+                    key={signalingPanel.id}
+                    workspaceId={currentTab.id}
+                    id={`signaling:${signalingPanel.id}`}
+                    natural={panels.length + visibleGraphMetricCount + index}
+                    defaultTitle={signalingPanel.kind === "timeline" ? translate("panel.timeline") : translate("panel.signalingView")}
+                    fullRow
+                    onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
+                  >
+                    {(title) => (
+                      <section className="kpi-signaling-panel" data-testid={`kpi-${signalingPanel.kind}-panel`}>
+                        <header className="kpi-signaling-panel-header">
+                          <h3>{title}</h3>
+                          <button type="button" className="kpi-icon" onClick={() => removeSignalingPanel(signalingPanel.id)} aria-label={translate("panel.remove")}>
+                            <X size={15} aria-hidden="true" />
+                          </button>
+                        </header>
+                        <div className="kpi-signaling-panel-body">
+                          <SignalingPage projectId={projectId} initialCapture={requestedCapture} stateTracksV2 embedded isolatedCapture initialView={signalingPanel.kind} />
+                        </div>
+                      </section>
+                    )}
+                  </PanelShell>
+                ))}
               </TableSettingsWorkspaceContext.Provider>
             </WorkspaceGrid>
-            {activeCatalog !== "parameters" && !panels.length && !selectedMetrics.length && (
+            {activeCatalog !== "parameters" && !panels.length && !selectedMetrics.length && !(currentTab.signalingPanels?.length) && (
               <div className="kpi-empty-workspace">
                 <BarChart3 size={28} />
                 <h2>{translate("kpi.97f764ab0b74")}</h2>

@@ -1105,11 +1105,17 @@ export function SignalingPage({
   initialCapture,
   initialSeq,
   stateTracksV2 = false,
+  embedded = false,
+  initialView = "signaling",
+  isolatedCapture = false,
 }: {
   projectId: string;
   initialCapture?: string | undefined;
   initialSeq?: number | undefined;
   stateTracksV2?: boolean;
+  embedded?: boolean;
+  initialView?: "signaling" | "timeline";
+  isolatedCapture?: boolean;
 }) {
   const { t } = useTranslation();
   const projectQuery = useQuery({
@@ -1133,7 +1139,7 @@ export function SignalingPage({
   // 1.54.0 (V3 LOT 1) — sidebar filtres repliable. État distinct de la
   // sélection message (P0 1.50.1) : jamais inclus dans les clés React
   // Query, jamais utilisé comme déclencheur de refetch.
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(initialView === "timeline");
   const filtersPanelRef = useRef<PanelImperativeHandle>(null);
   const toggleSidebar = () => {
     const next = !sidebarCollapsed;
@@ -1162,10 +1168,10 @@ export function SignalingPage({
   // Jamais inclus dans un queryKey (ne déclenche aucun refetch des points).
   // Panel map garde la même instance mountée (collapsedSize=0) pour éviter
   // le bug react-resizable-panels de remount dynamique.
-  const [mapVisible, setMapVisible] = useState(true);
+  const [mapVisible, setMapVisible] = useState(initialView !== "timeline");
   const [timelineVisible, setTimelineVisible] = useState(true);
   const [inspectionExpanded, setInspectionExpanded] = useState(false);
-  const [inspectionVisible, setInspectionVisible] = useState(true);
+  const [inspectionVisible, setInspectionVisible] = useState(initialView !== "timeline");
   const [metricsVisible, setMetricsVisible] = useState(false);
   const inspectionPanelRef = useRef<PanelImperativeHandle>(null);
   const metricsPanelRef = useRef<PanelImperativeHandle>(null);
@@ -1225,6 +1231,7 @@ export function SignalingPage({
     if (collapsed === current) set(!collapsed);
   };
   const [sharedCapture, setSharedCapture] = useCaptureContext(projectId);
+  const [localCapture, setLocalCapture] = useState(initialCapture);
   const [protocols, setProtocols] = useState(layers),
     [technology, setTechnology] = useState(""),
     [direction, setDirection] = useState(""),
@@ -1250,7 +1257,10 @@ export function SignalingPage({
     queryKey: ["signaling-captures", projectId],
     queryFn: ({ signal }) => getSignaling(projectId, "captures", {}, signal),
   });
-  const capture = selectSignalingCapture(caps.data?.captures ?? [], sharedCapture);
+  const capture = selectSignalingCapture(
+    caps.data?.captures ?? [],
+    isolatedCapture ? localCapture : sharedCapture,
+  );
   // Metric columns added from the catalogue: picker dialog + per-selector series.
   const [metricPickerOpen, setMetricPickerOpen] = useState(false);
   const metricSearchRef = useRef<HTMLInputElement | null>(null);
@@ -1343,11 +1353,13 @@ export function SignalingPage({
     FULL_CAPTURE_S,
   );
   useEffect(() => {
-    if (initialCapture) setCaptureContext(projectId, initialCapture);
-  }, [projectId, initialCapture]);
+    if (!isolatedCapture && initialCapture) setCaptureContext(projectId, initialCapture);
+    if (isolatedCapture && initialCapture) setLocalCapture(initialCapture);
+  }, [projectId, initialCapture, isolatedCapture]);
   useEffect(() => {
-    if (capture && !sharedCapture) setCaptureContext(projectId, capture);
-  }, [capture, sharedCapture, projectId]);
+    if (!isolatedCapture && capture && !sharedCapture) setCaptureContext(projectId, capture);
+    if (isolatedCapture && capture && !localCapture) setLocalCapture(capture);
+  }, [capture, sharedCapture, localCapture, projectId, isolatedCapture]);
   const base = useMemo(
     () => ({
       capture_id: capture,
@@ -1647,7 +1659,8 @@ export function SignalingPage({
     setSeq(undefined);
   };
   const chooseCapture = (cap: string) => {
-    setSharedCapture(cap);
+    if (isolatedCapture) setLocalCapture(cap);
+    else setSharedCapture(cap);
     setPage(1);
     setRange(undefined);
     setProcedure("");
@@ -1755,7 +1768,7 @@ export function SignalingPage({
   );
 
   return (
-    <main className="p-3" data-testid="signaling-page">
+    <main className={embedded ? "signaling-embedded" : "p-3"} data-testid="signaling-page">
       <h1 className="sr-only">{t(stateTracksV2 ? "signalingV2.title" : "signalingV2.stable")}</h1>
 
       {(error || exportError) && (
@@ -2092,7 +2105,7 @@ export function SignalingPage({
                     minSize={mapVisible ? 25 : 0}
                     collapsible
                     collapsedSize={0}
-                    defaultSize={40}
+                    defaultSize={mapVisible ? 40 : 0}
                     onResize={() => syncFromPanel(mapPanelRef, mapVisible, setMapVisible)}
                     data-testid="signaling-map-panel"
                   >
@@ -2124,6 +2137,7 @@ export function SignalingPage({
               <Panel
                 id="inspection"
                 panelRef={inspectionPanelRef}
+                defaultSize={inspectionVisible ? "42%" : 0}
                 minSize={inspectionVisible ? 300 : 0}
                 collapsible
                 collapsedSize={0}

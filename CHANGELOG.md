@@ -1,3 +1,9 @@
+## 1.138.11 (patch) — Signaling dans les onglets KPI — 2026-11-04 (BC4)
+
+- Ajoute au menu supérieur KPI un menu Affichage pour créer des panneaux Signaling View et Timeline.
+- Chaque panneau est une instance indépendante, duplicable, fermable et persistée dans son onglet Workspace, y compris sa capture locale.
+- Conserve intégralement la page Signaling existante dans la navigation et réutilise son comportement sans dupliquer les données.
+
 ## 1.138.10 (patch) — Onglets Map et application — 2026-11-04 (BC4)
 
 - Le bouton de la Map ouvre désormais une vue dédiée plein navigateur qui ne montre que la carte, sans header ni navigation de l’application.

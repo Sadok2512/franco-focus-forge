@@ -3,6 +3,8 @@
 // (1/2/3/auto colonnes). Les requêtes ne se déclenchent que sur l'onglet actif
 // (G11 perf). Pas de nouveau stockage back ; URL = source de vérité.
 export type WorkspaceLayout = "auto" | "1" | "2" | "3";
+export type SignalingPanelKind = "signaling" | "timeline";
+export type SignalingPanel = { id: string; kind: SignalingPanelKind };
 export type WorkspaceTab = {
   id: string;
   name: string;
@@ -13,6 +15,7 @@ export type WorkspaceTab = {
   // 1.76.0 (BC3) — Spec v2 G6 : overlay = tous les codes du tab rendus dans
   // UN seul graphique avec check d'unités (max 2 distinctes).
   overlay: boolean;
+  signalingPanels?: SignalingPanel[];
 };
 export type WorkspaceTabsState = {
   tabs: WorkspaceTab[];
@@ -31,6 +34,7 @@ export function defaultTab(codes: string[] = [], name = DEFAULT_NAME): Workspace
     activeCode: codes[0] ?? null,
     layout: "auto",
     overlay: false,
+    signalingPanels: [],
   };
 }
 
@@ -54,6 +58,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
       a: t.activeCode,
       l: t.layout,
       o: t.overlay ? 1 : 0,
+      s: t.signalingPanels,
     })),
     a: state.activeTabId,
   };
@@ -86,6 +91,16 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
           ? (r["l"] as WorkspaceLayout)
           : "auto";
       const overlay = r["o"] === 1 || r["o"] === true;
+      const signalingPanels = Array.isArray(r["s"])
+        ? r["s"].flatMap((value) => {
+            if (!value || typeof value !== "object") return [];
+            const panel = value as Record<string, unknown>;
+            return typeof panel["id"] === "string" &&
+              (panel["kind"] === "signaling" || panel["kind"] === "timeline")
+              ? [{ id: panel["id"], kind: panel["kind"] } as SignalingPanel]
+              : [];
+          })
+        : [];
       tabs.push({
         id: r["i"] as string,
         name: r["n"] as string,
@@ -96,6 +111,7 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
         activeCode,
         layout,
         overlay,
+        signalingPanels,
       });
     }
     if (!tabs.length) return null;
