@@ -184,10 +184,10 @@ export function KpiFilters({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onSelect={() => { setDisplayOpen(false); onAddSignalingPanel?.("signaling"); }}>
+            <DropdownMenuItem onClick={() => { setDisplayOpen(false); onAddSignalingPanel?.("signaling"); }}>
               <ListVideo aria-hidden="true" /> {t("panel.signalingView")}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => { setDisplayOpen(false); onAddSignalingPanel?.("timeline"); }}>
+            <DropdownMenuItem onClick={() => { setDisplayOpen(false); onAddSignalingPanel?.("timeline"); }}>
               <Activity aria-hidden="true" /> {t("panel.timeline")}
             </DropdownMenuItem>
           </DropdownMenuContent>
