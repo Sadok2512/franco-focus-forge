@@ -314,8 +314,10 @@ function Plot({
     chart.current.on("click", (event: unknown) => {
       const hit = event as { componentType?: string; data?: { seq?: number } };
       if (hit.componentType === "markLine" && hit.data?.seq !== undefined)
-        window.location.assign(
-          `/signaling?capture_id=${encodeURIComponent(data.capture_id)}&seq=${hit.data.seq}`,
+        window.dispatchEvent(
+          new CustomEvent("bc4:open-l3-signaling", {
+            detail: { captureId: data.capture_id, seq: hit.data.seq },
+          }),
         );
     });
   }, [ready, data, events, stacked, start, end, translate, timeAxisMode, timeMeta]);
@@ -607,75 +609,80 @@ export const Chronogram = forwardRef<
       )}
       {captures.data?.length === 0 && <p>{i18n.t("metrics.83a847061d36")}</p>}
       {!codes.length && <p>{i18n.t("metrics.6a0225657516")}</p>}
-      {data && (() => {
-        const timeMeta: TimeAxisMeta = {
-          nmf_start_at: data.nmf_start_at ?? null,
-          origin_ts: data.origin_ts,
-          utc_offset_min: data.utc_offset_min ?? null,
-          capture_date: data.capture_date ?? null,
-        };
-        const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);
-        return (
-        <>
-          <p className="text-xs">
-            Capture {data.capture_id} {i18n.t("metrics.21ebc78f9d73")} {data.origin_ts} (seq{" "}
-            {data.origin_seq}) · {data.duration_s} s
-          </p>
-          <Plot
-            key={data.capture_id}
-            data={data}
-            events={events.data}
-            stacked={stacked}
-            start={
-              task ? events.data?.markers.find((m) => m.seq === task.seq_daa)?.t_rel_s : undefined
-            }
-            end={
-              task ? events.data?.markers.find((m) => m.seq === task.seq_dcomp)?.t_rel_s : undefined
-            }
-            timeAxisMode={effectiveTimeAxisMode}
-            timeMeta={timeMeta}
-          />
-          <div className="text-xs">
-            {data.series.map((s) => (
-              <p key={s.code}>
-                {s.label} : {s.n_returned} / {s.n_total} {i18n.t("metrics.160ef05875c7")}{" "}
-                {s.sampling.method} {i18n.t("metrics.d56421f8efd3")} {s.sampling.factor}
+      {data &&
+        (() => {
+          const timeMeta: TimeAxisMeta = {
+            nmf_start_at: data.nmf_start_at ?? null,
+            origin_ts: data.origin_ts,
+            utc_offset_min: data.utc_offset_min ?? null,
+            capture_date: data.capture_date ?? null,
+          };
+          const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);
+          return (
+            <>
+              <p className="text-xs">
+                Capture {data.capture_id} {i18n.t("metrics.21ebc78f9d73")} {data.origin_ts} (seq{" "}
+                {data.origin_seq}) · {data.duration_s} s
               </p>
-            ))}
-          </div>
-          <p className="text-xs text-muted-foreground"> {i18n.t("metrics.654afae6676f")} </p>
-          <p className="text-[10px]">result_id : {data.result_id}</p>
-          {info && (
-            <Sheet open={info} onOpenChange={setInfo}>
-              <SheetContent className="overflow-auto">
-                <SheetHeader>
-                  <SheetTitle>{i18n.t("metrics.a5f6619a0954")}</SheetTitle>
-                  <SheetDescription> {i18n.t("metrics.a40a66a10e04")} </SheetDescription>
-                </SheetHeader>
-                <pre className="text-xs whitespace-pre-wrap">
-                  {JSON.stringify(
-                    {
-                      decoder_version: data.decoder_version,
-                      schema_version: data.schema_version,
-                      decode_level: data.decode_level,
-                      aggregation: data.aggregation,
-                      result_id: data.result_id,
-                      capture_id: data.capture_id,
-                      time_policy: data.time_policy,
-                      metrics: metrics.data?.metrics ?? [],
-                      events_result_id: events.data?.result_id,
-                      markers: events.data?.markers,
-                    },
-                    null,
-                    2,
-                  )}
-                </pre>
-              </SheetContent>
-            </Sheet>
-          )}
-        </>
-      );
-      })()}
+              <Plot
+                key={data.capture_id}
+                data={data}
+                events={events.data}
+                stacked={stacked}
+                start={
+                  task
+                    ? events.data?.markers.find((m) => m.seq === task.seq_daa)?.t_rel_s
+                    : undefined
+                }
+                end={
+                  task
+                    ? events.data?.markers.find((m) => m.seq === task.seq_dcomp)?.t_rel_s
+                    : undefined
+                }
+                timeAxisMode={effectiveTimeAxisMode}
+                timeMeta={timeMeta}
+              />
+              <div className="text-xs">
+                {data.series.map((s) => (
+                  <p key={s.code}>
+                    {s.label} : {s.n_returned} / {s.n_total} {i18n.t("metrics.160ef05875c7")}{" "}
+                    {s.sampling.method} {i18n.t("metrics.d56421f8efd3")} {s.sampling.factor}
+                  </p>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground"> {i18n.t("metrics.654afae6676f")} </p>
+              <p className="text-[10px]">result_id : {data.result_id}</p>
+              {info && (
+                <Sheet open={info} onOpenChange={setInfo}>
+                  <SheetContent className="overflow-auto">
+                    <SheetHeader>
+                      <SheetTitle>{i18n.t("metrics.a5f6619a0954")}</SheetTitle>
+                      <SheetDescription> {i18n.t("metrics.a40a66a10e04")} </SheetDescription>
+                    </SheetHeader>
+                    <pre className="text-xs whitespace-pre-wrap">
+                      {JSON.stringify(
+                        {
+                          decoder_version: data.decoder_version,
+                          schema_version: data.schema_version,
+                          decode_level: data.decode_level,
+                          aggregation: data.aggregation,
+                          result_id: data.result_id,
+                          capture_id: data.capture_id,
+                          time_policy: data.time_policy,
+                          metrics: metrics.data?.metrics ?? [],
+                          events_result_id: events.data?.result_id,
+                          markers: events.data?.markers,
+                        },
+                        null,
+                        2,
+                      )}
+                    </pre>
+                  </SheetContent>
+                </Sheet>
+              )}
+            </>
+          );
+        })()}
     </section>
   );
 });

@@ -38,6 +38,7 @@ vi.mock("maplibre-gl", () => {
     removeLayer() {}
     removeSource() {}
     setFilter() {}
+    setLayoutProperty() {}
     setFeatureState() {}
     fitBounds(...args: unknown[]) {
       fitBounds(...args);

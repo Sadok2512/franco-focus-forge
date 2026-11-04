@@ -1,14 +1,12 @@
 import { rfProtocolColors } from "@/theme/rf-timeline";
 import { useTranslation } from "react-i18next";
-import { RfTimeline } from "./RfTimeline";
-import { EventRibbon } from "./EventRibbon";
 import { revealRow } from "./reveal-row";
 import { followMessage, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { TimeNavigator } from "./TimeNavigator";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
-import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { lazy, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
@@ -28,8 +26,6 @@ import {
   type SignalingLine,
 } from "@/lib/api/signaling";
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
-import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
-import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
 import { MapLegendList, MapLegendRow, MapLegendSection } from "@/features/kpi/map-legend";
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
 import { resolveNetworkMapCenter } from "@/features/map/map-center";
@@ -108,8 +104,6 @@ import {
   type MessageInfo,
   type MetricCol,
 } from "./message-columns";
-import { SignalingFilters } from "./SignalingFilters";
-import { SignalingMetricsSection } from "./SignalingMetricsSection";
 import { isAllowedNetworkEvent } from "./network-events";
 import {
   filterMessageRows,
@@ -120,6 +114,29 @@ import {
   type MessageSelection,
 } from "./message-filter";
 import "./signaling.css";
+
+const RfTimeline = lazy(() =>
+  import("./RfTimeline").then(({ RfTimeline }) => ({ default: RfTimeline })),
+);
+const EventRibbon = lazy(() =>
+  import("./EventRibbon").then(({ EventRibbon }) => ({ default: EventRibbon })),
+);
+const KpiMapOSM = lazy(() =>
+  import("@/features/kpi/KpiMapOSM").then(({ KpiMapOSM }) => ({ default: KpiMapOSM })),
+);
+const DriveRsrpLayer = lazy(() =>
+  import("@/features/kpi/DriveRsrpLayer").then(({ DriveRsrpLayer }) => ({
+    default: DriveRsrpLayer,
+  })),
+);
+const SignalingFilters = lazy(() =>
+  import("./SignalingFilters").then(({ SignalingFilters }) => ({ default: SignalingFilters })),
+);
+const SignalingMetricsSection = lazy(() =>
+  import("./SignalingMetricsSection").then(({ SignalingMetricsSection }) => ({
+    default: SignalingMetricsSection,
+  })),
+);
 
 const layers = ["RRC LTE", "RRC NR", "NAS", "Événements Nemo", "MAC-RACH"];
 const colors = layers.map((layer) => rfProtocolColors[layer]!);

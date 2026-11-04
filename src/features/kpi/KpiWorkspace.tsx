@@ -6,7 +6,7 @@ import {
   dictTreeQuery,
 } from "@/lib/analytics-bootstrap";
 import { useTranslation } from "react-i18next";
-import { useCaptureContext } from "@/lib/capture-context";
+import { setCaptureContext, useCaptureContext } from "@/lib/capture-context";
 import { analysisScopeSearch, type AnalysisScope } from "@/lib/analysis-scope";
 import { VisualizationItems } from "./VisualizationMenu";
 import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
@@ -303,10 +303,11 @@ function Workspace({
     persistTabs(updateTab(tabsState, tabId, { layout }));
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
-  const addSignalingPanel = (kind: "l3" | "timeline") => {
+  const addSignalingPanel = (kind: "l3" | "timeline", selectedSeq?: number) => {
     const panel = {
       id: `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
       kind,
+      ...(selectedSeq === undefined ? {} : { selectedSeq }),
     };
     persistTabs(
       updateTab(tabsState, currentTab.id, {
@@ -314,6 +315,18 @@ function Workspace({
       }),
     );
   };
+  const addSignalingPanelRef = useRef(addSignalingPanel);
+  addSignalingPanelRef.current = addSignalingPanel;
+  useEffect(() => {
+    const openL3 = (event: Event) => {
+      const detail = (event as CustomEvent<{ captureId?: string; seq?: number }>).detail;
+      if (!detail?.captureId || !Number.isInteger(detail.seq)) return;
+      setCaptureContext(projectId, detail.captureId);
+      addSignalingPanelRef.current("l3", detail.seq);
+    };
+    window.addEventListener("bc4:open-l3-signaling", openL3);
+    return () => window.removeEventListener("bc4:open-l3-signaling", openL3);
+  }, [projectId]);
   const removeSignalingPanel = (id: string) =>
     persistTabs(
       updateTab(tabsState, currentTab.id, {
@@ -1726,14 +1739,8 @@ function Workspace({
               }}
               onOpenSignaling={(row: ProcedureRow) => {
                 setProcedureExplorerCode(null);
-                void navigate({
-                  to: "/signaling",
-                  search: {
-                    analysis_scope: "capture",
-                    capture_id: row.capture_id,
-                    seq: row.start_seq,
-                  },
-                } as never);
+                setCaptureContext(projectId, row.capture_id);
+                addSignalingPanel("l3", row.start_seq);
               }}
             />
             <WorkspaceTabsBar

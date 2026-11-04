@@ -40,7 +40,6 @@ import { isDetachedMapView } from "@/lib/app-tabs";
 const NAV = [
   { to: "/projects", label: "nav.projects" },
   { to: "/kpi", label: "nav.kpi" },
-  { to: "/signaling", label: "nav.signaling" },
   { to: "/rf", label: "nav.rf" },
   { to: "/assistant", label: "nav.assistant" },
 ] as const;

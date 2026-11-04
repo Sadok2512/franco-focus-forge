@@ -1,3 +1,9 @@
+## 1.139.0 (minor) — Suppression de Signaling View autonome — 2026-11-04 (BC4)
+
+- Supprime Signaling View de la navigation et redirige ses anciennes URL vers KPI Analytics.
+- Conserve L3 Signaling et Timeline exclusivement comme panneaux du Workspace KPI.
+- Retire l'ancienne implémentation Signaling V2 orpheline et diffère les modules carte/timeline/sidebar autonomes afin qu'ils ne soient plus chargés par le panneau L3.
+
 ## 1.138.14 (patch) — Timeline redimensionnable et Signaling allégé — 2026-11-04 (BC4)
 
 - Rend le panneau Timeline redimensionnable en largeur et en hauteur, avec persistance par Workspace comme les autres panneaux KPI.

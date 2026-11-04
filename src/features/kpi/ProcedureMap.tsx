@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "@tanstack/react-router";
 import { LoaderCircle, RefreshCw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -8,7 +7,11 @@ import type { GeoJSONSource, Map as MlMap } from "maplibre-gl";
 import { Button } from "@/components/ui/button";
 import { getProcedures, resultsForProcedureMeasure } from "@/lib/api/client";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { FAILURE_RESULTS, procedureIncidentLayer, type IncidentLayerKey } from "./procedure-map-layers";
+import {
+  FAILURE_RESULTS,
+  procedureIncidentLayer,
+  type IncidentLayerKey,
+} from "./procedure-map-layers";
 
 const SOURCE_ID = "procedure-evidence";
 const LAYER_ID = "procedure-evidence-points";
@@ -47,7 +50,6 @@ export function ProcedureMap({
   label: string;
 }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const [map, setMap] = useState<MlMap | null>(null);
   const [incidentVisibility, setIncidentVisibility] = useState<Record<IncidentLayerKey, boolean>>({
     drops: true,
@@ -178,16 +180,17 @@ export function ProcedureMap({
       const selectedCapture = String(properties?.["capture_id"] ?? "");
       const seq = Number(properties?.["seq"]);
       if (!selectedCapture || !Number.isInteger(seq)) return;
-      void navigate({
-        to: "/signaling",
-        search: { analysis_scope: "capture", capture_id: selectedCapture, seq },
-      } as never);
+      window.dispatchEvent(
+        new CustomEvent("bc4:open-l3-signaling", {
+          detail: { captureId: selectedCapture, seq },
+        }),
+      );
     };
     map.on("click", LAYER_ID, click);
     return () => {
       map.off("click", LAYER_ID, click);
     };
-  }, [features, map, navigate]);
+  }, [features, map]);
   useEffect(() => {
     if (!map || !map.isStyleLoaded()) return;
     const collection = { type: "FeatureCollection" as const, features: incidentFeatures };
@@ -200,10 +203,11 @@ export function ProcedureMap({
       const selectedCapture = String(properties?.["capture_id"] ?? "");
       const seq = Number(properties?.["seq"]);
       if (!selectedCapture || !Number.isInteger(seq)) return;
-      void navigate({
-        to: "/signaling",
-        search: { analysis_scope: "capture", capture_id: selectedCapture, seq },
-      } as never);
+      window.dispatchEvent(
+        new CustomEvent("bc4:open-l3-signaling", {
+          detail: { captureId: selectedCapture, seq },
+        }),
+      );
     };
     for (const layer of INCIDENT_LAYERS) {
       const id = `procedure-incidents-${layer.key}`;
@@ -233,7 +237,7 @@ export function ProcedureMap({
         map.off("click", id, click);
       }
     };
-  }, [incidentFeatures, incidentVisibility, map, navigate]);
+  }, [incidentFeatures, incidentVisibility, map]);
   const legend = (
     <div className="space-y-1 text-xs">
       <strong>{label}</strong>
@@ -279,7 +283,9 @@ export function ProcedureMap({
         onMapReady={setMap}
         routeCoordinates={routeCoordinates}
         layersLegend={legend}
-        measurementStatus={query.isPending || incidentQuery.isPending ? t("procedures.loadingMap") : null}
+        measurementStatus={
+          query.isPending || incidentQuery.isPending ? t("procedures.loadingMap") : null
+        }
       >
         {query.isPending && (
           <div className="kpi-metric-map-status" role="status">
