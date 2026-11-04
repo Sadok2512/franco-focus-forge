@@ -28,6 +28,7 @@ export function PanelShell({
   natural,
   defaultTitle,
   fullRow,
+  defaultSpan,
   perRow,
   onDuplicate,
   bare = false,
@@ -38,6 +39,7 @@ export function PanelShell({
   natural: number;
   defaultTitle: string;
   fullRow?: boolean;
+  defaultSpan?: PanelSpan;
   perRow?: 1 | 2 | 3;
   onDuplicate?: (() => void) | undefined;
   bare?: boolean;
@@ -56,11 +58,14 @@ export function PanelShell({
   }, [id]);
   const title = s.titles[id] || defaultTitle;
   // Tables always reserve an entire row, including when a narrower span was saved.
-  const span = effectivePanelSpan(!!fullRow, perRow
-    ? perRow === 1
-      ? "full"
-      : (Math.max(1, Math.floor(cols / perRow)) as PanelSpan)
-    : (s.span[id] ?? 1));
+  const span = effectivePanelSpan(
+    !!fullRow,
+    perRow
+      ? perRow === 1
+        ? "full"
+        : (Math.max(1, Math.floor(cols / perRow)) as PanelSpan)
+      : (s.span[id] ?? defaultSpan ?? 1),
+  );
   const collapsed = !!s.collapsed[id];
   const height = s.height[id];
   const nextSpan = (): PanelSpan =>
@@ -114,10 +119,19 @@ export function PanelShell({
           }}
         />
       )}
-      <MapPanelWidthContext.Provider value={{
-        wide: panelColumns(span, cols) === cols,
-        toggle: () => update((p) => ({ ...p, span: { ...p.span, [id]: panelColumns(span, cols) === cols ? 1 : cols as PanelSpan } })),
-      }}>
+      <MapPanelWidthContext.Provider
+        value={{
+          wide: panelColumns(span, cols) === cols,
+          toggle: () =>
+            update((p) => ({
+              ...p,
+              span: {
+                ...p.span,
+                [id]: panelColumns(span, cols) === cols ? 1 : (cols as PanelSpan),
+              },
+            })),
+        }}
+      >
         {children(title)}
       </MapPanelWidthContext.Provider>
       {!collapsed && (

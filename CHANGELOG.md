@@ -1,3 +1,10 @@
+## 1.138.13 (patch) — Signaling View partagé dans KPI — 2026-11-04 (BC4)
+
+- Remplace la table L3 simplifiée de KPI Analytics par le bloc exact Messages + inspecteur ASN.1 de Signaling View, avec la même recherche, les mêmes filtres, colonnes, badges, pagination et onglets de détail.
+- Réutilise une seule implémentation Signaling : la page autonome reste inchangée, tandis que son intégration KPI ne monte ni sidebar, ni Map, ni Timeline, ni panneau Metrics.
+- Rend le panneau L3 indépendant, déplaçable, redimensionnable en largeur et hauteur, fermable et persistant par Workspace ; le séparateur Messages/ASN.1 et le message sélectionné sont également restaurés.
+- Relie la sélection L3 au bouton Sync par les identifiants réels `capture_id` et `seq`, sans corrélation inventée et sans recharger Map, Graph ou Table.
+
 ## 1.138.12 (patch) — Sections L3 et Timeline dans KPI — 2026-11-04 (BC4)
 
 - Remplace l’intégration de la page Signaling complète par deux panneaux ciblés : la table L3 Signaling et la Timeline RF.

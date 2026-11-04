@@ -10,10 +10,20 @@ import { useCaptureContext } from "@/lib/capture-context";
 import { analysisScopeSearch, type AnalysisScope } from "@/lib/analysis-scope";
 import { VisualizationItems } from "./VisualizationMenu";
 import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { BarChart3, Download, PanelLeftClose, PanelLeftOpen, Plus, RefreshCw, X } from "lucide-react";
+import {
+  BarChart3,
+  Download,
+  Maximize2,
+  Minimize2,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  RefreshCw,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { PanelImperativeHandle } from "react-resizable-panels";
 import {
@@ -70,7 +80,7 @@ import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
 import { KpiOverlayCard } from "./KpiOverlayCard";
 import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
-import { KpiL3SignalingSection, KpiTimelineSection } from "./KpiSignalingSections";
+import { KpiTimelineSection } from "./KpiSignalingSections";
 import {
   MAX_GRAPHS,
   appliedPayload,
@@ -97,7 +107,7 @@ import {
   updateTab,
 } from "./workspace-tabs";
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
-import { PanelShell } from "./PanelShell";
+import { MapPanelWidthContext, PanelShell } from "./PanelShell";
 import { WorkspaceGrid } from "./WorkspaceGrid";
 import { ActiveEventsProvider } from "./active-events";
 import { PointSyncProvider } from "./point-sync";
@@ -110,6 +120,12 @@ import {
 } from "./workspace-template-state";
 import { loadTableSettings } from "./table-settings";
 import "./workspace.css";
+
+const SharedSignalingPage = lazy(() =>
+  import("@/features/signaling/SignalingPage").then(({ SignalingPage }) => ({
+    default: SignalingPage,
+  })),
+);
 
 export function KpiWorkspace() {
   useTranslation();
@@ -303,6 +319,19 @@ function Workspace({
     const source = (currentTab.signalingPanels ?? []).find((panel) => panel.id === id);
     if (source) addSignalingPanel(source.kind);
   };
+  const updateSignalingPanelSelection = (id: string, selectedSeq: number | undefined) =>
+    persistTabs(
+      updateTab(tabsState, currentTab.id, {
+        signalingPanels: (currentTab.signalingPanels ?? []).map((panel) =>
+          panel.id === id
+            ? {
+                ...panel,
+                ...(selectedSeq === undefined ? {} : { selectedSeq }),
+              }
+            : panel,
+        ),
+      }),
+    );
   const queryClient = useQueryClient();
   const [captureId, setCaptureId] = useCaptureContext(projectId);
   const metricsCapturesQuery = useQuery({
@@ -357,10 +386,7 @@ function Workspace({
     [catalog, procedureCatalogQuery.data],
   );
   const entries = useMemo(() => catalogEntries(mergedCatalog), [mergedCatalog]);
-  const classifiedCatalogs = useMemo(
-    () => classifyKpiCatalog(mergedCatalog),
-    [mergedCatalog],
-  );
+  const classifiedCatalogs = useMemo(() => classifyKpiCatalog(mergedCatalog), [mergedCatalog]);
   const dimensionsQuery = useQuery(kpiFiltersQuery(projectId, scopeCaptureIds));
   const dimensions = dimensionsQuery.data;
   const dimensionsLoading = dimensionsQuery.isPending;
@@ -383,7 +409,9 @@ function Workspace({
     });
     if (next.type === "capture") setCaptureId(next.captureId);
     else {
-      const stream = superstreamsQuery.data?.find((candidate) => candidate.id === next.superstreamId);
+      const stream = superstreamsQuery.data?.find(
+        (candidate) => candidate.id === next.superstreamId,
+      );
       const first = stream?.captureIds[0];
       if (first) setCaptureId(first);
     }
@@ -725,9 +753,7 @@ function Workspace({
   const [limitMessage, setLimitMessage] = useState("");
   const catalogSearch = useRef<HTMLInputElement>(null);
   const [procedureExplorerCode, setProcedureExplorerCode] = useState<string | null>(null);
-  const procedureExplorerEntry = entries.find(
-    (entry) => entry.item.code === procedureExplorerCode,
-  );
+  const procedureExplorerEntry = entries.find((entry) => entry.item.code === procedureExplorerCode);
   const effectiveActive = codes.includes(active ?? "") ? active : (codes[0] ?? null);
   const visibleCodes = codes;
   const analyticCaptureIds = scopeCaptureIds.length
@@ -769,17 +795,20 @@ function Workspace({
     })),
   });
   const panels = kpiRequests.flatMap(({ code, memberCaptureId, memberPosition }, index) => {
-    const entry = entries.find((e) => e.item.code === code), query = queries[index];
+    const entry = entries.find((e) => e.item.code === code),
+      query = queries[index];
     if (!entry || !query) return [];
     const stat = chosenStatistic(query.data, configFor(code).statistic ?? undefined);
-    return [{
-      entry,
-      query,
-      stat,
-      rows: query.data ? analyticRows(query.data, stat) : [],
-      memberCaptureId,
-      memberPosition,
-    }];
+    return [
+      {
+        entry,
+        query,
+        stat,
+        rows: query.data ? analyticRows(query.data, stat) : [],
+        memberCaptureId,
+        memberPosition,
+      },
+    ];
   });
   // Closing the data table hides it until the set of panels changes.
   const panelsKey = panels.map((panel) => panel.entry.item.code).join("|");
@@ -903,12 +932,15 @@ function Workspace({
     }
   };
   const cacheTemplate = (template: WorkspaceTemplate) => {
-    queryClient.setQueryData<WorkspaceTemplate[]>(["workspace-templates", projectId], (previous) => {
-      const rest = (previous ?? []).filter((candidate) => candidate.id !== template.id);
-      return [template, ...rest].sort((left, right) =>
-        right.updatedAt.localeCompare(left.updatedAt),
-      );
-    });
+    queryClient.setQueryData<WorkspaceTemplate[]>(
+      ["workspace-templates", projectId],
+      (previous) => {
+        const rest = (previous ?? []).filter((candidate) => candidate.id !== template.id);
+        return [template, ...rest].sort((left, right) =>
+          right.updatedAt.localeCompare(left.updatedAt),
+        );
+      },
+    );
     rememberActiveTemplate(template.id);
   };
   const templateContext = {
@@ -957,8 +989,9 @@ function Workspace({
     remove: async () => {
       if (!activeTemplate) throw new Error("Aucun template actif.");
       await deleteWorkspaceTemplate(projectId, activeTemplate);
-      queryClient.setQueryData<WorkspaceTemplate[]>(["workspace-templates", projectId], (previous) =>
-        (previous ?? []).filter((candidate) => candidate.id !== activeTemplate.id),
+      queryClient.setQueryData<WorkspaceTemplate[]>(
+        ["workspace-templates", projectId],
+        (previous) => (previous ?? []).filter((candidate) => candidate.id !== activeTemplate.id),
       );
       rememberActiveTemplate(null);
     },
@@ -997,615 +1030,714 @@ function Workspace({
   ];
   return (
     <WorkspaceTemplatesProvider value={templateContext}>
-    <ActiveEventsProvider resetKey={`${currentTab.id}:${scopeIdentity}`}>
-    <PointSyncProvider projectId={projectId} workspaceId={currentTab.id}>
-    <main className="kpi-workspace" aria-label="KPI Analytics">
-      <KpiFilters
-        draft={draft}
-        applied={applied}
-        dimensions={dimensions}
-        period={period}
-        dirty={dirty}
-        loading={dimensionsLoading}
-        error={dimensionsError}
-        onRetry={retryDimensions}
-        onChange={setDraft}
-        onApply={apply}
-        onReset={reset}
-        scope={analysisScope}
-        captures={metricsCapturesQuery.data ?? []}
-        superstreams={superstreamsQuery.data ?? []}
-        sourcesLoading={metricsCapturesQuery.isPending || superstreamsQuery.isPending}
-        onScopeChange={changeAnalysisScope}
-        eventsVisible={eventsVisible}
-        onEventsVisibleChange={setEventsVisible}
-        onAddSignalingPanel={addSignalingPanel}
-      />
-      {eventsVisible && scopeCaptureIds.length > 0 && (
-        <section className="kpi-events-scope" data-testid="kpi-events-scope">
-          {scopeCaptureIds.map((memberCaptureId, memberPosition) => (
-            <div key={memberCaptureId} data-member-position={memberPosition}>
-              {analysisScope?.type === "superstream" && (
-                <p className="kpi-capture-boundary">
-                  Capture {memberPosition + 1} · {memberCaptureId}
-                </p>
-              )}
-              <MetricsEventsRibbon
-                projectId={projectId}
-                captureId={memberCaptureId}
-                filters={{ ...applied, capture_id: memberCaptureId }}
-                syncId={`kpi-workspace-${currentTab.id}-${memberCaptureId}`}
-              />
-            </div>
-          ))}
-        </section>
-      )}
-      <ResizablePanelGroup orientation="horizontal" className="kpi-workspace-panels">
-        <ResizablePanel
-          id="kpi-catalog-panel"
-          defaultSize="280px"
-          minSize="230px"
-          maxSize="460px"
-          panelRef={cataloguePanel}
-          collapsible
-          collapsedSize="36px"
-          onResize={() =>
-            rememberCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)
-          }
-          className="kpi-sidebar-panel"
-        >
-          {catalogueCollapsed && (
-            <div className="kpi-catalog-rail" data-testid="kpi-catalog-rail">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="kpi-catalog-toggle"
-                title={translate("panel.expand_catalogue")}
-                aria-label={translate("panel.expand_catalogue")}
-                onClick={() => cataloguePanel.current?.expand()}
-              >
-                <PanelLeftOpen size={15} />
-              </Button>
-            </div>
-          )}
-          <div className="kpi-sidebar-tabs" hidden={catalogueCollapsed}>
-            <div
-              className="kpi-sidebar-tabbar"
-              role="tablist"
-              aria-label={translate("kpi.103451395067")}
-              style={{
-                display: "flex",
-                gap: 0,
-                borderBottom: "1px solid var(--border, #d9dee5)",
-                padding: "4px 6px 0",
-                background: "var(--panel, #fff)",
-              }}
-            >
-              <button
-                role="tab"
-                aria-selected={activeCatalog === "kpi"}
-                title={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
-                aria-label={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
-                className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
-                onClick={() => setActiveCatalog("kpi")}
-                style={{
-                  color: "var(--foreground)",
-                  padding: "6px 12px",
-                  borderRadius: "4px 4px 0 0",
-                  border: "none",
-                  background: activeCatalog === "kpi" ? "transparent" : "transparent",
-                  borderBottom:
-                    activeCatalog === "kpi"
-                      ? "2px solid var(--primary, #1b5fd6)"
-                      : "2px solid transparent",
-                  fontWeight: activeCatalog === "kpi" ? 600 : 400,
-                }}
-              >
-                {translate("kpi.catalogTabKpi")}
-              </button>
-              <button
-                role="tab"
-                aria-selected={activeCatalog === "metrics"}
-                title={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
-                aria-label={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
-                className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
-                onClick={() => setActiveCatalog("metrics")}
-                style={{
-                  color: "var(--foreground)",
-                  padding: "6px 12px",
-                  borderRadius: "4px 4px 0 0",
-                  border: "none",
-                  background: "transparent",
-                  borderBottom:
-                    activeCatalog === "metrics"
-                      ? "2px solid var(--primary, #1b5fd6)"
-                      : "2px solid transparent",
-                  fontWeight: activeCatalog === "metrics" ? 600 : 400,
-                }}
-              >
-                {translate("kpi.catalogTabMetrics")} (
-                {metricsCatalogLoading
-                  ? translate("kpi.catalogReconnecting")
-                  : selectableMetricCount}
-                )
-              </button>
-              <button
-                role="tab"
-                aria-selected={activeCatalog === "parameters"}
-                title={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
-                aria-label={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
-                className={`kpi-button ${activeCatalog === "parameters" ? "primary" : ""}`}
-                onClick={() => setActiveCatalog("parameters")}
-                style={{
-                  color: "var(--foreground)",
-                  padding: "6px 12px",
-                  borderRadius: "4px 4px 0 0",
-                  border: "none",
-                  background: "transparent",
-                  borderBottom:
-                    activeCatalog === "parameters"
-                      ? "2px solid var(--primary, #1b5fd6)"
-                      : "2px solid transparent",
-                  fontWeight: activeCatalog === "parameters" ? 600 : 400,
-                }}
-              >
-                {translate("kpi.catalogTabParameters")}
-              </button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="kpi-catalog-toggle ml-auto self-center"
-                title={translate("panel.collapse_catalogue")}
-                aria-label={translate("panel.collapse_catalogue")}
-                data-testid="kpi-catalog-collapse"
-                onClick={() => cataloguePanel.current?.collapse()}
-              >
-                <PanelLeftClose size={15} />
-              </Button>
-            </div>
-            {activeCatalog === "kpi" ? (
-              <KpiCatalogSidebar
-                catalog={classifiedCatalogs.kpi}
-                selected={codes}
-                active={effectiveActive}
-                onToggle={onCatalogToggle}
-                onVisualization={visualize}
-                searchRef={catalogSearch}
-                loading={
-                  catalogLoading ||
-                  procedureCatalogQuery.isPending ||
-                  (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)
-                }
-                onViewProcedures={setProcedureExplorerCode}
-                onOpenSignaling={setProcedureExplorerCode}
-              />
-            ) : activeCatalog === "metrics" ? (
-              <MetricsCatalogSidebar
-                projectId={projectId}
-                selected={selectedMetrics}
-                onToggle={toggleMetric}
-                onVisualization={visualizeMetric}
-                searchRef={catalogSearch}
-                selectionCount={selectedMetrics.length}
-                onVisibleCountChange={updateVisibleCatalogMetricCount}
-                measuredEntries={catalogEntries(presentedMeasuredCatalog)}
-                measuredSelected={codes}
-                measuredActive={effectiveActive}
-                onMeasuredVisualization={visualize}
-                captureKind={captureKind}
-                captureIds={scopeCaptureIds}
-              />
-            ) : (
-              <TreePanel
-                techno={parameterTechnology}
-                catalog={parameterTrees.catalog}
-                raw={parameterTrees.raw}
-                selected={parameterSelectedSet}
-                onToggle={toggleParameter}
-                onToggleCatalog={(parameter, technology, origin, leaf) =>
-                  setParameterSelection((previous) =>
-                    toggleCatalogSelection(previous, parameter, technology, origin, leaf),
-                  )
-                }
-                onInfo={(leaf) => {
-                  if (!parameterSelectedSet.has(selectionId(selectedParameter(leaf)))) {
-                    toggleParameter(leaf);
-                  }
-                }}
-                onReset={() => {
-                  setParameterSelection([]);
-                  setParameterResetTick((tick) => tick + 1);
-                }}
-                resetTick={parameterResetTick}
-                categories={[]}
-                onTemplateLeaf={() => undefined}
-                onCategory={() => undefined}
-                templatesLoading={false}
-                templatesError={false}
-                templateCatalog={parameterTrees.catalog}
-                onViewChange={setParameterTreeView}
-                showTemplates={false}
-              />
-            )}
-          </div>
-        </ResizablePanel>
-        <ResizableHandle
-          withHandle
-          className="kpi-resize-handle"
-          aria-label={translate("kpi.9afd5ab37dac")}
-        />
-        <ResizablePanel id="kpi-analysis-panel" minSize="300px">
-          <div
-            className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}${mapOnlyWorkspace ? " kpi-analysis-map-only" : ""}`}
-          >
-            {activeCatalog === "parameters" && (
-              <div className="m-2 space-y-3" data-testid="kpi-parameters-workspace">
-                {!!(applied.operator?.length || applied.band?.length) && (
-                  <p role="status" className="rrc-context-notice">
-                    {translate("kpi.parametersUnsupportedFilters")}
-                  </p>
-                )}
-                <ValueExplorer
-                  catalog={parameterCatalogQ.data ?? null}
-                  distribution={parameterDistributionQ.data ?? null}
-                  groupBy={parameterGroupBy}
-                  onGroupByChange={setParameterGroupBy}
-                  isLoading={parameterDistributionQ.isPending}
-                  error={parameterDistributionQ.error}
-                  selectedKeys={selectedParameterKeys}
-                  filtered={Object.keys(parameterGeo).length > 0}
-                  onRetry={() => void parameterDistributionQ.refetch()}
-                  hideGroupBy
-                  hideEmptyPrompt
-                  compactHierarchy
-                />
-                {parameterSelection.length > 0 && (
-                  <SelectedParameterInfo
-                    projectId={projectId}
-                    selected={parameterSelection}
-                    catalog={parameterCatalogQ.data ?? null}
-                    distribution={parameterDistributionQ.data ?? null}
-                    refreshing={parameterDistributionQ.isFetching}
-                    locallyFiltered={Object.keys(parameterGeo).length > 0}
-                  />
-                )}
-              </div>
-            )}
-            {limitMessage && (
-              <p role="status" className="text-xs text-amber-700">
-                {limitMessage}
-              </p>
-            )}
-            {unavailableTemplateSelections.length > 0 && (
-              <div
-                role="alert"
-                className="m-2 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950"
-                data-testid="workspace-unavailable-metrics"
-              >
-                <strong>{translate("workspaceTemplates.unavailable")}</strong>
-                <ul className="mt-1 list-disc pl-4">
-                  {unavailableTemplateSelections.map((item) => (
-                    <li key={`${item.code}:${item.reason}`}>
-                      {item.code} — {item.reason}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-            {/* 1.92.0 — bandeau Scanner visible dès que la capture active est
-                un scanner, même sans métrique sélectionnée. Jamais caché. */}
-            {activeCatalog === "metrics" && captureKind === "scanner" && (
-              <div
-                role="alert"
-                className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
-                data-testid="scanner-capture-banner"
-              >
-                <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput per layer)
-                not available in scanner mode — Ibflex-Scanner captures only expose{" "}
-                <code>SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code> events. UE cell leaves in
-                the catalogue are disabled with tooltip "no UE cell metrics in scanner capture"
-                (never hidden). Future "Scanner view" lot open — see CHANGELOG back 0.76.1.
-              </div>
-            )}
-            {analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2 ? (
-              <KpiOverlayCard
-                panels={panels.map((p) => ({ entry: p.entry, rows: p.rows }))}
-                onDisable={() => setOverlay(tabsState.activeTabId, false)}
-              />
-            ) : null}
-            <WorkspaceGrid
-              count={panels.length + visibleGraphMetricCount + (metricsTablePane ? 1 : 0) + (currentTab.signalingPanels?.length ?? 0)}
-              layout={currentTab.layout}
-              hidden={analysisScope?.type !== "superstream" && currentTab.overlay && panels.length >= 2}
-              fillAvailable={mapOnlyWorkspace}
-            >
-              <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                {panels.map(({ entry, query, stat, rows: graphRows, memberCaptureId, memberPosition }, natural) => (
-                  <PanelShell
-                    key={`${memberCaptureId}:${entry.item.code}`}
-                    workspaceId={tabsState.activeTabId}
-                    id={`kpi:${entry.item.code}${analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""}`}
-                    natural={natural}
-                    defaultTitle={analysisScope?.type === "superstream" ? `${memberPosition + 1}. ${entry.item.name} · ${memberCaptureId}` : entry.item.name}
-                    fullRow={configFor(entry.item.code).visualization === "table"}
-                  >
-                    {(panelTitle) => (
-                      <KpiGraphCard
-                        projectId={projectId}
-                        workspaceId={tabsState.activeTabId}
-                        appliedFilters={{ ...applied, capture_id: memberCaptureId }}
-                        captureId={memberCaptureId}
-                        onCaptureChange={setCaptureId}
-                        entry={
-                          panelTitle === entry.item.name
-                            ? entry
-                            : { ...entry, item: { ...entry.item, name: panelTitle } }
-                        }
-                        query={query}
-                        blockedReason={
-                          dimensionsLoading
-                            ? translate("kpi.f58ddd1effba")
-                            : dimensionsError
-                              ? translate("kpi.a237d197caeb")
-                              : undefined
-                        }
-                        rows={graphRows}
-                        statistic={stat}
-                        config={configFor(entry.item.code)}
-                        groupOptions={(
-                          [
-                            "none",
-                            "operator",
-                            "band",
-                            "operator_band",
-                            ...(dimensions?.dor?.available ? ["dor"] : []),
-                          ] as KpiGroupBy[]
-                        ).filter(
-                          (g) =>
-                            g === "none" ||
-                            g === "dor" ||
-                            (g === "operator"
-                              ? dimensions?.operators?.available
-                              : g === "band"
-                                ? dimensions?.bands?.available
-                                : dimensions?.operators?.available && dimensions?.bands?.available),
-                        )}
-                        onConfig={(next) => updateConfig(entry.item.code, next)}
-                        onStatistic={(value) =>
-                          updateConfig(entry.item.code, {
-                            ...configFor(entry.item.code),
-                            statistic: value,
-                          })
-                        }
-                        active={effectiveActive === entry.item.code}
-                        onActivate={() => setActive(entry.item.code)}
-                        selectedRows={selectedRows}
-                        onSelectRow={toggleRow}
-                        onRemove={() => toggle(entry.item.code)}
-                        onMove={(direction) => move(entry.item.code, direction)}
-                        index={codes.indexOf(entry.item.code)}
-                        count={codes.length}
-                      />
+      <ActiveEventsProvider resetKey={`${currentTab.id}:${scopeIdentity}`}>
+        <PointSyncProvider projectId={projectId} workspaceId={currentTab.id}>
+          <main className="kpi-workspace" aria-label="KPI Analytics">
+            <KpiFilters
+              draft={draft}
+              applied={applied}
+              dimensions={dimensions}
+              period={period}
+              dirty={dirty}
+              loading={dimensionsLoading}
+              error={dimensionsError}
+              onRetry={retryDimensions}
+              onChange={setDraft}
+              onApply={apply}
+              onReset={reset}
+              scope={analysisScope}
+              captures={metricsCapturesQuery.data ?? []}
+              superstreams={superstreamsQuery.data ?? []}
+              sourcesLoading={metricsCapturesQuery.isPending || superstreamsQuery.isPending}
+              onScopeChange={changeAnalysisScope}
+              eventsVisible={eventsVisible}
+              onEventsVisibleChange={setEventsVisible}
+              onAddSignalingPanel={addSignalingPanel}
+            />
+            {eventsVisible && scopeCaptureIds.length > 0 && (
+              <section className="kpi-events-scope" data-testid="kpi-events-scope">
+                {scopeCaptureIds.map((memberCaptureId, memberPosition) => (
+                  <div key={memberCaptureId} data-member-position={memberPosition}>
+                    {analysisScope?.type === "superstream" && (
+                      <p className="kpi-capture-boundary">
+                        Capture {memberPosition + 1} · {memberCaptureId}
+                      </p>
                     )}
-                  </PanelShell>
+                    <MetricsEventsRibbon
+                      projectId={projectId}
+                      captureId={memberCaptureId}
+                      filters={{ ...applied, capture_id: memberCaptureId }}
+                      syncId={`kpi-workspace-${currentTab.id}-${memberCaptureId}`}
+                    />
+                  </div>
                 ))}
-                {selectedMetrics.length > 0 && (
-                  <>
-                    {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
-                      <MetricsWorkspace
-                        key={`${currentTab.id}:${memberCaptureId}`}
-                        projectId={projectId}
-                        captureId={memberCaptureId}
-                        onCaptureChange={(nextCaptureId) => {
-                          if (analysisScope?.type !== "superstream") {
-                            changeAnalysisScope({ type: "capture", captureId: nextCaptureId });
-                          }
-                        }}
-                        selections={selectedMetrics}
-                        catalog={metricsCatalog.data?.metrics ?? []}
-                        filters={{ ...applied, capture_id: memberCaptureId }}
-                        view={metricsView}
-                        onViewChange={setMetricsView}
-                        onTablePaneChange={setMetricsTablePane}
-                        onCardPanelCountChange={setMetricCardPanelCount}
-                        views={metricViews}
-                        onVisualization={visualizeMetric}
-                        mapFillsAvailable={mapOnlyWorkspace && analyticCaptureIds.length === 1}
-                        workspaceId={tabsState.activeTabId}
-                        projectCenter={projectCenter}
-                        showEvents={false}
-                        scopeLabel={
-                          analysisScope?.type === "superstream"
-                            ? `Capture ${memberPosition + 1} · ${memberCaptureId}`
-                            : undefined
-                        }
-                        panelIdSuffix={
-                          analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""
-                        }
-                        onColumnsChange={setTableColumns}
-                        paneRequest={metricsPaneRequest.n}
-                        cardViewRequest={cardViewRequest}
-                        onClear={() => {
-                          setSelectedMetrics([]);
-                        }}
-                        onRemove={(code: string) =>
-                          setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
-                        }
-                      />
-                    ))}
-                  </>
-                )}
-                {(currentTab.signalingPanels ?? []).map((signalingPanel, index) => (
-                  <PanelShell
-                    key={signalingPanel.id}
-                    workspaceId={currentTab.id}
-                    id={`signaling:${signalingPanel.id}`}
-                    natural={panels.length + visibleGraphMetricCount + index}
-                    defaultTitle={signalingPanel.kind === "timeline" ? translate("panel.timeline") : translate("panel.l3Signaling")}
-                    fullRow
-                    onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
-                  >
-                    {(title) => (
-                      <section className="kpi-signaling-panel" data-testid={`kpi-${signalingPanel.kind}-panel`}>
-                        <header className="kpi-signaling-panel-header">
-                          <h3>{title}</h3>
-                          <button type="button" className="kpi-icon" onClick={() => removeSignalingPanel(signalingPanel.id)} aria-label={translate("panel.remove")}>
-                            <X size={15} aria-hidden="true" />
-                          </button>
-                        </header>
-                        <div className="kpi-signaling-panel-body">
-                          {requestedCapture && (signalingPanel.kind === "timeline" ? <KpiTimelineSection projectId={projectId} captureId={requestedCapture} /> : <KpiL3SignalingSection projectId={projectId} captureId={requestedCapture} />)}
-                        </div>
-                      </section>
-                    )}
-                  </PanelShell>
-                ))}
-              </TableSettingsWorkspaceContext.Provider>
-            </WorkspaceGrid>
-            {activeCatalog !== "parameters" && !panels.length && !selectedMetrics.length && !(currentTab.signalingPanels?.length) && (
-              <div className="kpi-empty-workspace">
-                <BarChart3 size={28} />
-                <h2>{translate("kpi.97f764ab0b74")}</h2>
-                <p>{translate("kpi.ed0d56673d65")}</p>
-                <button className="kpi-button primary" onClick={addGraph}>
-                  <Plus size={14} /> {translate("kpi.b8982dc44102")}{" "}
-                </button>
-              </div>
+              </section>
             )}
-            <div id="kpi-workspace-data">
-              {(() => {
-                if (!panels.length || dataTableClosedFor === panelsKey) return null;
-                // A map card never brings a data table with it (user request).
-                if (
-                  panels.every((panel) => {
-                    const visualization = configFor(panel.entry.item.code).visualization;
-                    // Map cards bring no table; temporal Table cards render their own rows.
-                    return (
-                      visualization === "map" ||
-                      (visualization === "table" && !!panel.entry.item.temporal_source)
-                    );
-                  })
-                )
-                  return null;
-                // 1.43.0 — Tableau brut : si au moins un KPI « temporel »
-                // (temporal_source != null) est sélectionné en mode
-                // Graphique, on affiche les observations brutes de la
-                // capture active plutôt que l'agrégat (mandat §8). Les
-                // KPI task_* gardent leur rendu propre (points sous la
-                // série) comme avant.
-                const rawMetrics: KpiRawMetric[] = panels
-                  .filter(
-                    (panel) =>
-                      configFor(panel.entry.item.code).visualization === "graph" &&
-                      !!panel.entry.item.temporal_source,
-                  )
-                  .map((panel) => ({
-                    code: panel.entry.item.code,
-                    label: panel.entry.item.name,
-                    unit: panel.entry.item.unit ?? null,
-                  }));
-                if (rawMetrics.length > 0) {
-                  return (
-                    <>
-                      {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
-                        <section key={memberCaptureId}>
-                          {analysisScope?.type === "superstream" && (
-                            <p className="kpi-capture-boundary">
-                              Capture {memberPosition + 1} · {memberCaptureId}
-                            </p>
-                          )}
-                          <KpiRawDataTable
-                            projectId={projectId}
-                            captureId={memberCaptureId}
-                            metrics={rawMetrics}
-                          />
-                        </section>
-                      ))}
-                    </>
-                  );
+            <ResizablePanelGroup orientation="horizontal" className="kpi-workspace-panels">
+              <ResizablePanel
+                id="kpi-catalog-panel"
+                defaultSize="280px"
+                minSize="230px"
+                maxSize="460px"
+                panelRef={cataloguePanel}
+                collapsible
+                collapsedSize="36px"
+                onResize={() =>
+                  rememberCatalogueCollapsed(cataloguePanel.current?.isCollapsed() ?? false)
                 }
-                if (
-                  panels.every((panel) =>
-                    configFor(panel.entry.item.code).visualization.startsWith("task_"),
-                  )
-                ) {
-                  return (
-                    <p className="p-3 text-xs text-muted-foreground">
-                      {" "}
-                      {translate("kpi.717260829dcc")}{" "}
+                className="kpi-sidebar-panel"
+              >
+                {catalogueCollapsed && (
+                  <div className="kpi-catalog-rail" data-testid="kpi-catalog-rail">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="kpi-catalog-toggle"
+                      title={translate("panel.expand_catalogue")}
+                      aria-label={translate("panel.expand_catalogue")}
+                      onClick={() => cataloguePanel.current?.expand()}
+                    >
+                      <PanelLeftOpen size={15} />
+                    </Button>
+                  </div>
+                )}
+                <div className="kpi-sidebar-tabs" hidden={catalogueCollapsed}>
+                  <div
+                    className="kpi-sidebar-tabbar"
+                    role="tablist"
+                    aria-label={translate("kpi.103451395067")}
+                    style={{
+                      display: "flex",
+                      gap: 0,
+                      borderBottom: "1px solid var(--border, #d9dee5)",
+                      padding: "4px 6px 0",
+                      background: "var(--panel, #fff)",
+                    }}
+                  >
+                    <button
+                      role="tab"
+                      aria-selected={activeCatalog === "kpi"}
+                      title={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
+                      aria-label={`${translate("kpi.catalogTabKpi")} · ${codes.length}`}
+                      className={`kpi-button ${activeCatalog === "kpi" ? "primary" : ""}`}
+                      onClick={() => setActiveCatalog("kpi")}
+                      style={{
+                        color: "var(--foreground)",
+                        padding: "6px 12px",
+                        borderRadius: "4px 4px 0 0",
+                        border: "none",
+                        background: activeCatalog === "kpi" ? "transparent" : "transparent",
+                        borderBottom:
+                          activeCatalog === "kpi"
+                            ? "2px solid var(--primary, #1b5fd6)"
+                            : "2px solid transparent",
+                        fontWeight: activeCatalog === "kpi" ? 600 : 400,
+                      }}
+                    >
+                      {translate("kpi.catalogTabKpi")}
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={activeCatalog === "metrics"}
+                      title={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
+                      aria-label={`${translate("kpi.catalogTabMetrics")} · ${selectableMetricCount}`}
+                      className={`kpi-button ${activeCatalog === "metrics" ? "primary" : ""}`}
+                      onClick={() => setActiveCatalog("metrics")}
+                      style={{
+                        color: "var(--foreground)",
+                        padding: "6px 12px",
+                        borderRadius: "4px 4px 0 0",
+                        border: "none",
+                        background: "transparent",
+                        borderBottom:
+                          activeCatalog === "metrics"
+                            ? "2px solid var(--primary, #1b5fd6)"
+                            : "2px solid transparent",
+                        fontWeight: activeCatalog === "metrics" ? 600 : 400,
+                      }}
+                    >
+                      {translate("kpi.catalogTabMetrics")} (
+                      {metricsCatalogLoading
+                        ? translate("kpi.catalogReconnecting")
+                        : selectableMetricCount}
+                      )
+                    </button>
+                    <button
+                      role="tab"
+                      aria-selected={activeCatalog === "parameters"}
+                      title={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
+                      aria-label={`${translate("kpi.catalogTabParameters")} · ${parameterSelection.length}`}
+                      className={`kpi-button ${activeCatalog === "parameters" ? "primary" : ""}`}
+                      onClick={() => setActiveCatalog("parameters")}
+                      style={{
+                        color: "var(--foreground)",
+                        padding: "6px 12px",
+                        borderRadius: "4px 4px 0 0",
+                        border: "none",
+                        background: "transparent",
+                        borderBottom:
+                          activeCatalog === "parameters"
+                            ? "2px solid var(--primary, #1b5fd6)"
+                            : "2px solid transparent",
+                        fontWeight: activeCatalog === "parameters" ? 600 : 400,
+                      }}
+                    >
+                      {translate("kpi.catalogTabParameters")}
+                    </button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="kpi-catalog-toggle ml-auto self-center"
+                      title={translate("panel.collapse_catalogue")}
+                      aria-label={translate("panel.collapse_catalogue")}
+                      data-testid="kpi-catalog-collapse"
+                      onClick={() => cataloguePanel.current?.collapse()}
+                    >
+                      <PanelLeftClose size={15} />
+                    </Button>
+                  </div>
+                  {activeCatalog === "kpi" ? (
+                    <KpiCatalogSidebar
+                      catalog={classifiedCatalogs.kpi}
+                      selected={codes}
+                      active={effectiveActive}
+                      onToggle={onCatalogToggle}
+                      onVisualization={visualize}
+                      searchRef={catalogSearch}
+                      loading={
+                        catalogLoading ||
+                        procedureCatalogQuery.isPending ||
+                        (dimensionsLoading && classifiedCatalogs.kpi.tree.length === 0)
+                      }
+                      onViewProcedures={setProcedureExplorerCode}
+                      onOpenSignaling={setProcedureExplorerCode}
+                    />
+                  ) : activeCatalog === "metrics" ? (
+                    <MetricsCatalogSidebar
+                      projectId={projectId}
+                      selected={selectedMetrics}
+                      onToggle={toggleMetric}
+                      onVisualization={visualizeMetric}
+                      searchRef={catalogSearch}
+                      selectionCount={selectedMetrics.length}
+                      onVisibleCountChange={updateVisibleCatalogMetricCount}
+                      measuredEntries={catalogEntries(presentedMeasuredCatalog)}
+                      measuredSelected={codes}
+                      measuredActive={effectiveActive}
+                      onMeasuredVisualization={visualize}
+                      captureKind={captureKind}
+                      captureIds={scopeCaptureIds}
+                    />
+                  ) : (
+                    <TreePanel
+                      techno={parameterTechnology}
+                      catalog={parameterTrees.catalog}
+                      raw={parameterTrees.raw}
+                      selected={parameterSelectedSet}
+                      onToggle={toggleParameter}
+                      onToggleCatalog={(parameter, technology, origin, leaf) =>
+                        setParameterSelection((previous) =>
+                          toggleCatalogSelection(previous, parameter, technology, origin, leaf),
+                        )
+                      }
+                      onInfo={(leaf) => {
+                        if (!parameterSelectedSet.has(selectionId(selectedParameter(leaf)))) {
+                          toggleParameter(leaf);
+                        }
+                      }}
+                      onReset={() => {
+                        setParameterSelection([]);
+                        setParameterResetTick((tick) => tick + 1);
+                      }}
+                      resetTick={parameterResetTick}
+                      categories={[]}
+                      onTemplateLeaf={() => undefined}
+                      onCategory={() => undefined}
+                      templatesLoading={false}
+                      templatesError={false}
+                      templateCatalog={parameterTrees.catalog}
+                      onViewChange={setParameterTreeView}
+                      showTemplates={false}
+                    />
+                  )}
+                </div>
+              </ResizablePanel>
+              <ResizableHandle
+                withHandle
+                className="kpi-resize-handle"
+                aria-label={translate("kpi.9afd5ab37dac")}
+              />
+              <ResizablePanel id="kpi-analysis-panel" minSize="300px">
+                <div
+                  className={`kpi-analysis-scroll${tableOnlyWorkspace ? " kpi-analysis-table-only" : ""}${mapOnlyWorkspace ? " kpi-analysis-map-only" : ""}`}
+                >
+                  {activeCatalog === "parameters" && (
+                    <div className="m-2 space-y-3" data-testid="kpi-parameters-workspace">
+                      {!!(applied.operator?.length || applied.band?.length) && (
+                        <p role="status" className="rrc-context-notice">
+                          {translate("kpi.parametersUnsupportedFilters")}
+                        </p>
+                      )}
+                      <ValueExplorer
+                        catalog={parameterCatalogQ.data ?? null}
+                        distribution={parameterDistributionQ.data ?? null}
+                        groupBy={parameterGroupBy}
+                        onGroupByChange={setParameterGroupBy}
+                        isLoading={parameterDistributionQ.isPending}
+                        error={parameterDistributionQ.error}
+                        selectedKeys={selectedParameterKeys}
+                        filtered={Object.keys(parameterGeo).length > 0}
+                        onRetry={() => void parameterDistributionQ.refetch()}
+                        hideGroupBy
+                        hideEmptyPrompt
+                        compactHierarchy
+                      />
+                      {parameterSelection.length > 0 && (
+                        <SelectedParameterInfo
+                          projectId={projectId}
+                          selected={parameterSelection}
+                          catalog={parameterCatalogQ.data ?? null}
+                          distribution={parameterDistributionQ.data ?? null}
+                          refreshing={parameterDistributionQ.isFetching}
+                          locallyFiltered={Object.keys(parameterGeo).length > 0}
+                        />
+                      )}
+                    </div>
+                  )}
+                  {limitMessage && (
+                    <p role="status" className="text-xs text-amber-700">
+                      {limitMessage}
                     </p>
-                  );
-                }
-                return (
-                  <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
-                    {analysisScope?.type === "superstream" ? (
-                      analyticCaptureIds.map((memberCaptureId, memberPosition) => (
-                        <section key={memberCaptureId}>
-                          <p className="kpi-capture-boundary">
-                            Capture {memberPosition + 1} · {memberCaptureId}
-                          </p>
-                          <KpiDataTable
-                            rows={panels
-                              .filter((panel) => panel.memberCaptureId === memberCaptureId)
-                              .flatMap((panel) => panel.rows)}
-                            selected={selectedRows}
-                            onSelect={setSelectedRows}
-                            onClose={() => setDataTableClosedFor(panelsKey)}
-                          />
-                        </section>
-                      ))
-                    ) : (
-                      <KpiDataTable
-                        rows={rows}
-                        selected={selectedRows}
-                        onSelect={setSelectedRows}
-                        onClose={() => setDataTableClosedFor(panelsKey)}
-                      />
+                  )}
+                  {unavailableTemplateSelections.length > 0 && (
+                    <div
+                      role="alert"
+                      className="m-2 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950"
+                      data-testid="workspace-unavailable-metrics"
+                    >
+                      <strong>{translate("workspaceTemplates.unavailable")}</strong>
+                      <ul className="mt-1 list-disc pl-4">
+                        {unavailableTemplateSelections.map((item) => (
+                          <li key={`${item.code}:${item.reason}`}>
+                            {item.code} — {item.reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {/* 1.92.0 — bandeau Scanner visible dès que la capture active est
+                un scanner, même sans métrique sélectionnée. Jamais caché. */}
+                  {activeCatalog === "metrics" && captureKind === "scanner" && (
+                    <div
+                      role="alert"
+                      className="m-2 rounded border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900"
+                      data-testid="scanner-capture-banner"
+                    >
+                      <strong>Scanner capture</strong> · UE cell metrics (RSRP, CA, throughput per
+                      layer) not available in scanner mode — Ibflex-Scanner captures only expose{" "}
+                      <code>SCANCONFIG / STARTSCAN / CELLSCAN / OFDMSCAN</code> events. UE cell
+                      leaves in the catalogue are disabled with tooltip "no UE cell metrics in
+                      scanner capture" (never hidden). Future "Scanner view" lot open — see
+                      CHANGELOG back 0.76.1.
+                    </div>
+                  )}
+                  {analysisScope?.type !== "superstream" &&
+                  currentTab.overlay &&
+                  panels.length >= 2 ? (
+                    <KpiOverlayCard
+                      panels={panels.map((p) => ({ entry: p.entry, rows: p.rows }))}
+                      onDisable={() => setOverlay(tabsState.activeTabId, false)}
+                    />
+                  ) : null}
+                  <WorkspaceGrid
+                    count={
+                      panels.length +
+                      visibleGraphMetricCount +
+                      (metricsTablePane ? 1 : 0) +
+                      (currentTab.signalingPanels?.length ?? 0)
+                    }
+                    layout={currentTab.layout}
+                    hidden={
+                      analysisScope?.type !== "superstream" &&
+                      currentTab.overlay &&
+                      panels.length >= 2
+                    }
+                    fillAvailable={mapOnlyWorkspace}
+                  >
+                    <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
+                      {panels.map(
+                        (
+                          { entry, query, stat, rows: graphRows, memberCaptureId, memberPosition },
+                          natural,
+                        ) => (
+                          <PanelShell
+                            key={`${memberCaptureId}:${entry.item.code}`}
+                            workspaceId={tabsState.activeTabId}
+                            id={`kpi:${entry.item.code}${analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""}`}
+                            natural={natural}
+                            defaultTitle={
+                              analysisScope?.type === "superstream"
+                                ? `${memberPosition + 1}. ${entry.item.name} · ${memberCaptureId}`
+                                : entry.item.name
+                            }
+                            fullRow={configFor(entry.item.code).visualization === "table"}
+                          >
+                            {(panelTitle) => (
+                              <KpiGraphCard
+                                projectId={projectId}
+                                workspaceId={tabsState.activeTabId}
+                                appliedFilters={{ ...applied, capture_id: memberCaptureId }}
+                                captureId={memberCaptureId}
+                                onCaptureChange={setCaptureId}
+                                entry={
+                                  panelTitle === entry.item.name
+                                    ? entry
+                                    : { ...entry, item: { ...entry.item, name: panelTitle } }
+                                }
+                                query={query}
+                                blockedReason={
+                                  dimensionsLoading
+                                    ? translate("kpi.f58ddd1effba")
+                                    : dimensionsError
+                                      ? translate("kpi.a237d197caeb")
+                                      : undefined
+                                }
+                                rows={graphRows}
+                                statistic={stat}
+                                config={configFor(entry.item.code)}
+                                groupOptions={(
+                                  [
+                                    "none",
+                                    "operator",
+                                    "band",
+                                    "operator_band",
+                                    ...(dimensions?.dor?.available ? ["dor"] : []),
+                                  ] as KpiGroupBy[]
+                                ).filter(
+                                  (g) =>
+                                    g === "none" ||
+                                    g === "dor" ||
+                                    (g === "operator"
+                                      ? dimensions?.operators?.available
+                                      : g === "band"
+                                        ? dimensions?.bands?.available
+                                        : dimensions?.operators?.available &&
+                                          dimensions?.bands?.available),
+                                )}
+                                onConfig={(next) => updateConfig(entry.item.code, next)}
+                                onStatistic={(value) =>
+                                  updateConfig(entry.item.code, {
+                                    ...configFor(entry.item.code),
+                                    statistic: value,
+                                  })
+                                }
+                                active={effectiveActive === entry.item.code}
+                                onActivate={() => setActive(entry.item.code)}
+                                selectedRows={selectedRows}
+                                onSelectRow={toggleRow}
+                                onRemove={() => toggle(entry.item.code)}
+                                onMove={(direction) => move(entry.item.code, direction)}
+                                index={codes.indexOf(entry.item.code)}
+                                count={codes.length}
+                              />
+                            )}
+                          </PanelShell>
+                        ),
+                      )}
+                      {selectedMetrics.length > 0 && (
+                        <>
+                          {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                            <MetricsWorkspace
+                              key={`${currentTab.id}:${memberCaptureId}`}
+                              projectId={projectId}
+                              captureId={memberCaptureId}
+                              onCaptureChange={(nextCaptureId) => {
+                                if (analysisScope?.type !== "superstream") {
+                                  changeAnalysisScope({
+                                    type: "capture",
+                                    captureId: nextCaptureId,
+                                  });
+                                }
+                              }}
+                              selections={selectedMetrics}
+                              catalog={metricsCatalog.data?.metrics ?? []}
+                              filters={{ ...applied, capture_id: memberCaptureId }}
+                              view={metricsView}
+                              onViewChange={setMetricsView}
+                              onTablePaneChange={setMetricsTablePane}
+                              onCardPanelCountChange={setMetricCardPanelCount}
+                              views={metricViews}
+                              onVisualization={visualizeMetric}
+                              mapFillsAvailable={
+                                mapOnlyWorkspace && analyticCaptureIds.length === 1
+                              }
+                              workspaceId={tabsState.activeTabId}
+                              projectCenter={projectCenter}
+                              showEvents={false}
+                              scopeLabel={
+                                analysisScope?.type === "superstream"
+                                  ? `Capture ${memberPosition + 1} · ${memberCaptureId}`
+                                  : undefined
+                              }
+                              panelIdSuffix={
+                                analysisScope?.type === "superstream" ? `:${memberCaptureId}` : ""
+                              }
+                              onColumnsChange={setTableColumns}
+                              paneRequest={metricsPaneRequest.n}
+                              cardViewRequest={cardViewRequest}
+                              onClear={() => {
+                                setSelectedMetrics([]);
+                              }}
+                              onRemove={(code: string) =>
+                                setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
+                              }
+                            />
+                          ))}
+                        </>
+                      )}
+                      {(currentTab.signalingPanels ?? []).map((signalingPanel, index) => (
+                        <PanelShell
+                          key={signalingPanel.id}
+                          workspaceId={currentTab.id}
+                          id={`signaling:${signalingPanel.id}`}
+                          natural={panels.length + visibleGraphMetricCount + index}
+                          defaultTitle={
+                            signalingPanel.kind === "timeline"
+                              ? translate("panel.timeline")
+                              : translate("panel.l3Signaling")
+                          }
+                          fullRow={signalingPanel.kind === "timeline"}
+                          defaultSpan={3}
+                          onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
+                        >
+                          {(title) => (
+                            <section
+                              className="kpi-signaling-panel"
+                              data-testid={`kpi-${signalingPanel.kind}-panel`}
+                            >
+                              <header className="kpi-signaling-panel-header">
+                                <h3>{title}</h3>
+                                <div className="flex items-center gap-1">
+                                  {signalingPanel.kind === "l3" && (
+                                    <MapPanelWidthContext.Consumer>
+                                      {(width) =>
+                                        width && (
+                                          <button
+                                            type="button"
+                                            className="kpi-icon"
+                                            onClick={width.toggle}
+                                            aria-label={translate("panel.width")}
+                                            title={translate("panel.width")}
+                                          >
+                                            {width.wide ? (
+                                              <Minimize2 size={15} aria-hidden="true" />
+                                            ) : (
+                                              <Maximize2 size={15} aria-hidden="true" />
+                                            )}
+                                          </button>
+                                        )
+                                      }
+                                    </MapPanelWidthContext.Consumer>
+                                  )}
+                                  <button
+                                    type="button"
+                                    className="kpi-icon"
+                                    onClick={() => removeSignalingPanel(signalingPanel.id)}
+                                    aria-label={translate("panel.remove")}
+                                  >
+                                    <X size={15} aria-hidden="true" />
+                                  </button>
+                                </div>
+                              </header>
+                              <div className="kpi-signaling-panel-body">
+                                {requestedCapture &&
+                                  (signalingPanel.kind === "timeline" ? (
+                                    <KpiTimelineSection
+                                      projectId={projectId}
+                                      captureId={requestedCapture}
+                                    />
+                                  ) : (
+                                    <Suspense
+                                      fallback={
+                                        <p
+                                          className="p-4 text-sm text-muted-foreground"
+                                          role="status"
+                                        >
+                                          {translate("sigTable.loading")}
+                                        </p>
+                                      }
+                                    >
+                                      <SharedSignalingPage
+                                        projectId={projectId}
+                                        initialCapture={requestedCapture}
+                                        initialSeq={signalingPanel.selectedSeq}
+                                        stateTracksV2
+                                        embedded
+                                        persistenceId={`${currentTab.id}.${signalingPanel.id}`}
+                                        syncWorkspaceId={currentTab.id}
+                                        onSelectedSeqChange={(selectedSeq) =>
+                                          updateSignalingPanelSelection(
+                                            signalingPanel.id,
+                                            selectedSeq,
+                                          )
+                                        }
+                                      />
+                                    </Suspense>
+                                  ))}
+                              </div>
+                            </section>
+                          )}
+                        </PanelShell>
+                      ))}
+                    </TableSettingsWorkspaceContext.Provider>
+                  </WorkspaceGrid>
+                  {activeCatalog !== "parameters" &&
+                    !panels.length &&
+                    !selectedMetrics.length &&
+                    !currentTab.signalingPanels?.length && (
+                      <div className="kpi-empty-workspace">
+                        <BarChart3 size={28} />
+                        <h2>{translate("kpi.97f764ab0b74")}</h2>
+                        <p>{translate("kpi.ed0d56673d65")}</p>
+                        <button className="kpi-button primary" onClick={addGraph}>
+                          <Plus size={14} /> {translate("kpi.b8982dc44102")}{" "}
+                        </button>
+                      </div>
                     )}
-                  </TableSettingsWorkspaceContext.Provider>
-                );
-              })()}
-            </div>
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
-      <ProcedureExplorer
-        projectId={projectId}
-        captureIds={analyticCaptureIds}
-        name={procedureExplorerEntry?.item.name ?? ""}
-        procedureTypes={procedureExplorerEntry?.item.procedure_types ?? []}
-        measure={procedureExplorerEntry?.item.procedure_measure}
-        open={procedureExplorerEntry != null}
-        onOpenChange={(open) => {
-          if (!open) setProcedureExplorerCode(null);
-        }}
-        onOpenSignaling={(row: ProcedureRow) => {
-          setProcedureExplorerCode(null);
-          void navigate({
-            to: "/signaling",
-            search: {
-              analysis_scope: "capture",
-              capture_id: row.capture_id,
-              seq: row.start_seq,
-            },
-          } as never);
-        }}
-      />
-      <WorkspaceTabsBar
-        columns={tableColumns}
-        tabs={tabsState.tabs}
-        activeTabId={tabsState.activeTabId}
-        onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}
-        onCreate={() => persistTabs(addTab(tabsState))}
-        onClose={(id) => persistTabs(removeTab(tabsState, id))}
-        onRename={(id, name) => persistTabs(updateTab(tabsState, id, { name }))}
-        onReorder={(from, to) => persistTabs(reorderTab(tabsState, from, to))}
-        onLayoutChange={setLayout}
-        onOverlayToggle={setOverlay}
-      />
-    </main>
-    </PointSyncProvider>
-    </ActiveEventsProvider>
+                  <div id="kpi-workspace-data">
+                    {(() => {
+                      if (!panels.length || dataTableClosedFor === panelsKey) return null;
+                      // A map card never brings a data table with it (user request).
+                      if (
+                        panels.every((panel) => {
+                          const visualization = configFor(panel.entry.item.code).visualization;
+                          // Map cards bring no table; temporal Table cards render their own rows.
+                          return (
+                            visualization === "map" ||
+                            (visualization === "table" && !!panel.entry.item.temporal_source)
+                          );
+                        })
+                      )
+                        return null;
+                      // 1.43.0 — Tableau brut : si au moins un KPI « temporel »
+                      // (temporal_source != null) est sélectionné en mode
+                      // Graphique, on affiche les observations brutes de la
+                      // capture active plutôt que l'agrégat (mandat §8). Les
+                      // KPI task_* gardent leur rendu propre (points sous la
+                      // série) comme avant.
+                      const rawMetrics: KpiRawMetric[] = panels
+                        .filter(
+                          (panel) =>
+                            configFor(panel.entry.item.code).visualization === "graph" &&
+                            !!panel.entry.item.temporal_source,
+                        )
+                        .map((panel) => ({
+                          code: panel.entry.item.code,
+                          label: panel.entry.item.name,
+                          unit: panel.entry.item.unit ?? null,
+                        }));
+                      if (rawMetrics.length > 0) {
+                        return (
+                          <>
+                            {analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                              <section key={memberCaptureId}>
+                                {analysisScope?.type === "superstream" && (
+                                  <p className="kpi-capture-boundary">
+                                    Capture {memberPosition + 1} · {memberCaptureId}
+                                  </p>
+                                )}
+                                <KpiRawDataTable
+                                  projectId={projectId}
+                                  captureId={memberCaptureId}
+                                  metrics={rawMetrics}
+                                />
+                              </section>
+                            ))}
+                          </>
+                        );
+                      }
+                      if (
+                        panels.every((panel) =>
+                          configFor(panel.entry.item.code).visualization.startsWith("task_"),
+                        )
+                      ) {
+                        return (
+                          <p className="p-3 text-xs text-muted-foreground">
+                            {" "}
+                            {translate("kpi.717260829dcc")}{" "}
+                          </p>
+                        );
+                      }
+                      return (
+                        <TableSettingsWorkspaceContext.Provider value={tabsState.activeTabId}>
+                          {analysisScope?.type === "superstream" ? (
+                            analyticCaptureIds.map((memberCaptureId, memberPosition) => (
+                              <section key={memberCaptureId}>
+                                <p className="kpi-capture-boundary">
+                                  Capture {memberPosition + 1} · {memberCaptureId}
+                                </p>
+                                <KpiDataTable
+                                  rows={panels
+                                    .filter((panel) => panel.memberCaptureId === memberCaptureId)
+                                    .flatMap((panel) => panel.rows)}
+                                  selected={selectedRows}
+                                  onSelect={setSelectedRows}
+                                  onClose={() => setDataTableClosedFor(panelsKey)}
+                                />
+                              </section>
+                            ))
+                          ) : (
+                            <KpiDataTable
+                              rows={rows}
+                              selected={selectedRows}
+                              onSelect={setSelectedRows}
+                              onClose={() => setDataTableClosedFor(panelsKey)}
+                            />
+                          )}
+                        </TableSettingsWorkspaceContext.Provider>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+            <ProcedureExplorer
+              projectId={projectId}
+              captureIds={analyticCaptureIds}
+              name={procedureExplorerEntry?.item.name ?? ""}
+              procedureTypes={procedureExplorerEntry?.item.procedure_types ?? []}
+              measure={procedureExplorerEntry?.item.procedure_measure}
+              open={procedureExplorerEntry != null}
+              onOpenChange={(open) => {
+                if (!open) setProcedureExplorerCode(null);
+              }}
+              onOpenSignaling={(row: ProcedureRow) => {
+                setProcedureExplorerCode(null);
+                void navigate({
+                  to: "/signaling",
+                  search: {
+                    analysis_scope: "capture",
+                    capture_id: row.capture_id,
+                    seq: row.start_seq,
+                  },
+                } as never);
+              }}
+            />
+            <WorkspaceTabsBar
+              columns={tableColumns}
+              tabs={tabsState.tabs}
+              activeTabId={tabsState.activeTabId}
+              onSelect={(id) => persistTabs({ ...tabsState, activeTabId: id })}
+              onCreate={() => persistTabs(addTab(tabsState))}
+              onClose={(id) => persistTabs(removeTab(tabsState, id))}
+              onRename={(id, name) => persistTabs(updateTab(tabsState, id, { name }))}
+              onReorder={(from, to) => persistTabs(reorderTab(tabsState, from, to))}
+              onLayoutChange={setLayout}
+              onOverlayToggle={setOverlay}
+            />
+          </main>
+        </PointSyncProvider>
+      </ActiveEventsProvider>
     </WorkspaceTemplatesProvider>
   );
 }

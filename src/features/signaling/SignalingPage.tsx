@@ -34,9 +34,10 @@ import { MapLegendList, MapLegendRow, MapLegendSection } from "@/features/kpi/ma
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
 import { resolveNetworkMapCenter } from "@/features/map/map-center";
 import { selectSignalingCapture } from "./capture-selection";
+import { usePointSync } from "@/features/kpi/point-sync";
 
 import { Group, Panel, Separator } from "react-resizable-panels";
-import type { PanelImperativeHandle } from "react-resizable-panels";
+import type { Layout, PanelImperativeHandle } from "react-resizable-panels";
 import {
   Activity,
   ActivitySquare,
@@ -1105,16 +1106,42 @@ export function SignalingPage({
   initialCapture,
   initialSeq,
   stateTracksV2 = false,
+  embedded = false,
+  persistenceId,
+  syncWorkspaceId,
+  onSelectedSeqChange,
 }: {
   projectId: string;
   initialCapture?: string | undefined;
   initialSeq?: number | undefined;
   stateTracksV2?: boolean;
+  embedded?: boolean;
+  persistenceId?: string | undefined;
+  syncWorkspaceId?: string | undefined;
+  onSelectedSeqChange?: ((seq: number | undefined) => void) | undefined;
 }) {
   const { t } = useTranslation();
+  const pointSync = usePointSync();
+  const inspectionLayoutKey = `bc4.signaling.inspection-layout.v1.${projectId}.${persistenceId ?? "standalone"}`;
+  const [inspectionLayout] = useState<Layout | undefined>(() => {
+    if (!embedded || typeof window === "undefined") return undefined;
+    try {
+      const value = JSON.parse(
+        window.localStorage.getItem(inspectionLayoutKey) ?? "null",
+      ) as unknown;
+      if (!value || typeof value !== "object") return undefined;
+      const layout = value as Layout;
+      return typeof layout["messages"] === "number" && typeof layout["details"] === "number"
+        ? layout
+        : undefined;
+    } catch {
+      return undefined;
+    }
+  });
   const projectQuery = useQuery({
     queryKey: ["project", projectId],
     queryFn: ({ signal }) => getProject(projectId, signal),
+    enabled: !embedded,
     staleTime: 60_000,
   });
   const projectCenter = resolveNetworkMapCenter(projectQuery.data?.center);
@@ -1162,8 +1189,8 @@ export function SignalingPage({
   // Jamais inclus dans un queryKey (ne déclenche aucun refetch des points).
   // Panel map garde la même instance mountée (collapsedSize=0) pour éviter
   // le bug react-resizable-panels de remount dynamique.
-  const [mapVisible, setMapVisible] = useState(true);
-  const [timelineVisible, setTimelineVisible] = useState(true);
+  const [mapVisible, setMapVisible] = useState(!embedded);
+  const [timelineVisible, setTimelineVisible] = useState(!embedded);
   const [inspectionExpanded, setInspectionExpanded] = useState(false);
   const [inspectionVisible, setInspectionVisible] = useState(true);
   const [metricsVisible, setMetricsVisible] = useState(false);
@@ -1295,7 +1322,7 @@ export function SignalingPage({
   }, [metricColSeries.data, metricSelectors]);
   const signalingSummary = useQuery({
     queryKey: ["signaling-rf-summary", projectId, capture],
-    enabled: !!capture,
+    enabled: !!capture && !embedded,
     queryFn: ({ signal }) =>
       getSignaling(projectId, "eventSummary", { capture_id: capture }, signal),
     staleTime: 60000,
@@ -1320,7 +1347,7 @@ export function SignalingPage({
   });
   const captureRadio = useQuery({
     queryKey: ["signaling-rf-radio", projectId, capture],
-    enabled: !!capture,
+    enabled: !!capture && !embedded,
     queryFn: ({ signal }) => {
       if (!capture) throw new Error("Capture unavailable");
       return getMetricRadioSeries(
@@ -1429,7 +1456,7 @@ export function SignalingPage({
   // Independent of the paginated /signaling response; groups per type.
   const procedures = useQuery({
     queryKey: ["signaling-procedures", projectId, capture],
-    enabled: !!capture,
+    enabled: !!capture && !embedded,
     queryFn: ({ signal }) => getSignaling(projectId, "procedures", { capture_id: capture }, signal),
   });
   const availableEventTypes = useMemo(
@@ -1472,7 +1499,11 @@ export function SignalingPage({
     // Avoid the transient [0, 0] request made before overview/summary has
     // supplied the real capture duration. It was immediately superseded by
     // the full-window request and only added load to the API and browser.
-    enabled: !!capture && captureDuration > 0 && timeWindow[1] > timeWindow[0],
+    enabled:
+      !!capture &&
+      (!embedded || seq !== undefined) &&
+      captureDuration > 0 &&
+      timeWindow[1] > timeWindow[0],
     queryFn: ({ signal }) =>
       getSignaling(
         projectId,
@@ -1495,18 +1526,49 @@ export function SignalingPage({
     queryFn: ({ signal }) =>
       getSignaling(projectId, "details", { capture_id: capture, seq }, signal),
   });
-  const initialMessage = useQuery({
-    queryKey: ["signaling-initial-message", projectId, capture, initialSeq],
-    enabled: !!capture && capture === initialCapture && initialSeq !== undefined,
+  const selectedMessage = useQuery({
+    queryKey: ["signaling-selected-message", projectId, capture, seq],
+    enabled:
+      !!capture &&
+      seq !== undefined &&
+      !listing.data?.rows.some((candidate) => candidate.seq === seq),
     queryFn: ({ signal }) =>
-      getSignaling(projectId, "rows", { capture_id: capture, seq: initialSeq, size: 1 }, signal),
+      getSignaling(projectId, "rows", { capture_id: capture, seq, size: 1 }, signal),
     staleTime: Infinity,
   });
   const selected =
     selectedRecord?.capture_id === capture && selectedRecord?.seq === seq
       ? selectedRecord
       : (listing.data?.rows.find((r) => r.seq === seq) ??
-        initialMessage.data?.rows.find((r) => r.seq === seq));
+        selectedMessage.data?.rows.find((r) => r.seq === seq));
+  useEffect(() => {
+    const synced = pointSync.selection;
+    if (
+      !embedded ||
+      !pointSync.enabled ||
+      !synced ||
+      synced.projectId !== projectId ||
+      synced.captureId !== capture ||
+      synced.seq === seq
+    )
+      return;
+    setSelectedRecord(undefined);
+    setSeq(synced.seq);
+    setCursor((current) => ({
+      ...current,
+      selectedTimeS: synced.tRelS ?? current.selectedTimeS,
+      selectedMessageSeq: synced.seq,
+    }));
+    onSelectedSeqChange?.(synced.seq);
+  }, [
+    capture,
+    embedded,
+    onSelectedSeqChange,
+    pointSync.enabled,
+    pointSync.selection,
+    projectId,
+    seq,
+  ]);
   useEffect(() => {
     if (selectionCapture.current && selectionCapture.current !== capture) {
       setSeq(undefined);
@@ -1667,6 +1729,7 @@ export function SignalingPage({
       },
     );
     setSeq(value);
+    onSelectedSeqChange?.(value);
     setCursor({
       selectedTimeS: row?.t_rel_s ?? point?.t_rel_s ?? null,
       hoveredTimeS: null,
@@ -1674,6 +1737,16 @@ export function SignalingPage({
       selectedMessageSeq: value,
     });
     setLinkedMessages([]);
+    if (embedded && syncWorkspaceId && pointSync.enabled) {
+      pointSync.select({
+        projectId,
+        workspaceId: syncWorkspaceId,
+        captureId: capture,
+        seq: value,
+        tRelS: row?.t_rel_s ?? point?.t_rel_s ?? null,
+        source: "signaling",
+      });
+    }
   };
   const error = [caps, listing, timeline, points].find((q) => q.isError)?.error;
   const exportCsv = async () => {
@@ -1755,7 +1828,10 @@ export function SignalingPage({
   );
 
   return (
-    <main className="p-3" data-testid="signaling-page">
+    <main
+      className={embedded ? "h-full min-h-0 p-0" : "p-3"}
+      data-testid={embedded ? "signaling-inspection-embedded" : "signaling-page"}
+    >
       <h1 className="sr-only">{t(stateTracksV2 ? "signalingV2.title" : "signalingV2.stable")}</h1>
 
       {(error || exportError) && (
@@ -1763,14 +1839,21 @@ export function SignalingPage({
           {String(error?.message ?? exportError)}
         </p>
       )}
-      <div className="signaling-workspace">
-        <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-workspace">
+      <div className={`signaling-workspace${embedded ? " signaling-workspace-embedded" : ""}`}>
+        <Group
+          orientation={narrow ? "vertical" : "horizontal"}
+          id={
+            embedded ? `signaling-workspace-${persistenceId ?? "embedded"}` : "signaling-workspace"
+          }
+          defaultLayout={embedded ? { filters: 0, workspace: 100 } : undefined}
+        >
           <Panel
             id="filters"
+            className={embedded ? "hidden" : undefined}
             panelRef={filtersPanelRef}
-            defaultSize={narrow ? "34%" : 300}
-            minSize={sidebarCollapsed ? 0 : narrow ? 280 : 280}
-            maxSize={narrow ? "50%" : 360}
+            defaultSize={embedded ? 0 : narrow ? "34%" : 300}
+            minSize={embedded ? 0 : sidebarCollapsed ? 0 : narrow ? 280 : 280}
+            maxSize={embedded ? 0 : narrow ? "50%" : 360}
             collapsible
             collapsedSize={44}
             onResize={() =>
@@ -1913,18 +1996,23 @@ export function SignalingPage({
               />
             )}
           </Panel>
-          <Separator className="signaling-separator" aria-label="Largeur des filtres" />
+          <Separator
+            className={embedded ? "hidden" : "signaling-separator"}
+            aria-label="Largeur des filtres"
+          />
           <Panel id="workspace" minSize="55%">
             <Group
               orientation="vertical"
-              id="signaling-rows"
+              id={embedded ? `signaling-rows-${persistenceId ?? "embedded"}` : "signaling-rows"}
+              defaultLayout={embedded ? { overview: 0, inspection: 100, metrics: 0 } : undefined}
               className={inspectionExpanded ? "signaling-inspection-expanded" : undefined}
             >
               <Panel
                 id="overview"
+                className={embedded ? "hidden" : undefined}
                 panelRef={overviewPanelRef}
-                defaultSize="58%"
-                minSize={timelineVisible || mapVisible ? 190 : 0}
+                defaultSize={embedded ? 0 : "58%"}
+                minSize={embedded ? 0 : timelineVisible || mapVisible ? 190 : 0}
                 collapsible
                 collapsedSize={0}
                 data-testid="signaling-overview-panel"
@@ -2118,13 +2206,14 @@ export function SignalingPage({
                 </Group>
               </Panel>
               <Separator
-                className="signaling-separator"
+                className={embedded ? "hidden" : "signaling-separator"}
                 aria-label="Hauteur de la vue d’ensemble"
               />
               <Panel
                 id="inspection"
                 panelRef={inspectionPanelRef}
-                minSize={inspectionVisible ? 300 : 0}
+                defaultSize={embedded ? "100%" : undefined}
+                minSize={embedded ? 0 : inspectionVisible ? 300 : 0}
                 collapsible
                 collapsedSize={0}
                 onResize={() =>
@@ -2132,7 +2221,23 @@ export function SignalingPage({
                 }
                 data-testid="signaling-inspection-panel"
               >
-                <Group orientation={narrow ? "vertical" : "horizontal"} id="signaling-inspection">
+                <Group
+                  orientation={narrow ? "vertical" : "horizontal"}
+                  id={
+                    embedded
+                      ? `signaling-inspection-${persistenceId ?? "embedded"}`
+                      : "signaling-inspection"
+                  }
+                  defaultLayout={inspectionLayout}
+                  onLayoutChanged={(layout, meta) => {
+                    if (!embedded || !meta.isUserInteraction) return;
+                    try {
+                      window.localStorage.setItem(inspectionLayoutKey, JSON.stringify(layout));
+                    } catch {
+                      /* storage unavailable */
+                    }
+                  }}
+                >
                   <Panel id="messages" defaultSize="70%" minSize={narrow ? 220 : "35%"}>
                     <section
                       className="sig-messages signaling-pane flex flex-col overflow-hidden rounded-lg border bg-card"
@@ -2805,9 +2910,13 @@ export function SignalingPage({
                   </Panel>
                 </Group>
               </Panel>
-              <Separator className="signaling-separator" aria-label={t("signalingV2.metrics")} />
+              <Separator
+                className={embedded ? "hidden" : "signaling-separator"}
+                aria-label={t("signalingV2.metrics")}
+              />
               <Panel
                 id="metrics"
+                className={embedded ? "hidden" : undefined}
                 panelRef={metricsPanelRef}
                 defaultSize={0}
                 minSize={metricsVisible ? 220 : 0}

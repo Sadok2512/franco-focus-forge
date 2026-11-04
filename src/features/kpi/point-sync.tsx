@@ -18,7 +18,7 @@ export type SyncedPoint = {
   tRelS?: number | null;
   lat?: number;
   lng?: number;
-  source: "map" | "graph" | "table";
+  source: "map" | "graph" | "table" | "signaling";
 };
 
 type PointSyncContextValue = {

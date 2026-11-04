@@ -4,7 +4,7 @@
 // (G11 perf). Pas de nouveau stockage back ; URL = source de vérité.
 export type WorkspaceLayout = "auto" | "1" | "2" | "3";
 export type SignalingPanelKind = "l3" | "timeline";
-export type SignalingPanel = { id: string; kind: SignalingPanelKind };
+export type SignalingPanel = { id: string; kind: SignalingPanelKind; selectedSeq?: number };
 export type WorkspaceTab = {
   id: string;
   name: string;
@@ -54,7 +54,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
       i: t.id,
       n: t.name,
       c: t.codes,
-       m: t.metricCodes,
+      m: t.metricCodes,
       a: t.activeCode,
       l: t.layout,
       o: t.overlay ? 1 : 0,
@@ -68,8 +68,7 @@ export function encodeTabs(state: WorkspaceTabsState): string {
 
 export function decodeTabs(encoded: string): WorkspaceTabsState | null {
   try {
-    const json =
-      typeof atob === "function" ? decodeURIComponent(escape(atob(encoded))) : encoded;
+    const json = typeof atob === "function" ? decodeURIComponent(escape(atob(encoded))) : encoded;
     const parsed: unknown = JSON.parse(json);
     if (!parsed || typeof parsed !== "object") return null;
     const obj = parsed as { t?: unknown[]; a?: unknown };
@@ -78,11 +77,7 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
     for (const raw of obj.t) {
       if (!raw || typeof raw !== "object") continue;
       const r = raw as Record<string, unknown>;
-      if (
-        typeof r["i"] !== "string" ||
-        typeof r["n"] !== "string" ||
-        !Array.isArray(r["c"])
-      )
+      if (typeof r["i"] !== "string" || typeof r["n"] !== "string" || !Array.isArray(r["c"]))
         continue;
       const codes = (r["c"] as unknown[]).filter((v): v is string => typeof v === "string");
       const activeCode = typeof r["a"] === "string" ? r["a"] : null;
@@ -97,7 +92,15 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
             const panel = value as Record<string, unknown>;
             const kind = panel["kind"] === "signaling" ? "l3" : panel["kind"];
             return typeof panel["id"] === "string" && (kind === "l3" || kind === "timeline")
-              ? [{ id: panel["id"], kind } as SignalingPanel]
+              ? [
+                  {
+                    id: panel["id"],
+                    kind,
+                    ...(typeof panel["selectedSeq"] === "number"
+                      ? { selectedSeq: panel["selectedSeq"] }
+                      : {}),
+                  } as SignalingPanel,
+                ]
               : [];
           })
         : [];
@@ -145,8 +148,7 @@ export function addTab(state: WorkspaceTabsState, nameHint?: string): WorkspaceT
 export function removeTab(state: WorkspaceTabsState, tabId: string): WorkspaceTabsState {
   const next = state.tabs.filter((t) => t.id !== tabId);
   if (!next.length) return newTabsState();
-  const activeTabId =
-    state.activeTabId === tabId ? (next[0]?.id ?? "") : state.activeTabId;
+  const activeTabId = state.activeTabId === tabId ? (next[0]?.id ?? "") : state.activeTabId;
   return { tabs: next, activeTabId };
 }
 
