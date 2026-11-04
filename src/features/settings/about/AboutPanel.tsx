@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { getAbout } from "@/lib/api/client";
-import { CHANGELOG_RAW, releaseNotes } from "@/lib/version";
+import { APP_VERSION, CHANGELOG_RAW, releaseNotes } from "@/lib/version";
 import { ErrorState, LoadingSkeleton } from "@/components/bc4/States";
 import { btn, Card, errMsg, Modal, SettingsSection } from "../shared";
 
@@ -17,10 +17,10 @@ export function AboutPanel() {
   if (q.isLoading) return <LoadingSkeleton className="h-64" />;
   if (q.isError) return <ErrorState message={errMsg(q.error)} onRetry={() => q.refetch()} />;
   const a = q.data!;
-  const notes = releaseNotes(a.version);
+  const notes = releaseNotes(APP_VERSION);
   const rows: [string, string][] = [
     ["Application", a.app_name],
-    ["Version frontend (SemVer)", `v${a.version}`],
+    ["Version frontend (SemVer)", `v${APP_VERSION}`],
     ["Numéro de build", a.build_number ?? "N/D"],
     ["Date de build", a.build_date ?? "N/D"],
     ["Environnement", ENV[a.environment]],
@@ -56,7 +56,7 @@ export function AboutPanel() {
             Voir le changelog
           </button>
         </Card>
-        <Card title={`Nouveautés de la v${a.version}`}>
+        <Card title={`Nouveautés de la v${APP_VERSION}`}>
           {notes.length ? (
             <ul className="list-disc space-y-1.5 pl-4 text-xs">
               {notes.map((n) => (
