@@ -1,3 +1,13 @@
+## 1.138.2 (patch) — Recherche Metrics interruptible — 2026-11-04 (Agent BC1)
+
+- Exécute le filtrage et le montage de l'arbre Metrics dans une transition
+  React interruptible : une nouvelle frappe prioritaire ne reste plus bloquée
+  derrière le rendu des branches correspondant à la recherche précédente.
+- Porte le debounce à 400 ms (au-delà de l'intervalle humain reproduit à
+  300 ms) et conserve la valeur, le focus, le curseur, les
+  sélections et le catalogue courant sans nouvelle requête API.
+- SemVer front : **PATCH 1.138.2** ; backend et catalogue inchangés.
+
 ## 1.138.1 (patch) — Bouton d’ouverture visible sur la Map — 2026-11-04 (BC4)
 
 - Affiche directement sur chaque Map un bouton **Nouvel onglet**, avec icône et libellé, pour ouvrir la carte détachée sans passer par le menu `⋯`. L’action du menu reste disponible et la synchronisation entre onglets est inchangée.

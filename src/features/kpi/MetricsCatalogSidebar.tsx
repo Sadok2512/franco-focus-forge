@@ -17,6 +17,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useTransition,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -55,7 +56,10 @@ import { MAP_METRIC_MIME } from "./map-metric-drop";
 const rootKey = "__root__";
 const STAR = "★";
 const MAX_METRICS = 64;
-const SEARCH_DEBOUNCE_MS = 180;
+// A 250 ms delay still fired between ordinary 300 ms keystrokes and mounted
+// the broad `e` / `ea` result trees. Wait for a real typing pause instead;
+// the input itself remains synchronous and the eventual render interruptible.
+const SEARCH_DEBOUNCE_MS = 400;
 // 1.78.1 — strip des badges source `[PHRATE #1]`, `[CI #2]`, `[CELLMEAS #5]`...
 // bakés dans node.label par le back (le back garde la source pour sa logique
 // de binding via SOURCE_RE ; côté UI on affiche le nom nu).
@@ -384,10 +388,16 @@ export function MetricsCatalogSidebar({
   // filter is debounced.
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [isSearchPending, startSearchTransition] = useTransition();
   useEffect(() => {
-    const timer = window.setTimeout(() => setDebouncedSearch(search), SEARCH_DEBOUNCE_MS);
+    const timer = window.setTimeout(() => {
+      // Filtering can expose hundreds of nested rows. Keep that render
+      // interruptible: an urgent input update must win immediately when the
+      // user resumes typing after a short pause.
+      startSearchTransition(() => setDebouncedSearch(search));
+    }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [search]);
+  }, [search, startSearchTransition]);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const [copied, setCopied] = useState<string | null>(null);
   const [info, setInfo] = useState<MetricCatalogNode | null>(null);
@@ -1024,7 +1034,11 @@ export function MetricsCatalogSidebar({
           </button>
         </div>
       )}
-      <div className="kpi-tree" data-testid="unified-metrics-tree">
+      <div
+        className="kpi-tree"
+        data-testid="unified-metrics-tree"
+        aria-busy={isSearchPending}
+      >
         <ul className="p-2 space-y-1">{tree.map((node) => renderNode(node))}</ul>
         {debouncedSearch.trim() && matching?.size === 0 && (
           <p className="p-3 text-xs text-muted-foreground" role="status">
