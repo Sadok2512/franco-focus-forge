@@ -26,7 +26,17 @@ vi.mock("@/lib/api/client", () => ({
 vi.mock("@/features/kpi/RsrpDiagnosisDialog", () => ({
   RsrpDiagnosisDialog: () => null,
 }));
-import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
+import { DriveRsrpLayer, driveSourceFeatures } from "@/features/kpi/DriveRsrpLayer";
+
+describe("embedded Drive source", () => {
+  const features = [1, 2, 3].map((seq) => ({ properties: { seq } }));
+
+  it("does not duplicate host map points and retains only the active ring feature", () => {
+    expect(driveSourceFeatures(features, true)).toEqual([]);
+    expect(driveSourceFeatures(features, true, 2)).toEqual([{ properties: { seq: 2 } }]);
+    expect(driveSourceFeatures(features, false)).toBe(features);
+  });
+});
 
 function mapDouble() {
   const source = { setData: vi.fn() };

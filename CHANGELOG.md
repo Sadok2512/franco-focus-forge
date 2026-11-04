@@ -1,3 +1,8 @@
+## 1.138.6 (patch) — Source Map unique — 2026-11-04 (BC4)
+
+- Évite de charger les milliers de mesures une seconde fois dans la source MapLibre interne de sélection : lorsque la Map hôte dessine déjà les points, la couche radio conserve uniquement le point actif nécessaire à l’anneau et aux paramètres RF.
+- Préserve tous les points de mesure, les liens publiés, la légende, les sites et la sélection exacte, sans clustering ni échantillonnage.
+
 ## 1.138.5 (patch) — Ajout Analytics sans requêtes croisées — 2026-11-04 (BC4)
 
 - Envoie à l’agrégat Histogram le code métrique décodé, sans suffixe de cellule, afin d’éviter le HTTP 422 `unknown_metric`.

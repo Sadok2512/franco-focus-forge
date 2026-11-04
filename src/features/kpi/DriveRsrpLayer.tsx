@@ -107,6 +107,20 @@ export type SelectedDrivePoint = MeasurementPointIdentity & { lng: number; lat: 
 
 type PointLinkEntry = { point: DriveRsrpPoint; links: RadioCellLink[] };
 
+/** A host KPI map already paints every measurement. Keep only the selected
+ * feature in the Drive source so MapLibre does not parse and index the same
+ * thousands of points a second time merely to draw the selection ring. */
+export function driveSourceFeatures<T extends { properties: { seq: number } }>(
+  features: T[],
+  hostOwnsPoints: boolean,
+  selectedSeq?: number,
+): T[] {
+  if (!hostOwnsPoints) return features;
+  if (selectedSeq === undefined) return [];
+  const selected = features.find((feature) => feature.properties.seq === selectedSeq);
+  return selected ? [selected] : [];
+}
+
 /** Return at most the serving evidence for the exact active measurement point. */
 export function activeServingPointLink(
   entries: readonly PointLinkEntry[],
@@ -345,6 +359,11 @@ export function DriveRsrpLayer({
       })),
     [drivePoints, effectiveCaptureId],
   );
+  const hostOwnsPoints = hidePoints && Boolean(selectionLayerId);
+  const sourceFeatures = useMemo(
+    () => driveSourceFeatures(features, hostOwnsPoints, selectedPoint?.seq),
+    [features, hostOwnsPoints, selectedPoint?.seq],
+  );
   useEffect(() => {
     const routePositions = gps.data?.markers?.length ? gps.data.markers : allPositions;
     const captureRoute = routePositions
@@ -525,6 +544,8 @@ export function DriveRsrpLayer({
           type: "geojson",
           data: { type: "FeatureCollection", features: [] },
         });
+      }
+      if (!hostOwnsPoints && !map.getLayer(LAYER)) {
         const before = map.getStyle()?.layers?.find((l) => l.id.startsWith("bc4-sites"))?.id;
         map.addLayer(
           {
@@ -565,7 +586,7 @@ export function DriveRsrpLayer({
       }
       map.moveLayer(SELECTED_LAYER);
       const source = map.getSource(SOURCE) as GeoJSONSource | undefined;
-      source?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
+      source?.setData({ type: "FeatureCollection", features: prefs.on ? sourceFeatures : [] });
       const linkSource = map.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
       linkSource?.setData({
         type: "FeatureCollection",
@@ -575,19 +596,20 @@ export function DriveRsrpLayer({
         if (map.getLayer(spec.id))
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }
-      if (!map.getLayer(LAYER)) return;
-      map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
-      applyGpsOnly();
-      map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
+      if (map.getLayer(LAYER)) {
+        map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
+        applyGpsOnly();
+        map.setPaintProperty(LAYER, "circle-radius", metricRadius(metricSize));
+        map.setFilter(LAYER, [
+          "all",
+          ["!=", ["get", "rsrp_class"], null],
+          ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
+        ]);
+      }
       map.setLayoutProperty(SELECTED_LAYER, "visibility", prefs.on ? "visible" : "none");
       map.setFilter(SELECTED_LAYER, [
         "all",
         ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
-        ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
-      ]);
-      map.setFilter(LAYER, [
-        "all",
-        ["!=", ["get", "rsrp_class"], null],
         ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
       ]);
       promoteServingLayers();
@@ -603,7 +625,7 @@ export function DriveRsrpLayer({
       map.off("idle", promoteServingLayers);
       if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
-  }, [map, features, linkFeatures, prefs, metricSize, selectedPoint]);
+  }, [map, sourceFeatures, linkFeatures, prefs, metricSize, selectedPoint, hostOwnsPoints]);
 
   // Serving site circle: a pulsing ring at the API-published serving cell
   // position of the selected point (never inferred).
@@ -680,10 +702,10 @@ export function DriveRsrpLayer({
 
   useEffect(() => {
     const src = map?.getSource(SOURCE) as GeoJSONSource | undefined;
-    src?.setData({ type: "FeatureCollection", features: prefs.on ? features : [] });
+    src?.setData({ type: "FeatureCollection", features: prefs.on ? sourceFeatures : [] });
     const links = map?.getSource(LINK_SOURCE) as GeoJSONSource | undefined;
     links?.setData({ type: "FeatureCollection", features: prefs.on ? linkFeatures : [] });
-  }, [map, features, linkFeatures, prefs.on]);
+  }, [map, sourceFeatures, linkFeatures, prefs.on]);
 
   const frame = () => {
     if (!map || !features.length) return;
@@ -775,14 +797,14 @@ export function DriveRsrpLayer({
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
     };
-    const clickLayers = [LAYER, SELECTED_LAYER, selectionLayerId].filter(
+    const clickLayers = [hostOwnsPoints ? undefined : LAYER, SELECTED_LAYER, selectionLayerId].filter(
       (layer, index, layers): layer is string => !!layer && layers.indexOf(layer) === index,
     );
     for (const layer of clickLayers) map.on("click", layer, click);
     return () => {
       for (const layer of clickLayers) map.off("click", layer, click);
     };
-  }, [drivePoints, effectiveCaptureId, map, projectId, selectionLayerId]);
+  }, [drivePoints, effectiveCaptureId, hostOwnsPoints, map, projectId, selectionLayerId]);
 
   // A selection is scoped to one project/capture/map workspace. Never carry
   // its line or card into another context, even when sequence numbers match.
