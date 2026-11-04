@@ -283,7 +283,10 @@ function Workspace({
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
   const addSignalingPanel = (kind: "signaling" | "timeline") => {
-    const panel = { id: `${kind}-${crypto.randomUUID()}`, kind };
+    const panel = {
+      id: `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
+      kind,
+    };
     persistTabs(
       updateTab(tabsState, currentTab.id, {
         signalingPanels: [...(currentTab.signalingPanels ?? []), panel],
