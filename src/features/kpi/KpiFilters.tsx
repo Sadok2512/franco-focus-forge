@@ -1,5 +1,6 @@
 import { Activity, Check, ChevronDown, ListVideo, Link2, RotateCcw } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { FilterSelect } from "@/features/dict-v2/FilterSelect";
 import { Switch } from "@/components/ui/switch";
 import type { ProjectKpiFilters, KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
@@ -66,6 +67,7 @@ export function KpiFilters({
   onAddSignalingPanel?: (kind: SignalingPanelKind) => void;
 }) {
   const { t } = useTranslation();
+  const [displayOpen, setDisplayOpen] = useState(false);
   const pointSync = usePointSync();
   const update = (key: FilterKey, values: string[]) =>
     onChange({ ...draft, values: { ...draft.values, [key]: values } });
@@ -174,7 +176,7 @@ export function KpiFilters({
           <WorkspaceTemplatesMenu />
         </div>
 
-        <DropdownMenu>
+        <DropdownMenu open={displayOpen} onOpenChange={setDisplayOpen}>
           <DropdownMenuTrigger asChild>
             <button type="button" className="kpi-button" data-testid="kpi-display-menu">
               <ListVideo size={14} aria-hidden="true" /> {t("panel.display")}
@@ -182,10 +184,10 @@ export function KpiFilters({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onSelect={() => onAddSignalingPanel?.("signaling")}>
+            <DropdownMenuItem onSelect={() => { setDisplayOpen(false); onAddSignalingPanel?.("signaling"); }}>
               <ListVideo aria-hidden="true" /> {t("panel.signalingView")}
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onAddSignalingPanel?.("timeline")}>
+            <DropdownMenuItem onSelect={() => { setDisplayOpen(false); onAddSignalingPanel?.("timeline"); }}>
               <Activity aria-hidden="true" /> {t("panel.timeline")}
             </DropdownMenuItem>
           </DropdownMenuContent>
