@@ -86,6 +86,7 @@ export function RfTimeline({
   timeWindow,
   onWindow,
   stateTracksV2 = false,
+  excludedEventTypes = [],
 }: {
   projectId: string;
   captureId: string;
@@ -101,6 +102,7 @@ export function RfTimeline({
   timeWindow?: TimeWindow;
   onWindow?: (window: TimeWindow) => void;
   stateTracksV2?: boolean;
+  excludedEventTypes?: string[];
 }) {
   const { t, i18n } = useTranslation();
   const [layers, setLayers] = useState(protocols);
@@ -139,15 +141,7 @@ export function RfTimeline({
   const changeWindow = onWindow ?? localWindow.setWindow;
   const detailEnabled = shouldLoadTimelineDetail(overview.isSuccess, duration, visibleWindow);
   const events = useQuery({
-    queryKey: [
-      "signaling-rf",
-      projectId,
-      captureId,
-      technology,
-      direction,
-      search,
-      visibleWindow,
-    ],
+    queryKey: ["signaling-rf", projectId, captureId, technology, direction, search, visibleWindow],
     enabled: detailEnabled,
     queryFn: ({ signal }) =>
       getSignaling(
@@ -205,26 +199,32 @@ export function RfTimeline({
     () => (overview.data?.task_events ?? []) as unknown as RfEvent[],
     [overview.data?.task_events],
   );
-  const eligibleEvents = useMemo(
-    () => {
-      const source = mergeTimelineEvents(
-        overviewStateEvents,
-        overviewTaskEvents,
-        events.data?.events ?? [],
+  const eligibleEvents = useMemo(() => {
+    const source = mergeTimelineEvents(
+      overviewStateEvents,
+      overviewTaskEvents,
+      events.data?.events ?? [],
+    );
+    return source.filter((e) => {
+      if (excludedEventTypes.includes(e.type)) return false;
+      if (!e.attrs.protocol) return true;
+      return (
+        layers.includes(e.attrs.protocol) &&
+        (e.attrs.protocol === "Procedures" ||
+          allowedProtocols.includes(
+            e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
+          )) &&
+        e.t_rel_s !== null
       );
-      return source.filter(
-        (e) =>
-          !e.attrs.protocol ||
-          (layers.includes(e.attrs.protocol) &&
-            (e.attrs.protocol === "Procedures" ||
-              allowedProtocols.includes(
-                e.attrs.protocol === "Nemo" ? "Événements Nemo" : e.attrs.protocol,
-              )) &&
-            e.t_rel_s !== null),
-      );
-    },
-    [events.data, overviewStateEvents, overviewTaskEvents, layers, allowedProtocols],
-  );
+    });
+  }, [
+    events.data,
+    overviewStateEvents,
+    overviewTaskEvents,
+    layers,
+    allowedProtocols,
+    excludedEventTypes,
+  ]);
   const states = useMemo(
     () => (stateTracksV2 ? provenStates(overviewStateEvents, captureId) : []),
     [stateTracksV2, overviewStateEvents, captureId],

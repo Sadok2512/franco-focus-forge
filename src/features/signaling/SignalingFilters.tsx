@@ -69,6 +69,8 @@ export function SignalingFilters(props: {
   // dans l'option si kind='scanner'.
   captures: { capture_id: string; label: string; kind?: "ue" | "scanner" | null | undefined }[];
   procedures: { id: string; type: string; seq_start: number; seq_end: number | null }[];
+  eventTypes: { type: string; count: number }[];
+  excludedEventTypes: string[];
   counts?: Record<string, number> | undefined;
   total?: number | undefined;
   selection: MessageSelection;
@@ -82,12 +84,12 @@ export function SignalingFilters(props: {
   onDirection: (v: string) => void;
   onCapture: (v: string) => void;
   onProcedure: (v: string) => void;
+  onEventType: (type: string, checked: boolean) => void;
   onSearch: (v: string) => void;
   onSize: (v: number) => void;
   onReset: () => void;
   onCollapse: () => void;
   viewControls?: ReactNode;
-
 }) {
   const { t } = useTranslation();
   return (
@@ -119,7 +121,6 @@ export function SignalingFilters(props: {
             {props.viewControls}
           </div>
         )}
-
       </header>
       <div className="sig-filters-sections">
         <FilterSection icon={Radio} title={t("sigFilters.technology")}>
@@ -211,7 +212,8 @@ export function SignalingFilters(props: {
           >
             {props.captures.map((c) => (
               <option key={c.capture_id} value={c.capture_id}>
-                {c.kind === "scanner" ? "[Scanner] " : ""}{c.label}
+                {c.kind === "scanner" ? "[Scanner] " : ""}
+                {c.label}
               </option>
             ))}
           </select>
@@ -232,6 +234,23 @@ export function SignalingFilters(props: {
               </option>
             ))}
           </select>
+        </FilterSection>
+        <FilterSection icon={Network} title={t("sigFilters.eventTypes")}>
+          <div className="sig-filter-layers" data-testid="signaling-event-type-filter">
+            {props.eventTypes.map(({ type, count }) => (
+              <label key={type}>
+                <Checkbox
+                  checked={!props.excludedEventTypes.includes(type)}
+                  aria-label={t("sigFilters.eventTypeToggle", { type })}
+                  onCheckedChange={(value) => props.onEventType(type, value === true)}
+                />
+                <span className="min-w-0 truncate">
+                  {t(`signaling.types.${type}`, { defaultValue: type })}
+                </span>
+                <span className="sig-occurrence">{count.toLocaleString()}</span>
+              </label>
+            ))}
+          </div>
         </FilterSection>
         <FilterSection
           icon={Search}

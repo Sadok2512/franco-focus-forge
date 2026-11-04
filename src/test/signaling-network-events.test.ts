@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isAllowedNetworkEvent } from "@/features/signaling/network-events";
+import {
+  EXPLICIT_NETWORK_EVENT_TYPES,
+  eventTypeCounts,
+  isAllowedNetworkEvent,
+} from "@/features/signaling/network-events";
 
 describe("Network Events presentation allowlist", () => {
   it("includes LTE and NR RRC Request events", () => {
@@ -18,8 +22,36 @@ describe("Network Events presentation allowlist", () => {
       expect(isAllowedNetworkEvent({ type, label: "" })).toBe(true);
   });
 
+  it("explicitly includes every Mobilité 3b event type", () => {
+    expect(EXPLICIT_NETWORK_EVENT_TYPES).toEqual([
+      "PSCELL_CHANGE",
+      "SCG_ADD",
+      "SCG_RELEASE",
+      "RRRE",
+      "RRF",
+      "TUF",
+      "LUF",
+      "PBF",
+    ]);
+    for (const type of EXPLICIT_NETWORK_EVENT_TYPES)
+      expect(isAllowedNetworkEvent({ type, label: type })).toBe(true);
+  });
+
+  it("counts exactly the API population by type", () => {
+    expect(eventTypeCounts([{ type: "HOS" }, { type: "HOA" }, { type: "HOS" }])).toEqual([
+      { type: "HOA", count: 1 },
+      { type: "HOS", count: 2 },
+    ]);
+  });
+
   it("excludes other network events and does not mutate source data", () => {
-    const events = ["RRCConnectionSetupComplete", "RRCReconfiguration", "NAS Attach Request", "handover", "measurement_report"].map(type => ({ type, label: type }));
+    const events = [
+      "RRCConnectionSetupComplete",
+      "RRCReconfiguration",
+      "NAS Attach Request",
+      "handover",
+      "measurement_report",
+    ].map((type) => ({ type, label: type }));
     expect(events.filter(isAllowedNetworkEvent)).toEqual([]);
     expect(events).toHaveLength(5);
   });

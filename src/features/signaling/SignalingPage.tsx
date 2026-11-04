@@ -13,7 +13,13 @@ import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
 import type { FeatureCollection } from "geojson";
-import { getSignaling, getAllSignalingRows, getMetricSeries, getProject } from "@/lib/api/client";
+import {
+  getAllSignalingEvents,
+  getSignaling,
+  getAllSignalingRows,
+  getMetricSeries,
+  getProject,
+} from "@/lib/api/client";
 import {
   type RfEvent,
   type SignalingTimeline,
@@ -23,11 +29,7 @@ import {
 import { useCaptureContext, setCaptureContext } from "@/lib/capture-context";
 import { KpiMapOSM } from "@/features/kpi/KpiMapOSM";
 import { DriveRsrpLayer } from "@/features/kpi/DriveRsrpLayer";
-import {
-  MapLegendList,
-  MapLegendRow,
-  MapLegendSection,
-} from "@/features/kpi/map-legend";
+import { MapLegendList, MapLegendRow, MapLegendSection } from "@/features/kpi/map-legend";
 import { rsrpPositionsFrom } from "@/features/kpi/drive-rsrp";
 import { resolveNetworkMapCenter } from "@/features/map/map-center";
 import { selectSignalingCapture } from "./capture-selection";
@@ -74,12 +76,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MetricsCatalogSidebar } from "@/features/kpi/MetricsCatalogSidebar";
 import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 import { DecoderTree } from "./DecoderTree";
@@ -111,6 +108,7 @@ import {
 } from "./message-columns";
 import { SignalingFilters } from "./SignalingFilters";
 import { SignalingMetricsSection } from "./SignalingMetricsSection";
+import { eventTypeCounts } from "./network-events";
 import {
   filterMessageRows,
   messageTypes,
@@ -768,6 +766,7 @@ function Timeline({
 
 function SignalMap({
   data,
+  events,
   onSelect,
   selectedSeq,
   projectId,
@@ -775,6 +774,7 @@ function SignalMap({
   projectCenter,
 }: {
   data: SignalingPoints;
+  events: RfEvent[];
   onSelect: (seq: number) => void;
   selectedSeq: number | undefined;
   projectId: string;
@@ -799,6 +799,34 @@ function SignalMap({
   /** Positions the server already published for this capture, so an RSRP row
    * without its own GPS can still be drawn at its exact sequence. */
   const rsrpPositions = useMemo(() => rsrpPositionsFrom(data.points, data.markers), [data]);
+  const eventFeatures = useMemo<FeatureCollection>(
+    () => ({
+      type: "FeatureCollection",
+      features: events.flatMap((event) => {
+        const lat = event.attrs["lat"];
+        const lng = event.attrs["lng"];
+        if (typeof lat !== "number" || typeof lng !== "number") return [];
+        return [
+          {
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [lng, lat] },
+            properties: {
+              id: event.id,
+              seq: event.seq,
+              type: event.type,
+              color:
+                event.outcome === "fail" || event.kind === "fail"
+                  ? "#DC2626"
+                  : event.outcome === "ok"
+                    ? "#16A34A"
+                    : "#F97316",
+            },
+          },
+        ];
+      }),
+    }),
+    [events],
+  );
   useEffect(() => {
     if (!map) return;
     let disposed = false;
@@ -865,10 +893,28 @@ function SignalMap({
           },
         });
       }
+      const eventSource = map.getSource("signaling-network-events") as GeoJSONSource | undefined;
+      if (eventSource) eventSource.setData(eventFeatures);
+      else {
+        map.addSource("signaling-network-events", { type: "geojson", data: eventFeatures });
+        map.addLayer({
+          id: "signaling-network-events",
+          type: "circle",
+          source: "signaling-network-events",
+          paint: {
+            "circle-radius": 7,
+            "circle-color": ["get", "color"],
+            "circle-stroke-width": 2,
+            "circle-stroke-color": "#fff",
+          },
+        });
+      }
     };
     if (map.isStyleLoaded()) void render();
     else map.once("load", render);
     const click = (e: import("maplibre-gl").MapMouseEvent) => {
+      if (map.queryRenderedFeatures(e.point, { layers: ["signaling-network-events"] }).length)
+        return;
       const f = map.queryRenderedFeatures(e.point, { layers: ["signaling-points"] })[0];
       if (!f) return;
       callback.current(Number(f.properties["seq"]));
@@ -882,13 +928,58 @@ function SignalMap({
         new ml.Popup().setLngLat(e.lngLat).setDOMContent(el).addTo(map);
       });
     };
+    const clickEvent = (e: import("maplibre-gl").MapMouseEvent) => {
+      const feature = map.queryRenderedFeatures(e.point, {
+        layers: ["signaling-network-events"],
+      })[0];
+      const event = events.find((candidate) => candidate.id === feature?.properties["id"]);
+      if (!feature || !event) return;
+      callback.current(event.seq);
+      void import("maplibre-gl").then((ml) => {
+        if (disposed) return;
+        const card = document.createElement("div");
+        card.className = "grid gap-1 text-xs";
+        const add = (label: string, value: unknown) => {
+          if (value === null || value === undefined || value === "") return;
+          const row = document.createElement("div");
+          const key = document.createElement("strong");
+          key.textContent = `${label}: `;
+          row.append(key, document.createTextNode(String(value)));
+          card.append(row);
+        };
+        add(
+          t("signaling.tooltip.type"),
+          t(`signaling.types.${event.type}`, { defaultValue: event.type }),
+        );
+        add(
+          t("signaling.tooltip.status"),
+          event.outcome === "ok"
+            ? t("signaling.tooltip.success")
+            : event.outcome === "fail" || event.kind === "fail"
+              ? t("signaling.tooltip.failure")
+              : t("signaling.tooltip.unknown"),
+        );
+        add(t("signaling.tooltip.cause"), event.cause);
+        add(t("signaling.tooltip.sourcePci"), event.attrs["source_pci"]);
+        add(t("signaling.tooltip.sourceEarfcn"), event.attrs["source_earfcn"]);
+        add(t("signaling.tooltip.targetPci"), event.attrs["target_pci"] ?? event.attrs["pci"]);
+        add(
+          t("signaling.tooltip.targetEarfcn"),
+          event.attrs["target_earfcn"] ?? event.attrs["earfcn"],
+        );
+        add(t("signaling.tooltip.seq"), event.seq);
+        new ml.Popup().setLngLat(e.lngLat).setDOMContent(card).addTo(map);
+      });
+    };
     map.on("click", "signaling-points", click);
+    map.on("click", "signaling-network-events", clickEvent);
     return () => {
       disposed = true;
       map.off("load", render);
       map.off("click", "signaling-points", click);
+      map.off("click", "signaling-network-events", clickEvent);
     };
-  }, [map, data]);
+  }, [map, data, eventFeatures, events, t]);
   useEffect(() => {
     if (!map) return;
     let marker: import("maplibre-gl").Marker | undefined;
@@ -1144,6 +1235,7 @@ export function SignalingPage({
     [seq, setSeq] = useState<number | undefined>(initialSeq),
     [sort, setSort] = useState("seq"),
     [order, setOrder] = useState("asc");
+  const [excludedEventTypes, setExcludedEventTypes] = useState<string[]>([]);
   const [hover, setHover] = useState<string[]>([]),
     [exportError, setExportError] = useState("");
   const [cursor, setCursor] = useState<TimelineCursorState>({
@@ -1334,6 +1426,28 @@ export function SignalingPage({
     enabled: !!capture,
     queryFn: ({ signal }) => getSignaling(projectId, "procedures", { capture_id: capture }, signal),
   });
+  const eventPopulation = useQuery({
+    queryKey: ["signaling-event-types", projectId, capture],
+    enabled: !!capture,
+    queryFn: ({ signal }) =>
+      getAllSignalingEvents(
+        projectId,
+        { capture_id: capture, view: "legacy", limit: 2000 },
+        signal,
+      ),
+    staleTime: 60000,
+  });
+  const availableEventTypes = useMemo(
+    () => eventTypeCounts(eventPopulation.data?.events ?? []),
+    [eventPopulation.data?.events],
+  );
+  const visibleMapEvents = useMemo(
+    () =>
+      (eventPopulation.data?.events ?? []).filter(
+        (event) => !excludedEventTypes.includes(event.type),
+      ),
+    [eventPopulation.data?.events, excludedEventTypes],
+  );
   const points = useQuery({
     queryKey: ["signaling-points", projectId, filtered, timeWindow],
     enabled: !!capture,
@@ -1377,6 +1491,7 @@ export function SignalingPage({
       setSelectedRecord(undefined);
       setCursor({ ...emptyCursor, selectedTimeS: 0 });
       setLinkedMessages([]);
+      setExcludedEventTypes([]);
     }
     selectionCapture.current = capture;
   }, [capture]);
@@ -1712,6 +1827,8 @@ export function SignalingPage({
                 size={size}
                 captures={caps.data?.captures ?? []}
                 procedures={procedures.data?.procedures ?? []}
+                eventTypes={availableEventTypes}
+                excludedEventTypes={excludedEventTypes}
                 counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
                 total={listing.data?.total}
                 selection={messageSelection}
@@ -1742,6 +1859,15 @@ export function SignalingPage({
                   setProcedure(v);
                   resetPage();
                 }}
+                onEventType={(type, checked) => {
+                  setExcludedEventTypes((current) =>
+                    checked
+                      ? current.filter((candidate) => candidate !== type)
+                      : current.includes(type)
+                        ? current
+                        : [...current, type],
+                  );
+                }}
                 onSearch={(v) => {
                   setSearch(v);
                   resetPage();
@@ -1759,6 +1885,7 @@ export function SignalingPage({
                   setProcedure("");
                   setRange(undefined);
                   setMessageSelection(null);
+                  setExcludedEventTypes([]);
                   setPage(1);
                 }}
               />
@@ -1844,6 +1971,7 @@ export function SignalingPage({
                           timeWindow={timeWindow}
                           onWindow={setTimeWindow}
                           stateTracksV2={stateTracksV2}
+                          excludedEventTypes={excludedEventTypes}
                           onTime={(time) => {
                             setCursor({
                               selectedTimeS: time,
@@ -1953,6 +2081,7 @@ export function SignalingPage({
                       {mapVisible && points.data ? (
                         <SignalMap
                           data={points.data}
+                          events={visibleMapEvents}
                           onSelect={chooseSeq}
                           selectedSeq={seq}
                           projectId={projectId}
@@ -2073,9 +2202,7 @@ export function SignalingPage({
                               <DropdownMenuLabel>{t("sigTable.columnsLabel")}</DropdownMenuLabel>
                               {knownOrder(colConfig).map((c, i) => {
                                 const metricMeta = isMetricCol(c)
-                                  ? colConfig.metrics.find(
-                                      (m) => metricColId(m.selector) === c,
-                                    )
+                                  ? colConfig.metrics.find((m) => metricColId(m.selector) === c)
                                   : undefined;
                                 const mandatory =
                                   !metricMeta && MANDATORY_COLS.includes(c as ColKey);
@@ -2256,9 +2383,7 @@ export function SignalingPage({
                             <tr>
                               {shownCols.map((c) => {
                                 const metricMeta = isMetricCol(c)
-                                  ? colConfig.metrics.find(
-                                      (m) => metricColId(m.selector) === c,
-                                    )
+                                  ? colConfig.metrics.find((m) => metricColId(m.selector) === c)
                                   : undefined;
                                 const def = COLUMNS.find((d) => d.key === c) ?? {
                                   key: c as ColKey,

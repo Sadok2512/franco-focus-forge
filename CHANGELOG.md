@@ -1,3 +1,5 @@
+## 1.136.1 (patch) — Mobilité 3b visible : attributs radio, infobulle carte et filtre par type — 2026-11-04 (BC4)
+
 ## 1.136.0 (minor) — Mobilité étape 3 : icônes + i18n events mobilité — 2026-11-03 (Agent BC5)
 
 - **Front 1.135.0 → 1.136.0** (minor — nouveaux event types reconnus).

@@ -653,7 +653,15 @@
       "status": "Status",
       "seq": "Seq",
       "gpsGap": "GPS gap (seq)",
-      "subtype": "Subtype"
+      "subtype": "Subtype",
+      "type": "Type",
+      "success": "Success",
+      "failure": "Failure",
+      "unknown": "Unknown",
+      "sourcePci": "Source PCI",
+      "sourceEarfcn": "Source EARFCN",
+      "targetPci": "Target PCI",
+      "targetEarfcn": "Target EARFCN"
     }
   },
   "rfTimeline": {
@@ -800,6 +808,8 @@
     "capture": "Capture",
     "procedure": "Procedure",
     "allProcedures": "All ({{count}})",
+    "eventTypes": "Event types",
+    "eventTypeToggle": "Display {{type}} events",
     "search": "Search",
     "searchScope": "Search across the capture",
     "searchPlaceholder": "Search messages…",
