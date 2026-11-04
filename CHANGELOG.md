@@ -1,3 +1,8 @@
+## 1.139.1 (patch) — Liens cellule sélectionnée sur la Map — 2026-11-04 (BC4)
+
+- Rétablit les liens Serving, Neighbour et NR anchor publiés par l'API pour le point sélectionné, au lieu de ne transmettre que Serving à MapLibre.
+- Respecte les trois interrupteurs indépendants de la légende et ne déduit aucune association cellule/site côté frontend.
+
 ## 1.139.0 (minor) — Suppression de Signaling View autonome — 2026-11-04 (BC4)
 
 - Supprime Signaling View de la navigation et redirige ses anciennes URL vers KPI Analytics.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  activePointCellLinks,
   activeServingPointLink,
   type MeasurementPointIdentity,
 } from "@/features/kpi/DriveRsrpLayer";
@@ -23,6 +24,13 @@ const neighbour: RadioCellLink = {
   confidence: "probable",
 };
 
+const anchor: RadioCellLink = {
+  kind: "nr_anchor",
+  lat: 48.4,
+  lng: 2.4,
+  confidence: "proven",
+};
+
 const selected = (seq: number): MeasurementPointIdentity => ({
   projectId: "project-a",
   captureId: "capture-a",
@@ -31,7 +39,7 @@ const selected = (seq: number): MeasurementPointIdentity => ({
 
 describe("active serving point link", () => {
   const entries = [
-    { point: point(10), links: [serving, neighbour] },
+    { point: point(10), links: [serving, neighbour, anchor] },
     { point: point(20), links: [neighbour] },
   ];
 
@@ -45,6 +53,11 @@ describe("active serving point link", () => {
     expect(active?.link.kind).toBe("serving");
   });
 
+  it("keeps serving, neighbour and NR anchor evidence for the selected point", () => {
+    const active = activePointCellLinks(entries, selected(10), "project-a", "capture-a");
+    expect(active).toEqual({ point: entries[0]?.point, links: [serving, neighbour, anchor] });
+  });
+
   it("returns no line when the selected point has no serving evidence", () => {
     expect(activeServingPointLink(entries, selected(20), "project-a", "capture-a")).toBeUndefined();
   });
@@ -52,5 +65,7 @@ describe("active serving point link", () => {
   it("rejects a selection from another project or capture", () => {
     expect(activeServingPointLink(entries, selected(10), "project-b", "capture-a")).toBeUndefined();
     expect(activeServingPointLink(entries, selected(10), "project-a", "capture-b")).toBeUndefined();
+    expect(activePointCellLinks(entries, selected(10), "project-b", "capture-a")).toBeUndefined();
+    expect(activePointCellLinks(entries, selected(10), "project-a", "capture-b")).toBeUndefined();
   });
 });

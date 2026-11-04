@@ -121,13 +121,13 @@ export function driveSourceFeatures<T extends { properties: { seq: number } }>(
   return selected ? [selected] : [];
 }
 
-/** Return at most the serving evidence for the exact active measurement point. */
-export function activeServingPointLink(
+/** Return every backend-published cell link for the exact active point. */
+export function activePointCellLinks(
   entries: readonly PointLinkEntry[],
   selected: MeasurementPointIdentity | null,
   projectId: string,
   captureId?: string,
-): { point: DriveRsrpPoint; link: RadioCellLink } | undefined {
+): PointLinkEntry | undefined {
   if (
     !selected ||
     !captureId ||
@@ -135,7 +135,17 @@ export function activeServingPointLink(
     selected.captureId !== captureId
   )
     return undefined;
-  const entry = entries.find(({ point }) => point.seq === selected.seq);
+  return entries.find(({ point }) => point.seq === selected.seq);
+}
+
+/** Return at most the serving evidence for the exact active measurement point. */
+export function activeServingPointLink(
+  entries: readonly PointLinkEntry[],
+  selected: MeasurementPointIdentity | null,
+  projectId: string,
+  captureId?: string,
+): { point: DriveRsrpPoint; link: RadioCellLink } | undefined {
+  const entry = activePointCellLinks(entries, selected, projectId, captureId);
   const link = entry?.links.find((candidate) => candidate.kind === "serving");
   return entry && link ? { point: entry.point, link } : undefined;
 }
@@ -387,11 +397,16 @@ export function DriveRsrpLayer({
     () => activeServingPointLink(pointLinks, selectedPoint, projectId, effectiveCaptureId),
     [effectiveCaptureId, pointLinks, projectId, selectedPoint],
   );
+  const activeLinks = useMemo(
+    () => activePointCellLinks(pointLinks, selectedPoint, projectId, effectiveCaptureId),
+    [effectiveCaptureId, pointLinks, projectId, selectedPoint],
+  );
   const linkFeatures = useMemo(() => {
-    if (!activeServing || !prefs.links.serving || !effectiveCaptureId) return [];
-    const { point, link } = activeServing;
-    return [
-      {
+    if (!activeLinks || !effectiveCaptureId) return [];
+    const { point, links } = activeLinks;
+    return links
+      .filter((link) => prefs.links[link.kind])
+      .map((link) => ({
         type: "Feature" as const,
         geometry: {
           type: "LineString" as const,
@@ -410,9 +425,8 @@ export function DriveRsrpLayer({
           selected: true,
           has_selection: true,
         },
-      },
-    ];
-  }, [activeServing, effectiveCaptureId, prefs.links.serving, projectId]);
+      }));
+  }, [activeLinks, effectiveCaptureId, prefs.links, projectId]);
   const linkCounts = useMemo(
     () =>
       pointLinks
