@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  activeMetricMapCellLinks,
   activeMetricMapServingLink,
   installMetricMapSource,
   metricMapFeatures,
@@ -283,6 +284,24 @@ describe("Map selection keeps its own panel", () => {
         "44621571bccc",
       ),
     ).toEqual([]);
+    expect(
+      activeMetricMapCellLinks(
+        allLinks,
+        { projectId: "project-a", captureId: "44621571bccc", seq: 7 },
+        "project-a",
+        "44621571bccc",
+        { serving: true, neighbour: true, nr_anchor: true },
+      ).map((feature) => feature.properties.link_type),
+    ).toEqual(["serving", "neighbour", "nr_anchor"]);
+    expect(
+      activeMetricMapCellLinks(
+        allLinks,
+        { projectId: "project-a", captureId: "44621571bccc", seq: 7 },
+        "project-a",
+        "44621571bccc",
+        { serving: true, neighbour: false, nr_anchor: true },
+      ).map((feature) => feature.properties.link_type),
+    ).toEqual(["serving", "nr_anchor"]);
     const first = toggleMetricMapPoint(null, "project-a", "44621571bccc", 7);
     expect(first).toEqual({ projectId: "project-a", captureId: "44621571bccc", seq: 7 });
     const replacement = toggleMetricMapPoint(first, "project-a", "44621571bccc", 8);

@@ -370,6 +370,28 @@ export function activeMetricMapServingLink(
     : [];
 }
 
+/** Publish every API-proven link enabled for the exact selected map point.
+ * Keeping the selection scope avoids drawing thousands of segments while
+ * making the existing serving/neighbour/NR-anchor switches effective. */
+export function activeMetricMapCellLinks(
+  features: ReturnType<typeof metricMapLinkFeatures>,
+  selected: MetricMapPointIdentity | null,
+  projectId: string,
+  captureId: string,
+  enabled: Record<MetricLinkKind, boolean>,
+) {
+  if (!selected || selected.projectId !== projectId || selected.captureId !== captureId) return [];
+  return features
+    .filter(
+      (feature) =>
+        feature.properties.seq === selected.seq && enabled[feature.properties.link_type],
+    )
+    .map((feature) => ({
+      ...feature,
+      properties: { ...feature.properties, selected: true, has_selection: true },
+    }));
+}
+
 /** Distinct categorical colours (one per code, e.g. DCI format). */
 export const CATEGORY_COLORS = [
   "#2563eb",
@@ -653,10 +675,14 @@ function MetricMap({
   const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
   const links = useMemo(
     () =>
-      preferences.links.serving
-        ? activeMetricMapServingLink(allLinks, selectedPoint, projectId, captureId)
-        : [],
-    [allLinks, captureId, preferences.links.serving, projectId, selectedPoint],
+      activeMetricMapCellLinks(
+        allLinks,
+        selectedPoint,
+        projectId,
+        captureId,
+        preferences.links,
+      ),
+    [allLinks, captureId, preferences.links, projectId, selectedPoint],
   );
   useEffect(() => {
     if (!map) return;

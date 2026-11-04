@@ -1,3 +1,12 @@
+## 1.138.9 (patch) — Liens serving et ancre NR sur la Map — 2026-11-04 (Agent BC1)
+
+- Rétablit, pour le point de mesure sélectionné, le segment vers la cellule
+  serving publié par l'API et ajoute le segment vers l'ancre NR ainsi que les
+  voisines lorsque leurs interrupteurs sont actifs.
+- Les trois familles restent indépendantes, limitées au `(project_id,
+  capture_id, seq)` sélectionné et aucun lien n'est déduit côté frontend.
+- SemVer front : **PATCH 1.138.9** ; backend, catalogue et données RF inchangés.
+
 ## 1.138.8 (patch) — Metrics Catalogue lisible et Active only — 2026-11-04 (BC4)
 
 - Remplace le curseur de déplacement par un pointeur sur les métriques de la sidebar, sans modifier leur glisser-déposer.
