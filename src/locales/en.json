@@ -940,6 +940,7 @@
   "panel": {
     "display": "Display",
     "signalingView": "Signaling View",
+    "l3Signaling": "L3 Signaling",
     "timeline": "Timeline",
     "collapse_catalogue": "Collapse catalogue",
     "expand_catalogue": "Expand catalogue",

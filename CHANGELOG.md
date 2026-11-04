@@ -1,3 +1,9 @@
+## 1.138.12 (patch) — Sections L3 et Timeline dans KPI — 2026-11-04 (BC4)
+
+- Remplace l’intégration de la page Signaling complète par deux panneaux ciblés : la table L3 Signaling et la Timeline RF.
+- Ne monte plus dans KPI la sidebar Signaling, la carte, l’inspecteur ni les autres sections de la page autonome.
+- Migre automatiquement les panneaux Signaling créés en 1.138.11 vers la section L3 et conserve la page Signaling autonome.
+
 ## 1.138.11 (patch) — Signaling dans les onglets KPI — 2026-11-04 (BC4)
 
 - Ajoute au menu supérieur KPI un menu Affichage pour créer des panneaux Signaling View et Timeline.

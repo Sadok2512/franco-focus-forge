@@ -3,7 +3,7 @@
 // (1/2/3/auto colonnes). Les requêtes ne se déclenchent que sur l'onglet actif
 // (G11 perf). Pas de nouveau stockage back ; URL = source de vérité.
 export type WorkspaceLayout = "auto" | "1" | "2" | "3";
-export type SignalingPanelKind = "signaling" | "timeline";
+export type SignalingPanelKind = "l3" | "timeline";
 export type SignalingPanel = { id: string; kind: SignalingPanelKind };
 export type WorkspaceTab = {
   id: string;
@@ -95,9 +95,9 @@ export function decodeTabs(encoded: string): WorkspaceTabsState | null {
         ? r["s"].flatMap((value) => {
             if (!value || typeof value !== "object") return [];
             const panel = value as Record<string, unknown>;
-            return typeof panel["id"] === "string" &&
-              (panel["kind"] === "signaling" || panel["kind"] === "timeline")
-              ? [{ id: panel["id"], kind: panel["kind"] } as SignalingPanel]
+            const kind = panel["kind"] === "signaling" ? "l3" : panel["kind"];
+            return typeof panel["id"] === "string" && (kind === "l3" || kind === "timeline")
+              ? [{ id: panel["id"], kind } as SignalingPanel]
               : [];
           })
         : [];

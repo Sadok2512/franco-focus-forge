@@ -70,7 +70,7 @@ import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
 import { KpiOverlayCard } from "./KpiOverlayCard";
 import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
-import { SignalingPage } from "@/features/signaling/SignalingPage";
+import { KpiL3SignalingSection, KpiTimelineSection } from "./KpiSignalingSections";
 import {
   MAX_GRAPHS,
   appliedPayload,
@@ -282,7 +282,7 @@ function Workspace({
     persistTabs(updateTab(tabsState, tabId, { layout }));
   const setOverlay = (tabId: string, overlay: boolean) =>
     persistTabs(updateTab(tabsState, tabId, { overlay }));
-  const addSignalingPanel = (kind: "signaling" | "timeline") => {
+  const addSignalingPanel = (kind: "l3" | "timeline") => {
     const panel = {
       id: `${kind}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`,
       kind,
@@ -1441,7 +1441,7 @@ function Workspace({
                     workspaceId={currentTab.id}
                     id={`signaling:${signalingPanel.id}`}
                     natural={panels.length + visibleGraphMetricCount + index}
-                    defaultTitle={signalingPanel.kind === "timeline" ? translate("panel.timeline") : translate("panel.signalingView")}
+                    defaultTitle={signalingPanel.kind === "timeline" ? translate("panel.timeline") : translate("panel.l3Signaling")}
                     fullRow
                     onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
                   >
@@ -1454,7 +1454,7 @@ function Workspace({
                           </button>
                         </header>
                         <div className="kpi-signaling-panel-body">
-                          <SignalingPage projectId={projectId} initialCapture={requestedCapture} stateTracksV2 embedded isolatedCapture initialView={signalingPanel.kind} />
+                          {requestedCapture && (signalingPanel.kind === "timeline" ? <KpiTimelineSection projectId={projectId} captureId={requestedCapture} /> : <KpiL3SignalingSection projectId={projectId} captureId={requestedCapture} />)}
                         </div>
                       </section>
                     )}
