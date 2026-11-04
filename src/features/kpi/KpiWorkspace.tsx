@@ -80,7 +80,6 @@ import { KpiGraphCard } from "./KpiGraphCard";
 import { KpiDataTable } from "./KpiDataTable";
 import { KpiOverlayCard } from "./KpiOverlayCard";
 import { KpiRawDataTable, type KpiRawMetric } from "./KpiRawDataTable";
-import { KpiTimelineSection } from "./KpiSignalingSections";
 import {
   MAX_GRAPHS,
   appliedPayload,
@@ -124,6 +123,12 @@ import "./workspace.css";
 const SharedSignalingPage = lazy(() =>
   import("@/features/signaling/SignalingPage").then(({ SignalingPage }) => ({
     default: SignalingPage,
+  })),
+);
+
+const SharedTimelineSection = lazy(() =>
+  import("./KpiSignalingSections").then(({ KpiTimelineSection }) => ({
+    default: KpiTimelineSection,
   })),
 );
 
@@ -1506,7 +1511,6 @@ function Workspace({
                               ? translate("panel.timeline")
                               : translate("panel.l3Signaling")
                           }
-                          fullRow={signalingPanel.kind === "timeline"}
                           defaultSpan={3}
                           onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
                         >
@@ -1518,27 +1522,25 @@ function Workspace({
                               <header className="kpi-signaling-panel-header">
                                 <h3>{title}</h3>
                                 <div className="flex items-center gap-1">
-                                  {signalingPanel.kind === "l3" && (
-                                    <MapPanelWidthContext.Consumer>
-                                      {(width) =>
-                                        width && (
-                                          <button
-                                            type="button"
-                                            className="kpi-icon"
-                                            onClick={width.toggle}
-                                            aria-label={translate("panel.width")}
-                                            title={translate("panel.width")}
-                                          >
-                                            {width.wide ? (
-                                              <Minimize2 size={15} aria-hidden="true" />
-                                            ) : (
-                                              <Maximize2 size={15} aria-hidden="true" />
-                                            )}
-                                          </button>
-                                        )
-                                      }
-                                    </MapPanelWidthContext.Consumer>
-                                  )}
+                                  <MapPanelWidthContext.Consumer>
+                                    {(width) =>
+                                      width && (
+                                        <button
+                                          type="button"
+                                          className="kpi-icon"
+                                          onClick={width.toggle}
+                                          aria-label={translate("panel.width")}
+                                          title={translate("panel.width")}
+                                        >
+                                          {width.wide ? (
+                                            <Minimize2 size={15} aria-hidden="true" />
+                                          ) : (
+                                            <Maximize2 size={15} aria-hidden="true" />
+                                          )}
+                                        </button>
+                                      )
+                                    }
+                                  </MapPanelWidthContext.Consumer>
                                   <button
                                     type="button"
                                     className="kpi-icon"
@@ -1552,10 +1554,21 @@ function Workspace({
                               <div className="kpi-signaling-panel-body">
                                 {requestedCapture &&
                                   (signalingPanel.kind === "timeline" ? (
-                                    <KpiTimelineSection
-                                      projectId={projectId}
-                                      captureId={requestedCapture}
-                                    />
+                                    <Suspense
+                                      fallback={
+                                        <p
+                                          className="p-4 text-sm text-muted-foreground"
+                                          role="status"
+                                        >
+                                          {translate("sigTable.loading")}
+                                        </p>
+                                      }
+                                    >
+                                      <SharedTimelineSection
+                                        projectId={projectId}
+                                        captureId={requestedCapture}
+                                      />
+                                    </Suspense>
                                   ) : (
                                     <Suspense
                                       fallback={

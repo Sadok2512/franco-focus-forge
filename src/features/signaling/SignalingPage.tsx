@@ -1862,139 +1862,146 @@ export function SignalingPage({
               )
             }
           >
-            {sidebarCollapsed ? (
-              <aside
-                className="signaling-pane flex h-full w-full flex-col items-center gap-2 rounded-lg border bg-card py-3"
-                data-testid="signaling-sidebar-rail"
-              >
-                <button
-                  type="button"
-                  className="kpi-icon"
-                  title="Afficher les filtres"
-                  aria-label="Afficher les filtres"
-                  aria-expanded="false"
-                  onClick={toggleSidebar}
+            {!embedded &&
+              (sidebarCollapsed ? (
+                <aside
+                  className="signaling-pane flex h-full w-full flex-col items-center gap-2 rounded-lg border bg-card py-3"
+                  data-testid="signaling-sidebar-rail"
                 >
-                  <ChevronRight size={16} />
-                </button>
-                <SlidersHorizontal size={16} className="text-muted-foreground" aria-hidden="true" />
-                <Button
-                  asChild
-                  variant="ghost"
-                  size="icon"
-                  className="kpi-icon"
-                  aria-label={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
-                  title={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
-                >
-                  <Link
-                    to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
-                    search={(previous) => ({ ...previous, capture_id: capture, seq })}
+                  <button
+                    type="button"
+                    className="kpi-icon"
+                    title="Afficher les filtres"
+                    aria-label="Afficher les filtres"
+                    aria-expanded="false"
+                    onClick={toggleSidebar}
                   >
-                    <Eye size={16} />
-                  </Link>
-                </Button>
-                <button
-                  type="button"
-                  className="kpi-icon"
-                  onClick={toggleTimeline}
-                  aria-pressed={timelineVisible}
-                  aria-label={t("signalingV2.timeline")}
-                  data-testid="signaling-timeline-toggle"
-                  title={
-                    timelineVisible ? t("signalingV2.hideTimeline") : t("signalingV2.showTimeline")
-                  }
-                >
-                  {timelineVisible ? <Activity size={16} /> : <ActivitySquare size={16} />}
-                </button>
-                <button
-                  type="button"
-                  className="kpi-icon"
-                  onClick={toggleMap}
-                  aria-pressed={mapVisible}
-                  aria-label={t("signalingV2.map")}
-                  data-testid="signaling-map-toggle"
-                  title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
-                >
-                  {mapVisible ? <MapPin size={16} /> : <MapPinOff size={16} />}
-                </button>
-              </aside>
-            ) : (
-              <SignalingFilters
-                viewControls={viewControls}
+                    <ChevronRight size={16} />
+                  </button>
+                  <SlidersHorizontal
+                    size={16}
+                    className="text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <Button
+                    asChild
+                    variant="ghost"
+                    size="icon"
+                    className="kpi-icon"
+                    aria-label={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                    title={t(stateTracksV2 ? "signalingV2.stable" : "signalingV2.open")}
+                  >
+                    <Link
+                      to={stateTracksV2 ? "/signaling" : "/signaling-v2"}
+                      search={(previous) => ({ ...previous, capture_id: capture, seq })}
+                    >
+                      <Eye size={16} />
+                    </Link>
+                  </Button>
+                  <button
+                    type="button"
+                    className="kpi-icon"
+                    onClick={toggleTimeline}
+                    aria-pressed={timelineVisible}
+                    aria-label={t("signalingV2.timeline")}
+                    data-testid="signaling-timeline-toggle"
+                    title={
+                      timelineVisible
+                        ? t("signalingV2.hideTimeline")
+                        : t("signalingV2.showTimeline")
+                    }
+                  >
+                    {timelineVisible ? <Activity size={16} /> : <ActivitySquare size={16} />}
+                  </button>
+                  <button
+                    type="button"
+                    className="kpi-icon"
+                    onClick={toggleMap}
+                    aria-pressed={mapVisible}
+                    aria-label={t("signalingV2.map")}
+                    data-testid="signaling-map-toggle"
+                    title={mapVisible ? t("signalingV2.hideMap") : t("signalingV2.showMap")}
+                  >
+                    {mapVisible ? <MapPin size={16} /> : <MapPinOff size={16} />}
+                  </button>
+                </aside>
+              ) : (
+                <SignalingFilters
+                  viewControls={viewControls}
 
-                layers={layers}
-                protocols={protocols}
-                technology={technology}
-                direction={direction}
-                search={search}
-                procedure={procedure}
-                capture={capture}
-                size={size}
-                captures={caps.data?.captures ?? []}
-                procedures={procedures.data?.procedures ?? []}
-                eventTypes={availableEventTypes}
-                excludedEventTypes={excludedEventTypes}
-                counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
-                total={listing.data?.total}
-                selection={messageSelection}
-                types={types}
-                catalogLoading={catalog.isPending}
-                catalogError={catalog.isError}
-                onRequestTypes={() => {
-                  setCatalogRequested(true);
-                  if (catalog.isError) void catalog.refetch();
-                }}
-                onApply={(value) => {
-                  setMessageSelection(value);
-                }}
-                onTechnology={(v) => {
-                  setTechnology(v);
-                  resetPage();
-                }}
-                onProtocols={(v) => {
-                  setProtocols(v);
-                  resetPage();
-                }}
-                onDirection={(v) => {
-                  setDirection(v);
-                  resetPage();
-                }}
-                onCapture={chooseCapture}
-                onProcedure={(v) => {
-                  setProcedure(v);
-                  resetPage();
-                }}
-                onEventType={(type, checked) => {
-                  setExcludedEventTypes((current) =>
-                    checked
-                      ? current.filter((candidate) => candidate !== type)
-                      : current.includes(type)
-                        ? current
-                        : [...current, type],
-                  );
-                }}
-                onSearch={(v) => {
-                  setSearch(v);
-                  resetPage();
-                }}
-                onSize={(v) => {
-                  setSize(v);
-                  setPage(1);
-                }}
-                onCollapse={toggleSidebar}
-                onReset={() => {
-                  setTechnology("");
-                  setProtocols(layers);
-                  setDirection("");
-                  setSearch("");
-                  setProcedure("");
-                  setRange(undefined);
-                  setMessageSelection(null);
-                  setExcludedEventTypes([]);
-                  setPage(1);
-                }}
-              />
-            )}
+                  layers={layers}
+                  protocols={protocols}
+                  technology={technology}
+                  direction={direction}
+                  search={search}
+                  procedure={procedure}
+                  capture={capture}
+                  size={size}
+                  captures={caps.data?.captures ?? []}
+                  procedures={procedures.data?.procedures ?? []}
+                  eventTypes={availableEventTypes}
+                  excludedEventTypes={excludedEventTypes}
+                  counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
+                  total={listing.data?.total}
+                  selection={messageSelection}
+                  types={types}
+                  catalogLoading={catalog.isPending}
+                  catalogError={catalog.isError}
+                  onRequestTypes={() => {
+                    setCatalogRequested(true);
+                    if (catalog.isError) void catalog.refetch();
+                  }}
+                  onApply={(value) => {
+                    setMessageSelection(value);
+                  }}
+                  onTechnology={(v) => {
+                    setTechnology(v);
+                    resetPage();
+                  }}
+                  onProtocols={(v) => {
+                    setProtocols(v);
+                    resetPage();
+                  }}
+                  onDirection={(v) => {
+                    setDirection(v);
+                    resetPage();
+                  }}
+                  onCapture={chooseCapture}
+                  onProcedure={(v) => {
+                    setProcedure(v);
+                    resetPage();
+                  }}
+                  onEventType={(type, checked) => {
+                    setExcludedEventTypes((current) =>
+                      checked
+                        ? current.filter((candidate) => candidate !== type)
+                        : current.includes(type)
+                          ? current
+                          : [...current, type],
+                    );
+                  }}
+                  onSearch={(v) => {
+                    setSearch(v);
+                    resetPage();
+                  }}
+                  onSize={(v) => {
+                    setSize(v);
+                    setPage(1);
+                  }}
+                  onCollapse={toggleSidebar}
+                  onReset={() => {
+                    setTechnology("");
+                    setProtocols(layers);
+                    setDirection("");
+                    setSearch("");
+                    setProcedure("");
+                    setRange(undefined);
+                    setMessageSelection(null);
+                    setExcludedEventTypes([]);
+                    setPage(1);
+                  }}
+                />
+              ))}
           </Panel>
           <Separator
             className={embedded ? "hidden" : "signaling-separator"}
@@ -2017,193 +2024,195 @@ export function SignalingPage({
                 collapsedSize={0}
                 data-testid="signaling-overview-panel"
               >
-                <Group orientation="horizontal" id="signaling-overview">
-                  <Panel
-                    id="timeline"
-                    panelRef={timelinePanelRef}
-                    defaultSize={60}
-                    minSize={timelineVisible ? 20 : 0}
-                    collapsible
-                    collapsedSize={0}
-                    onResize={() =>
-                      syncFromPanel(timelinePanelRef, timelineVisible, setTimelineVisible)
-                    }
-                    data-testid="signaling-timeline-panel"
-                  >
-                    <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
-                      {timelineView === "ribbon" && capture ? (
-                        <EventRibbon
-                          key={capture}
-                          projectId={projectId}
-                          captureId={capture}
-                          selectedSeq={seq}
-                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
-                          onTime={(time) =>
-                            setCursor((current) => ({
-                              ...current,
-                              selectedTimeS: time,
-                              selectedEventId: null,
-                            }))
-                          }
-                          duration={captureDuration}
-                          timeWindow={timeWindow}
-                          onSelect={(e) => {
-                            // Spec signaling_timeline §interactions : clic →
-                            // sélectionne pivot_seq (ou le seq lui-même si pas
-                            // de pivot), surlignes messages liés dans la
-                            // liste, ouvre l'arbre ASN.1 sur le pivot. On
-                            // réutilise chooseSeq qui déjà met à jour seq +
-                            // selected pour le highlight et ouvre /details.
-                            const target = e.pivot_seq ?? e.seq;
-                            chooseSeq(target);
-                            setCursor({
-                              selectedTimeS: e.t_rel_s,
-                              hoveredTimeS: null,
-                              selectedEventId: e.id,
-                              selectedMessageSeq: target,
-                            });
-                            setSelectedRecord({
-                              capture_id: capture,
-                              seq: target,
-                              t_rel_s: e.t_rel_s,
-                              message_name: e.label,
-                              protocol: "",
-                            });
-                          }}
-                        />
-                      ) : timelineView === "rf" && capture ? (
-                        <RfTimeline
-                          key={capture}
-                          projectId={projectId}
-                          captureId={capture}
-                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
-                          selectedEventId={cursor.selectedEventId}
-                          timeWindow={timeWindow}
-                          onWindow={setTimeWindow}
-                          stateTracksV2={stateTracksV2}
-                          excludedEventTypes={excludedEventTypes}
-                          onTime={(time) => {
-                            setCursor({
-                              selectedTimeS: time,
-                              hoveredTimeS: null,
-                              selectedEventId: null,
-                              selectedMessageSeq: time === null ? null : (seq ?? null),
-                            });
-                            setLinkedMessages([]);
-                            if (time === null) {
-                              setSeq(undefined);
-                              setSelectedRecord(undefined);
+                {!embedded && (
+                  <Group orientation="horizontal" id="signaling-overview">
+                    <Panel
+                      id="timeline"
+                      panelRef={timelinePanelRef}
+                      defaultSize={60}
+                      minSize={timelineVisible ? 20 : 0}
+                      collapsible
+                      collapsedSize={0}
+                      onResize={() =>
+                        syncFromPanel(timelinePanelRef, timelineVisible, setTimelineVisible)
+                      }
+                      data-testid="signaling-timeline-panel"
+                    >
+                      <section className="signaling-pane flex flex-col rounded-lg border bg-card p-3">
+                        {timelineView === "ribbon" && capture ? (
+                          <EventRibbon
+                            key={capture}
+                            projectId={projectId}
+                            captureId={capture}
+                            selectedSeq={seq}
+                            selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
+                            onTime={(time) =>
+                              setCursor((current) => ({
+                                ...current,
+                                selectedTimeS: time,
+                                selectedEventId: null,
+                              }))
                             }
-                          }}
-                          technology={technology}
-                          direction={direction}
-                          search={search}
-                          allowedProtocols={protocols}
-                          onRange={(r) => {
-                            setRange(r);
-                            resetPage();
-                          }}
-                          onSelect={(e, sourceSeq) => {
-                            const target = sourceSeq ?? eventMessage(e);
-                            setLinkedMessages(e.linked_seqs);
-                            setCursor({
-                              selectedTimeS: e.t_rel_s,
-                              hoveredTimeS: null,
-                              selectedEventId: e.id,
-                              selectedMessageSeq: target,
-                            });
-                            if (target === null || !capture) return;
-                            const row = listing.data?.rows.find((r) => r.seq === target);
-                            setSeq(target);
-                            setSelectedRecord(
-                              row ?? {
+                            duration={captureDuration}
+                            timeWindow={timeWindow}
+                            onSelect={(e) => {
+                              // Spec signaling_timeline §interactions : clic →
+                              // sélectionne pivot_seq (ou le seq lui-même si pas
+                              // de pivot), surlignes messages liés dans la
+                              // liste, ouvre l'arbre ASN.1 sur le pivot. On
+                              // réutilise chooseSeq qui déjà met à jour seq +
+                              // selected pour le highlight et ouvre /details.
+                              const target = e.pivot_seq ?? e.seq;
+                              chooseSeq(target);
+                              setCursor({
+                                selectedTimeS: e.t_rel_s,
+                                hoveredTimeS: null,
+                                selectedEventId: e.id,
+                                selectedMessageSeq: target,
+                              });
+                              setSelectedRecord({
                                 capture_id: capture,
                                 seq: target,
                                 t_rel_s: e.t_rel_s,
-                                message_name:
-                                  typeof e.attrs["source_message"] === "string"
-                                    ? e.attrs["source_message"]
-                                    : e.label,
-                                protocol: e.attrs.protocol ?? "",
-                              },
-                            );
-                            if (!row)
-                              void getSignaling(projectId, "rows", {
-                                ...filtered,
-                                seq: target,
-                                page,
-                                size,
-                                sort,
-                                order,
-                              })
-                                .then((data) => {
-                                  const selectedRow = data.rows.find((r) => r.seq === target);
-                                  if (selectedRow) setSelectedRecord(selectedRow);
-                                  if (data.selected_page !== null && data.selected_page !== page)
-                                    setPage(data.selected_page);
+                                message_name: e.label,
+                                protocol: "",
+                              });
+                            }}
+                          />
+                        ) : timelineView === "rf" && capture ? (
+                          <RfTimeline
+                            key={capture}
+                            projectId={projectId}
+                            captureId={capture}
+                            selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
+                            selectedEventId={cursor.selectedEventId}
+                            timeWindow={timeWindow}
+                            onWindow={setTimeWindow}
+                            stateTracksV2={stateTracksV2}
+                            excludedEventTypes={excludedEventTypes}
+                            onTime={(time) => {
+                              setCursor({
+                                selectedTimeS: time,
+                                hoveredTimeS: null,
+                                selectedEventId: null,
+                                selectedMessageSeq: time === null ? null : (seq ?? null),
+                              });
+                              setLinkedMessages([]);
+                              if (time === null) {
+                                setSeq(undefined);
+                                setSelectedRecord(undefined);
+                              }
+                            }}
+                            technology={technology}
+                            direction={direction}
+                            search={search}
+                            allowedProtocols={protocols}
+                            onRange={(r) => {
+                              setRange(r);
+                              resetPage();
+                            }}
+                            onSelect={(e, sourceSeq) => {
+                              const target = sourceSeq ?? eventMessage(e);
+                              setLinkedMessages(e.linked_seqs);
+                              setCursor({
+                                selectedTimeS: e.t_rel_s,
+                                hoveredTimeS: null,
+                                selectedEventId: e.id,
+                                selectedMessageSeq: target,
+                              });
+                              if (target === null || !capture) return;
+                              const row = listing.data?.rows.find((r) => r.seq === target);
+                              setSeq(target);
+                              setSelectedRecord(
+                                row ?? {
+                                  capture_id: capture,
+                                  seq: target,
+                                  t_rel_s: e.t_rel_s,
+                                  message_name:
+                                    typeof e.attrs["source_message"] === "string"
+                                      ? e.attrs["source_message"]
+                                      : e.label,
+                                  protocol: e.attrs.protocol ?? "",
+                                },
+                              );
+                              if (!row)
+                                void getSignaling(projectId, "rows", {
+                                  ...filtered,
+                                  seq: target,
+                                  page,
+                                  size,
+                                  sort,
+                                  order,
                                 })
-                                .catch(() => undefined);
-                          }}
-                        />
-                      ) : timeline.data ? (
-                        <Timeline
-                          data={timeline.data}
-                          timeWindow={timeWindow}
-                          duration={captureDuration}
-                          selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
-                          onRange={(r) => {
-                            setRange(r);
-                            resetPage();
-                          }}
-                        />
-                      ) : (
-                        <p role="status" className="p-10">
-                          Chargement de la timeline…
-                        </p>
-                      )}
-                      {capture && timelineView !== "rf" && (
-                        <TimeNavigator
-                          duration={captureDuration}
-                          window={timeWindow}
-                          onWindow={setTimeWindow}
-                        />
-                      )}
-                    </section>
-                  </Panel>
-                  <Separator
-                    className="signaling-separator"
-                    aria-label="Largeur timeline et carte"
-                  />
-                  <Panel
-                    id="map"
-                    panelRef={mapPanelRef}
-                    minSize={mapVisible ? 25 : 0}
-                    collapsible
-                    collapsedSize={0}
-                    defaultSize={40}
-                    onResize={() => syncFromPanel(mapPanelRef, mapVisible, setMapVisible)}
-                    data-testid="signaling-map-panel"
-                  >
-                    <section
-                      className="signaling-pane flex flex-col rounded-lg border bg-card p-3"
-                      aria-label={t("signalingV2.map")}
+                                  .then((data) => {
+                                    const selectedRow = data.rows.find((r) => r.seq === target);
+                                    if (selectedRow) setSelectedRecord(selectedRow);
+                                    if (data.selected_page !== null && data.selected_page !== page)
+                                      setPage(data.selected_page);
+                                  })
+                                  .catch(() => undefined);
+                            }}
+                          />
+                        ) : timeline.data ? (
+                          <Timeline
+                            data={timeline.data}
+                            timeWindow={timeWindow}
+                            duration={captureDuration}
+                            selectedTime={cursor.selectedTimeS ?? selected?.t_rel_s ?? null}
+                            onRange={(r) => {
+                              setRange(r);
+                              resetPage();
+                            }}
+                          />
+                        ) : (
+                          <p role="status" className="p-10">
+                            Chargement de la timeline…
+                          </p>
+                        )}
+                        {capture && timelineView !== "rf" && (
+                          <TimeNavigator
+                            duration={captureDuration}
+                            window={timeWindow}
+                            onWindow={setTimeWindow}
+                          />
+                        )}
+                      </section>
+                    </Panel>
+                    <Separator
+                      className="signaling-separator"
+                      aria-label="Largeur timeline et carte"
+                    />
+                    <Panel
+                      id="map"
+                      panelRef={mapPanelRef}
+                      minSize={mapVisible ? 25 : 0}
+                      collapsible
+                      collapsedSize={0}
+                      defaultSize={40}
+                      onResize={() => syncFromPanel(mapPanelRef, mapVisible, setMapVisible)}
+                      data-testid="signaling-map-panel"
                     >
-                      {mapVisible && points.data ? (
-                        <SignalMap
-                          data={points.data}
-                          events={visibleMapEvents}
-                          onSelect={chooseSeq}
-                          selectedSeq={seq}
-                          projectId={projectId}
-                          captureId={capture ?? ""}
-                          projectCenter={projectCenter}
-                        />
-                      ) : (
-                        <p role="status">Chargement des positions…</p>
-                      )}
-                    </section>
-                  </Panel>
-                </Group>
+                      <section
+                        className="signaling-pane flex flex-col rounded-lg border bg-card p-3"
+                        aria-label={t("signalingV2.map")}
+                      >
+                        {mapVisible && points.data ? (
+                          <SignalMap
+                            data={points.data}
+                            events={visibleMapEvents}
+                            onSelect={chooseSeq}
+                            selectedSeq={seq}
+                            projectId={projectId}
+                            captureId={capture ?? ""}
+                            projectCenter={projectCenter}
+                          />
+                        ) : (
+                          <p role="status">Chargement des positions…</p>
+                        )}
+                      </section>
+                    </Panel>
+                  </Group>
+                )}
               </Panel>
               <Separator
                 className={embedded ? "hidden" : "signaling-separator"}

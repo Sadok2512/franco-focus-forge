@@ -1,3 +1,9 @@
+## 1.138.14 (patch) — Timeline redimensionnable et Signaling allégé — 2026-11-04 (BC4)
+
+- Rend le panneau Timeline redimensionnable en largeur et en hauteur, avec persistance par Workspace comme les autres panneaux KPI.
+- Charge la Timeline uniquement à sa première ouverture afin d'alléger le démarrage de KPI Analytics.
+- Ne monte plus les composants cachés de la sidebar et de la vue d'ensemble Signaling dans chaque panneau L3 intégré.
+
 ## 1.138.13 (patch) — Signaling View partagé dans KPI — 2026-11-04 (BC4)
 
 - Remplace la table L3 simplifiée de KPI Analytics par le bloc exact Messages + inspecteur ASN.1 de Signaling View, avec la même recherche, les mêmes filtres, colonnes, badges, pagination et onglets de détail.
