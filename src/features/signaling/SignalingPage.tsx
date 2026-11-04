@@ -948,26 +948,26 @@ function SignalMap({
           card.append(row);
         };
         add(
-          t("signaling.tooltip.type"),
-          t(`signaling.types.${event.type}`, { defaultValue: event.type }),
+          t("timeNavigator.tooltip.type"),
+          t(`timeNavigator.types.${event.type}`, { defaultValue: event.type }),
         );
         add(
-          t("signaling.tooltip.status"),
+          t("timeNavigator.tooltip.status"),
           event.outcome === "ok"
-            ? t("signaling.tooltip.success")
+            ? t("timeNavigator.tooltip.success")
             : event.outcome === "fail" || event.kind === "fail"
-              ? t("signaling.tooltip.failure")
-              : t("signaling.tooltip.unknown"),
+              ? t("timeNavigator.tooltip.failure")
+              : t("timeNavigator.tooltip.unknown"),
         );
-        add(t("signaling.tooltip.cause"), event.cause);
-        add(t("signaling.tooltip.sourcePci"), event.attrs["source_pci"]);
-        add(t("signaling.tooltip.sourceEarfcn"), event.attrs["source_earfcn"]);
-        add(t("signaling.tooltip.targetPci"), event.attrs["target_pci"] ?? event.attrs["pci"]);
+        add(t("timeNavigator.tooltip.cause"), event.cause);
+        add(t("timeNavigator.tooltip.sourcePci"), event.attrs["source_pci"]);
+        add(t("timeNavigator.tooltip.sourceEarfcn"), event.attrs["source_earfcn"]);
+        add(t("timeNavigator.tooltip.targetPci"), event.attrs["target_pci"] ?? event.attrs["pci"]);
         add(
-          t("signaling.tooltip.targetEarfcn"),
+          t("timeNavigator.tooltip.targetEarfcn"),
           event.attrs["target_earfcn"] ?? event.attrs["earfcn"],
         );
-        add(t("signaling.tooltip.seq"), event.seq);
+        add(t("timeNavigator.tooltip.seq"), event.seq);
         new ml.Popup().setLngLat(e.lngLat).setDOMContent(card).addTo(map);
       });
     };
