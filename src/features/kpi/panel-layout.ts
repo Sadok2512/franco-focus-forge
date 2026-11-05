@@ -48,7 +48,7 @@ export function panelOrder(s: PanelLayoutState, id: string, natural: number): nu
   return i < 0 ? 1000 + natural : i;
 }
 
-/** Move `from` onto `to` within the full list of present panel ids. */
+/** Exchange `from` and `to` within the full list of present panel ids. */
 export function movePanel(
   s: PanelLayoutState,
   present: string[],
@@ -61,7 +61,7 @@ export function movePanel(
   const fi = ids.indexOf(from),
     ti = ids.indexOf(to);
   if (fi < 0 || ti < 0 || fi === ti) return s;
-  ids.splice(ti, 0, ids.splice(fi, 1)[0]!);
+  [ids[fi], ids[ti]] = [ids[ti]!, ids[fi]!];
   return { ...s, order: ids };
 }
 

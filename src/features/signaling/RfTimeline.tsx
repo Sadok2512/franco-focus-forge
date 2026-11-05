@@ -108,16 +108,27 @@ export function RfTimeline({
   const [layers, setLayers] = useState(protocols);
   const [measures, setMeasures] = useState(codes);
   const [ready, setReady] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
   const [, redrawCursor] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
   // Chip shown on click: the name of the clicked event or measurement, nothing else.
   const [nameTag, setNameTag] = useState<NameTag | null>(null);
 
   const host = useRef<HTMLDivElement>(null),
-    root = useRef<HTMLDivElement>(null);
+    root = useRef<HTMLDivElement>(null),
+    viewport = useRef<HTMLDivElement>(null);
   const chart = useRef<ECharts | undefined>(undefined);
   const callbacks = useRef({ onSelect, onRange });
   callbacks.current = { onSelect, onRange };
+  useEffect(() => {
+    const element = viewport.current;
+    if (!element) return;
+    const measure = () => setViewportHeight(Math.round(element.getBoundingClientRect().height));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
   const overview = useQuery({
     queryKey: ["signaling-rf-overview", projectId, captureId, technology, direction, search],
     queryFn: ({ signal }) =>
@@ -449,7 +460,9 @@ export function RfTimeline({
   const laneLayout = useMemo(() => stateLaneLayout(lanes), [lanes]);
   const trackHeight = stateTracksV2 ? laneLayout.height : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
-  const chartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
+  const baseChartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
+  const chartHeight = Math.max(baseChartHeight, viewportHeight > 0 ? viewportHeight - 44 : 0);
+  const chartHeightExtra = chartHeight - baseChartHeight;
   useEffect(() => {
     const c = chart.current;
     if (!c) return;
@@ -738,7 +751,7 @@ export function RfTimeline({
     };
     // V2: one RF sub-grid per metric, each with its own Y scale, sharing the X axis.
     const rfGrids = stateTracksV2 ? codes.length : 1;
-    const subH = 52;
+    const subH = 52 + (stateTracksV2 ? chartHeightExtra / Math.max(1, codes.length) : 0);
     const xAxes = Array.from({ length: 1 + rfGrids }, (_, i) => ({
       type: "value" as const,
       gridIndex: i,
@@ -785,7 +798,7 @@ export function RfTimeline({
               left: 112,
               right: 24,
             }))
-          : [{ top: rfTop, height: 138, left: 112, right: 24 }]),
+          : [{ top: rfTop, height: 138 + chartHeightExtra, left: 112, right: 24 }]),
       ],
       legend: {
         show: !stateTracksV2,
@@ -998,6 +1011,7 @@ export function RfTimeline({
     visibleWindow,
     overviewPoints,
     detailEnabled,
+    chartHeightExtra,
   ]);
   return (
     <div
@@ -1058,7 +1072,7 @@ export function RfTimeline({
             {String(q.error.message)}
           </p>
         ))}
-      <div className="min-h-0 flex-1 overflow-auto">
+      <div ref={viewport} className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
           {stateTracksV2 &&
             (["uestate", "rrcstate"] as const).map((lane) => {

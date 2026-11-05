@@ -1,3 +1,11 @@
+## 1.141.0 (minor) — Panneaux Workspace unifiés — 2026-11-05 (Agent BC1)
+
+- Ajoute à chaque panneau visuel une poignée commune permettant de le déplacer puis d'échanger sa position avec un autre panneau du même Workspace.
+- Conserve l'ordre, la largeur et la hauteur par Workspace après changement d'onglet et rechargement.
+- Agrandit la poignée de redimensionnement bidirectionnel commune aux Graphs, Maps, Radio Snapshot, Timeline et L3 Signaling.
+- Rend également le canvas interne de la Timeline sensible à la hauteur disponible, sans modifier les événements, séquences ni fenêtres temporelles.
+- SemVer frontend : **MINOR 1.141.0** ; backend, catalogue, décodeur et données RF inchangés.
+
 ## 1.140.3 (patch) — Liens radio fins et professionnels — 2026-11-05 (BC4)
 
 - Affine les traits Serving, Neighbour et NR anchor sur toutes les Maps partagées, avec extrémités et jointures arrondies.

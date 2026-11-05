@@ -5,6 +5,7 @@
 // shell chrome: maps still use the same persisted resize affordance as
 // graphs and histograms.
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { GripVertical } from "lucide-react";
 
 export const PanelGridContext = createContext<{ cols: number }>({ cols: 3 });
 export const MapPanelWidthContext = createContext<{
@@ -49,7 +50,7 @@ export function PanelShell({
   const { cols } = useContext(PanelGridContext);
   const [s, update] = usePanelLayout(workspaceId);
   const [editing, setEditing] = useState(false);
-  const [over, setOver] = useState(false);
+  const [dragging, setDragging] = useState(false);
   useEffect(() => {
     presentPanels.add(id);
     return () => {
@@ -73,7 +74,7 @@ export function PanelShell({
 
   return (
     <div
-      className={`kpi-panel-shell kpi-panel-enter${over ? " is-drop" : ""}${collapsed ? " is-collapsed" : ""}`}
+      className={`kpi-panel-shell kpi-panel-enter${dragging ? " is-dragging" : ""}${collapsed ? " is-collapsed" : ""}`}
       data-panel-id={id}
       data-testid={`panel-${id}`}
       style={{
@@ -81,22 +82,62 @@ export function PanelShell({
         gridColumn: fullRow ? "1 / -1" : `span ${panelColumns(span, cols)}`,
         height: !collapsed && height ? `${height}px` : undefined,
       }}
-      onDragOver={(e) => {
-        if (e.dataTransfer.types.includes("application/x-bc4-panel")) {
-          e.preventDefault();
-          setOver(true);
-        }
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        setOver(false);
-        const from = e.dataTransfer.getData("application/x-bc4-panel");
-        if (from && from !== id) update((p) => movePanel(p, [...presentPanels], from, id));
-      }}
       onDoubleClick={(e) => {
         if ((e.target as HTMLElement).closest("h3")) setEditing(true);
       }}
     >
+      <button
+        type="button"
+        className="kpi-panel-grip"
+        title={t("panel.move")}
+        aria-label={t("panel.move")}
+        onPointerDown={(event) => {
+          if (event.button !== 0) return;
+          event.preventDefault();
+          event.stopPropagation();
+          setDragging(true);
+          let target: HTMLElement | null = null;
+          const clearTarget = () => {
+            target?.classList.remove("is-drop");
+            target = null;
+          };
+          const onMove = (moveEvent: PointerEvent) => {
+            const next = document
+              .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
+              ?.closest<HTMLElement>(".kpi-panel-shell");
+            if (next === target) return;
+            clearTarget();
+            if (next?.dataset["panelId"] && next.dataset["panelId"] !== id) {
+              target = next;
+              target.classList.add("is-drop");
+            }
+          };
+          const onUp = (upEvent: PointerEvent) => {
+            onMove(upEvent);
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onCancel);
+            const targetId = target?.dataset["panelId"];
+            clearTarget();
+            setDragging(false);
+            if (targetId && targetId !== id) {
+              update((p) => movePanel(p, [...presentPanels], id, targetId));
+            }
+          };
+          const onCancel = () => {
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onCancel);
+            clearTarget();
+            setDragging(false);
+          };
+          window.addEventListener("pointermove", onMove);
+          window.addEventListener("pointerup", onUp);
+          window.addEventListener("pointercancel", onCancel);
+        }}
+      >
+        <GripVertical size={14} aria-hidden="true" />
+      </button>
       {!bare && editing && (
         <input
           autoFocus

@@ -1808,6 +1808,37 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   outline: 2px dashed var(--primary, #2563eb);
   outline-offset: 2px;
 }
+.kpi-panel-shell.is-dragging {
+  opacity: 0.58;
+}
+.kpi-panel-grip {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  z-index: 12;
+  display: inline-flex;
+  width: 24px;
+  height: 22px;
+  transform: translateX(-50%);
+  cursor: grab;
+  touch-action: none;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 88%, transparent);
+  color: var(--muted-foreground);
+  opacity: 0.58;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--foreground) 10%, transparent);
+}
+.kpi-panel-grip:hover,
+.kpi-panel-grip:focus-visible {
+  color: var(--foreground);
+  opacity: 1;
+}
+.kpi-panel-grip:active {
+  cursor: grabbing;
+}
 .kpi-panel-shell.is-collapsed {
   max-height: 46px;
   overflow: hidden;
@@ -1864,8 +1895,8 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   right: -3px;
   bottom: -3px;
   z-index: 8;
-  width: 16px;
-  height: 16px;
+  width: 22px;
+  height: 22px;
   cursor: nwse-resize;
   border-right: 2px solid transparent;
   border-bottom: 2px solid transparent;
@@ -1879,8 +1910,8 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   position: absolute;
   right: 2px;
   bottom: 2px;
-  width: 6px;
-  height: 6px;
+  width: 9px;
+  height: 9px;
   content: "";
   border-right: 1px solid #94a3b8;
   border-bottom: 1px solid #94a3b8;

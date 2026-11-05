@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { EMPTY_LAYOUT, loadLayout, movePanel, panelOrder, saveLayout } from "@/features/kpi/panel-layout";
+import {
+  EMPTY_LAYOUT,
+  loadLayout,
+  movePanel,
+  panelOrder,
+  saveLayout,
+} from "@/features/kpi/panel-layout";
 
 describe("unified panel layout", () => {
-  it("mixes KPI and metric panels in one order and moves across types", () => {
+  it("mixes KPI and metric panels in one order and exchanges them across types", () => {
     const present = ["kpi:A", "kpi:B", "metric:x@0"];
     const next = movePanel(EMPTY_LAYOUT, present, "metric:x@0", "kpi:A");
-    expect(next.order).toEqual(["metric:x@0", "kpi:A", "kpi:B"]);
-    expect(panelOrder(next, "kpi:B", 1)).toBe(2);
+    expect(next.order).toEqual(["metric:x@0", "kpi:B", "kpi:A"]);
+    expect(panelOrder(next, "kpi:B", 1)).toBe(1);
   });
   it("persists custom titles per workspace", () => {
     saveLayout("ws1", { ...EMPTY_LAYOUT, titles: { "kpi:A": "Mon RACH" } });

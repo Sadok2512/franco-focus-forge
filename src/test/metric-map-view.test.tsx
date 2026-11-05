@@ -196,7 +196,13 @@ describe("Map selection keeps its own panel", () => {
 
     const dimension = {
       ...fixture,
-      map_points: [{ ...fixture.map_points[0], code: "cell_ch@lte-type-0", value: "3650.0" }],
+      map_points: [
+        {
+          ...points[0]!,
+          code: "cell_ch@lte-type-0",
+          value: "3650.0",
+        },
+      ],
     } as never;
     expect(metricMapFeatures(dimension)[0]?.properties.value).toBe(3650);
     expect(metricMapNumericExtent(dimension)).toEqual([3649, 3651]);
