@@ -56,6 +56,7 @@ describe("Simplified Metrics tree", () => {
       [
         leaf({
           simple_name: "LTE_RSRP_PCELL",
+          simple_tech: "LTE",
           simple_theme: "1 · Couverture",
           simple_kpi: "RSRP",
           simple_label: "RSRP serving",
@@ -69,6 +70,7 @@ describe("Simplified Metrics tree", () => {
           cell_label: "SCell 1",
           raw_cell_type: 10,
           simple_name: "LTE_RSRP_SCELL1",
+          simple_tech: "LTE",
           simple_theme: "1 · Couverture",
           simple_kpi: "RSRP",
           simple_label: "RSRP serving",

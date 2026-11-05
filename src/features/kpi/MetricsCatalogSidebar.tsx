@@ -93,6 +93,7 @@ export function metricCatalogSearchText(node: MetricCatalogNode): string {
     node.selection,
     node.cell,
     node.simple_name,
+    node.simple_tech,
     node.simple_theme,
     node.simple_kpi,
     node.simple_label,
@@ -347,7 +348,7 @@ export function buildSimpleMetricTree(
           const matchingLeaves = leaves
             .filter(
               (leaf) =>
-                leaf.technology === tech &&
+                leaf.simple_tech === tech &&
                 leaf.simple_theme === entry.theme &&
                 leaf.simple_kpi === entry.kpi,
             )
@@ -579,7 +580,7 @@ export function MetricsCatalogSidebar({
   );
   const normalizedNodes = useMemo(
     () =>
-      treeMode === "simple" && (query.data?.simple_tree.length ?? 0) > 0
+      treeMode === "simple" && (query.data?.simple_tree?.length ?? 0) > 0
         ? buildSimpleMetricTree(query.data?.nodes ?? [], query.data?.simple_tree ?? [])
         : advancedNodes,
     [advancedNodes, query.data?.nodes, query.data?.simple_tree, treeMode],
@@ -1275,7 +1276,7 @@ export function MetricsCatalogSidebar({
             type="button"
             className={`rounded px-2 py-1 text-[11px] ${treeMode === "simple" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
             onClick={() => setTreeMode("simple")}
-            disabled={!query.data?.simple_tree.length}
+            disabled={!query.data?.simple_tree?.length}
             aria-pressed={treeMode === "simple"}
           >
             {t("metrics.treeSimple")}

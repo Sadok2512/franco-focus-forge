@@ -59,6 +59,7 @@ const MetricCatalogNodePayloadSchema = z
     nom_court: z.string().nullable().optional(),
     display_branch: z.enum(["CAPTURE", "LTE", "NR", "IP / Services"]).nullable().optional(),
     simple_name: z.string().nullable().optional(),
+    simple_tech: z.enum(["LTE", "NR"]).nullable().optional(),
     simple_theme: z.string().nullable().optional(),
     simple_kpi: z.string().nullable().optional(),
     simple_label: z.string().nullable().optional(),
@@ -136,7 +137,9 @@ export const MetricCatalogResponseSchema = z.object({
   header: z.string(),
   metrics: z.array(MetricSchema),
   nodes: z.array(MetricCatalogNodeSchema),
-  simple_tree: z.array(SimpleTreeEntrySchema).optional().default([]),
+  // Optional for compatibility with a rolling backend deployment; callers
+  // already fall back to the unchanged advanced tree when it is absent.
+  simple_tree: z.array(SimpleTreeEntrySchema).optional(),
   // 1.107.0 — enveloppe Phase 3a : lue par le footer sidebar
   // ("Catalog X.Y.Z · Decoder A.B.C"). Nullable quand catalog_release est
   // vide (bootstrap frais) ; `reason` explicite la bascule legacy.
