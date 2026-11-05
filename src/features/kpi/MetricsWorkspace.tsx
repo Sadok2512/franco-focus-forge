@@ -1060,7 +1060,10 @@ function MetricMap({
         hideControls
         legendHost={driveLegendHost}
         selectionLayerId="metrics-v3"
-        externalSelection={pointSync.enabled ? driveSelection : undefined}
+        // The map's own cell links must always follow its selected point.
+        // Workspace Sync only controls propagation to the other panels; it
+        // must not disable Serving / neighbour / NR-anchor selection locally.
+        externalSelection={driveSelection}
         pointMetrics={(seq) => {
           const point = data?.map_points.find((candidate) => candidate.seq === seq);
           return point ? [{ label, unit, value: point.value, active: true }] : [];

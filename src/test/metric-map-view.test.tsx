@@ -16,7 +16,7 @@ import { getMetricAnalysis, getMetricMap } from "@/lib/api/client";
 import { readMetricViews, writeMetricViews } from "@/features/kpi/metric-views";
 import "@/lib/i18n";
 
-const renderers = vi.hoisted(() => ({ graph: vi.fn(), map: vi.fn() }));
+const renderers = vi.hoisted(() => ({ graph: vi.fn(), map: vi.fn(), drive: vi.fn() }));
 vi.mock("@/features/kpi/MetricGraphCard", async (original) => {
   const actual = await original<typeof import("@/features/kpi/MetricGraphCard")>();
   return {
@@ -53,7 +53,12 @@ vi.mock("@/features/kpi/KpiMapOSM", () => ({
     );
   },
 }));
-vi.mock("@/features/kpi/DriveRsrpLayer", () => ({ DriveRsrpLayer: () => null }));
+vi.mock("@/features/kpi/DriveRsrpLayer", () => ({
+  DriveRsrpLayer: (props: unknown) => {
+    renderers.drive(props);
+    return null;
+  },
+}));
 vi.mock("maplibre-gl/dist/maplibre-gl-worker.mjs?url", () => ({ default: "worker.js" }));
 vi.mock("@/lib/api/client", async () => {
   const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
@@ -215,6 +220,7 @@ describe("Map selection keeps its own panel", () => {
 
   it("keeps only API-proven cell links and exposes three independent link controls", async () => {
     renderers.map.mockClear();
+    renderers.drive.mockClear();
     const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
     const mapPoints = [
       {
@@ -346,6 +352,13 @@ describe("Map selection keeps its own panel", () => {
     ]) {
       expect(within(panel).getByLabelText(label)).toBeChecked();
     }
+    await waitFor(() => expect(renderers.drive).toHaveBeenCalled());
+    // Sync is OFF by default. Local Map selection still controls its own
+    // Serving / neighbour / NR-anchor evidence and must never be undefined.
+    expect(renderers.drive.mock.lastCall?.[0]).toMatchObject({
+      selectionLayerId: "metrics-v3",
+      externalSelection: null,
+    });
   });
 
   // 1.106.2 — ouvrir le tableau explicitement (⋮ → Tableau, paneRequest)
