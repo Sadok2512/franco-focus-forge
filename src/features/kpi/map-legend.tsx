@@ -138,6 +138,24 @@ export function MapLegendSettings({ title, children }: { title: ReactNode; child
   );
 }
 
+/** Shared compact key for radio-link evidence. It explains line semantics
+ * without adding another floating map control. */
+export function MapLinkConfidenceLegend() {
+  const { t } = useTranslation();
+  return (
+    <div className="measurement-link-style-legend" aria-label={t("mapPointPopup.lineStyles")}>
+      <span>
+        <span className="measurement-popup-line" aria-hidden="true" />
+        {t("mapPointPopup.solid")}
+      </span>
+      <span>
+        <span className="measurement-popup-line is-probable" aria-hidden="true" />
+        {t("mapPointPopup.dashed")}
+      </span>
+    </div>
+  );
+}
+
 /** Compact, closed-by-default settings content shared by every numeric metric. */
 export function MetricLegendSettingsPanel({
   metric,

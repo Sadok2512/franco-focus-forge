@@ -24,6 +24,7 @@ import {
   MapLegendList,
   MapLegendRow,
   MapLegendSection,
+  MapLinkConfidenceLegend,
   MetricLegendSettingsPanel,
 } from "./map-legend";
 import {
@@ -1047,6 +1048,7 @@ function MetricMap({
                       {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
                     </label>
                   ))}
+                  <MapLinkConfidenceLegend />
                 </fieldset>
               </div>
             </div>

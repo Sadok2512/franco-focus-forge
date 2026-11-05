@@ -38,7 +38,13 @@ import {
   type CellLinkKind,
   type RadioCellLink,
 } from "./measurement-point-popup";
-import { MapLegendList, MapLegendRow, MapLegendSection, MapLegendSettings } from "./map-legend";
+import {
+  MapLegendList,
+  MapLegendRow,
+  MapLegendSection,
+  MapLegendSettings,
+  MapLinkConfidenceLegend,
+} from "./map-legend";
 import { metricMapKey } from "./query-keys";
 import type { MetricMapResponse } from "@/lib/api/metrics-schemas";
 
@@ -93,8 +99,8 @@ export function cellLinkVisualOffset(link: RadioCellLink, links: readonly RadioC
     (candidate) => `${candidate.lat.toFixed(6)}:${candidate.lng.toFixed(6)}` === endpoint,
   );
   if (coincident.length < 2) return 0;
-  if (link.kind === "neighbour") return -3;
-  if (link.kind === "nr_anchor") return 3;
+  if (link.kind === "neighbour") return -6;
+  if (link.kind === "nr_anchor") return 6;
   return 0;
 }
 /**
@@ -1038,6 +1044,7 @@ export function DriveRsrpLayer({
           />
         ))}
       </MapLegendList>
+      <MapLinkConfidenceLegend />
     </MapLegendSettings>
   );
   const legendRows = (

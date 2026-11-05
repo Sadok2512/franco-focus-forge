@@ -1,3 +1,9 @@
+## 1.141.4 (patch) — Liens radio lisibles et légende de confiance — 2026-11-05 (BC4)
+
+- Renforce le contraste du lien radio sélectionné sur les fonds satellite et les secteurs, avec un trait de 5 px, un contour neutre de 9 px et des couleurs Serving, Neighbour et NR anchor distinctes.
+- Sépare de nouveau les liens superposés de ±6 px sans modifier leurs coordonnées ni leurs associations API.
+- Ajoute dans les légendes Map une clé compacte « plein · prouvé / pointillés · probable » en conservant les contrôles existants.
+
 ## 1.141.3 (patch) — Radio Snapshot compact et zoom temporel réel — 2026-11-05 (Agent BC1)
 
 - Compacte les badges et les lignes du panneau Radio Snapshot en une grille stable nom / valeur / barre ; le déplacement et les actions deviennent disponibles au survol sans boutons permanents.

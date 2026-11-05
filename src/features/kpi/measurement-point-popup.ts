@@ -6,8 +6,8 @@ export type LinkConfidence = "proven" | "probable";
 
 export const CELL_LINK_KINDS = ["serving", "neighbour", "nr_anchor"] as const;
 export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
-  serving: "#0ea5e9",
-  neighbour: "#f59e0b",
+  serving: "#00b8ff",
+  neighbour: "#ff8a00",
   nr_anchor: "#d946ef",
 };
 
@@ -15,14 +15,14 @@ export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
  * The selected stroke and its casing must remain legible over satellite tiles
  * and dense sector overlays without returning to the former oversized halo. */
 export const CELL_LINK_STYLE = {
-  width: 1.5,
-  selectedWidth: 3.25,
-  casingWidth: 5.25,
-  opacity: 0.88,
-  mutedOpacity: 0.28,
+  width: 2,
+  selectedWidth: 5,
+  casingWidth: 9,
+  opacity: 0.92,
+  mutedOpacity: 0.32,
   selectedOpacity: 1,
-  casingOpacity: 0.86,
-  probableDash: [3, 2] as [number, number],
+  casingOpacity: 0.92,
+  probableDash: [4, 2] as [number, number],
 } as const;
 
 export type RadioCellLink = {

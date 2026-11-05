@@ -27,17 +27,17 @@ describe("Drive RSRP cell-link layer order", () => {
   });
 
   it("keeps probable links dashed, including serving links", () => {
-    expect(cellLinkDasharray("probable")).toEqual([3, 2]);
+    expect(cellLinkDasharray("probable")).toEqual([4, 2]);
     expect(cellLinkDasharray("proven")).toBeUndefined();
   });
 
   it("keeps selected radio evidence visible without the former oversized stroke", () => {
-    expect(CELL_LINK_COLORS.serving).toBe("#0ea5e9");
-    expect(CELL_LINK_STYLE.selectedWidth).toBeGreaterThanOrEqual(3);
-    expect(CELL_LINK_STYLE.selectedWidth).toBeLessThan(5);
-    expect(CELL_LINK_STYLE.casingWidth - CELL_LINK_STYLE.selectedWidth).toBeGreaterThanOrEqual(2);
+    expect(CELL_LINK_COLORS.serving).toBe("#00b8ff");
+    expect(CELL_LINK_STYLE.selectedWidth).toBe(5);
+    expect(CELL_LINK_STYLE.casingWidth).toBe(9);
+    expect(CELL_LINK_STYLE.casingWidth - CELL_LINK_STYLE.selectedWidth).toBe(4);
     expect(CELL_LINK_STYLE.selectedOpacity).toBe(1);
-    expect(CELL_LINK_STYLE.casingOpacity).toBeGreaterThanOrEqual(0.8);
+    expect(CELL_LINK_STYLE.casingOpacity).toBeGreaterThanOrEqual(0.9);
   });
 
   it("keeps a contrast casing for both serving confidence styles", () => {
@@ -60,7 +60,7 @@ describe("Drive RSRP cell-link layer order", () => {
       { kind: "nr_anchor", lat: 50.41, lng: 2.96, confidence: "probable" },
     ];
 
-    expect(links.map((link) => cellLinkVisualOffset(link, links))).toEqual([0, -3, 3, 0]);
+    expect(links.map((link) => cellLinkVisualOffset(link, links))).toEqual([0, -6, 6, 0]);
     expect(links.map((link) => [link.lat, link.lng])).toEqual([
       [50.4, 2.95],
       [50.4, 2.95],
