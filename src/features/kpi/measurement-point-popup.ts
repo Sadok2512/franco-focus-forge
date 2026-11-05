@@ -5,21 +5,23 @@ export type LinkConfidence = "proven" | "probable";
 
 export const CELL_LINK_KINDS = ["serving", "neighbour", "nr_anchor"] as const;
 export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
-  serving: "#0284c7",
-  neighbour: "#d97706",
-  nr_anchor: "#a21caf",
+  serving: "#0ea5e9",
+  neighbour: "#f59e0b",
+  nr_anchor: "#d946ef",
 };
 
-/** Shared restrained line treatment for Map, Signaling and KPI. */
+/** Shared restrained but map-safe line treatment for Map, Signaling and KPI.
+ * The selected stroke and its casing must remain legible over satellite tiles
+ * and dense sector overlays without returning to the former oversized halo. */
 export const CELL_LINK_STYLE = {
-  width: 1.25,
-  selectedWidth: 2.25,
-  casingWidth: 3.75,
-  opacity: 0.78,
-  mutedOpacity: 0.18,
-  selectedOpacity: 0.96,
-  casingOpacity: 0.68,
-  probableDash: [2, 1.5] as [number, number],
+  width: 1.5,
+  selectedWidth: 3.25,
+  casingWidth: 5.25,
+  opacity: 0.88,
+  mutedOpacity: 0.28,
+  selectedOpacity: 1,
+  casingOpacity: 0.86,
+  probableDash: [3, 2] as [number, number],
 } as const;
 
 export type RadioCellLink = {

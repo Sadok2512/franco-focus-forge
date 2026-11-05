@@ -6,7 +6,11 @@ import {
   cellLinkVisualOffset,
   servingCasingFilter,
 } from "@/features/kpi/DriveRsrpLayer";
-import type { RadioCellLink } from "@/features/kpi/measurement-point-popup";
+import {
+  CELL_LINK_COLORS,
+  CELL_LINK_STYLE,
+  type RadioCellLink,
+} from "@/features/kpi/measurement-point-popup";
 
 describe("Drive RSRP cell-link layer order", () => {
   it("paints serving links after neighbour and NR links for both confidences", () => {
@@ -23,8 +27,17 @@ describe("Drive RSRP cell-link layer order", () => {
   });
 
   it("keeps probable links dashed, including serving links", () => {
-    expect(cellLinkDasharray("probable")).toEqual([2, 1.5]);
+    expect(cellLinkDasharray("probable")).toEqual([3, 2]);
     expect(cellLinkDasharray("proven")).toBeUndefined();
+  });
+
+  it("keeps selected radio evidence visible without the former oversized stroke", () => {
+    expect(CELL_LINK_COLORS.serving).toBe("#0ea5e9");
+    expect(CELL_LINK_STYLE.selectedWidth).toBeGreaterThanOrEqual(3);
+    expect(CELL_LINK_STYLE.selectedWidth).toBeLessThan(5);
+    expect(CELL_LINK_STYLE.casingWidth - CELL_LINK_STYLE.selectedWidth).toBeGreaterThanOrEqual(2);
+    expect(CELL_LINK_STYLE.selectedOpacity).toBe(1);
+    expect(CELL_LINK_STYLE.casingOpacity).toBeGreaterThanOrEqual(0.8);
   });
 
   it("keeps a contrast casing for both serving confidence styles", () => {

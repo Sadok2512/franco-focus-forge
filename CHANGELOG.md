@@ -1,3 +1,10 @@
+## 1.141.1 (patch) — Visibilité des liens radio — 2026-11-05 (BC4)
+
+- Restaure le contraste des liens Serving, Neighbour et NR anchor sur les fonds clairs, sombres et satellite sans revenir aux anciens traits surdimensionnés.
+- Renforce uniquement le lien sélectionné et son contour neutre ; les coordonnées, associations radio et filtres restent inchangés.
+- Ajoute un garde ciblé sur la largeur, l'opacité et le contraste minimum du lien Serving sélectionné.
+- SemVer frontend : **PATCH 1.141.1** ; backend et données radio inchangés.
+
 ## 1.141.0 (minor) — Panneaux Workspace unifiés — 2026-11-05 (Agent BC1)
 
 - Ajoute à chaque panneau visuel une poignée commune permettant de le déplacer puis d'échanger sa position avec un autre panneau du même Workspace.
