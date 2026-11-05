@@ -6,7 +6,7 @@ import {
   metricCellSortRank,
 } from "@/features/kpi/MetricsCatalogSidebar";
 import type { MetricCatalogNode, SimpleTreeEntry } from "@/lib/api/metrics-schemas";
-import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
+import { metricsCatalogQuery, metricsCatalogRawQuery } from "@/lib/analytics-bootstrap";
 
 const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
   node_id: "rsrp-pcell",
@@ -86,6 +86,7 @@ describe("Simplified Metrics tree", () => {
       ["leaf", "PCell"],
       ["leaf", "SCell 1"],
     ]);
+    expect(nodes.find((node) => node.node_type === "metric")?.n).toBe(9870);
   });
 
   it("keeps an OPEN KPI visible without inventing a selectable metric", () => {
@@ -132,6 +133,14 @@ describe("Metrics Technology -> Metric -> Cell tree", () => {
     expect(metricsCatalogQuery("project", ["capture-b"]).queryKey).not.toEqual(
       metricsCatalogQuery("project", ["capture-a"]).queryKey,
     );
+  });
+
+  it("shares one request while keeping raw leaves for the simplified tree", () => {
+    const raw = metricsCatalogRawQuery("project", ["capture-a"]);
+    const advanced = metricsCatalogQuery("project", ["capture-a"]);
+    expect(raw.queryKey).toEqual(advanced.queryKey);
+    expect(raw.select).toBeUndefined();
+    expect(advanced.select).toBeTypeOf("function");
   });
 
   it("keeps direct cells when a metric has no certified neighbour distinction", () => {

@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { exportMetadata } from "@/lib/api/settings";
 import { apiBase, getSession } from "@/lib/api/http";
-import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
+import { metricsCatalogQuery, metricsCatalogRawQuery } from "@/lib/analytics-bootstrap";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -573,6 +573,11 @@ export function MetricsCatalogSidebar({
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
+  // Both observers share one TanStack query/request. The advanced observer
+  // applies its oracle hierarchy; the simplified observer must consume the
+  // untouched API leaves, otherwise that advanced-only transform discards
+  // valid simple families and turns them into false n=0 placeholders.
+  const rawQuery = useQuery({ ...metricsCatalogRawQuery(projectId, captureIds), retry: false });
   const query = useQuery({ ...metricsCatalogQuery(projectId, captureIds), retry: false });
   const advancedNodes = useMemo(
     () => mergeMetricCatalogTrees(query.data?.nodes ?? [], measuredMetricNodes(measuredEntries)),
@@ -580,10 +585,10 @@ export function MetricsCatalogSidebar({
   );
   const normalizedNodes = useMemo(
     () =>
-      treeMode === "simple" && (query.data?.simple_tree?.length ?? 0) > 0
-        ? buildSimpleMetricTree(query.data?.nodes ?? [], query.data?.simple_tree ?? [])
+      treeMode === "simple" && (rawQuery.data?.simple_tree?.length ?? 0) > 0
+        ? buildSimpleMetricTree(rawQuery.data?.nodes ?? [], rawQuery.data?.simple_tree ?? [])
         : advancedNodes,
-    [advancedNodes, query.data?.nodes, query.data?.simple_tree, treeMode],
+    [advancedNodes, rawQuery.data?.nodes, rawQuery.data?.simple_tree, treeMode],
   );
   useEffect(() => setOpen(new Set()), [treeMode]);
   const byParent = useMemo(() => {
@@ -1276,7 +1281,7 @@ export function MetricsCatalogSidebar({
             type="button"
             className={`rounded px-2 py-1 text-[11px] ${treeMode === "simple" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
             onClick={() => setTreeMode("simple")}
-            disabled={!query.data?.simple_tree?.length}
+            disabled={!rawQuery.data?.simple_tree?.length}
             aria-pressed={treeMode === "simple"}
           >
             {t("metrics.treeSimple")}

@@ -1,3 +1,9 @@
+## 1.142.2 (patch) — Compteurs réels de l’arbre simplifié — 2026-11-05 (BC4)
+
+- Construit la vue Simplifiée depuis les feuilles API brutes certifiées au lieu de la projection filtrée réservée à la vue Avancée.
+- Restaure les cellules, disponibilités et compteurs réels de tous les KPI simplifiés sans ajouter de requête réseau.
+- Conserve la vue Avancée et son reclassement existants inchangés.
+
 ## 1.142.1 (patch) — Map KPI indépendante et responsive — 2026-11-05 (BC4)
 
 - Empêche le mode « Map seule » de s'activer lorsqu'une Timeline ou un panneau L3 est présent, supprimant le chevauchement des lignes du Workspace.

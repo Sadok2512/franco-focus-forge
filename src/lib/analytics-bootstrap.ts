@@ -208,6 +208,12 @@ export const kpiFiltersQuery = (projectId: string, captureIds: string[] = []) =>
         : getProjectKpiFilters(projectId, signal),
     staleTime: 60_000,
   });
+/** Raw API projection used by consumers whose hierarchy is certified by
+ * backend metadata (for example the 2.68.5 simplified tree). It deliberately
+ * shares the exact query key and fetch with the advanced projection below. */
+export const metricsCatalogRawQuery = (projectId: string, captureIds: string[] = []) =>
+  shaKeyedMetricsQuery(projectId, captureIds);
+
 export const metricsCatalogQuery = (projectId: string, captureIds: string[] = []) => {
   // BC5 — reparent RF leaves into the certified reference hierarchy
   // (Technology → Category → Group → Metric → Cell), bijective sur les
@@ -216,7 +222,7 @@ export const metricsCatalogQuery = (projectId: string, captureIds: string[] = []
   // Compatible BC1 RC multi-capture scoping : la query d'origine conserve son
   // 2e paramètre `captureIds`, le `select` est appliqué à la réponse quel que
   // soit le scope.
-  const base = shaKeyedMetricsQuery(projectId, captureIds);
+  const base = metricsCatalogRawQuery(projectId, captureIds);
   return { ...base, select: applyReferenceHierarchy };
 };
 export const analyticsProjectQuery = (projectId: string) =>
