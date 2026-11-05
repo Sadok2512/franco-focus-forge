@@ -35,6 +35,20 @@ import {
   type MetricClass,
 } from "./metric-classes";
 import { mapScalarLabel, numericMapScalar } from "./map-scalar";
+import {
+  DEFAULT_MAP_PREFERENCES,
+  MAP_PALETTES,
+  metricMapPreferenceKey,
+  readMetricMapPreferences,
+  type MetricMapPalette,
+  type MetricMapPreferences,
+} from "./metricMapPreferences";
+export {
+  DEFAULT_MAP_PREFERENCES,
+  metricMapPreferenceKey,
+  readMetricMapPreferences,
+  writeMetricMapPreferences,
+} from "./metricMapPreferences";
 import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import type { MetricViews, MetricWorkspaceView } from "./metric-views";
@@ -71,6 +85,7 @@ import {
   pointCellLinks,
   type CellLinkKind,
 } from "./measurement-point-popup";
+type MetricLinkKind = CellLinkKind;
 import {
   automaticTimeAxisMode,
   formatTick,
@@ -207,67 +222,6 @@ function Plot({ option, label }: { option: EChartsOption; label: string }) {
     />
   );
 }
-const MAP_PALETTES = {
-  coverage: ["#b91c1c", "#f97316", "#facc15", "#84cc16", "#15803d"],
-  viridis: ["#440154", "#3b528b", "#21918c", "#5ec962", "#fde725"],
-  ocean: ["#172554", "#1e40af", "#0284c7", "#06b6d4", "#a7f3d0"],
-} as const;
-export type MetricMapPalette = keyof typeof MAP_PALETTES;
-type MetricLinkKind = CellLinkKind;
-export type MetricMapPreferences = {
-  palette: MetricMapPalette;
-  pointSize: number;
-  links: Record<MetricLinkKind, boolean>;
-};
-export const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
-  palette: "coverage",
-  pointSize: 3,
-  links: { serving: true, neighbour: true, nr_anchor: true },
-};
-export function metricMapPreferenceKey(workspaceId: string, selection: string) {
-  return `bc4.metric-map.v1.${workspaceId}.${selection}`;
-}
-
-export function readMetricMapPreferences(
-  workspaceId: string,
-  selection: string,
-): MetricMapPreferences {
-  try {
-    const value = JSON.parse(
-      localStorage.getItem(metricMapPreferenceKey(workspaceId, selection)) ?? "null",
-    ) as Partial<MetricMapPreferences> | null;
-    const palette =
-      value?.palette && value.palette in MAP_PALETTES
-        ? value.palette
-        : DEFAULT_MAP_PREFERENCES.palette;
-    const pointSize =
-      typeof value?.pointSize === "number" && value.pointSize >= 1 && value.pointSize <= 10
-        ? value.pointSize
-        : DEFAULT_MAP_PREFERENCES.pointSize;
-    return { palette, pointSize, links: { ...DEFAULT_MAP_PREFERENCES.links, ...value?.links } };
-  } catch {
-    return DEFAULT_MAP_PREFERENCES;
-  }
-}
-
-export function writeMetricMapPreferences(
-  workspaceId: string,
-  selection: string,
-  preferences: MetricMapPreferences,
-) {
-  try {
-    localStorage.setItem(
-      metricMapPreferenceKey(workspaceId, selection),
-      JSON.stringify(preferences),
-    );
-  } catch {
-    /* storage unavailable */
-  }
-  window.dispatchEvent(
-    new CustomEvent("bc4-metric-map-preferences", { detail: { workspaceId, selection } }),
-  );
-}
-
 export function metricMapNumericExtent(data: MetricMapData): [number, number] {
   const values = data.map_points
     .map((point) => numericMapScalar(point.value))

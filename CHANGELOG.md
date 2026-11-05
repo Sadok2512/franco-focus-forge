@@ -1,3 +1,8 @@
+## 1.141.10 (patch) — Migration des préférences de liens radio — 2026-11-05 (BC4)
+
+- Réactive une seule fois Serving, Neighbour et NR anchor pour les navigateurs dont un ancien contrôle avait persisté les liens désactivés.
+- Conserve la palette et la taille des points pendant la migration, puis mémorise normalement chaque choix utilisateur sous les nouvelles clés de préférences.
+
 ## 1.141.9 (patch) — Timeline KPI redimensionnable sans boucle de hauteur — 2026-11-05 (Agent BC1)
 
 - Contraint la hauteur initiale des panneaux Timeline et L3 afin que le canvas ne puisse plus agrandir récursivement son propre viewport.
@@ -161,7 +166,7 @@
   serving publié par l'API et ajoute le segment vers l'ancre NR ainsi que les
   voisines lorsque leurs interrupteurs sont actifs.
 - Les trois familles restent indépendantes, limitées au `(project_id,
-  capture_id, seq)` sélectionné et aucun lien n'est déduit côté frontend.
+capture_id, seq)` sélectionné et aucun lien n'est déduit côté frontend.
 - SemVer front : **PATCH 1.138.9** ; backend, catalogue et données RF inchangés.
 
 ## 1.138.8 (patch) — Metrics Catalogue lisible et Active only — 2026-11-04 (BC4)
@@ -288,8 +293,8 @@
   l'endpoint back `GET /projects/{projectId}/metrics/catalog-csv` qui
   renvoie un text/csv complet avec :
   - en-tête `display_code, label, kind, unit, data_type, Technology,
-    Category, Group, Metric, Cell, Event, Source column, Metric id,
-    Raw cell type, Selectable, Availability, Reason` ;
+Category, Group, Metric, Cell, Event, Source column, Metric id,
+Raw cell type, Selectable, Availability, Reason` ;
   - une colonne `n_<capture_id>` par capture du projet (serveur merge
     toutes les captures par `display_code`).
 - Design UI inchangé — même bouton Export, même tooltip.
@@ -353,8 +358,8 @@
 
 ## 1.133.22 (patch) — Export KPI catalogue CSV on /settings/kpi-catalog — 2026-11-02 (Agent BC5)
 
-- 1.133.18 shipped a *users* CSV export on `/settings/users` by mistake;
-  the ask was a *metric catalogue* export. 1.133.22 lands the right one.
+- 1.133.18 shipped a _users_ CSV export on `/settings/users` by mistake;
+  the ask was a _metric catalogue_ export. 1.133.22 lands the right one.
 - Adds an `Exporter CSV` button (download icon, next to `Ajouter`) on
   `/settings/kpi-catalog`. Downloads the currently-filtered KPI catalogue
   as a semicolon-delimited CSV with columns: `Code`, `Nom`, `Famille`,
@@ -486,14 +491,14 @@
   observed leaves emit 1..6. The slot looks "missing" even when the
   real sibling exists, and the synthesized hn collides with it.
   Result: 1100 placeholder+observed duplicates survived 1.133.15.
-- 1.133.16 moves the dedup pass to run *after* placeholder generation
+- 1.133.16 moves the dedup pass to run _after_ placeholder generation
   and re-keys by `(parent_id, lowercased label)` — the actual
   dimension the user perceives as "duplicate". Tie-break: drop any
   `ref:placeholder:*` when a non-placeholder competes; otherwise
   keep the leaf with the most samples; final tie prefers the
   `lf_observed_*` variant. Audit result on live /metrics now reads
   `total leaves 5374 / distinct (parent,label) 5374 / duplicate
-  groups 0`.
+groups 0`.
 - SemVer front: **PATCH 1.133.16**; backend remains **0.123.2**.
 
 ## 1.133.15 (patch) — Dedup remapped leaves — 2026-11-02 (Agent BC5)
@@ -550,10 +555,10 @@
   carries the full standard roster of Serving cells, with greyed-out
   placeholder leaves (`availability_status="no_data"`,
   `selectable=false`, `n=0`, `reason="No observations recorded by the
-  probe on this cell"`) inserted for cells the oracle itself omits
+probe on this cell"`) inserted for cells the oracle itself omits
   because the probe never recorded them.
-    LTE Serving  : PCell + SCell 1..6 (raws 0, 10..15)
-    NR  Serving  : PCell + SCell 1..6 + SCG SCell 0 + PSCell
+  LTE Serving : PCell + SCell 1..6 (raws 0, 10..15)
+  NR Serving : PCell + SCell 1..6 + SCG SCell 0 + PSCell
   A user never sees PCell + SCell 1 + SCell 5 without SCell 2/3/4
   again: the missing cells either carry data or stay as explicit
   placeholders.
@@ -571,10 +576,10 @@
   **0 silently dropped** (previously 100).
 - 42 synthetic `oracle-observed:` entries now cover every backend
   observed-cell leaf currently emitted with real data on the project:
-    CELLMEAS LTE × PCell/SCell1-3 for SINR / RSSI / Timing / Band / Ch / PCI
-    CELLMEAS NR × PCell/PSCell for SINR
-    CQI LTE × raws 0-4 for #Params
-    PLAID / PLAIU LTE × raws 0-4 for Sample duration
+  CELLMEAS LTE × PCell/SCell1-3 for SINR / RSSI / Timing / Band / Ch / PCI
+  CELLMEAS NR × PCell/PSCell for SINR
+  CQI LTE × raws 0-4 for #Params
+  PLAID / PLAIU LTE × raws 0-4 for Sample duration
 - Fallback matcher now also strips the `(bloc XXX)` tech-selector
   suffix the backend emits for shared-event dynamic leaves
   (e.g. `#Params (bloc UMTS TD-SCDMA)` ↔ oracle `#Params`), on top
@@ -586,8 +591,8 @@
 - Mapping JSON now carries 22 synthetic `oracle-observed:` entries
   that cover every backend observed cell leaf currently emitted on
   the 3 project captures with real data:
-    LTE SINR / RSSI / Timing / Band / Ch / PCI × SCell 1-3
-    NR PCI / NR-ARFCN × observed cells
+  LTE SINR / RSSI / Timing / Band / Ch / PCI × SCell 1-3
+  NR PCI / NR-ARFCN × observed cells
   These were silently dropped before because the oracle itself does
   not declare SCell 1-3 for every metric (documentation gap) and the
   backend's dynamic observed-cell leaves had no mapping entry.
@@ -605,9 +610,9 @@
 
 - Mapping JSON enriched with 3 synthetic entries covering the live
   observed cells that the oracle itself does not publish:
-    LTE_SERVING_SINR_SCELL1  (raw=10)
-    LTE_SERVING_SINR_SCELL2  (raw=11)
-    LTE_SERVING_SINR_SCELL3  (raw=12)
+  LTE_SERVING_SINR_SCELL1 (raw=10)
+  LTE_SERVING_SINR_SCELL2 (raw=11)
+  LTE_SERVING_SINR_SCELL3 (raw=12)
   Keys prefixed `oracle-observed:<hn>` so they feed the tech-aware
   fallback introduced in 1.133.8 without colliding with real backend
   node ids.
@@ -641,7 +646,7 @@
   prefixed `oracle:<hn>` so they never collide with a real backend
   node id but still feed the tech-aware fallback.
 - Resulting live view on Test_6 under `LTE / Serving radio / Serving
-  / RSRP (CELLMEAS)` surfaces the full oracle serving cells —
+/ RSRP (CELLMEAS)` surfaces the full oracle serving cells —
   PCell + SCell 1 (n=1 343) + SCell 2 (n=459) + SCell 3 (n=384) +
   SCell 5 + SCell 6 — in a single column with no duplicate PCell.
 - SemVer front: **PATCH 1.133.8**; backend remains **0.123.2**.
@@ -836,8 +841,8 @@
   scatter view and Chronogram now render the real NMF capture clock on
   the X axis instead of raw `t_rel_s` seconds, with tooltip triple
   Local / UTC / Capture at millisecond precision. `effectiveTimeAxisMode`
-  + `timeMeta` propagated through the useMemo deps so the chart
-  refreshes on mode change.
+  - `timeMeta` propagated through the useMemo deps so the chart
+    refreshes on mode change.
 - Scatter view applies the same formatter when the X axis is implicit
   time; metric-vs-metric scatter keeps its own metric label.
 - Chronogram accepts `timeAxisMode` + `timeMeta` props and formats each
@@ -943,7 +948,8 @@ dimension modified.
 - Keeps the six Map UI corrections, four persisted per-workspace heights and
   responsive MapLibre resize behaviour from the server implementation.
 - SemVer front: **MINOR 1.130.0**.
-=======
+  \=======
+
 ## 1.129.6 (patch) — Real capture time on Metrics Graphs — 2026-11-01 (Agent BC5)
 
 - Metrics Workspace and Chronogram now format every X-axis tick with the real
@@ -993,6 +999,7 @@ dimension modified.
   reopen, with the map canvas resized and its camera/layers/selection kept.
 - Removes the floating "Zoom in to see cells" overlay; zoom thresholds and
   cell/sector/beam rendering conditions are unchanged.
+
 ## 1.130.0 (minor) — Map controls and Metrics cell catalogue — 2026-11-01 (BC1 + BC4)
 
 - Removes the redundant floating Metrics, GPS-unavailable and zoom-hint overlays
@@ -1061,7 +1068,7 @@ dimension modified.
   sequence; source dimensions come only from the selected capture members.
 - Adds capture/Superstream source selection with canonical member ordering and
   separate per-capture analytical rendering, preserving `(project_id,
-  capture_id, seq)` provenance without timestamp fusion.
+capture_id, seq)` provenance without timestamp fusion.
 - Events can be hidden without unmounting analytical panels; timeline state is
   retained and the recovered vertical space is resized immediately.
 - Adds durable Workspace Template create/list/read/apply/update/rename/delete
@@ -1127,6 +1134,7 @@ dimension modified.
   prouvés restent continus et la sélection unique `0 → 1 → remplacement → 0` est préservée.
 - Aucun endpoint, formule RF, valeur, décodeur ou contrat analytique n'est modifié.
 - SemVer front : **PATCH 1.126.15**.
+
 ## 1.126.15 (patch) — BC4-FRONT 2026-11-01 — colonnes métriques Signaling, panneau Paramètres RF, compteur retiré (Agent BC4)
 
 - **Colonnes métriques dans le tableau Signaling** : le popup « Afficher et
@@ -1143,6 +1151,7 @@ dimension modified.
 - **Barre des messages allégée** : le compteur « N messages » au-dessus du
   tableau Signaling est supprimé ; les icônes Colonnes, Export CSV et Effacer
   restent en place.
+
 ## 1.126.14 (patch) — BC4-FRONT 2026-10-31 — carte KPI alignée sur Signaling, légende interactive, sélection fidèle (Agent BC4)
 
 - **Légende en haut de carte** : la légende flottante passe du bas en haut ;
@@ -6620,6 +6629,7 @@ scripts/g5_diff_scope.sh    # diff limité à src/lib/api + env + scripts
 
 - The Signaling and Map RSRP layers draw a thin line from each positioned RSRP observation to its serving cell when the API provides an exact CHI-to-ECI reference match.
 - RSRP popups identify the proven serving cell, site, and CHI sequence. Captures without that proof keep their measurement points without a fabricated line.
+
 ## 1.130.0 (minor) — certified procedures in KPI Analytics — 2026-11-01 (BC4)
 
 - Merges the source-scoped procedure catalogue into the existing KPI tab

@@ -46,6 +46,7 @@ import {
   MapLinkConfidenceLegend,
 } from "./map-legend";
 import { metricMapKey } from "./query-keys";
+import { readPreferencesWithLinkReset } from "./mapLinkPreferenceMigration";
 import type { MetricMapResponse } from "@/lib/api/metrics-schemas";
 
 const SOURCE = "bc4-drive-rsrp";
@@ -113,9 +114,11 @@ const RSRP_COLOR_EXPRESSION = [
   ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
   "#94a3b8",
 ] as unknown as ExpressionSpecification;
-// v2 enables the measurement layer on first use. The dedicated Map page is
-// expected to open on real radio points rather than on an empty basemap.
-const STORE = "bc4.map.driveRsrp.v2";
+// v3 is a one-time preference migration. Earlier releases could persist all
+// radio links OFF while the UI still looked enabled in the other map control.
+// The v3 key resets only link visibility once; subsequent user choices remain
+// stored and are respected.
+const STORE = "bc4.map.driveRsrp.v3";
 
 type Prefs = {
   on: boolean;
@@ -213,10 +216,9 @@ function samePoint(
   );
 }
 
-function readPrefs(store: string, defaults: Prefs): Prefs {
+export function readDriveRsrpPrefs(store: string, defaults: Prefs = DEFAULT): Prefs {
   try {
-    const stored = JSON.parse(localStorage.getItem(store) ?? "{}") as Partial<Prefs>;
-    return { ...defaults, ...stored, links: { ...defaults.links, ...stored.links } };
+    return readPreferencesWithLinkReset(store, store.replace(/\.v3$/, ".v2"), defaults);
   } catch {
     return defaults;
   }
@@ -263,14 +265,12 @@ export function DriveRsrpLayer({
   /** Exact API points already loaded by a host KPI map. Sharing them keeps
    * selection and radio evidence on one dataset and avoids a duplicate map
    * request with a different filter scope. */
-  hostMapData?: Pick<
-    MetricMapResponse,
-    | "map_points"
-    | "origin_ts"
-    | "nmf_start_at"
-    | "capture_date"
-    | "utc_offset_min"
-  > | undefined;
+  hostMapData?:
+    | Pick<
+        MetricMapResponse,
+        "map_points" | "origin_ts" | "nmf_start_at" | "capture_date" | "utc_offset_min"
+      >
+    | undefined;
   /** Host map legend panel element the RSRP rows are rendered into. */
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
@@ -282,10 +282,7 @@ export function DriveRsrpLayer({
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
-  // v2 deliberately resets the embedded Signaling preference once: older
-  // sessions may have persisted the layer OFF before it became the primary
-  // map measurement. Signaling now opens with real RSRP visible and framed.
-  const store = embedded ? "bc4.signaling.driveRsrp.v2" : STORE;
+  const store = embedded ? "bc4.signaling.driveRsrp.v3" : STORE;
   const [storedPrefs, setPrefs] = useState<Prefs>(DEFAULT);
   const prefs = useMemo(
     () => (hideControls ? { ...storedPrefs, on: true } : storedPrefs),
@@ -303,7 +300,7 @@ export function DriveRsrpLayer({
     from: string;
     to: string;
   }>();
-  useEffect(() => setPrefs(readPrefs(store, DEFAULT)), [store]);
+  useEffect(() => setPrefs(readDriveRsrpPrefs(store, DEFAULT)), [store]);
   useEffect(() => {
     if (externalSelection === undefined) return;
     selectedPointRef.current = externalSelection;
