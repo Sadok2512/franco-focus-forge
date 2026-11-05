@@ -1,3 +1,8 @@
+## 1.141.7 (patch) — Sélection Serving sur les points superposés — 2026-11-05 (BC4)
+
+- Un clic sur plusieurs mesures partageant le même pixel privilégie désormais la séquence qui porte une preuve Serving publiée par l'API.
+- La ligne Serving et sa cellule cible ne disparaissent plus parce que MapLibre a retourné en premier une séquence superposée sans rattachement radio.
+
 ## 1.141.6 (patch) — Payload Signaling sans résumé décodé dupliqué — 2026-11-05 (Agent BC1)
 
 - Retire du panneau Payload la section « Decoded values » et ses lignes de valeurs dupliquées ; l'arbre ASN.1, les paramètres décodés et les données backend restent inchangés.

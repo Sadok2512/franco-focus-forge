@@ -185,6 +185,23 @@ export function activeServingPointLink(
   return entry && link ? { point: entry.point, link } : undefined;
 }
 
+/** Resolve a click stack deterministically. Several measurements often share
+ * one GPS pixel; prefer the API-published Serving evidence instead of the
+ * arbitrary first MapLibre feature, otherwise a valid link can disappear. */
+export function preferredPointFromClickStack(
+  points: readonly DriveRsrpPoint[],
+  sequences: readonly number[],
+): DriveRsrpPoint | undefined {
+  const candidates = sequences
+    .map((seq) => points.find((point) => point.seq === seq))
+    .filter((point): point is DriveRsrpPoint => point !== undefined);
+  return (
+    candidates.find((point) => pointCellLinks(point).some((link) => link.kind === "serving")) ??
+    candidates.find((point) => pointCellLinks(point).length > 0) ??
+    candidates[0]
+  );
+}
+
 function samePoint(
   selected: MeasurementPointIdentity | null,
   projectId: string,
@@ -881,20 +898,20 @@ export function DriveRsrpLayer({
           samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)
         );
       });
-      const p = activeFeature?.properties ?? e.features?.[0]?.properties;
-      if (!p) return;
-      const seq = Number(p["seq"]);
-      const point = drivePoints.find((candidate) => candidate.seq === seq);
-      if (!point || !effectiveCaptureId) return;
-      if (samePoint(selectedPointRef.current, projectId, effectiveCaptureId, seq)) {
+      if (activeFeature && effectiveCaptureId) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
         return;
       }
+      const sequences = (e.features ?? [])
+        .map((feature) => Number(feature.properties?.["seq"]))
+        .filter((seq) => Number.isFinite(seq));
+      const point = preferredPointFromClickStack(drivePoints, sequences);
+      if (!point || !effectiveCaptureId) return;
       const identity: SelectedDrivePoint = {
         projectId,
         captureId: effectiveCaptureId,
-        seq,
+        seq: point.seq,
         lng: point.lng,
         lat: point.lat,
       };
