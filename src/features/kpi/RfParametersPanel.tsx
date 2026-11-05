@@ -10,8 +10,6 @@ import { bearingDeg, type RfPointMetric } from "./map-rf-panel";
 
 const ND = "N/D";
 const finite = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
-const text = (v: unknown) => (v === null || v === undefined || v === "" ? ND : String(v));
-
 export function formatElapsed(value?: number | null): string {
   if (!finite(value)) return ND;
   const h = Math.floor(value / 3600);
@@ -36,7 +34,9 @@ function Badge({ children, tone = "primary" }: { children: ReactNode; tone?: "pr
   return (
     <span
       className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-        tone === "nr" ? "bg-violet-500/10 text-violet-600 dark:text-violet-400" : "bg-primary/10 text-primary"
+        tone === "nr"
+          ? "bg-violet-500/10 text-violet-600 dark:text-violet-400"
+          : "bg-primary/10 text-primary"
       }`}
     >
       {children}
@@ -44,7 +44,12 @@ function Badge({ children, tone = "primary" }: { children: ReactNode; tone?: "pr
   );
 }
 
-function Row({ label, value, className = "", highlight = false }: {
+function Row({
+  label,
+  value,
+  className = "",
+  highlight = false,
+}: {
   label: string;
   value: ReactNode;
   className?: string;
@@ -67,7 +72,15 @@ function Row({ label, value, className = "", highlight = false }: {
   );
 }
 
-function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
+function Section({
+  title,
+  children,
+  aside,
+}: {
+  title: string;
+  children: ReactNode;
+  aside?: ReactNode;
+}) {
   const [open, setOpen] = useState(true);
   return (
     <section className="border-b border-border/60 pb-2 last:border-b-0">
@@ -81,7 +94,11 @@ function Section({ title, children, aside }: { title: string; children: ReactNod
           {title}
           {aside}
         </span>
-        {open ? <ChevronUp className="h-3.5 w-3.5 shrink-0" /> : <ChevronDown className="h-3.5 w-3.5 shrink-0" />}
+        {open ? (
+          <ChevronUp className="h-3.5 w-3.5 shrink-0" />
+        ) : (
+          <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+        )}
       </button>
       {open && <div className="space-y-0.5">{children}</div>}
     </section>
@@ -154,32 +171,31 @@ export function RfParametersPanel({
       {anchor && (
         <Section title={t("mapWorkspace.rf.radioInfo")}>
           <Row label={t("mapWorkspace.rf.technology")} value={<Badge>{tech}</Badge>} />
-          <Row
-            label="NR"
-            value={<Badge tone="nr">{t("mapPointPopup.nrAnchor")}</Badge>}
-          />
-          <Row label="NR PCI" value={text(anchor.pci)} />
-          <Row label="NRARFCN" value={text(anchor.arfcn)} />
+          <Row label="NR" value={<Badge tone="nr">{t("mapPointPopup.nrAnchor")}</Badge>} />
+          {finite(anchor.pci) && <Row label="NR PCI" value={String(anchor.pci)} />}
+          {finite(anchor.arfcn) && <Row label="NRARFCN" value={String(anchor.arfcn)} />}
         </Section>
       )}
 
       {serving && (
-        <Section
-          title={t("mapPointPopup.serving")}
-          aside={<Confidence link={serving} />}
-        >
+        <Section title={t("mapPointPopup.serving")} aside={<Confidence link={serving} />}>
           <Row label={t("mapWorkspace.rf.servingTech")} value={<Badge>LTE PCell</Badge>} />
-          <Row label="PCI" value={text(serving.pci)} />
-          <Row label="EARFCN" value={text(serving.arfcn)} />
-          <Row label={t("mapWorkspace.rf.site")} value={text(serving.siteName)} />
-          <Row
-            label={t("mapWorkspace.distanceUeSite")}
-            value={formatDistance(serving.distanceM)}
-            className="text-primary"
-          />
-          <Row label={t("mapWorkspace.rf.azimuth")} value={azimuth} />
+          {finite(serving.pci) && <Row label="PCI" value={String(serving.pci)} />}
+          {finite(serving.arfcn) && <Row label="EARFCN" value={String(serving.arfcn)} />}
+          {serving.siteName && <Row label={t("mapWorkspace.rf.site")} value={serving.siteName} />}
+          {finite(serving.distanceM) && (
+            <Row
+              label={t("mapWorkspace.distanceUeSite")}
+              value={formatDistance(serving.distanceM)}
+              className="text-primary"
+            />
+          )}
+          {azimuth !== ND && <Row label={t("mapWorkspace.rf.azimuth")} value={azimuth} />}
           {details.neighbours.length > 0 && (
-            <Row label={t("mapWorkspace.rf.neighbours")} value={String(details.neighbours.length)} />
+            <Row
+              label={t("mapWorkspace.rf.neighbours")}
+              value={String(details.neighbours.length)}
+            />
           )}
         </Section>
       )}

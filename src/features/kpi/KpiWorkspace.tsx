@@ -111,6 +111,7 @@ import {
 } from "./workspace-tabs";
 import { WorkspaceTabsBar } from "./WorkspaceTabsBar";
 import { MapPanelWidthContext, PanelShell } from "./PanelShell";
+import { isMapOnlyWorkspace } from "./workspace-map-layout";
 import { WorkspaceGrid } from "./WorkspaceGrid";
 import { ActiveEventsProvider } from "./active-events";
 import { PointSyncProvider } from "./point-sync";
@@ -605,15 +606,15 @@ function Workspace({
     metricsTablePane &&
     visibleGraphMetricCount === 0;
 
-  const mapOnlyWorkspace =
-    !metricsTablePane &&
-    metricCardPanelCount === 1 &&
-    ((codes.length === 0 &&
-      selectedMetrics.length === 1 &&
-      metricViews[selectedMetrics[0]!] === "map") ||
-      (selectedMetrics.length === 0 &&
-        codes.length === 1 &&
-        configFor(codes[0]!).visualization === "map"));
+  const mapOnlyWorkspace = isMapOnlyWorkspace({
+    metricsTablePane,
+    metricCardPanelCount,
+    selectedMetrics,
+    metricViews,
+    kpiCodes: codes,
+    kpiPanelCount: codes.filter((code) => configFor(code).visualization !== "map").length,
+    signalingPanelCount: currentTab.signalingPanels?.length ?? 0,
+  });
   const [cardViewRequest, setCardViewRequest] = useState<
     | { workspaceId: string; id: string; code: string; view: MetricWorkspaceView; n: number }
     | undefined

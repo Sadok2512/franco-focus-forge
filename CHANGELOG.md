@@ -1,3 +1,9 @@
+## 1.142.1 (patch) — Map KPI indépendante et responsive — 2026-11-05 (BC4)
+
+- Empêche le mode « Map seule » de s'activer lorsqu'une Timeline ou un panneau L3 est présent, supprimant le chevauchement des lignes du Workspace.
+- Rend les contrôles Map adaptatifs à la largeur et à la hauteur du panneau, compacte la barre Sites / Cells / Z / Distance et conserve une hauteur redimensionnable par Workspace.
+- Ferme RF Parameters sans perdre le point sélectionné et masque les identités radio absentes au lieu d'afficher des valeurs de remplacement.
+
 ## 1.142.0 (minor) — Arbre Métriques simplifié et avancé — 2026-11-05 (BC4)
 
 - Ajoute le sélecteur `Simplifié | Avancé` au-dessus de l’arbre sans modifier le design des lignes existantes.

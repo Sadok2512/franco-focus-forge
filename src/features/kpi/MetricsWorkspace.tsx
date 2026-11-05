@@ -1967,6 +1967,7 @@ export function MetricsWorkspace({
                 }
                 fullRow={mapFillsAvailable && metricView === "map"}
                 bare={metricView === "map"}
+                {...(metricView === "map" ? { defaultHeight: 420 } : {})}
               >
                 {(panelTitle) =>
                   metricView === "map" ? (

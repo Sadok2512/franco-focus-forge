@@ -32,6 +32,9 @@ describe("Map workspace chrome", () => {
     expect(screen.queryByTestId("map-workspace-topbar")).not.toBeInTheDocument();
     expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("619");
     expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("341");
+    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent("Z 13.0");
+    expect(screen.getByTestId("map-workspace-statusbar")).toHaveTextContent(/Distance/);
+    expect(screen.getByTestId("map-workspace-statusbar")).not.toHaveTextContent(/0\.0000/);
   });
 
   it("drives sites, cell sectors and technology from the sidebar layers panel", () => {

@@ -1139,7 +1139,7 @@ export function DriveRsrpLayer({
             details={selectedDetails}
             position={selectedPoint ? [selectedPoint.lng, selectedPoint.lat] : undefined}
             metrics={pointMetrics?.(selectedDetails.seq) ?? []}
-            onClose={clearSelection}
+            onClose={() => rfPanel?.requestClose()}
           />,
           rfHost,
         )

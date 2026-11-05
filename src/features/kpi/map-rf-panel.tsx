@@ -9,7 +9,9 @@ export type MapRfPanel = {
   setHost: (node: HTMLDivElement | null) => void;
   /** Incremented on every new point selection so the chrome can show the tab. */
   selectionTick: number;
+  closeTick: number;
   notifySelection: () => void;
+  requestClose: () => void;
 };
 
 const Ctx = createContext<MapRfPanel | null>(null);
@@ -17,9 +19,17 @@ const Ctx = createContext<MapRfPanel | null>(null);
 export function MapRfPanelProvider({ children }: { children: ReactNode }) {
   const [host, setHost] = useState<HTMLDivElement | null>(null);
   const [selectionTick, setTick] = useState(0);
+  const [closeTick, setCloseTick] = useState(0);
   const value = useMemo<MapRfPanel>(
-    () => ({ host, setHost, selectionTick, notifySelection: () => setTick((n) => n + 1) }),
-    [host, selectionTick],
+    () => ({
+      host,
+      setHost,
+      selectionTick,
+      closeTick,
+      notifySelection: () => setTick((n) => n + 1),
+      requestClose: () => setCloseTick((n) => n + 1),
+    }),
+    [closeTick, host, selectionTick],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

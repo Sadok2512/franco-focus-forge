@@ -1147,6 +1147,7 @@
     "center": "Recentrer la carte",
     "centerRoute": "Centrer sur le parcours",
     "distance": "Mesurer une distance",
+    "statusDistance": "Distance",
     "area": "Mesurer une surface",
     "select": "Sélection site / cellule",
     "toggleLayers": "Calques de la carte",

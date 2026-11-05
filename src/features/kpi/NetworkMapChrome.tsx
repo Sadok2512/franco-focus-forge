@@ -5,7 +5,6 @@ import type { GeoJSONSource, Map as MlMap, MapMouseEvent } from "maplibre-gl";
 import {
   ChevronDown,
   ChevronLeft,
-  Crosshair,
   ExternalLink,
   ArrowLeftRight,
   Layers,
@@ -105,8 +104,8 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   } = props;
   const locale = i18n.resolvedLanguage === "fr" ? "fr-FR" : "en-GB";
   const rootRef = useRef<HTMLDivElement>(null);
-  const [width, setWidth] = useState(1200);
-  const compact = width < 760;
+  const [size, setSize] = useState({ width: 1200, height: 700 });
+  const compact = size.width < 760 || size.height < 440;
   const [panelOpen, setPanelOpenState] = useState<boolean | null>(() => {
     try {
       const saved = localStorage.getItem("bc4.map.chrome.sidebar.v1");
@@ -140,17 +139,27 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     setPanelTab("rf");
     setPanelOpen(true);
   }, [selectionTick]);
+  const closeTick = rfPanel?.closeTick ?? 0;
+  useEffect(() => {
+    if (closeTick === 0) return;
+    setPanelOpen(false);
+  }, [closeTick]);
   const [query, setQuery] = useState("");
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [cursor, setCursor] = useState<[number, number] | null>(null);
   const [liveZoom, setLiveZoom] = useState<number | null>(null);
   const [centerLat, setCenterLat] = useState(46.6);
   const [mode, setMode] = useState<MeasureMode>("none");
   const [points, setPoints] = useState<Array<[number, number]>>([]);
   const [basemapOpen, setBasemapOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const fullscreenLabel = t(props.fullscreenLevel === 2 ? "mapWorkspace.exitFullscreen" : props.fullscreen ? "mapWorkspace.totalFullscreen" : "mapWorkspace.frameFullscreen");
+  const fullscreenLabel = t(
+    props.fullscreenLevel === 2
+      ? "mapWorkspace.exitFullscreen"
+      : props.fullscreen
+        ? "mapWorkspace.totalFullscreen"
+        : "mapWorkspace.frameFullscreen",
+  );
   const [basemap, setBasemap] = useState<BasemapId>(() => readBasemap());
   const chooseBasemap = (id: BasemapId) => {
     setBasemap(id);
@@ -161,7 +170,10 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
   useEffect(() => {
     const node = rootRef.current;
     if (!node || typeof ResizeObserver === "undefined") return;
-    const obs = new ResizeObserver(([entry]) => entry && setWidth(entry.contentRect.width));
+    const obs = new ResizeObserver(
+      ([entry]) =>
+        entry && setSize({ width: entry.contentRect.width, height: entry.contentRect.height }),
+    );
     obs.observe(node);
     return () => obs.disconnect();
   }, []);
@@ -187,23 +199,17 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
     };
   }, [map, props.layersLegend, tab]);
 
-  // Live cursor / zoom / scale from the real map state.
+  // Live zoom / scale from the real map state.
   useEffect(() => {
     if (!map) return;
-    const move = (e: MapMouseEvent) => setCursor([e.lngLat.lng, e.lngLat.lat]);
-    const out = () => setCursor(null);
     const view = () => {
       setLiveZoom(map.getZoom());
       const c = map.getCenter?.();
       if (c) setCenterLat(c.lat);
     };
     view();
-    map.on("mousemove", move);
-    map.on("mouseout", out);
     map.on("move", view);
     return () => {
-      map.off("mousemove", move);
-      map.off("mouseout", out);
       map.off("move", view);
     };
   }, [map]);
@@ -315,7 +321,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         : "";
 
   const railBtn = (on = false) =>
-    `flex h-8 w-8 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
+    `flex ${compact ? "h-7 w-7" : "h-8 w-8"} shrink-0 items-center justify-center rounded-lg transition ${on ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-muted"}`;
 
   // MAP UI V1 — floating compact legend: technology, band colours and symbols
   // only. The "site colour = operator" row is removed by design.
@@ -383,7 +389,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {showPanel ? (
         <aside
           aria-label={t("mapWorkspace.layers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex w-64 max-w-[calc(100%-1.5rem)] flex-col overflow-hidden rounded-xl ${glass} ${compact ? "bottom-3" : "bottom-[76px]"}`}
+          className={`pointer-events-auto absolute left-2 top-2 flex w-64 max-w-[calc(100%-4rem)] flex-col overflow-hidden rounded-xl ${glass} bottom-12`}
         >
           <div className="flex items-center justify-between border-b px-3 py-2">
             {tabs.length > 1 ? (
@@ -549,7 +555,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           role="toolbar"
           aria-orientation="vertical"
           aria-label={t("mapWorkspace.layers")}
-          className={`pointer-events-auto absolute left-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
+          className={`pointer-events-auto absolute left-2 top-2 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
         >
           <button
             type="button"
@@ -595,7 +601,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       {/* Top-right — floating search */}
       {(!compact || searchOpen) && (
         <div
-          className={`pointer-events-auto absolute top-3 ${compact ? "left-3 right-14" : "right-14 w-[300px]"}`}
+          className={`pointer-events-auto absolute top-2 ${compact ? "left-11 right-12" : "right-12 w-[min(300px,calc(100%-22rem))]"}`}
         >
           <label className={`flex h-10 items-center gap-2 rounded-xl px-3 ${glass}`}>
             <Search className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
@@ -658,7 +664,7 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
 
       {/* Right — vertical map tools */}
       <div
-        className={`pointer-events-auto absolute right-3 top-3 flex flex-col gap-1 rounded-xl p-1 ${glass}`}
+        className={`pointer-events-auto absolute right-2 top-2 flex max-h-[calc(100%-3.5rem)] flex-col gap-0.5 overflow-y-auto rounded-xl p-1 ${glass}`}
         role="toolbar"
         aria-orientation="vertical"
         aria-label={t("mapWorkspace.tools")}
@@ -687,15 +693,31 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
           </Button>
         )}
         <Button
-          variant="ghost" size="icon"
+          variant="ghost"
+          size="icon"
           className={railBtn(props.fullscreen)}
           aria-label={fullscreenLabel}
           title={fullscreenLabel}
           onClick={props.onToggleFullscreen}
         >
-          {props.fullscreenLevel === 2 ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+          {props.fullscreenLevel === 2 ? (
+            <Minimize2 className="h-4 w-4" />
+          ) : (
+            <Maximize2 className="h-4 w-4" />
+          )}
         </Button>
-        {props.fullscreen && props.onRestore && <Button variant="ghost" size="icon" className={railBtn()} aria-label={t("mapWorkspace.restoreMap")} title={t("mapWorkspace.restoreMap")} onClick={props.onRestore}><Minimize2 className="h-4 w-4" /></Button>}
+        {props.fullscreen && props.onRestore && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className={railBtn()}
+            aria-label={t("mapWorkspace.restoreMap")}
+            title={t("mapWorkspace.restoreMap")}
+            onClick={props.onRestore}
+          >
+            <Minimize2 className="h-4 w-4" />
+          </Button>
+        )}
         <button
           type="button"
           className={railBtn(settingsOpen)}
@@ -760,40 +782,71 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
         </button>
       </div>
 
-      {settingsOpen && <div role="dialog" aria-label={t("mapWorkspace.mapSettings")} className={`pointer-events-auto absolute right-14 top-3 w-56 rounded-lg p-3 ${glass}`}>
-        <div className="mb-2 flex items-center justify-between gap-2"><strong className="text-xs">{t("mapWorkspace.mapSettings")}</strong><Button variant="ghost" size="icon" className="h-6 w-6" aria-label={t("mapWorkspace.closeSettings")} onClick={() => setSettingsOpen(false)}><X className="h-4 w-4" /></Button></div>
-        <Button variant="outline" size="sm" className="w-full text-xs" disabled={props.fullscreen || !props.onToggleWide} aria-pressed={props.wide ?? false} onClick={props.onToggleWide}><ArrowLeftRight className="h-4 w-4" />{t(props.wide ? "mapWorkspace.restoreWidth" : "mapWorkspace.increaseWidth")}</Button>
-        {props.onMapHeightChange && (
-          <div className="mt-2 border-t border-border/60 pt-2">
-            <p className="mb-1.5 text-[11px] font-semibold">{t("mapWorkspace.mapHeight")}</p>
-            <div className="grid grid-cols-2 gap-1" role="radiogroup" aria-label={t("mapWorkspace.mapHeight")}>
-              {MAP_HEIGHT_OPTIONS.map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  role="radio"
-                  aria-checked={(props.mapHeight ?? "default") === option}
-                  onClick={() => props.onMapHeightChange?.(option)}
-                  className={`rounded-md border px-2 py-1 text-[11px] transition ${
-                    (props.mapHeight ?? "default") === option
-                      ? "border-primary bg-primary/10 font-semibold"
-                      : "border-border hover:bg-muted"
-                  }`}
-                >
-                  {t(`mapWorkspace.mapHeightOption.${option}`)}
-                </button>
-              ))}
-            </div>
+      {settingsOpen && (
+        <div
+          role="dialog"
+          aria-label={t("mapWorkspace.mapSettings")}
+          className={`pointer-events-auto absolute right-11 top-2 max-h-[calc(100%-3.5rem)] w-56 max-w-[calc(100%-3.5rem)] overflow-y-auto rounded-lg p-3 ${glass}`}
+        >
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <strong className="text-xs">{t("mapWorkspace.mapSettings")}</strong>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              aria-label={t("mapWorkspace.closeSettings")}
+              onClick={() => setSettingsOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           </div>
-        )}
-      </div>}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full text-xs"
+            disabled={props.fullscreen || !props.onToggleWide}
+            aria-pressed={props.wide ?? false}
+            onClick={props.onToggleWide}
+          >
+            <ArrowLeftRight className="h-4 w-4" />
+            {t(props.wide ? "mapWorkspace.restoreWidth" : "mapWorkspace.increaseWidth")}
+          </Button>
+          {props.onMapHeightChange && (
+            <div className="mt-2 border-t border-border/60 pt-2">
+              <p className="mb-1.5 text-[11px] font-semibold">{t("mapWorkspace.mapHeight")}</p>
+              <div
+                className="grid grid-cols-2 gap-1"
+                role="radiogroup"
+                aria-label={t("mapWorkspace.mapHeight")}
+              >
+                {MAP_HEIGHT_OPTIONS.map((option) => (
+                  <button
+                    key={option}
+                    type="button"
+                    role="radio"
+                    aria-checked={(props.mapHeight ?? "default") === option}
+                    onClick={() => props.onMapHeightChange?.(option)}
+                    className={`rounded-md border px-2 py-1 text-[11px] transition ${
+                      (props.mapHeight ?? "default") === option
+                        ? "border-primary bg-primary/10 font-semibold"
+                        : "border-border hover:bg-muted"
+                    }`}
+                  >
+                    {t(`mapWorkspace.mapHeightOption.${option}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Basemap selector — 2 × 2 grid opened from the rail Layers button */}
       {basemapOpen && (
         <div
           role="radiogroup"
           aria-label={t("mapWorkspace.basemap")}
-          className={`pointer-events-auto absolute right-14 w-56 rounded-xl p-2 ${glass}`}
+          className={`pointer-events-auto absolute right-11 w-56 max-w-[calc(100%-3.5rem)] rounded-xl p-2 ${glass}`}
           style={{ top: compact ? 56 : 300 }}
         >
           <p className="mb-1.5 px-1 text-[11px] font-semibold">{t("mapWorkspace.basemap")}</p>
@@ -867,33 +920,18 @@ export function NetworkMapChrome(props: NetworkMapChromeProps) {
       )}
 
       {/* Bottom — status bar centred horizontally, state dot at the right. */}
-      <div
-        className="pointer-events-none absolute bottom-3 left-1/2 flex max-w-[calc(100%-7rem)] -translate-x-1/2 items-end justify-center"
-      >
+      <div className="pointer-events-none absolute bottom-3 left-1/2 flex max-w-[calc(100%-7rem)] -translate-x-1/2 items-end justify-center">
         <div
           data-testid="map-workspace-statusbar"
           className={`pointer-events-auto flex min-w-0 max-w-full items-center gap-2.5 overflow-x-auto whitespace-nowrap rounded-xl px-2.5 py-0.5 text-[11px] ${glass}`}
         >
           <Stat value={fmt(status?.n_sites)} label={t("mapWorkspace.visibleSites")} />
           <Stat value={fmt(status?.n_cells)} label={t("mapWorkspace.visibleCells")} />
-          <span className="h-5 w-px bg-border" />
           <span className="tabular-nums">
             <span className="text-muted-foreground">Z </span>
             <strong className="text-sm">{zoom.toFixed(1)}</strong>
           </span>
-          {!compact && (
-            <span
-              className="inline-flex min-w-[118px] items-center gap-1 tabular-nums text-muted-foreground"
-              title={t("mapWorkspace.cursor")}
-            >
-              <Crosshair className="h-3 w-3" />
-              {cursor ? `${cursor[1].toFixed(4)}, ${cursor[0].toFixed(4)}` : "—"}
-            </span>
-          )}
-          <span className="flex flex-col items-center text-[10px]" title={t("mapWorkspace.scale")}>
-            {scale.label}
-            <span className="h-1 border-x border-b border-foreground" style={{ width: scale.px }} />
-          </span>
+          <Stat value={scale.label} label={t("mapWorkspace.statusDistance")} />
         </div>
       </div>
       <div

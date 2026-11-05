@@ -53,4 +53,27 @@ describe("RF Parameters tab", () => {
     expect(Math.round(bearingDeg([2, 50], [2, 51]))).toBe(0);
     expect(Math.round(bearingDeg([2, 50], [3, 50]))).toBe(90);
   });
+
+  it("does not render unavailable serving identity fields", () => {
+    render(
+      <RfParametersPanel
+        details={{
+          ...base,
+          value: -96.4,
+          serving: {
+            kind: "serving",
+            confidence: "probable",
+            lat: 50,
+            lng: 2,
+          },
+        }}
+        position={[2.01, 50.01]}
+        onClose={vi.fn()}
+      />,
+    );
+    const panel = screen.getByTestId("rf-parameters-panel");
+    expect(panel).not.toHaveTextContent("PCI");
+    expect(panel).not.toHaveTextContent("EARFCN");
+    expect(panel).not.toHaveTextContent("N/D");
+  });
 });
