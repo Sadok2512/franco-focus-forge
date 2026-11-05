@@ -4,6 +4,7 @@ import type {
   Map as MlMap,
   MapLayerMouseEvent,
   MapMouseEvent,
+  PointLike,
   Popup as MlPopup,
 } from "maplibre-gl";
 import { getSites, type SitesResponse } from "@/lib/api/sites";
@@ -29,6 +30,24 @@ const CELL_POINT_LAYER_ID = "bc4-sites-cell";
 const CELL_BEAM_LAYER_ID = "bc4-sites-cell-sector";
 const CELL_BEAM_OUTLINE_LAYER_ID = "bc4-sites-cell-sector-outline";
 const SITE_LABEL_LAYER_ID = "bc4-sites-label";
+/** Measurement layers own their click before the broad Sites/Cells hit-test.
+ * A GPS point can sit exactly over a site marker; opening both interactions
+ * hides the selected radio segment behind the large site popup. The serving
+ * endpoint layer is intentionally absent so its underlying site/cell remains
+ * clickable. */
+export const MEASUREMENT_CLICK_LAYER_IDS = [
+  "metrics-v3",
+  "bc4-drive-rsrp-points",
+  "bc4-drive-rsrp-selected",
+] as const;
+
+export function measurementOwnsMapClick(
+  map: Pick<MlMap, "getLayer" | "queryRenderedFeatures">,
+  point: PointLike,
+): boolean {
+  const layers = MEASUREMENT_CLICK_LAYER_IDS.filter((id) => map.getLayer(id));
+  return layers.length > 0 && map.queryRenderedFeatures(point, { layers }).length > 0;
+}
 export type SitesLayerDisplay = { beams: boolean; labels: boolean; beamSize?: number; beamIntensity?: number };
 export const MAP_MIN_ZOOM = 6;
 // 1.126.4 BC4 — MAP_INITIAL_ZOOM reste à 11 ; MapWorkspacePage frame
@@ -379,6 +398,14 @@ export function useSitesLayer(
     };
     // Priority: site marker > cell point > beam. Signaling markers keep their own click.
     const mapClick = (event: MapMouseEvent) => {
+      if (measurementOwnsMapClick(map, event.point)) {
+        // A point selection must remain unobstructed. Close a previous network
+        // popup without consuming the measurement layer's own click handler.
+        popupRef.current?.remove();
+        hoverPopupRef.current?.remove();
+        clearSelection();
+        return;
+      }
       const layers = [SITE_LAYER_ID, CELL_POINT_LAYER_ID, CELL_BEAM_LAYER_ID].filter((id) => map.getLayer(id));
       const own = map.getStyle?.()?.layers?.filter((l) => l.id.startsWith("signaling")).map((l) => l.id) ?? [];
       if (own.length && map.queryRenderedFeatures(event.point, { layers: own }).length) return;

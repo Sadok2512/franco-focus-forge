@@ -1,3 +1,8 @@
+## 1.143.2 (patch) — Clic des liens radio non masqué par les sites — 2026-11-05 (BC4)
+
+- Donne la priorité au point de mesure KPI lors d'un clic superposé à un site ou secteur, afin que la fiche réseau ne masque plus le lien LTE/NR sélectionné.
+- Conserve le clic sur la cellule cible, les identités certifiées publiées par l'API et les contrôles de liens existants sans modifier les données RF.
+
 ## 1.143.1 (patch) — Noms avancés dans l’arbre simplifié — 2026-11-05 (BC4)
 
 - Réutilise exactement `display_code_lisible` de la vue Avancée pour les valeurs, EARFCN et PCI affichés sous PCell/SCell.
