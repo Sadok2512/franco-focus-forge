@@ -2045,6 +2045,7 @@ export function MetricsWorkspace({
                     />
                   ) : (
                     <MetricGraphCard
+                      panelId={panel.id}
                       projectId={projectId}
                       code={s.full}
                       label={panelTitle}

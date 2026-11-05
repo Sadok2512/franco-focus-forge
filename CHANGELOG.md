@@ -1,3 +1,10 @@
+## 1.141.3 (patch) — Radio Snapshot compact et zoom temporel réel — 2026-11-05 (Agent BC1)
+
+- Compacte les badges et les lignes du panneau Radio Snapshot en une grille stable nom / valeur / barre ; le déplacement et les actions deviennent disponibles au survol sans boutons permanents.
+- Conserve l’ajout, le retrait, les seuils et la persistance des métriques par Workspace, sans interpolation ni conversion des valeurs absentes.
+- Applique la fenêtre du Brush aux bornes visibles de l’axe X des Graphs, persiste le zoom par panneau et ajoute l’action « Réinitialiser le zoom ».
+- SemVer frontend : **PATCH 1.141.3** ; backend, API, catalogue, décodeur et données RF inchangés.
+
 ## 1.141.2 (patch) — Heure réelle du log sur la Map — 2026-11-05 (BC4)
 
 - Le point sélectionné de la Map affiche l'heure locale exacte du log au lieu du temps relatif repartant de zéro.

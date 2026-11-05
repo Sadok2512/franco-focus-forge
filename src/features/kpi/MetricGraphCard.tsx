@@ -28,6 +28,7 @@ import {
   MapPin,
   Maximize2,
   Palette,
+  RotateCcw,
   Table2,
   TrendingUp,
   X,
@@ -82,6 +83,45 @@ import { usePointSync } from "./point-sync";
 import { parseMetricSelection } from "./metric-selection";
 
 const KPI_SERIES_RENDER_DEBUG = import.meta.env["VITE_KPI_SERIES_RENDER_DEBUG"] === "1";
+
+export type MetricZoomWindow = { startIndex: number; endIndex: number };
+
+export function normalizeMetricZoom(
+  zoom: MetricZoomWindow | null,
+  rowCount: number,
+): MetricZoomWindow | null {
+  if (!zoom || rowCount < 2) return null;
+  const startIndex = Math.max(0, Math.min(rowCount - 1, Math.floor(zoom.startIndex)));
+  const endIndex = Math.max(startIndex, Math.min(rowCount - 1, Math.floor(zoom.endIndex)));
+  return startIndex === 0 && endIndex === rowCount - 1 ? null : { startIndex, endIndex };
+}
+
+export function metricZoomDomain(
+  rows: Array<{ t_rel_s: number }>,
+  zoom: MetricZoomWindow | null,
+): [number, number] {
+  const normalized = normalizeMetricZoom(zoom, rows.length);
+  const first = rows[normalized?.startIndex ?? 0]?.t_rel_s ?? 0;
+  const last = rows[normalized?.endIndex ?? Math.max(0, rows.length - 1)]?.t_rel_s ?? first;
+  return first === last ? [first, first + 1] : [first, last];
+}
+
+export function metricZoomStorageKey(workspaceId: string | undefined, panelId: string) {
+  return `bc4.metric-zoom.v1.${workspaceId ?? "metrics"}.${panelId}`;
+}
+
+function readMetricZoom(workspaceId: string | undefined, panelId: string): MetricZoomWindow | null {
+  try {
+    const value = JSON.parse(
+      localStorage.getItem(metricZoomStorageKey(workspaceId, panelId)) ?? "null",
+    ) as Partial<MetricZoomWindow> | null;
+    return typeof value?.startIndex === "number" && typeof value.endIndex === "number"
+      ? { startIndex: value.startIndex, endIndex: value.endIndex }
+      : null;
+  } catch {
+    return null;
+  }
+}
 
 /** Aggregate routes accept a catalogue metric code, not the UI's
  * code@cell selector used by series/map endpoints. */
@@ -145,6 +185,7 @@ export function MetricGraphCard({
   // "capture" (comportement 1.97.0).
   timeAxisMode,
   workspaceId,
+  panelId,
   style: styleProp,
   onStyleChange,
   prefetchedSeries,
@@ -169,6 +210,7 @@ export function MetricGraphCard({
   eventsCaptureId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   workspaceId?: string | undefined;
+  panelId?: string | undefined;
   style?: MetricStyle | undefined;
   onStyleChange?: ((style: MetricStyle) => void) | undefined;
   prefetchedSeries?: ChronogramData | undefined;
@@ -185,6 +227,27 @@ export function MetricGraphCard({
     onViewChange?.(v);
   };
   const cardRef = useRef<HTMLElement>(null);
+  const zoomPanelId = panelId ?? code;
+  const zoomKey = metricZoomStorageKey(workspaceId, zoomPanelId);
+  const [zoomState, setZoomState] = useState<{ key: string; value: MetricZoomWindow | null }>(
+    () => ({
+      key: zoomKey,
+      value: readMetricZoom(workspaceId, zoomPanelId),
+    }),
+  );
+  if (zoomState.key !== zoomKey) {
+    setZoomState({ key: zoomKey, value: readMetricZoom(workspaceId, zoomPanelId) });
+  }
+  const zoom = zoomState.key === zoomKey ? zoomState.value : null;
+  const saveZoom = (next: MetricZoomWindow | null) => {
+    setZoomState({ key: zoomKey, value: next });
+    try {
+      if (next) localStorage.setItem(zoomKey, JSON.stringify(next));
+      else localStorage.removeItem(zoomKey);
+    } catch {
+      /* The mounted graph remains authoritative when storage is unavailable. */
+    }
+  };
   // Style du graphe (tracé + couleur) : mémorisé par onglet par le parent.
   const style = styleProp ?? DEFAULT_METRIC_STYLE;
   const setStyle = (next: MetricStyle) => onStyleChange?.(next);
@@ -342,6 +405,16 @@ export function MetricGraphCard({
               </DropdownMenuSubContent>
             </DropdownMenuSub>
             <DropdownMenuSeparator />
+            {view === "graph" && (
+              <DropdownMenuItem
+                data-testid="metric-reset-zoom"
+                disabled={!zoom}
+                onSelect={() => saveZoom(null)}
+              >
+                <RotateCcw size={14} /> {translate("panel.resetZoom")}
+              </DropdownMenuItem>
+            )}
+            {view === "graph" && <DropdownMenuSeparator />}
             <DropdownMenuItem onSelect={() => void cardRef.current?.requestFullscreen?.()}>
               <Maximize2 size={14} /> {translate("panel.fullscreen")}
             </DropdownMenuItem>
@@ -375,6 +448,8 @@ export function MetricGraphCard({
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
           workspaceId={workspaceId}
+          zoom={zoom}
+          onZoomChange={saveZoom}
           prefetchedSeries={prefetchedSeries}
           batchSeries={batchSeries}
           prefetchedSeriesPending={prefetchedSeriesPending}
@@ -664,6 +739,8 @@ function MetricTimePlot({
   timeAxisMode,
   eventsCaptureId,
   workspaceId,
+  zoom,
+  onZoomChange,
   prefetchedSeries,
   batchSeries,
   prefetchedSeriesPending,
@@ -681,6 +758,8 @@ function MetricTimePlot({
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
   workspaceId?: string | undefined;
+  zoom: MetricZoomWindow | null;
+  onZoomChange: (zoom: MetricZoomWindow | null) => void;
   prefetchedSeries?: ChronogramData | undefined;
   batchSeries: boolean;
   prefetchedSeriesPending: boolean;
@@ -712,7 +791,7 @@ function MetricTimePlot({
   // capture) : aucune interpolation, une série sans échantillon à ce seq est
   // simplement absente.
   const rows = useMemo(() => {
-    const bySeq = new Map<number, Record<string, number>>();
+    const bySeq = new Map<number, { t_rel_s: number } & Record<string, number>>();
     for (const s of seriesData?.series ?? []) {
       for (const p of s.points ?? []) {
         if (typeof p.value !== "number") continue;
@@ -730,6 +809,8 @@ function MetricTimePlot({
   ];
   const axisFor = (value: string) => axisOf(units, value) ?? "left";
   const rightAxis = seriesList.some((s) => axisFor(s.unit) === "right");
+  const effectiveZoom = normalizeMetricZoom(zoom, rows.length);
+  const [visibleXMin, visibleXMax] = metricZoomDomain(rows, effectiveZoom);
 
   const plotRef = useRef<HTMLDivElement>(null);
   const renderProbe = useRef({ updateAt: 0, startedAt: 0 });
@@ -938,6 +1019,10 @@ function MetricTimePlot({
       data-testid="metric-time-plot"
       data-capture-id={captureId}
       data-n-points={points.length}
+      data-zoom-start={effectiveZoom?.startIndex ?? 0}
+      data-zoom-end={effectiveZoom?.endIndex ?? Math.max(0, rows.length - 1)}
+      data-x-min={visibleXMin}
+      data-x-max={visibleXMax}
     >
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
@@ -950,7 +1035,8 @@ function MetricTimePlot({
           <XAxis
             type="number"
             dataKey="t_rel_s"
-            domain={[0, "dataMax"]}
+            domain={[visibleXMin, visibleXMax]}
+            allowDataOverflow
             tickCount={6}
             tick={{ fontSize: 10, fill: "#64748b" }}
             tickFormatter={(v: number) =>
@@ -1061,6 +1147,18 @@ function MetricTimePlot({
               travellerWidth={7}
               stroke="#94a3b8"
               fill="#f1f5f9"
+              startIndex={effectiveZoom?.startIndex ?? 0}
+              endIndex={effectiveZoom?.endIndex ?? rows.length - 1}
+              onChange={(window) => {
+                if (typeof window.startIndex !== "number" || typeof window.endIndex !== "number")
+                  return;
+                onZoomChange(
+                  normalizeMetricZoom(
+                    { startIndex: window.startIndex, endIndex: window.endIndex },
+                    rows.length,
+                  ),
+                );
+              }}
             />
           ) : null}
         </ComposedChart>

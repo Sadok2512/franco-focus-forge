@@ -4,6 +4,7 @@ import {
   defaultSnapshotConfiguration,
   defaultSnapshotThreshold,
   readRadioSnapshotConfiguration,
+  reorderSnapshotMetrics,
   snapshotBarPosition,
   snapshotValueColor,
   writeRadioSnapshotConfiguration,
@@ -35,6 +36,25 @@ describe("Radio Snapshot configuration", () => {
 
     expect(readRadioSnapshotConfiguration("workspace-a", "panel-a", catalog)).toEqual(config);
     expect(readRadioSnapshotConfiguration("workspace-b", "panel-a", catalog).showBadges).toBe(true);
+  });
+
+  it("reorders metric rows without adding or losing a metric", () => {
+    const metrics = ["rsrp", "rsrq", "sinr", "bler"];
+
+    expect(reorderSnapshotMetrics(metrics, "rsrq", "bler")).toEqual([
+      "rsrp",
+      "sinr",
+      "bler",
+      "rsrq",
+    ]);
+    expect(reorderSnapshotMetrics(metrics, "bler", "rsrp")).toEqual([
+      "bler",
+      "rsrp",
+      "rsrq",
+      "sinr",
+    ]);
+    expect(reorderSnapshotMetrics(metrics, "missing", "rsrp")).toEqual(metrics);
+    expect(metrics).toEqual(["rsrp", "rsrq", "sinr", "bler"]);
   });
 
   it("positions the value in its RF range and applies directional thresholds", () => {

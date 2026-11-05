@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowDown, ArrowUp, Clock3, Plus, Radio, RotateCcw, Settings2, X } from "lucide-react";
+import { Clock3, GripVertical, Plus, Radio, RotateCcw, Settings2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { getMetricAnalysis } from "@/lib/api/client";
 import type { MetricInfo } from "@/lib/api/metrics-schemas";
@@ -164,6 +164,16 @@ export function snapshotValueColor(value: number, threshold: SnapshotThreshold) 
   return threshold.colors[0];
 }
 
+export function reorderSnapshotMetrics(metrics: string[], from: string, to: string) {
+  if (from === to || !metrics.includes(from) || !metrics.includes(to)) return metrics;
+  const fromIndex = metrics.indexOf(from);
+  const toIndex = metrics.indexOf(to);
+  const next = [...metrics];
+  next.splice(fromIndex, 1);
+  next.splice(toIndex, 0, from);
+  return next;
+}
+
 function unique(values: Array<string | null | undefined>) {
   return [...new Set(values.filter((value): value is string => Boolean(value)))];
 }
@@ -195,7 +205,7 @@ export function RadioSnapshotPanel({
     readRadioSnapshotConfiguration(workspaceId, panelId, catalog, initialMetric),
   );
   const [addOpen, setAddOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [configuredMetric, setConfiguredMetric] = useState<string | null>(null);
   const [metricSearch, setMetricSearch] = useState("");
   const [dropOver, setDropOver] = useState(false);
 
@@ -233,12 +243,9 @@ export function RadioSnapshotPanel({
       thresholds,
     });
   };
-  const moveMetric = (index: number, delta: -1 | 1) => {
-    const to = index + delta;
-    if (to < 0 || to >= configuration.metrics.length) return;
-    const metrics = [...configuration.metrics];
-    [metrics[index], metrics[to]] = [metrics[to]!, metrics[index]!];
-    save({ ...configuration, metrics });
+  const moveMetric = (from: string, to: string) => {
+    const metrics = reorderSnapshotMetrics(configuration.metrics, from, to);
+    if (metrics !== configuration.metrics) save({ ...configuration, metrics });
   };
   const selectedPoint =
     pointSync.selection?.projectId === projectId && pointSync.selection.captureId === captureId
@@ -391,7 +398,7 @@ export function RadioSnapshotPanel({
           <DropdownMenuItem onSelect={() => setAddOpen(true)}>
             <Plus size={14} /> {t("radioSnapshot.addMetric")}
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setSettingsOpen((value) => !value)}>
+          <DropdownMenuItem onSelect={() => setConfiguredMetric(configuration.metrics[0] ?? null)}>
             <Settings2 size={14} /> {t("radioSnapshot.configure")}
           </DropdownMenuItem>
           <DropdownMenuCheckboxItem
@@ -484,7 +491,7 @@ export function RadioSnapshotPanel({
       )}
       {!error && configuration.metrics.length > 0 && (
         <div className="radio-snapshot-metrics" aria-busy={loading}>
-          {configuration.metrics.map((code, index) => {
+          {configuration.metrics.map((code) => {
             const info = metricByCode.get(code);
             const column = columns.get(code);
             const row = populatedRows.find((candidate) => candidate.values[code] != null);
@@ -498,6 +505,7 @@ export function RadioSnapshotPanel({
                 <div
                   className="radio-snapshot-metric"
                   data-testid={`radio-snapshot-metric-${code}`}
+                  data-snapshot-code={code}
                 >
                   <div
                     className="radio-snapshot-metric-name"
@@ -517,36 +525,73 @@ export function RadioSnapshotPanel({
                   <div className="radio-snapshot-bar" aria-label={t("radioSnapshot.rangePosition")}>
                     <span style={{ width: `${position}%`, backgroundColor: color }} />
                   </div>
-                  <div className="radio-snapshot-row-actions">
-                    <button
-                      type="button"
-                      className="kpi-icon"
-                      disabled={index === 0}
-                      onClick={() => moveMetric(index, -1)}
-                      aria-label={t("radioSnapshot.moveUp")}
+                  <button
+                    type="button"
+                    className="radio-snapshot-row-grip"
+                    aria-label={t("radioSnapshot.reorderMetric", {
+                      metric: info?.label ?? code,
+                    })}
+                    title={t("radioSnapshot.reorderMetric", { metric: info?.label ?? code })}
+                    onPointerDown={(event) => {
+                      if (event.button !== 0) return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      const source =
+                        event.currentTarget.closest<HTMLElement>(".radio-snapshot-metric");
+                      source?.classList.add("is-dragging");
+                      let target: HTMLElement | null = null;
+                      const clearTarget = () => {
+                        target?.classList.remove("is-drop-target");
+                        target = null;
+                      };
+                      const onMove = (moveEvent: PointerEvent) => {
+                        const next = document
+                          .elementFromPoint(moveEvent.clientX, moveEvent.clientY)
+                          ?.closest<HTMLElement>(".radio-snapshot-metric");
+                        if (next === target) return;
+                        clearTarget();
+                        if (next?.dataset["snapshotCode"] !== code) {
+                          target = next ?? null;
+                          target?.classList.add("is-drop-target");
+                        }
+                      };
+                      const finish = (upEvent?: PointerEvent) => {
+                        if (upEvent) onMove(upEvent);
+                        window.removeEventListener("pointermove", onMove);
+                        window.removeEventListener("pointerup", onUp);
+                        window.removeEventListener("pointercancel", onCancel);
+                        const targetCode = target?.dataset["snapshotCode"];
+                        clearTarget();
+                        source?.classList.remove("is-dragging");
+                        if (targetCode) moveMetric(code, targetCode);
+                      };
+                      const onUp = (upEvent: PointerEvent) => finish(upEvent);
+                      const onCancel = () => finish();
+                      window.addEventListener("pointermove", onMove);
+                      window.addEventListener("pointerup", onUp);
+                      window.addEventListener("pointercancel", onCancel);
+                    }}
+                  >
+                    <GripVertical size={13} aria-hidden="true" />
+                  </button>
+                  <div className="radio-snapshot-row-menu">
+                    <WorkspacePanelMenu
+                      label={t("radioSnapshot.metricMenu", { metric: info?.label ?? code })}
                     >
-                      <ArrowUp size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      className="kpi-icon"
-                      disabled={index === configuration.metrics.length - 1}
-                      onClick={() => moveMetric(index, 1)}
-                      aria-label={t("radioSnapshot.moveDown")}
-                    >
-                      <ArrowDown size={12} />
-                    </button>
-                    <button
-                      type="button"
-                      className="kpi-icon"
-                      onClick={() => removeMetric(code)}
-                      aria-label={t("radioSnapshot.removeMetric", { metric: info?.label ?? code })}
-                    >
-                      <X size={12} />
-                    </button>
+                      <DropdownMenuItem onSelect={() => setConfiguredMetric(code)}>
+                        <Settings2 size={13} /> {t("radioSnapshot.configure")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onSelect={() => removeMetric(code)}
+                        className="text-destructive"
+                      >
+                        <X size={13} />
+                        {t("radioSnapshot.removeMetric", { metric: info?.label ?? code })}
+                      </DropdownMenuItem>
+                    </WorkspacePanelMenu>
                   </div>
                 </div>
-                {settingsOpen && (
+                {configuredMetric === code && (
                   <div
                     className="radio-snapshot-thresholds"
                     data-testid={`radio-snapshot-thresholds-${code}`}
@@ -611,6 +656,13 @@ export function RadioSnapshotPanel({
                         />
                       </label>
                     ))}
+                    <button
+                      type="button"
+                      className="radio-snapshot-settings-close"
+                      onClick={() => setConfiguredMetric(null)}
+                    >
+                      {t("radioSnapshot.done")}
+                    </button>
                   </div>
                 )}
               </div>

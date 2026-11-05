@@ -2368,9 +2368,9 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   display: flex;
   min-height: 100%;
   flex-direction: column;
-  gap: 10px;
+  gap: 7px;
   overflow: auto;
-  padding: 12px;
+  padding: 9px 10px;
   background: var(--card);
 }
 .radio-snapshot-panel.is-drop {
@@ -2406,13 +2406,13 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 .radio-snapshot-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 3px 4px;
 }
 .radio-snapshot-badges span {
   border: 1px solid transparent;
   border-radius: 999px;
-  padding: 3px 8px;
-  font-size: 10px;
+  padding: 2px 7px;
+  font-size: 9px;
   font-weight: 600;
   white-space: nowrap;
 }
@@ -2442,13 +2442,14 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-width: 0;
 }
 .radio-snapshot-metric {
-  min-height: 42px;
-  gap: 10px;
+  display: grid;
+  grid-template-columns: minmax(92px, 0.9fr) 78px minmax(52px, 1.25fr) 22px 22px;
+  min-height: 34px;
+  gap: 6px;
   border-bottom: 1px solid hsl(var(--border) / 0.65);
 }
 .radio-snapshot-metric-name {
   min-width: 0;
-  flex: 0 1 34%;
 }
 .radio-snapshot-metric-name strong,
 .radio-snapshot-metric-name small {
@@ -2461,12 +2462,10 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   font-size: 11px;
 }
 .radio-snapshot-metric-name small {
-  color: hsl(var(--muted-foreground));
-  font-size: 8px;
+  display: none;
 }
 .radio-snapshot-value {
-  width: 84px;
-  flex: 0 0 84px;
+  min-width: 0;
   text-align: right;
   font-size: 12px;
   font-weight: 650;
@@ -2486,16 +2485,46 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   height: 100%;
   min-width: 0;
   border-radius: inherit;
-  transition: width 160ms ease, background-color 160ms ease;
+  transition:
+    width 160ms ease,
+    background-color 160ms ease;
 }
-.radio-snapshot-row-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 1px;
+.radio-snapshot-row-grip,
+.radio-snapshot-row-menu {
+  opacity: 0;
+  transition: opacity 120ms ease;
 }
-.radio-snapshot-row-actions .kpi-icon {
+.radio-snapshot-row-grip {
+  display: inline-flex;
+  touch-action: none;
+  cursor: grab;
+  align-items: center;
+  justify-content: center;
+  color: hsl(var(--muted-foreground));
+}
+.radio-snapshot-row-menu .kpi-icon {
   width: 22px;
   height: 22px;
+}
+.radio-snapshot-metric:hover .radio-snapshot-row-grip,
+.radio-snapshot-metric:hover .radio-snapshot-row-menu,
+.radio-snapshot-metric:focus-within .radio-snapshot-row-grip,
+.radio-snapshot-metric:focus-within .radio-snapshot-row-menu {
+  opacity: 1;
+}
+.radio-snapshot-metric.is-dragging {
+  opacity: 0.55;
+}
+.radio-snapshot-metric.is-drop-target {
+  box-shadow: inset 0 2px hsl(var(--primary));
+}
+.radio-snapshot-settings-close {
+  align-self: end;
+  min-height: 26px;
+  border: 1px solid hsl(var(--border));
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 9px;
 }
 .radio-snapshot-add {
   display: inline-flex;
@@ -2578,18 +2607,11 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 }
 @media (max-width: 800px) {
   .radio-snapshot-metric {
-    flex-wrap: wrap;
-  }
-  .radio-snapshot-metric-name {
-    flex-basis: calc(100% - 100px);
+    grid-template-columns: minmax(76px, 0.85fr) 68px minmax(38px, 1fr) 20px 20px;
+    gap: 4px;
   }
   .radio-snapshot-bar {
-    order: 3;
-    flex-basis: calc(100% - 78px);
-    margin-bottom: 5px;
-  }
-  .radio-snapshot-row-actions {
-    order: 4;
+    min-width: 38px;
   }
   .radio-snapshot-thresholds {
     grid-template-columns: repeat(2, minmax(70px, 1fr));
