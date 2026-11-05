@@ -1,3 +1,9 @@
+## 1.141.6 (patch) — Payload Signaling sans résumé décodé dupliqué — 2026-11-05 (Agent BC1)
+
+- Retire du panneau Payload la section « Decoded values » et ses lignes de valeurs dupliquées ; l'arbre ASN.1, les paramètres décodés et les données backend restent inchangés.
+- Supprime les styles devenus inutilisés et ajoute un test de non-régression sur le contenu de l'inspecteur.
+- SemVer frontend : **PATCH 1.141.6** ; backend, API, catalogue, décodeur et données RF inchangés.
+
 ## 1.141.5 (patch) — Liaison Serving réellement visible — 2026-11-05 (BC4)
 
 - Place le lien Serving sélectionné et son endpoint au-dessus des secteurs, cellules et points de mesure.

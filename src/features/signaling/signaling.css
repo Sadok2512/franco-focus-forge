@@ -458,35 +458,6 @@
   color: var(--sig-accent);
   border-bottom-color: var(--sig-accent);
 }
-.sig-decoded {
-  max-height: 38%;
-  overflow: auto;
-  padding-bottom: 8px;
-}
-.sig-decoded table {
-  border: 1px solid var(--sig-table-border);
-  border-radius: 6px;
-  border-collapse: separate;
-  border-spacing: 0;
-  overflow: hidden;
-}
-.sig-decoded th,
-.sig-decoded td {
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--sig-table-border);
-  text-align: left;
-  vertical-align: top;
-}
-.sig-decoded th {
-  width: 45%;
-  font-weight: 500;
-  background: var(--sig-table-header);
-}
-.sig-decoded td {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--sig-asn-value);
-  word-break: break-all;
-}
 .decoder-field {
   color: var(--sig-asn-field);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;

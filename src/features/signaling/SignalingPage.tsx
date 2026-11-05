@@ -615,47 +615,6 @@ function InfoBadge({ info }: { info: MessageInfo | null }) {
   );
 }
 
-/** Compact summary of leaf values actually decoded (first named fields only). */
-function DecodedValues({
-  parameters,
-}: {
-  parameters: {
-    path: string;
-    value?: unknown;
-    param_key: string | null;
-    redacted_reason?: string | null | undefined;
-  }[];
-}) {
-  const rows = parameters
-    .filter(
-      (p) => p.value !== undefined && !p.redacted_reason && !String(p.value).startsWith("<binary"),
-    )
-    .slice(0, 10);
-  if (!rows.length) return null;
-  return (
-    <section className="sig-decoded shrink-0 border-t pt-2" data-testid="decoded-values">
-      <h3 className="mb-1 text-xs font-semibold">Decoded values</h3>
-      <table className="w-full">
-        <tbody>
-          {rows.map((p, i) => (
-            <tr key={`${p.path}:${i}`}>
-              <th scope="row" title={p.path}>
-                {p.param_key ?? p.path.split("/").slice(-1)[0]}
-              </th>
-              <td>{typeof p.value === "string" ? p.value : JSON.stringify(p.value)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {parameters.length > rows.length && (
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          {rows.length} / {parameters.length} — liste complète dans « Paramètres »
-        </p>
-      )}
-    </section>
-  );
-}
-
 const timeShown = (value: number | null | undefined) => (value == null ? "—" : value.toFixed(3));
 const radioShown = (value: number | null | undefined, unit: string) =>
   value == null
@@ -2833,15 +2792,12 @@ export function SignalingPage({
                               >
                                 {inspectorTab === "Payload" ? (
                                   details.data.parameters.length ? (
-                                    <>
-                                      <div className="min-h-0 flex-1">
-                                        <DecoderTree
-                                          key={`${capture}:${seq}`}
-                                          parameters={details.data.parameters}
-                                        />
-                                      </div>
-                                      <DecodedValues parameters={details.data.parameters} />
-                                    </>
+                                    <div className="min-h-0 flex-1">
+                                      <DecoderTree
+                                        key={`${capture}:${seq}`}
+                                        parameters={details.data.parameters}
+                                      />
+                                    </div>
                                   ) : (
                                     <div className="space-y-2">
                                       <p>Payload ASN.1 non disponible pour ce message.</p>
