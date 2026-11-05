@@ -40,7 +40,7 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
 });
 
 describe("Simplified Metrics tree", () => {
-  it("builds Technology -> Theme -> KPI -> Cell -> Value from API metadata", () => {
+  it("builds Technology -> Theme -> KPI -> PCell/SCell leaves from API metadata", () => {
     const definitions: SimpleTreeEntry[] = [
       {
         tech: "LTE",
@@ -55,6 +55,7 @@ describe("Simplified Metrics tree", () => {
     const nodes = buildSimpleMetricTree(
       [
         leaf({
+          display_code_lisible: "LTE_RSRP_SERVING_PCELL",
           simple_name: "LTE_RSRP_PCELL",
           simple_tech: "LTE",
           simple_theme: "1 · Couverture",
@@ -64,12 +65,28 @@ describe("Simplified Metrics tree", () => {
         }),
         leaf({
           node_id: "rsrp-scell1",
+          display_code_lisible: "LTE_RSRP_SERVING_SCELL1",
           metric_id: "cell_rsrp@lte-type-10",
           selection: "cell_rsrp@lte-type-10",
           cell: "lte-type-10",
           cell_label: "SCell 1",
           raw_cell_type: 10,
           simple_name: "LTE_RSRP_SCELL1",
+          simple_tech: "LTE",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "RSRP",
+          simple_label: "RSRP serving",
+          simple_status: "ok",
+        }),
+        leaf({
+          node_id: "rsrp-scell2",
+          display_code_lisible: "LTE_RSRP_SERVING_SCELL2",
+          metric_id: "cell_rsrp@lte-type-11",
+          selection: "cell_rsrp@lte-type-11",
+          cell: "lte-type-11",
+          cell_label: "SCell 2",
+          raw_cell_type: 11,
+          simple_name: "LTE_RSRP_SCELL2",
           simple_tech: "LTE",
           simple_theme: "1 · Couverture",
           simple_kpi: "RSRP",
@@ -83,15 +100,14 @@ describe("Simplified Metrics tree", () => {
       ["tech", "LTE"],
       ["category", "1 · Couverture"],
       ["metric", "RSRP serving"],
-      ["group", "PCell"],
-      ["leaf", "LTE_Serving_RSRP_PCell"],
-      ["group", "SCell 1"],
-      ["leaf", "LTE_Serving_RSRP_PCell"],
+      ["leaf", "LTE_RSRP_SERVING_PCELL"],
+      ["leaf", "LTE_RSRP_SERVING_SCELL1"],
+      ["leaf", "LTE_RSRP_SERVING_SCELL2"],
     ]);
-    expect(nodes.find((node) => node.node_type === "metric")?.n).toBe(9870);
+    expect(nodes.find((node) => node.node_type === "metric")?.n).toBe(14805);
   });
 
-  it("adds EARFCN and PCI context below every matching cell", () => {
+  it("keeps EARFCN and PCI as independent KPI groups with direct cell leaves", () => {
     const definitions: SimpleTreeEntry[] = [
       {
         tech: "LTE",
@@ -155,19 +171,19 @@ describe("Simplified Metrics tree", () => {
       ],
       definitions,
     );
-    const rsrpMetric = nodes.find(
-      (node) => node.node_type === "metric" && node.label === "RSRP serving",
-    )!;
-    const pcell = nodes.find(
-      (node) => node.parent_id === rsrpMetric.node_id && node.label === "PCell",
-    )!;
-    expect(
-      nodes
-        .filter((node) => node.parent_id === pcell.node_id)
-        .map((node) => [node.label, node.selection]),
-    ).toEqual([
+    const childrenOf = (label: string) => {
+      const metric = nodes.find((node) => node.node_type === "metric" && node.label === label)!;
+      return nodes
+        .filter((node) => node.parent_id === metric.node_id)
+        .map((node) => [node.label, node.selection]);
+    };
+    expect(childrenOf("RSRP serving")).toEqual([
       ["LTE_SERVING_RSRP_PCELL", "cell_rsrp@lte-type-0"],
+    ]);
+    expect(childrenOf("EARFCN")).toEqual([
       ["LTE_EARFCN_SERVING_PCELL", "cell_ch@lte-type-0"],
+    ]);
+    expect(childrenOf("PCI")).toEqual([
       ["LTE_PCI_SERVING_PCELL", "cell_pci@lte-type-0"],
     ]);
   });

@@ -1,3 +1,9 @@
+## 1.143.3 (patch) — Cellules directement sous chaque KPI simplifié — 2026-11-05 (BC4)
+
+- Affiche chaque feuille PCell/SCell directement sous son KPI dans la vue Simplifiée, avec le nom exact de la vue Avancée.
+- Conserve EARFCN et PCI comme KPI indépendants possédant leurs propres feuilles PCell/SCell, sans groupe « Serving Cells » ni contexte imbriqué.
+- Ne modifie ni les sélections, ni les compteurs, ni les identifiants API, ni la vue Avancée.
+
 ## 1.143.2 (patch) — Clic des liens radio non masqué par les sites — 2026-11-05 (BC4)
 
 - Donne la priorité au point de mesure KPI lors d'un clic superposé à un site ou secteur, afin que la fiche réseau ne masque plus le lien LTE/NR sélectionné.
