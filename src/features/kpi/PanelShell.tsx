@@ -141,7 +141,9 @@ export function PanelShell({
           aria-label={t("panel.resize")}
           onPointerDown={(e) => {
             const el = e.currentTarget.parentElement as HTMLElement;
-            const grid = el.parentElement;
+            // Metric cards sit below a `display: contents` wrapper, whose
+            // bounding box is empty. Always measure the real workspace grid.
+            const grid = el.closest<HTMLElement>(".kpi-graph-grid") ?? el.parentElement;
             const startRect = el.getBoundingClientRect();
             const startX = e.clientX;
             const startY = e.clientY;

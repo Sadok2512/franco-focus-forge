@@ -73,7 +73,7 @@ describe("panel drag-to-move control", () => {
     "resizes and persists both axes for %s",
     (id) => {
       const { container } = render(
-        <div data-testid="grid">
+        <div className="kpi-graph-grid" data-testid="grid">
           <PanelGridContext.Provider value={{ cols: 3 }}>
             <PanelShell workspaceId="both-axes" id={id} natural={0} defaultTitle={id}>
               {() => <div>panel</div>}
@@ -121,4 +121,47 @@ describe("panel drag-to-move control", () => {
       expect(saved.span[id]).toBe(2);
     },
   );
+
+  it("measures the workspace grid through a display-contents metric wrapper", () => {
+    const { container } = render(
+      <div className="kpi-graph-grid" data-testid="wrapped-grid">
+        <section style={{ display: "contents" }}>
+          <PanelGridContext.Provider value={{ cols: 3 }}>
+            <PanelShell
+              workspaceId="wrapped-resize"
+              id="radio-snapshot"
+              natural={0}
+              defaultTitle="snapshot"
+            >
+              {() => <div>snapshot</div>}
+            </PanelShell>
+          </PanelGridContext.Provider>
+        </section>
+      </div>,
+    );
+    const grid = screen.getByTestId("wrapped-grid");
+    grid.getBoundingClientRect = () => ({ width: 932 }) as DOMRect;
+    const shell = container.querySelector<HTMLElement>("[data-panel-id='radio-snapshot']")!;
+    shell.getBoundingClientRect = () => ({ width: 300, height: 300 }) as DOMRect;
+    const handle = shell.querySelector<HTMLElement>(".kpi-panel-resize")!;
+
+    fireEvent(handle, new MouseEvent("pointerdown", {
+      bubbles: true,
+      cancelable: true,
+      clientX: 300,
+      clientY: 100,
+    }));
+    fireEvent(window, new MouseEvent("pointermove", {
+      bubbles: true,
+      clientX: 630,
+      clientY: 100,
+    }));
+    fireEvent(window, new MouseEvent("pointerup", {
+      bubbles: true,
+      clientX: 630,
+      clientY: 100,
+    }));
+
+    expect(loadLayout("wrapped-resize").span["radio-snapshot"]).toBe(2);
+  });
 });
