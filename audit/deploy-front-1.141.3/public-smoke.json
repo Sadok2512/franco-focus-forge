@@ -1,0 +1,34 @@
+{
+  "base": "http://185.248.33.125:5174",
+  "results": [
+    {
+      "requested": "/projects",
+      "final": "/projects",
+      "status": 200
+    },
+    {
+      "requested": "/kpi",
+      "final": "/kpi",
+      "status": 200
+    },
+    {
+      "requested": "/map",
+      "final": "/map",
+      "status": 200
+    },
+    {
+      "requested": "/rf",
+      "final": "/rf",
+      "status": 200
+    },
+    {
+      "requested": "/signaling",
+      "final": "/kpi",
+      "status": 200
+    }
+  ],
+  "encodings": [
+    "gzip"
+  ],
+  "errors": []
+}

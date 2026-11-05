@@ -1,0 +1,138 @@
+{
+  "base": "http://127.0.0.1:5192",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "metric": "cell_rsrp@lte-type-0",
+  "rowLayout": [
+    {
+      "code": "cell_rsrp@lte-type-0",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    },
+    {
+      "code": "cell_rsrq@lte-type-0",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    },
+    {
+      "code": "cell_sinr@lte-type-0",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    },
+    {
+      "code": "cell_rsrp@nr-type-199",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    },
+    {
+      "code": "cell_rsrq@nr-type-199",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    },
+    {
+      "code": "cell_sinr@nr-type-199",
+      "height": 34,
+      "nameRight": 511.5,
+      "valueLeft": 517.5,
+      "valueRight": 595.5,
+      "barLeft": 601.5,
+      "barWidth": 266
+    }
+  ],
+  "initialOrder": [
+    "cell_rsrp@lte-type-0",
+    "cell_rsrq@lte-type-0",
+    "cell_sinr@lte-type-0",
+    "cell_rsrp@nr-type-199",
+    "cell_rsrq@nr-type-199",
+    "cell_sinr@nr-type-199"
+  ],
+  "reordered": [
+    "cell_rsrq@lte-type-0",
+    "cell_rsrp@lte-type-0",
+    "cell_sinr@lte-type-0",
+    "cell_rsrp@nr-type-199",
+    "cell_rsrq@nr-type-199",
+    "cell_sinr@nr-type-199"
+  ],
+  "syncedSnapshot": {
+    "time": "Selected sample · seq 198964 · 16:44:11.824",
+    "values": [
+      "-13.9 dB",
+      "-101.3 dBm",
+      "1 dB",
+      "N/A",
+      "N/A",
+      "N/A"
+    ]
+  },
+  "fullDomain": {
+    "start": 0,
+    "end": 1979,
+    "min": 0,
+    "max": 4857.711,
+    "points": 1980
+  },
+  "afterLeft": {
+    "start": 382,
+    "end": 1979,
+    "min": 1061.292,
+    "max": 4857.711,
+    "points": 1980
+  },
+  "afterRight": {
+    "start": 382,
+    "end": 1669,
+    "min": 1061.292,
+    "max": 4141.108,
+    "points": 1980
+  },
+  "afterPan": {
+    "start": 470,
+    "end": 1756,
+    "min": 1290.484,
+    "max": 4339.123,
+    "points": 1980
+  },
+  "workspaceDomain": {
+    "start": 470,
+    "end": 1756,
+    "min": 1290.484,
+    "max": 4339.123,
+    "points": 1980
+  },
+  "reloadedDomain": {
+    "start": 470,
+    "end": 1756,
+    "min": 1290.484,
+    "max": 4339.123,
+    "points": 1980
+  },
+  "resetDomain": {
+    "min": 0,
+    "max": 4857.711,
+    "points": 1980
+  },
+  "consoleErrors": [],
+  "apiErrors": []
+}

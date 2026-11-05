@@ -1,0 +1,19 @@
+COMMAND:
+docker exec -e G51_TOKEN=<ephemeral-not-printed> bc4-api-1 python scripts/guards/run_all.py --base-url http://127.0.0.1:8000 --pid 43e81a34a073 --capture a4b0c321c52e --skip-g51
+
+G18b VERDICT=PASS cached=4304 fresh=4304 only_cache=0 only_fresh=0
+G24 VERDICT=PASS candidates_recounted=152 false_zeros=0
+G24b VERDICT=PASS identity_leaks=0 warns=6
+G32 VERDICT=PASS total_differ=0 total_orphans_pair=0 total_orphans_proc=0
+G56 VERDICT=PASS proven_points=199 proven_marked=199 probable_points=4935 probable_serving=4435
+
+GUARD  VERDICT  DURATION_S  EXIT
+G18b   PASS         24.40  0
+G24    PASS         30.19  0
+G24b   PASS          2.76  0
+G32    PASS         55.16  0
+G56    PASS          2.07  0
+GUARDS VERDICT=PASS passed=5/5
+RUN_ALL_EXIT=0
+
+G51 is explicitly excluded by DEPLOY.md and remains assigned to the nightly cron.
