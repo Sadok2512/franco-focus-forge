@@ -1,3 +1,10 @@
+## 1.140.1 (patch) — Redimensionnement bidirectionnel des panneaux — 2026-11-05 (Agent BC1)
+
+- Rend Radio Snapshot, Timeline et L3 Signaling redimensionnables horizontalement et verticalement depuis la poignée commune du panneau.
+- Aligne la largeur sur les colonnes du Workspace et conserve largeur et hauteur par Workspace après changement d'onglet ou rechargement.
+- Notifie les visualisations montées pendant et après le redimensionnement afin que Timeline, graphes et cartes recalculent leur surface sans modifier leurs données.
+- SemVer frontend : **PATCH 1.140.1** ; backend, catalogue, décodeur et données RF inchangés.
+
 ## 1.140.0 (minor) — Serving / Radio Snapshot — 2026-11-05 (Agent BC1)
 
 - Ajoute un panneau Workspace indépendant `Serving / Radio Snapshot`, compatible avec le layout, le déplacement, le redimensionnement et la persistance par onglet.

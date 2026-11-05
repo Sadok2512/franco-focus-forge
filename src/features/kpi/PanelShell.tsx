@@ -1,4 +1,4 @@
-// Common panel frame: width span, height resize, collapse,
+// Common panel frame: bidirectional grid-width/height resize, collapse,
 // rename (double-click the title), duplicate when supported. Wraps the
 // existing KPI/Metrics cards so their header, Chart Settings, export and
 // fullscreen stay the single source of truth. `bare` suppresses only the
@@ -141,16 +141,40 @@ export function PanelShell({
           aria-label={t("panel.resize")}
           onPointerDown={(e) => {
             const el = e.currentTarget.parentElement as HTMLElement;
-            const startY = e.clientY,
-              startH = el.getBoundingClientRect().height;
+            const grid = el.parentElement;
+            const startRect = el.getBoundingClientRect();
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startH = startRect.height;
+            const startColumns = panelColumns(span, cols);
+            const gridWidth = grid?.getBoundingClientRect().width ?? startRect.width;
+            const gridStyle = grid ? window.getComputedStyle(grid) : null;
+            const gap = Number.parseFloat(gridStyle?.columnGap ?? "0") || 0;
+            const columnWidth = (gridWidth - gap * Math.max(0, cols - 1)) / cols;
+            let resizedColumns = startColumns;
+            e.preventDefault();
             const onMove = (m: PointerEvent) => {
               el.style.height = `${Math.max(180, startH + m.clientY - startY)}px`;
+              if (!fullRow && cols > 1 && columnWidth > 0) {
+                const requestedWidth = startRect.width + m.clientX - startX;
+                resizedColumns = Math.max(
+                  1,
+                  Math.min(cols, Math.round((requestedWidth + gap) / (columnWidth + gap))),
+                );
+                el.style.gridColumn = `span ${resizedColumns}`;
+              }
+              window.dispatchEvent(new CustomEvent("bc4:workspace-resize"));
             };
             const onUp = (m: PointerEvent) => {
               window.removeEventListener("pointermove", onMove);
               window.removeEventListener("pointerup", onUp);
               const h = Math.max(180, Math.round(startH + m.clientY - startY));
-              update((p) => ({ ...p, height: { ...p.height, [id]: h } }));
+              update((p) => ({
+                ...p,
+                height: { ...p.height, [id]: h },
+                span: fullRow ? p.span : { ...p.span, [id]: resizedColumns as PanelSpan },
+              }));
+              window.dispatchEvent(new CustomEvent("bc4:workspace-resize"));
             };
             window.addEventListener("pointermove", onMove);
             window.addEventListener("pointerup", onUp);

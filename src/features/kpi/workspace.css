@@ -1861,15 +1861,29 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 }
 .kpi-panel-resize {
   position: absolute;
-  left: 30%;
-  right: 30%;
-  bottom: -4px;
-  height: 8px;
-  cursor: ns-resize;
-  border-radius: 4px;
+  right: -3px;
+  bottom: -3px;
+  z-index: 8;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+  border-right: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  border-radius: 0 0 5px;
+  touch-action: none;
 }
 .kpi-panel-resize:hover {
-  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+.kpi-panel-resize::after {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 6px;
+  height: 6px;
+  content: "";
+  border-right: 1px solid #94a3b8;
+  border-bottom: 1px solid #94a3b8;
 }
 
 /* 1.97.0 (Phase 2 Charts) — Events Ribbon + Charts Grid matrix. */

@@ -4,6 +4,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import "@/lib/i18n";
 import { PanelGridContext, PanelShell } from "@/features/kpi/PanelShell";
+import { loadLayout } from "@/features/kpi/panel-layout";
 
 describe("panel drag-to-move control", () => {
   beforeEach(() => localStorage.clear());
@@ -67,4 +68,57 @@ describe("panel drag-to-move control", () => {
     expect(JSON.parse(localStorage.getItem("bc4.panelLayout.resize-test") ?? "{}").height[kind])
       .toBe(380);
   });
+
+  it.each(["radio-snapshot", "signaling:timeline", "signaling:l3"])(
+    "resizes and persists both axes for %s",
+    (id) => {
+      const { container } = render(
+        <div data-testid="grid">
+          <PanelGridContext.Provider value={{ cols: 3 }}>
+            <PanelShell workspaceId="both-axes" id={id} natural={0} defaultTitle={id}>
+              {() => <div>panel</div>}
+            </PanelShell>
+          </PanelGridContext.Provider>
+        </div>,
+      );
+
+      const grid = screen.getByTestId("grid");
+      grid.getBoundingClientRect = () => ({ width: 932 }) as DOMRect;
+      const shell = container.querySelector<HTMLElement>(`[data-panel-id='${id}']`)!;
+      shell.getBoundingClientRect = () => ({ width: 300, height: 300 }) as DOMRect;
+      const handle = shell.querySelector<HTMLElement>(".kpi-panel-resize")!;
+
+      fireEvent(
+        handle,
+        new MouseEvent("pointerdown", {
+          bubbles: true,
+          cancelable: true,
+          clientX: 300,
+          clientY: 100,
+        }),
+      );
+      fireEvent(
+        window,
+        new MouseEvent("pointermove", {
+          bubbles: true,
+          clientX: 630,
+          clientY: 180,
+        }),
+      );
+      fireEvent(
+        window,
+        new MouseEvent("pointerup", {
+          bubbles: true,
+          clientX: 630,
+          clientY: 180,
+        }),
+      );
+
+      const saved = loadLayout("both-axes");
+      expect(shell.style.height).toBe("380px");
+      expect(shell.style.gridColumn).toBe("span 2");
+      expect(saved.height[id]).toBe(380);
+      expect(saved.span[id]).toBe(2);
+    },
+  );
 });
