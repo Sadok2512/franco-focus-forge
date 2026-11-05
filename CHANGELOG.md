@@ -1,3 +1,10 @@
+## 1.142.0 (minor) — Arbre Métriques simplifié et avancé — 2026-11-05 (BC4)
+
+- Ajoute le sélecteur `Simplifié | Avancé` au-dessus de l’arbre sans modifier le design des lignes existantes.
+- Construit la vue simplifiée depuis le contrat API du catalogue 2.68.5 : LTE/NR → thème → KPI → cellule.
+- Étend la recherche par contenu aux noms, thèmes et identifiants simples ; la vue Avancé conserve sa hiérarchie actuelle.
+- Affiche explicitement les KPI `OPEN` sans fabriquer de mesure ni d’identifiant sélectionnable.
+
 ## 1.141.11 (patch) — Récupération des hauteurs Timeline persistées — 2026-11-05 (Agent BC1)
 
 - Normalise les anciennes hauteurs de panneau hors écran produites par la boucle de redimensionnement afin de rendre immédiatement la Timeline et sa poignée accessibles.

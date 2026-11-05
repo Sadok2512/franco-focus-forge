@@ -46,7 +46,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
+import type { MetricCatalogNode, SimpleTreeEntry } from "@/lib/api/metrics-schemas";
 import type { Entry } from "./workspace-model";
 import type { MetricView } from "./MetricGraphCard";
 import type { MetricWorkspaceView } from "./metric-views";
@@ -92,6 +92,10 @@ export function metricCatalogSearchText(node: MetricCatalogNode): string {
     node.source_column,
     node.selection,
     node.cell,
+    node.simple_name,
+    node.simple_theme,
+    node.simple_kpi,
+    node.simple_label,
   ]
     .filter((value): value is string => Boolean(value))
     .join(" ")
@@ -285,6 +289,123 @@ export function buildMetricCellTree(nodes: MetricCatalogNode[]): MetricCatalogNo
   return result;
 }
 
+/** Build the certified 2.68.5 presentation hierarchy without changing metric
+ * identities. Definitions and leaf membership both come from the API; labels
+ * are never used to decide whether a metric belongs to the simplified tree. */
+export function buildSimpleMetricTree(
+  nodes: MetricCatalogNode[],
+  definitions: SimpleTreeEntry[],
+): MetricCatalogNode[] {
+  const leaves = nodes.filter(
+    (node) => node.node_type === "leaf" && Boolean(node.simple_name),
+  );
+  const output: MetricCatalogNode[] = [];
+  const techOrder = ["LTE", "NR"];
+
+  for (const [techIndex, tech] of techOrder.entries()) {
+    const techDefinitions = definitions.filter((entry) => entry.tech === tech);
+    if (!techDefinitions.length) continue;
+    const techId = `simple:tech:${tech}`;
+    const techNode: MetricCatalogNode = {
+      node_id: techId,
+      parent_id: null,
+      order: techIndex,
+      label: tech,
+      note: null,
+      source: null,
+      node_type: "tech",
+      analytics_tab: null,
+      metric_id: null,
+      selection: null,
+      event: null,
+      field_idx: null,
+      source_column: null,
+      unit: "",
+      cell: null,
+      n: 0,
+      proof: "catalog-2.68.5-simple-tree",
+      selectable: false,
+      reason: null,
+    };
+    output.push(techNode);
+
+    const themes = [...new Set(techDefinitions.map((entry) => entry.theme))];
+    themes.forEach((theme, themeIndex) => {
+      const themeId = `${techId}:theme:${theme}`;
+      output.push({
+        ...techNode,
+        node_id: themeId,
+        parent_id: techId,
+        order: themeIndex,
+        label: theme,
+        node_type: "category",
+      });
+      techDefinitions
+        .filter((entry) => entry.theme === theme)
+        .forEach((entry, kpiIndex) => {
+          const kpiId = `${themeId}:kpi:${entry.kpi}`;
+          const matchingLeaves = leaves
+            .filter(
+              (leaf) =>
+                leaf.technology === tech &&
+                leaf.simple_theme === entry.theme &&
+                leaf.simple_kpi === entry.kpi,
+            )
+            .sort((a, b) => metricCellSortRank(a) - metricCellSortRank(b));
+          const template = matchingLeaves[0] ?? output[output.length - 1]!;
+          output.push({
+            ...template,
+            node_id: kpiId,
+            parent_id: themeId,
+            order: kpiIndex,
+            label: entry.label,
+            node_type: "metric",
+            metric_id: null,
+            selection: null,
+            cell: null,
+            unit: entry.unit,
+            n: matchingLeaves.reduce((sum, leaf) => sum + leaf.n, 0),
+            selectable: false,
+            reason: entry.status === "open" ? "OPEN — source non décodée" : null,
+            simple_name: null,
+          });
+          if (matchingLeaves.length) {
+            matchingLeaves.forEach((leaf, leafIndex) => {
+              output.push({
+                ...leaf,
+                node_id: `simple:leaf:${leaf.node_id}`,
+                parent_id: kpiId,
+                order: leafIndex,
+                label: leaf.cell_label || leaf.simple_name || leaf.label,
+              });
+            });
+          } else {
+            output.push({
+              ...template,
+              node_id: `${kpiId}:open`,
+              parent_id: kpiId,
+              order: 0,
+              label: entry.label,
+              node_type: "leaf",
+              metric_id: null,
+              selection: null,
+              source_column: null,
+              cell: null,
+              unit: entry.unit,
+              n: 0,
+              proof: entry.status,
+              selectable: false,
+              availability_status: entry.status === "open" ? "not_available" : "no_data",
+              reason: entry.status,
+              simple_name: null,
+            });
+          }
+        });
+    });
+  }
+  return output;
+}
+
 /** Keep the certified BC5 hierarchy when it is present, while attaching the
  * calculated metrics catalogue to the same technology roots. Rebuilding the
  * whole response with `buildMetricCellTree` would discard the synthetic
@@ -447,14 +568,23 @@ export function MetricsCatalogSidebar({
   // still turn it OFF to hide the non-selectable leaves.
   const [showUnavailable, setShowUnavailable] = useState(true);
   const [activeOnly, setActiveOnly] = useState(false);
+  const [treeMode, setTreeMode] = useState<"simple" | "advanced">("simple");
   // 1.103.3 — Partage les options avec `analytics-bootstrap` : persist
   // localStorage + initialData → 2e visite affiche le catalogue instantanément,
   // refetch silencieux en arrière-plan (SWR). Zéro invention.
   const query = useQuery({ ...metricsCatalogQuery(projectId, captureIds), retry: false });
-  const normalizedNodes = useMemo(
+  const advancedNodes = useMemo(
     () => mergeMetricCatalogTrees(query.data?.nodes ?? [], measuredMetricNodes(measuredEntries)),
     [measuredEntries, query.data?.nodes],
   );
+  const normalizedNodes = useMemo(
+    () =>
+      treeMode === "simple" && (query.data?.simple_tree.length ?? 0) > 0
+        ? buildSimpleMetricTree(query.data?.nodes ?? [], query.data?.simple_tree ?? [])
+        : advancedNodes,
+    [advancedNodes, query.data?.nodes, query.data?.simple_tree, treeMode],
+  );
+  useEffect(() => setOpen(new Set()), [treeMode]);
   const byParent = useMemo(() => {
     const result = new Map<string, MetricCatalogNode[]>();
     for (const node of normalizedNodes) {
@@ -1135,6 +1265,30 @@ export function MetricsCatalogSidebar({
             className="h-9 w-full rounded-md border bg-background pl-8 pr-2 text-xs"
           />
         </label>
+        <div
+          className="mt-2 grid grid-cols-2 rounded-md border bg-muted/30 p-0.5"
+          role="group"
+          aria-label={t("metrics.treeMode")}
+          data-testid="metrics-tree-mode"
+        >
+          <button
+            type="button"
+            className={`rounded px-2 py-1 text-[11px] ${treeMode === "simple" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+            onClick={() => setTreeMode("simple")}
+            disabled={!query.data?.simple_tree.length}
+            aria-pressed={treeMode === "simple"}
+          >
+            {t("metrics.treeSimple")}
+          </button>
+          <button
+            type="button"
+            className={`rounded px-2 py-1 text-[11px] ${treeMode === "advanced" ? "bg-background font-medium text-foreground shadow-sm" : "text-muted-foreground"}`}
+            onClick={() => setTreeMode("advanced")}
+            aria-pressed={treeMode === "advanced"}
+          >
+            {t("metrics.treeAdvanced")}
+          </button>
+        </div>
       </header>
       {/* The catalogue is prefetched at app start, so a tab opened later joins an
           already-finished request: show the bar for any in-flight fetch, not only

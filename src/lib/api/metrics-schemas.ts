@@ -58,6 +58,11 @@ const MetricCatalogNodePayloadSchema = z
     display_code_lisible: z.string().nullable().optional(),
     nom_court: z.string().nullable().optional(),
     display_branch: z.enum(["CAPTURE", "LTE", "NR", "IP / Services"]).nullable().optional(),
+    simple_name: z.string().nullable().optional(),
+    simple_theme: z.string().nullable().optional(),
+    simple_kpi: z.string().nullable().optional(),
+    simple_label: z.string().nullable().optional(),
+    simple_status: z.enum(["ok", "empty", "open"]).nullable().optional(),
     tree_visible: z.boolean().optional(),
     kind: z.enum(["KPI", "KPI_CATEGORICAL", "DIMENSION"]).nullable().optional(),
     note: z.string().nullable(),
@@ -113,6 +118,15 @@ export const CatalogReleaseInfoSchema = z.object({
   sha256: z.string(),
   n_leaves: z.number().int(),
 });
+export const SimpleTreeEntrySchema = z.object({
+  tech: z.enum(["LTE", "NR"]),
+  theme: z.string(),
+  kpi: z.string(),
+  label: z.string(),
+  families: z.array(z.string()),
+  unit: z.string(),
+  status: z.enum(["ok", "empty", "open"]),
+});
 export const MetricCatalogResponseSchema = z.object({
   // 1.107.0 — catalogue_version 2.50.5 (contrat enveloppe Phase 3a/3b) ou
   // "v6" en fallback legacy. String libre : jamais un refus silencieux
@@ -122,6 +136,7 @@ export const MetricCatalogResponseSchema = z.object({
   header: z.string(),
   metrics: z.array(MetricSchema),
   nodes: z.array(MetricCatalogNodeSchema),
+  simple_tree: z.array(SimpleTreeEntrySchema).optional().default([]),
   // 1.107.0 — enveloppe Phase 3a : lue par le footer sidebar
   // ("Catalog X.Y.Z · Decoder A.B.C"). Nullable quand catalog_release est
   // vide (bootstrap frais) ; `reason` explicite la bascule legacy.
@@ -220,6 +235,7 @@ export type ChronogramEvents = z.infer<typeof EventsSchema>;
 
 export type MetricInfo = z.infer<typeof MetricSchema>;
 export type MetricCatalogNode = z.infer<typeof MetricCatalogNodeSchema>;
+export type SimpleTreeEntry = z.infer<typeof SimpleTreeEntrySchema>;
 export type MetricCatalogResponse = z.infer<typeof MetricCatalogResponseSchema>;
 const scalar = z.union([z.number(), z.string()]);
 const MetricAnalysisPayloadSchema = z.object({

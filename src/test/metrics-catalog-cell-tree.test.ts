@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMetricCellTree,
+  buildSimpleMetricTree,
   mergeMetricCatalogTrees,
   metricCellSortRank,
 } from "@/features/kpi/MetricsCatalogSidebar";
-import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
+import type { MetricCatalogNode, SimpleTreeEntry } from "@/lib/api/metrics-schemas";
 import { metricsCatalogQuery } from "@/lib/analytics-bootstrap";
 
 const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
@@ -36,6 +37,73 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
   selectable: true,
   reason: null,
   ...overrides,
+});
+
+describe("Simplified Metrics tree", () => {
+  it("builds Technology -> Theme -> KPI -> Cell from API metadata", () => {
+    const definitions: SimpleTreeEntry[] = [
+      {
+        tech: "LTE",
+        theme: "1 · Couverture",
+        kpi: "RSRP",
+        label: "RSRP serving",
+        families: ["cellmeas_rsrp", "cell_rsrp"],
+        unit: "dBm",
+        status: "ok",
+      },
+    ];
+    const nodes = buildSimpleMetricTree(
+      [
+        leaf({
+          simple_name: "LTE_RSRP_PCELL",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "RSRP",
+          simple_label: "RSRP serving",
+          simple_status: "ok",
+        }),
+        leaf({
+          node_id: "rsrp-scell1",
+          metric_id: "cell_rsrp@lte-type-10",
+          selection: "cell_rsrp@lte-type-10",
+          cell: "lte-type-10",
+          cell_label: "SCell 1",
+          raw_cell_type: 10,
+          simple_name: "LTE_RSRP_SCELL1",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "RSRP",
+          simple_label: "RSRP serving",
+          simple_status: "ok",
+        }),
+      ],
+      definitions,
+    );
+    expect(nodes.map((node) => [node.node_type, node.label])).toEqual([
+      ["tech", "LTE"],
+      ["category", "1 · Couverture"],
+      ["metric", "RSRP serving"],
+      ["leaf", "PCell"],
+      ["leaf", "SCell 1"],
+    ]);
+  });
+
+  it("keeps an OPEN KPI visible without inventing a selectable metric", () => {
+    const nodes = buildSimpleMetricTree([], [
+      {
+        tech: "LTE",
+        theme: "3 · Débit UL",
+        kpi: "THP_UL_MAC",
+        label: "Débit MAC UL",
+        families: [],
+        unit: "Mbit/s",
+        status: "open",
+      },
+    ]);
+    const placeholder = nodes.find((node) => node.node_type === "leaf");
+    expect(placeholder?.label).toBe("Débit MAC UL");
+    expect(placeholder?.proof).toBe("open");
+    expect(placeholder?.selection).toBeNull();
+    expect(placeholder?.selectable).toBe(false);
+  });
 });
 
 describe("Metrics Technology -> Metric -> Cell tree", () => {
