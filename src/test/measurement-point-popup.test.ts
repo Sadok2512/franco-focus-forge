@@ -110,4 +110,19 @@ describe("shared measurement-point popup", () => {
     expect(card.textContent).toContain("PCI 195 · EARFCN 1675 · 859 m · -98 dBm");
     expect(card.querySelectorAll(".measurement-popup-line.is-probable")).toHaveLength(1);
   });
+
+  it("shows the source-log clock instead of restarting at capture zero", () => {
+    const details = pointDetails(point, "RSRP", "dBm", {
+      origin_ts: "15:59:41.338",
+      nmf_start_at: "04.11.2026 15:59:41.338",
+      capture_date: "2026-11-04",
+      utc_offset_min: 120,
+    });
+    const card = buildMeasurementPointPopup(details);
+
+    expect(details.timeLocal).toBe("16:00:46.463");
+    expect(details.timeUtc).toBe("14:00:46.463");
+    expect(card.textContent).toContain("16:00:46.463");
+    expect(card.textContent).not.toContain("00:01:05.125");
+  });
 });

@@ -1,4 +1,5 @@
 import i18n from "@/lib/i18n";
+import { tooltipTriple, type TimeAxisMeta } from "./time-axis";
 
 export type CellLinkKind = "serving" | "neighbour" | "nr_anchor";
 export type LinkConfidence = "proven" | "probable";
@@ -41,6 +42,9 @@ export type RadioCellLink = {
 export type MeasurementPointDetails = {
   seq: number;
   tRelS?: number | null | undefined;
+  /** Exact source-log clock derived from origin_ts + t_rel_s. */
+  timeLocal?: string | null | undefined;
+  timeUtc?: string | null | undefined;
   metricLabel: string;
   value?: string | number | null | undefined;
   unit?: string | null | undefined;
@@ -168,11 +172,15 @@ export function pointDetails(
   point: ApiMeasurementPoint,
   metricLabel: string,
   unit: string,
+  timeMeta?: TimeAxisMeta,
 ): MeasurementPointDetails {
   const links = pointCellLinks(point);
+  const clock = finite(point.t_rel_s) ? tooltipTriple(point.t_rel_s, timeMeta) : null;
   return {
     seq: point.seq,
     tRelS: point.t_rel_s,
+    timeLocal: clock?.local,
+    timeUtc: clock?.utc,
     metricLabel,
     value: point.value,
     unit,
@@ -254,7 +262,7 @@ export function buildMeasurementPointPopup(details: MeasurementPointDetails): HT
 
   const time = document.createElement("div");
   time.className = "measurement-popup-time";
-  time.textContent = `${i18n.t("mapPointPopup.time")} ${elapsed(details.tRelS)} · seq ${details.seq}`;
+  time.textContent = `${i18n.t("mapPointPopup.time")} ${details.timeLocal ?? elapsed(details.tRelS)} · seq ${details.seq}`;
   card.append(header, time);
 
   if (details.serving) appendCell(card, details.serving, i18n.t("mapPointPopup.serving"));

@@ -1,3 +1,8 @@
+## 1.141.2 (patch) — Heure réelle du log sur la Map — 2026-11-05 (BC4)
+
+- Le point sélectionné de la Map affiche l'heure locale exacte du log au lieu du temps relatif repartant de zéro.
+- Le contrat Map réutilise les métadonnées temporelles certifiées de Graph/Table (`origin_ts`, `#START`, `#UT`) sans déduction navigateur.
+
 ## 1.141.1 (patch) — Visibilité des liens radio — 2026-11-05 (BC4)
 
 - Restaure le contraste des liens Serving, Neighbour et NR anchor sur les fonds clairs, sombres et satellite sans revenir aux anciens traits surdimensionnés.

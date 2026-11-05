@@ -464,6 +464,13 @@ export const MetricMapResponseSchema = z.object({
   capture_id: z.string(),
   result_id: z.string(),
   decoder_version: z.string(),
+  // Same certified source-clock contract as metric series/table. Optional
+  // during rolling deployment so an older API remains readable.
+  origin_seq: z.number().optional(),
+  origin_ts: z.string().optional(),
+  nmf_start_at: z.string().nullable().optional(),
+  capture_date: z.string().nullable().optional(),
+  utc_offset_min: z.number().int().nullable().optional(),
   total_points: z.number().int(),
   map_points: MetricAnalysisPayloadSchema.shape.map_points,
 });

@@ -140,7 +140,10 @@ export function RfParametersPanel({
         </button>
       </div>
       <Section title={t("mapWorkspace.selectedPoint")}>
-        <Row label={t("mapWorkspace.rf.time")} value={formatElapsed(details.tRelS)} />
+        <Row
+          label={t("mapWorkspace.rf.time")}
+          value={details.timeLocal ?? formatElapsed(details.tRelS)}
+        />
         <Row
           label={t("mapWorkspace.rf.position")}
           value={position ? `${position[1].toFixed(6)}, ${position[0].toFixed(6)}` : ND}

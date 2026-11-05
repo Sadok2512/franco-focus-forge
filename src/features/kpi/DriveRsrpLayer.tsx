@@ -240,7 +240,14 @@ export function DriveRsrpLayer({
   /** Exact API points already loaded by a host KPI map. Sharing them keeps
    * selection and radio evidence on one dataset and avoids a duplicate map
    * request with a different filter scope. */
-  hostMapData?: Pick<MetricMapResponse, "map_points"> | undefined;
+  hostMapData?: Pick<
+    MetricMapResponse,
+    | "map_points"
+    | "origin_ts"
+    | "nmf_start_at"
+    | "capture_date"
+    | "utc_offset_min"
+  > | undefined;
   /** Host map legend panel element the RSRP rows are rendered into. */
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
@@ -935,8 +942,16 @@ export function DriveRsrpLayer({
   const selectedDetails = useMemo(() => {
     if (!selectedPoint) return null;
     const point = drivePoints.find((candidate) => candidate.seq === selectedPoint.seq);
-    return point ? pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm") : null;
-  }, [drivePoints, selectedPoint, t]);
+    const timeMeta = analysisData?.origin_ts
+      ? {
+          origin_ts: analysisData.origin_ts,
+          nmf_start_at: analysisData.nmf_start_at,
+          capture_date: analysisData.capture_date,
+          utc_offset_min: analysisData.utc_offset_min,
+        }
+      : undefined;
+    return point ? pointDetails(point, t("mapWorkspace.driveRsrp"), "dBm", timeMeta) : null;
+  }, [analysisData, drivePoints, selectedPoint, t]);
 
   const counts = useMemo(() => {
     const c: Record<string, number> = {};

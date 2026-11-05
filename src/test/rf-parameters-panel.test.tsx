@@ -37,6 +37,18 @@ describe("RF Parameters tab", () => {
     expect(screen.getByText("2.1 %").closest("div")?.className).toContain("bg-primary/10");
   });
 
+  it("prefers the exact source-log clock over capture-relative elapsed time", () => {
+    render(
+      <RfParametersPanel
+        details={{ ...base, timeLocal: "16:49:49.372", value: -96.4 }}
+        onClose={vi.fn()}
+      />,
+    );
+    const panel = screen.getByTestId("rf-parameters-panel");
+    expect(panel).toHaveTextContent("16:49:49.372");
+    expect(panel).not.toHaveTextContent("00:50:08.034");
+  });
+
   it("computes UE → site azimuth from real coordinates", () => {
     expect(Math.round(bearingDeg([2, 50], [2, 51]))).toBe(0);
     expect(Math.round(bearingDeg([2, 50], [3, 50]))).toBe(90);
