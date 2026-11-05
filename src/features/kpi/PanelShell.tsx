@@ -30,6 +30,7 @@ export function PanelShell({
   defaultTitle,
   fullRow,
   defaultSpan,
+  defaultHeight,
   perRow,
   onDuplicate,
   bare = false,
@@ -41,6 +42,7 @@ export function PanelShell({
   defaultTitle: string;
   fullRow?: boolean;
   defaultSpan?: PanelSpan;
+  defaultHeight?: number;
   perRow?: 1 | 2 | 3;
   onDuplicate?: (() => void) | undefined;
   bare?: boolean;
@@ -68,7 +70,7 @@ export function PanelShell({
       : (s.span[id] ?? defaultSpan ?? 1),
   );
   const collapsed = !!s.collapsed[id];
-  const height = s.height[id];
+  const height = s.height[id] ?? defaultHeight;
   const nextSpan = (): PanelSpan =>
     span === "full" ? 1 : span === 3 ? 1 : ((span + 1) as PanelSpan);
 

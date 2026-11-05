@@ -1,3 +1,10 @@
+## 1.141.9 (patch) — Timeline KPI redimensionnable sans boucle de hauteur — 2026-11-05 (Agent BC1)
+
+- Contraint la hauteur initiale des panneaux Timeline et L3 afin que le canvas ne puisse plus agrandir récursivement son propre viewport.
+- Aligne la hauteur minimale du contenu Signaling sur la borne de la poignée commune ; une Timeline réduite conserve ses pistes dans un scroll interne.
+- Conserve le redimensionnement horizontal, la position, les données, le zoom et la persistance par Workspace.
+- SemVer frontend : **PATCH 1.141.9** ; backend, API et données RF inchangés.
+
 ## 1.141.8 (patch) — Heure absolue restaurée dans les Graphs — 2026-11-05 (BC4)
 
 - Utilise les métadonnées horaires de la réponse Series lorsque la requête Table reste volontairement inactive dans un Workspace Graph.

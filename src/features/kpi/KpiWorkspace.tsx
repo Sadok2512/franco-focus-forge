@@ -1531,6 +1531,7 @@ function Workspace({
                               : translate("panel.l3Signaling")
                           }
                           defaultSpan={3}
+                          defaultHeight={signalingPanel.kind === "timeline" ? 420 : 360}
                           onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
                         >
                           {(title) => (

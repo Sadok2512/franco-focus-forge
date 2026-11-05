@@ -144,6 +144,33 @@ describe("panel drag-to-move control", () => {
     },
   );
 
+  it("constrains a timeline on first render and lets it shrink to the shared minimum", () => {
+    const { container } = render(
+      <PanelGridContext.Provider value={{ cols: 3 }}>
+        <PanelShell
+          workspaceId="timeline-height"
+          id="signaling:timeline"
+          natural={0}
+          defaultTitle="Timeline"
+          defaultHeight={420}
+        >
+          {() => <div className="kpi-signaling-panel">timeline</div>}
+        </PanelShell>
+      </PanelGridContext.Provider>,
+    );
+    const shell = container.querySelector<HTMLElement>("[data-panel-id='signaling:timeline']")!;
+    shell.getBoundingClientRect = () => ({ width: 600, height: 420 }) as DOMRect;
+    const handle = shell.querySelector<HTMLElement>(".kpi-panel-resize")!;
+
+    expect(shell.style.height).toBe("420px");
+    fireEvent(handle, new MouseEvent("pointerdown", { bubbles: true, clientY: 420 }));
+    fireEvent(window, new MouseEvent("pointermove", { bubbles: true, clientY: 100 }));
+    fireEvent(window, new MouseEvent("pointerup", { bubbles: true, clientY: 100 }));
+
+    expect(shell.style.height).toBe("180px");
+    expect(loadLayout("timeline-height").height["signaling:timeline"]).toBe(180);
+  });
+
   it("measures the workspace grid through a display-contents metric wrapper", () => {
     const { container } = render(
       <div className="kpi-graph-grid" data-testid="wrapped-grid">

@@ -2294,7 +2294,7 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
 
 .kpi-signaling-panel {
   display: flex;
-  min-height: 280px;
+  min-height: 180px;
   height: 100%;
   flex-direction: column;
   overflow: hidden;
