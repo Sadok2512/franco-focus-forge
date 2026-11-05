@@ -27,15 +27,16 @@ describe("Drive RSRP cell-link layer order", () => {
   });
 
   it("keeps probable links dashed, including serving links", () => {
-    expect(cellLinkDasharray("probable")).toEqual([4, 2]);
+    expect(cellLinkDasharray("probable")).toEqual([3, 1.5]);
     expect(cellLinkDasharray("proven")).toBeUndefined();
   });
 
-  it("keeps selected radio evidence visible without the former oversized stroke", () => {
+  it("keeps selected radio evidence visible over dense map overlays", () => {
     expect(CELL_LINK_COLORS.serving).toBe("#00b8ff");
-    expect(CELL_LINK_STYLE.selectedWidth).toBe(5);
-    expect(CELL_LINK_STYLE.casingWidth).toBe(9);
-    expect(CELL_LINK_STYLE.casingWidth - CELL_LINK_STYLE.selectedWidth).toBe(4);
+    expect(CELL_LINK_STYLE.selectedWidth).toBe(7);
+    expect(CELL_LINK_STYLE.casingWidth).toBe(13);
+    expect(CELL_LINK_STYLE.casingWidth - CELL_LINK_STYLE.selectedWidth).toBe(6);
+    expect(CELL_LINK_STYLE.casingColor).toBe("#0f172a");
     expect(CELL_LINK_STYLE.selectedOpacity).toBe(1);
     expect(CELL_LINK_STYLE.casingOpacity).toBeGreaterThanOrEqual(0.9);
   });

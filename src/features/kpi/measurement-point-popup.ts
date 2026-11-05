@@ -16,13 +16,14 @@ export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
  * and dense sector overlays without returning to the former oversized halo. */
 export const CELL_LINK_STYLE = {
   width: 2,
-  selectedWidth: 5,
-  casingWidth: 9,
+  selectedWidth: 7,
+  casingWidth: 13,
+  casingColor: "#0f172a",
   opacity: 0.92,
   mutedOpacity: 0.32,
   selectedOpacity: 1,
-  casingOpacity: 0.92,
-  probableDash: [4, 2] as [number, number],
+  casingOpacity: 0.96,
+  probableDash: [3, 1.5] as [number, number],
 } as const;
 
 export type RadioCellLink = {

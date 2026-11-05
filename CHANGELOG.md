@@ -1,3 +1,9 @@
+## 1.141.5 (patch) — Liaison Serving réellement visible — 2026-11-05 (BC4)
+
+- Place le lien Serving sélectionné et son endpoint au-dessus des secteurs, cellules et points de mesure.
+- Remplace le contour blanc peu visible sur fond clair par un contour sombre de 13 px autour du trait cyan de 7 px ; les liaisons probables restent en pointillés.
+- Renforce le marqueur de cellule cible sans modifier les coordonnées ni l'association radio fournie par l'API.
+
 ## 1.141.4 (patch) — Liens radio lisibles et légende de confiance — 2026-11-05 (BC4)
 
 - Renforce le contraste du lien radio sélectionné sur les fonds satellite et les secteurs, avec un trait de 5 px, un contour neutre de 9 px et des couleurs Serving, Neighbour et NR anchor distinctes.

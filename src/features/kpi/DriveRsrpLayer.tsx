@@ -560,6 +560,9 @@ export function DriveRsrpLayer({
         if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
       if (map.getLayer(SELECTED_LAYER)) map.moveLayer(SELECTED_LAYER);
+      // The endpoint is part of the selected-link affordance. Keep it above
+      // sectors, measurements and the line itself so short links remain clear.
+      if (map.getLayer(SERVING_SITE_LAYER)) map.moveLayer(SERVING_SITE_LAYER);
     };
     const add = () => {
       if (!map.getSource(LINK_SOURCE)) {
@@ -628,7 +631,7 @@ export function DriveRsrpLayer({
               filter,
               layout: { "line-cap": "round", "line-join": "round" },
               paint: {
-                "line-color": "#ffffff",
+                "line-color": CELL_LINK_STYLE.casingColor,
                 "line-width": CELL_LINK_STYLE.casingWidth,
                 "line-opacity": CELL_LINK_STYLE.casingOpacity,
                 "line-offset": ["get", "visual_offset"],
@@ -756,11 +759,11 @@ export function DriveRsrpLayer({
           type: "circle",
           source: SERVING_SITE_SOURCE,
           paint: {
-            "circle-radius": 10,
+            "circle-radius": 12,
             "circle-color": CELL_LINK_COLORS.serving,
-            "circle-opacity": 0.25,
-            "circle-stroke-width": 3,
-            "circle-stroke-color": CELL_LINK_COLORS.serving,
+            "circle-opacity": 0.4,
+            "circle-stroke-width": 4,
+            "circle-stroke-color": CELL_LINK_STYLE.casingColor,
           },
         });
       map.moveLayer(SERVING_SITE_LAYER);
@@ -769,8 +772,8 @@ export function DriveRsrpLayer({
       let pulse = 0;
       const paint = () => {
         if (!map.getLayer(SERVING_SITE_LAYER)) return;
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 15 : 10);
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.35 : 1);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 18 : 12);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.55 : 1);
         pulse = pulse ? 0 : 1;
       };
       paint();
