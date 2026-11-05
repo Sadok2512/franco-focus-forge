@@ -104,7 +104,7 @@ export const WorkspaceTemplateConfigurationSchema = z
         chartConfigurations: z.record(z.string(), ChartConfigurationSchema),
         metricViews: z.record(
           z.string(),
-          z.enum(["graph", "histogram", "table", "map"]),
+          z.enum(["graph", "histogram", "table", "map", "snapshot"]),
         ),
         panelLayout: PanelLayoutSchema,
         tableSettings: TableSettingsSchema,

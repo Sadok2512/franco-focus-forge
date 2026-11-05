@@ -1,11 +1,12 @@
 import type { MetricView } from "./MetricGraphCard";
+import type { MetricWorkspaceView } from "./metric-views";
 
-export type MetricCardView = Exclude<MetricView, "table">;
+export type MetricCardView = Exclude<MetricView, "table"> | "snapshot";
 export type MetricCardPanel = { id: string; code: string; view: MetricCardView };
 
 const storageKey = (workspaceId: string) => `bc4.metrics.card-panels.${workspaceId}`;
 const isCardView = (value: unknown): value is MetricCardView =>
-  value === "graph" || value === "histogram" || value === "map";
+  value === "graph" || value === "histogram" || value === "map" || value === "snapshot";
 
 export function readMetricCardPanels(workspaceId: string): MetricCardPanel[] | null {
   try {
@@ -41,7 +42,7 @@ export function newMetricCardPanel(code: string, view: MetricCardView): MetricCa
 
 export function legacyMetricCardPanels(
   selections: string[],
-  views: Record<string, MetricView>,
+  views: Record<string, MetricWorkspaceView>,
 ): MetricCardPanel[] {
   return selections.flatMap((code, index) => {
     const view = views[code] ?? "graph";

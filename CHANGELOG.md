@@ -1,3 +1,11 @@
+## 1.140.0 (minor) — Serving / Radio Snapshot — 2026-11-05 (Agent BC1)
+
+- Ajoute un panneau Workspace indépendant `Serving / Radio Snapshot`, compatible avec le layout, le déplacement, le redimensionnement et la persistance par onglet.
+- Affiche uniquement les mesures exactes à la séquence synchronisée Graph/Map/Table/Signaling ; sans sélection, utilise la dernière séquence valide et marque explicitement le mode `Latest sample`.
+- Fournit les six métriques RF serving LTE/NR disponibles, des barres bornées par des seuils configurables, l’ajout/retrait/réordonnancement et le glisser-déposer depuis le catalogue, sans interpolation ni conversion des valeurs nulles.
+- Ajoute l’accès `Radio Snapshot` au menu supérieur `Display`, aux côtés des panneaux L3 Signaling et Timeline.
+- SemVer frontend : **MINOR 1.140.0** ; backend, catalogue, décodeur et données RF inchangés.
+
 ## 1.139.6 (patch) — Contraste du lien Serving sélectionné — 2026-11-05 (BC4)
 
 - Restaure un contour clair sous le lien Serving sélectionné afin de le conserver lisible sur les fonds satellite, les points du parcours et les secteurs, sans modifier les associations radio publiées par l'API.

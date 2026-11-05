@@ -124,11 +124,13 @@ export const getMetricAnalysis = (
     table_only?: boolean;
     cell_pci?: number;
     cell_arfcn?: number;
+    from_seq?: number;
+    to_seq?: number;
   },
   signal?: AbortSignal,
 ) =>
   kpiFetch(
-    `/projects/${encodeURIComponent(p)}/metrics/table?${metricRequestQuery(capture, filters, { codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}), ...(options.cell_pci != null ? { cell_pci: String(options.cell_pci) } : {}), ...(options.cell_arfcn != null ? { cell_arfcn: String(options.cell_arfcn) } : {}) })}`,
+    `/projects/${encodeURIComponent(p)}/metrics/table?${metricRequestQuery(capture, filters, { codes: codes.join(","), group_by: options.group_by, include_map: String(options.include_map), table_only: String(options.table_only ?? false), page: String(options.page ?? 1), page_size: String(options.page_size ?? 25), ...(options.x ? { x: options.x } : {}), ...(options.cell_pci != null ? { cell_pci: String(options.cell_pci) } : {}), ...(options.cell_arfcn != null ? { cell_arfcn: String(options.cell_arfcn) } : {}), ...(options.from_seq != null ? { from_seq: String(options.from_seq) } : {}), ...(options.to_seq != null ? { to_seq: String(options.to_seq) } : {}) })}`,
     MetricAnalysisSchema,
     signal,
   );

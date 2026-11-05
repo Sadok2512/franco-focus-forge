@@ -31,6 +31,7 @@ import {
   Download,
   Info,
   MoreVertical,
+  RadioTower,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -48,6 +49,7 @@ import {
 import type { MetricCatalogNode } from "@/lib/api/metrics-schemas";
 import type { Entry } from "./workspace-model";
 import type { MetricView } from "./MetricGraphCard";
+import type { MetricWorkspaceView } from "./metric-views";
 import { VisualizationItems } from "./VisualizationMenu";
 import type { VisualizationType } from "./visualization-model";
 import { APP_VERSION } from "@/lib/version";
@@ -400,7 +402,7 @@ export function MetricsCatalogSidebar({
   projectId: string;
   selected: string[];
   onToggle: (code: string) => void;
-  onVisualization?: (code: string, view: MetricView) => void;
+  onVisualization?: (code: string, view: MetricWorkspaceView) => void;
   onVisualizationIntent?: (code: string, view: MetricView) => void;
   searchRef: RefObject<HTMLInputElement | null>;
   selectionCount?: number;
@@ -1057,6 +1059,14 @@ export function MetricsCatalogSidebar({
                         }
                       }}
                     />
+                    {!measured && (
+                      <DropdownMenuItem
+                        onSelect={() => onVisualization(node.selection!, "snapshot")}
+                        data-testid={`metric-snapshot-${node.node_id}`}
+                      >
+                        <RadioTower size={14} /> {t("radioSnapshot.menuLabel")}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuSeparator />
                   </>
                 )}

@@ -3,7 +3,8 @@
 // tab in localStorage, the same pattern as the pane mode and table settings.
 import type { MetricView } from "./MetricGraphCard";
 
-export type MetricViews = Record<string, MetricView>;
+export type MetricWorkspaceView = MetricView | "snapshot";
+export type MetricViews = Record<string, MetricWorkspaceView>;
 
 const storageKey = (tabId?: string) =>
   tabId ? `bc3.metrics.views.${tabId}` : "bc3.metrics.views";
@@ -16,7 +17,13 @@ export function readMetricViews(tabId?: string): MetricViews {
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
     const views: MetricViews = {};
     for (const [code, view] of Object.entries(parsed as Record<string, unknown>)) {
-      if (view === "graph" || view === "histogram" || view === "table" || view === "map") {
+      if (
+        view === "graph" ||
+        view === "histogram" ||
+        view === "table" ||
+        view === "map" ||
+        view === "snapshot"
+      ) {
         views[code] = view;
       }
     }

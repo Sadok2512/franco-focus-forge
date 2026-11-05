@@ -35,7 +35,7 @@ import {
 } from "./metric-classes";
 import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
-import type { MetricViews } from "./metric-views";
+import type { MetricViews, MetricWorkspaceView } from "./metric-views";
 import {
   legacyMetricCardPanels,
   readMetricCardPanels,
@@ -81,6 +81,7 @@ import { parseMetricSelection } from "./metric-selection";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
 import { pointMatchesRange, usePointSync } from "./point-sync";
 import { openAuthenticatedTab } from "@/lib/api/http";
+import { RadioSnapshotPanel } from "./RadioSnapshotPanel";
 
 // 1.88.0 (lot Time/GPS) — plus de parsing côté front : le back expose
 // `rows[].time_local` et `rows[].time_utc` directement (format HH:MM:SS.mmm)
@@ -1279,7 +1280,7 @@ export function MetricsWorkspace({
     | { workspaceId: string; id: string; code: string; view: string; n: number }
     | undefined;
   onRemove?: ((code: string) => void) | undefined;
-  onVisualization?: ((code: string, view: MetricView) => void) | undefined;
+  onVisualization?: ((code: string, view: MetricWorkspaceView) => void) | undefined;
   mapFillsAvailable?: boolean;
   showEvents?: boolean;
   scopeLabel?: string | undefined;
@@ -1837,7 +1838,8 @@ export function MetricsWorkspace({
     if (
       cardViewRequest.view === "graph" ||
       cardViewRequest.view === "histogram" ||
-      cardViewRequest.view === "map"
+      cardViewRequest.view === "map" ||
+      cardViewRequest.view === "snapshot"
     ) {
       saveCardPanels([
         ...cardPanels,
@@ -1979,7 +1981,11 @@ export function MetricsWorkspace({
                 workspaceId={_workspaceId ?? "metrics"}
                 id={`${panel.id}${panelIdSuffix}`}
                 natural={100 + i}
-                defaultTitle={`${i + 1}. ${title}`}
+                defaultTitle={
+                  metricView === "snapshot"
+                    ? translate("radioSnapshot.title")
+                    : `${i + 1}. ${title}`
+                }
                 fullRow={mapFillsAvailable && metricView === "map"}
                 bare={metricView === "map"}
               >
@@ -2000,6 +2006,18 @@ export function MetricsWorkspace({
                       workspaceId={_workspaceId ?? "metrics"}
                       projectCenter={projectCenter}
                       routeCoordinates={captureRouteCoordinates}
+                    />
+                  ) : metricView === "snapshot" ? (
+                    <RadioSnapshotPanel
+                      projectId={projectId}
+                      captureId={captureId!}
+                      workspaceId={_workspaceId ?? "metrics"}
+                      panelId={panel.id}
+                      title={panelTitle}
+                      initialMetric={s.full}
+                      catalog={catalog}
+                      filters={filters}
+                      onRemove={remove}
                     />
                   ) : (
                     <MetricGraphCard

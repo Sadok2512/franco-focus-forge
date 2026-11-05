@@ -61,9 +61,13 @@ import { TableSettingsWorkspaceContext } from "./table-settings";
 import { MetricsWorkspace, type View as MetricsView } from "./MetricsWorkspace";
 import { MetricsCatalogSidebar } from "./MetricsCatalogSidebar";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey } from "./query-keys";
-import type { MetricView } from "./MetricGraphCard";
 import { newMetricCardPanel } from "./metric-card-panels";
-import { readMetricViews, writeMetricViews, type MetricViews } from "./metric-views";
+import {
+  readMetricViews,
+  writeMetricViews,
+  type MetricViews,
+  type MetricWorkspaceView,
+} from "./metric-views";
 import { TreePanel, type TreePanelView } from "@/features/dict-v2/TreePanel";
 import { ValueExplorer } from "@/features/dict-v2/ValueExplorer";
 import { SelectedParameterInfo } from "@/features/dict-v2/SelectedParameterInfo";
@@ -611,7 +615,7 @@ function Workspace({
         codes.length === 1 &&
         configFor(codes[0]!).visualization === "map"));
   const [cardViewRequest, setCardViewRequest] = useState<
-    { workspaceId: string; id: string; code: string; view: MetricView; n: number } | undefined
+    { workspaceId: string; id: string; code: string; view: MetricWorkspaceView; n: number } | undefined
   >();
   const prefetchMetricMap = (code: string) => {
     if (!captureId) return;
@@ -626,7 +630,7 @@ function Workspace({
       staleTime: 60_000,
     });
   };
-  const visualizeMetric = (code: string, view: MetricView) => {
+  const visualizeMetric = (code: string, view: MetricWorkspaceView) => {
     const nextSelected = selectedMetrics.includes(code)
       ? selectedMetrics
       : [...selectedMetrics, code];
