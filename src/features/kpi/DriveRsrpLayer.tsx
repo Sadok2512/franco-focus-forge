@@ -960,6 +960,23 @@ export function DriveRsrpLayer({
 
   // Legend rows shared by the control card and the host map's own legend panel:
   // the RSRP classes (click to hide or show them) and the proven cell links.
+  const cellLinkLegend = (
+    <MapLegendSettings title={t("metrics.mapCellLinks")}>
+      <MapLegendList>
+        {CELL_LINK_KINDS.map((kind) => (
+          <MapLegendRow
+            key={kind}
+            swatch="line"
+            color={CELL_LINK_COLORS[kind]}
+            label={t(`metrics.mapLink.${kind}`)}
+            meta={linkCounts[kind]}
+            checked={prefs.links[kind]}
+            onToggle={() => update({ links: { ...prefs.links, [kind]: !prefs.links[kind] } })}
+          />
+        ))}
+      </MapLegendList>
+    </MapLegendSettings>
+  );
   const legendRows = (
     <div className="space-y-2">
       <MapLegendList label={t("mapWorkspace.driveRsrpLegend")}>
@@ -990,21 +1007,7 @@ export function DriveRsrpLayer({
           );
         })}
       </MapLegendList>
-      <MapLegendSettings title={t("metrics.mapCellLinks")}>
-        <MapLegendList>
-          {CELL_LINK_KINDS.map((kind) => (
-            <MapLegendRow
-              key={kind}
-              swatch="line"
-              color={CELL_LINK_COLORS[kind]}
-              label={t(`metrics.mapLink.${kind}`)}
-              meta={linkCounts[kind]}
-              checked={prefs.links[kind]}
-              onToggle={() => update({ links: { ...prefs.links, [kind]: !prefs.links[kind] } })}
-            />
-          ))}
-        </MapLegendList>
-      </MapLegendSettings>
+      {cellLinkLegend}
     </div>
   );
   // The host map's legend panel (Layers → Legend) receives these rows through a
@@ -1014,15 +1017,18 @@ export function DriveRsrpLayer({
     ? createPortal(
         <section className="space-y-2" data-map-drive-rsrp-legend="">
           {hidePoints ? (
-            <MapLegendList label={t("mapWorkspace.gpsPoints")}>
-              <MapLegendRow
-                color={GPS_POINT_COLOR}
-                label={t("mapWorkspace.gpsPoints")}
-                meta={prefs.on ? features.length : ""}
-                checked={prefs.on}
-                onToggle={() => update({ on: !prefs.on })}
-              />
-            </MapLegendList>
+            <>
+              <MapLegendList label={t("mapWorkspace.gpsPoints")}>
+                <MapLegendRow
+                  color={GPS_POINT_COLOR}
+                  label={t("mapWorkspace.gpsPoints")}
+                  meta={prefs.on ? features.length : ""}
+                  checked={prefs.on}
+                  onToggle={() => update({ on: !prefs.on })}
+                />
+              </MapLegendList>
+              {cellLinkLegend}
+            </>
           ) : (
             <>
               <div className="font-semibold">{t("mapWorkspace.driveRsrp")}</div>

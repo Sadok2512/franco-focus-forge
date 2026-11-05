@@ -1,3 +1,8 @@
+## 1.139.5 (patch) — Contrôles des liens dans la légende KPI — 2026-11-05 (BC4)
+
+- Restaure dans l'onglet Legend de la Map KPI la section Point → liens cellule et ses interrupteurs Serving, Neighbour et NR anchor.
+- Conserve la couche de points propre à la métrique ainsi que les liens radio publiés par le serveur.
+
 ## 1.139.4 (patch) — Liens Map visibles et distincts — 2026-11-05 (BC4)
 
 - Remonte Serving, Neighbour et NR anchor au-dessus des secteurs et des mesures de la Map KPI.

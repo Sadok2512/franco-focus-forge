@@ -44,7 +44,7 @@ function mapDouble() {
   };
 }
 
-function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement) {
+function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement, hidePoints = false) {
   return render(
     <QueryClientProvider
       client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}
@@ -54,6 +54,7 @@ function mount(map: ReturnType<typeof mapDouble>, legendHost: HTMLDivElement) {
         projectId="Test_3"
         activeCaptureId="c1"
         hideControls
+        hidePoints={hidePoints}
         legendHost={legendHost}
       />
     </QueryClientProvider>,
@@ -123,5 +124,18 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
     expect(JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v2") ?? "{}").hidden).toContain(
       "excellent",
     );
+  });
+
+  it("keeps all cell-link switches in KPI maps that own their measurement points", async () => {
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    mount(mapDouble(), host, true);
+
+    await waitFor(() => expect(host.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull());
+    expect(host.textContent).toContain("Point → cell links");
+    expect(host.textContent).toContain("Serving cell");
+    expect(host.textContent).toContain("Neighbour cells");
+    expect(host.textContent).toContain("NR anchor");
+    expect(host.querySelectorAll("input[type=checkbox]")).toHaveLength(4);
   });
 });
