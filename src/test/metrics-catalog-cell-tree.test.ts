@@ -84,9 +84,9 @@ describe("Simplified Metrics tree", () => {
       ["category", "1 · Couverture"],
       ["metric", "RSRP serving"],
       ["group", "PCell"],
-      ["leaf", "RSRP"],
+      ["leaf", "LTE_Serving_RSRP_PCell"],
       ["group", "SCell 1"],
-      ["leaf", "RSRP"],
+      ["leaf", "LTE_Serving_RSRP_PCell"],
     ]);
     expect(nodes.find((node) => node.node_type === "metric")?.n).toBe(9870);
   });
@@ -124,6 +124,7 @@ describe("Simplified Metrics tree", () => {
     const nodes = buildSimpleMetricTree(
       [
         leaf({
+          display_code_lisible: "LTE_SERVING_RSRP_PCELL",
           simple_name: "LTE_RSRP_PCELL",
           simple_tech: "LTE",
           simple_theme: "1 · Couverture",
@@ -131,6 +132,7 @@ describe("Simplified Metrics tree", () => {
         }),
         leaf({
           node_id: "earfcn-pcell",
+          display_code_lisible: "LTE_EARFCN_SERVING_PCELL",
           metric_id: "cell_ch@lte-type-0",
           selection: "cell_ch@lte-type-0",
           metric_label: "EARFCN",
@@ -141,6 +143,7 @@ describe("Simplified Metrics tree", () => {
         }),
         leaf({
           node_id: "pci-pcell",
+          display_code_lisible: "LTE_PCI_SERVING_PCELL",
           metric_id: "cell_pci@lte-type-0",
           selection: "cell_pci@lte-type-0",
           metric_label: "PCI",
@@ -163,9 +166,9 @@ describe("Simplified Metrics tree", () => {
         .filter((node) => node.parent_id === pcell.node_id)
         .map((node) => [node.label, node.selection]),
     ).toEqual([
-      ["RSRP", "cell_rsrp@lte-type-0"],
-      ["EARFCN", "cell_ch@lte-type-0"],
-      ["PCI", "cell_pci@lte-type-0"],
+      ["LTE_SERVING_RSRP_PCELL", "cell_rsrp@lte-type-0"],
+      ["LTE_EARFCN_SERVING_PCELL", "cell_ch@lte-type-0"],
+      ["LTE_PCI_SERVING_PCELL", "cell_pci@lte-type-0"],
     ]);
   });
 

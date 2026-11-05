@@ -1,3 +1,8 @@
+## 1.143.1 (patch) — Noms avancés dans l’arbre simplifié — 2026-11-05 (BC4)
+
+- Réutilise exactement `display_code_lisible` de la vue Avancée pour les valeurs, EARFCN et PCI affichés sous PCell/SCell.
+- Conserve sans modification les sélections, compteurs, disponibilités et identifiants API.
+
 ## 1.143.0 (minor) — Cellules et identité radio dans l’arbre simplifié — 2026-11-05 (BC4)
 
 - Structure les KPI cellulaires de la vue Simplifiée en `KPI → PCell/SCell → valeur`, sans modifier la vue Avancée.

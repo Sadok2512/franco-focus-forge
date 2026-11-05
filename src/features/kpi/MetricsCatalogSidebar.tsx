@@ -419,7 +419,11 @@ export function buildSimpleMetricTree(
                     node_id: `simple:leaf:${kpiId}:${leaf.node_id}`,
                     parent_id: cellId,
                     order: leafIndex,
-                    label: leaf.metric_label || entry.label,
+                    label:
+                      leaf.display_code_lisible ||
+                      leaf.technical_label ||
+                      leaf.label ||
+                      entry.label,
                   });
                 });
                 const identities = identityByCell.get(`${tech}:${cellLabel}`);
@@ -432,7 +436,11 @@ export function buildSimpleMetricTree(
                     node_id: `${cellId}:context:${identityKind}:${identity.node_id}`,
                     parent_id: cellId,
                     order: roleLeaves.length + identityIndex,
-                    label: identityKind,
+                    label:
+                      identity.display_code_lisible ||
+                      identity.technical_label ||
+                      identity.label ||
+                      identityKind,
                   });
                 });
               });
