@@ -75,6 +75,7 @@ import {
   automaticTimeAxisMode,
   formatTick,
   timeAxisLabel,
+  timeAxisMetaFromPayload,
   tooltipTriple,
   type TimeAxisMeta,
   type TimeAxisMode,
@@ -1560,14 +1561,12 @@ export function MetricsWorkspace({
   });
   const data = query.data;
   const refreshing = query.isPlaceholderData && query.isFetching;
-  const timeMeta: TimeAxisMeta | undefined = data
-    ? {
-        nmf_start_at: data.nmf_start_at ?? null,
-        origin_ts: data.origin_ts,
-        utc_offset_min: data.utc_offset_min ?? null,
-        capture_date: data.capture_date ?? null,
-      }
-    : undefined;
+  // The table request is intentionally dormant in a graph-only workspace.
+  // Restore the same certified clock from the lean series response instead
+  // of falling back to 0/1000/2000 seconds after navigation.
+  const timeMeta: TimeAxisMeta | undefined = timeAxisMetaFromPayload(
+    data ?? sharedGraphSeries.data,
+  );
   // Repli automatique si l'utilisateur a préféré Clock mais la capture n'a
   // pas de meta #START/#UT (null). Jamais une heure inventée.
   const effectiveTimeAxisMode: TimeAxisMode = automaticTimeAxisMode(timeMeta);

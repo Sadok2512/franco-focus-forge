@@ -1,3 +1,9 @@
+## 1.141.8 (patch) — Heure absolue restaurée dans les Graphs — 2026-11-05 (BC4)
+
+- Utilise les métadonnées horaires de la réponse Series lorsque la requête Table reste volontairement inactive dans un Workspace Graph.
+- Empêche un retour ou une restauration de Workspace de réafficher `0 s / 1000 s / 2000 s` quand l'heure NMF certifiée est disponible.
+- Conserve le repli en secondes relatives uniquement pour les captures réellement dépourvues de `#START/#UT`.
+
 ## 1.141.7 (patch) — Sélection Serving sur les points superposés — 2026-11-05 (BC4)
 
 - Un clic sur plusieurs mesures partageant le même pixel privilégie désormais la séquence qui porte une preuve Serving publiée par l'API.

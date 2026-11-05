@@ -20,6 +20,28 @@ export type TimeAxisMeta = {
   capture_date: string | null | undefined;
 };
 
+type TimeAxisPayload = {
+  nmf_start_at?: string | null | undefined;
+  origin_ts: string;
+  utc_offset_min?: number | null | undefined;
+  capture_date?: string | null | undefined;
+};
+
+/** Extract the certified clock fields from either the table or lean series
+ * response. Graph-only workspaces must not depend on the dormant table call. */
+export function timeAxisMetaFromPayload(
+  payload: TimeAxisPayload | null | undefined,
+): TimeAxisMeta | undefined {
+  return payload
+    ? {
+        nmf_start_at: payload.nmf_start_at ?? null,
+        origin_ts: payload.origin_ts,
+        utc_offset_min: payload.utc_offset_min ?? null,
+        capture_date: payload.capture_date ?? null,
+      }
+    : undefined;
+}
+
 const STORAGE_KEY = "bc3.metrics.timeAxisMode";
 
 function parseOriginSecondsOfDay(origin_ts: string): number | null {
@@ -60,6 +82,17 @@ export function isClockAvailable(meta: TimeAxisMeta | undefined | null): boolean
 /** The workspace has no global time-axis control: certified NMF clock wins. */
 export function automaticTimeAxisMode(meta: TimeAxisMeta | undefined | null): TimeAxisMode {
   return isClockAvailable(meta) ? "clock-local" : "capture";
+}
+
+/** Certified log time wins over a stale/restored relative-time preference.
+ * UTC remains explicit when requested; absent metadata still fails closed to
+ * capture seconds rather than inventing a clock. */
+export function effectiveTimeAxisMode(
+  requested: TimeAxisMode | undefined,
+  meta: TimeAxisMeta | undefined | null,
+): TimeAxisMode {
+  if (!isClockAvailable(meta)) return "capture";
+  return requested === "clock-utc" ? "clock-utc" : "clock-local";
 }
 
 export function timeAxisLabel(mode: TimeAxisMode, meta: TimeAxisMeta | undefined): string {

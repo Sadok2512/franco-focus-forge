@@ -10,7 +10,9 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  effectiveTimeAxisMode,
   formatTick,
+  timeAxisMetaFromPayload,
   timeAxisLabel,
   tooltipTriple,
   type TimeAxisMeta,
@@ -98,6 +100,22 @@ describe("audit BC5 — real capture time before/after", () => {
     // UTC = local - 120 min
     expect(formatTick(0, "clock-utc", t6)).toBe("13:59:41");
     expect(formatTick(4858, "clock-utc", t6)).toBe("15:20:39");
+  });
+
+  it("restored graph uses its lean series clock even when the table request is dormant", () => {
+    const meta = timeAxisMetaFromPayload({
+      nmf_start_at: "10.06.2026 15:59:41.993",
+      origin_ts: "15:59:41.993",
+      utc_offset_min: 120,
+      capture_date: "2026-06-10",
+    });
+    const mode = effectiveTimeAxisMode("capture", meta);
+
+    expect(mode).toBe("clock-local");
+    expect(formatTick(0, mode, meta)).toBe("15:59:41");
+    expect(formatTick(1000, mode, meta)).toBe("16:16:21");
+    expect(formatTick(2000, mode, meta)).toBe("16:33:01");
+    expect(formatTick(3000, mode, meta)).toBe("16:49:41");
   });
 
   it("midnight wrap — origin 23:30 + 7200 s = 01:30 modulo 24h", () => {

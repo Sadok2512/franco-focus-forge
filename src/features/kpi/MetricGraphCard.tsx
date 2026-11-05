@@ -74,7 +74,9 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import type { ChronogramData } from "@/lib/api/metrics-schemas";
 import { operatorColor } from "./workspace-model";
 import {
+  effectiveTimeAxisMode,
   formatTick as formatTimeTick,
+  timeAxisMetaFromPayload,
   tooltipTriple,
   type TimeAxisMeta,
   type TimeAxisMode,
@@ -836,15 +838,8 @@ function MetricTimePlot({
       seq: point.seq,
     }));
   }, [seriesData]);
-  const timeMeta: TimeAxisMeta | undefined = seriesData
-    ? {
-        nmf_start_at: seriesData.nmf_start_at ?? null,
-        origin_ts: seriesData.origin_ts,
-        utc_offset_min: seriesData.utc_offset_min ?? null,
-        capture_date: seriesData.capture_date ?? null,
-      }
-    : undefined;
-  const mode: TimeAxisMode = timeAxisMode ?? "capture";
+  const timeMeta: TimeAxisMeta | undefined = timeAxisMetaFromPayload(seriesData);
+  const mode: TimeAxisMode = effectiveTimeAxisMode(timeAxisMode, timeMeta);
   const selectChartPoint = (state: unknown) => {
     if (!pointSync.enabled || !captureId) return;
     const active = state as {
