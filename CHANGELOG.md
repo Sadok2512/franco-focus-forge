@@ -1,3 +1,8 @@
+## 1.139.4 (patch) — Liens Map visibles et distincts — 2026-11-05 (BC4)
+
+- Remonte Serving, Neighbour et NR anchor au-dessus des secteurs et des mesures de la Map KPI.
+- Sépare visuellement de ±6 px les liens qui partagent exactement le même endpoint, sans modifier les coordonnées ni les associations publiées par le serveur.
+
 ## 1.139.3 (patch) — Sélection locale des liens Map — 2026-11-05 (BC4)
 
 - Relie toujours le point sélectionné de la Map KPI à ses liens Serving, Neighbour et NR anchor, même lorsque la synchronisation inter-panneaux est désactivée.

@@ -69,6 +69,22 @@ export const DRIVE_CELL_LINK_LAYER_SPECS = [
 ] as const;
 export const cellLinkDasharray = (confidence: "proven" | "probable") =>
   confidence === "probable" ? CELL_LINK_STYLE.probableDash : undefined;
+
+/**
+ * Coincident server links need a presentation-only separation or the last
+ * painted kind hides every other kind. The radio endpoint itself stays
+ * untouched; MapLibre applies this offset in screen pixels while painting.
+ */
+export function cellLinkVisualOffset(link: RadioCellLink, links: readonly RadioCellLink[]): number {
+  const endpoint = `${link.lat.toFixed(6)}:${link.lng.toFixed(6)}`;
+  const coincident = links.filter(
+    (candidate) => `${candidate.lat.toFixed(6)}:${candidate.lng.toFixed(6)}` === endpoint,
+  );
+  if (coincident.length < 2) return 0;
+  if (link.kind === "neighbour") return -6;
+  if (link.kind === "nr_anchor") return 6;
+  return 0;
+}
 /**
  * A measurement's own legend colour. The selection ring borrows it so the
  * point is never framed in a colour that is not its own.
@@ -431,6 +447,7 @@ export function DriveRsrpLayer({
           link_type: link.kind,
           confidence: link.confidence,
           source: link.source ?? "",
+          visual_offset: cellLinkVisualOffset(link, links),
           selected: true,
           has_selection: true,
         },
@@ -500,14 +517,15 @@ export function DriveRsrpLayer({
   useEffect(() => {
     if (!map) return;
     let promoteFrame: number | undefined;
-    const promoteServingLayers = () => {
+    const promoteCellLinkLayers = () => {
       // Site/sector layers are installed by the shared map chrome after this
-      // measurement component. Keep serving above those overlays as well as
-      // above neighbour/NR links; point circles remain independently
-      // clickable because MapLibre hit testing is layer-specific below.
-      for (const id of [SERVING_LINK_LAYER_PROBABLE, SERVING_LINK_LAYER]) {
-        if (map.getLayer(id)) map.moveLayer(id);
+      // measurement component. Keep every selected radio link above those
+      // overlays; serving remains last in the declared order. Point circles
+      // remain independently clickable through layer-specific hit testing.
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+        if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
+      if (map.getLayer(SELECTED_LAYER)) map.moveLayer(SELECTED_LAYER);
     };
     const add = () => {
       if (!map.getSource(LINK_SOURCE)) {
@@ -555,6 +573,7 @@ export function DriveRsrpLayer({
                 CELL_LINK_STYLE.mutedOpacity,
                 CELL_LINK_STYLE.opacity,
               ],
+              "line-offset": ["get", "visual_offset"],
               ...(dasharray ? { "line-dasharray": dasharray } : {}),
             },
           });
@@ -635,17 +654,17 @@ export function DriveRsrpLayer({
         ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
         ["!", ["in", ["get", "rsrp_class"], ["literal", prefs.hidden]]],
       ]);
-      promoteServingLayers();
-      map.once("idle", promoteServingLayers);
+      promoteCellLinkLayers();
+      map.once("idle", promoteCellLinkLayers);
       promoteFrame = window.requestAnimationFrame(() => {
-        promoteFrame = window.requestAnimationFrame(promoteServingLayers);
+        promoteFrame = window.requestAnimationFrame(promoteCellLinkLayers);
       });
     };
     if (map.getStyle?.() || map.isStyleLoaded()) add();
     else map.once("load", add);
     return () => {
       map.off("load", add);
-      map.off("idle", promoteServingLayers);
+      map.off("idle", promoteCellLinkLayers);
       if (promoteFrame !== undefined) window.cancelAnimationFrame(promoteFrame);
     };
   }, [map, sourceFeatures, linkFeatures, prefs, metricSize, selectedPoint, hostOwnsPoints]);
