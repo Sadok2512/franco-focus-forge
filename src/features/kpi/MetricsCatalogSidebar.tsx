@@ -297,11 +297,24 @@ export function buildSimpleMetricTree(
   nodes: MetricCatalogNode[],
   definitions: SimpleTreeEntry[],
 ): MetricCatalogNode[] {
-  const leaves = nodes.filter(
-    (node) => node.node_type === "leaf" && Boolean(node.simple_name),
-  );
+  const leaves = nodes.filter((node) => node.node_type === "leaf" && Boolean(node.simple_name));
   const output: MetricCatalogNode[] = [];
   const techOrder = ["LTE", "NR"];
+  const identityByCell = new Map<string, Partial<Record<"EARFCN" | "PCI", MetricCatalogNode>>>();
+  for (const leaf of leaves) {
+    const identityKind =
+      leaf.simple_kpi === "EARFCN" || leaf.simple_kpi === "NRARFCN"
+        ? "EARFCN"
+        : leaf.simple_kpi === "PCI"
+          ? "PCI"
+          : null;
+    if (!identityKind || !leaf.simple_tech || !leaf.cell_label) continue;
+    const key = `${leaf.simple_tech}:${leaf.cell_label}`;
+    identityByCell.set(key, {
+      ...(identityByCell.get(key) ?? {}),
+      [identityKind]: leaf,
+    });
+  }
 
   for (const [techIndex, tech] of techOrder.entries()) {
     const techDefinitions = definitions.filter((entry) => entry.tech === tech);
@@ -371,15 +384,80 @@ export function buildSimpleMetricTree(
             simple_name: null,
           });
           if (matchingLeaves.length) {
-            matchingLeaves.forEach((leaf, leafIndex) => {
-              output.push({
-                ...leaf,
-                node_id: `simple:leaf:${leaf.node_id}`,
-                parent_id: kpiId,
-                order: leafIndex,
-                label: leaf.cell_label || leaf.simple_name || leaf.label,
+            const cellLeaves = matchingLeaves.filter((leaf) => Boolean(leaf.cell_label));
+            if (cellLeaves.length) {
+              const cellLabels = [...new Set(cellLeaves.map((leaf) => leaf.cell_label!))].sort(
+                (left, right) => {
+                  const leftLeaf = cellLeaves.find((leaf) => leaf.cell_label === left)!;
+                  const rightLeaf = cellLeaves.find((leaf) => leaf.cell_label === right)!;
+                  return metricCellSortRank(leftLeaf) - metricCellSortRank(rightLeaf);
+                },
+              );
+              cellLabels.forEach((cellLabel, cellIndex) => {
+                const roleLeaves = cellLeaves.filter((leaf) => leaf.cell_label === cellLabel);
+                const roleTemplate = roleLeaves[0]!;
+                const cellId = `${kpiId}:cell:${cellLabel}`;
+                output.push({
+                  ...roleTemplate,
+                  node_id: cellId,
+                  parent_id: kpiId,
+                  order: cellIndex,
+                  label: cellLabel,
+                  node_type: "group",
+                  metric_id: null,
+                  selection: null,
+                  source_column: null,
+                  cell: null,
+                  n: roleLeaves.reduce((sum, leaf) => sum + leaf.n, 0),
+                  selectable: false,
+                  reason: null,
+                  simple_name: null,
+                });
+                roleLeaves.forEach((leaf, leafIndex) => {
+                  output.push({
+                    ...leaf,
+                    node_id: `simple:leaf:${kpiId}:${leaf.node_id}`,
+                    parent_id: cellId,
+                    order: leafIndex,
+                    label: leaf.metric_label || entry.label,
+                  });
+                });
+                const identities = identityByCell.get(`${tech}:${cellLabel}`);
+                (["EARFCN", "PCI"] as const).forEach((identityKind, identityIndex) => {
+                  const identity = identities?.[identityKind];
+                  if (!identity || roleLeaves.some((leaf) => leaf.selection === identity.selection))
+                    return;
+                  output.push({
+                    ...identity,
+                    node_id: `${cellId}:context:${identityKind}:${identity.node_id}`,
+                    parent_id: cellId,
+                    order: roleLeaves.length + identityIndex,
+                    label: identityKind,
+                  });
+                });
               });
-            });
+              matchingLeaves
+                .filter((leaf) => !leaf.cell_label)
+                .forEach((leaf, leafIndex) => {
+                  output.push({
+                    ...leaf,
+                    node_id: `simple:leaf:${kpiId}:${leaf.node_id}`,
+                    parent_id: kpiId,
+                    order: cellLabels.length + leafIndex,
+                    label: leaf.simple_name || leaf.label,
+                  });
+                });
+            } else {
+              matchingLeaves.forEach((leaf, leafIndex) => {
+                output.push({
+                  ...leaf,
+                  node_id: `simple:leaf:${kpiId}:${leaf.node_id}`,
+                  parent_id: kpiId,
+                  order: leafIndex,
+                  label: leaf.simple_name || leaf.label,
+                });
+              });
+            }
           } else {
             output.push({
               ...template,

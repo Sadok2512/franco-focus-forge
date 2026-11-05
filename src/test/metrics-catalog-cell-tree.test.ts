@@ -40,7 +40,7 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
 });
 
 describe("Simplified Metrics tree", () => {
-  it("builds Technology -> Theme -> KPI -> Cell from API metadata", () => {
+  it("builds Technology -> Theme -> KPI -> Cell -> Value from API metadata", () => {
     const definitions: SimpleTreeEntry[] = [
       {
         tech: "LTE",
@@ -83,24 +83,107 @@ describe("Simplified Metrics tree", () => {
       ["tech", "LTE"],
       ["category", "1 · Couverture"],
       ["metric", "RSRP serving"],
-      ["leaf", "PCell"],
-      ["leaf", "SCell 1"],
+      ["group", "PCell"],
+      ["leaf", "RSRP"],
+      ["group", "SCell 1"],
+      ["leaf", "RSRP"],
     ]);
     expect(nodes.find((node) => node.node_type === "metric")?.n).toBe(9870);
   });
 
-  it("keeps an OPEN KPI visible without inventing a selectable metric", () => {
-    const nodes = buildSimpleMetricTree([], [
+  it("adds EARFCN and PCI context below every matching cell", () => {
+    const definitions: SimpleTreeEntry[] = [
       {
         tech: "LTE",
-        theme: "3 · Débit UL",
-        kpi: "THP_UL_MAC",
-        label: "Débit MAC UL",
-        families: [],
-        unit: "Mbit/s",
-        status: "open",
+        theme: "1 · Couverture",
+        kpi: "RSRP",
+        label: "RSRP serving",
+        families: ["cell_rsrp"],
+        unit: "dBm",
+        status: "ok",
       },
+      {
+        tech: "LTE",
+        theme: "1 · Couverture",
+        kpi: "EARFCN",
+        label: "EARFCN",
+        families: ["cell_ch"],
+        unit: "",
+        status: "ok",
+      },
+      {
+        tech: "LTE",
+        theme: "1 · Couverture",
+        kpi: "PCI",
+        label: "PCI",
+        families: ["cell_pci"],
+        unit: "",
+        status: "ok",
+      },
+    ];
+    const nodes = buildSimpleMetricTree(
+      [
+        leaf({
+          simple_name: "LTE_RSRP_PCELL",
+          simple_tech: "LTE",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "RSRP",
+        }),
+        leaf({
+          node_id: "earfcn-pcell",
+          metric_id: "cell_ch@lte-type-0",
+          selection: "cell_ch@lte-type-0",
+          metric_label: "EARFCN",
+          simple_name: "LTE_EARFCN_PCELL",
+          simple_tech: "LTE",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "EARFCN",
+        }),
+        leaf({
+          node_id: "pci-pcell",
+          metric_id: "cell_pci@lte-type-0",
+          selection: "cell_pci@lte-type-0",
+          metric_label: "PCI",
+          simple_name: "LTE_PCI_PCELL",
+          simple_tech: "LTE",
+          simple_theme: "1 · Couverture",
+          simple_kpi: "PCI",
+        }),
+      ],
+      definitions,
+    );
+    const rsrpMetric = nodes.find(
+      (node) => node.node_type === "metric" && node.label === "RSRP serving",
+    )!;
+    const pcell = nodes.find(
+      (node) => node.parent_id === rsrpMetric.node_id && node.label === "PCell",
+    )!;
+    expect(
+      nodes
+        .filter((node) => node.parent_id === pcell.node_id)
+        .map((node) => [node.label, node.selection]),
+    ).toEqual([
+      ["RSRP", "cell_rsrp@lte-type-0"],
+      ["EARFCN", "cell_ch@lte-type-0"],
+      ["PCI", "cell_pci@lte-type-0"],
     ]);
+  });
+
+  it("keeps an OPEN KPI visible without inventing a selectable metric", () => {
+    const nodes = buildSimpleMetricTree(
+      [],
+      [
+        {
+          tech: "LTE",
+          theme: "3 · Débit UL",
+          kpi: "THP_UL_MAC",
+          label: "Débit MAC UL",
+          families: [],
+          unit: "Mbit/s",
+          status: "open",
+        },
+      ],
+    );
     const placeholder = nodes.find((node) => node.node_type === "leaf");
     expect(placeholder?.label).toBe("Débit MAC UL");
     expect(placeholder?.proof).toBe("open");

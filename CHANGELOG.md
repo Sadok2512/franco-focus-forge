@@ -1,3 +1,9 @@
+## 1.143.0 (minor) — Cellules et identité radio dans l’arbre simplifié — 2026-11-05 (BC4)
+
+- Structure les KPI cellulaires de la vue Simplifiée en `KPI → PCell/SCell → valeur`, sans modifier la vue Avancée.
+- Ajoute sous chaque cellule les dimensions EARFCN et PCI réellement publiées par l’API, sans dupliquer ni inventer de valeur radio.
+- Conserve les KPI globaux RLC, PDCP, mobilité et agrégats en feuilles globales lorsqu’aucune ventilation par cellule n’existe dans la source.
+
 ## 1.142.2 (patch) — Compteurs réels de l’arbre simplifié — 2026-11-05 (BC4)
 
 - Construit la vue Simplifiée depuis les feuilles API brutes certifiées au lieu de la projection filtrée réservée à la vue Avancée.
