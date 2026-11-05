@@ -1,0 +1,8 @@
+{
+  "base": "http://185.248.33.125:5174",
+  "projectId": "43e81a34a073",
+  "captureId": "a4b0c321c52e",
+  "metric": "cell_rsrp@lte-type-0",
+  "consoleErrors": [],
+  "apiErrors": []
+}
