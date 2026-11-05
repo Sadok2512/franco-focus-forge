@@ -1,4 +1,12 @@
-import { Activity, Check, ChevronDown, ListVideo, Link2, RotateCcw } from "lucide-react";
+import {
+  Activity,
+  Check,
+  ChevronDown,
+  ListVideo,
+  Link2,
+  RadioTower,
+  RotateCcw,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { FilterSelect } from "@/features/dict-v2/FilterSelect";
@@ -45,6 +53,7 @@ export function KpiFilters({
   eventsVisible,
   onEventsVisibleChange,
   onAddSignalingPanel,
+  onAddRadioSnapshot,
 }: {
   draft: FilterDraft;
   applied: KpiQueryFilters;
@@ -65,6 +74,7 @@ export function KpiFilters({
   eventsVisible: boolean;
   onEventsVisibleChange: (visible: boolean) => void;
   onAddSignalingPanel?: (kind: SignalingPanelKind) => void;
+  onAddRadioSnapshot?: () => void;
 }) {
   const { t } = useTranslation();
   const [displayOpen, setDisplayOpen] = useState(false);
@@ -184,11 +194,30 @@ export function KpiFilters({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => { setDisplayOpen(false); onAddSignalingPanel?.("l3"); }}>
+            <DropdownMenuItem
+              onClick={() => {
+                setDisplayOpen(false);
+                onAddSignalingPanel?.("l3");
+              }}
+            >
               <ListVideo aria-hidden="true" /> {t("panel.l3Signaling")}
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { setDisplayOpen(false); onAddSignalingPanel?.("timeline"); }}>
+            <DropdownMenuItem
+              onClick={() => {
+                setDisplayOpen(false);
+                onAddSignalingPanel?.("timeline");
+              }}
+            >
               <Activity aria-hidden="true" /> {t("panel.timeline")}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              data-testid="kpi-add-radio-snapshot"
+              onClick={() => {
+                setDisplayOpen(false);
+                onAddRadioSnapshot?.();
+              }}
+            >
+              <RadioTower aria-hidden="true" /> {t("radioSnapshot.title")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

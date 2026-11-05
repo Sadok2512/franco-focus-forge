@@ -615,7 +615,8 @@ function Workspace({
         codes.length === 1 &&
         configFor(codes[0]!).visualization === "map"));
   const [cardViewRequest, setCardViewRequest] = useState<
-    { workspaceId: string; id: string; code: string; view: MetricWorkspaceView; n: number } | undefined
+    | { workspaceId: string; id: string; code: string; view: MetricWorkspaceView; n: number }
+    | undefined
   >();
   const prefetchMetricMap = (code: string) => {
     if (!captureId) return;
@@ -1075,6 +1076,7 @@ function Workspace({
               eventsVisible={eventsVisible}
               onEventsVisibleChange={setEventsVisible}
               onAddSignalingPanel={addSignalingPanel}
+              onAddRadioSnapshot={() => visualizeMetric("cell_rsrp@lte-type-0", "snapshot")}
             />
             {eventsVisible && scopeCaptureIds.length > 0 && (
               <section className="kpi-events-scope" data-testid="kpi-events-scope">
