@@ -2,11 +2,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import "@/lib/i18n";
-import { PanelGridContext, PanelShell } from "@/features/kpi/PanelShell";
+import { PanelGridContext, PanelShell, clampPanelHeight } from "@/features/kpi/PanelShell";
 import { loadLayout } from "@/features/kpi/panel-layout";
 
 describe("panel drag-to-move control", () => {
   beforeEach(() => localStorage.clear());
+
+  it("clamps a runaway persisted Timeline height back inside the viewport", () => {
+    expect(clampPanelHeight(33_554_416, 1_000)).toBe(720);
+    expect(clampPanelHeight(120, 1_000)).toBe(180);
+    expect(clampPanelHeight(420, 1_000)).toBe(420);
+  });
 
   it("renders a common drag handle on a graph panel", () => {
     const { container } = render(

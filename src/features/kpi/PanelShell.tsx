@@ -14,6 +14,16 @@ export const MapPanelWidthContext = createContext<{
 } | null>(null);
 import { useTranslation } from "react-i18next";
 
+const MIN_PANEL_HEIGHT = 180;
+// Reserve the application header, KPI controls and the fixed Workspace bar so
+// the bottom-right resize handle never lands underneath another control.
+const PANEL_VIEWPORT_MARGIN = 280;
+
+export function clampPanelHeight(height: number, viewportHeight: number): number {
+  const maximum = Math.max(MIN_PANEL_HEIGHT, viewportHeight - PANEL_VIEWPORT_MARGIN);
+  return Math.max(MIN_PANEL_HEIGHT, Math.min(Math.round(height), maximum));
+}
+
 import { effectivePanelSpan, panelColumns, sunkPanelOrder } from "./workspace-grid";
 import {
   movePanel,
@@ -70,7 +80,21 @@ export function PanelShell({
       : (s.span[id] ?? defaultSpan ?? 1),
   );
   const collapsed = !!s.collapsed[id];
-  const height = s.height[id] ?? defaultHeight;
+  const storedHeight = s.height[id] ?? defaultHeight;
+  const viewportHeight = typeof window === "undefined" ? 1080 : window.innerHeight;
+  const height =
+    storedHeight === undefined ? undefined : clampPanelHeight(storedHeight, viewportHeight);
+  // Older Timeline builds could persist a runaway height (tens of millions
+  // of pixels). Normalise it once so the resize handle returns inside the
+  // viewport instead of leaving an apparently empty, impossible-to-resize
+  // panel on every reload.
+  useEffect(() => {
+    if (storedHeight === undefined || height === undefined || storedHeight === height) return;
+    update((previous) => ({
+      ...previous,
+      height: { ...previous.height, [id]: height },
+    }));
+  }, [height, id, storedHeight, update]);
   const nextSpan = (): PanelSpan =>
     span === "full" ? 1 : span === 3 ? 1 : ((span + 1) as PanelSpan);
 
@@ -199,7 +223,7 @@ export function PanelShell({
             let resizedColumns = startColumns;
             e.preventDefault();
             const onMove = (m: PointerEvent) => {
-              el.style.height = `${Math.max(180, startH + m.clientY - startY)}px`;
+              el.style.height = `${clampPanelHeight(startH + m.clientY - startY, window.innerHeight)}px`;
               if (!fullRow && cols > 1 && columnWidth > 0) {
                 const requestedWidth = startRect.width + m.clientX - startX;
                 resizedColumns = Math.max(
@@ -213,7 +237,7 @@ export function PanelShell({
             const onUp = (m: PointerEvent) => {
               window.removeEventListener("pointermove", onMove);
               window.removeEventListener("pointerup", onUp);
-              const h = Math.max(180, Math.round(startH + m.clientY - startY));
+              const h = clampPanelHeight(startH + m.clientY - startY, window.innerHeight);
               update((p) => ({
                 ...p,
                 height: { ...p.height, [id]: h },

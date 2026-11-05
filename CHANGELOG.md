@@ -1,3 +1,9 @@
+## 1.141.11 (patch) — Récupération des hauteurs Timeline persistées — 2026-11-05 (Agent BC1)
+
+- Normalise les anciennes hauteurs de panneau hors écran produites par la boucle de redimensionnement afin de rendre immédiatement la Timeline et sa poignée accessibles.
+- Borne tout nouveau redimensionnement vertical à la hauteur visible du navigateur et renforce l'affordance de la poignée commune, sans modifier les données Signaling.
+- SemVer frontend : **PATCH 1.141.11** ; backend, API, catalogue, décodeur et données RF inchangés.
+
 ## 1.141.10 (patch) — Migration des préférences de liens radio — 2026-11-05 (BC4)
 
 - Réactive une seule fois Serving, Neighbour et NR anchor pour les navigateurs dont un ancien contrôle avait persisté les liens désactivés.
