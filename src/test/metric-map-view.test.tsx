@@ -358,6 +358,7 @@ describe("Map selection keeps its own panel", () => {
     expect(renderers.drive.mock.lastCall?.[0]).toMatchObject({
       selectionLayerId: "metrics-v3",
       externalSelection: null,
+      hostMapData: { map_points: mapPoints },
     });
   });
 

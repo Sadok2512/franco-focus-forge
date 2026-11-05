@@ -45,6 +45,7 @@ import {
   MapLegendSettings,
 } from "./map-legend";
 import { metricMapKey } from "./query-keys";
+import type { MetricMapResponse } from "@/lib/api/metrics-schemas";
 
 const SOURCE = "bc4-drive-rsrp";
 const LAYER = "bc4-drive-rsrp-points";
@@ -185,6 +186,7 @@ export function DriveRsrpLayer({
   selectedRingColor,
   onSelectedChange,
   externalSelection,
+  hostMapData,
   legendHost,
   selectionLayerId,
   pointMetrics,
@@ -207,6 +209,10 @@ export function DriveRsrpLayer({
   /** Selection imposed by the KPI workspace sync contract. Undefined keeps
    * this layer autonomous; null explicitly clears the shared selection. */
   externalSelection?: SelectedDrivePoint | null | undefined;
+  /** Exact API points already loaded by a host KPI map. Sharing them keeps
+   * selection and radio evidence on one dataset and avoids a duplicate map
+   * request with a different filter scope. */
+  hostMapData?: Pick<MetricMapResponse, "map_points"> | undefined;
   /** Host map legend panel element the RSRP rows are rendered into. */
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
@@ -296,13 +302,14 @@ export function DriveRsrpLayer({
       if (!effectiveCaptureId) throw new Error("Missing capture");
       return getMetricMap(projectId, effectiveCaptureId, [RSRP_SELECTION], {}, signal);
     },
-    enabled: prefs.on && !!effectiveCaptureId,
+    enabled: prefs.on && !!effectiveCaptureId && !hostMapData,
     staleTime: 60_000,
   });
   // Old decoded captures can have no lean map points while the legacy table
   // still carries same-sequence GPS rows. Keep that compatibility path, but
   // never make the normal Map/Signaling load wait for the heavy table route.
-  const needsLegacyFallback = mapAnalysis.isSuccess && mapAnalysis.data.map_points.length === 0;
+  const needsLegacyFallback =
+    !hostMapData && mapAnalysis.isSuccess && mapAnalysis.data.map_points.length === 0;
   const legacyAnalysis = useQuery({
     queryKey: ["drive-rsrp-legacy", projectId, effectiveCaptureId],
     queryFn: ({ signal }) => {
@@ -320,8 +327,10 @@ export function DriveRsrpLayer({
     staleTime: 60_000,
   });
   const analysis = needsLegacyFallback ? legacyAnalysis : mapAnalysis;
+  const analysisData = hostMapData ?? analysis.data;
+  const analysisReady = hostMapData !== undefined || analysis.isSuccess;
   /** What arrived before any pairing: decides whether the capture's GPS log is even needed. */
-  const bare = useMemo(() => driveRsrpDiagnostics(analysis.data), [analysis.data]);
+  const bare = useMemo(() => driveRsrpDiagnostics(analysisData), [analysisData]);
   const needsGps =
     prefs.on && !embedded && !positions?.length && bare.rowsWithRsrp > 0 && bare.rowsWithGps === 0;
 
@@ -343,8 +352,8 @@ export function DriveRsrpLayer({
     return rsrpPositionsFrom(gps.data.points, gps.data.markers);
   }, [positions, gps.data]);
   const drivePoints = useMemo(
-    () => driveRsrpPoints(analysis.data, allPositions),
-    [analysis.data, allPositions],
+    () => driveRsrpPoints(analysisData, allPositions),
+    [analysisData, allPositions],
   );
   const features = useMemo(
     () =>
@@ -439,8 +448,8 @@ export function DriveRsrpLayer({
   );
 
   const diag = useMemo(
-    () => driveRsrpDiagnostics(analysis.data, allPositions),
-    [analysis.data, allPositions],
+    () => driveRsrpDiagnostics(analysisData, allPositions),
+    [analysisData, allPositions],
   );
 
   // A remembered/default capture may be a valid session with no geolocated
@@ -452,7 +461,7 @@ export function DriveRsrpLayer({
       explicitCapture.current ||
       automaticRecoveryAttempted.current ||
       !effectiveCaptureId ||
-      !analysis.isSuccess ||
+      !analysisReady ||
       (needsGps && !gps.isSuccess) ||
       features.length > 0
     )
@@ -470,7 +479,7 @@ export function DriveRsrpLayer({
     setAutomaticRecovery({ from: effectiveCaptureId, to: next });
     setCaptureId(next);
   }, [
-    analysis.isSuccess,
+    analysisReady,
     captures.data,
     effectiveCaptureId,
     embedded,
@@ -877,22 +886,22 @@ export function DriveRsrpLayer({
         ? "error"
         : analysis.isLoading
           ? "loading"
-          : analysis.data
+          : analysisData
             ? "ok"
             : "idle",
-      rows: analysis.data ? diag.rows : null,
-      rowsWithRsrp: analysis.data ? diag.rowsWithRsrp : null,
-      rowsWithGps: analysis.data ? diag.rowsWithGps : null,
-      pairedPositions: analysis.data ? diag.paired : null,
-      mapPoints: analysis.data ? diag.mapPoints : null,
-      rsrpPoints: analysis.data ? diag.rsrpMapPoints : null,
-      numericRsrp: analysis.data ? driveRsrpPoints(analysis.data).length : null,
-      displayed: analysis.data ? features.length : null,
-      servingLinks: analysis.data ? linkFeatures.length : null,
+      rows: analysisData ? diag.rows : null,
+      rowsWithRsrp: analysisData ? diag.rowsWithRsrp : null,
+      rowsWithGps: analysisData ? diag.rowsWithGps : null,
+      pairedPositions: analysisData ? diag.paired : null,
+      mapPoints: analysisData ? diag.mapPoints : null,
+      rsrpPoints: analysisData ? diag.rsrpMapPoints : null,
+      numericRsrp: analysisData ? driveRsrpPoints(analysisData).length : null,
+      displayed: analysisData ? features.length : null,
+      servingLinks: analysisData ? linkFeatures.length : null,
       gpsMarkers: allPositions.length,
     }),
     [
-      analysis.data,
+      analysisData,
       analysis.isError,
       analysis.isLoading,
       effectiveCaptureId,

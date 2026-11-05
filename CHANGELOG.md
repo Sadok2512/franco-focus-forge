@@ -1,6 +1,7 @@
-## 1.139.2 (patch) — Sélection locale des liens Map — 2026-11-05 (BC4)
+## 1.139.3 (patch) — Sélection locale des liens Map — 2026-11-05 (BC4)
 
 - Relie toujours le point sélectionné de la Map KPI à ses liens Serving, Neighbour et NR anchor, même lorsque la synchronisation inter-panneaux est désactivée.
+- Réutilise les points exacts déjà chargés par la Map pour les liens radio et supprime la seconde requête concurrente qui pouvait perdre la séquence sélectionnée.
 - Conserve le bouton Sync pour la propagation aux autres panneaux uniquement ; aucune association radio n'est déduite côté frontend.
 
 ## 1.139.1 (patch) — Liens cellule sélectionnée sur la Map — 2026-11-04 (BC4)
