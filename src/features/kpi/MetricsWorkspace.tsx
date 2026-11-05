@@ -542,6 +542,7 @@ function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricM
       type: "line",
       source: "metric-cell-links-v1",
       filter: ["==", ["get", "confidence"], confidence],
+      layout: { "line-cap": "round", "line-join": "round" },
       paint: {
         "line-color": color,
         "line-width": [

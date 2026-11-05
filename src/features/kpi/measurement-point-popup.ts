@@ -5,19 +5,21 @@ export type LinkConfidence = "proven" | "probable";
 
 export const CELL_LINK_KINDS = ["serving", "neighbour", "nr_anchor"] as const;
 export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
-  serving: "#00b8ff",
-  neighbour: "#ff8a00",
-  nr_anchor: "#d946ef",
+  serving: "#0284c7",
+  neighbour: "#d97706",
+  nr_anchor: "#a21caf",
 };
 
-/** Shared high-contrast line treatment for Map, Signaling and KPI. */
+/** Shared restrained line treatment for Map, Signaling and KPI. */
 export const CELL_LINK_STYLE = {
-  width: 2.75,
-  selectedWidth: 5,
-  opacity: 0.9,
-  mutedOpacity: 0.32,
-  selectedOpacity: 1,
-  probableDash: [3, 2] as [number, number],
+  width: 1.25,
+  selectedWidth: 2.25,
+  casingWidth: 3.75,
+  opacity: 0.78,
+  mutedOpacity: 0.18,
+  selectedOpacity: 0.96,
+  casingOpacity: 0.68,
+  probableDash: [2, 1.5] as [number, number],
 } as const;
 
 export type RadioCellLink = {

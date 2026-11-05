@@ -38,12 +38,7 @@ import {
   type CellLinkKind,
   type RadioCellLink,
 } from "./measurement-point-popup";
-import {
-  MapLegendList,
-  MapLegendRow,
-  MapLegendSection,
-  MapLegendSettings,
-} from "./map-legend";
+import { MapLegendList, MapLegendRow, MapLegendSection, MapLegendSettings } from "./map-legend";
 import { metricMapKey } from "./query-keys";
 import type { MetricMapResponse } from "@/lib/api/metrics-schemas";
 
@@ -80,6 +75,13 @@ export const DRIVE_SERVING_LINK_CASING_SPECS = [
 export const cellLinkDasharray = (confidence: "proven" | "probable") =>
   confidence === "probable" ? CELL_LINK_STYLE.probableDash : undefined;
 
+export const servingCasingFilter = (confidence: "proven" | "probable"): FilterSpecification => [
+  "all",
+  ["==", ["get", "confidence"], confidence],
+  ["==", ["get", "link_type"], "serving"],
+  ["==", ["get", "selected"], true],
+];
+
 /**
  * Coincident server links need a presentation-only separation or the last
  * painted kind hides every other kind. The radio endpoint itself stays
@@ -91,8 +93,8 @@ export function cellLinkVisualOffset(link: RadioCellLink, links: readonly RadioC
     (candidate) => `${candidate.lat.toFixed(6)}:${candidate.lng.toFixed(6)}` === endpoint,
   );
   if (coincident.length < 2) return 0;
-  if (link.kind === "neighbour") return -6;
-  if (link.kind === "nr_anchor") return 6;
+  if (link.kind === "neighbour") return -3;
+  if (link.kind === "nr_anchor") return 3;
   return 0;
 }
 /**
@@ -566,6 +568,7 @@ export function DriveRsrpLayer({
             type: "line",
             source: LINK_SOURCE,
             filter,
+            layout: { "line-cap": "round", "line-join": "round" },
             paint: {
               "line-color": spec.serving
                 ? CELL_LINK_COLORS.serving
@@ -601,11 +604,7 @@ export function DriveRsrpLayer({
         map.setFilter(spec.id, filter);
       }
       for (const spec of DRIVE_SERVING_LINK_CASING_SPECS) {
-        const filter: FilterSpecification = [
-          "all",
-          ["==", ["get", "confidence"], spec.confidence],
-          ["==", ["get", "link_type"], "serving"],
-        ];
+        const filter = servingCasingFilter(spec.confidence);
         if (!map.getLayer(spec.id)) {
           const dasharray = cellLinkDasharray(spec.confidence);
           map.addLayer(
@@ -614,10 +613,11 @@ export function DriveRsrpLayer({
               type: "line",
               source: LINK_SOURCE,
               filter,
+              layout: { "line-cap": "round", "line-join": "round" },
               paint: {
                 "line-color": "#ffffff",
-                "line-width": CELL_LINK_STYLE.selectedWidth + 4,
-                "line-opacity": 0.92,
+                "line-width": CELL_LINK_STYLE.casingWidth,
+                "line-opacity": CELL_LINK_STYLE.casingOpacity,
                 "line-offset": ["get", "visual_offset"],
                 ...(dasharray ? { "line-dasharray": dasharray } : {}),
               },
@@ -885,9 +885,11 @@ export function DriveRsrpLayer({
       selectedPointRef.current = identity;
       setSelectedPoint(identity);
     };
-    const clickLayers = [hostOwnsPoints ? undefined : LAYER, SELECTED_LAYER, selectionLayerId].filter(
-      (layer, index, layers): layer is string => !!layer && layers.indexOf(layer) === index,
-    );
+    const clickLayers = [
+      hostOwnsPoints ? undefined : LAYER,
+      SELECTED_LAYER,
+      selectionLayerId,
+    ].filter((layer, index, layers): layer is string => !!layer && layers.indexOf(layer) === index);
     for (const layer of clickLayers) map.on("click", layer, click);
     return () => {
       for (const layer of clickLayers) map.off("click", layer, click);
@@ -1044,9 +1046,7 @@ export function DriveRsrpLayer({
               checked={!hidden}
               onToggle={() =>
                 update({
-                  hidden: hidden
-                    ? prefs.hidden.filter((h) => h !== c.id)
-                    : [...prefs.hidden, c.id],
+                  hidden: hidden ? prefs.hidden.filter((h) => h !== c.id) : [...prefs.hidden, c.id],
                 })
               }
             />

@@ -1,3 +1,11 @@
+## 1.140.3 (patch) — Liens radio fins et professionnels — 2026-11-05 (BC4)
+
+- Affine les traits Serving, Neighbour et NR anchor sur toutes les Maps partagées, avec extrémités et jointures arrondies.
+- Réduit la saturation et l’opacité des couleurs tout en conservant une identité distincte pour chaque type de lien.
+- Limite le contour clair au seul lien Serving sélectionné ; les liens non sélectionnés ne portent plus un halo surdimensionné.
+- Resserre l’écart visuel des liens superposés sans modifier leurs coordonnées ni les associations publiées par l’API.
+- SemVer frontend : **PATCH 1.140.3** ; backend et données radio inchangés.
+
 ## 1.140.2 (patch) — Dimensions géolocalisées sur les Maps — 2026-11-05 (BC4)
 
 - Affiche les dimensions numériques renvoyées comme chaînes par l’API (EARFCN, PCI et identifiants numériques) au lieu de les supprimer comme non géolocalisées.
