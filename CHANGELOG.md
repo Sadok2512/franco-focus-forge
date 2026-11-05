@@ -1,3 +1,8 @@
+## 1.139.6 (patch) — Contraste du lien Serving sélectionné — 2026-11-05 (BC4)
+
+- Restaure un contour clair sous le lien Serving sélectionné afin de le conserver lisible sur les fonds satellite, les points du parcours et les secteurs, sans modifier les associations radio publiées par l'API.
+- Conserve la séparation visuelle des liens Serving, Neighbour et NR anchor superposés ainsi que les styles plein et pointillé selon la confiance.
+
 ## 1.139.5 (patch) — Contrôles des liens dans la légende KPI — 2026-11-05 (BC4)
 
 - Restaure dans l'onglet Legend de la Map KPI la section Point → liens cellule et ses interrupteurs Serving, Neighbour et NR anchor.

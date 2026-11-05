@@ -57,6 +57,8 @@ const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
 const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
 const SERVING_LINK_LAYER_PROBABLE = "bc4-drive-rsrp-serving-links-probable";
 const SERVING_LINK_LAYER = "bc4-drive-rsrp-serving-links-proven";
+const SERVING_LINK_CASING_PROBABLE = "bc4-drive-rsrp-serving-links-probable-casing";
+const SERVING_LINK_CASING = "bc4-drive-rsrp-serving-links-proven-casing";
 export const DRIVE_CELL_LINK_LAYER_SPECS = [
   { id: LINK_LAYER, confidence: "proven", serving: false },
   { id: LINK_LAYER_PROBABLE, confidence: "probable", serving: false },
@@ -66,6 +68,14 @@ export const DRIVE_CELL_LINK_LAYER_SPECS = [
   // hide the serving line completely.
   { id: SERVING_LINK_LAYER_PROBABLE, confidence: "probable", serving: true },
   { id: SERVING_LINK_LAYER, confidence: "proven", serving: true },
+] as const;
+export const DRIVE_SERVING_LINK_CASING_SPECS = [
+  {
+    id: SERVING_LINK_CASING_PROBABLE,
+    linkId: SERVING_LINK_LAYER_PROBABLE,
+    confidence: "probable",
+  },
+  { id: SERVING_LINK_CASING, linkId: SERVING_LINK_LAYER, confidence: "proven" },
 ] as const;
 export const cellLinkDasharray = (confidence: "proven" | "probable") =>
   confidence === "probable" ? CELL_LINK_STYLE.probableDash : undefined;
@@ -522,7 +532,16 @@ export function DriveRsrpLayer({
       // measurement component. Keep every selected radio link above those
       // overlays; serving remains last in the declared order. Point circles
       // remain independently clickable through layer-specific hit testing.
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => !layer.serving)) {
+        if (map.getLayer(spec.id)) map.moveLayer(spec.id);
+      }
+      // The neutral casing must remain above neighbour/NR segments but below
+      // the cyan Serving stroke. This keeps the selected radio evidence
+      // legible on satellite tiles and dense sector overlays.
+      for (const spec of DRIVE_SERVING_LINK_CASING_SPECS) {
+        if (map.getLayer(spec.id)) map.moveLayer(spec.id);
+      }
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.serving)) {
         if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
       if (map.getLayer(SELECTED_LAYER)) map.moveLayer(SELECTED_LAYER);
@@ -581,6 +600,33 @@ export function DriveRsrpLayer({
         // Also repair maps whose source survived a style/component refresh.
         map.setFilter(spec.id, filter);
       }
+      for (const spec of DRIVE_SERVING_LINK_CASING_SPECS) {
+        const filter: FilterSpecification = [
+          "all",
+          ["==", ["get", "confidence"], spec.confidence],
+          ["==", ["get", "link_type"], "serving"],
+        ];
+        if (!map.getLayer(spec.id)) {
+          const dasharray = cellLinkDasharray(spec.confidence);
+          map.addLayer(
+            {
+              id: spec.id,
+              type: "line",
+              source: LINK_SOURCE,
+              filter,
+              paint: {
+                "line-color": "#ffffff",
+                "line-width": CELL_LINK_STYLE.selectedWidth + 4,
+                "line-opacity": 0.92,
+                "line-offset": ["get", "visual_offset"],
+                ...(dasharray ? { "line-dasharray": dasharray } : {}),
+              },
+            },
+            spec.linkId,
+          );
+        }
+        map.setFilter(spec.id, filter);
+      }
       if (!map.getSource(SOURCE)) {
         map.addSource(SOURCE, {
           type: "geojson",
@@ -634,7 +680,7 @@ export function DriveRsrpLayer({
         type: "FeatureCollection",
         features: prefs.on ? linkFeatures : [],
       });
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+      for (const spec of [...DRIVE_CELL_LINK_LAYER_SPECS, ...DRIVE_SERVING_LINK_CASING_SPECS]) {
         if (map.getLayer(spec.id))
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }

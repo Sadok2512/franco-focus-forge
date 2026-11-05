@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   DRIVE_CELL_LINK_LAYER_SPECS,
+  DRIVE_SERVING_LINK_CASING_SPECS,
   cellLinkDasharray,
   cellLinkVisualOffset,
 } from "@/features/kpi/DriveRsrpLayer";
@@ -23,6 +24,17 @@ describe("Drive RSRP cell-link layer order", () => {
   it("keeps probable links dashed, including serving links", () => {
     expect(cellLinkDasharray("probable")).toEqual([3, 2]);
     expect(cellLinkDasharray("proven")).toBeUndefined();
+  });
+
+  it("keeps a contrast casing for both serving confidence styles", () => {
+    expect(DRIVE_SERVING_LINK_CASING_SPECS.map((layer) => layer.confidence)).toEqual([
+      "probable",
+      "proven",
+    ]);
+    expect(DRIVE_SERVING_LINK_CASING_SPECS.map((layer) => layer.linkId)).toEqual([
+      "bc4-drive-rsrp-serving-links-probable",
+      "bc4-drive-rsrp-serving-links-proven",
+    ]);
   });
 
   it("separates only links that share the same server endpoint", () => {
