@@ -1,3 +1,11 @@
+## 1.140.2 (patch) — Dimensions géolocalisées sur les Maps — 2026-11-05 (BC4)
+
+- Affiche les dimensions numériques renvoyées comme chaînes par l’API (EARFCN, PCI et identifiants numériques) au lieu de les supprimer comme non géolocalisées.
+- Affiche les dimensions textuelles avec des classes catégorielles stables dans les Maps indépendantes et les couches déposées sur une Map existante.
+- Conserve les valeurs absentes comme absentes : aucune chaîne vide ou valeur nulle n’est convertie en zéro.
+- Audit des consommateurs KPI : les séries KPI/RF numériques conservent leur contrat ; les graphes possédaient déjà leur chemin catégoriel, et les deux chemins Map étaient les seuls à rejeter les dimensions scalaires.
+- SemVer frontend : **PATCH 1.140.2** ; backend, catalogue, décodeur et données RF inchangés.
+
 ## 1.140.1 (patch) — Redimensionnement bidirectionnel des panneaux — 2026-11-05 (Agent BC1)
 
 - Rend Radio Snapshot, Timeline et L3 Signaling redimensionnables horizontalement et verticalement depuis la poignée commune du panneau.

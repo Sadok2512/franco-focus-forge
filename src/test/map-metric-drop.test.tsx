@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { MapMetricDropTarget } from "@/features/kpi/MapMetricDropTarget";
+import { droppedMetricFeatures, MapMetricDropTarget } from "@/features/kpi/MapMetricDropTarget";
 import {
   MAP_METRIC_MIME,
   addMapMetric,
@@ -21,6 +21,32 @@ const base = { kind: "kpi" as const, code: "LTE_DL_BLER", label: "BLER", unit: "
 const added = { kind: "metric" as const, code: "cell_rsrq@0", label: "RSRQ", unit: "dB" };
 
 describe("Add a metric to the existing map", () => {
+  it("keeps numeric-string dimensions and maps textual dimensions as categories", () => {
+    const earfcn = droppedMetricFeatures(
+      [{ code: "cell_ch@lte-type-0", seq: 1, value: "3650.0", lng: 3, lat: 50 }],
+      "cell_ch@lte-type-0",
+      "cap1",
+      "r1",
+      "earfcn",
+    );
+    expect(earfcn.categorical).toBe(false);
+    expect(earfcn.features[0]?.properties.value).toBe(3650);
+
+    const direction = droppedMetricFeatures(
+      [
+        { code: "direction", seq: 1, value: "DL", lng: 3, lat: 50 },
+        { code: "direction", seq: 2, value: "UL", lng: 3.1, lat: 50.1 },
+      ],
+      "direction",
+      "cap1",
+      "r1",
+      "",
+    );
+    expect(direction.categorical).toBe(true);
+    expect(direction.labels).toEqual(["DL", "UL"]);
+    expect(direction.features.map((feature) => feature.properties.value)).toEqual([0, 1]);
+  });
+
   it("adds without replacing existing membership and ignores duplicate drops", () => {
     const current = [{ ...added, code: "cell_rsrp@0" }];
     expect(addMapMetric(current, added, base)).toEqual([...current, added]);

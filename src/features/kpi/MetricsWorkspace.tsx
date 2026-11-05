@@ -33,6 +33,7 @@ import {
   useMetricLegendSettings,
   type MetricClass,
 } from "./metric-classes";
+import { mapScalarLabel, numericMapScalar } from "./map-scalar";
 import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
 import type { MetricViews, MetricWorkspaceView } from "./metric-views";
@@ -267,15 +268,19 @@ export function writeMetricMapPreferences(
 
 export function metricMapNumericExtent(data: MetricMapData): [number, number] {
   const values = data.map_points
-    .map((point) => point.value)
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+    .map((point) => numericMapScalar(point.value))
+    .filter((value): value is number => value !== null);
   if (!values.length) return [0, 1];
   const min = Math.min(...values);
   const max = Math.max(...values);
   return min === max ? [min - 1, max + 1] : [min, max];
 }
 
-export function metricMapFeatures(data: MetricMapData) {
+export function metricMapFeatures(
+  data: MetricMapData,
+  categories: Array<{ value: number; label: string }> | null = null,
+) {
+  const categoryByLabel = new Map(categories?.map((category) => [category.label, category.value]));
   return data.map_points.map((point) => ({
     type: "Feature" as const,
     geometry: {
@@ -283,9 +288,7 @@ export function metricMapFeatures(data: MetricMapData) {
       coordinates: [point.lng, point.lat] as [number, number],
     },
     properties: {
-      tooltip:
-        point.tooltip ||
-        `${point.code} · seq ${point.seq} · ${String(point.value)}`,
+      tooltip: point.tooltip || `${point.code} · seq ${point.seq} · ${String(point.value)}`,
       code: point.code,
       seq: point.seq,
       serving_cell_id: point.serving_cell_id,
@@ -294,9 +297,15 @@ export function metricMapFeatures(data: MetricMapData) {
       serving_site_name: point.serving_site_name,
       serving_cell_source: point.serving_cell_source,
       t_rel_s: point.t_rel_s,
-      ...(typeof point.value === "number" && Number.isFinite(point.value)
-        ? { value: point.value }
-        : {}),
+      ...(() => {
+        const label = mapScalarLabel(point.value);
+        const value = categories
+          ? label === null
+            ? null
+            : (categoryByLabel.get(label) ?? null)
+          : numericMapScalar(point.value);
+        return value === null ? {} : { value, value_label: label ?? String(value) };
+      })(),
     },
   }));
 }
@@ -385,8 +394,7 @@ export function activeMetricMapCellLinks(
   if (!selected || selected.projectId !== projectId || selected.captureId !== captureId) return [];
   return features
     .filter(
-      (feature) =>
-        feature.properties.seq === selected.seq && enabled[feature.properties.link_type],
+      (feature) => feature.properties.seq === selected.seq && enabled[feature.properties.link_type],
     )
     .map((feature) => ({
       ...feature,
@@ -415,17 +423,21 @@ export function isCategoricalMetric(label: string): boolean {
 
 export function metricCategories(
   data: MetricMapData,
-): Array<{ value: number; count: number; color: string }> {
-  const counts = new Map<number, number>();
+): Array<{ value: number; label: string; count: number; color: string }> {
+  const counts = new Map<string, number>();
   for (const point of data.map_points) {
-    if (typeof point.value === "number" && Number.isFinite(point.value)) {
-      counts.set(point.value, (counts.get(point.value) ?? 0) + 1);
-    }
+    const label = mapScalarLabel(point.value);
+    if (label !== null) counts.set(label, (counts.get(label) ?? 0) + 1);
   }
   return [...counts.entries()]
-    .sort((a, b) => a[0] - b[0])
-    .map(([value, count], index) => ({
-      value,
+    .sort((a, b) => {
+      const an = numericMapScalar(a[0]);
+      const bn = numericMapScalar(b[0]);
+      return an !== null && bn !== null ? an - bn : a[0].localeCompare(b[0]);
+    })
+    .map(([label, count], index) => ({
+      value: index,
+      label,
       count,
       color: CATEGORY_COLORS[index % CATEGORY_COLORS.length]!,
     }));
@@ -629,10 +641,20 @@ function MetricMap({
     () => (data ? metricMapNumericExtent(data) : [0, 1]),
     [data],
   );
-  const features = useMemo(() => (data ? metricMapFeatures(data) : []), [data]);
   const categories = useMemo(
-    () => (data && isCategoricalMetric(label) ? metricCategories(data) : null),
+    () =>
+      data &&
+      (isCategoricalMetric(label) ||
+        data.map_points.some(
+          (point) => mapScalarLabel(point.value) !== null && numericMapScalar(point.value) === null,
+        ))
+        ? metricCategories(data)
+        : null,
     [data, label],
+  );
+  const features = useMemo(
+    () => (data ? metricMapFeatures(data, categories) : []),
+    [categories, data],
   );
   const numericClasses = useMemo(
     () =>
@@ -677,13 +699,7 @@ function MetricMap({
   const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
   const links = useMemo(
     () =>
-      activeMetricMapCellLinks(
-        allLinks,
-        selectedPoint,
-        projectId,
-        captureId,
-        preferences.links,
-      ),
+      activeMetricMapCellLinks(allLinks, selectedPoint, projectId, captureId, preferences.links),
     [allLinks, captureId, preferences.links, projectId, selectedPoint],
   );
   useEffect(() => {
@@ -807,7 +823,17 @@ function MetricMap({
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
     };
-  }, [captureId, data, dropContext?.workspaceId, heightKey, label, map, pointSync, projectId, unit]);
+  }, [
+    captureId,
+    data,
+    dropContext?.workspaceId,
+    heightKey,
+    label,
+    map,
+    pointSync,
+    projectId,
+    unit,
+  ]);
   useEffect(() => {
     if (!pointSync.enabled) return;
     const shared = pointSync.selection;
@@ -834,9 +860,7 @@ function MetricMap({
   const driveSelection = selectedPoint
     ? (() => {
         const point = data?.map_points.find((candidate) => candidate.seq === selectedPoint.seq);
-        return point
-          ? { ...selectedPoint, lng: point.lng, lat: point.lat }
-          : null;
+        return point ? { ...selectedPoint, lng: point.lng, lat: point.lat } : null;
       })()
     : null;
   const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
@@ -880,7 +904,7 @@ function MetricMap({
                 <MapLegendRow
                   key={c.value}
                   color={c.color}
-                  label={fmt(c.value)}
+                  label={c.label}
                   meta={c.count}
                   checked={!hiddenCategories.includes(c.value)}
                   onToggle={() =>
@@ -1277,8 +1301,7 @@ export function MetricsWorkspace({
   onColumnsChange?: unknown;
   paneRequest?: number;
   cardViewRequest?:
-    | { workspaceId: string; id: string; code: string; view: string; n: number }
-    | undefined;
+    { workspaceId: string; id: string; code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
   onVisualization?: ((code: string, view: MetricWorkspaceView) => void) | undefined;
   mapFillsAvailable?: boolean;
@@ -1359,7 +1382,9 @@ export function MetricsWorkspace({
   }
   const cardPanels = cardPanelState.panels;
   const graphCodes = useMemo(
-    () => [...new Set(cardPanels.filter((panel) => panel.view === "graph").map((panel) => panel.code))],
+    () => [
+      ...new Set(cardPanels.filter((panel) => panel.view === "graph").map((panel) => panel.code)),
+    ],
     [cardPanels],
   );
   // One endpoint call can return every visible graph series. Previously each
@@ -1403,9 +1428,7 @@ export function MetricsWorkspace({
   const [cellPciFilter, setCellPciFilter] = useState("");
   const [cellArfcnFilter, setCellArfcnFilter] = useState("");
   const mapSelections = [
-    ...new Set(
-      cardPanels.filter((panel) => panel.view === "map").map((panel) => panel.code),
-    ),
+    ...new Set(cardPanels.filter((panel) => panel.view === "map").map((panel) => panel.code)),
   ];
   const captureRouteQuery = useQuery({
     queryKey: ["metrics-map-route", projectId, captureId],

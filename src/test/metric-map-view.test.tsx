@@ -129,7 +129,6 @@ describe("Map selection keeps its own panel", () => {
     );
   });
 
-
   it("renders 4,935 coloured raw points, the metric legend and the overlay menu", async () => {
     renderers.map.mockClear();
     const fixture = (await import("./fixtures/metrics-analysis-44621571bccc.json")).default;
@@ -194,6 +193,13 @@ describe("Map selection keeps its own panel", () => {
     expect(source.data.features).toHaveLength(4_935);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual(["metrics-v3"]);
     expect(map.addLayer.mock.calls[0]?.[0].paint["circle-color"][0]).toBe("interpolate");
+
+    const dimension = {
+      ...fixture,
+      map_points: [{ ...fixture.map_points[0], code: "cell_ch@lte-type-0", value: "3650.0" }],
+    } as never;
+    expect(metricMapFeatures(dimension)[0]?.properties.value).toBe(3650);
+    expect(metricMapNumericExtent(dimension)).toEqual([3649, 3651]);
 
     expect(screen.getByTestId("metric-map-legend")).toHaveTextContent("RSRP (LTE) @ Serving · dBm");
     await waitFor(() =>

@@ -10,11 +10,13 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { mapFeatures } from "./map-model";
 import {
   classOf,
+  defaultPalette,
   metricClasses,
   useMetricLegendSettings,
   useMetricLegendPresentation,
   type MetricClass,
 } from "./metric-classes";
+import { mapScalarLabel, numericMapScalar } from "./map-scalar";
 import {
   addMapMetric,
   mapLegendScope,
@@ -35,6 +37,59 @@ function classRange(c: MetricClass): string {
   if (c.min === -Infinity) return `< ${Number(c.max.toPrecision(3))}`;
   if (c.max === Infinity) return `≥ ${Number(c.min.toPrecision(3))}`;
   return `${Number(c.min.toPrecision(3))} – ${Number(c.max.toPrecision(3))}`;
+}
+
+export function droppedMetricFeatures(
+  points: Array<{ code: string; seq: number; value: unknown; lng: number; lat: number }>,
+  code: string,
+  captureId: string,
+  resultId: string,
+  unit: string,
+) {
+  const matching = points.filter((point) => point.code === code);
+  const categorical = matching.some(
+    (point) => mapScalarLabel(point.value) !== null && numericMapScalar(point.value) === null,
+  );
+  const labels = categorical
+    ? [
+        ...new Set(
+          matching.map((point) => mapScalarLabel(point.value)).filter(Boolean) as string[],
+        ),
+      ].sort()
+    : [];
+  const categoryIndex = new Map(labels.map((label, index) => [label, index]));
+  return {
+    categorical,
+    labels,
+    features: matching.flatMap((point) => {
+      const label = mapScalarLabel(point.value);
+      const value = categorical
+        ? label === null
+          ? null
+          : (categoryIndex.get(label) ?? null)
+        : numericMapScalar(point.value);
+      return value === null
+        ? []
+        : [
+            {
+              type: "Feature" as const,
+              geometry: {
+                type: "Point" as const,
+                coordinates: [point.lng, point.lat] as [number, number],
+              },
+              properties: {
+                value,
+                value_label: label ?? String(value),
+                seq: point.seq,
+                capture_id: captureId,
+                result_id: resultId,
+                unit,
+                file: "",
+              },
+            },
+          ];
+    }),
+  };
 }
 
 function AddedMetric({
@@ -84,45 +139,42 @@ function AddedMetric({
         );
       }
       const data = await getMetricMap(projectId, captureId, [metric.code], filters, signal);
-      return data.map_points.flatMap((p) =>
-        p.code === metric.code && typeof p.value === "number" && Number.isFinite(p.value)
-          ? [
-              {
-                type: "Feature" as const,
-                geometry: {
-                  type: "Point" as const,
-                  coordinates: [p.lng, p.lat] as [number, number],
-                },
-                properties: {
-                  value: p.value,
-                  seq: p.seq,
-                  capture_id: captureId,
-                  result_id: data.result_id,
-                  unit: metric.unit,
-                  file: "",
-                },
-              },
-            ]
-          : [],
+      return droppedMetricFeatures(
+        data.map_points,
+        metric.code,
+        captureId,
+        data.result_id,
+        metric.unit,
       );
     },
   });
+  const queryResult = query.data;
+  const rawFeatures = Array.isArray(queryResult) ? queryResult : (queryResult?.features ?? []);
+  const categoryLabels = Array.isArray(queryResult) ? [] : (queryResult?.labels ?? []);
+  const categorical = !Array.isArray(queryResult) && Boolean(queryResult?.categorical);
   const classes = useMemo(
     () =>
-      metricClasses(
-        metric.code,
-        (query.data ?? []).map((f) => Number(f.properties.value)),
-        settings,
-      ),
-    [metric.code, query.data, settings],
+      categorical
+        ? defaultPalette(categoryLabels.length).map((color, index) => ({
+            id: `category-${index}`,
+            min: index,
+            max: index + 1,
+            color: settings.colors[index] ?? color,
+          }))
+        : metricClasses(
+            metric.code,
+            rawFeatures.map((f) => Number(f.properties.value)),
+            settings,
+          ),
+    [categorical, categoryLabels.length, metric.code, rawFeatures, settings],
   );
   const features = useMemo(
     () =>
-      (query.data ?? []).flatMap((f) => {
+      rawFeatures.flatMap((f) => {
         const c = classOf(classes, Number(f.properties.value));
         return c ? [{ ...f, properties: { ...f.properties, color: c.color, cls: c.id } }] : [];
       }),
-    [query.data, classes],
+    [rawFeatures, classes],
   );
   // A new class set invalidates the rows the technician had hidden.
   useEffect(() => {
@@ -218,7 +270,11 @@ function AddedMetric({
                       <MapLegendRow
                         key={c.id}
                         color={c.color}
-                        label={classRange(c)}
+                        label={
+                          categorical
+                            ? (categoryLabels[Number(c.id.replace("category-", ""))] ?? c.id)
+                            : classRange(c)
+                        }
                         meta={(() => {
                           const count = features.filter((f) => f.properties.cls === c.id).length;
                           const parts = [];
