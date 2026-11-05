@@ -254,9 +254,9 @@
     "mapPointSize": "Point size",
     "mapCellLinks": "Point → cell links",
     "mapLink": {
-      "serving": "Serving cell",
-      "neighbour": "Neighbour cells",
-      "nr_anchor": "NR anchor"
+      "serving": "LTE Serving (PCell)",
+      "neighbour": "Neighbour",
+      "nr_anchor": "NR PSCell / SCG"
     },
     "mapLoadError": "Measurement points could not be loaded.",
     "59d5ea1eb6a5": "No proven GPS position for the selected observations",

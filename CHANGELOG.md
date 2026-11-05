@@ -1,3 +1,10 @@
+## 1.142.3 (patch) — Liens LTE Serving et NR PSCell certifiés — 2026-11-05 (Agent BC1)
+
+- Sélectionne, parmi les points GPS superposés, l’échantillon qui porte une preuve radio publiée et ne trace que les associations `proven` de l’API.
+- Unifie la Map KPI sur une seule source de liens : LTE Serving bleu continu 2 px, NR PSCell/SCG violet discontinu 2 px et voisines grises discontinues 1,25 px, masquées par défaut.
+- Conserve trois contrôles indépendants dans la légende, la persistance par Workspace et les détails RF des candidats probables sans les promouvoir en liens certifiés.
+- SemVer frontend : **PATCH 1.142.3** ; backend, API et données RF inchangés.
+
 ## 1.142.2 (patch) — Compteurs réels de l’arbre simplifié — 2026-11-05 (BC4)
 
 - Construit la vue Simplifiée depuis les feuilles API brutes certifiées au lieu de la projection filtrée réservée à la vue Avancée.

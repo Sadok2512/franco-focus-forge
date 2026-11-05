@@ -13,13 +13,16 @@ export type MetricMapPreferences = {
 export const DEFAULT_MAP_PREFERENCES: MetricMapPreferences = {
   palette: "coverage",
   pointSize: 3,
-  links: { serving: true, neighbour: true, nr_anchor: true },
+  links: { serving: true, neighbour: false, nr_anchor: true },
 };
 export function metricMapPreferenceKey(workspaceId: string, selection: string) {
-  return `bc4.metric-map.v2.${workspaceId}.${selection}`;
+  return `bc4.metric-map.v3.${workspaceId}.${selection}`;
 }
-function legacyMetricMapPreferenceKey(workspaceId: string, selection: string) {
-  return `bc4.metric-map.v1.${workspaceId}.${selection}`;
+function legacyMetricMapPreferenceKeys(workspaceId: string, selection: string) {
+  return [
+    `bc4.metric-map.v2.${workspaceId}.${selection}`,
+    `bc4.metric-map.v1.${workspaceId}.${selection}`,
+  ];
 }
 
 export function readMetricMapPreferences(
@@ -31,9 +34,14 @@ export function readMetricMapPreferences(
     const current = localStorage.getItem(key);
     const legacy =
       current === null
-        ? (JSON.parse(
-            localStorage.getItem(legacyMetricMapPreferenceKey(workspaceId, selection)) ?? "null",
-          ) as Partial<MetricMapPreferences> | null)
+        ? (legacyMetricMapPreferenceKeys(workspaceId, selection)
+            .map(
+              (legacyKey) =>
+                JSON.parse(
+                  localStorage.getItem(legacyKey) ?? "null",
+                ) as Partial<MetricMapPreferences> | null,
+            )
+            .find((candidate) => candidate !== null) ?? null)
         : null;
     const value = JSON.parse(current ?? "null") as Partial<MetricMapPreferences> | null;
     const source = value ?? legacy;

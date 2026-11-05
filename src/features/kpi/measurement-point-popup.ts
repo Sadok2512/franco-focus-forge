@@ -6,25 +6,32 @@ export type LinkConfidence = "proven" | "probable";
 
 export const CELL_LINK_KINDS = ["serving", "neighbour", "nr_anchor"] as const;
 export const CELL_LINK_COLORS: Record<CellLinkKind, string> = {
-  serving: "#00b8ff",
-  neighbour: "#ff8a00",
-  nr_anchor: "#d946ef",
+  serving: "#2563eb",
+  neighbour: "#64748b",
+  nr_anchor: "#7c3aed",
 };
 
-/** Shared restrained but map-safe line treatment for Map, Signaling and KPI.
- * The selected stroke and its casing must remain legible over satellite tiles
- * and dense sector overlays without returning to the former oversized halo. */
+/** One restrained treatment shared by Map, Signaling and KPI. Link kind, not
+ * confidence, owns the visual grammar: LTE solid, NR/SCG and neighbours
+ * dashed. Evidence remains explicit in the RF details. */
 export const CELL_LINK_STYLE = {
   width: 2,
-  selectedWidth: 7,
-  casingWidth: 13,
-  casingColor: "#0f172a",
+  neighbourWidth: 1.25,
   opacity: 0.92,
-  mutedOpacity: 0.32,
   selectedOpacity: 1,
-  casingOpacity: 0.96,
-  probableDash: [3, 1.5] as [number, number],
+  nrDash: [4, 3] as [number, number],
+  neighbourDash: [3, 3] as [number, number],
 } as const;
+
+export function cellLinkWidth(kind: CellLinkKind): number {
+  return kind === "neighbour" ? CELL_LINK_STYLE.neighbourWidth : CELL_LINK_STYLE.width;
+}
+
+export function cellLinkDasharray(kind: CellLinkKind): [number, number] | undefined {
+  if (kind === "nr_anchor") return CELL_LINK_STYLE.nrDash;
+  if (kind === "neighbour") return CELL_LINK_STYLE.neighbourDash;
+  return undefined;
+}
 
 export type RadioCellLink = {
   kind: CellLinkKind;
@@ -167,6 +174,31 @@ export function pointCellLinks(point: ApiMeasurementPoint): RadioCellLink[] {
     });
   }
   return links;
+}
+
+/** Lines on the map are fail-closed: an explicit backend proof is required.
+ * Probable candidates stay available in RF Parameters, but are never painted
+ * as a certified serving/PSCell/neighbour relationship. */
+export function certifiedPointCellLinks(point: ApiMeasurementPoint): RadioCellLink[] {
+  return pointCellLinks(point).filter((link) => link.confidence === "proven");
+}
+
+/** Select the exact overlapping sample with the strongest certified radio
+ * evidence. No coordinate, PCI-only or nearest-site inference is performed. */
+export function preferredCertifiedPoint<T extends ApiMeasurementPoint>(
+  points: readonly T[],
+  sequences: readonly number[],
+): T | undefined {
+  const candidates = sequences
+    .map((seq) => points.find((point) => point.seq === seq))
+    .filter((point): point is T => point !== undefined);
+  const certified = (point: T) => certifiedPointCellLinks(point);
+  return (
+    candidates.find((point) => certified(point).some((link) => link.kind === "serving")) ??
+    candidates.find((point) => certified(point).some((link) => link.kind === "nr_anchor")) ??
+    candidates.find((point) => certified(point).length > 0) ??
+    candidates[0]
+  );
 }
 
 export function pointDetails(

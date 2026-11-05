@@ -352,18 +352,6 @@ describe("Map selection keeps its own panel", () => {
         />
       </QueryClientProvider>,
     );
-    const settings = await screen.findByRole("button", {
-      name: /Metric map settings|Réglages de la carte métrique/,
-    });
-    fireEvent.click(settings);
-    const panel = screen.getByTestId("metric-map-settings");
-    for (const label of [
-      /Serving cell|Cellule servante/,
-      /Neighbour cells|Cellules voisines/,
-      /NR anchor|Ancre NR/,
-    ]) {
-      expect(within(panel).getByLabelText(label)).toBeChecked();
-    }
     await waitFor(() => expect(renderers.drive).toHaveBeenCalled());
     // Sync is OFF by default. Local Map selection still controls its own
     // Serving / neighbour / NR-anchor evidence and must never be undefined.
@@ -371,6 +359,7 @@ describe("Map selection keeps its own panel", () => {
       selectionLayerId: "metrics-v3",
       externalSelection: null,
       hostMapData: { map_points: mapPoints },
+      linkVisibility: { serving: true, neighbour: false, nr_anchor: true },
     });
   });
 
