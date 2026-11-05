@@ -24,7 +24,6 @@ import {
   MapLegendList,
   MapLegendRow,
   MapLegendSection,
-  MapLinkConfidenceLegend,
   MetricLegendSettingsPanel,
 } from "./map-legend";
 import {
@@ -79,10 +78,8 @@ import { downloadCsv } from "./workspace-model";
 import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
-  CELL_LINK_COLORS,
-  CELL_LINK_KINDS,
-  CELL_LINK_STYLE,
   pointCellLinks,
+  preferredCertifiedPoint,
   type CellLinkKind,
 } from "./measurement-point-popup";
 type MetricLinkKind = CellLinkKind;
@@ -476,51 +473,6 @@ export function installMetricMapSource(
   });
 }
 
-function installMetricLinkSource(map: MlMap, features: ReturnType<typeof metricMapLinkFeatures>) {
-  map.addSource("metric-cell-links-v1", {
-    type: "geojson",
-    data: { type: "FeatureCollection", features },
-  });
-  const color = [
-    "match",
-    ["get", "link_type"],
-    "serving",
-    CELL_LINK_COLORS.serving,
-    "neighbour",
-    CELL_LINK_COLORS.neighbour,
-    "nr_anchor",
-    CELL_LINK_COLORS.nr_anchor,
-    "#64748b",
-  ] as ExpressionSpecification;
-  for (const confidence of ["proven", "probable"] as const) {
-    map.addLayer({
-      id: `metric-cell-links-v1-${confidence}`,
-      type: "line",
-      source: "metric-cell-links-v1",
-      filter: ["==", ["get", "confidence"], confidence],
-      layout: { "line-cap": "round", "line-join": "round" },
-      paint: {
-        "line-color": color,
-        "line-width": [
-          "case",
-          ["get", "selected"],
-          CELL_LINK_STYLE.selectedWidth,
-          CELL_LINK_STYLE.width,
-        ],
-        "line-opacity": [
-          "case",
-          ["get", "selected"],
-          CELL_LINK_STYLE.selectedOpacity,
-          ["get", "has_selection"],
-          CELL_LINK_STYLE.mutedOpacity,
-          CELL_LINK_STYLE.opacity,
-        ],
-        ...(confidence === "probable" ? { "line-dasharray": CELL_LINK_STYLE.probableDash } : {}),
-      },
-    });
-  }
-}
-
 function MetricMap({
   data,
   projectId,
@@ -653,19 +605,9 @@ function MetricMap({
     () => features.map((feature) => feature.geometry.coordinates),
     [features],
   );
-  const allLinks = useMemo(() => (data ? metricMapLinkFeatures(data) : []), [data]);
-  const links = useMemo(
-    () =>
-      activeMetricMapCellLinks(allLinks, selectedPoint, projectId, captureId, preferences.links),
-    [allLinks, captureId, preferences.links, projectId, selectedPoint],
-  );
   useEffect(() => {
     if (!map) return;
     const geo = { type: "FeatureCollection" as const, features: mapFeaturesWithClasses };
-    const linkGeo = { type: "FeatureCollection" as const, features: links };
-    const linkSource = map.getSource("metric-cell-links-v1") as GeoJSONSource | undefined;
-    if (linkSource) linkSource.setData(linkGeo);
-    else installMetricLinkSource(map, links);
     const source = map.getSource("metrics-v3") as GeoJSONSource | undefined;
     if (source) {
       source.setData(geo);
@@ -714,7 +656,6 @@ function MetricMap({
   }, [
     map,
     mapFeaturesWithClasses,
-    links,
     minValue,
     maxValue,
     preferences.palette,
@@ -737,9 +678,15 @@ function MetricMap({
           sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq)
         );
       });
-      const seq = Number((activeFeature?.properties ?? e.features?.[0]?.properties)?.["seq"]);
-      const point = data?.map_points.find((candidate) => candidate.seq === seq);
+      const sequences = (e.features ?? [])
+        .map((feature) => Number(feature.properties?.["seq"]))
+        .filter((seq) => Number.isFinite(seq));
+      const activeSeq = Number(activeFeature?.properties?.["seq"]);
+      const point = Number.isFinite(activeSeq)
+        ? data?.map_points.find((candidate) => candidate.seq === activeSeq)
+        : preferredCertifiedPoint(data?.map_points ?? [], sequences);
       if (!point) return;
+      const seq = point.seq;
       const nextSelection = toggleMetricMapPoint(
         selectedPointRef.current,
         projectId,
@@ -820,13 +767,6 @@ function MetricMap({
         return point ? { ...selectedPoint, lng: point.lng, lat: point.lat } : null;
       })()
     : null;
-  const linkCounts = allLinks.reduce<Record<MetricLinkKind, number>>(
-    (counts, feature) => ({
-      ...counts,
-      [feature.properties.link_type]: counts[feature.properties.link_type] + 1,
-    }),
-    { serving: 0, neighbour: 0, nr_anchor: 0 },
-  );
   // The metric legend lives in the Layers panel's Legend tab, like the
   // Signaling map — nothing floats over the map itself.
   const legend = (
@@ -982,29 +922,6 @@ function MetricMap({
                     }
                   />
                 </label>
-                <fieldset>
-                  <legend>{translate("metrics.mapCellLinks")}</legend>
-                  {CELL_LINK_KINDS.map((kind) => (
-                    <label key={kind}>
-                      <input
-                        type="checkbox"
-                        checked={preferences.links[kind]}
-                        onChange={(event) =>
-                          onPreferences({
-                            ...preferences,
-                            links: { ...preferences.links, [kind]: event.target.checked },
-                          })
-                        }
-                      />
-                      <span
-                        className="kpi-metric-map-link-swatch"
-                        style={{ backgroundColor: CELL_LINK_COLORS[kind] }}
-                      />
-                      {translate(`metrics.mapLink.${kind}`)} <span>({linkCounts[kind]})</span>
-                    </label>
-                  ))}
-                  <MapLinkConfidenceLegend />
-                </fieldset>
               </div>
             </div>
           )}
@@ -1052,6 +969,8 @@ function MetricMap({
           const point = data?.map_points.find((candidate) => candidate.seq === seq);
           return point ? [{ label, unit, value: point.value, active: true }] : [];
         }}
+        linkVisibility={preferences.links}
+        onLinkVisibilityChange={(links) => onPreferences({ ...preferences, links })}
       />
       {loading && (
         <div className="kpi-metric-map-status" role="status" data-testid="metric-map-loading">

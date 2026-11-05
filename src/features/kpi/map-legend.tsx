@@ -74,6 +74,8 @@ export function MapLegendRow({
   checked,
   onToggle,
   title,
+  lineStyle = "solid",
+  lineWidth = 2,
 }: {
   color: string;
   label: ReactNode;
@@ -82,13 +84,15 @@ export function MapLegendRow({
   checked?: boolean;
   onToggle?: () => void;
   title?: string;
+  lineStyle?: "solid" | "dashed";
+  lineWidth?: number;
 }) {
   const swatchEl =
     swatch === "line" ? (
       <span
         aria-hidden="true"
-        className="h-0 w-5 shrink-0 border-t-[3px]"
-        style={{ borderColor: color }}
+        className="h-0 w-5 shrink-0 border-t"
+        style={{ borderColor: color, borderTopStyle: lineStyle, borderTopWidth: lineWidth }}
       />
     ) : swatch === "ring" ? (
       <span

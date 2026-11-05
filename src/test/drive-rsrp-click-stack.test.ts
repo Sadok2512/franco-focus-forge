@@ -14,13 +14,14 @@ const point = (seq: number, extra: Partial<DriveRsrpPoint> = {}): DriveRsrpPoint
 });
 
 describe("drive point click stack", () => {
-  it("prefers a superposed point with published serving evidence", () => {
+  it("prefers a superposed point with certified serving evidence", () => {
     const points = [
       point(217668),
       point(217205, {
-        probable_serving_cell_ref_id: "466265799",
-        probable_serving_cell_lat: 50.38,
-        probable_serving_cell_lng: 3.02,
+        serving_cell_ref_id: "466265799",
+        serving_cell_source: "chi_previous_seq_cell_ref_exact",
+        serving_cell_lat: 50.38,
+        serving_cell_lng: 3.02,
       }),
     ];
 

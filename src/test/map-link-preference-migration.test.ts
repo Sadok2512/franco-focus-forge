@@ -22,9 +22,9 @@ describe("radio-link preference migration", () => {
     expect(readMetricMapPreferences("workspace", "rsrp")).toEqual({
       palette: "ocean",
       pointSize: 7,
-      links: { serving: true, neighbour: true, nr_anchor: true },
+      links: { serving: true, neighbour: false, nr_anchor: true },
     });
-    expect(metricMapPreferenceKey("workspace", "rsrp")).toContain(".v2.");
+    expect(metricMapPreferenceKey("workspace", "rsrp")).toContain(".v3.");
   });
 
   it("respects a user choice saved after the KPI migration", () => {
@@ -41,7 +41,7 @@ describe("radio-link preference migration", () => {
 
   it("resets the legacy shared-map links once and persists the migrated state", () => {
     localStorage.setItem(
-      "bc4.map.driveRsrp.v2",
+      "bc4.map.driveRsrp.v3",
       JSON.stringify({
         on: true,
         opacity: 55,
@@ -53,22 +53,22 @@ describe("radio-link preference migration", () => {
       on: true,
       opacity: 90,
       hidden: [] as string[],
-      links: { serving: true, neighbour: true, nr_anchor: true },
+      links: { serving: true, neighbour: false, nr_anchor: true },
     };
     const migrated = readPreferencesWithLinkReset(
+      "bc4.map.driveRsrp.v4",
       "bc4.map.driveRsrp.v3",
-      "bc4.map.driveRsrp.v2",
       defaults,
     );
     expect(migrated.opacity).toBe(55);
-    expect(migrated.links).toEqual({ serving: true, neighbour: true, nr_anchor: true });
+    expect(migrated.links).toEqual({ serving: true, neighbour: false, nr_anchor: true });
 
     localStorage.setItem(
-      "bc4.map.driveRsrp.v3",
+      "bc4.map.driveRsrp.v4",
       JSON.stringify({ ...migrated, links: { ...migrated.links, serving: false } }),
     );
     expect(
-      readPreferencesWithLinkReset("bc4.map.driveRsrp.v3", "bc4.map.driveRsrp.v2", defaults).links
+      readPreferencesWithLinkReset("bc4.map.driveRsrp.v4", "bc4.map.driveRsrp.v3", defaults).links
         .serving,
     ).toBe(false);
   });

@@ -33,18 +33,15 @@ import {
   CELL_LINK_COLORS,
   CELL_LINK_KINDS,
   CELL_LINK_STYLE,
-  pointCellLinks,
+  cellLinkDasharray,
+  cellLinkWidth,
+  certifiedPointCellLinks,
+  preferredCertifiedPoint,
   pointDetails,
   type CellLinkKind,
   type RadioCellLink,
 } from "./measurement-point-popup";
-import {
-  MapLegendList,
-  MapLegendRow,
-  MapLegendSection,
-  MapLegendSettings,
-  MapLinkConfidenceLegend,
-} from "./map-legend";
+import { MapLegendList, MapLegendRow, MapLegendSection, MapLegendSettings } from "./map-legend";
 import { metricMapKey } from "./query-keys";
 import { readPreferencesWithLinkReset } from "./mapLinkPreferenceMigration";
 import type { MetricMapResponse } from "@/lib/api/metrics-schemas";
@@ -55,39 +52,15 @@ const SELECTED_LAYER = "bc4-drive-rsrp-selected";
 const SERVING_SITE_SOURCE = "bc4-drive-rsrp-serving-site";
 const SERVING_SITE_LAYER = "bc4-drive-rsrp-serving-site";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
-const LINK_LAYER = "bc4-drive-rsrp-cell-links-proven";
-const LINK_LAYER_PROBABLE = "bc4-drive-rsrp-cell-links-probable";
-const SERVING_LINK_LAYER_PROBABLE = "bc4-drive-rsrp-serving-links-probable";
-const SERVING_LINK_LAYER = "bc4-drive-rsrp-serving-links-proven";
-const SERVING_LINK_CASING_PROBABLE = "bc4-drive-rsrp-serving-links-probable-casing";
-const SERVING_LINK_CASING = "bc4-drive-rsrp-serving-links-proven-casing";
+const NEIGHBOUR_LINK_LAYER = "bc4-drive-rsrp-neighbour-links";
+const NR_ANCHOR_LINK_LAYER = "bc4-drive-rsrp-nr-anchor-links";
+const SERVING_LINK_LAYER = "bc4-drive-rsrp-serving-links";
 export const DRIVE_CELL_LINK_LAYER_SPECS = [
-  { id: LINK_LAYER, confidence: "proven", serving: false },
-  { id: LINK_LAYER_PROBABLE, confidence: "probable", serving: false },
-  // Serving is deliberately painted after neighbour/NR links. Some API
-  // records legitimately resolve the serving and a neighbour to the exact
-  // same segment; a shared confidence layer used to let the later neighbour
-  // hide the serving line completely.
-  { id: SERVING_LINK_LAYER_PROBABLE, confidence: "probable", serving: true },
-  { id: SERVING_LINK_LAYER, confidence: "proven", serving: true },
+  { id: NEIGHBOUR_LINK_LAYER, kind: "neighbour" },
+  { id: NR_ANCHOR_LINK_LAYER, kind: "nr_anchor" },
+  // Serving is painted last when certified segments overlap.
+  { id: SERVING_LINK_LAYER, kind: "serving" },
 ] as const;
-export const DRIVE_SERVING_LINK_CASING_SPECS = [
-  {
-    id: SERVING_LINK_CASING_PROBABLE,
-    linkId: SERVING_LINK_LAYER_PROBABLE,
-    confidence: "probable",
-  },
-  { id: SERVING_LINK_CASING, linkId: SERVING_LINK_LAYER, confidence: "proven" },
-] as const;
-export const cellLinkDasharray = (confidence: "proven" | "probable") =>
-  confidence === "probable" ? CELL_LINK_STYLE.probableDash : undefined;
-
-export const servingCasingFilter = (confidence: "proven" | "probable"): FilterSpecification => [
-  "all",
-  ["==", ["get", "confidence"], confidence],
-  ["==", ["get", "link_type"], "serving"],
-  ["==", ["get", "selected"], true],
-];
 
 /**
  * Coincident server links need a presentation-only separation or the last
@@ -100,8 +73,8 @@ export function cellLinkVisualOffset(link: RadioCellLink, links: readonly RadioC
     (candidate) => `${candidate.lat.toFixed(6)}:${candidate.lng.toFixed(6)}` === endpoint,
   );
   if (coincident.length < 2) return 0;
-  if (link.kind === "neighbour") return -6;
-  if (link.kind === "nr_anchor") return 6;
+  if (link.kind === "neighbour") return -2;
+  if (link.kind === "nr_anchor") return 2;
   return 0;
 }
 /**
@@ -114,11 +87,10 @@ const RSRP_COLOR_EXPRESSION = [
   ...RSRP_CLASSES.flatMap((c) => [c.id, c.color]),
   "#94a3b8",
 ] as unknown as ExpressionSpecification;
-// v3 is a one-time preference migration. Earlier releases could persist all
-// radio links OFF while the UI still looked enabled in the other map control.
-// The v3 key resets only link visibility once; subsequent user choices remain
+// v4 is a one-time preference migration. It keeps LTE/NR links enabled while
+// restoring Neighbour to its safe default OFF; subsequent user choices remain
 // stored and are respected.
-const STORE = "bc4.map.driveRsrp.v3";
+const STORE = "bc4.map.driveRsrp.v4";
 
 type Prefs = {
   on: boolean;
@@ -130,7 +102,7 @@ const DEFAULT: Prefs = {
   on: true,
   opacity: 90,
   hidden: [],
-  links: { serving: true, neighbour: true, nr_anchor: true },
+  links: { serving: true, neighbour: false, nr_anchor: true },
 };
 const LAST_CAPTURE_STORE = "bc4.driveRsrp.lastCapture";
 
@@ -198,10 +170,9 @@ export function preferredPointFromClickStack(
   const candidates = sequences
     .map((seq) => points.find((point) => point.seq === seq))
     .filter((point): point is DriveRsrpPoint => point !== undefined);
-  return (
-    candidates.find((point) => pointCellLinks(point).some((link) => link.kind === "serving")) ??
-    candidates.find((point) => pointCellLinks(point).length > 0) ??
-    candidates[0]
+  return preferredCertifiedPoint(
+    candidates,
+    candidates.map((point) => point.seq),
   );
 }
 
@@ -218,7 +189,7 @@ function samePoint(
 
 export function readDriveRsrpPrefs(store: string, defaults: Prefs = DEFAULT): Prefs {
   try {
-    return readPreferencesWithLinkReset(store, store.replace(/\.v3$/, ".v2"), defaults);
+    return readPreferencesWithLinkReset(store, store.replace(/\.v4$/, ".v3"), defaults);
   } catch {
     return defaults;
   }
@@ -243,6 +214,8 @@ export function DriveRsrpLayer({
   legendHost,
   selectionLayerId,
   pointMetrics,
+  linkVisibility,
+  onLinkVisibilityChange,
 }: {
   map: MlMap | null;
   projectId: string;
@@ -277,12 +250,16 @@ export function DriveRsrpLayer({
   selectionLayerId?: string | undefined;
   /** Host-map metric values for an exact sequence, listed in RF Parameters → Metrics. */
   pointMetrics?: ((seq: number) => RfPointMetric[]) | undefined;
+  /** Workspace maps control these three switches with their persisted panel
+   * preferences. Standalone maps retain their own local preferences. */
+  linkVisibility?: Record<CellLinkKind, boolean> | undefined;
+  onLinkVisibilityChange?: ((next: Record<CellLinkKind, boolean>) => void) | undefined;
 }) {
   const rfPanel = useMapRfPanel();
   const { t } = useTranslation();
   const [metricSize] = useMetricSize();
   const embedded = activeCaptureId !== undefined;
-  const store = embedded ? "bc4.signaling.driveRsrp.v3" : STORE;
+  const store = embedded ? "bc4.signaling.driveRsrp.v4" : STORE;
   const [storedPrefs, setPrefs] = useState<Prefs>(DEFAULT);
   const prefs = useMemo(
     () => (hideControls ? { ...storedPrefs, on: true } : storedPrefs),
@@ -320,6 +297,12 @@ export function DriveRsrpLayer({
       localStorage.setItem(store, JSON.stringify(next));
       return next;
     });
+  const effectiveLinkVisibility = linkVisibility ?? prefs.links;
+  const updateLinkVisibility = (kind: CellLinkKind) => {
+    const next = { ...effectiveLinkVisibility, [kind]: !effectiveLinkVisibility[kind] };
+    if (onLinkVisibilityChange) onLinkVisibilityChange(next);
+    else update({ links: next });
+  };
 
   const captures = useQuery({
     queryKey: ["map-captures", projectId],
@@ -454,7 +437,7 @@ export function DriveRsrpLayer({
     );
   }, [allPositions, features, gps.data?.markers, onRouteChange]);
   const pointLinks = useMemo(
-    () => drivePoints.map((point) => ({ point, links: pointCellLinks(point) })),
+    () => drivePoints.map((point) => ({ point, links: certifiedPointCellLinks(point) })),
     [drivePoints],
   );
   const activeServing = useMemo(
@@ -469,7 +452,7 @@ export function DriveRsrpLayer({
     if (!activeLinks || !effectiveCaptureId) return [];
     const { point, links } = activeLinks;
     return links
-      .filter((link) => prefs.links[link.kind])
+      .filter((link) => effectiveLinkVisibility[link.kind])
       .map((link) => ({
         type: "Feature" as const,
         geometry: {
@@ -491,7 +474,7 @@ export function DriveRsrpLayer({
           has_selection: true,
         },
       }));
-  }, [activeLinks, effectiveCaptureId, prefs.links, projectId]);
+  }, [activeLinks, effectiveCaptureId, effectiveLinkVisibility, projectId]);
   const linkCounts = useMemo(
     () =>
       pointLinks
@@ -561,16 +544,10 @@ export function DriveRsrpLayer({
       // measurement component. Keep every selected radio link above those
       // overlays; serving remains last in the declared order. Point circles
       // remain independently clickable through layer-specific hit testing.
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => !layer.serving)) {
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind !== "serving")) {
         if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
-      // The neutral casing must remain above neighbour/NR segments but below
-      // the cyan Serving stroke. This keeps the selected radio evidence
-      // legible on satellite tiles and dense sector overlays.
-      for (const spec of DRIVE_SERVING_LINK_CASING_SPECS) {
-        if (map.getLayer(spec.id)) map.moveLayer(spec.id);
-      }
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.serving)) {
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind === "serving")) {
         if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
       if (map.getLayer(SELECTED_LAYER)) map.moveLayer(SELECTED_LAYER);
@@ -586,12 +563,8 @@ export function DriveRsrpLayer({
         });
       }
       for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
-        const dasharray = cellLinkDasharray(spec.confidence);
-        const filter: FilterSpecification = [
-          "all",
-          ["==", ["get", "confidence"], spec.confidence],
-          [spec.serving ? "==" : "!=", ["get", "link_type"], "serving"],
-        ];
+        const dasharray = cellLinkDasharray(spec.kind);
+        const filter: FilterSpecification = ["==", ["get", "link_type"], spec.kind];
         if (!map.getLayer(spec.id)) {
           map.addLayer({
             id: spec.id,
@@ -600,61 +573,15 @@ export function DriveRsrpLayer({
             filter,
             layout: { "line-cap": "round", "line-join": "round" },
             paint: {
-              "line-color": spec.serving
-                ? CELL_LINK_COLORS.serving
-                : [
-                    "match",
-                    ["get", "link_type"],
-                    "neighbour",
-                    CELL_LINK_COLORS.neighbour,
-                    "nr_anchor",
-                    CELL_LINK_COLORS.nr_anchor,
-                    "#64748b",
-                  ],
-              "line-width": [
-                "case",
-                ["get", "selected"],
-                CELL_LINK_STYLE.selectedWidth,
-                CELL_LINK_STYLE.width,
-              ],
-              "line-opacity": [
-                "case",
-                ["get", "selected"],
-                CELL_LINK_STYLE.selectedOpacity,
-                ["get", "has_selection"],
-                CELL_LINK_STYLE.mutedOpacity,
-                CELL_LINK_STYLE.opacity,
-              ],
+              "line-color": CELL_LINK_COLORS[spec.kind],
+              "line-width": cellLinkWidth(spec.kind),
+              "line-opacity": CELL_LINK_STYLE.selectedOpacity,
               "line-offset": ["get", "visual_offset"],
               ...(dasharray ? { "line-dasharray": dasharray } : {}),
             },
           });
         }
         // Also repair maps whose source survived a style/component refresh.
-        map.setFilter(spec.id, filter);
-      }
-      for (const spec of DRIVE_SERVING_LINK_CASING_SPECS) {
-        const filter = servingCasingFilter(spec.confidence);
-        if (!map.getLayer(spec.id)) {
-          const dasharray = cellLinkDasharray(spec.confidence);
-          map.addLayer(
-            {
-              id: spec.id,
-              type: "line",
-              source: LINK_SOURCE,
-              filter,
-              layout: { "line-cap": "round", "line-join": "round" },
-              paint: {
-                "line-color": CELL_LINK_STYLE.casingColor,
-                "line-width": CELL_LINK_STYLE.casingWidth,
-                "line-opacity": CELL_LINK_STYLE.casingOpacity,
-                "line-offset": ["get", "visual_offset"],
-                ...(dasharray ? { "line-dasharray": dasharray } : {}),
-              },
-            },
-            spec.linkId,
-          );
-        }
         map.setFilter(spec.id, filter);
       }
       if (!map.getSource(SOURCE)) {
@@ -710,7 +637,7 @@ export function DriveRsrpLayer({
         type: "FeatureCollection",
         features: prefs.on ? linkFeatures : [],
       });
-      for (const spec of [...DRIVE_CELL_LINK_LAYER_SPECS, ...DRIVE_SERVING_LINK_CASING_SPECS]) {
+      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
         if (map.getLayer(spec.id))
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }
@@ -749,7 +676,7 @@ export function DriveRsrpLayer({
   // position of the selected point (never inferred).
   useEffect(() => {
     if (!map) return;
-    const site = prefs.on && prefs.links.serving ? activeServing?.link : undefined;
+    const site = prefs.on && effectiveLinkVisibility.serving ? activeServing?.link : undefined;
     const data = {
       type: "FeatureCollection" as const,
       features: site
@@ -773,11 +700,11 @@ export function DriveRsrpLayer({
           type: "circle",
           source: SERVING_SITE_SOURCE,
           paint: {
-            "circle-radius": 12,
+            "circle-radius": 5,
             "circle-color": CELL_LINK_COLORS.serving,
-            "circle-opacity": 0.4,
-            "circle-stroke-width": 4,
-            "circle-stroke-color": CELL_LINK_STYLE.casingColor,
+            "circle-opacity": 0.9,
+            "circle-stroke-width": 1,
+            "circle-stroke-color": "#ffffff",
           },
         });
       map.moveLayer(SERVING_SITE_LAYER);
@@ -786,8 +713,8 @@ export function DriveRsrpLayer({
       let pulse = 0;
       const paint = () => {
         if (!map.getLayer(SERVING_SITE_LAYER)) return;
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 18 : 12);
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.55 : 1);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 7 : 5);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.6 : 1);
         pulse = pulse ? 0 : 1;
       };
       paint();
@@ -799,7 +726,7 @@ export function DriveRsrpLayer({
       map.off("load", install);
       if (timer !== undefined) window.clearInterval(timer);
     };
-  }, [map, activeServing, prefs.on, prefs.links.serving]);
+  }, [map, activeServing, effectiveLinkVisibility.serving, prefs.on]);
 
   useEffect(() => {
     if (!map || !selectedPoint || !prefs.on) return;
@@ -858,10 +785,10 @@ export function DriveRsrpLayer({
   useEffect(() => {
     if (!map?.getLayer(LAYER)) return;
     map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
-    if (map.getLayer(LINK_LAYER))
-      map.setLayoutProperty(LINK_LAYER, "visibility", prefs.on ? "visible" : "none");
-    if (map.getLayer(LINK_LAYER_PROBABLE))
-      map.setLayoutProperty(LINK_LAYER_PROBABLE, "visibility", prefs.on ? "visible" : "none");
+    for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+      if (map.getLayer(spec.id))
+        map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
+    }
     applyGpsOnly();
     map.setFilter(
       LAYER,
@@ -1054,14 +981,15 @@ export function DriveRsrpLayer({
             key={kind}
             swatch="line"
             color={CELL_LINK_COLORS[kind]}
+            lineStyle={cellLinkDasharray(kind) ? "dashed" : "solid"}
+            lineWidth={cellLinkWidth(kind)}
             label={t(`metrics.mapLink.${kind}`)}
             meta={linkCounts[kind]}
-            checked={prefs.links[kind]}
-            onToggle={() => update({ links: { ...prefs.links, [kind]: !prefs.links[kind] } })}
+            checked={effectiveLinkVisibility[kind]}
+            onToggle={() => updateLinkVisibility(kind)}
           />
         ))}
       </MapLegendList>
-      <MapLinkConfidenceLegend />
     </MapLegendSettings>
   );
   const legendRows = (

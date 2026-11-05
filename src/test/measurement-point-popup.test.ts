@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
   buildMeasurementPointPopup,
+  certifiedPointCellLinks,
   linkConfidence,
   pointCellLinks,
   pointDetails,
+  preferredCertifiedPoint,
 } from "@/features/kpi/measurement-point-popup";
 import "@/lib/i18n";
 
@@ -97,6 +99,23 @@ describe("shared measurement-point popup", () => {
         distanceM: 692.5,
       }),
     ]);
+  });
+
+  it("paints only explicitly certified radio relationships", () => {
+    const links = certifiedPointCellLinks(point);
+    expect(links.map((link) => link.kind)).toEqual(["serving", "nr_anchor"]);
+    expect(links.every((link) => link.confidence === "proven")).toBe(true);
+  });
+
+  it("prefers a certified overlapping point without inventing an identity", () => {
+    const probable = {
+      ...point,
+      seq: 41,
+      serving_link_confidence: "probable" as const,
+      nr_anchor_link: null,
+    };
+    expect(preferredCertifiedPoint([probable, point], [41, 42])?.seq).toBe(42);
+    expect(preferredCertifiedPoint([probable], [41])?.seq).toBe(41);
   });
 
   it("renders time, metric value, serving identity and neighbours in one readable card", () => {
