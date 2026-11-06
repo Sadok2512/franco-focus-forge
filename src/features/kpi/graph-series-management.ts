@@ -2,10 +2,12 @@ import { METRIC_COLORS, freeColor } from "./metric-styles";
 import { normalizeUnit, type GraphSeries } from "./graph-series-drop";
 
 export type GraphAxisSide = "left" | "right";
+export type GraphSeriesDisplay = "point" | "line" | "point-line";
 
 export type ManagedGraphSeries = GraphSeries & {
   visible: boolean;
   axis: GraphAxisSide;
+  display: GraphSeriesDisplay;
 };
 
 export type GraphAxisSettings = {
@@ -60,6 +62,7 @@ function parseAxis(value: unknown, fallback: GraphAxisSettings): GraphAxisSettin
 export function readGraphSeriesSettings(
   workspaceId: string | undefined,
   panelId: string,
+  displayName: (code: string, fallback: string) => string = (_code, fallback) => fallback,
 ): GraphSeriesSettings | null {
   try {
     const raw = localStorage.getItem(graphSeriesSettingsKey(workspaceId, panelId));
@@ -73,7 +76,6 @@ export function readGraphSeriesSettings(
       const item = rawSeries as Record<string, unknown>;
       if (
         typeof item["code"] !== "string" ||
-        typeof item["label"] !== "string" ||
         typeof item["unit"] !== "string" ||
         !validColor(item["color"])
       )
@@ -81,11 +83,18 @@ export function readGraphSeriesSettings(
       return [
         {
           code: item["code"],
-          label: item["label"],
+          label: displayName(
+            item["code"],
+            typeof item["label"] === "string" ? item["label"] : item["code"],
+          ),
           unit: item["unit"],
           color: item["color"],
           visible: item["visible"] !== false,
           axis: item["axis"] === "right" ? "right" : "left",
+          display:
+            item["display"] === "line" || item["display"] === "point-line"
+              ? item["display"]
+              : "point",
         },
       ];
     });
@@ -111,7 +120,15 @@ export function writeGraphSeriesSettings(
   settings: GraphSeriesSettings,
 ): void {
   try {
-    localStorage.setItem(graphSeriesSettingsKey(workspaceId, panelId), JSON.stringify(settings));
+    localStorage.setItem(
+      graphSeriesSettingsKey(workspaceId, panelId),
+      JSON.stringify({
+        ...settings,
+        // Labels are deliberately not persisted: every restore resolves the
+        // current catalogue display code from the canonical metric id.
+        series: settings.series.map(({ label: _label, ...series }) => series),
+      }),
+    );
   } catch {
     /* mounted state remains authoritative when storage is unavailable */
   }
@@ -132,6 +149,7 @@ export function initialGraphSeriesSettings(
       color: item.color || freeColor(all.slice(0, index).map((entry) => entry.color)),
       visible: !hidden.includes(item.code),
       axis: units.indexOf(normalized) === 1 ? "right" : "left",
+      display: "point",
     };
   });
   return {
@@ -158,7 +176,7 @@ export function addManagedSeries(
   const color = freeColor(settings.series.map((item) => item.color));
   return {
     ...settings,
-    series: [...settings.series, { ...added, color, visible: true, axis }],
+    series: [...settings.series, { ...added, color, visible: true, axis, display: "point" }],
     axes: {
       ...settings.axes,
       [axis]: settings.axes[axis].unit

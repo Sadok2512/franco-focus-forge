@@ -37,6 +37,7 @@ describe("graph series management", () => {
       ["nr_bler@nr-type-199", "right"],
       ["nr_thp@nr-type-199", "left"],
     ]);
+    expect(settings.series.every((item) => item.display === "point")).toBe(true);
     expect(new Set(settings.series.map((item) => item.color)).size).toBe(3);
   });
 
@@ -61,8 +62,20 @@ describe("graph series management", () => {
       },
     };
     writeGraphSeriesSettings("workspace-a", "panel-a", settings);
-    expect(readGraphSeriesSettings("workspace-a", "panel-a")).toEqual(settings);
-    expect(localStorage.getItem(graphSeriesSettingsKey("workspace-a", "panel-a"))).not.toBeNull();
+    const stored = localStorage.getItem(graphSeriesSettingsKey("workspace-a", "panel-a"));
+    expect(stored).not.toBeNull();
+    expect(stored).not.toContain('"label"');
+    expect(
+      readGraphSeriesSettings("workspace-a", "panel-a", (code) =>
+        code === "bler" ? "NR_BLER_MAC_DL_PSCELL" : "LTE_PDSCH_THP_SERVING_PCELL",
+      ),
+    ).toEqual({
+      ...settings,
+      series: settings.series.map((item) => ({
+        ...item,
+        label: item.code === "bler" ? "NR_BLER_MAC_DL_PSCELL" : "LTE_PDSCH_THP_SERVING_PCELL",
+      })),
+    });
     expect(readGraphSeriesSettings("workspace-a", "panel-b")).toBeNull();
   });
 

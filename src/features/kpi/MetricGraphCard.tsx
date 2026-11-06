@@ -62,6 +62,7 @@ import {
   writeGraphSeriesSettings,
   type GraphAxisSide,
   type GraphAxisSettings,
+  type GraphSeriesDisplay,
   type GraphSeriesSettings,
   type ManagedGraphSeries,
 } from "./graph-series-management";
@@ -260,41 +261,47 @@ export const METRIC_VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
 function ManageGraphSeriesPopover({
   settings,
   onChange,
+  onReset,
   open,
   onOpenChange,
 }: {
   settings: GraphSeriesSettings;
   onChange: (settings: GraphSeriesSettings) => void;
+  onReset: () => GraphSeriesSettings;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useTranslation();
   const [dragged, setDragged] = useState<string | null>(null);
+  const [draft, setDraft] = useState(settings);
+  useEffect(() => {
+    if (open) setDraft(settings);
+  }, [open, settings]);
   const updateSeries = (code: string, patch: Partial<ManagedGraphSeries>) =>
-    onChange({
-      ...settings,
-      series: settings.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
+    setDraft({
+      ...draft,
+      series: draft.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
     });
   const updateAxis = (side: GraphAxisSide, patch: Partial<GraphAxisSettings>) =>
-    onChange({
-      ...settings,
-      axes: { ...settings.axes, [side]: { ...settings.axes[side], ...patch } },
+    setDraft({
+      ...draft,
+      axes: { ...draft.axes, [side]: { ...draft.axes[side], ...patch } },
     });
   const assignAxis = (code: string, axis: GraphAxisSide) => {
-    if (!canAssignSeriesAxis(settings, code, axis)) {
+    if (!canAssignSeriesAxis(draft, code, axis)) {
       toast.error(t("graphSeries.incompatibleAxis"));
       return;
     }
-    const target = settings.series.find((item) => item.code === code);
-    onChange({
-      ...settings,
-      series: settings.series.map((item) => (item.code === code ? { ...item, axis } : item)),
+    const target = draft.series.find((item) => item.code === code);
+    setDraft({
+      ...draft,
+      series: draft.series.map((item) => (item.code === code ? { ...item, axis } : item)),
       axes: {
-        ...settings.axes,
+        ...draft.axes,
         [axis]:
-          settings.axes[axis].unit || !target
-            ? settings.axes[axis]
-            : { ...settings.axes[axis], unit: target.unit },
+          draft.axes[axis].unit || !target
+            ? draft.axes[axis]
+            : { ...draft.axes[axis], unit: target.unit },
       },
     });
   };
@@ -310,11 +317,11 @@ function ManageGraphSeriesPopover({
         data-testid="metric-manage-series"
       >
         <DropdownMenuLabel>{t("graphSeries.manage")}</DropdownMenuLabel>
-        {settings.series.length === 0 ? (
+        {draft.series.length === 0 ? (
           <p className="px-2 py-3 text-xs text-muted-foreground">{t("graphSeries.empty")}</p>
         ) : (
           <div className="space-y-1.5">
-            {settings.series.map((series) => (
+            {draft.series.map((series) => (
               <div
                 key={series.code}
                 draggable
@@ -324,9 +331,9 @@ function ManageGraphSeriesPopover({
                 onDrop={(event) => {
                   event.preventDefault();
                   if (!dragged) return;
-                  onChange({
-                    ...settings,
-                    series: reorderManagedSeries(settings.series, dragged, series.code),
+                  setDraft({
+                    ...draft,
+                    series: reorderManagedSeries(draft.series, dragged, series.code),
                   });
                   setDragged(null);
                 }}
@@ -379,9 +386,9 @@ function ManageGraphSeriesPopover({
                   className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   aria-label={t("graphSeries.remove", { metric: series.label })}
                   onClick={() =>
-                    onChange({
-                      ...settings,
-                      series: settings.series.filter((item) => item.code !== series.code),
+                    setDraft({
+                      ...draft,
+                      series: draft.series.filter((item) => item.code !== series.code),
                     })
                   }
                 >
@@ -405,14 +412,28 @@ function ManageGraphSeriesPopover({
                     type="button"
                     className="ml-1 text-[10px] text-muted-foreground underline"
                     onClick={() =>
-                      onChange({
-                        ...settings,
-                        series: resetSeriesColor(settings.series, series.code),
+                      setDraft({
+                        ...draft,
+                        series: resetSeriesColor(draft.series, series.code),
                       })
                     }
                   >
                     {t("graphSeries.resetColor")}
                   </button>
+                  <select
+                    value={series.display}
+                    aria-label={t("graphSeries.displayFor", { metric: series.label })}
+                    className="h-6 rounded border bg-background px-1 text-[10px]"
+                    onChange={(event) =>
+                      updateSeries(series.code, {
+                        display: event.target.value as GraphSeriesDisplay,
+                      })
+                    }
+                  >
+                    <option value="point">{t("graphSeries.points")}</option>
+                    <option value="line">{t("graphSeries.line")}</option>
+                    <option value="point-line">{t("graphSeries.pointsLine")}</option>
+                  </select>
                 </div>
               </div>
             ))}
@@ -421,7 +442,7 @@ function ManageGraphSeriesPopover({
         <DropdownMenuSeparator />
         <div className="grid gap-2 sm:grid-cols-2" data-testid="metric-axis-settings">
           {(["left", "right"] as const).map((side) => {
-            const axis = settings.axes[side];
+            const axis = draft.axes[side];
             return (
               <fieldset key={side} className="space-y-1 rounded-md border p-2 text-[11px]">
                 <legend className="px-1 font-semibold">
@@ -496,7 +517,7 @@ function ManageGraphSeriesPopover({
                     updateAxis(
                       side,
                       defaultAxisSettings(
-                        settings.series.find((item) => item.axis === side)?.unit ?? "",
+                        draft.series.find((item) => item.axis === side)?.unit ?? "",
                       ),
                     )
                   }
@@ -506,6 +527,43 @@ function ManageGraphSeriesPopover({
               </fieldset>
             );
           })}
+        </div>
+        <DropdownMenuSeparator />
+        <div className="flex flex-wrap items-center justify-end gap-1.5 px-1 pb-1">
+          <button
+            type="button"
+            className="kpi-button mr-auto"
+            onClick={() => {
+              onOpenChange(false);
+              requestAnimationFrame(() =>
+                document.querySelector<HTMLInputElement>('[data-testid="metrics-search"]')?.focus(),
+              );
+            }}
+          >
+            {t("graphSeries.addMetric")}
+          </button>
+          <button
+            type="button"
+            className="kpi-button"
+            data-testid="manage-series-remove-all"
+            onClick={() => setDraft({ ...draft, series: [] })}
+          >
+            {t("graphSeries.removeAll")}
+          </button>
+          <button type="button" className="kpi-button" onClick={() => setDraft(onReset())}>
+            {t("common.reset")}
+          </button>
+          <button
+            type="button"
+            className="kpi-button primary"
+            data-testid="manage-series-apply"
+            onClick={() => {
+              onChange(draft);
+              onOpenChange(false);
+            }}
+          >
+            {t("graphSeries.apply")}
+          </button>
         </div>
       </PopoverContent>
     </Popover>
@@ -536,6 +594,8 @@ export function MetricGraphCard({
   timeAxisMode,
   workspaceId,
   panelId,
+  panelNumber,
+  displayNames,
   style: styleProp,
   onStyleChange,
   prefetchedSeries,
@@ -561,6 +621,8 @@ export function MetricGraphCard({
   timeAxisMode?: TimeAxisMode | undefined;
   workspaceId?: string | undefined;
   panelId?: string | undefined;
+  panelNumber?: number | undefined;
+  displayNames?: ReadonlyMap<string, string> | undefined;
   style?: MetricStyle | undefined;
   onStyleChange?: ((style: MetricStyle) => void) | undefined;
   prefetchedSeries?: ChronogramData | undefined;
@@ -603,13 +665,22 @@ export function MetricGraphCard({
   const setStyle = (next: MetricStyle) => onStyleChange?.(next);
   const seriesSettingsId = panelId ?? code;
   const seriesSettingsKey = `${workspaceId ?? "metrics"}:${seriesSettingsId}`;
-  const buildInitialSeriesSettings = () =>
-    readGraphSeriesSettings(workspaceId, seriesSettingsId) ??
+  const displayName = (selection: string, fallback: string) =>
+    displayNames?.get(selection) ??
+    displayNames?.get(selection.split("!", 1)[0] ?? selection) ??
+    fallback;
+  const buildDefaultSeriesSettings = () =>
     initialGraphSeriesSettings(
-      { code, label, unit, color: style.color },
-      readGraphSeries(workspaceId, code),
+      { code, label: displayName(code, label), unit, color: style.color },
+      readGraphSeries(workspaceId, code).map((item) => ({
+        ...item,
+        label: displayName(item.code, item.label),
+      })),
       readHiddenGraphSeries(workspaceId, code),
     );
+  const buildInitialSeriesSettings = () =>
+    readGraphSeriesSettings(workspaceId, seriesSettingsId, displayName) ??
+    buildDefaultSeriesSettings();
   const [managedState, setManagedState] = useState<{
     key: string;
     value: GraphSeriesSettings;
@@ -619,6 +690,13 @@ export function MetricGraphCard({
   }
   const seriesSettings =
     managedState.key === seriesSettingsKey ? managedState.value : buildInitialSeriesSettings();
+  const resolvedSeriesSettings = {
+    ...seriesSettings,
+    series: seriesSettings.series.map((item) => ({
+      ...item,
+      label: displayName(item.code, item.label),
+    })),
+  };
   const saveSeriesSettings = (next: GraphSeriesSettings) => {
     setManagedState({ key: seriesSettingsKey, value: next });
     writeGraphSeriesSettings(workspaceId, seriesSettingsId, next);
@@ -641,13 +719,13 @@ export function MetricGraphCard({
       toast.error(translate("graphSeries.kpiUnsupported"));
       return;
     }
-    if (seriesSettings.series.some((item) => item.code === metric.code)) {
+    if (resolvedSeriesSettings.series.some((item) => item.code === metric.code)) {
       toast.error(translate("graphSeries.duplicate"));
       return;
     }
-    const result = addManagedSeries(seriesSettings, {
+    const result = addManagedSeries(resolvedSeriesSettings, {
       code: metric.code,
-      label: metric.label,
+      label: displayName(metric.code, metric.label),
       unit: metric.unit,
     });
     if (!result) {
@@ -685,7 +763,15 @@ export function MetricGraphCard({
       <header className="kpi-card-header">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
-            <h3 title={label}>{label}</h3>
+            <h3
+              title={
+                resolvedSeriesSettings.series[0]?.label ?? translate("graphSeries.noMetricsTitle")
+              }
+            >
+              {resolvedSeriesSettings.series[0]
+                ? `${panelNumber ? `${panelNumber}. ` : ""}${resolvedSeriesSettings.series[0].label}`
+                : translate("graphSeries.noMetricsTitle")}
+            </h3>
           </div>
           <p>
             {tech} · [{eventCode}] · {unit} · {category ?? "autres"}
@@ -801,8 +887,9 @@ export function MetricGraphCard({
           </WorkspacePanelMenu>
           {view === "graph" && (
             <ManageGraphSeriesPopover
-              settings={seriesSettings}
+              settings={resolvedSeriesSettings}
               onChange={saveSeriesSettings}
+              onReset={buildDefaultSeriesSettings}
               open={seriesManagerOpen}
               onOpenChange={changeSeriesManagerOpen}
             />
@@ -824,7 +911,7 @@ export function MetricGraphCard({
           label={label}
           unit={unit}
           plot={style.plot}
-          settings={seriesSettings}
+          settings={resolvedSeriesSettings}
           onSettingsChange={saveSeriesSettings}
           syncId={syncId}
           timeAxisMode={timeAxisMode}
@@ -1192,12 +1279,19 @@ function MetricTimePlot({
   const seriesList = requestedSeries.map((requested) => {
     const api = seriesData?.series.find((item) => item.code === requested.code);
     const numeric = numericSeries.find((item) => item.code === requested.code)?.points ?? [];
-    const renderMode = metricSeriesRenderMode(plot, numeric);
+    const lineMode = metricSeriesRenderMode("line", numeric);
+    const renderMode =
+      requested.display === "line" && lineMode === "point" ? "point" : requested.display;
     return {
       ...requested,
-      label: api?.label ?? requested.label,
+      // API labels describe storage fields. Visible identity always comes
+      // from the catalogue-resolved managed series.
+      label: requested.label,
       unit: api?.unit ?? requested.unit,
-      points: metricSeriesPlotPoints(numeric, renderMode),
+      points: metricSeriesPlotPoints(
+        numeric,
+        renderMode === "line" || renderMode === "point-line" ? "line" : "point",
+      ),
       renderMode,
     };
   });
@@ -1574,35 +1668,53 @@ function MetricTimePlot({
               return parts.join(" · ");
             }}
           />
-          {seriesList.map((s) =>
-            s.renderMode === "bar" ? (
-              <Bar
-                key={s.code}
-                yAxisId={s.axis}
-                data={s.points.filter(
-                  (point): point is MetricPlotPoint & { value: number } => point.value !== null,
-                )}
-                dataKey="value"
-                name={s.label}
-                fill={s.color}
-                barSize={6}
-                hide={!s.visible}
-                isAnimationActive={false}
-              />
-            ) : s.renderMode === "point" ? (
-              <Scatter
-                key={s.code}
-                yAxisId={s.axis}
-                data={s.points.filter(
-                  (point): point is MetricPlotPoint & { value: number } => point.value !== null,
-                )}
-                dataKey="value"
-                name={s.label}
-                fill={s.color}
-                hide={!s.visible}
-                isAnimationActive={false}
-              />
-            ) : (
+          {seriesList.flatMap((s) => {
+            const numericPoints = s.points.filter(
+              (point): point is MetricPlotPoint & { value: number } => point.value !== null,
+            );
+            if (s.renderMode === "point") {
+              return [
+                <Scatter
+                  key={s.code}
+                  yAxisId={s.axis}
+                  data={numericPoints}
+                  dataKey="value"
+                  name={s.label}
+                  fill={s.color}
+                  hide={!s.visible}
+                  isAnimationActive={false}
+                />,
+              ];
+            }
+            if (s.renderMode === "point-line") {
+              return [
+                <Line
+                  key={`${s.code}:line`}
+                  yAxisId={s.axis}
+                  type="linear"
+                  data={s.points}
+                  dataKey="value"
+                  name={s.label}
+                  stroke={s.color}
+                  strokeWidth={1.2}
+                  dot={false}
+                  connectNulls={false}
+                  hide={!s.visible}
+                  isAnimationActive={false}
+                />,
+                <Scatter
+                  key={`${s.code}:points`}
+                  yAxisId={s.axis}
+                  data={numericPoints}
+                  dataKey="value"
+                  name={s.label}
+                  fill={s.color}
+                  hide={!s.visible}
+                  isAnimationActive={false}
+                />,
+              ];
+            }
+            return [
               <Line
                 key={s.code}
                 yAxisId={s.axis}
@@ -1616,9 +1728,9 @@ function MetricTimePlot({
                 connectNulls={false}
                 hide={!s.visible}
                 isAnimationActive={false}
-              />
-            ),
-          )}
+              />,
+            ];
+          })}
           {activeEvents
             .filter(
               (e) =>

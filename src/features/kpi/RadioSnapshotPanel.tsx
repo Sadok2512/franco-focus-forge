@@ -186,6 +186,7 @@ export function RadioSnapshotPanel({
   title,
   initialMetric,
   catalog,
+  displayNames,
   filters,
   onRemove,
 }: {
@@ -196,10 +197,12 @@ export function RadioSnapshotPanel({
   title: string;
   initialMetric: string;
   catalog: MetricInfo[];
+  displayNames?: ReadonlyMap<string, string>;
   filters: KpiQueryFilters;
   onRemove: () => void;
 }) {
   const { t } = useTranslation();
+  const displayName = (code: string, fallback: string) => displayNames?.get(code) ?? fallback;
   const pointSync = usePointSync();
   const [configuration, setConfiguration] = useState(() =>
     readRadioSnapshotConfiguration(workspaceId, panelId, catalog, initialMetric),
@@ -356,7 +359,10 @@ export function RadioSnapshotPanel({
     if (configuration.metrics.includes(metric.code)) return false;
     const query = metricSearch.trim().toLocaleLowerCase();
     return (
-      !query || `${metric.label} ${metric.code} ${metric.tech}`.toLocaleLowerCase().includes(query)
+      !query ||
+      `${displayName(metric.code, metric.label)} ${metric.code} ${metric.tech}`
+        .toLocaleLowerCase()
+        .includes(query)
     );
   });
 
@@ -465,7 +471,7 @@ export function RadioSnapshotPanel({
           <div className="radio-snapshot-picker-list">
             {choices.slice(0, 40).map((metric) => (
               <button key={metric.code} type="button" onClick={() => addMetric(metric.code)}>
-                <span>{metric.label}</span>
+                <span>{displayName(metric.code, metric.label)}</span>
                 <small>
                   {metric.tech} · {metric.unit}
                 </small>
@@ -509,10 +515,9 @@ export function RadioSnapshotPanel({
                 >
                   <div
                     className="radio-snapshot-metric-name"
-                    title={column?.label ?? info?.label ?? code}
+                    title={displayName(code, column?.label ?? info?.label ?? code)}
                   >
-                    <strong>{column?.label ?? info?.label ?? code}</strong>
-                    <small>{code}</small>
+                    <strong>{displayName(code, column?.label ?? info?.label ?? code)}</strong>
                   </div>
                   <div className="radio-snapshot-value">
                     {value == null
@@ -529,9 +534,11 @@ export function RadioSnapshotPanel({
                     type="button"
                     className="radio-snapshot-row-grip"
                     aria-label={t("radioSnapshot.reorderMetric", {
-                      metric: info?.label ?? code,
+                      metric: displayName(code, info?.label ?? code),
                     })}
-                    title={t("radioSnapshot.reorderMetric", { metric: info?.label ?? code })}
+                    title={t("radioSnapshot.reorderMetric", {
+                      metric: displayName(code, info?.label ?? code),
+                    })}
                     onPointerDown={(event) => {
                       if (event.button !== 0) return;
                       event.preventDefault();
@@ -576,7 +583,9 @@ export function RadioSnapshotPanel({
                   </button>
                   <div className="radio-snapshot-row-menu">
                     <WorkspacePanelMenu
-                      label={t("radioSnapshot.metricMenu", { metric: info?.label ?? code })}
+                      label={t("radioSnapshot.metricMenu", {
+                        metric: displayName(code, info?.label ?? code),
+                      })}
                     >
                       <DropdownMenuItem onSelect={() => setConfiguredMetric(code)}>
                         <Settings2 size={13} /> {t("radioSnapshot.configure")}
@@ -586,7 +595,9 @@ export function RadioSnapshotPanel({
                         className="text-destructive"
                       >
                         <X size={13} />
-                        {t("radioSnapshot.removeMetric", { metric: info?.label ?? code })}
+                        {t("radioSnapshot.removeMetric", {
+                          metric: displayName(code, info?.label ?? code),
+                        })}
                       </DropdownMenuItem>
                     </WorkspacePanelMenu>
                   </div>

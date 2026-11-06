@@ -1486,6 +1486,7 @@ function Workspace({
                               }}
                               selections={selectedMetrics}
                               catalog={metricsCatalog.data?.metrics ?? []}
+                              catalogNodes={metricsCatalog.data?.nodes ?? []}
                               filters={{ ...applied, capture_id: memberCaptureId }}
                               view={metricsView}
                               onViewChange={setMetricsView}
@@ -1527,7 +1528,9 @@ function Workspace({
                                     preserved.has(code),
                                   ),
                                 ) as MetricViews;
-                                if (Object.keys(nextViews).length !== Object.keys(metricViews).length) {
+                                if (
+                                  Object.keys(nextViews).length !== Object.keys(metricViews).length
+                                ) {
                                   writeViews(nextViews);
                                 }
                               }}

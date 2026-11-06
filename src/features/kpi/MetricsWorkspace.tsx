@@ -15,7 +15,12 @@ import {
   getSignaling,
 } from "@/lib/api/client";
 import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } from "./query-keys";
-import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
+import type {
+  MetricAnalysis,
+  MetricCatalogNode,
+  MetricInfo,
+  MetricMapResponse,
+} from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
 import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
@@ -50,6 +55,11 @@ export {
 } from "./metricMapPreferences";
 import { mapLegendScope } from "./map-metric-drop";
 import { MetricGraphCard, type MetricView } from "./MetricGraphCard";
+import {
+  canonicalizeMetricsCsv,
+  metricDisplayNameMap,
+  resolveMetricDisplayName,
+} from "./metric-display-name";
 import type { MetricViews, MetricWorkspaceView } from "./metric-views";
 import {
   legacyMetricCardPanels,
@@ -1266,6 +1276,7 @@ export function MetricsWorkspace({
   onCaptureChange,
   selections,
   catalog,
+  catalogNodes = [],
   filters,
   onClear,
   view: externalView,
@@ -1296,6 +1307,7 @@ export function MetricsWorkspace({
   onCaptureChange: (c: string) => void;
   selections: string[];
   catalog: MetricInfo[];
+  catalogNodes?: MetricCatalogNode[];
   filters: KpiQueryFilters;
   onClear: () => void;
   view?: View | undefined;
@@ -1318,6 +1330,15 @@ export function MetricsWorkspace({
   panelIdSuffix?: string | undefined;
 }) {
   const { t: translate } = useTranslation();
+  const metricDisplayNames = useMemo(
+    () => metricDisplayNameMap(catalogNodes, catalog),
+    [catalog, catalogNodes],
+  );
+  const metricDisplayName = useCallback(
+    (selection: string, fallback: string) =>
+      resolveMetricDisplayName(metricDisplayNames, selection, fallback),
+    [metricDisplayNames],
+  );
   const pointSync = usePointSync();
   const reasonLabel = useReasonLabel();
   const legacyMapSelection = selections[0] ?? "metric";
@@ -1998,7 +2019,7 @@ export function MetricsWorkspace({
         <section className="kpi-metrics-charts-grid" data-testid="metrics-charts-grid">
           {visibleGridPanels.map(({ panel, selection: s }, i) => {
             const info = metricInfoByCode.get(s.full) ?? metricInfoByCode.get(s.code);
-            const title = info?.label ?? s.code;
+            const title = metricDisplayName(s.full, info?.label ?? s.code);
             const metricView = panel.view;
             const remove = () => {
               const next = cardPanels.filter((candidate) => candidate.id !== panel.id);
@@ -2051,12 +2072,15 @@ export function MetricsWorkspace({
                       title={panelTitle}
                       initialMetric={s.full}
                       catalog={catalog}
+                      displayNames={metricDisplayNames}
                       filters={filters}
                       onRemove={remove}
                     />
                   ) : (
                     <MetricGraphCard
                       panelId={panel.id}
+                      panelNumber={i + 1}
+                      displayNames={metricDisplayNames}
                       projectId={projectId}
                       code={s.full}
                       label={panelTitle}
@@ -2272,7 +2296,12 @@ export function MetricsWorkspace({
                         <DropdownMenuItem
                           data-testid="metrics-table-export"
                           disabled={!data.csv}
-                          onSelect={() => downloadCsv(data.csv, `metrics_${data.capture_id}`)}
+                          onSelect={() =>
+                            downloadCsv(
+                              canonicalizeMetricsCsv(data.csv, data.columns, metricDisplayNames),
+                              `metrics_${data.capture_id}`,
+                            )
+                          }
                         >
                           <Download size={14} /> {translate("panel.export_csv")}
                         </DropdownMenuItem>
@@ -2338,8 +2367,12 @@ export function MetricsWorkspace({
                             </th>
                           )}
                           {data.columns.map((c) => (
-                            <th key={c.code} title={c.label} className="numeric">
-                              {c.label}
+                            <th
+                              key={c.code}
+                              title={metricDisplayName(c.code, c.label)}
+                              className="numeric"
+                            >
+                              {metricDisplayName(c.code, c.label)}
                               <small className="block">{c.unit || "—"}</small>
                             </th>
                           ))}

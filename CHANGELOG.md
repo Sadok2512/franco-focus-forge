@@ -1,3 +1,9 @@
+## 1.144.9 (patch) — Noms catalogue canoniques et gestion multi-séries — 2026-11-06 (BC1)
+
+- Utilise strictement `display_code_lisible` du catalogue dans les titres, légendes, tooltips, tableaux, exports et Radio Snapshot, sans persister de copie divergente du libellé.
+- Complète Manage Graph avec affichage Points/Ligne/Points + ligne par série, suppression individuelle ou totale, réorganisation, couleurs, axes et validation explicite.
+- Met à jour immédiatement le titre sur la première série restante et conserve un panneau vide réutilisable après la suppression de toutes les métriques.
+
 ## 1.144.8 (patch) — Clic Map et remplacement des lignes radio — 2026-11-06 (BC4)
 
 - Maintient le gestionnaire de clic actif pendant les changements de métrique, de capture et la recréation des couches MapLibre.
