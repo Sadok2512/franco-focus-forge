@@ -378,6 +378,7 @@ export function DriveRsrpLayer({
   const analysis = needsLegacyFallback ? legacyAnalysis : mapAnalysis;
   const analysisData = hostMapData ?? analysis.data;
   const analysisReady = hostMapData !== undefined || analysis.isSuccess;
+  const analysisSettled = analysisReady || analysis.isError;
   /** What arrived before any pairing: decides whether the capture's GPS log is even needed. */
   const bare = useMemo(() => driveRsrpDiagnostics(analysisData), [analysisData]);
   const needsGps =
@@ -390,9 +391,11 @@ export function DriveRsrpLayer({
       if (!effectiveCaptureId) throw new Error("Missing capture");
       return getSignaling(projectId, "points", { capture_id: effectiveCaptureId }, signal);
     },
-    // The shared map framing needs the selected capture route even when the
-    // metric rows already carry coordinates (or contain no RSRP at all).
-    enabled: !!effectiveCaptureId && (needsGps || Boolean(onRouteChange)),
+    // Fetch the GPS stream only when map rows cannot be positioned.  When
+    // `/metrics/map` already carries exact/previous-fix coordinates, those
+    // same proven points frame the route and a second multi-megabyte
+    // `/signaling/points` response would duplicate the data.
+    enabled: !!effectiveCaptureId && needsGps,
     staleTime: 60_000,
   });
   const allPositions = useMemo<RsrpPosition[]>(() => {
@@ -436,6 +439,7 @@ export function DriveRsrpLayer({
     [features, hostOwnsPoints, selectedPoint?.seq],
   );
   useEffect(() => {
+    if (!analysisSettled || (needsGps && gps.isPending)) return;
     const routePositions = gps.data?.markers?.length ? gps.data.markers : allPositions;
     const captureRoute = routePositions
       .filter(
@@ -449,7 +453,7 @@ export function DriveRsrpLayer({
     onRouteChange?.(
       captureRoute.length ? captureRoute : features.map((feature) => feature.geometry.coordinates),
     );
-  }, [allPositions, features, gps.data?.markers, onRouteChange]);
+  }, [allPositions, analysisSettled, features, gps.data?.markers, gps.isPending, needsGps, onRouteChange]);
   const pointLinks = useMemo(
     () => drivePoints.map((point) => ({ point, links: certifiedPointCellLinks(point) })),
     [drivePoints],

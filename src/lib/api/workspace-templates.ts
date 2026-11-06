@@ -17,7 +17,10 @@ const ChartConfigurationSchema = z
     yMetric: z.string(),
     groupBy: z.enum(["none", "operator", "band", "operator_band", "dor"]),
     statistic: z.enum(["value", "p10", "p50", "p90"]).nullable(),
-    curveType: z.enum(["points", "line", "line_points"]).optional(),
+    curveType: z
+      .enum(["points", "line", "line_points"])
+      .nullable()
+      .optional(),
   })
   .strict();
 

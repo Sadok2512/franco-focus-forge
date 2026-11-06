@@ -52,7 +52,7 @@ export const MetricSchema = z.object({
 const MetricCatalogNodePayloadSchema = z
   .object({
     node_id: z.string(),
-    parent_id: z.string().nullable(),
+    parent_id: z.string().nullable().optional(),
     order: z.number().int(),
     label: z.string(),
     display_code_lisible: z.string().nullable().optional(),
@@ -66,23 +66,23 @@ const MetricCatalogNodePayloadSchema = z
     simple_status: z.enum(["ok", "empty", "open"]).nullable().optional(),
     tree_visible: z.boolean().optional(),
     kind: z.enum(["KPI", "KPI_CATEGORICAL", "DIMENSION"]).nullable().optional(),
-    note: z.string().nullable(),
-    source: z.string().nullable(),
+    note: z.string().nullable().optional(),
+    source: z.string().nullable().optional(),
     // 1.107.0 — ajout "tech" (racine Technology) et "event" (NFF event,
     // parent des feuilles cellule). "group"/"metric" conservés pour le
     // fallback legacy catalogue_v6.
     node_type: z.enum(["tech", "category", "group", "metric", "event", "leaf"]),
-    analytics_tab: z.enum(["metrics"]).nullable(),
-    metric_id: z.string().nullable(),
-    selection: z.string().nullable(),
-    event: z.string().nullable(),
-    field_idx: z.number().int().nullable(),
-    source_column: z.string().nullable(),
+    analytics_tab: z.enum(["metrics"]).nullable().optional(),
+    metric_id: z.string().nullable().optional(),
+    selection: z.string().nullable().optional(),
+    event: z.string().nullable().optional(),
+    field_idx: z.number().int().nullable().optional(),
+    source_column: z.string().nullable().optional(),
     unit: z.string(),
     // 1.107.0 — cell en string libre nullable : 2.50.5 ne mappe pas encore
     // vers "pcell"/"scell*"/"pscell" ; le badge PER CELL est dérivé par le
     // sidebar depuis `metric_id` (suffixe `@<cell_type>`).
-    cell: z.string().nullable(),
+    cell: z.string().nullable().optional(),
     technology: z.string().nullable().optional(),
     metric_label: z.string().nullable().optional(),
     cell_label: z.string().nullable().optional(),
@@ -95,9 +95,9 @@ const MetricCatalogNodePayloadSchema = z
       .nullable()
       .optional(),
     n: z.number().int(),
-    proof: z.string().nullable(),
+    proof: z.string().nullable().optional(),
     selectable: z.boolean(),
-    reason: z.string().nullable(),
+    reason: z.string().nullable().optional(),
   })
   .superRefine((node, context) => {
     if (node.node_type === "leaf" && node.analytics_tab !== "metrics") {

@@ -136,12 +136,13 @@ export function useSitesLayer(
   filters: SitesLayerFilters,
   labels: SitesLayerLabels,
   display: SitesLayerDisplay = { beams: true, labels: false },
-  options: { sitesMinZoom?: number } = {},
+  options: { sitesMinZoom?: number; deferFetch?: boolean } = {},
 ) {
   // Embedded maps (Signaling View) can gate site points to a minimum zoom so
   // the GPS track stays readable; the Map page keeps the default 0 (every
   // zoom). Presentation only — never clustering.
   const sitesMinZoom = Math.max(0, options.sitesMinZoom ?? 0);
+  const deferFetch = options.deferFetch ?? false;
   const [status, setStatus] = useState<SitesLayerStatus>({
     loading: false,
     error: null,
@@ -156,7 +157,7 @@ export function useSitesLayer(
   const sitesDataRef = useRef<GeoJSON.Feature[]>([]);
 
   const fetchForCurrentBbox = useCallback(() => {
-    if (!map || (!sitesEnabled && !cellsEnabled)) return;
+    if (!map || deferFetch || (!sitesEnabled && !cellsEnabled)) return;
     const bounds = map.getBounds();
     const zoom = Math.max(MAP_MIN_ZOOM, map.getZoom());
     const sw = bounds.getSouthWest();
@@ -205,7 +206,7 @@ export function useSitesLayer(
           zoom,
         }));
       });
-  }, [map, sitesEnabled, cellsEnabled, filters.technos, filters.bands, filters.operators, sitesMinZoom]);
+  }, [map, deferFetch, sitesEnabled, cellsEnabled, filters.technos, filters.bands, filters.operators, sitesMinZoom]);
 
   useEffect(() => {
     if (!map) return;
@@ -472,7 +473,14 @@ export function useSitesLayer(
     };
     const scheduleFetch = () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(fetchForCurrentBbox, 250);
+      const fetchWhenIdle = () => {
+        if (map.isMoving?.()) {
+          debounceRef.current = setTimeout(fetchWhenIdle, 100);
+          return;
+        }
+        fetchForCurrentBbox();
+      };
+      debounceRef.current = setTimeout(fetchWhenIdle, 250);
     };
     // A parsed style can already accept overlays while satellite tiles are
     // still loading. isStyleLoaded() also waits for those tiles; waiting for
@@ -492,7 +500,7 @@ export function useSitesLayer(
         debounceRef.current = setTimeout(initialFetch, 50);
         return;
       }
-      fetchForCurrentBbox();
+      scheduleFetch();
     };
     initialFetch();
     return () => {

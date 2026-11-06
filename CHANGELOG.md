@@ -1,3 +1,9 @@
+## 1.145.2 (patch) — Chargement KPI et Map allégé — 2026-11-07 (BC4)
+
+- Réutilise les points géolocalisés de la Map pour cadrer le parcours sans second chargement Signaling, et attend le cadrage final avant les requêtes sites/cellules.
+- Charge MapLibre uniquement lorsqu’une carte est effectivement montée et demande la projection compacte du catalogue Metrics.
+- Accepte le contrat backend `curveType=null` des anciens Templates afin d’éviter quatre tentatives réseau identiques.
+
 ## 1.145.1 (patch) — Manage Series compact — 2026-11-06 (BC1)
 
 - Réduit Manage Series à un popover de 352 px avec une ligne compacte par KPI et application immédiate de la visibilité, couleur, axe, suppression et mode d’affichage.

@@ -21,8 +21,9 @@ export const getMetrics = (
   const captureIds = Array.isArray(captureIdsOrSignal) ? captureIdsOrSignal : [];
   const signal = Array.isArray(captureIdsOrSignal) ? requestSignal : captureIdsOrSignal;
   const query = new URLSearchParams();
+  query.set("compact", "true");
   for (const captureId of captureIds) query.append("capture_id", captureId);
-  const suffix = query.size ? `?${query}` : "";
+  const suffix = `?${query}`;
   return kpiFetch(
     `/projects/${encodeURIComponent(p)}/metrics${suffix}`,
     MetricCatalogResponseSchema,

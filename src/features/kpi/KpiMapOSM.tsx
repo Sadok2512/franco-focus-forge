@@ -22,14 +22,16 @@ import { MAP_HEIGHT_PX, readMapHeight, writeMapHeight, type MapHeightSetting } f
 import { MapRfPanelProvider } from "./map-rf-panel";
 import { BASEMAP_EXTRA_SOURCES, applyBasemap, basemapStyleParts, readBasemap } from "./basemaps";
 
-// Start the map runtime as soon as the KPI map module is evaluated. Waiting
-// for the card effect added a full parse/evaluation turn before the first OSM
-// tile request on a cold workspace.
-const maplibreRuntime = Promise.all([
-  import("maplibre-gl"),
-  import("maplibre-gl/dist/maplibre-gl.css"),
-  import("maplibre-gl/dist/maplibre-gl-worker.mjs?url"),
-]);
+// Load the heavy map runtime only when a map is actually mounted. Keep the
+// promise shared so several workspace maps still reuse one import.
+let maplibreRuntime: Promise<unknown[]> | undefined;
+function loadMaplibreRuntime(): Promise<unknown[]> {
+  return (maplibreRuntime ??= Promise.all([
+    import("maplibre-gl"),
+    import("maplibre-gl/dist/maplibre-gl.css"),
+    import("maplibre-gl/dist/maplibre-gl-worker.mjs?url"),
+  ]));
+}
 
 // 1.21.0 — Couleurs de marque opérateurs (identiques à KPI/Chart).
 const OPERATOR_COLORS: Array<{ op: string; hex: string }> = [
@@ -55,6 +57,7 @@ function SitesLayerHarness({
   mapHeight,
   onMapHeightChange,
   onOpenNewTab,
+  deferSites = false,
 }: {
   layersLegend?: ReactNode;
   map: MlMap | null;
@@ -69,6 +72,7 @@ function SitesLayerHarness({
   mapHeight?: MapHeightSetting;
   onMapHeightChange?: (value: MapHeightSetting) => void;
   onOpenNewTab?: (() => void) | undefined;
+  deferSites?: boolean;
 }) {
   const { t } = useTranslation();
   const {
@@ -99,7 +103,9 @@ function SitesLayerHarness({
     }),
     [t],
   );
-  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display);
+  const status = useSitesLayer(map, enabled, cellsEnabled, filters, labels, display, {
+    deferFetch: deferSites,
+  });
   const truncated = [status.sites, status.cells].some((response) =>
     Boolean(response?.reason?.startsWith("truncated")),
   );
@@ -178,6 +184,7 @@ export function KpiMapOSM({
   workspace = false,
   layersLegend,
   onOpenNewTab,
+  deferSites = false,
 }: {
   layersLegend?: ReactNode;
   center?: [number, number];
@@ -201,6 +208,8 @@ export function KpiMapOSM({
   sitesLayerEnabled?: boolean;
   workspace?: boolean;
   onOpenNewTab?: (() => void) | undefined;
+  /** Delay the first bbox request until the host resolves its opening frame. */
+  deferSites?: boolean;
 }) {
   const { t: translate, i18n: locale } = useTranslation();
   const readyCallback = useRef(onMapReady);
@@ -281,7 +290,9 @@ export function KpiMapOSM({
   useEffect(() => {
     let disposed = false;
     (async () => {
-      const [maplibregl, , worker] = await maplibreRuntime;
+      const [maplibreModule, , workerModule] = await loadMaplibreRuntime();
+      const maplibregl = maplibreModule as typeof import("maplibre-gl");
+      const worker = workerModule as { default: string };
       // 1.106.2 — MapLibre v6 : le worker calculé par Vite échoue
       // (« Worker failed to load »), la carte restait blanche. Même
       // correctif que SignalingMap/AssistantMap : worker bundlé explicite.
@@ -570,6 +581,7 @@ export function KpiMapOSM({
           layersLegend={layersLegend}
           mapHeight={mapHeight}
           onOpenNewTab={onOpenNewTab}
+          deferSites={deferSites}
           {...(heightKey ? { onMapHeightChange: changeMapHeight } : {})}
         />
       )}
