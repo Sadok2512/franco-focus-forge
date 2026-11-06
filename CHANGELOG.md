@@ -1,3 +1,9 @@
+## 1.145.0 (minor) — Filtres et coloration L3 Signaling — 2026-11-06 (BC4)
+
+- Place dans la toolbar L3 deux popovers indépendants « Message filter » et « Color messages » : catégories certifiées, noms exacts, presets, règles pastel réordonnables et priorité explicite.
+- Applique le filtre à la population paginée complète et vérifiée de la capture, conserve la sélection hors filtre et persiste filtres, couleurs, colonnes, séparation et plein écran par Workspace.
+- Utilise toute la hauteur disponible en plein écran local et distingue les états payload Décodé, Brut disponible, Non décodé, Aucun payload, Identité non vérifiée et Erreur de chargement sans fabriquer de contenu.
+
 ## 1.144.9 (patch) — Noms catalogue canoniques et gestion multi-séries — 2026-11-06 (BC1)
 
 - Utilise strictement `display_code_lisible` du catalogue dans les titres, légendes, tooltips, tableaux, exports et Radio Snapshot, sans persister de copie divergente du libellé.

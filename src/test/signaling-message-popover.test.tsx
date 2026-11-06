@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { MessageFilterPopover } from "@/features/signaling/MessageFilterPopover";
-import type { MessageSelection } from "@/features/signaling/message-filter";
+import { ALL_MESSAGE_FILTERS, type MessageFilterState } from "@/features/signaling/message-filter";
 import "@/lib/i18n";
 
 const types = [
@@ -24,18 +24,16 @@ const types = [
   },
 ];
 
-const openAndExpand = (...channelIds: string[]) => {
+const openFilter = () => {
   fireEvent.click(screen.getByTestId("message-filter-trigger"));
-  fireEvent.click(screen.getByTestId("tree-chevron-LTE"));
-  for (const id of channelIds) fireEvent.click(screen.getByTestId(`tree-chevron-LTE/${id}`));
 };
 
 describe("transactional popup", () => {
-  it("opens with every group closed: only technologies are listed", () => {
+  it("shows presets, certified categories and exact message names", () => {
     render(
       <MessageFilterPopover
         types={types}
-        selection={null}
+        filter={ALL_MESSAGE_FILTERS}
         onApply={() => {}}
         onRequest={() => {}}
         loading={false}
@@ -43,23 +41,25 @@ describe("transactional popup", () => {
       />,
     );
     fireEvent.click(screen.getByTestId("message-filter-trigger"));
-    expect(screen.getByTestId("tree-tech-LTE")).toBeInTheDocument();
-    expect(screen.getByTestId("tree-chevron-LTE")).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByRole("checkbox", { name: "Paging · RRC LTE" })).not.toBeInTheDocument();
-    expect(screen.queryByTestId("tree-channel-LTE/PCCH")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "RRC only" })).toBeInTheDocument();
+    expect(screen.getByRole("checkbox", { name: "PCCH / Paging" })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("checkbox", { name: "Paging" })).toBeInTheDocument();
   });
 
   it("Cancel leaves the applied selection untouched; Apply persists across reopen", async () => {
     const apply = vi.fn();
     function Harness() {
-      const [selection, setSelection] = useState<MessageSelection>(null);
+      const [filter, setFilter] = useState<MessageFilterState>(ALL_MESSAGE_FILTERS);
       return (
         <MessageFilterPopover
           types={types}
-          selection={selection}
+          filter={filter}
           onApply={(v) => {
             apply(v);
-            setSelection(v);
+            setFilter(v);
           }}
           onRequest={() => {}}
           loading={false}
@@ -68,21 +68,23 @@ describe("transactional popup", () => {
       );
     }
     render(<Harness />);
-    openAndExpand("PCCH");
-    fireEvent.click(screen.getByRole("checkbox", { name: "Paging · RRC LTE" }));
+    openFilter();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Paging" }));
     expect(apply).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-    openAndExpand("PCCH");
-    expect(screen.getByRole("checkbox", { name: "Paging · RRC LTE" })).toHaveAttribute(
+    openFilter();
+    expect(screen.getByRole("checkbox", { name: "Paging" })).toHaveAttribute(
       "aria-checked",
       "true",
     );
-    fireEvent.click(screen.getByRole("checkbox", { name: "Paging · RRC LTE" }));
+    fireEvent.click(screen.getByRole("checkbox", { name: "Paging" }));
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
-    expect(apply).toHaveBeenCalledWith(["request"]);
-    openAndExpand("PCCH");
+    expect(apply).toHaveBeenCalledWith(
+      expect.objectContaining({ names: ["RRCConnectionRequest"] }),
+    );
+    openFilter();
     await waitFor(() =>
-      expect(screen.getByRole("checkbox", { name: "Paging · RRC LTE" })).toHaveAttribute(
+      expect(screen.getByRole("checkbox", { name: "Paging" })).toHaveAttribute(
         "aria-checked",
         "false",
       ),

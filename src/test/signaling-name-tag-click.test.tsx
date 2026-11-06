@@ -86,13 +86,16 @@ function renderTimeline() {
     link_rule_counts: {},
     rule_version: null,
   });
-  client.setQueryData(["signaling-rf-radio", "p", "c"], {
+  client.setQueryData(
+    ["signaling-rf-radio", "p", "c", ["cell_rsrp", "cell_rsrq", "ci_rs_snr"]],
+    {
     project_id: "p",
     capture_id: "c",
     result_id: "r",
     duration_s: 100,
     series: [{ code: "cell_rsrp", points: [{ seq: 1, t_rel_s: 5, value: -98.2 }] }],
-  });
+    },
+  );
   render(
     <QueryClientProvider client={client}>
       <RfTimeline

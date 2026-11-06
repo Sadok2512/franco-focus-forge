@@ -6,7 +6,7 @@ import { TimeNavigator } from "./TimeNavigator";
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { emptyCursor, eventMessage, type TimelineCursorState } from "./cursor";
-import { lazy, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { lazy, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts } from "echarts";
 import type { Map as MlMap, GeoJSONSource } from "maplibre-gl";
@@ -110,9 +110,15 @@ import {
   messageTypes,
   messagePage,
   messageRowsCsv,
-  reconcileMessageSelection,
+  ALL_MESSAGE_FILTERS,
+  parseMessageFilter,
+  selectionForMessageFilter,
+  type MessageFilterState,
   type MessageSelection,
 } from "./message-filter";
+import { MessageFilterPopover } from "./MessageFilterPopover";
+import { MessageColorPopover } from "./MessageColorPopover";
+import { messageRowColor, parseMessageColoring, type MessageColoring } from "./message-coloring";
 import "./signaling.css";
 
 const RfTimeline = lazy(() =>
@@ -143,6 +149,18 @@ const colors = layers.map((layer) => rfProtocolColors[layer]!);
 /** Grey of the plotted GPS route line. */
 const ROUTE_COLOR = "#64748b";
 const shown = (value: unknown) => (value === null || value === undefined ? "—" : String(value));
+type PayloadStatus = "decoded" | "notDecoded" | "noPayload" | "identityUnverified";
+function payloadStatus(details: {
+  parameters: unknown[];
+  hex: string | null;
+  hex_reason: string | null;
+}): PayloadStatus {
+  if (details.parameters.length) return "decoded";
+  if (/identity|identit|unverified|non certifi/i.test(details.hex_reason ?? ""))
+    return "identityUnverified";
+  if (details.hex) return "notDecoded";
+  return "noPayload";
+}
 
 // V10 column catalog lives in message-columns.ts (catalog, persistence, Info/RRC/radio rules).
 
@@ -1098,7 +1116,12 @@ export function SignalingPage({
 }) {
   const { t } = useTranslation();
   const pointSync = usePointSync();
+  const workspaceStorageId = `${projectId}.${persistenceId ?? "standalone"}`;
   const inspectionLayoutKey = `bc4.signaling.inspection-layout.v1.${projectId}.${persistenceId ?? "standalone"}`;
+  const messageFilterKey = `bc4.signaling.message-filter.v2.${workspaceStorageId}`;
+  const messageColorKey = `bc4.signaling.message-colors.v1.${workspaceStorageId}`;
+  const columnsStorageKey = `${COLUMNS_STORAGE_KEY}.${workspaceStorageId}`;
+  const expandedStorageKey = `bc4.signaling.inspection-expanded.v1.${workspaceStorageId}`;
   const [inspectionLayout] = useState<Layout | undefined>(() => {
     if (!embedded || typeof window === "undefined") return undefined;
     try {
@@ -1148,15 +1171,18 @@ export function SignalingPage({
   const [colConfig, setColConfig] = useState<ColumnConfig>(() =>
     typeof window === "undefined"
       ? defaultColumns()
-      : parseColumns(window.localStorage.getItem(COLUMNS_STORAGE_KEY)),
+      : parseColumns(
+          window.localStorage.getItem(columnsStorageKey) ??
+            window.localStorage.getItem(COLUMNS_STORAGE_KEY),
+        ),
   );
   useEffect(() => {
     try {
-      window.localStorage.setItem(COLUMNS_STORAGE_KEY, JSON.stringify(colConfig));
+      window.localStorage.setItem(columnsStorageKey, JSON.stringify(colConfig));
     } catch {
       /* storage unavailable: keep session config */
     }
-  }, [colConfig]);
+  }, [colConfig, columnsStorageKey]);
   const shownCols = visibleColumns(colConfig);
   // Inspector tab state is independent of selection and of every query key.
   type InspectorTab = "Payload" | "Paramètres" | "Call Flow" | "Détails" | "Hexadécimal";
@@ -1167,7 +1193,72 @@ export function SignalingPage({
   // le bug react-resizable-panels de remount dynamique.
   const [mapVisible, setMapVisible] = useState(!embedded);
   const [timelineVisible, setTimelineVisible] = useState(!embedded);
-  const [inspectionExpanded, setInspectionExpanded] = useState(false);
+  const pageRootRef = useRef<HTMLElement | null>(null);
+  const expandedFrameRef = useRef<{ top: number; left: number; width: number; bottomGap: number } | null>(null);
+  const [inspectionExpanded, setInspectionExpanded] = useState(
+    () =>
+      typeof window !== "undefined" && window.localStorage.getItem(expandedStorageKey) === "true",
+  );
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(expandedStorageKey, String(inspectionExpanded));
+    } catch {
+      /* session only */
+    }
+  }, [expandedStorageKey, inspectionExpanded]);
+  const toggleInspectionExpanded = () => {
+    if (!inspectionExpanded && embedded) {
+      const viewport =
+        pageRootRef.current?.closest(".kpi-workspace-grid-viewport") ??
+        document.querySelector(".kpi-workspace-grid-viewport");
+      const rect = viewport?.getBoundingClientRect();
+      const appHeader = document.querySelector(".app-header")?.getBoundingClientRect();
+      if (rect)
+        expandedFrameRef.current = {
+          top: Math.max(8, appHeader?.bottom ?? rect.top),
+          left: 8,
+          width: Math.max(320, window.innerWidth - 16),
+          // Fullscreen owns the remaining viewport. The workspace tabs bar is
+          // part of the normal flow and must not reduce the expanded height.
+          bottomGap: 12,
+        };
+    }
+    setInspectionExpanded((expanded) => !expanded);
+  };
+  useLayoutEffect(() => {
+    if (!inspectionExpanded || !embedded) return;
+    const shell = pageRootRef.current?.closest<HTMLElement>(".kpi-panel-shell");
+    if (!shell) return;
+    if (!expandedFrameRef.current) {
+      const viewport = document.querySelector(".kpi-workspace-grid-viewport");
+      const rect = (viewport ?? shell).getBoundingClientRect();
+      const appHeader = document.querySelector(".app-header")?.getBoundingClientRect();
+      expandedFrameRef.current = {
+        top: Math.max(8, appHeader?.bottom ?? rect.top),
+        left: 8,
+        width: Math.max(320, window.innerWidth - 16),
+        bottomGap: 12,
+      };
+    }
+    const applyFrame = () => {
+      const frame = expandedFrameRef.current;
+      if (!frame) return;
+      shell.style.position = "fixed";
+      shell.style.inset = "auto";
+      shell.style.top = `${frame.top}px`;
+      shell.style.left = `${frame.left}px`;
+      shell.style.width = `${frame.width}px`;
+      shell.style.height = `${Math.max(240, window.innerHeight - frame.top - frame.bottomGap)}px`;
+      shell.style.zIndex = "40";
+    };
+    applyFrame();
+    window.addEventListener("resize", applyFrame);
+    return () => {
+      window.removeEventListener("resize", applyFrame);
+      for (const property of ["position", "inset", "top", "left", "width", "height", "z-index"])
+        shell.style.removeProperty(property);
+    };
+  }, [embedded, inspectionExpanded]);
   const [inspectionVisible, setInspectionVisible] = useState(true);
   const [metricsVisible, setMetricsVisible] = useState(false);
   const inspectionPanelRef = useRef<PanelImperativeHandle>(null);
@@ -1366,8 +1457,34 @@ export function SignalingPage({
     () => ({ ...base, from_s: range?.[0], to_s: range?.[1] }),
     [base, range],
   );
-  const [messageSelection, setMessageSelection] = useState<MessageSelection>(null);
-  const [catalogRequested, setCatalogRequested] = useState(false);
+  const [messageFilter, setMessageFilter] = useState<MessageFilterState>(() =>
+    typeof window === "undefined"
+      ? ALL_MESSAGE_FILTERS
+      : parseMessageFilter(window.localStorage.getItem(messageFilterKey)),
+  );
+  const [messageColoring, setMessageColoring] = useState<MessageColoring>(() =>
+    typeof window === "undefined"
+      ? parseMessageColoring(null)
+      : parseMessageColoring(window.localStorage.getItem(messageColorKey)),
+  );
+  const [messagePopover, setMessagePopover] = useState<"filter" | "color" | null>(null);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(messageFilterKey, JSON.stringify(messageFilter));
+    } catch {
+      /* session only */
+    }
+  }, [messageFilter, messageFilterKey]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(messageColorKey, JSON.stringify(messageColoring));
+    } catch {
+      /* session only */
+    }
+  }, [messageColorKey, messageColoring]);
+  const [catalogRequested, setCatalogRequested] = useState(
+    messageFilter.categories !== null || messageFilter.names !== null,
+  );
   const catalog = useQuery({
     queryKey: ["signaling-message-types", projectId, capture],
     enabled: !!capture && catalogRequested,
@@ -1377,9 +1494,10 @@ export function SignalingPage({
     retry: false,
   });
   const types = useMemo(() => messageTypes(catalog.data?.rows ?? []), [catalog.data]);
-  useEffect(() => {
-    if (catalog.data) setMessageSelection((old) => reconcileMessageSelection(old, types));
-  }, [catalog.data, types]);
+  const messageSelection: MessageSelection = useMemo(
+    () => selectionForMessageFilter(types, messageFilter),
+    [messageFilter, types],
+  );
   const selectedPopulation = useQuery({
     queryKey: ["signaling-message-population", projectId, filtered, sort, order],
     enabled: !!capture && messageSelection !== null && messageSelection.length > 0,
@@ -1805,6 +1923,7 @@ export function SignalingPage({
 
   return (
     <main
+      ref={pageRootRef}
       className={embedded ? "h-full min-h-0 p-0" : "p-3"}
       data-testid={embedded ? "signaling-inspection-embedded" : "signaling-page"}
     >
@@ -1919,17 +2038,6 @@ export function SignalingPage({
                   excludedEventTypes={excludedEventTypes}
                   counts={catalog.data?.protocol_counts ?? remoteListing.data?.protocol_counts}
                   total={listing.data?.total}
-                  selection={messageSelection}
-                  types={types}
-                  catalogLoading={catalog.isPending}
-                  catalogError={catalog.isError}
-                  onRequestTypes={() => {
-                    setCatalogRequested(true);
-                    if (catalog.isError) void catalog.refetch();
-                  }}
-                  onApply={(value) => {
-                    setMessageSelection(value);
-                  }}
                   onTechnology={(v) => {
                     setTechnology(v);
                     resetPage();
@@ -1972,7 +2080,7 @@ export function SignalingPage({
                     setSearch("");
                     setProcedure("");
                     setRange(undefined);
-                    setMessageSelection(null);
+                    setMessageFilter(ALL_MESSAGE_FILTERS);
                     setExcludedEventTypes([]);
                     setPage(1);
                   }}
@@ -2242,6 +2350,33 @@ export function SignalingPage({
                             }}
                           />
                         </label>
+                        <MessageFilterPopover
+                          types={types}
+                          filter={messageFilter}
+                          onApply={(next) => {
+                            setMessageFilter(next);
+                            resetPage();
+                          }}
+                          onRequest={() => {
+                            setCatalogRequested(true);
+                            if (catalog.isError) void catalog.refetch();
+                          }}
+                          loading={!catalogRequested || catalog.isPending}
+                          error={catalog.isError}
+                          disabled={!capture}
+                          open={messagePopover === "filter"}
+                          onOpenChange={(open) => setMessagePopover(open ? "filter" : null)}
+                        />
+                        <MessageColorPopover
+                          value={messageColoring}
+                          types={types}
+                          onApply={setMessageColoring}
+                          open={messagePopover === "color"}
+                          onOpenChange={(open) => {
+                            if (open) setCatalogRequested(true);
+                            setMessagePopover(open ? "color" : null);
+                          }}
+                        />
                         <select
                           className="sig-select"
                           aria-label={t("sigTable.layer")}
@@ -2446,7 +2581,7 @@ export function SignalingPage({
                             data-testid="sig-clear-filters"
                             disabled={!filtersActive}
                             onClick={() => {
-                              setMessageSelection(null);
+                              setMessageFilter(ALL_MESSAGE_FILTERS);
                               setSearch("");
                               setProtocols(layers);
                               setDirection("");
@@ -2475,7 +2610,7 @@ export function SignalingPage({
                             )}
                             aria-pressed={inspectionExpanded}
                             data-testid="sig-messages-fullscreen"
-                            onClick={() => setInspectionExpanded((expanded) => !expanded)}
+                            onClick={toggleInspectionExpanded}
                           >
                             {inspectionExpanded ? (
                               <Minimize size={14} aria-hidden="true" />
@@ -2566,6 +2701,7 @@ export function SignalingPage({
                                 <tr
                                   className="sig-virtual-row"
                                   key={r.seq}
+                                  style={{ backgroundColor: messageRowColor(r, messageColoring) }}
                                   data-seq={r.seq}
                                   aria-selected={r.seq === seq}
                                   data-event-linked={linked}
@@ -2790,6 +2926,19 @@ export function SignalingPage({
                                 className="flex min-h-0 flex-1 flex-col break-words px-3 pt-2"
                                 data-testid="inspector-content"
                               >
+                                <div className="sig-payload-status" data-testid="payload-status">
+                                  <span data-status={payloadStatus(details.data)}>
+                                    {t(`sigPayload.${payloadStatus(details.data)}`)}
+                                  </span>
+                                  {details.data.hex && details.data.parameters.length > 0 && (
+                                    <span data-status="rawAvailable">
+                                      {t("sigPayload.rawAvailable")}
+                                    </span>
+                                  )}
+                                  <small>
+                                    {details.data.hex_reason ?? details.data.tree_source}
+                                  </small>
+                                </div>
                                 {inspectorTab === "Payload" ? (
                                   details.data.parameters.length ? (
                                     <div className="min-h-0 flex-1">

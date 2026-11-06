@@ -15,7 +15,64 @@ export type MessageType = {
   channelSource?: ChannelSource;
   /** Catalogue/decoded disagreement kept for reporting; the source channel is never overwritten. */
   conflict?: string | null;
+  /** RAT supplied by the row population. It is never inferred from a name. */
+  radioTechnology?: string | null;
 };
+
+export type MessageCategoryId =
+  | "BCCH"
+  | "PAGING"
+  | "DL_CCCH"
+  | "UL_CCCH"
+  | "DL_DCCH"
+  | "UL_DCCH"
+  | "NAS_LTE"
+  | "NAS_5G"
+  | "RRC_LTE"
+  | "RRC_NR"
+  | "S1AP"
+  | "NGAP"
+  | "X2AP"
+  | "XNAP"
+  | "IMS_SIP"
+  | "OTHER";
+
+export type MessageFilterState = {
+  /** null means unrestricted, [] means explicitly no category. */
+  categories: MessageCategoryId[] | null;
+  /** Exact backend message names. null means unrestricted. */
+  names: string[] | null;
+  preset: string | null;
+};
+
+export const ALL_MESSAGE_FILTERS: MessageFilterState = {
+  categories: null,
+  names: null,
+  preset: "all",
+};
+
+export function parseMessageFilter(raw: string | null): MessageFilterState {
+  if (!raw) return ALL_MESSAGE_FILTERS;
+  try {
+    const value = JSON.parse(raw) as Partial<MessageFilterState>;
+    const names = value.names;
+    return {
+      categories:
+        value.categories === null || Array.isArray(value.categories)
+          ? (value.categories as MessageCategoryId[] | null)
+          : null,
+      names:
+        names === null
+          ? null
+          : Array.isArray(names)
+            ? names.filter((name): name is string => typeof name === "string")
+            : null,
+      preset: typeof value.preset === "string" ? value.preset : null,
+    };
+  } catch {
+    return ALL_MESSAGE_FILTERS;
+  }
+}
 export const messageTypeKey = (row: Pick<SignalingLine, "protocol" | "message_name">) =>
   JSON.stringify([row.protocol, row.message_name]);
 
@@ -31,7 +88,10 @@ export function messageTech(row: Pick<SignalingLine, "protocol" | "layer">): Mes
 }
 
 export function messageTypes(rows: SignalingLine[]): MessageType[] {
-  const groups = new Map<string, MessageType & { channels: Set<string | null> }>();
+  const groups = new Map<
+    string,
+    MessageType & { channels: Set<string | null>; radioTechnologies: Set<string | null> }
+  >();
   for (const row of rows) {
     const key = messageTypeKey(row);
     const channel = row.channel?.trim() || null;
@@ -39,6 +99,7 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
     if (found) {
       found.count++;
       found.channels.add(channel);
+      found.radioTechnologies.add(row.technology?.trim().toUpperCase() || null);
     } else
       groups.set(key, {
         key,
@@ -48,16 +109,26 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
         technology: messageTech(row),
         channel: null,
         channels: new Set([channel]),
+        radioTechnologies: new Set([row.technology?.trim().toUpperCase() || null]),
       });
   }
   return [...groups.values()]
-    .map(({ channels, ...type }): MessageType => {
+    .map(({ channels, radioTechnologies, ...type }): MessageType => {
+      const radioTechnology =
+        radioTechnologies.size === 1 ? ([...radioTechnologies][0] ?? null) : null;
       if (type.technology !== "LTE" && type.technology !== "NR")
-        return { ...type, channel: null, channelSource: "UNCLASSIFIED", conflict: null };
+        return {
+          ...type,
+          radioTechnology,
+          channel: null,
+          channelSource: "UNCLASSIFIED",
+          conflict: null,
+        };
       if (channels.size > 1)
         // Rows of one type disagree on the decoded channel: keep it visible as unclassified.
         return {
           ...type,
+          radioTechnology,
           channel: null,
           channelSource: "UNCLASSIFIED",
           conflict: [...channels].join("|"),
@@ -65,12 +136,91 @@ export function messageTypes(rows: SignalingLine[]): MessageType[] {
       const c = classifyRrc(type.technology, type.name, [...channels][0]);
       return {
         ...type,
+        radioTechnology,
         channel: c.logicalChannel,
         channelSource: c.classificationSource,
         conflict: c.conflict,
       };
     })
     .sort((a, b) => a.protocol.localeCompare(b.protocol) || a.name.localeCompare(b.name));
+}
+
+const protocolToken = (type: MessageType) =>
+  `${type.protocol} ${type.name}`.trim().toLocaleUpperCase();
+
+/** Categories are based on decoded/catalogued channels and explicit protocol fields only. */
+export function messageCategories(type: MessageType): MessageCategoryId[] {
+  const ids = new Set<MessageCategoryId>();
+  const token = protocolToken(type);
+  if (type.channel === "BCCH") ids.add("BCCH");
+  if (type.channel === "PCCH") ids.add("PAGING");
+  if (type.channel === "DL-CCCH") ids.add("DL_CCCH");
+  if (type.channel === "UL-CCCH") ids.add("UL_CCCH");
+  if (type.channel === "DL-DCCH") ids.add("DL_DCCH");
+  if (type.channel === "UL-DCCH") ids.add("UL_DCCH");
+  if (type.technology === "LTE") ids.add("RRC_LTE");
+  if (type.technology === "NR") ids.add("RRC_NR");
+  if (type.technology === "NAS" && type.radioTechnology === "LTE") ids.add("NAS_LTE");
+  if (type.technology === "NAS" && type.radioTechnology === "NR") ids.add("NAS_5G");
+  if (/\bS1AP\b/.test(token)) ids.add("S1AP");
+  if (/\bNGAP\b/.test(token)) ids.add("NGAP");
+  if (/\bX2AP\b/.test(token)) ids.add("X2AP");
+  if (/\bXNAP\b/.test(token)) ids.add("XNAP");
+  if (/\b(?:IMS|SIP)\b/.test(token)) ids.add("IMS_SIP");
+  if (!ids.size) ids.add("OTHER");
+  return [...ids];
+}
+
+export function selectionForMessageFilter(
+  types: MessageType[],
+  filter: MessageFilterState,
+): MessageSelection {
+  if (filter.categories === null && filter.names === null) return null;
+  const categories = filter.categories === null ? null : new Set(filter.categories);
+  const names = filter.names === null ? null : new Set(filter.names);
+  return types
+    .filter(
+      (type) =>
+        (categories === null || messageCategories(type).some((id) => categories.has(id))) &&
+        (names === null || names.has(type.name)),
+    )
+    .map((type) => type.key);
+}
+
+export function messageCategoryCounts(types: MessageType[]) {
+  const counts = new Map<MessageCategoryId, number>();
+  for (const type of types)
+    for (const id of messageCategories(type)) counts.set(id, (counts.get(id) ?? 0) + type.count);
+  return counts;
+}
+
+const nameContains = (type: MessageType, terms: RegExp) => terms.test(type.name);
+
+export function messagePreset(preset: string, types: MessageType[]): MessageFilterState {
+  if (preset === "all") return ALL_MESSAGE_FILTERS;
+  if (preset === "rrc") return { categories: ["RRC_LTE", "RRC_NR"], names: null, preset };
+  if (preset === "nas") return { categories: ["NAS_LTE", "NAS_5G"], names: null, preset };
+  if (preset === "rrc_nas")
+    return {
+      categories: ["RRC_LTE", "RRC_NR", "NAS_LTE", "NAS_5G"],
+      names: null,
+      preset,
+    };
+  if (preset === "control")
+    return { categories: ["BCCH", "PAGING", "DL_CCCH", "UL_CCCH"], names: null, preset };
+  if (preset === "paging") return { categories: ["PAGING"], names: null, preset };
+  if (preset === "call") return { categories: ["IMS_SIP"], names: null, preset };
+  const pattern =
+    preset === "mobility"
+      ? /handover|mobility|reconfiguration|reestablishment/i
+      : /failure|failed|reject|error|drop|rlf|scgfailure/i;
+  return {
+    categories: null,
+    names: [
+      ...new Set(types.filter((type) => nameContains(type, pattern)).map((type) => type.name)),
+    ],
+    preset,
+  };
 }
 
 const channelRank = (c: string | null) => {

@@ -9,7 +9,6 @@ import {
   FileText,
   Filter,
   Layers,
-  MailCheck,
   Network,
   Radio,
   RotateCcw,
@@ -19,8 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageFilterPopover, MessageLayerBadge } from "./MessageFilterPopover";
-import type { MessageSelection, MessageType } from "./message-filter";
+import { MessageLayerBadge } from "./MessageFilterPopover";
 
 function FilterSection({
   icon: Icon,
@@ -73,12 +71,6 @@ export function SignalingFilters(props: {
   excludedEventTypes: string[];
   counts?: Record<string, number> | undefined;
   total?: number | undefined;
-  selection: MessageSelection;
-  types: MessageType[];
-  catalogLoading: boolean;
-  catalogError: boolean;
-  onRequestTypes: () => void;
-  onApply: (v: MessageSelection) => void;
   onTechnology: (v: string) => void;
   onProtocols: (v: string[]) => void;
   onDirection: (v: string) => void;
@@ -159,21 +151,6 @@ export function SignalingFilters(props: {
               </label>
             ))}
           </div>
-        </FilterSection>
-        <FilterSection
-          icon={MailCheck}
-          title={t("sigFilters.messages")}
-          subtitle={t("sigFilters.messageSubtitle")}
-        >
-          <MessageFilterPopover
-            types={props.types}
-            selection={props.selection}
-            onApply={props.onApply}
-            onRequest={props.onRequestTypes}
-            loading={props.catalogLoading}
-            error={props.catalogError}
-            disabled={!props.capture}
-          />
         </FilterSection>
         <FilterSection icon={ArrowLeftRight} title={t("sigFilters.direction")}>
           <div className="sig-filter-directions">
