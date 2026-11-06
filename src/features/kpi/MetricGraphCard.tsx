@@ -264,12 +264,14 @@ function ManageGraphSeriesPopover({
   onReset,
   open,
   onOpenChange,
+  onClose,
 }: {
   settings: GraphSeriesSettings;
   onChange: (settings: GraphSeriesSettings) => void;
   onReset: () => GraphSeriesSettings;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onClose: () => void;
 }) {
   const { t } = useTranslation();
   const [dragged, setDragged] = useState<string | null>(null);
@@ -534,7 +536,7 @@ function ManageGraphSeriesPopover({
             type="button"
             className="kpi-button mr-auto"
             onClick={() => {
-              onOpenChange(false);
+              onClose();
               requestAnimationFrame(() =>
                 document.querySelector<HTMLInputElement>('[data-testid="metrics-search"]')?.focus(),
               );
@@ -559,7 +561,7 @@ function ManageGraphSeriesPopover({
             data-testid="manage-series-apply"
             onClick={() => {
               onChange(draft);
-              onOpenChange(false);
+              onClose();
             }}
           >
             {t("graphSeries.apply")}
@@ -709,7 +711,11 @@ export function MetricGraphCard({
     setSeriesManagerOpen(true);
   };
   const changeSeriesManagerOpen = (next: boolean) => {
-    if (!next && performance.now() - seriesManagerOpenedAt.current < 500) return;
+    // Closing the parent Dropdown transfers focus through the hidden Popover
+    // anchor. Radix emits a delayed false transition while the catalogue and
+    // graph data settle; ignore that transition, but explicit Apply/Add uses
+    // the direct onClose callback below.
+    if (!next && performance.now() - seriesManagerOpenedAt.current < 2_000) return;
     setSeriesManagerOpen(next);
   };
   const dropMetric = (raw: string) => {
@@ -892,6 +898,7 @@ export function MetricGraphCard({
               onReset={buildDefaultSeriesSettings}
               open={seriesManagerOpen}
               onOpenChange={changeSeriesManagerOpen}
+              onClose={() => setSeriesManagerOpen(false)}
             />
           )}
         </div>
