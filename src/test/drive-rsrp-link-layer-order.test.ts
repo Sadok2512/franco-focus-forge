@@ -9,11 +9,17 @@ import {
 } from "@/features/kpi/measurement-point-popup";
 
 describe("Drive RSRP cell-link presentation", () => {
-  it("paints neighbour, NR PSCell, then LTE Serving", () => {
-    expect(DRIVE_CELL_LINK_LAYER_SPECS.map((layer) => layer.kind)).toEqual([
-      "neighbour",
-      "nr_anchor",
-      "serving",
+  it("paints neighbour, NR PSCell, probable Serving, then proven Serving", () => {
+    expect(
+      DRIVE_CELL_LINK_LAYER_SPECS.map((layer) => [
+        layer.kind,
+        "confidence" in layer ? layer.confidence : null,
+      ]),
+    ).toEqual([
+      ["neighbour", null],
+      ["nr_anchor", null],
+      ["serving", "probable"],
+      ["serving", "proven"],
     ]);
   });
 
