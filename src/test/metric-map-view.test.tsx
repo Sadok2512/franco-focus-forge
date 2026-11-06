@@ -11,6 +11,7 @@ import {
   metricMapLinkFeatures,
   metricMapNumericExtent,
   MetricsWorkspace,
+  nearestMetricMapClickSequences,
   selectedMetricRadiusExpression,
   toggleMetricMapPoint,
 } from "@/features/kpi/MetricsWorkspace";
@@ -80,6 +81,26 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
+  it("lets an adjacent rendered point replace the enlarged active point", () => {
+    expect(
+      nearestMetricMapClickSequences([
+        { seq: 41, distancePx: 8.5 },
+        { seq: 42, distancePx: 0.2 },
+      ]),
+    ).toEqual([42]);
+  });
+
+  it("keeps coincident rendered sequences together for certified-link resolution", () => {
+    expect(
+      nearestMetricMapClickSequences([
+        { seq: 41, distancePx: 0.1 },
+        { seq: 42, distancePx: 0.1 },
+        { seq: 42, distancePx: 0.1 },
+        { seq: 43, distancePx: 3 },
+      ]),
+    ).toEqual([41, 42]);
+  });
+
   it("enlarges only the exact selected sequence", () => {
     const expression = selectedMetricRadiusExpression(3, 42);
     expect(expression).toEqual([

@@ -312,6 +312,38 @@ export function toggleMetricMapPoint(
     : { projectId, captureId, seq };
 }
 
+type MetricMapClickCandidate = {
+  seq: number;
+  distancePx: number;
+};
+
+/** Keep only the exact rendered measurements nearest to the pointer.
+ *
+ * MapLibre returns every circle whose painted radius contains the click. A
+ * previously selected circle can therefore be present in the hit stack even
+ * when the user is clicking an adjacent measurement. Resolving the nearest
+ * rendered centre prevents that old selection from swallowing the new click;
+ * coincident measurements remain together so the certified-evidence chooser
+ * can resolve them deterministically.
+ */
+export function nearestMetricMapClickSequences(
+  candidates: readonly MetricMapClickCandidate[],
+  tolerancePx = 0.75,
+): number[] {
+  const valid = candidates.filter(
+    (candidate) => Number.isFinite(candidate.seq) && Number.isFinite(candidate.distancePx),
+  );
+  const nearest = Math.min(...valid.map((candidate) => candidate.distancePx));
+  if (!Number.isFinite(nearest)) return [];
+  return [
+    ...new Set(
+      valid
+        .filter((candidate) => candidate.distancePx <= nearest + tolerancePx)
+        .map((candidate) => candidate.seq),
+    ),
+  ];
+}
+
 /** Keep at most the serving segment for the exact point selected in this KPI map. */
 export function activeMetricMapServingLink(
   features: ReturnType<typeof metricMapLinkFeatures>,
@@ -653,23 +685,16 @@ function MetricMap({
         "circle-color",
         categories ? categoryColorExpression(categories) : ["get", "color"],
       );
+      // Keep the hit target at its normal radius. The dedicated selected
+      // overlay below owns the enlarged visual ring and is intentionally not
+      // queried for clicks, so it cannot block an adjacent measurement.
       map.setPaintProperty(
         "metrics-v3",
         "circle-radius",
-        selectedMetricRadiusExpression(preferences.pointSize, selectedPoint?.seq),
+        metricRadiusExpression(preferences.pointSize),
       );
-      map.setPaintProperty("metrics-v3", "circle-stroke-width", [
-        "case",
-        ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
-        2.5,
-        0.5,
-      ]);
-      map.setPaintProperty("metrics-v3", "circle-stroke-color", [
-        "case",
-        ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
-        "#ffffff",
-        "rgba(15,23,42,0.55)",
-      ]);
+      map.setPaintProperty("metrics-v3", "circle-stroke-width", 0.5);
+      map.setPaintProperty("metrics-v3", "circle-stroke-color", "rgba(15,23,42,0.55)");
     } else {
       installMetricMapSource(
         map,
@@ -691,20 +716,14 @@ function MetricMap({
         filter: ["==", ["get", "seq"], -1],
         paint: {
           "circle-radius": activeMetricRadiusExpression(preferences.pointSize),
-          "circle-color": categories
-            ? categoryColorExpression(categories)
-            : ["get", "color"],
+          "circle-color": categories ? categoryColorExpression(categories) : ["get", "color"],
           "circle-stroke-width": 2.5,
           "circle-stroke-color": "#ffffff",
           "circle-opacity": 1,
         },
       });
     }
-    map.setFilter(SELECTED_METRIC_LAYER, [
-      "==",
-      ["get", "seq"],
-      selectedPoint?.seq ?? -1,
-    ]);
+    map.setFilter(SELECTED_METRIC_LAYER, ["==", ["get", "seq"], selectedPoint?.seq ?? -1]);
     map.setPaintProperty(
       SELECTED_METRIC_LAYER,
       "circle-radius",
@@ -756,26 +775,33 @@ function MetricMap({
   // render certified links; it must not register a second handler that can
   // toggle the same click back off.
   useEffect(() => {
-    if (!map?.getLayer("metrics-v3")) return;
+    if (!map) return;
     const click = (event: import("maplibre-gl").MapMouseEvent) => {
+      // Test layer existence at event time, not effect-install time. Metric or
+      // capture changes can recreate the source after this handler mounts.
+      if (!map.getLayer("metrics-v3")) return;
       const features = map.queryRenderedFeatures(event.point, { layers: ["metrics-v3"] });
       if (!features.length) return;
-      const active = features.find((feature) => {
-        const seq = Number(feature.properties?.["seq"]);
-        return (
-          Number.isFinite(seq) &&
-          sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq)
-        );
-      });
+      const sequences = nearestMetricMapClickSequences(
+        features.map((feature) => {
+          const coordinates =
+            feature.geometry.type === "Point" ? feature.geometry.coordinates : [NaN, NaN];
+          const rendered = map.project(coordinates as [number, number]);
+          return {
+            seq: Number(feature.properties?.["seq"]),
+            distancePx: Math.hypot(rendered.x - event.point.x, rendered.y - event.point.y),
+          };
+        }),
+      );
+      const active = sequences.some((seq) =>
+        sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq),
+      );
       if (active) {
         selectedPointRef.current = null;
         setSelectedPoint(null);
         pointSync.select(null);
         return;
       }
-      const sequences = features
-        .map((feature) => Number(feature.properties?.["seq"]))
-        .filter(Number.isFinite);
       const point = preferredCertifiedPoint(data?.map_points ?? [], sequences);
       if (!point) return;
       const selection: SelectedDrivePoint = {
@@ -806,12 +832,19 @@ function MetricMap({
       map.getCanvas().style.cursor = "";
     };
     map.on("click", click);
-    map.on("mouseenter", "metrics-v3", pointer);
-    map.on("mouseleave", "metrics-v3", noPointer);
+    // The click handler is always live. Cursor decoration is optional during
+    // the brief interval where a metric/capture transition has no layer.
+    const layerReady = Boolean(map.getLayer("metrics-v3"));
+    if (layerReady) {
+      map.on("mouseenter", "metrics-v3", pointer);
+      map.on("mouseleave", "metrics-v3", noPointer);
+    }
     return () => {
       map.off("click", click);
-      map.off("mouseenter", "metrics-v3", pointer);
-      map.off("mouseleave", "metrics-v3", noPointer);
+      if (layerReady) {
+        map.off("mouseenter", "metrics-v3", pointer);
+        map.off("mouseleave", "metrics-v3", noPointer);
+      }
     };
   }, [captureId, data, dropContext?.workspaceId, heightKey, map, pointSync, projectId]);
   useEffect(() => {

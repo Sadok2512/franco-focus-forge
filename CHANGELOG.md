@@ -1,3 +1,9 @@
+## 1.144.8 (patch) — Clic Map et remplacement des lignes radio — 2026-11-06 (BC4)
+
+- Maintient le gestionnaire de clic actif pendant les changements de métrique, de capture et la recréation des couches MapLibre.
+- Empêche le point précédemment agrandi de bloquer la sélection d'un point voisin : le clic choisit le centre rendu exact le plus proche, puis conserve la résolution certifiée pour les mesures superposées.
+- Conserve les lignes Serving, Neighbour et NR Anchor strictement liées au nouveau `(project_id, capture_id, seq)` publié par l'API, sans approximation géographique.
+
 ## 1.144.7 (patch) — Liens radio sur tous les KPI Map — 2026-11-06 (BC4)
 
 - Conserve les preuves Serving, Neighbour et NR Anchor du point API sélectionné même lorsque le KPI affiché n'est pas du RSRP.
