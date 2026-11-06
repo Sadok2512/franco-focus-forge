@@ -1251,6 +1251,7 @@ export function MetricsWorkspace({
   paneRequest,
   cardViewRequest,
   onRemove,
+  onTableClose,
   onVisualization,
   mapFillsAvailable = false,
   showEvents = true,
@@ -1276,6 +1277,7 @@ export function MetricsWorkspace({
   cardViewRequest?:
     { workspaceId: string; id: string; code: string; view: string; n: number } | undefined;
   onRemove?: ((code: string) => void) | undefined;
+  onTableClose?: ((preservedCodes: string[]) => void) | undefined;
   onVisualization?: ((code: string, view: MetricWorkspaceView) => void) | undefined;
   mapFillsAvailable?: boolean;
   showEvents?: boolean;
@@ -1354,6 +1356,11 @@ export function MetricsWorkspace({
     setCardPanelState({ workspaceId: cardPanelWorkspace, panels: loadCardPanels() });
   }
   const cardPanels = cardPanelState.panels;
+  const closeTablePanel = () => {
+    const cardCodes = new Set(cardPanels.map((panel) => panel.code));
+    setPane("charts");
+    onTableClose?.(selections.filter((code) => cardCodes.has(code)));
+  };
   const graphCodes = useMemo(
     () => [
       ...new Set(cardPanels.filter((panel) => panel.view === "graph").map((panel) => panel.code)),
@@ -2245,7 +2252,7 @@ export function MetricsWorkspace({
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
                           data-testid="metrics-table-remove"
-                          onSelect={() => setPane("charts")}
+                          onSelect={closeTablePanel}
                         >
                           <X size={14} /> {translate("panel.remove")}
                         </DropdownMenuItem>

@@ -1516,6 +1516,21 @@ function Workspace({
                               onRemove={(code: string) =>
                                 setSelectedMetrics(selectedMetrics.filter((item) => item !== code))
                               }
+                              onTableClose={(preservedCodes) => {
+                                const preserved = new Set(preservedCodes);
+                                const nextSelected = selectedMetrics.filter((code) =>
+                                  preserved.has(code),
+                                );
+                                setSelectedMetrics(nextSelected);
+                                const nextViews = Object.fromEntries(
+                                  Object.entries(metricViews).filter(([code]) =>
+                                    preserved.has(code),
+                                  ),
+                                ) as MetricViews;
+                                if (Object.keys(nextViews).length !== Object.keys(metricViews).length) {
+                                  writeViews(nextViews);
+                                }
+                              }}
                             />
                           ))}
                         </>

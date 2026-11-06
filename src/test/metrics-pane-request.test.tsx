@@ -36,6 +36,8 @@ function mount(props: {
   paneRequest?: number;
   cardViewRequest?: { workspaceId: string; id: string; code: string; view: string; n: number };
   view?: "table" | "graph" | "histogram" | "scatter" | "map";
+  onTableClose?: (preservedCodes: string[]) => void;
+  views?: Record<string, "graph" | "histogram" | "table" | "map" | "snapshot">;
 }) {
   return render(
     <QueryClientProvider
@@ -71,14 +73,28 @@ describe("MetricsWorkspace — mode piloté par le catalogue (barre supprimée)"
   });
 
   it("closing the table panel keeps the graphs", async () => {
+    const onTableClose = vi.fn();
     window.localStorage.setItem("bc3.metrics.pane", "table");
-    mount({});
+    mount({ onTableClose });
     await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), {
       timeout: 3000,
     });
     await removeTable();
     expect(screen.queryByTestId("metrics-table-panel")).toBeNull();
     expect(screen.getByTestId("metrics-charts-grid")).toBeInTheDocument();
+    expect(onTableClose).toHaveBeenCalledWith(["cell_rsrp@0"]);
+  });
+
+  it("closing a table-only metric resets the table selection", async () => {
+    const onTableClose = vi.fn();
+    window.localStorage.setItem("bc3.metrics.pane", "table");
+    window.localStorage.removeItem("bc4.metrics.card-panels.metrics");
+    mount({ views: { "cell_rsrp@0": "table" }, onTableClose });
+    await waitFor(() => expect(screen.getByTestId("metrics-table-panel")).toBeVisible(), {
+      timeout: 3000,
+    });
+    await removeTable();
+    expect(onTableClose).toHaveBeenCalledWith([]);
   });
 
   it("⋮ → Tableau depuis un graphe garde le graphe visible", async () => {

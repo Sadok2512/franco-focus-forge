@@ -11,11 +11,16 @@
 - Affiche aussi les associations Serving `probable` publiées par l'API en pointillés, tout en conservant les associations `proven` en trait plein.
 - Peint le point KPI actif dans une couche dédiée, agrandie et cerclée, au-dessus des secteurs et des sites.
 
+## 1.144.5 (patch) — Réinitialisation de la Table Metrics — 2026-11-06 (BC4)
+
+- Fermer le panneau Table retire ses métriques sans panneau associé afin que la prochaine ouverture reparte d'une sélection vide.
+- Préserve les métriques encore utilisées par un panneau Graph, Map, Histogramme ou Snapshot.
+
 ## 1.144.2 (patch) — Gestion indépendante des séries et axes Graph — 2026-11-06 (BC1)
 
 - Ajoute « Manage Series » au menu ⋯ des Graphs pour masquer, colorer, réordonner, affecter à l’axe gauche/droit ou retirer chaque série sans fermer le panneau.
 - Persiste par panneau et Workspace les séries, couleurs, ordre, visibilité, axes, échelles Min/Max, unités et zoom, sans refetch lors d’un changement purement visuel.
-- Interdit le partage d’un axe entre unités incompatibles et conserve un état vide « Add Metric » lorsque la dernière série est retirée.
+- Interdit le partage d'un axe entre unités incompatibles et conserve un état vide « Add Metric » lorsque la dernière série est retirée.
 
 ## 1.144.1 (patch) — Chargement Measurements fluide — 2026-11-06 (BC4)
 
