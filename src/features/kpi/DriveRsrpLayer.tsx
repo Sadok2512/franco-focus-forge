@@ -54,12 +54,15 @@ const SERVING_SITE_LAYER = "bc4-drive-rsrp-serving-site";
 const LINK_SOURCE = "bc4-drive-rsrp-serving-links";
 const NEIGHBOUR_LINK_LAYER = "bc4-drive-rsrp-neighbour-links";
 const NR_ANCHOR_LINK_LAYER = "bc4-drive-rsrp-nr-anchor-links";
+const SERVING_PROBABLE_LINK_LAYER = "bc4-drive-rsrp-serving-probable-links";
 const SERVING_LINK_LAYER = "bc4-drive-rsrp-serving-links";
 export const DRIVE_CELL_LINK_LAYER_SPECS = [
   { id: NEIGHBOUR_LINK_LAYER, kind: "neighbour" },
   { id: NR_ANCHOR_LINK_LAYER, kind: "nr_anchor" },
-  // Serving is painted last when certified segments overlap.
-  { id: SERVING_LINK_LAYER, kind: "serving" },
+  // Probable serving evidence stays visible but dashed; proven evidence is
+  // painted last and solid if both ever share the same endpoint.
+  { id: SERVING_PROBABLE_LINK_LAYER, kind: "serving", confidence: "probable" },
+  { id: SERVING_LINK_LAYER, kind: "serving", confidence: "proven" },
 ] as const;
 
 /**
@@ -566,8 +569,18 @@ export function DriveRsrpLayer({
         });
       }
       for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
-        const dasharray = cellLinkDasharray(spec.kind);
-        const filter: FilterSpecification = ["==", ["get", "link_type"], spec.kind];
+        const dasharray =
+          "confidence" in spec && spec.confidence === "probable"
+            ? ([3, 3] as [number, number])
+            : cellLinkDasharray(spec.kind);
+        const filter: FilterSpecification =
+          "confidence" in spec
+            ? [
+                "all",
+                ["==", ["get", "link_type"], spec.kind],
+                ["==", ["get", "confidence"], spec.confidence],
+              ]
+            : ["==", ["get", "link_type"], spec.kind];
         if (!map.getLayer(spec.id)) {
           map.addLayer({
             id: spec.id,

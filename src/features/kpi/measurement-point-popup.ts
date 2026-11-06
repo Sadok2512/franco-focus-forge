@@ -176,11 +176,11 @@ export function pointCellLinks(point: ApiMeasurementPoint): RadioCellLink[] {
   return links;
 }
 
-/** Lines on the map are fail-closed: an explicit backend proof is required.
- * Probable candidates stay available in RF Parameters, but are never painted
- * as a certified serving/PSCell/neighbour relationship. */
+/** Lines on the map remain evidence-backed. `proven` relationships are solid;
+ * backend-published `probable` relationships are retained and painted dashed.
+ * No client-side PCI/nearest-site inference is performed here. */
 export function certifiedPointCellLinks(point: ApiMeasurementPoint): RadioCellLink[] {
-  return pointCellLinks(point).filter((link) => link.confidence === "proven");
+  return pointCellLinks(point);
 }
 
 /** Select the exact overlapping sample with the strongest certified radio
@@ -192,11 +192,18 @@ export function preferredCertifiedPoint<T extends ApiMeasurementPoint>(
   const candidates = sequences
     .map((seq) => points.find((point) => point.seq === seq))
     .filter((point): point is T => point !== undefined);
-  const certified = (point: T) => certifiedPointCellLinks(point);
+  const evidenced = (point: T) => certifiedPointCellLinks(point);
   return (
-    candidates.find((point) => certified(point).some((link) => link.kind === "serving")) ??
-    candidates.find((point) => certified(point).some((link) => link.kind === "nr_anchor")) ??
-    candidates.find((point) => certified(point).length > 0) ??
+    candidates.find((point) =>
+      evidenced(point).some(
+        (link) => link.kind === "serving" && link.confidence === "proven",
+      ),
+    ) ??
+    candidates.find((point) =>
+      evidenced(point).some((link) => link.confidence === "proven"),
+    ) ??
+    candidates.find((point) => evidenced(point).some((link) => link.kind === "serving")) ??
+    candidates.find((point) => evidenced(point).length > 0) ??
     candidates[0]
   );
 }

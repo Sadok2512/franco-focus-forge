@@ -101,10 +101,13 @@ describe("shared measurement-point popup", () => {
     ]);
   });
 
-  it("paints only explicitly certified radio relationships", () => {
+  it("paints proven and backend-published probable relationships without promotion", () => {
     const links = certifiedPointCellLinks(point);
-    expect(links.map((link) => link.kind)).toEqual(["serving", "nr_anchor"]);
-    expect(links.every((link) => link.confidence === "proven")).toBe(true);
+    expect(links.map((link) => [link.kind, link.confidence])).toEqual([
+      ["serving", "proven"],
+      ["neighbour", "probable"],
+      ["nr_anchor", "proven"],
+    ]);
   });
 
   it("prefers a certified overlapping point without inventing an identity", () => {
