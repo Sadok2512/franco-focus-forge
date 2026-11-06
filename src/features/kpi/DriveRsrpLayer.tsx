@@ -65,6 +65,10 @@ export const DRIVE_CELL_LINK_LAYER_SPECS = [
   { id: SERVING_LINK_LAYER, kind: "serving", confidence: "proven" },
 ] as const;
 
+export function cellLinkHaloLayerId(layerId: string) {
+  return `${layerId}-halo`;
+}
+
 /**
  * Coincident server links need a presentation-only separation or the last
  * painted kind hides every other kind. The radio endpoint itself stays
@@ -550,10 +554,13 @@ export function DriveRsrpLayer({
       // measurement component. Keep every selected radio link above those
       // overlays; serving remains last in the declared order. Point circles
       // remain independently clickable through layer-specific hit testing.
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind !== "serving")) {
-        if (map.getLayer(spec.id)) map.moveLayer(spec.id);
-      }
-      for (const spec of DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind === "serving")) {
+      const ordered = [
+        ...DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind !== "serving"),
+        ...DRIVE_CELL_LINK_LAYER_SPECS.filter((layer) => layer.kind === "serving"),
+      ];
+      for (const spec of ordered) {
+        const haloId = cellLinkHaloLayerId(spec.id);
+        if (map.getLayer(haloId)) map.moveLayer(haloId);
         if (map.getLayer(spec.id)) map.moveLayer(spec.id);
       }
       if (map.getLayer(SELECTED_LAYER)) map.moveLayer(SELECTED_LAYER);
@@ -581,6 +588,23 @@ export function DriveRsrpLayer({
                 ["==", ["get", "confidence"], spec.confidence],
               ]
             : ["==", ["get", "link_type"], spec.kind];
+        const haloId = cellLinkHaloLayerId(spec.id);
+        if (!map.getLayer(haloId)) {
+          map.addLayer({
+            id: haloId,
+            type: "line",
+            source: LINK_SOURCE,
+            filter,
+            layout: { "line-cap": "round", "line-join": "round" },
+            paint: {
+              "line-color": "rgba(255,255,255,0.94)",
+              "line-width": cellLinkWidth(spec.kind) + 3,
+              "line-opacity": 0.9,
+              "line-offset": ["get", "visual_offset"],
+              ...(dasharray ? { "line-dasharray": dasharray } : {}),
+            },
+          });
+        }
         if (!map.getLayer(spec.id)) {
           map.addLayer({
             id: spec.id,
@@ -598,6 +622,7 @@ export function DriveRsrpLayer({
           });
         }
         // Also repair maps whose source survived a style/component refresh.
+        map.setFilter(haloId, filter);
         map.setFilter(spec.id, filter);
       }
       if (!map.getSource(SOURCE)) {
@@ -654,6 +679,9 @@ export function DriveRsrpLayer({
         features: prefs.on ? linkFeatures : [],
       });
       for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+        const haloId = cellLinkHaloLayerId(spec.id);
+        if (map.getLayer(haloId))
+          map.setLayoutProperty(haloId, "visibility", prefs.on ? "visible" : "none");
         if (map.getLayer(spec.id))
           map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
       }
@@ -716,11 +744,11 @@ export function DriveRsrpLayer({
           type: "circle",
           source: SERVING_SITE_SOURCE,
           paint: {
-            "circle-radius": 5,
-            "circle-color": CELL_LINK_COLORS.serving,
-            "circle-opacity": 0.9,
-            "circle-stroke-width": 1,
-            "circle-stroke-color": "#ffffff",
+            "circle-radius": 7,
+            "circle-color": "rgba(37,99,235,0.16)",
+            "circle-opacity": 1,
+            "circle-stroke-width": 2.5,
+            "circle-stroke-color": CELL_LINK_COLORS.serving,
           },
         });
       map.moveLayer(SERVING_SITE_LAYER);
@@ -729,7 +757,7 @@ export function DriveRsrpLayer({
       let pulse = 0;
       const paint = () => {
         if (!map.getLayer(SERVING_SITE_LAYER)) return;
-        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 7 : 5);
+        map.setPaintProperty(SERVING_SITE_LAYER, "circle-radius", pulse ? 11 : 7);
         map.setPaintProperty(SERVING_SITE_LAYER, "circle-stroke-opacity", pulse ? 0.6 : 1);
         pulse = pulse ? 0 : 1;
       };
@@ -802,6 +830,9 @@ export function DriveRsrpLayer({
     if (!map?.getLayer(LAYER)) return;
     map.setLayoutProperty(LAYER, "visibility", prefs.on ? "visible" : "none");
     for (const spec of DRIVE_CELL_LINK_LAYER_SPECS) {
+      const haloId = cellLinkHaloLayerId(spec.id);
+      if (map.getLayer(haloId))
+        map.setLayoutProperty(haloId, "visibility", prefs.on ? "visible" : "none");
       if (map.getLayer(spec.id))
         map.setLayoutProperty(spec.id, "visibility", prefs.on ? "visible" : "none");
     }

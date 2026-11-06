@@ -37,6 +37,7 @@ const SITE_LABEL_LAYER_ID = "bc4-sites-label";
  * clickable. */
 export const MEASUREMENT_CLICK_LAYER_IDS = [
   "metrics-v3",
+  "metrics-v3-selected",
   "bc4-drive-rsrp-points",
   "bc4-drive-rsrp-selected",
 ] as const;
@@ -427,6 +428,12 @@ export function useSitesLayer(
     };
     window.addEventListener("keydown", onKey);
     const siteEnter = async (event: MapLayerMouseEvent) => {
+      if (measurementOwnsMapClick(map, event.point)) {
+        // A network marker can share the exact pixel of a selected GPS
+        // measurement. Its hover card must not cover the selected link.
+        hoverPopupRef.current?.remove();
+        return;
+      }
       map.getCanvas().style.cursor = "pointer";
       const feature = event.features?.[0];
       if (!feature) return;

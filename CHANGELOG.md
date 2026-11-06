@@ -1,3 +1,8 @@
+## 1.144.4 (patch) — Liaison Serving lisible à toute distance — 2026-11-06 (BC4)
+
+- Empêche les infobulles Site/Cell de recouvrir la liaison lorsqu'un point de mesure occupe le même pixel.
+- Ajoute un halo contrasté au segment radio et un anneau cible Serving distinct, sans modifier les coordonnées RF ni déplacer la carte.
+
 ## 1.144.3 (patch) — SINR visible et sélection Serving fiable — 2026-11-06 (BC4)
 
 - Affiche RSRP et SINR dans la hauteur compacte initiale de la Timeline tout en conservant les six mesures LTE/NR sélectionnables, sans interpolation ni modification des valeurs.
