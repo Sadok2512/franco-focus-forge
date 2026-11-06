@@ -1,3 +1,9 @@
+## 1.144.1 (patch) — Chargement Measurements fluide — 2026-11-06 (BC4)
+
+- Ajoute un squelette animé par transformation pendant le premier chargement du tableau, en complément de la barre de progression indéterminée.
+- Conserve les lignes existantes sous un voile léger lors d’un changement de métrique au lieu de vider le panneau.
+- Accompagne la pagination SQL multi-métrique du backend 0.133.2 sans modifier les valeurs ni l’ordre temporel.
+
 ## 1.144.0 (minor) — Timeline KPI V2 compacte et synchronisée — 2026-11-06 (BC4)
 
 - Réorganise la Timeline KPI en RRC State, icônes RRC & Events, tâches DATA DL/UL/Voice certifiées, mesures LTE/NR repliables et navigateur temporel commun, sans modifier la Timeline Signaling.

@@ -2024,6 +2024,16 @@ export function MetricsWorkspace({
           >
             <span />
           </div>
+          <div
+            className="kpi-measurements-skeleton"
+            data-testid="metrics-loading-skeleton"
+            aria-hidden="true"
+          >
+            <i />
+            <i />
+            <i />
+            <i />
+          </div>
         </div>
       ) : query.isError ? (
         <div style={{ order: TABLE_PANEL_ORDER }}>

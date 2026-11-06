@@ -84,6 +84,7 @@ describe("Measurements table request states", () => {
       "Loading measurements",
     );
     expect(screen.getByRole("progressbar")).toBeVisible();
+    expect(screen.getByTestId("metrics-loading-skeleton")).toBeVisible();
     request.resolve(response("cap-a"));
     expect(await screen.findByTestId("metrics-table-panel")).toBeVisible();
     expect(screen.queryByTestId("metrics-table-loading")).toBeNull();
