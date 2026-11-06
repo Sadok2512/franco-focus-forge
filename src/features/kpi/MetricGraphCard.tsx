@@ -280,31 +280,33 @@ function ManageGraphSeriesPopover({
     if (open) setDraft(settings);
   }, [open, settings]);
   const updateSeries = (code: string, patch: Partial<ManagedGraphSeries>) =>
-    setDraft({
-      ...draft,
-      series: draft.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
-    });
+    setDraft((current) => ({
+      ...current,
+      series: current.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
+    }));
   const updateAxis = (side: GraphAxisSide, patch: Partial<GraphAxisSettings>) =>
-    setDraft({
-      ...draft,
-      axes: { ...draft.axes, [side]: { ...draft.axes[side], ...patch } },
-    });
+    setDraft((current) => ({
+      ...current,
+      axes: { ...current.axes, [side]: { ...current.axes[side], ...patch } },
+    }));
   const assignAxis = (code: string, axis: GraphAxisSide) => {
-    if (!canAssignSeriesAxis(draft, code, axis)) {
-      toast.error(t("graphSeries.incompatibleAxis"));
-      return;
-    }
-    const target = draft.series.find((item) => item.code === code);
-    setDraft({
-      ...draft,
-      series: draft.series.map((item) => (item.code === code ? { ...item, axis } : item)),
-      axes: {
-        ...draft.axes,
-        [axis]:
-          draft.axes[axis].unit || !target
-            ? draft.axes[axis]
-            : { ...draft.axes[axis], unit: target.unit },
-      },
+    setDraft((current) => {
+      if (!canAssignSeriesAxis(current, code, axis)) {
+        toast.error(t("graphSeries.incompatibleAxis"));
+        return current;
+      }
+      const target = current.series.find((item) => item.code === code);
+      return {
+        ...current,
+        series: current.series.map((item) => (item.code === code ? { ...item, axis } : item)),
+        axes: {
+          ...current.axes,
+          [axis]:
+            current.axes[axis].unit || !target
+              ? current.axes[axis]
+              : { ...current.axes[axis], unit: target.unit },
+        },
+      };
     });
   };
   return (
@@ -333,10 +335,10 @@ function ManageGraphSeriesPopover({
                 onDrop={(event) => {
                   event.preventDefault();
                   if (!dragged) return;
-                  setDraft({
-                    ...draft,
-                    series: reorderManagedSeries(draft.series, dragged, series.code),
-                  });
+                  setDraft((current) => ({
+                    ...current,
+                    series: reorderManagedSeries(current.series, dragged, series.code),
+                  }));
                   setDragged(null);
                 }}
                 className="grid grid-cols-[18px_28px_minmax(0,1fr)_88px_28px] items-center gap-1 rounded-md border bg-background px-1.5 py-1.5"
@@ -388,10 +390,10 @@ function ManageGraphSeriesPopover({
                   className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   aria-label={t("graphSeries.remove", { metric: series.label })}
                   onClick={() =>
-                    setDraft({
-                      ...draft,
-                      series: draft.series.filter((item) => item.code !== series.code),
-                    })
+                    setDraft((current) => ({
+                      ...current,
+                      series: current.series.filter((item) => item.code !== series.code),
+                    }))
                   }
                 >
                   <Trash2 size={14} />
@@ -414,10 +416,10 @@ function ManageGraphSeriesPopover({
                     type="button"
                     className="ml-1 text-[10px] text-muted-foreground underline"
                     onClick={() =>
-                      setDraft({
-                        ...draft,
-                        series: resetSeriesColor(draft.series, series.code),
-                      })
+                      setDraft((current) => ({
+                        ...current,
+                        series: resetSeriesColor(current.series, series.code),
+                      }))
                     }
                   >
                     {t("graphSeries.resetColor")}
@@ -548,7 +550,7 @@ function ManageGraphSeriesPopover({
             type="button"
             className="kpi-button"
             data-testid="manage-series-remove-all"
-            onClick={() => setDraft({ ...draft, series: [] })}
+            onClick={() => setDraft((current) => ({ ...current, series: [] }))}
           >
             {t("graphSeries.removeAll")}
           </button>
