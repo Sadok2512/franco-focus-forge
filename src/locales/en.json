@@ -725,6 +725,28 @@
       "event": "Event"
     }
   },
+  "timelineV2": {
+    "rrcEvents": "RRC & Events",
+    "dataDl": "DATA DL",
+    "dataUl": "DATA UL",
+    "voice": "Voice",
+    "measurements": "Measurements",
+    "lteRsrp": "LTE RSRP",
+    "lteRsrq": "LTE RSRQ",
+    "lteSinr": "LTE SINR",
+    "nrRsrp": "NR RSRP",
+    "nrRsrq": "NR RSRQ",
+    "nrSinr": "NR SINR",
+    "timestamp": "Capture time",
+    "technology": "Technology",
+    "procedure": "Procedure",
+    "status": "Status",
+    "evidence": "Evidence",
+    "cluster_one": "{{count}} close event",
+    "cluster_other": "{{count}} close events",
+    "clusterPicker": "Close event picker",
+    "close": "Close"
+  },
   "sigTable": {
     "title": "Signaling messages",
     "fullscreen": "Messages full screen",

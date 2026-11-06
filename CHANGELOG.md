@@ -1,3 +1,9 @@
+## 1.144.0 (minor) — Timeline KPI V2 compacte et synchronisée — 2026-11-06 (BC4)
+
+- Réorganise la Timeline KPI en RRC State, icônes RRC & Events, tâches DATA DL/UL/Voice certifiées, mesures LTE/NR repliables et navigateur temporel commun, sans modifier la Timeline Signaling.
+- Regroupe sans perte les événements trop proches, conserve les durées et preuves réelles dans les infobulles et retire uniquement la ligne visuelle UE State de KPI Analytics.
+- Persiste hauteur, zoom, mesures et sections par Workspace, accepte l'ajout de mesures depuis le catalogue et synchronise un clic avec Map, Radio Snapshot, Graph/Table et L3 via le curseur partagé.
+
 ## 1.143.4 (patch) — Superposition multi-KPI lisible — 2026-11-06 (BC4)
 
 - Rend chaque KPI depuis ses propres échantillons sur l'axe temporel partagé, sans injecter les absences des autres séries comme des coupures artificielles.

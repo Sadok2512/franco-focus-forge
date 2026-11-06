@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export type TimeWindow = [number, number];
 export const DEFAULT_WINDOW_S = 30;
@@ -40,9 +40,38 @@ export function useTimeWindow(
   captureId: string | undefined,
   duration: number,
   defaultWidth = DEFAULT_WINDOW_S,
+  persistenceKey?: string,
 ) {
-  const [request, setRequest] = useState({ start: 0, width: defaultWidth });
-  useEffect(() => setRequest({ start: 0, width: defaultWidth }), [captureId, defaultWidth]);
+  const storageKey = persistenceKey && captureId ? `${persistenceKey}.${captureId}` : undefined;
+  const readRequest = useCallback(() => {
+    if (!storageKey) return { start: 0, width: defaultWidth };
+    try {
+      const stored = JSON.parse(localStorage.getItem(storageKey) ?? "null") as unknown;
+      if (stored && typeof stored === "object") {
+        const value = stored as Record<string, unknown>;
+        if (typeof value["start"] === "number" && typeof value["width"] === "number")
+          return { start: value["start"], width: value["width"] };
+      }
+    } catch {
+      /* persistence unavailable */
+    }
+    return { start: 0, width: defaultWidth };
+  }, [defaultWidth, storageKey]);
+  const [request, setRequest] = useState(readRequest);
+  const hydrated = useRef(false);
+  useEffect(() => {
+    hydrated.current = false;
+    setRequest(readRequest());
+    hydrated.current = true;
+  }, [captureId, readRequest]);
+  useEffect(() => {
+    if (!storageKey || !hydrated.current) return;
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(request));
+    } catch {
+      /* persistence unavailable */
+    }
+  }, [request, storageKey]);
   const window = clampWindow(duration, request.start, request.width);
   const setWindow = useCallback((next: TimeWindow) => {
     setRequest({ start: next[0], width: next[1] - next[0] });

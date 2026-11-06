@@ -1532,7 +1532,7 @@ function Workspace({
                               : translate("panel.l3Signaling")
                           }
                           defaultSpan={3}
-                          defaultHeight={signalingPanel.kind === "timeline" ? 420 : 360}
+                          defaultHeight={signalingPanel.kind === "timeline" ? 340 : 360}
                           onDuplicate={() => duplicateSignalingPanel(signalingPanel.id)}
                         >
                           {(title) => (
@@ -1588,6 +1588,8 @@ function Workspace({
                                       <SharedTimelineSection
                                         projectId={projectId}
                                         captureId={requestedCapture}
+                                        workspaceId={currentTab.id}
+                                        persistenceId={`${currentTab.id}.${signalingPanel.id}`}
                                       />
                                     </Suspense>
                                   ) : (

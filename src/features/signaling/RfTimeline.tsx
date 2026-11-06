@@ -8,7 +8,7 @@ import { rfColors, rfProtocolColors } from "@/theme/rf-timeline";
 import { TimeCursor } from "./TimeCursor";
 import { activeIntervals } from "./cursor";
 import { isAllowedNetworkEvent } from "./network-events";
-import { FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
+import { DEFAULT_WINDOW_S, FULL_CAPTURE_S, useTimeWindow, type TimeWindow } from "./time-window";
 import { provenStates, stateTrack } from "./state-evidence";
 import {
   statePresentation,
@@ -23,6 +23,8 @@ import { eventTrack } from "./event-track";
 import { TimeNavigator } from "./TimeNavigator";
 import { clampNameTagX, nearestNameTag, type NameTag } from "./name-tag";
 import { mergeTimelineEvents, shouldLoadTimelineDetail } from "./timeline-loading";
+import { MAP_METRIC_MIME, readMapMetric } from "@/features/kpi/map-metric-drop";
+import "./signaling.css";
 
 // Fixed lane order: RRC state on top (user request), then UE state,
 // then network events, task lanes, mobility, and one combined RF grid.
@@ -34,6 +36,7 @@ const laneOrder = [
   "ul",
   "volte",
   "vonr",
+  "voice",
   "ping",
   "sms",
   "mobility",
@@ -55,8 +58,86 @@ const laneOf = (track: string | undefined): Lane => {
     return track;
   return "network";
 };
-const laneFor = (event: Pick<RfEvent, "attrs" | "lane">): Lane => laneOf(eventTrack(event));
-const codes = ["cell_rsrp", "cell_rsrq", "ci_rs_snr"];
+const laneFor = (event: Pick<RfEvent, "attrs" | "lane">, compactKpi = false): Lane => {
+  const lane = laneOf(eventTrack(event));
+  if (!compactKpi) return lane;
+  if (lane === "volte" || lane === "vonr") return "voice";
+  if (lane === "rrcstate" || lane === "uestate" || lane === "dl" || lane === "ul") return lane;
+  return "network";
+};
+/** Presentation allowlist for the compact KPI event lane. It relies on observed
+ * source types only and never promotes an inferred procedure to certified. */
+export function isCompactTimelineEvent(event: Pick<RfEvent, "type" | "label" | "attrs" | "lane">) {
+  const originalLane = laneFor(event, false);
+  if (["dl", "ul", "volte", "vonr"].includes(originalLane)) return true;
+  const name = `${event.type} ${event.label}`.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return (
+    /rrc(?:connection)?(?:request|setup|setupcomplete|reestablishment|reestablishmentcomplete|reestablishmentreject|release)/.test(
+      name,
+    ) ||
+    /^(?:hoa|hos|hof|handover)/.test(name) ||
+    name.includes("scgfailure") ||
+    name.includes("radio link failure".replace(/ /g, "")) ||
+    /(?:call|sipinvite|volte|vonr).*(?:attempt|setup|success|failure|release|drop)/.test(name)
+  );
+}
+type TimelineMetric = {
+  code: string;
+  labelKey?: string;
+  label?: string;
+  unit: string;
+  color: string;
+};
+const legacyMetrics: TimelineMetric[] = [
+  { code: "cell_rsrp", labelKey: "cell_rsrp", unit: "dBm", color: rfColors["cell_rsrp"]! },
+  { code: "cell_rsrq", labelKey: "cell_rsrq", unit: "dB", color: rfColors["cell_rsrq"]! },
+  { code: "ci_rs_snr", labelKey: "ci_rs_snr", unit: "dB", color: rfColors["ci_rs_snr"]! },
+];
+const compactMetrics: TimelineMetric[] = [
+  { code: "cell_rsrp@lte-type-0", labelKey: "lteRsrp", unit: "dBm", color: "#2563EB" },
+  { code: "cell_rsrq@lte-type-0", labelKey: "lteRsrq", unit: "dB", color: "#0F766E" },
+  { code: "cell_sinr@lte-type-0", labelKey: "lteSinr", unit: "dB", color: "#D97706" },
+  { code: "cell_rsrp@nr-type-199", labelKey: "nrRsrp", unit: "dBm", color: "#7C3AED" },
+  { code: "cell_rsrq@nr-type-199", labelKey: "nrRsrq", unit: "dB", color: "#DB2777" },
+  { code: "cell_sinr@nr-type-199", labelKey: "nrSinr", unit: "dB", color: "#0891B2" },
+];
+
+export type TimelineEventGroup = { event: RfEvent; members: RfEvent[] };
+/** Group only point events that would overlap at the current zoom. Task/state
+ * intervals retain their exact independent geometry. Every source event stays
+ * available in `members` for the cluster picker. */
+export function clusterTimelineEvents(
+  events: readonly RfEvent[],
+  window: TimeWindow,
+  pixelWidth: number,
+  compactKpi = false,
+): TimelineEventGroup[] {
+  const threshold = ((window[1] - window[0]) / Math.max(320, pixelWidth)) * 22;
+  const groups: TimelineEventGroup[] = [];
+  for (const event of [...events].sort(
+    (a, b) =>
+      (a.t_rel_s ?? Number.POSITIVE_INFINITY) - (b.t_rel_s ?? Number.POSITIVE_INFINITY) ||
+      a.seq - b.seq,
+  )) {
+    const point =
+      event.t_rel_s !== null && !(event.t_rel_end_s !== null && event.t_rel_end_s > event.t_rel_s);
+    const previous = groups.at(-1);
+    if (
+      point &&
+      previous &&
+      previous.members.every(
+        (member) =>
+          member.t_rel_s !== null &&
+          !(member.t_rel_end_s !== null && member.t_rel_end_s > member.t_rel_s),
+      ) &&
+      laneFor(previous.event, compactKpi) === laneFor(event, compactKpi) &&
+      Math.abs((event.t_rel_s ?? 0) - (previous.event.t_rel_s ?? 0)) <= threshold
+    ) {
+      previous.members.push(event);
+    } else groups.push({ event, members: [event] });
+  }
+  return groups;
+}
 const protocols = ["RRC LTE", "RRC NR", "NAS", "Nemo", "MAC-RACH", "Procedures"];
 const severityLegend = [
   { key: "info", color: "#1769E0" },
@@ -87,6 +168,8 @@ export function RfTimeline({
   onWindow,
   stateTracksV2 = false,
   excludedEventTypes = [],
+  compactKpi = false,
+  persistenceId,
 }: {
   projectId: string;
   captureId: string;
@@ -103,16 +186,67 @@ export function RfTimeline({
   onWindow?: (window: TimeWindow) => void;
   stateTracksV2?: boolean;
   excludedEventTypes?: string[];
+  /** KPI Analytics-only compact presentation. Signaling keeps its established layout. */
+  compactKpi?: boolean;
+  persistenceId?: string;
 }) {
   const { t, i18n } = useTranslation();
   const [layers, setLayers] = useState(protocols);
-  const [measures, setMeasures] = useState(codes);
+  const storageScope = `bc4.kpi.timeline.v2.${persistenceId ?? captureId}`;
+  const [extraMetrics, setExtraMetrics] = useState<TimelineMetric[]>(() => {
+    if (!compactKpi) return [];
+    try {
+      const value: unknown = JSON.parse(localStorage.getItem(`${storageScope}.metrics`) ?? "[]");
+      return Array.isArray(value)
+        ? value.filter(
+            (item): item is TimelineMetric =>
+              !!item &&
+              typeof item === "object" &&
+              typeof item.code === "string" &&
+              typeof item.label === "string" &&
+              typeof item.unit === "string" &&
+              typeof item.color === "string",
+          )
+        : [];
+    } catch {
+      return [];
+    }
+  });
+  const metricDefinitions = useMemo(
+    () => [...(compactKpi ? compactMetrics : legacyMetrics), ...extraMetrics],
+    [compactKpi, extraMetrics],
+  );
+  const metricCodes = useMemo(
+    () => metricDefinitions.map((metric) => metric.code),
+    [metricDefinitions],
+  );
+  const [measures, setMeasures] = useState<string[]>(() => {
+    if (!compactKpi) return legacyMetrics.map((metric) => metric.code);
+    try {
+      const value: unknown = JSON.parse(localStorage.getItem(`${storageScope}.visible`) ?? "[]");
+      return Array.isArray(value) && value.every((item) => typeof item === "string") && value.length
+        ? value
+        : compactMetrics.map((metric) => metric.code);
+    } catch {
+      return compactMetrics.map((metric) => metric.code);
+    }
+  });
+  const [measurementsOpen, setMeasurementsOpen] = useState(() => {
+    if (!compactKpi) return true;
+    try {
+      return localStorage.getItem(`${storageScope}.measurements`) === "open";
+    } catch {
+      return false;
+    }
+  });
   const [ready, setReady] = useState(0);
   const [viewportHeight, setViewportHeight] = useState(0);
+  const [viewportWidth, setViewportWidth] = useState(1200);
   const [, redrawCursor] = useState(0);
   const [windowSeq, setWindowSeq] = useState<{ from_seq: number; to_seq: number }>();
   // Chip shown on click: the name of the clicked event or measurement, nothing else.
   const [nameTag, setNameTag] = useState<NameTag | null>(null);
+  const [eventCluster, setEventCluster] = useState<RfEvent[] | null>(null);
 
   const host = useRef<HTMLDivElement>(null),
     root = useRef<HTMLDivElement>(null),
@@ -123,12 +257,26 @@ export function RfTimeline({
   useEffect(() => {
     const element = viewport.current;
     if (!element) return;
-    const measure = () => setViewportHeight(Math.round(element.getBoundingClientRect().height));
+    const measure = () => {
+      const rect = element.getBoundingClientRect();
+      setViewportHeight(Math.round(rect.height));
+      setViewportWidth(Math.round(rect.width));
+    };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+  useEffect(() => {
+    if (!compactKpi) return;
+    try {
+      localStorage.setItem(`${storageScope}.visible`, JSON.stringify(measures));
+      localStorage.setItem(`${storageScope}.measurements`, measurementsOpen ? "open" : "closed");
+      localStorage.setItem(`${storageScope}.metrics`, JSON.stringify(extraMetrics));
+    } catch {
+      /* presentation persistence unavailable */
+    }
+  }, [compactKpi, extraMetrics, measurementsOpen, measures, storageScope]);
   const overview = useQuery({
     queryKey: ["signaling-rf-overview", projectId, captureId, technology, direction, search],
     queryFn: ({ signal }) =>
@@ -147,8 +295,15 @@ export function RfTimeline({
     staleTime: 60000,
   });
   const duration = overview.data?.t_rel_end_s ?? 0;
-  const localWindow = useTimeWindow(captureId, duration, FULL_CAPTURE_S);
+  const localWindow = useTimeWindow(
+    captureId,
+    duration,
+    compactKpi ? DEFAULT_WINDOW_S : FULL_CAPTURE_S,
+    compactKpi ? `${storageScope}.window` : undefined,
+  );
   const visibleWindow = timeWindow ?? localWindow.window;
+  const visibleWindowStart = visibleWindow[0];
+  const visibleWindowEnd = visibleWindow[1];
   const changeWindow = onWindow ?? localWindow.setWindow;
   const detailEnabled = shouldLoadTimelineDetail(overview.isSuccess, duration, visibleWindow);
   const events = useQuery({
@@ -173,16 +328,16 @@ export function RfTimeline({
     staleTime: 60000,
   });
   const detailed = useQuery({
-    queryKey: ["signaling-rf-radio-window", projectId, captureId, windowSeq],
-    enabled: !!windowSeq,
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal, windowSeq),
+    queryKey: ["signaling-rf-radio-window", projectId, captureId, metricCodes, windowSeq],
+    enabled: !!windowSeq && (!compactKpi || measurementsOpen),
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, metricCodes, signal, windowSeq),
     staleTime: 60000,
   });
   // Read the page-level full radio query if it already exists, but never
   // trigger it from the timeline. Zoom-window data remains authoritative.
   const cachedRadio = useQuery({
-    queryKey: ["signaling-rf-radio", projectId, captureId],
-    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, codes, signal),
+    queryKey: ["signaling-rf-radio", projectId, captureId, metricCodes],
+    queryFn: ({ signal }) => getMetricSeries(projectId, captureId, metricCodes, signal),
     enabled: false,
     staleTime: 60000,
   });
@@ -245,38 +400,42 @@ export function RfTimeline({
     [stateTracksV2, states, duration],
   );
   const displayed = useMemo(() => {
-    const source = eligibleEvents.filter(
-      (event) => laneFor(event) !== "network" || isAllowedNetworkEvent(event),
+    const source = eligibleEvents.filter((event) =>
+      compactKpi
+        ? isCompactTimelineEvent(event)
+        : laneFor(event) !== "network" || isAllowedNetworkEvent(event),
     );
-    const stateEvents = states
-      .filter(
-        (state) =>
-          state.track !== "RRC_STATE" &&
-          statePresentation(state) !== null &&
-          (!technology ||
-            (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
-      )
-      .map((state) => {
-        const presentation = statePresentation(state);
-        const label = presentation
-          ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined })
-          : "";
-        return {
-          ...state.event,
-          label:
-            state.track === "RRC_STATE" && state.state === "IDLE"
-              ? t("signalingV2.idle")
-              : presentation?.status
-                ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
-                : label,
-          attrs: {
-            ...state.event.attrs,
-            track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
-          },
-        };
-      });
+    const stateEvents = compactKpi
+      ? []
+      : states
+          .filter(
+            (state) =>
+              state.track !== "RRC_STATE" &&
+              statePresentation(state) !== null &&
+              (!technology ||
+                (technology === "LTE" ? state.technology === "LTE" : state.technology !== "LTE")),
+          )
+          .map((state) => {
+            const presentation = statePresentation(state);
+            const label = presentation
+              ? t(`signalingV2.${presentation.key}`, { count: presentation.count ?? undefined })
+              : "";
+            return {
+              ...state.event,
+              label:
+                state.track === "RRC_STATE" && state.state === "IDLE"
+                  ? t("signalingV2.idle")
+                  : presentation?.status
+                    ? `${label} · ${t(`signalingV2.${presentation.status}`)}`
+                    : label,
+              attrs: {
+                ...state.event.attrs,
+                track: state.track === "UE_STATE" ? "ue_state" : "rrc_state",
+              },
+            };
+          });
     return [...source.filter((event) => stateTrack(event) === null), ...stateEvents];
-  }, [eligibleEvents, states, technology, t]);
+  }, [compactKpi, eligibleEvents, states, technology, t]);
   const series = detailed.data?.series ?? cachedRadio.data?.series;
   const overviewPoints = useMemo(
     () =>
@@ -290,11 +449,15 @@ export function RfTimeline({
     () =>
       laneOrder.filter(
         (lane) =>
-          lane === "network" ||
-          (stateTracksV2 && (lane === "uestate" || lane === "rrcstate")) ||
-          displayed.some((event) => laneFor(event) === lane),
+          (!compactKpi ||
+            !["uestate", "volte", "vonr", "ping", "sms", "mobility"].includes(lane)) &&
+          (lane === "network" ||
+            (stateTracksV2 &&
+              (!compactKpi || lane !== "uestate") &&
+              (lane === "uestate" || lane === "rrcstate")) ||
+            displayed.some((event) => laneFor(event, compactKpi) === lane)),
       ),
-    [displayed, stateTracksV2],
+    [compactKpi, displayed, stateTracksV2],
   );
   const zoom: [number, number] =
     duration > 0
@@ -304,31 +467,40 @@ export function RfTimeline({
   windowCallbacks.current = { changeWindow, duration };
   const cursorSeries = useMemo(
     () =>
-      codes.map((code) => ({
-        code,
-        label: t(`rfTimeline.${code}`),
-        unit: code === "cell_rsrp" ? "dBm" : "dB",
-        points:
-          measures.includes(code) && technology !== "NR"
-            ? (series ?? [])
-                .filter((s) => s.code === code)
-                .flatMap((s) => s.points)
-                .filter((p): p is typeof p & { value: number } => typeof p.value === "number")
-                .sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq)
-            : [],
+      metricDefinitions.map((metric) => ({
+        code: metric.code,
+        label:
+          metric.label ??
+          t(compactKpi ? `timelineV2.${metric.labelKey}` : `rfTimeline.${metric.labelKey}`),
+        unit: metric.unit,
+        points: measures.includes(metric.code)
+          ? (series ?? [])
+              .filter((s) => s.code === metric.code)
+              .flatMap((s) => s.points)
+              .filter((p): p is typeof p & { value: number } => typeof p.value === "number")
+              .sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq)
+          : [],
       })),
-    [series, measures, technology, t],
+    [compactKpi, metricDefinitions, series, measures, t],
+  );
+  const renderedEvents = useMemo(
+    () =>
+      compactKpi
+        ? clusterTimelineEvents(displayed, visibleWindow, viewportWidth, true)
+        : displayed.map((event) => ({ event, members: [event] })),
+    [compactKpi, displayed, viewportWidth, visibleWindow],
   );
   const current = useRef({ displayed, series, duration, cursorSeries });
   current.current = { displayed, series, duration, cursorSeries };
   useEffect(() => {
     setWindowSeq(undefined);
     setNameTag(null);
+    setEventCluster(null);
   }, [captureId]);
   // The chip is anchored to pixels, so it must not survive a pan or a zoom.
   useEffect(() => {
     setNameTag(null);
-  }, [visibleWindow[0], visibleWindow[1]]);
+  }, [visibleWindowStart, visibleWindowEnd]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setNameTag(null);
@@ -364,13 +536,19 @@ export function RfTimeline({
       };
       c.on("click", (ev: unknown) => {
         const p = ev as {
-          data?: { event?: RfEvent; source?: string };
+          data?: { event?: RfEvent; clusterEvents?: RfEvent[]; source?: string };
           event?: { offsetX: number; offsetY: number };
         };
         const x = p.event?.offsetX ?? 0;
         const y = p.event?.offsetY ?? 0;
         if (p.data?.event) {
+          if ((p.data.clusterEvents?.length ?? 0) > 1) {
+            setEventCluster(p.data.clusterEvents ?? null);
+            setNameTag(null);
+            return;
+          }
           callbacks.current.onSelect(p.data.event);
+          setEventCluster(null);
           setNameTag({ name: p.data.event.label, code: "event", x, y });
           return;
         }
@@ -438,15 +616,20 @@ export function RfTimeline({
       series: [
         {
           id: "events",
-          data: displayed.map((e) => ({
-            value: [lanes.indexOf(laneFor(e)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
-            event: e,
-            itemStyle: { opacity: e.id === selectedEventId || active.has(e.id) ? 1 : 0.65 },
+          data: renderedEvents.map(({ event, members }) => ({
+            value: [
+              lanes.indexOf(laneFor(event, compactKpi)),
+              event.t_rel_s,
+              event.t_rel_end_s ?? event.t_rel_s,
+            ],
+            event,
+            clusterEvents: members,
+            itemStyle: { opacity: event.id === selectedEventId || active.has(event.id) ? 1 : 0.65 },
           })),
         },
       ],
     });
-  }, [selectedTime, selectedEventId, displayed, ready, lanes]);
+  }, [compactKpi, selectedTime, selectedEventId, displayed, renderedEvents, ready, lanes]);
   useEffect(() => {
     const c = chart.current;
     if (!c || !duration || !c.getOption()?.["xAxis"]) return;
@@ -457,11 +640,23 @@ export function RfTimeline({
     redrawCursor((revision) => revision + 1);
   }, [visibleWindow, duration, ready]);
   const showLabels = visibleWindow[1] - visibleWindow[0] <= 120;
-  const laneLayout = useMemo(() => stateLaneLayout(lanes), [lanes]);
+  const laneLayout = useMemo(() => {
+    if (!compactKpi) return stateLaneLayout(lanes);
+    const centers = lanes.map((_, index) => 14 + index * 32);
+    return { centers, height: Math.max(30, lanes.length * 32) };
+  }, [compactKpi, lanes]);
   const trackHeight = stateTracksV2 ? laneLayout.height : 216;
   const rfTop = stateTracksV2 ? 30 + trackHeight + 22 : 292;
-  const baseChartHeight = (stateTracksV2 ? rfTop + 3 * 60 + 16 : 470) + 22;
-  const chartHeight = Math.max(baseChartHeight, viewportHeight > 0 ? viewportHeight - 44 : 0);
+  const visibleMetricDefinitions = useMemo(
+    () =>
+      measurementsOpen ? metricDefinitions.filter((metric) => measures.includes(metric.code)) : [],
+    [measurementsOpen, measures, metricDefinitions],
+  );
+  const rfGridCount = compactKpi ? visibleMetricDefinitions.length : metricDefinitions.length;
+  const baseChartHeight = (stateTracksV2 ? rfTop + rfGridCount * 60 + 16 : 470) + 22;
+  const chartHeight = compactKpi
+    ? baseChartHeight
+    : Math.max(baseChartHeight, viewportHeight > 0 ? viewportHeight - 44 : 0);
   const chartHeightExtra = chartHeight - baseChartHeight;
   useEffect(() => {
     const c = chart.current;
@@ -481,7 +676,8 @@ export function RfTimeline({
         start[1] = 30 + center;
         end[1] = 30 + center;
       }
-      const item = displayed[params.dataIndex];
+      const group = renderedEvents[params.dataIndex];
+      const item = group?.event;
       if (!item) return;
       const track = eventTrack(item);
       const marker = eventIcon(item);
@@ -590,7 +786,7 @@ export function RfTimeline({
             style: { fill: iconForeground, stroke: color, lineWidth: 1 },
           });
         }
-        if (width > 90)
+        if (!compactKpi && width > 90)
           children.push({
             type: "text",
             style: {
@@ -603,7 +799,7 @@ export function RfTimeline({
               verticalAlign: "middle",
             },
           } as never);
-        if (showLabels && width > 40) {
+        if (!compactKpi && showLabels && width > 40) {
           // Start / End render below the bar (user spec), aligned on the exact extremities.
           children.push({
             type: "text",
@@ -662,11 +858,11 @@ export function RfTimeline({
         const nearby = displayed.some(
           (other) =>
             other.id !== item.id &&
-            laneFor(other) === laneFor(item) &&
+            laneFor(other, compactKpi) === laneFor(item, compactKpi) &&
             other.t_rel_s !== null &&
             Math.abs((api.coord([other.t_rel_s, lane])[0] ?? 0) - x) < 90,
         );
-        if (showLabels && !nearby)
+        if (!compactKpi && showLabels && !nearby)
           children.push({
             type: "text",
             style: {
@@ -677,6 +873,22 @@ export function RfTimeline({
               fontSize: 8,
               align: "center",
               verticalAlign: "top",
+            },
+          } as never);
+        if ((group?.members.length ?? 0) > 1)
+          children.push({
+            type: "text",
+            style: {
+              x: x + 8,
+              y: y - 17,
+              text: String(group!.members.length),
+              fill: "#FFFFFF",
+              backgroundColor: "#0F172A",
+              borderRadius: 8,
+              padding: [2, 4],
+              fontSize: 9,
+              fontWeight: 700,
+              align: "center",
             },
           } as never);
       }
@@ -696,7 +908,7 @@ export function RfTimeline({
       const right = Math.min(coordSys.x + coordSys.width, end[0] ?? left);
       if (right <= left) return;
       const y = 30 + center;
-      const height = 34;
+      const height = compactKpi ? 26 : 34;
       const roundStart = item.roundStart && left === start[0];
       const roundEnd = item.roundEnd && right === end[0];
       const radius = [roundStart ? 5 : 0, roundEnd ? 5 : 0, roundEnd ? 5 : 0, roundStart ? 5 : 0];
@@ -750,8 +962,9 @@ export function RfTimeline({
       } as unknown as ReturnType<NonNullable<CustomSeriesRenderItem>>;
     };
     // V2: one RF sub-grid per metric, each with its own Y scale, sharing the X axis.
-    const rfGrids = stateTracksV2 ? codes.length : 1;
-    const subH = 52 + (stateTracksV2 ? chartHeightExtra / Math.max(1, codes.length) : 0);
+    const chartMetrics = compactKpi ? visibleMetricDefinitions : metricDefinitions;
+    const rfGrids = stateTracksV2 ? chartMetrics.length : 1;
+    const subH = 52 + (stateTracksV2 ? chartHeightExtra / Math.max(1, chartMetrics.length) : 0);
     const xAxes = Array.from({ length: 1 + rfGrids }, (_, i) => ({
       type: "value" as const,
       gridIndex: i,
@@ -765,26 +978,27 @@ export function RfTimeline({
       show: i === 0,
       name: "",
     }));
-    const metricSeries = codes.map((code, i) => ({
-      id: code,
-      name: t(`rfTimeline.${code}`),
+    const metricSeries = chartMetrics.map((metric, i) => ({
+      id: metric.code,
+      name:
+        metric.label ??
+        t(compactKpi ? `timelineV2.${metric.labelKey}` : `rfTimeline.${metric.labelKey}`),
       type: "line" as const,
       xAxisIndex: stateTracksV2 ? 1 + i : 1,
       yAxisIndex: stateTracksV2 ? 1 + i : 1,
       showSymbol: stateTracksV2,
       symbolSize: 2,
       connectNulls: false,
-      lineStyle: { width: stateTracksV2 ? 1.2 : 1.6, color: rfColors[code]! },
-      itemStyle: { color: rfColors[code]! },
+      lineStyle: { width: stateTracksV2 ? 1.2 : 1.6, color: metric.color },
+      itemStyle: { color: metric.color },
       z: 2 + i,
-      data:
-        measures.includes(code) && technology !== "NR"
-          ? (series?.find((s) => s.code === code)?.points ?? []).map((p) => ({
-              value: [p.t_rel_s, p.value],
-              seq: p.seq,
-              source: code,
-            }))
-          : [],
+      data: measures.includes(metric.code)
+        ? (series?.find((s) => s.code === metric.code)?.points ?? []).map((p) => ({
+            value: [p.t_rel_s, p.value],
+            seq: p.seq,
+            source: metric.code,
+          }))
+        : [],
     }));
     const options: EChartsOption = {
       animation: false,
@@ -792,7 +1006,7 @@ export function RfTimeline({
       grid: [
         { top: 30, height: trackHeight, left: 112, right: 24 },
         ...(stateTracksV2
-          ? codes.map((_, i) => ({
+          ? chartMetrics.map((_, i) => ({
               top: rfTop + i * (subH + 8),
               height: subH,
               left: 112,
@@ -810,7 +1024,11 @@ export function RfTimeline({
         itemHeight: 3,
         itemGap: 8,
         textStyle: { fontSize: 10, color: "#475569" },
-        data: codes.map((code) => t(`rfTimeline.${code}`)),
+        data: chartMetrics.map(
+          (metric) =>
+            metric.label ??
+            t(compactKpi ? `timelineV2.${metric.labelKey}` : `rfTimeline.${metric.labelKey}`),
+        ),
       },
       xAxis: xAxes,
       yAxis: [
@@ -820,11 +1038,15 @@ export function RfTimeline({
           data: lanes.map((k) =>
             stateTracksV2 && k === "rrcstate"
               ? rrcStateLaneLabel(t("signalingV2.rrcState"))
-              : t(
-                  stateTracksV2 && (k === "uestate" || k === "rrcstate")
-                    ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
-                    : `rfTimeline.${k}`,
-                ),
+              : compactKpi
+                ? t(
+                    `timelineV2.${k === "network" ? "rrcEvents" : k === "dl" ? "dataDl" : k === "ul" ? "dataUl" : k}`,
+                  )
+                : t(
+                    stateTracksV2 && (k === "uestate" || k === "rrcstate")
+                      ? `signalingV2.${k === "uestate" ? "ueState" : "rrcState"}`
+                      : `rfTimeline.${k}`,
+                  ),
           ),
           axisLabel: {
             color: "#94a3b8",
@@ -837,16 +1059,18 @@ export function RfTimeline({
           axisLine: { show: false },
         },
         ...(stateTracksV2
-          ? codes.map((code, i) => ({
+          ? chartMetrics.map((metric, i) => ({
               type: "value" as const,
               gridIndex: 1 + i,
               scale: true,
               splitNumber: 2,
-              name: t(`rfTimeline.${code}`),
+              name:
+                metric.label ??
+                t(compactKpi ? `timelineV2.${metric.labelKey}` : `rfTimeline.${metric.labelKey}`),
               nameLocation: "middle" as const,
               nameRotate: 0,
               nameGap: 46,
-              nameTextStyle: { color: rfColors[code]!, fontSize: 10, align: "right" as const },
+              nameTextStyle: { color: metric.color, fontSize: 10, align: "right" as const },
               axisLabel: { color: "#94a3b8", fontSize: 9 },
               splitLine: { lineStyle: { color: "#334155", opacity: 0.15 } },
             }))
@@ -889,20 +1113,40 @@ export function RfTimeline({
       // (les icônes « sélection horizontale » et « Effacer la sélection »).
       toolbox: { show: false },
       tooltip: {
-        show: false,
+        show: compactKpi,
         trigger: "item",
         confine: true,
         formatter: (p: unknown) => {
           const d = (
-            p as { data: { event?: RfEvent; value?: unknown[]; seq?: number; source?: string } }
+            p as {
+              data: {
+                event?: RfEvent;
+                clusterEvents?: RfEvent[];
+                value?: unknown[];
+                seq?: number;
+                source?: string;
+              };
+            }
           ).data;
           if (d.event) {
             const e = d.event;
+            if ((d.clusterEvents?.length ?? 0) > 1)
+              return `<b>${escape(t("timelineV2.cluster", { count: d.clusterEvents!.length }))}</b><br/>${d.clusterEvents!.map((member) => `${fmtT(member.t_rel_s ?? 0)} s · ${escape(member.label)}`).join("<br/>")}`;
             const proof = states.find((state) => state.event.id === e.id);
             if (proof)
               return `<b>${escape(e.label)}</b><br/>${fmtT(proof.startS)} → ${fmtT(proof.endS)} s<br/>${escape(t("signalingV2.duration"))}: ${fmtT(proof.endS - proof.startS)} s<br/>${escape(proof.technology)} · ${escape(t("signalingV2.session"))}: ${escape(proof.sessionId)}<br/>${proof.componentCarriers === null ? "" : `${proof.componentCarriers} ${escape(t(`signalingV2.${proof.carrierStatus}`))}<br/>`}${escape(t("signalingV2.proof"))}: ${escape(proof.evidenceSeqs.join(", "))}`;
-            const header = `<b>${escape(e.label)}</b><br/>${escape(e.t_rel_s)} s · #${e.seq}<br/>${escape(e.attrs.technology)} · ${escape(e.attrs.status)}<br/>${escape(e.attrs.evidence_status)} · ${escape(e.attrs.source)}<br/>${escape((e.attrs.source_seqs ?? []).join(", "))}<br/>${e.duration_ms === null ? "" : escape(e.duration_ms) + " ms"}`;
-            const fields = ["hoa_pci", "hoa_att_pci", "hoa_ch_number", "hoa_att_ch", "cause"]
+            const header = `<b>${escape(e.label)}</b><br/>${escape(t("timelineV2.timestamp"))}: ${fmtT(e.t_rel_s ?? 0)} s · #${e.seq}<br/>${escape(t("timelineV2.technology"))}: ${escape(e.attrs.technology)}<br/>${escape(t("timelineV2.procedure"))}: ${escape(e.attrs["procedure_type"] ?? e.type)}<br/>${escape(t("timelineV2.status"))}: ${escape(e.attrs.status)}<br/>${escape(t("timelineV2.evidence"))}: ${escape(e.attrs.evidence_status)}<br/>${e.duration_ms === null ? "" : `${escape(t("signalingV2.duration"))}: ${escape(e.duration_ms)} ms`}`;
+            const fields = [
+              "serving_cell",
+              "pci",
+              "earfcn",
+              "nrarfcn",
+              "hoa_pci",
+              "hoa_att_pci",
+              "hoa_ch_number",
+              "hoa_att_ch",
+              "cause",
+            ]
               .filter((k) => e.attrs[k] != null)
               .map((k) => `${escape(k)}: ${escape(e.attrs[k])}`)
               .join("<br/>");
@@ -980,9 +1224,14 @@ export function RfTimeline({
           renderItem,
           encode: { x: [1, 2], y: 0 },
           clip: true,
-          data: displayed.map((e) => ({
-            value: [lanes.indexOf(laneFor(e)), e.t_rel_s, e.t_rel_end_s ?? e.t_rel_s],
-            event: e,
+          data: renderedEvents.map(({ event, members }) => ({
+            value: [
+              lanes.indexOf(laneFor(event, compactKpi)),
+              event.t_rel_s,
+              event.t_rel_end_s ?? event.t_rel_s,
+            ],
+            event,
+            clusterEvents: members,
           })),
         },
         ...metricSeries,
@@ -1012,13 +1261,48 @@ export function RfTimeline({
     overviewPoints,
     detailEnabled,
     chartHeightExtra,
+    compactKpi,
+    metricDefinitions,
+    renderedEvents,
+    visibleMetricDefinitions,
   ]);
   return (
     <div
       ref={root}
-      className="flex min-h-0 flex-1 flex-col bg-card"
+      className={`flex min-h-0 flex-1 flex-col bg-card${compactKpi ? " kpi-timeline-v2" : ""}`}
       data-testid="rf-timeline"
       data-task-count={overviewTaskEvents.length}
+      data-icons-only={compactKpi || undefined}
+      data-event-count={displayed.length}
+      data-cluster-count={renderedEvents.filter((group) => group.members.length > 1).length}
+      onDragOver={
+        compactKpi
+          ? (event) => {
+              if (event.dataTransfer.types.includes(MAP_METRIC_MIME)) event.preventDefault();
+            }
+          : undefined
+      }
+      onDrop={
+        compactKpi
+          ? (event) => {
+              const metric = readMapMetric(event.dataTransfer.getData(MAP_METRIC_MIME));
+              if (!metric || metricDefinitions.some((item) => item.code === metric.code)) return;
+              event.preventDefault();
+              const colors = ["#16A34A", "#DC2626", "#9333EA", "#0284C7"];
+              setExtraMetrics((items) => [
+                ...items,
+                {
+                  code: metric.code,
+                  label: metric.label,
+                  unit: metric.unit,
+                  color: colors[items.length % colors.length]!,
+                },
+              ]);
+              setMeasures((items) => [...items, metric.code]);
+              setMeasurementsOpen(true);
+            }
+          : undefined
+      }
     >
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="flex items-center gap-2" aria-hidden="true">
@@ -1029,7 +1313,7 @@ export function RfTimeline({
             </span>
           ))}
         </span>
-        <details>
+        <details open={compactKpi ? undefined : false}>
           <summary className="kpi-button">{t("rfTimeline.events")}</summary>
           <div className="flex flex-wrap gap-2 p-2">
             {protocols.map((p) => (
@@ -1046,19 +1330,31 @@ export function RfTimeline({
             ))}
           </div>
         </details>
-        <details>
-          <summary className="kpi-button">{t("rfTimeline.measures")}</summary>
+        <details
+          open={compactKpi ? measurementsOpen : undefined}
+          onToggle={
+            compactKpi ? (event) => setMeasurementsOpen(event.currentTarget.open) : undefined
+          }
+        >
+          <summary className="kpi-button" aria-expanded={measurementsOpen}>
+            {t(compactKpi ? "timelineV2.measurements" : "rfTimeline.measures")}
+          </summary>
           <div className="flex flex-wrap gap-2 p-2">
-            {codes.map((p) => (
-              <label key={p}>
+            {metricDefinitions.map((metric) => (
+              <label key={metric.code}>
                 <input
                   type="checkbox"
-                  checked={measures.includes(p)}
+                  checked={measures.includes(metric.code)}
                   onChange={() =>
-                    setMeasures((v) => (v.includes(p) ? v.filter((x) => x !== p) : [...v, p]))
+                    setMeasures((v) =>
+                      v.includes(metric.code)
+                        ? v.filter((x) => x !== metric.code)
+                        : [...v, metric.code],
+                    )
                   }
                 />
-                {t(`rfTimeline.${p}`)}
+                {metric.label ??
+                  t(compactKpi ? `timelineV2.${metric.labelKey}` : `rfTimeline.${metric.labelKey}`)}
               </label>
             ))}
           </div>
@@ -1075,23 +1371,25 @@ export function RfTimeline({
       <div ref={viewport} className="min-h-0 flex-1 overflow-auto">
         <div className="relative" style={{ minWidth: 320 }}>
           {stateTracksV2 &&
-            (["uestate", "rrcstate"] as const).map((lane) => {
-              const index = lanes.indexOf(lane);
-              const center = laneLayout.centers[index];
-              const title = stateLaneTitle(lane, {
-                ueState: t("signalingV2.ueState"),
-                rrcState: t("signalingV2.rrcState"),
-              });
-              return center === undefined ? null : (
-                <span
-                  key={lane}
-                  className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center gap-1.5 bg-card text-xs font-semibold text-foreground"
-                  style={{ top: 30 + center - 21 }}
-                >
-                  {title.title}
-                </span>
-              );
-            })}
+            (compactKpi ? (["rrcstate"] as const) : (["uestate", "rrcstate"] as const)).map(
+              (lane) => {
+                const index = lanes.indexOf(lane);
+                const center = laneLayout.centers[index];
+                const title = stateLaneTitle(lane, {
+                  ueState: t("signalingV2.ueState"),
+                  rrcState: t("signalingV2.rrcState"),
+                });
+                return center === undefined ? null : (
+                  <span
+                    key={lane}
+                    className="pointer-events-none absolute left-0 z-10 flex h-[42px] w-[106px] items-center gap-1.5 bg-card text-xs font-semibold text-foreground"
+                    style={{ top: 30 + center - 21 }}
+                  >
+                    {title.title}
+                  </span>
+                );
+              },
+            )}
           <div
             ref={host}
             style={{ height: chartHeight, minWidth: 320 }}
@@ -1105,7 +1403,7 @@ export function RfTimeline({
             selectedTime={selectedTime}
             eventId={selectedEventId}
             events={displayed}
-            series={cursorSeries}
+            series={compactKpi && !measurementsOpen ? [] : cursorSeries}
             zoom={zoom}
             duration={duration}
             onTime={onTime}
@@ -1125,6 +1423,38 @@ export function RfTimeline({
             >
               {nameTag.name}
             </span>
+          ) : null}
+          {eventCluster ? (
+            <div
+              className="kpi-timeline-cluster"
+              role="dialog"
+              aria-label={t("timelineV2.clusterPicker")}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <strong>{t("timelineV2.cluster", { count: eventCluster.length })}</strong>
+                <button type="button" className="kpi-button" onClick={() => setEventCluster(null)}>
+                  {t("timelineV2.close")}
+                </button>
+              </div>
+              {eventCluster.map((event) => (
+                <button
+                  key={`${captureId}:${event.seq}:${event.id}`}
+                  type="button"
+                  onClick={() => {
+                    callbacks.current.onSelect(event);
+                    setEventCluster(null);
+                  }}
+                >
+                  <span>
+                    {(event.t_rel_s ?? 0).toLocaleString(i18n.language, {
+                      maximumFractionDigits: 3,
+                    })}{" "}
+                    s
+                  </span>
+                  <span>{event.label}</span>
+                </button>
+              ))}
+            </div>
           ) : null}
         </div>
         <TimeNavigator duration={duration} window={visibleWindow} onWindow={changeWindow} />

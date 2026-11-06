@@ -2335,6 +2335,48 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   overflow: hidden;
   background: var(--card);
 }
+.kpi-timeline-v2 > div:first-child {
+  min-height: 32px;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--border);
+}
+.kpi-timeline-v2 details > div {
+  position: absolute;
+  z-index: 30;
+  max-width: min(620px, calc(100vw - 32px));
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--popover);
+  box-shadow: 0 8px 24px rgb(15 23 42 / 16%);
+}
+.kpi-timeline-cluster {
+  position: absolute;
+  top: 38px;
+  right: 16px;
+  z-index: 40;
+  display: grid;
+  width: min(330px, calc(100% - 32px));
+  max-height: 220px;
+  gap: 4px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 7px;
+  background: var(--popover);
+  box-shadow: 0 10px 28px rgb(15 23 42 / 20%);
+  font-size: 11px;
+}
+.kpi-timeline-cluster > button:not(.kpi-button) {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 6px;
+  border-radius: 4px;
+  padding: 5px;
+  text-align: left;
+}
+.kpi-timeline-cluster > button:not(.kpi-button):hover {
+  background: var(--muted);
+}
 .kpi-l3-toolbar {
   display: flex;
   flex-wrap: wrap;

@@ -725,6 +725,28 @@
       "event": "Événement"
     }
   },
+  "timelineV2": {
+    "rrcEvents": "RRC & Events",
+    "dataDl": "DATA DL",
+    "dataUl": "DATA UL",
+    "voice": "Voix",
+    "measurements": "Mesures",
+    "lteRsrp": "LTE RSRP",
+    "lteRsrq": "LTE RSRQ",
+    "lteSinr": "LTE SINR",
+    "nrRsrp": "NR RSRP",
+    "nrRsrq": "NR RSRQ",
+    "nrSinr": "NR SINR",
+    "timestamp": "Temps de capture",
+    "technology": "Technologie",
+    "procedure": "Procédure",
+    "status": "Statut",
+    "evidence": "Preuve",
+    "cluster_one": "{{count}} événement rapproché",
+    "cluster_other": "{{count}} événements rapprochés",
+    "clusterPicker": "Sélection des événements rapprochés",
+    "close": "Fermer"
+  },
   "sigTable": {
     "title": "Messages de signalisation",
     "fullscreen": "Messages en plein écran",
