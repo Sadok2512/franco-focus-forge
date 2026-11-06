@@ -4,6 +4,7 @@
 - Confie le clic d'un point KPI à une seule sélection exacte `(project_id, capture_id, seq)`, supprimant le double basculement qui annulait parfois le lien Serving.
 - Agrandit immédiatement le point actif avec un contour contrasté et conserve uniquement ses liens radio certifiés et sa fiche RF.
 - Affiche aussi les associations Serving `probable` publiées par l'API en pointillés, tout en conservant les associations `proven` en trait plein.
+- Peint le point KPI actif dans une couche dédiée, agrandie et cerclée, au-dessus des secteurs et des sites.
 
 ## 1.144.2 (patch) — Gestion indépendante des séries et axes Graph — 2026-11-06 (BC1)
 

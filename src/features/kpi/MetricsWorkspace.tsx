@@ -466,6 +466,8 @@ export function selectedMetricRadiusExpression(
   ] as ExpressionSpecification;
 }
 
+const SELECTED_METRIC_LAYER = "metrics-v3-selected";
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
@@ -664,6 +666,44 @@ function MetricMap({
         map.setPaintProperty("metrics-v3", "circle-color", categoryColorExpression(categories));
       else map.setPaintProperty("metrics-v3", "circle-color", ["get", "color"]);
     }
+    if (!map.getLayer(SELECTED_METRIC_LAYER)) {
+      map.addLayer({
+        id: SELECTED_METRIC_LAYER,
+        type: "circle",
+        source: "metrics-v3",
+        filter: ["==", ["get", "seq"], -1],
+        paint: {
+          "circle-radius": selectedMetricRadiusExpression(
+            preferences.pointSize,
+            selectedPoint?.seq,
+          ),
+          "circle-color": categories
+            ? categoryColorExpression(categories)
+            : ["get", "color"],
+          "circle-stroke-width": 2.5,
+          "circle-stroke-color": "#ffffff",
+          "circle-opacity": 1,
+        },
+      });
+    }
+    map.setFilter(SELECTED_METRIC_LAYER, [
+      "==",
+      ["get", "seq"],
+      selectedPoint?.seq ?? -1,
+    ]);
+    map.setPaintProperty(
+      SELECTED_METRIC_LAYER,
+      "circle-radius",
+      selectedMetricRadiusExpression(preferences.pointSize, selectedPoint?.seq),
+    );
+    map.setPaintProperty(
+      SELECTED_METRIC_LAYER,
+      "circle-color",
+      categories ? categoryColorExpression(categories) : ["get", "color"],
+    );
+    // Site and sector overlays are mounted independently; selection must stay
+    // visible above them without changing their own stacking or hit testing.
+    map.moveLayer(SELECTED_METRIC_LAYER);
     // Legend controls affect presentation only; the measurements stay mounted.
     if (typeof map.setFilter === "function")
       map.setFilter(
