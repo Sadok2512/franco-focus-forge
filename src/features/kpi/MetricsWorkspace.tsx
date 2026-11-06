@@ -466,6 +466,23 @@ export function selectedMetricRadiusExpression(
   ] as ExpressionSpecification;
 }
 
+/** The selected overlay is already filtered to one exact sequence, so its
+ * radius can be unconditional and cannot be reset by another point layer. */
+export function activeMetricRadiusExpression(pointSize = 3): ExpressionSpecification {
+  const k = pointSize / 3;
+  return [
+    "interpolate",
+    ["linear"],
+    ["zoom"],
+    9,
+    8 * k,
+    14,
+    11 * k,
+    18,
+    15 * k,
+  ] as ExpressionSpecification;
+}
+
 const SELECTED_METRIC_LAYER = "metrics-v3-selected";
 
 export function installMetricMapSource(
@@ -673,10 +690,7 @@ function MetricMap({
         source: "metrics-v3",
         filter: ["==", ["get", "seq"], -1],
         paint: {
-          "circle-radius": selectedMetricRadiusExpression(
-            preferences.pointSize,
-            selectedPoint?.seq,
-          ),
+          "circle-radius": activeMetricRadiusExpression(preferences.pointSize),
           "circle-color": categories
             ? categoryColorExpression(categories)
             : ["get", "color"],
@@ -694,7 +708,7 @@ function MetricMap({
     map.setPaintProperty(
       SELECTED_METRIC_LAYER,
       "circle-radius",
-      selectedMetricRadiusExpression(preferences.pointSize, selectedPoint?.seq),
+      activeMetricRadiusExpression(preferences.pointSize),
     );
     map.setPaintProperty(
       SELECTED_METRIC_LAYER,

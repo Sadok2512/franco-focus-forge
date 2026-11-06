@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
+  activeMetricRadiusExpression,
   activeMetricMapCellLinks,
   activeMetricMapServingLink,
   installMetricMapSource,
@@ -86,6 +87,17 @@ describe("Map selection keeps its own panel", () => {
       ["==", ["get", "seq"], 42],
       ["interpolate", ["linear"], ["zoom"], 9, 8, 14, 11, 18, 15],
       ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 6, 18, 9],
+    ]);
+    expect(activeMetricRadiusExpression(3)).toEqual([
+      "interpolate",
+      ["linear"],
+      ["zoom"],
+      9,
+      8,
+      14,
+      11,
+      18,
+      15,
     ]);
   });
 
