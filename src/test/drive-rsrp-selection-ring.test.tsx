@@ -190,4 +190,61 @@ describe("Selection ring of a drive point", () => {
       ),
     ).toBe(true);
   });
+
+  it("draws the selected Serving line from a non-RSRP host metric", async () => {
+    const map = mapDouble();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const selection = {
+      projectId: "Test_3",
+      captureId: "c1",
+      seq: 186998,
+      lng: 3.037336,
+      lat: 50.363434,
+    };
+    const hostMapData = {
+      map_points: [
+        {
+          seq: 186998,
+          lat: 50.363434,
+          lng: 3.037336,
+          code: "lte_earfcn_serving_pcell",
+          value: 1675,
+          t_rel_s: 2518.338,
+          tooltip: "EARFCN 1675",
+          serving_cell_lat: 50.37,
+          serving_cell_lng: 3.04,
+          serving_cell_pci: 195,
+          serving_cell_arfcn: 1675,
+          serving_cell_source: "chi_previous_seq_cell_ref_exact" as const,
+          neighbour_links: [],
+        },
+      ],
+    };
+    const component = (externalSelection: typeof selection | null) => (
+      <QueryClientProvider client={client}>
+        <DriveRsrpLayer
+          map={map as unknown as MlMap}
+          projectId="Test_3"
+          activeCaptureId="c1"
+          hidePoints
+          selectionLayerId="metrics-v3"
+          selectionInteractive={false}
+          externalSelection={externalSelection}
+          hostMapData={hostMapData}
+        />
+      </QueryClientProvider>
+    );
+    const view = render(component(null));
+    await waitFor(() => expect(map.layers.has(SELECTED)).toBe(true));
+    view.rerender(component(selection));
+
+    const links = map.sources.get("bc4-drive-rsrp-serving-links");
+    await waitFor(() =>
+      expect(
+        links?.setData.mock.calls.some(([data]) =>
+          JSON.stringify(data).includes('"coordinates":[[3.037336,50.363434],[3.04,50.37]]'),
+        ),
+      ).toBe(true),
+    );
+  });
 });

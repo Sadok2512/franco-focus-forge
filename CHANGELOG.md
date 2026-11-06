@@ -1,3 +1,8 @@
+## 1.144.7 (patch) — Liens radio sur tous les KPI Map — 2026-11-06 (BC4)
+
+- Conserve les preuves Serving, Neighbour et NR Anchor du point API sélectionné même lorsque le KPI affiché n'est pas du RSRP.
+- La sélection reste strictement liée à `(project_id, capture_id, seq)` et aucune cellule ni géométrie n'est inférée côté navigateur.
+
 ## 1.144.6 (patch) — Plein écran local L3 Signaling — 2026-11-06 (BC4)
 
 - Étend L3 Signaling sur toute la surface du cadre Workspace sans déclencher le plein écran natif du navigateur.

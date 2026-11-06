@@ -23,6 +23,7 @@ import {
   RSRP_SELECTION,
   driveRsrpDiagnostics,
   driveRsrpPoints,
+  metricMapEvidencePoints,
   rsrpClass,
   rsrpPositionsFrom,
   type DriveRsrpPoint,
@@ -400,8 +401,11 @@ export function DriveRsrpLayer({
     return rsrpPositionsFrom(gps.data.points, gps.data.markers);
   }, [positions, gps.data]);
   const drivePoints = useMemo(
-    () => driveRsrpPoints(analysisData, allPositions),
-    [analysisData, allPositions],
+    () =>
+      hostMapData
+        ? metricMapEvidencePoints(hostMapData)
+        : driveRsrpPoints(analysisData, allPositions),
+    [analysisData, allPositions, hostMapData],
   );
   const features = useMemo(
     () =>

@@ -105,7 +105,7 @@ export type DriveRsrpPoint = {
   seq: number;
   lat: number;
   lng: number;
-  value: number;
+  value: number | null;
   cell: number;
   t_rel_s?: number | null | undefined;
   serving_cell_id?: string | undefined;
@@ -145,6 +145,65 @@ const validPos = (lat: unknown, lng: unknown): boolean =>
   Math.abs(lat) <= 90 &&
   Math.abs(lng) <= 180;
 const num = (v: unknown): v is number => typeof v === "number" && Number.isFinite(v);
+
+type AnalysisMapPoint = NonNullable<AnalysisLike["map_points"]>[number];
+
+/** Copy only API-published radio evidence. Keeping this in one mapper prevents
+ * host metric maps and the dedicated RSRP map from drifting apart. */
+function radioEvidence(point: AnalysisMapPoint): Partial<DriveRsrpPoint> {
+  return {
+    ...((point.serving_link_confidence || point.serving_cell_source) &&
+    validPos(point.serving_cell_lat, point.serving_cell_lng)
+      ? {
+          serving_cell_id: point.serving_cell_id ?? undefined,
+          serving_cell_seq: point.serving_cell_seq ?? undefined,
+          serving_cell_ref_id: point.serving_cell_ref_id ?? undefined,
+          serving_site_id: point.serving_site_id ?? undefined,
+          serving_site_name: point.serving_site_name ?? undefined,
+          serving_cell_lat: point.serving_cell_lat as number,
+          serving_cell_lng: point.serving_cell_lng as number,
+          serving_cell_source: point.serving_cell_source ?? undefined,
+          serving_cell_pci: point.serving_cell_pci ?? undefined,
+          serving_cell_arfcn: point.serving_cell_arfcn ?? undefined,
+          serving_link_distance_m: point.serving_link_distance_m ?? undefined,
+          serving_link_confidence: point.serving_link_confidence ?? undefined,
+        }
+      : {}),
+    ...(point.probable_serving_cell_ref_id &&
+    validPos(point.probable_serving_cell_lat, point.probable_serving_cell_lng)
+      ? {
+          probable_serving_cell_ref_id: point.probable_serving_cell_ref_id,
+          probable_serving_site_id: point.probable_serving_site_id ?? undefined,
+          probable_serving_site_name: point.probable_serving_site_name ?? undefined,
+          probable_serving_cell_lat: point.probable_serving_cell_lat as number,
+          probable_serving_cell_lng: point.probable_serving_cell_lng as number,
+          probable_serving_pci: point.probable_serving_pci ?? undefined,
+          probable_serving_band_mhz: point.probable_serving_band_mhz ?? undefined,
+          probable_serving_distance_m: point.probable_serving_distance_m ?? undefined,
+        }
+      : {}),
+    neighbour_links: point.neighbour_links,
+    nr_anchor_link: point.nr_anchor_link,
+  };
+}
+
+/** Radio-link carrier for a KPI map. A host map may display EARFCN, throughput,
+ * a categorical KPI, or RSRP; link selection must therefore not discard its
+ * exact API point merely because the visible metric is not `cell_rsrp`. */
+export function metricMapEvidencePoints(data: AnalysisLike | undefined): DriveRsrpPoint[] {
+  return (data?.map_points ?? [])
+    .filter((point) => validPos(point.lat, point.lng))
+    .map((point) => ({
+      seq: point.seq,
+      lat: point.lat,
+      lng: point.lng,
+      value: num(point.value) ? point.value : null,
+      cell: rsrpColumnCell(point.code) ?? 0,
+      t_rel_s: point.t_rel_s,
+      position_source: "map" as const,
+      ...radioEvidence(point),
+    }));
+}
 
 /** First sequence → position; the first fix seen for a sequence wins, nothing is interpolated. */
 function positionBySeq(positions: RsrpPosition[] | undefined): Map<number, RsrpPosition> {
@@ -190,38 +249,7 @@ export function driveRsrpPoints(
       cell: rsrpColumnCell(p.code) ?? 0,
       t_rel_s: p.t_rel_s,
       position_source: "map" as const,
-      ...((p.serving_link_confidence || p.serving_cell_source) &&
-      validPos(p.serving_cell_lat, p.serving_cell_lng)
-        ? {
-            serving_cell_id: p.serving_cell_id ?? undefined,
-            serving_cell_seq: p.serving_cell_seq ?? undefined,
-            serving_cell_ref_id: p.serving_cell_ref_id ?? undefined,
-            serving_site_id: p.serving_site_id ?? undefined,
-            serving_site_name: p.serving_site_name ?? undefined,
-            serving_cell_lat: p.serving_cell_lat as number,
-            serving_cell_lng: p.serving_cell_lng as number,
-            serving_cell_source: p.serving_cell_source ?? undefined,
-            serving_cell_pci: p.serving_cell_pci ?? undefined,
-            serving_cell_arfcn: p.serving_cell_arfcn ?? undefined,
-            serving_link_distance_m: p.serving_link_distance_m ?? undefined,
-            serving_link_confidence: p.serving_link_confidence ?? undefined,
-          }
-        : {}),
-      ...(p.probable_serving_cell_ref_id &&
-      validPos(p.probable_serving_cell_lat, p.probable_serving_cell_lng)
-        ? {
-            probable_serving_cell_ref_id: p.probable_serving_cell_ref_id,
-            probable_serving_site_id: p.probable_serving_site_id ?? undefined,
-            probable_serving_site_name: p.probable_serving_site_name ?? undefined,
-            probable_serving_cell_lat: p.probable_serving_cell_lat as number,
-            probable_serving_cell_lng: p.probable_serving_cell_lng as number,
-            probable_serving_pci: p.probable_serving_pci ?? undefined,
-            probable_serving_band_mhz: p.probable_serving_band_mhz ?? undefined,
-            probable_serving_distance_m: p.probable_serving_distance_m ?? undefined,
-          }
-        : {}),
-      neighbour_links: p.neighbour_links,
-      nr_anchor_link: p.nr_anchor_link,
+      ...radioEvidence(p),
     }));
   if (fromMap.length) return fromMap;
   const gps = positionBySeq(positions);

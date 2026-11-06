@@ -4,6 +4,7 @@ import {
   driveRsrpPoints,
   findRsrpKpi,
   isRsrpPointCode,
+  metricMapEvidencePoints,
   rsrpClass,
   RSRP_SELECTION,
   rsrpPositionsFrom,
@@ -67,6 +68,44 @@ describe("RSRP map point codes", () => {
       value: -90,
     }));
     expect(driveRsrpPoints({ map_points })).toHaveLength(4935);
+  });
+});
+
+describe("host metric map radio evidence", () => {
+  it("keeps Serving and NR anchor links when the visible KPI is not RSRP", () => {
+    const points = metricMapEvidencePoints({
+      map_points: [
+        {
+          seq: 186998,
+          lat: 50.363434,
+          lng: 3.037336,
+          code: "lte_earfcn_serving_pcell",
+          value: 1675,
+          serving_cell_lat: 50.37,
+          serving_cell_lng: 3.04,
+          serving_cell_pci: 195,
+          serving_cell_arfcn: 1675,
+          serving_cell_source: "chi_previous_seq_cell_ref_exact",
+          nr_anchor_link: {
+            lat: 50.38,
+            lng: 3.05,
+            pci: 42,
+            arfcn: 640000,
+            confidence: "proven",
+          } as never,
+        },
+      ],
+    });
+
+    expect(points).toHaveLength(1);
+    expect(points[0]).toMatchObject({
+      seq: 186998,
+      serving_cell_lat: 50.37,
+      serving_cell_lng: 3.04,
+      serving_cell_pci: 195,
+      serving_cell_arfcn: 1675,
+      nr_anchor_link: { lat: 50.38, lng: 3.05 },
+    });
   });
 });
 
