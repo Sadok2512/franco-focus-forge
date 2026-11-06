@@ -1,3 +1,9 @@
+## 1.144.6 (patch) — Plein écran local L3 Signaling — 2026-11-06 (BC4)
+
+- Étend L3 Signaling sur toute la surface du cadre Workspace sans déclencher le plein écran natif du navigateur.
+- Neutralise la hauteur viewport de Signaling View en mode embarqué afin d'éviter le contenu coupé par le PanelShell.
+- Escape ou le bouton Restaurer rendent immédiatement la disposition précédente.
+
 ## 1.144.4 (patch) — Liaison Serving lisible à toute distance — 2026-11-06 (BC4)
 
 - Empêche les infobulles Site/Cell de recouvrir la liaison lorsqu'un point de mesure occupe le même pixel.

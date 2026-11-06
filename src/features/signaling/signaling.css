@@ -836,6 +836,16 @@ html.app-header-floating:not(.app-fullscreen)
   margin-top: 56px;
   height: calc(100dvh - var(--app-header-offset) - 81px);
 }
+/* In KPI Analytics, inspection fullscreen is local to the Workspace frame.
+ * The outer KPI panel owns the available rectangle; never apply the standalone
+ * viewport height or floating-header offset inside that embedded frame. */
+.signaling-workspace.signaling-workspace-embedded:has(.signaling-inspection-expanded),
+html.app-header-floating:not(.app-fullscreen)
+  .signaling-workspace.signaling-workspace-embedded:has(.signaling-inspection-expanded) {
+  height: 100%;
+  min-height: 0;
+  margin-top: 0;
+}
 
 /* Netteté (Signaling uniquement) : textes min 12 px, gris plus foncé, en-tête plein. */
 .signaling-workspace {

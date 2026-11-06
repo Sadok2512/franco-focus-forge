@@ -519,11 +519,28 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   gap: 16px;
 }
 .kpi-workspace-grid-viewport {
+  position: relative;
   width: 100%;
   min-width: 0;
   overflow-x: auto;
   padding-block: 0 6px;
   flex: 1;
+}
+.kpi-workspace-grid-viewport:has(
+    .signaling-workspace-embedded .signaling-inspection-expanded
+  ) {
+  overflow: hidden;
+}
+.kpi-workspace-grid-viewport
+  .kpi-panel-shell:has(.signaling-workspace-embedded .signaling-inspection-expanded) {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  grid-column: 1 / -1 !important;
+  width: 100%;
+  height: 100% !important;
+  min-height: 0;
+  background: var(--background);
 }
 .kpi-workspace-grid-viewport[hidden] {
   display: none;
