@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReactNode } from "react";
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import {
   activeMetricMapCellLinks,
@@ -10,6 +10,7 @@ import {
   metricMapLinkFeatures,
   metricMapNumericExtent,
   MetricsWorkspace,
+  selectedMetricRadiusExpression,
   toggleMetricMapPoint,
 } from "@/features/kpi/MetricsWorkspace";
 import { getMetricAnalysis, getMetricMap } from "@/lib/api/client";
@@ -78,6 +79,16 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
+  it("enlarges only the exact selected sequence", () => {
+    const expression = selectedMetricRadiusExpression(3, 42);
+    expect(expression).toEqual([
+      "case",
+      ["==", ["get", "seq"], 42],
+      ["interpolate", ["linear"], ["zoom"], 9, 8, 14, 11, 18, 15],
+      ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 6, 18, 9],
+    ]);
+  });
+
   // Graph/Map cards and the measurements table are independent panels. A
   // targeted map switch must not close a table explicitly restored for this
   // workspace tab.
@@ -361,6 +372,35 @@ describe("Map selection keeps its own panel", () => {
       hostMapData: { map_points: mapPoints },
       linkVisibility: { serving: true, neighbour: false, nr_anchor: true },
     });
+    const driveProps = renderers.drive.mock.lastCall?.[0] as {
+      onSelectedChange: (selection: {
+        projectId: string;
+        captureId: string;
+        seq: number;
+        lng: number;
+        lat: number;
+      }) => void;
+    };
+    act(() =>
+      driveProps.onSelectedChange({
+        projectId: "project-a",
+        captureId: "44621571bccc",
+        seq: 7,
+        lng: 2.3,
+        lat: 48.8,
+      }),
+    );
+    await waitFor(() =>
+      expect(renderers.drive.mock.lastCall?.[0]).toMatchObject({
+        externalSelection: {
+          projectId: "project-a",
+          captureId: "44621571bccc",
+          seq: 7,
+          lng: 2.3,
+          lat: 48.8,
+        },
+      }),
+    );
   });
 
   // 1.106.2 — ouvrir le tableau explicitement (⋮ → Tableau, paneRequest)

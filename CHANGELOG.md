@@ -1,3 +1,9 @@
+## 1.144.3 (patch) — SINR visible et sélection Serving fiable — 2026-11-06 (BC4)
+
+- Affiche RSRP et SINR dans la hauteur compacte initiale de la Timeline tout en conservant les six mesures LTE/NR sélectionnables, sans interpolation ni modification des valeurs.
+- Confie le clic d'un point KPI à une seule sélection exacte `(project_id, capture_id, seq)`, supprimant le double basculement qui annulait parfois le lien Serving.
+- Agrandit immédiatement le point actif avec un contour contrasté et conserve uniquement ses liens radio certifiés et sa fiche RF.
+
 ## 1.144.2 (patch) — Gestion indépendante des séries et axes Graph — 2026-11-06 (BC1)
 
 - Ajoute « Manage Series » au menu ⋯ des Graphs pour masquer, colorer, réordonner, affecter à l’axe gauche/droit ou retirer chaque série sans fermer le panneau.

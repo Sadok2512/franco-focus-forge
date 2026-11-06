@@ -105,9 +105,9 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
     ].map((span) => span.style.background);
     for (const cls of RSRP_CLASSES) expect(swatches).toContain(rgb(cls.color));
     // The proven cell links are listed too.
-    expect(host.textContent).toContain("Serving cell");
-    expect(host.textContent).toContain("Neighbour cells");
-    expect(host.textContent).toContain("NR anchor");
+    expect(host.textContent).toContain("LTE Serving (PCell)");
+    expect(host.textContent).toContain("Neighbour");
+    expect(host.textContent).toContain("NR PSCell / SCG");
 
     // Clicking a class in the panel hides it on the map and remembers the choice.
     const firstCheckbox = host.querySelector<HTMLInputElement>(
@@ -121,7 +121,7 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
         map.setFilter.mock.calls.some((call) => JSON.stringify(call).includes('"excellent"')),
       ).toBe(true),
     );
-    expect(JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v2") ?? "{}").hidden).toContain(
+    expect(JSON.parse(localStorage.getItem("bc4.signaling.driveRsrp.v4") ?? "{}").hidden).toContain(
       "excellent",
     );
   });
@@ -133,9 +133,9 @@ describe("Drive RSRP legend inside the host map's legend panel", () => {
 
     await waitFor(() => expect(host.querySelector("[data-map-drive-rsrp-legend]")).not.toBeNull());
     expect(host.textContent).toContain("Point → cell links");
-    expect(host.textContent).toContain("Serving cell");
-    expect(host.textContent).toContain("Neighbour cells");
-    expect(host.textContent).toContain("NR anchor");
+    expect(host.textContent).toContain("LTE Serving (PCell)");
+    expect(host.textContent).toContain("Neighbour");
+    expect(host.textContent).toContain("NR PSCell / SCG");
     expect(host.querySelectorAll("input[type=checkbox]")).toHaveLength(4);
   });
 });

@@ -220,15 +220,22 @@ export function RfTimeline({
     () => metricDefinitions.map((metric) => metric.code),
     [metricDefinitions],
   );
+  // Keep the compact panel useful without hiding SINR below an internal
+  // scroll viewport. All six LTE/NR measurements remain available from the
+  // checkboxes; the two primary LTE traces are visible on first open.
+  const compactDefaultMeasures = ["cell_rsrp@lte-type-0", "cell_sinr@lte-type-0"];
   const [measures, setMeasures] = useState<string[]>(() => {
     if (!compactKpi) return legacyMetrics.map((metric) => metric.code);
     try {
       const value: unknown = JSON.parse(localStorage.getItem(`${storageScope}.visible`) ?? "[]");
-      return Array.isArray(value) && value.every((item) => typeof item === "string") && value.length
-        ? value
-        : compactMetrics.map((metric) => metric.code);
+      if (Array.isArray(value) && value.every((item) => typeof item === "string") && value.length) {
+        // Migrate the first Timeline V2 release, which selected all six traces
+        // and consequently placed SINR below the visible 340 px panel.
+        return value.length === compactMetrics.length ? compactDefaultMeasures : value;
+      }
+      return compactDefaultMeasures;
     } catch {
-      return compactMetrics.map((metric) => metric.code);
+      return compactDefaultMeasures;
     }
   });
   const [measurementsOpen, setMeasurementsOpen] = useState(() => {

@@ -18,7 +18,7 @@ import { API_LEAN_STALE_MS, metricCapturesKey, metricMapKey, metricTableKey } fr
 import type { MetricAnalysis, MetricInfo, MetricMapResponse } from "@/lib/api/metrics-schemas";
 import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { KpiMapOSM } from "./KpiMapOSM";
-import { DriveRsrpLayer } from "./DriveRsrpLayer";
+import { DriveRsrpLayer, type SelectedDrivePoint } from "./DriveRsrpLayer";
 import {
   MapLegendHeaderActions,
   MapLegendList,
@@ -79,7 +79,6 @@ import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   pointCellLinks,
-  preferredCertifiedPoint,
   type CellLinkKind,
 } from "./measurement-point-popup";
 type MetricLinkKind = CellLinkKind;
@@ -448,6 +447,24 @@ export function metricRadiusExpression(pointSize = 3): ExpressionSpecification {
   ] as ExpressionSpecification;
 }
 
+/** Enlarge only the exact selected measurement while retaining the metric's
+ * own colour. The selection remains sequence-scoped and does not affect any
+ * other GPS fix sharing the same coordinates. */
+export function selectedMetricRadiusExpression(
+  pointSize = 3,
+  selectedSeq?: number,
+): ExpressionSpecification {
+  const normal = metricRadiusExpression(pointSize);
+  if (selectedSeq === undefined) return normal;
+  const k = pointSize / 3;
+  return [
+    "case",
+    ["==", ["get", "seq"], selectedSeq],
+    ["interpolate", ["linear"], ["zoom"], 9, 8 * k, 14, 11 * k, 18, 15 * k],
+    normal,
+  ] as ExpressionSpecification;
+}
+
 export function installMetricMapSource(
   map: MlMap,
   features: ReturnType<typeof metricMapFeatures>,
@@ -524,8 +541,8 @@ function MetricMap({
   // Legend tab host for the drive layer's RSRP classes and cell-link toggles,
   // same wiring as the Signaling and KPI measurement maps.
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
-  const [selectedPoint, setSelectedPoint] = useState<MetricMapPointIdentity | null>(null);
-  const selectedPointRef = useRef<MetricMapPointIdentity | null>(null);
+  const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
+  const selectedPointRef = useRef<SelectedDrivePoint | null>(null);
   useEffect(() => {
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
@@ -619,8 +636,20 @@ function MetricMap({
       map.setPaintProperty(
         "metrics-v3",
         "circle-radius",
-        metricRadiusExpression(preferences.pointSize),
+        selectedMetricRadiusExpression(preferences.pointSize, selectedPoint?.seq),
       );
+      map.setPaintProperty("metrics-v3", "circle-stroke-width", [
+        "case",
+        ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
+        2.5,
+        0.5,
+      ]);
+      map.setPaintProperty("metrics-v3", "circle-stroke-color", [
+        "case",
+        ["==", ["get", "seq"], selectedPoint?.seq ?? -1],
+        "#ffffff",
+        "rgba(15,23,42,0.55)",
+      ]);
     } else {
       installMetricMapSource(
         map,
@@ -665,78 +694,7 @@ function MetricMap({
     presentation.hidden,
     presentation.visible,
     closed,
-  ]);
-  useEffect(() => {
-    if (!map) return;
-    const click = (e: import("maplibre-gl").MapLayerMouseEvent) => {
-      // GPS fixes can overlap. Prefer the active sequence in the clicked
-      // feature stack so a second click on the same visual point deselects it.
-      const activeFeature = e.features?.find((feature) => {
-        const seq = Number(feature.properties?.["seq"]);
-        return (
-          Number.isFinite(seq) &&
-          sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq)
-        );
-      });
-      const sequences = (e.features ?? [])
-        .map((feature) => Number(feature.properties?.["seq"]))
-        .filter((seq) => Number.isFinite(seq));
-      const activeSeq = Number(activeFeature?.properties?.["seq"]);
-      const point = Number.isFinite(activeSeq)
-        ? data?.map_points.find((candidate) => candidate.seq === activeSeq)
-        : preferredCertifiedPoint(data?.map_points ?? [], sequences);
-      if (!point) return;
-      const seq = point.seq;
-      const nextSelection = toggleMetricMapPoint(
-        selectedPointRef.current,
-        projectId,
-        captureId,
-        seq,
-      );
-      if (!nextSelection) {
-        selectedPointRef.current = null;
-        setSelectedPoint(null);
-        pointSync.select(null);
-        return;
-      }
-      selectedPointRef.current = nextSelection;
-      setSelectedPoint(nextSelection);
-      pointSync.select({
-        projectId,
-        workspaceId: dropContext?.workspaceId ?? heightKey ?? "map",
-        captureId,
-        seq,
-        seqLast: seq,
-        tRelS: point.t_rel_s,
-        lat: point.lat,
-        lng: point.lng,
-        source: "map",
-      });
-    };
-    const pointer = () => {
-      map.getCanvas().style.cursor = "pointer";
-    };
-    const noPointer = () => {
-      map.getCanvas().style.cursor = "";
-    };
-    map.on("click", "metrics-v3", click);
-    map.on("mouseenter", "metrics-v3", pointer);
-    map.on("mouseleave", "metrics-v3", noPointer);
-    return () => {
-      map.off("click", "metrics-v3", click);
-      map.off("mouseenter", "metrics-v3", pointer);
-      map.off("mouseleave", "metrics-v3", noPointer);
-    };
-  }, [
-    captureId,
-    data,
-    dropContext?.workspaceId,
-    heightKey,
-    label,
-    map,
-    pointSync,
-    projectId,
-    unit,
+    selectedPoint?.seq,
   ]);
   useEffect(() => {
     if (!pointSync.enabled) return;
@@ -761,12 +719,30 @@ function MetricMap({
     setSelectedPoint(null);
   }, [captureId, map, projectId]);
   const first = data?.map_points[0];
-  const driveSelection = selectedPoint
-    ? (() => {
-        const point = data?.map_points.find((candidate) => candidate.seq === selectedPoint.seq);
-        return point ? { ...selectedPoint, lng: point.lng, lat: point.lat } : null;
-      })()
-    : null;
+  const onDriveSelection = useCallback(
+    (selection: SelectedDrivePoint | null) => {
+      selectedPointRef.current = selection;
+      setSelectedPoint(selection);
+      if (!selection) {
+        pointSync.select(null);
+        return;
+      }
+      const point = data?.map_points.find((candidate) => candidate.seq === selection.seq);
+      if (!point) return;
+      pointSync.select({
+        projectId,
+        workspaceId: dropContext?.workspaceId ?? heightKey ?? "map",
+        captureId,
+        seq: point.seq,
+        seqLast: point.seq,
+        tRelS: point.t_rel_s,
+        lat: point.lat,
+        lng: point.lng,
+        source: "map",
+      });
+    },
+    [captureId, data, dropContext?.workspaceId, heightKey, pointSync, projectId],
+  );
   // The metric legend lives in the Layers panel's Legend tab, like the
   // Signaling map — nothing floats over the map itself.
   const legend = (
@@ -963,7 +939,8 @@ function MetricMap({
         // The map's own cell links must always follow its selected point.
         // Workspace Sync only controls propagation to the other panels; it
         // must not disable Serving / neighbour / NR-anchor selection locally.
-        externalSelection={driveSelection}
+        externalSelection={selectedPoint}
+        onSelectedChange={onDriveSelection}
         hostMapData={data}
         pointMetrics={(seq) => {
           const point = data?.map_points.find((candidate) => candidate.seq === seq);
