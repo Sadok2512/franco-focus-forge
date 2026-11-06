@@ -1,3 +1,9 @@
+## 1.143.4 (patch) — Superposition multi-KPI lisible — 2026-11-06 (BC4)
+
+- Rend chaque KPI depuis ses propres échantillons sur l'axe temporel partagé, sans injecter les absences des autres séries comme des coupures artificielles.
+- Bascule en points lorsqu'une série possède plusieurs valeurs au même timestamp et coupe les lignes aux véritables lacunes d'acquisition, sans supprimer, interpoler ni transformer les valeurs RF.
+- Ajoute les unités aux axes et à la légende interactive, avec visibilité par série persistée dans le Workspace et zoom conservé.
+
 ## 1.143.3 (patch) — Cellules directement sous chaque KPI simplifié — 2026-11-05 (BC4)
 
 - Affiche chaque feuille PCell/SCell directement sous son KPI dans la vue Simplifiée, avec le nom exact de la vue Avancée.

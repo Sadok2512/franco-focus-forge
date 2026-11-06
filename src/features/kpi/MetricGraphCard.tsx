@@ -46,7 +46,9 @@ import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
 import {
   addGraphSeries,
   axisOf,
+  readHiddenGraphSeries,
   readGraphSeries,
+  writeHiddenGraphSeries,
   writeGraphSeries,
   type GraphSeries,
 } from "./graph-series-drop";
@@ -110,6 +112,84 @@ export function metricZoomDomain(
 
 export function metricZoomStorageKey(workspaceId: string | undefined, panelId: string) {
   return `bc4.metric-zoom.v1.${workspaceId ?? "metrics"}.${panelId}`;
+}
+
+export type MetricNumericPoint = {
+  seq: number;
+  t_rel_s: number;
+  value: number;
+};
+
+export type MetricPlotPoint = {
+  seq: number;
+  t_rel_s: number;
+  value: number | null;
+};
+
+/** Keep each API series independent. Merging them into one sparse row set
+ * inserts false nulls at every sample owned by another metric; Recharts then
+ * breaks a line into tiny strokes when connectNulls=false. */
+export function sortedMetricPoints(points: readonly MetricNumericPoint[]): MetricNumericPoint[] {
+  return [...points].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq);
+}
+
+export function metricSeriesRenderMode(
+  requested: MetricPlot,
+  points: readonly MetricNumericPoint[],
+): MetricPlot {
+  if (requested !== "line") return requested;
+  const timestamps = new Set<number>();
+  for (const point of points) {
+    if (timestamps.has(point.t_rel_s)) return "point";
+    timestamps.add(point.t_rel_s);
+  }
+  return "line";
+}
+
+/** Break a continuous line across a real acquisition gap without dropping or
+ * interpolating observations. The null marker is presentation-only and lies
+ * between two retained source samples. */
+export function metricSeriesPlotPoints(
+  points: readonly MetricNumericPoint[],
+  mode: MetricPlot,
+): MetricPlotPoint[] {
+  const ordered = sortedMetricPoints(points);
+  if (mode !== "line" || ordered.length < 3) return ordered;
+  const deltas = ordered
+    .slice(1)
+    .map((point, index) => point.t_rel_s - ordered[index]!.t_rel_s)
+    .filter((delta) => delta > 0)
+    .sort((a, b) => a - b);
+  const median = deltas.length ? deltas[Math.floor(deltas.length / 2)]! : 0;
+  if (!(median > 0)) return ordered;
+  const gapLimit = Math.max(10, median * 5);
+  const plotted: MetricPlotPoint[] = [];
+  for (const point of ordered) {
+    const previous = plotted.at(-1);
+    if (previous && previous.value !== null && point.t_rel_s - previous.t_rel_s > gapLimit) {
+      plotted.push({
+        seq: previous.seq,
+        t_rel_s: previous.t_rel_s + (point.t_rel_s - previous.t_rel_s) / 2,
+        value: null,
+      });
+    }
+    plotted.push(point);
+  }
+  return plotted;
+}
+
+export function metricTimelineRows(
+  series: ReadonlyArray<{ code: string; points: readonly MetricNumericPoint[] }>,
+) {
+  const rows = new Map<number, { seq: number; t_rel_s: number } & Record<string, number>>();
+  for (const item of series) {
+    for (const point of sortedMetricPoints(item.points)) {
+      const row = rows.get(point.t_rel_s) ?? { seq: point.seq, t_rel_s: point.t_rel_s };
+      row[item.code] = point.value;
+      rows.set(point.t_rel_s, row);
+    }
+  }
+  return [...rows.values()].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq);
 }
 
 function readMetricZoom(workspaceId: string | undefined, panelId: string): MetricZoomWindow | null {
@@ -789,28 +869,52 @@ function MetricTimePlot({
     retry: false,
   });
   const seriesData = extra.length === 0 && prefetchedSeries ? prefetchedSeries : series.data;
-  // Une ligne par échantillon (seq partagé par toutes les séries de la même
-  // capture) : aucune interpolation, une série sans échantillon à ce seq est
-  // simplement absente.
-  const rows = useMemo(() => {
-    const bySeq = new Map<number, { t_rel_s: number } & Record<string, number>>();
-    for (const s of seriesData?.series ?? []) {
-      for (const p of s.points ?? []) {
-        if (typeof p.value !== "number") continue;
-        const row = bySeq.get(p.seq) ?? { t_rel_s: p.t_rel_s };
-        row[s.code] = p.value;
-        bySeq.set(p.seq, row);
-      }
-    }
-    return [...bySeq.entries()].sort((a, b) => a[0] - b[0]).map(([seq, row]) => ({ seq, ...row }));
-  }, [seriesData]);
+  const numericSeries = useMemo(
+    () =>
+      (seriesData?.series ?? []).map((item) => ({
+        code: item.code,
+        points: item.points
+          .filter(
+            (point): point is typeof point & { value: number } => typeof point.value === "number",
+          )
+          .map((point) => ({ seq: point.seq, t_rel_s: point.t_rel_s, value: point.value })),
+      })),
+    [seriesData],
+  );
+  // The shared timeline drives only X domain, brush and exact-time tooltips.
+  // Every rendered series keeps its own source points below.
+  const rows = useMemo(() => metricTimelineRows(numericSeries), [numericSeries]);
   const units = [unit, ...extra.map((s) => s.unit)];
-  const seriesList = [
+  const requestedSeries = [
     { code, label, unit, color },
     ...extra.map((s) => ({ code: s.code, label: s.label, unit: s.unit, color: s.color })),
   ];
+  const seriesList = requestedSeries.map((requested) => {
+    const api = seriesData?.series.find((item) => item.code === requested.code);
+    const numeric = numericSeries.find((item) => item.code === requested.code)?.points ?? [];
+    const renderMode = metricSeriesRenderMode(plot, numeric);
+    return {
+      ...requested,
+      label: api?.label ?? requested.label,
+      unit: api?.unit ?? requested.unit,
+      points: metricSeriesPlotPoints(numeric, renderMode),
+      renderMode,
+    };
+  });
   const axisFor = (value: string) => axisOf(units, value) ?? "left";
   const rightAxis = seriesList.some((s) => axisFor(s.unit) === "right");
+  const leftAxisUnit = seriesList.find((s) => axisFor(s.unit) === "left")?.unit ?? "";
+  const rightAxisUnit = seriesList.find((s) => axisFor(s.unit) === "right")?.unit ?? "";
+  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(
+    () => new Set(readHiddenGraphSeries(workspaceId, code)),
+  );
+  const toggleSeries = (seriesCode: string) => {
+    const next = new Set(hiddenSeries);
+    if (next.has(seriesCode)) next.delete(seriesCode);
+    else next.add(seriesCode);
+    setHiddenSeries(next);
+    writeHiddenGraphSeries(workspaceId, code, [...next]);
+  };
   const effectiveZoom = normalizeMetricZoom(zoom, rows.length);
   const [visibleXMin, visibleXMax] = metricZoomDomain(rows, effectiveZoom);
 
@@ -1018,6 +1122,8 @@ function MetricTimePlot({
       data-zoom-end={effectiveZoom?.endIndex ?? Math.max(0, rows.length - 1)}
       data-x-min={visibleXMin}
       data-x-max={visibleXMax}
+      data-series-count={seriesList.length}
+      data-series-render={seriesList.map((item) => `${item.code}:${item.renderMode}`).join(",")}
     >
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
@@ -1040,21 +1146,41 @@ function MetricTimePlot({
           />
           <YAxis
             yAxisId="left"
-            width={54}
+            width={64}
             domain={["auto", "auto"]}
             tick={{ fontSize: 10, fill: "#64748b" }}
+            {...(leftAxisUnit
+              ? { label: { value: leftAxisUnit, angle: -90, position: "insideLeft" } }
+              : {})}
           />
           {rightAxis && (
             <YAxis
               yAxisId="right"
               orientation="right"
-              width={54}
+              width={64}
               domain={["auto", "auto"]}
               tick={{ fontSize: 10, fill: "#64748b" }}
+              {...(rightAxisUnit
+                ? { label: { value: rightAxisUnit, angle: 90, position: "insideRight" } }
+                : {})}
             />
           )}
-          {seriesList.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} iconSize={9} />}
+          {seriesList.length > 1 && (
+            <Legend
+              wrapperStyle={{ fontSize: 10, maxWidth: "calc(100% - 12px)" }}
+              iconSize={9}
+              formatter={(value) => {
+                const item = seriesList.find((candidate) => candidate.label === value);
+                return `${value}${item?.unit ? ` · ${item.unit}` : ""}`;
+              }}
+              onClick={(entry) => {
+                const item = seriesList.find((candidate) => candidate.label === entry.value);
+                if (item) toggleSeries(item.code);
+              }}
+            />
+          )}
           <Tooltip
+            shared={false}
             cursor={{ stroke: "#94a3b8", strokeDasharray: "2 2" }}
             contentStyle={{ fontSize: 11, padding: "4px 8px" }}
             formatter={(value: number, name: string) => {
@@ -1075,23 +1201,31 @@ function MetricTimePlot({
             }}
           />
           {seriesList.map((s) =>
-            plot === "bar" ? (
+            s.renderMode === "bar" ? (
               <Bar
                 key={s.code}
                 yAxisId={axisFor(s.unit)}
-                dataKey={s.code}
+                data={s.points.filter(
+                  (point): point is MetricPlotPoint & { value: number } => point.value !== null,
+                )}
+                dataKey="value"
                 name={s.label}
                 fill={s.color}
                 barSize={6}
+                hide={hiddenSeries.has(s.code)}
                 isAnimationActive={false}
               />
-            ) : plot === "point" ? (
+            ) : s.renderMode === "point" ? (
               <Scatter
                 key={s.code}
                 yAxisId={axisFor(s.unit)}
-                dataKey={s.code}
+                data={s.points.filter(
+                  (point): point is MetricPlotPoint & { value: number } => point.value !== null,
+                )}
+                dataKey="value"
                 name={s.label}
                 fill={s.color}
+                hide={hiddenSeries.has(s.code)}
                 isAnimationActive={false}
               />
             ) : (
@@ -1099,12 +1233,14 @@ function MetricTimePlot({
                 key={s.code}
                 yAxisId={axisFor(s.unit)}
                 type="linear"
-                dataKey={s.code}
+                data={s.points}
+                dataKey="value"
                 name={s.label}
                 stroke={s.color}
                 strokeWidth={1.2}
                 dot={false}
                 connectNulls={false}
+                hide={hiddenSeries.has(s.code)}
                 isAnimationActive={false}
               />
             ),

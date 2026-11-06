@@ -8,6 +8,9 @@ export type GraphSeries = { code: string; label: string; unit: string; color: st
 const storageKey = (tabId: string | undefined, base: string) =>
   `bc4.graph.series.${tabId ?? "default"}.${base}`;
 
+const visibilityStorageKey = (tabId: string | undefined, base: string) =>
+  `bc4.graph.series-hidden.v1.${tabId ?? "default"}.${base}`;
+
 export function readGraphSeries(tabId: string | undefined, base: string): GraphSeries[] {
   try {
     const raw = localStorage.getItem(storageKey(tabId, base));
@@ -47,6 +50,31 @@ export function writeGraphSeries(
     localStorage.setItem(storageKey(tabId, base), JSON.stringify(series));
   } catch {
     /* storage refused (private mode) — series stay for this tab session only */
+  }
+}
+
+export function readHiddenGraphSeries(tabId: string | undefined, base: string): string[] {
+  try {
+    const value: unknown = JSON.parse(
+      localStorage.getItem(visibilityStorageKey(tabId, base)) ?? "[]",
+    );
+    return Array.isArray(value)
+      ? value.filter((code): code is string => typeof code === "string" && code.length > 0)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+export function writeHiddenGraphSeries(
+  tabId: string | undefined,
+  base: string,
+  codes: readonly string[],
+): void {
+  try {
+    localStorage.setItem(visibilityStorageKey(tabId, base), JSON.stringify([...codes]));
+  } catch {
+    /* storage refused — visibility remains valid for this mounted graph */
   }
 }
 

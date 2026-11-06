@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  metricSeriesPlotPoints,
+  metricSeriesRenderMode,
+  metricTimelineRows,
   metricZoomDomain,
   metricZoomStorageKey,
   normalizeMetricZoom,
@@ -32,5 +35,48 @@ describe("Metric graph temporal zoom", () => {
     expect(metricZoomStorageKey("workspace-b", "graph-1")).not.toBe(
       metricZoomStorageKey("workspace-a", "graph-1"),
     );
+  });
+});
+
+describe("Metric graph independent overlay series", () => {
+  const pcell = [
+    { seq: 10, t_rel_s: 1, value: 4 },
+    { seq: 30, t_rel_s: 3, value: 8 },
+  ];
+  const scell = [
+    { seq: 20, t_rel_s: 2, value: 2 },
+    { seq: 40, t_rel_s: 4, value: 6 },
+  ];
+
+  it("does not inject the other KPI samples as nulls into either line", () => {
+    expect(metricSeriesPlotPoints(pcell, "line")).toEqual(pcell);
+    expect(metricSeriesPlotPoints(scell, "line")).toEqual(scell);
+    expect(
+      metricTimelineRows([
+        { code: "pdsch@pcell", points: pcell },
+        { code: "pdsch@scell1", points: scell },
+      ]).map((row) => row.t_rel_s),
+    ).toEqual([1, 2, 3, 4]);
+  });
+
+  it("uses points for duplicate timestamps instead of drawing a vertical segment", () => {
+    expect(
+      metricSeriesRenderMode("line", [
+        { seq: 1, t_rel_s: 1, value: 10 },
+        { seq: 2, t_rel_s: 1, value: 20 },
+      ]),
+    ).toBe("point");
+  });
+
+  it("keeps source samples and inserts only a null break across a real gap", () => {
+    const source = [
+      { seq: 1, t_rel_s: 0, value: 1 },
+      { seq: 2, t_rel_s: 1, value: 2 },
+      { seq: 3, t_rel_s: 2, value: 3 },
+      { seq: 4, t_rel_s: 50, value: 4 },
+    ];
+    const plotted = metricSeriesPlotPoints(source, "line");
+    expect(plotted.filter((point) => point.value !== null)).toEqual(source);
+    expect(plotted.filter((point) => point.value === null)).toHaveLength(1);
   });
 });
