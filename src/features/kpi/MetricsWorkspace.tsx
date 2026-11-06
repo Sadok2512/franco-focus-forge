@@ -703,8 +703,10 @@ function MetricMap({
   // toggle the same click back off.
   useEffect(() => {
     if (!map?.getLayer("metrics-v3")) return;
-    const click = (event: import("maplibre-gl").MapLayerMouseEvent) => {
-      const active = event.features?.find((feature) => {
+    const click = (event: import("maplibre-gl").MapMouseEvent) => {
+      const features = map.queryRenderedFeatures(event.point, { layers: ["metrics-v3"] });
+      if (!features.length) return;
+      const active = features.find((feature) => {
         const seq = Number(feature.properties?.["seq"]);
         return (
           Number.isFinite(seq) &&
@@ -717,7 +719,7 @@ function MetricMap({
         pointSync.select(null);
         return;
       }
-      const sequences = (event.features ?? [])
+      const sequences = features
         .map((feature) => Number(feature.properties?.["seq"]))
         .filter(Number.isFinite);
       const point = preferredCertifiedPoint(data?.map_points ?? [], sequences);
@@ -749,11 +751,11 @@ function MetricMap({
     const noPointer = () => {
       map.getCanvas().style.cursor = "";
     };
-    map.on("click", "metrics-v3", click);
+    map.on("click", click);
     map.on("mouseenter", "metrics-v3", pointer);
     map.on("mouseleave", "metrics-v3", noPointer);
     return () => {
-      map.off("click", "metrics-v3", click);
+      map.off("click", click);
       map.off("mouseenter", "metrics-v3", pointer);
       map.off("mouseleave", "metrics-v3", noPointer);
     };
