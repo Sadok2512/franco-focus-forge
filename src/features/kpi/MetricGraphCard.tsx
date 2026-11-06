@@ -34,7 +34,6 @@ import {
   RotateCcw,
   SlidersHorizontal,
   Table2,
-  Trash2,
   TrendingUp,
   X,
 } from "lucide-react";
@@ -58,7 +57,6 @@ import {
   initialGraphSeriesSettings,
   readGraphSeriesSettings,
   reorderManagedSeries,
-  resetSeriesColor,
   writeGraphSeriesSettings,
   type GraphAxisSide,
   type GraphAxisSettings,
@@ -261,14 +259,12 @@ export const METRIC_VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
 function ManageGraphSeriesPopover({
   settings,
   onChange,
-  onReset,
   open,
   onOpenChange,
   onClose,
 }: {
   settings: GraphSeriesSettings;
   onChange: (settings: GraphSeriesSettings) => void;
-  onReset: () => GraphSeriesSettings;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onClose: () => void;
@@ -276,21 +272,31 @@ function ManageGraphSeriesPopover({
   const { t } = useTranslation();
   const [dragged, setDragged] = useState<string | null>(null);
   const [draft, setDraft] = useState(settings);
+  const draftRef = useRef(settings);
   useEffect(() => {
-    if (open) setDraft(settings);
+    if (open) {
+      draftRef.current = settings;
+      setDraft(settings);
+    }
   }, [open, settings]);
+  const commit = (update: (current: GraphSeriesSettings) => GraphSeriesSettings) => {
+    const next = update(draftRef.current);
+    draftRef.current = next;
+    setDraft(next);
+    onChange(next);
+  };
   const updateSeries = (code: string, patch: Partial<ManagedGraphSeries>) =>
-    setDraft((current) => ({
+    commit((current) => ({
       ...current,
       series: current.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
     }));
   const updateAxis = (side: GraphAxisSide, patch: Partial<GraphAxisSettings>) =>
-    setDraft((current) => ({
+    commit((current) => ({
       ...current,
       axes: { ...current.axes, [side]: { ...current.axes[side], ...patch } },
     }));
   const assignAxis = (code: string, axis: GraphAxisSide) => {
-    setDraft((current) => {
+    commit((current) => {
       if (!canAssignSeriesAxis(current, code, axis)) {
         toast.error(t("graphSeries.incompatibleAxis"));
         return current;
@@ -324,16 +330,55 @@ function ManageGraphSeriesPopover({
       <PopoverContent
         align="end"
         side="bottom"
-        className="max-h-[min(72vh,640px)] w-[min(430px,calc(100vw-24px))] overflow-y-auto p-2"
+        collisionPadding={12}
+        className="flex max-h-[min(72vh,560px)] w-[min(352px,calc(100vw-24px))] flex-col overflow-hidden p-2"
         data-testid="metric-manage-series"
         onEscapeKeyDown={onClose}
         onPointerDownOutside={onClose}
       >
-        <DropdownMenuLabel>{t("graphSeries.manage")}</DropdownMenuLabel>
+        <div className="flex h-8 shrink-0 items-center justify-between px-1">
+          <DropdownMenuLabel className="p-0">{t("graphSeries.manage")}</DropdownMenuLabel>
+          <button
+            type="button"
+            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            aria-label={t("common.close")}
+            onClick={onClose}
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <label className="mb-1.5 flex h-8 shrink-0 items-center justify-between gap-2 rounded-md bg-muted/45 px-2 text-[11px] font-medium">
+          {t("graphSeries.display")}
+          <select
+            data-testid="manage-series-global-display"
+            value={
+              draft.series.length > 0 &&
+              draft.series.every((item) => item.display === draft.series[0]?.display)
+                ? draft.series[0]?.display
+                : ""
+            }
+            className="h-6 max-w-[132px] rounded border bg-background px-1 text-[10px]"
+            onChange={(event) => {
+              if (!event.target.value) return;
+              const display = event.target.value as GraphSeriesDisplay;
+              commit((current) => ({
+                ...current,
+                series: current.series.map((item) => ({ ...item, display })),
+              }));
+            }}
+          >
+            <option value="" disabled>
+              {t("graphSeries.mixed")}
+            </option>
+            <option value="point">{t("graphSeries.points")}</option>
+            <option value="line">{t("graphSeries.line")}</option>
+            <option value="point-line">{t("graphSeries.pointsLine")}</option>
+          </select>
+        </label>
         {draft.series.length === 0 ? (
           <p className="px-2 py-3 text-xs text-muted-foreground">{t("graphSeries.empty")}</p>
         ) : (
-          <div className="space-y-1.5">
+          <div className="min-h-0 space-y-0.5 overflow-y-auto pr-0.5">
             {draft.series.map((series) => (
               <div
                 key={series.code}
@@ -344,13 +389,13 @@ function ManageGraphSeriesPopover({
                 onDrop={(event) => {
                   event.preventDefault();
                   if (!dragged) return;
-                  setDraft((current) => ({
+                  commit((current) => ({
                     ...current,
                     series: reorderManagedSeries(current.series, dragged, series.code),
                   }));
                   setDragged(null);
                 }}
-                className="grid grid-cols-[18px_28px_minmax(0,1fr)_88px_28px] items-center gap-1 rounded-md border bg-background px-1.5 py-1.5"
+                className="grid h-9 grid-cols-[20px_24px_minmax(0,1fr)_58px_24px] items-center gap-1 rounded-md px-1 hover:bg-muted/55"
                 data-testid={`manage-series-row-${series.code}`}
               >
                 <GripVertical
@@ -360,7 +405,7 @@ function ManageGraphSeriesPopover({
                 />
                 <button
                   type="button"
-                  className="rounded p-1 hover:bg-muted"
+                  className="rounded p-0.5 hover:bg-background"
                   aria-label={
                     series.visible
                       ? t("graphSeries.hide", { metric: series.label })
@@ -370,25 +415,21 @@ function ManageGraphSeriesPopover({
                 >
                   {series.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                 </button>
-                <div className="min-w-0" title={`${series.label} · ${series.code}`}>
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="color"
-                      value={series.color}
-                      aria-label={t("graphSeries.color", { metric: series.label })}
-                      className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
-                      onChange={(event) => updateSeries(series.code, { color: event.target.value })}
-                    />
-                    <span className="truncate text-xs font-medium">{series.label}</span>
-                  </div>
-                  <div className="truncate text-[10px] text-muted-foreground">
-                    {series.unit || "—"}
-                  </div>
-                </div>
+                <input
+                  type="color"
+                  value={series.color}
+                  aria-label={t("graphSeries.color", { metric: series.label })}
+                  title={t("graphSeries.color", { metric: series.label })}
+                  className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"
+                  onChange={(event) => updateSeries(series.code, { color: event.target.value })}
+                />
+                <span className="min-w-0 truncate text-[11px] font-medium" title={series.label}>
+                  {series.label}
+                </span>
                 <select
                   value={series.axis}
                   aria-label={t("graphSeries.axisFor", { metric: series.label })}
-                  className="h-7 rounded border bg-background px-1 text-[11px]"
+                  className="h-6 rounded border bg-background px-1 text-[10px]"
                   onChange={(event) => assignAxis(series.code, event.target.value as GraphAxisSide)}
                 >
                   <option value="left">{t("graphSeries.leftY")}</option>
@@ -396,156 +437,26 @@ function ManageGraphSeriesPopover({
                 </select>
                 <button
                   type="button"
-                  className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                   aria-label={t("graphSeries.remove", { metric: series.label })}
                   onClick={() =>
-                    setDraft((current) => ({
+                    commit((current) => ({
                       ...current,
                       series: current.series.filter((item) => item.code !== series.code),
                     }))
                   }
                 >
-                  <Trash2 size={14} />
+                  <X size={13} />
                 </button>
-                <div className="col-start-3 col-span-2 flex flex-wrap gap-1">
-                  {METRIC_COLORS.slice(0, 6).map((color) => (
-                    <button
-                      key={color}
-                      type="button"
-                      aria-label={`${series.label} ${color}`}
-                      className="h-3.5 w-3.5 rounded-full border"
-                      style={{
-                        backgroundColor: color,
-                        outline: series.color === color ? "1px solid currentColor" : "none",
-                      }}
-                      onClick={() => updateSeries(series.code, { color })}
-                    />
-                  ))}
-                  <button
-                    type="button"
-                    className="ml-1 text-[10px] text-muted-foreground underline"
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        series: resetSeriesColor(current.series, series.code),
-                      }))
-                    }
-                  >
-                    {t("graphSeries.resetColor")}
-                  </button>
-                  <select
-                    value={series.display}
-                    aria-label={t("graphSeries.displayFor", { metric: series.label })}
-                    className="h-6 rounded border bg-background px-1 text-[10px]"
-                    onChange={(event) =>
-                      updateSeries(series.code, {
-                        display: event.target.value as GraphSeriesDisplay,
-                      })
-                    }
-                  >
-                    <option value="point">{t("graphSeries.points")}</option>
-                    <option value="line">{t("graphSeries.line")}</option>
-                    <option value="point-line">{t("graphSeries.pointsLine")}</option>
-                  </select>
-                </div>
               </div>
             ))}
           </div>
         )}
         <DropdownMenuSeparator />
-        <div className="grid gap-2 sm:grid-cols-2" data-testid="metric-axis-settings">
-          {(["left", "right"] as const).map((side) => {
-            const axis = draft.axes[side];
-            return (
-              <fieldset key={side} className="space-y-1 rounded-md border p-2 text-[11px]">
-                <legend className="px-1 font-semibold">
-                  {side === "left" ? t("graphSeries.leftY") : t("graphSeries.rightY")}
-                </legend>
-                <label className="flex items-center justify-between gap-2">
-                  {t("graphSeries.showAxis")}
-                  <input
-                    type="checkbox"
-                    checked={axis.visible}
-                    onChange={(event) => updateAxis(side, { visible: event.target.checked })}
-                  />
-                </label>
-                <label className="flex items-center justify-between gap-2">
-                  {t("graphSeries.autoScale")}
-                  <input
-                    type="checkbox"
-                    checked={axis.auto}
-                    onChange={(event) => updateAxis(side, { auto: event.target.checked })}
-                  />
-                </label>
-                <div className="grid grid-cols-2 gap-1">
-                  <label>
-                    {t("graphSeries.min")}
-                    <input
-                      type="number"
-                      disabled={axis.auto}
-                      value={axis.min ?? ""}
-                      className="mt-0.5 h-7 w-full rounded border px-1"
-                      onChange={(event) =>
-                        updateAxis(side, {
-                          min: event.target.value === "" ? null : Number(event.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                  <label>
-                    {t("graphSeries.max")}
-                    <input
-                      type="number"
-                      disabled={axis.auto}
-                      value={axis.max ?? ""}
-                      className="mt-0.5 h-7 w-full rounded border px-1"
-                      onChange={(event) =>
-                        updateAxis(side, {
-                          max: event.target.value === "" ? null : Number(event.target.value),
-                        })
-                      }
-                    />
-                  </label>
-                </div>
-                <label>
-                  {t("graphSeries.unit")}
-                  <input
-                    value={axis.unit}
-                    className="mt-0.5 h-7 w-full rounded border px-1"
-                    onChange={(event) => updateAxis(side, { unit: event.target.value })}
-                  />
-                </label>
-                <label className="flex items-center justify-between gap-2">
-                  {t("graphSeries.axisColor")}
-                  <input
-                    type="color"
-                    value={axis.color}
-                    onChange={(event) => updateAxis(side, { color: event.target.value })}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="text-[10px] text-muted-foreground underline"
-                  onClick={() =>
-                    updateAxis(
-                      side,
-                      defaultAxisSettings(
-                        draft.series.find((item) => item.axis === side)?.unit ?? "",
-                      ),
-                    )
-                  }
-                >
-                  {t("graphSeries.resetAxis")}
-                </button>
-              </fieldset>
-            );
-          })}
-        </div>
-        <DropdownMenuSeparator />
-        <div className="flex flex-wrap items-center justify-end gap-1.5 px-1 pb-1">
+        <div className="flex shrink-0 items-center gap-1.5 px-1 pb-1">
           <button
             type="button"
-            className="kpi-button mr-auto"
+            className="kpi-button"
             onClick={() => {
               onClose();
               requestAnimationFrame(() =>
@@ -557,26 +468,119 @@ function ManageGraphSeriesPopover({
           </button>
           <button
             type="button"
-            className="kpi-button"
+            className="kpi-button text-destructive"
             data-testid="manage-series-remove-all"
-            onClick={() => setDraft((current) => ({ ...current, series: [] }))}
+            onClick={() => commit((current) => ({ ...current, series: [] }))}
           >
             {t("graphSeries.removeAll")}
           </button>
-          <button type="button" className="kpi-button" onClick={() => setDraft(onReset())}>
-            {t("common.reset")}
-          </button>
-          <button
-            type="button"
-            className="kpi-button primary"
-            data-testid="manage-series-apply"
-            onClick={() => {
-              onChange(draft);
-              onClose();
-            }}
-          >
-            {t("graphSeries.apply")}
-          </button>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                className="kpi-button ml-auto"
+                data-testid="advanced-axis-trigger"
+              >
+                {t("graphSeries.advancedAxis")}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              side="right"
+              align="end"
+              collisionPadding={12}
+              className="w-[min(320px,calc(100vw-24px))] p-2"
+              data-testid="metric-axis-settings"
+            >
+              <div className="grid grid-cols-2 gap-2">
+                {(["left", "right"] as const).map((side) => {
+                  const axis = draft.axes[side];
+                  return (
+                    <fieldset key={side} className="space-y-1 rounded-md border p-2 text-[11px]">
+                      <legend className="px-1 font-semibold">
+                        {side === "left" ? t("graphSeries.leftY") : t("graphSeries.rightY")}
+                      </legend>
+                      <label className="flex items-center justify-between gap-2">
+                        {t("graphSeries.showAxis")}
+                        <input
+                          type="checkbox"
+                          checked={axis.visible}
+                          onChange={(event) => updateAxis(side, { visible: event.target.checked })}
+                        />
+                      </label>
+                      <label className="flex items-center justify-between gap-2">
+                        {t("graphSeries.autoScale")}
+                        <input
+                          type="checkbox"
+                          checked={axis.auto}
+                          onChange={(event) => updateAxis(side, { auto: event.target.checked })}
+                        />
+                      </label>
+                      <div className="grid grid-cols-2 gap-1">
+                        <label>
+                          {t("graphSeries.min")}
+                          <input
+                            type="number"
+                            disabled={axis.auto}
+                            value={axis.min ?? ""}
+                            className="mt-0.5 h-7 w-full rounded border px-1"
+                            onChange={(event) =>
+                              updateAxis(side, {
+                                min: event.target.value === "" ? null : Number(event.target.value),
+                              })
+                            }
+                          />
+                        </label>
+                        <label>
+                          {t("graphSeries.max")}
+                          <input
+                            type="number"
+                            disabled={axis.auto}
+                            value={axis.max ?? ""}
+                            className="mt-0.5 h-7 w-full rounded border px-1"
+                            onChange={(event) =>
+                              updateAxis(side, {
+                                max: event.target.value === "" ? null : Number(event.target.value),
+                              })
+                            }
+                          />
+                        </label>
+                      </div>
+                      <label>
+                        {t("graphSeries.unit")}
+                        <input
+                          value={axis.unit}
+                          className="mt-0.5 h-7 w-full rounded border px-1"
+                          onChange={(event) => updateAxis(side, { unit: event.target.value })}
+                        />
+                      </label>
+                      <label className="flex items-center justify-between gap-2">
+                        {t("graphSeries.axisColor")}
+                        <input
+                          type="color"
+                          value={axis.color}
+                          onChange={(event) => updateAxis(side, { color: event.target.value })}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="text-[10px] text-muted-foreground underline"
+                        onClick={() =>
+                          updateAxis(
+                            side,
+                            defaultAxisSettings(
+                              draft.series.find((item) => item.axis === side)?.unit ?? "",
+                            ),
+                          )
+                        }
+                      >
+                        {t("graphSeries.resetAxis")}
+                      </button>
+                    </fieldset>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </PopoverContent>
     </Popover>
@@ -896,7 +900,6 @@ export function MetricGraphCard({
             <ManageGraphSeriesPopover
               settings={resolvedSeriesSettings}
               onChange={saveSeriesSettings}
-              onReset={buildDefaultSeriesSettings}
               open={seriesManagerOpen}
               onOpenChange={setSeriesManagerOpen}
               onClose={() => setSeriesManagerOpen(false)}

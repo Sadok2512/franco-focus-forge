@@ -1,3 +1,9 @@
+## 1.145.1 (patch) — Manage Series compact — 2026-11-06 (BC1)
+
+- Réduit Manage Series à un popover de 352 px avec une ligne compacte par KPI et application immédiate de la visibilité, couleur, axe, suppression et mode d’affichage.
+- Déplace les réglages détaillés des axes dans un popover avancé séparé, sans modifier le DataZoom ni les données RF.
+- Conserve Add Metric et Remove All sans fermer le Graph, avec fermeture par X, Escape ou clic extérieur.
+
 ## 1.145.0 (minor) — Filtres et coloration L3 Signaling — 2026-11-06 (BC4)
 
 - Place dans la toolbar L3 deux popovers indépendants « Message filter » et « Color messages » : catégories certifiées, noms exacts, presets, règles pastel réordonnables et priorité explicite.
