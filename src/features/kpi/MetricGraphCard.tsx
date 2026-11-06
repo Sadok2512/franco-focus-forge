@@ -1286,9 +1286,7 @@ function MetricTimePlot({
   const seriesList = requestedSeries.map((requested) => {
     const api = seriesData?.series.find((item) => item.code === requested.code);
     const numeric = numericSeries.find((item) => item.code === requested.code)?.points ?? [];
-    const lineMode = metricSeriesRenderMode("line", numeric);
-    const renderMode =
-      requested.display === "line" && lineMode === "point" ? "point" : requested.display;
+    const renderMode = requested.display;
     return {
       ...requested,
       // API labels describe storage fields. Visible identity always comes
