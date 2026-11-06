@@ -213,6 +213,7 @@ export function DriveRsrpLayer({
   hostMapData,
   legendHost,
   selectionLayerId,
+  selectionInteractive = true,
   pointMetrics,
   linkVisibility,
   onLinkVisibilityChange,
@@ -248,6 +249,8 @@ export function DriveRsrpLayer({
   legendHost?: HTMLDivElement | null;
   /** Host point layer whose exact-sequence clicks select this drive evidence. */
   selectionLayerId?: string | undefined;
+  /** A host may own the click contract while this layer owns link rendering. */
+  selectionInteractive?: boolean;
   /** Host-map metric values for an exact sequence, listed in RF Parameters → Metrics. */
   pointMetrics?: ((seq: number) => RfPointMetric[]) | undefined;
   /** Workspace maps control these three switches with their persisted panel
@@ -805,7 +808,7 @@ export function DriveRsrpLayer({
   // MAP UI V1 — the click no longer opens a large map popup: it selects the
   // point and the compact RF card rendered below the layer panel takes over.
   useEffect(() => {
-    if (!map) return;
+    if (!map || !selectionInteractive) return;
     let lastClick: MouseEvent | undefined;
     const click = (e: MapLayerMouseEvent) => {
       if (e.originalEvent && lastClick === e.originalEvent) return;
@@ -851,7 +854,15 @@ export function DriveRsrpLayer({
     return () => {
       for (const layer of clickLayers) map.off("click", layer, click);
     };
-  }, [drivePoints, effectiveCaptureId, hostOwnsPoints, map, projectId, selectionLayerId]);
+  }, [
+    drivePoints,
+    effectiveCaptureId,
+    hostOwnsPoints,
+    map,
+    projectId,
+    selectionInteractive,
+    selectionLayerId,
+  ]);
 
   // A selection is scoped to one project/capture/map workspace. Never carry
   // its line or card into another context, even when sequence numbers match.

@@ -79,6 +79,7 @@ import { QueryErrorState } from "./QueryErrorState";
 import { TABLE_PANEL_ORDER } from "./workspace-grid";
 import {
   pointCellLinks,
+  preferredCertifiedPoint,
   type CellLinkKind,
 } from "./measurement-point-popup";
 type MetricLinkKind = CellLinkKind;
@@ -696,6 +697,67 @@ function MetricMap({
     closed,
     selectedPoint?.seq,
   ]);
+  // This host owns the visible metric circles, so it also owns their click
+  // contract. DriveRsrpLayer receives the resulting exact identity only to
+  // render certified links; it must not register a second handler that can
+  // toggle the same click back off.
+  useEffect(() => {
+    if (!map?.getLayer("metrics-v3")) return;
+    const click = (event: import("maplibre-gl").MapLayerMouseEvent) => {
+      const active = event.features?.find((feature) => {
+        const seq = Number(feature.properties?.["seq"]);
+        return (
+          Number.isFinite(seq) &&
+          sameMetricMapPoint(selectedPointRef.current, projectId, captureId, seq)
+        );
+      });
+      if (active) {
+        selectedPointRef.current = null;
+        setSelectedPoint(null);
+        pointSync.select(null);
+        return;
+      }
+      const sequences = (event.features ?? [])
+        .map((feature) => Number(feature.properties?.["seq"]))
+        .filter(Number.isFinite);
+      const point = preferredCertifiedPoint(data?.map_points ?? [], sequences);
+      if (!point) return;
+      const selection: SelectedDrivePoint = {
+        projectId,
+        captureId,
+        seq: point.seq,
+        lng: point.lng,
+        lat: point.lat,
+      };
+      selectedPointRef.current = selection;
+      setSelectedPoint(selection);
+      pointSync.select({
+        projectId,
+        workspaceId: dropContext?.workspaceId ?? heightKey ?? "map",
+        captureId,
+        seq: point.seq,
+        seqLast: point.seq,
+        tRelS: point.t_rel_s,
+        lat: point.lat,
+        lng: point.lng,
+        source: "map",
+      });
+    };
+    const pointer = () => {
+      map.getCanvas().style.cursor = "pointer";
+    };
+    const noPointer = () => {
+      map.getCanvas().style.cursor = "";
+    };
+    map.on("click", "metrics-v3", click);
+    map.on("mouseenter", "metrics-v3", pointer);
+    map.on("mouseleave", "metrics-v3", noPointer);
+    return () => {
+      map.off("click", "metrics-v3", click);
+      map.off("mouseenter", "metrics-v3", pointer);
+      map.off("mouseleave", "metrics-v3", noPointer);
+    };
+  }, [captureId, data, dropContext?.workspaceId, heightKey, map, pointSync, projectId]);
   useEffect(() => {
     if (!pointSync.enabled) return;
     const shared = pointSync.selection;
@@ -936,6 +998,7 @@ function MetricMap({
         hideControls
         legendHost={driveLegendHost}
         selectionLayerId="metrics-v3"
+        selectionInteractive={false}
         // The map's own cell links must always follow its selected point.
         // Workspace Sync only controls propagation to the other panels; it
         // must not disable Serving / neighbour / NR-anchor selection locally.
