@@ -25,11 +25,16 @@ import {
   BarChart3,
   ChartNoAxesCombined,
   CircleDot,
+  Eye,
+  EyeOff,
+  GripVertical,
   MapPin,
   Maximize2,
   Palette,
   RotateCcw,
+  SlidersHorizontal,
   Table2,
+  Trash2,
   TrendingUp,
   X,
 } from "lucide-react";
@@ -41,17 +46,25 @@ import {
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
+import { readHiddenGraphSeries, readGraphSeries } from "./graph-series-drop";
 import {
-  addGraphSeries,
-  axisOf,
-  readHiddenGraphSeries,
-  readGraphSeries,
-  writeHiddenGraphSeries,
-  writeGraphSeries,
-  type GraphSeries,
-} from "./graph-series-drop";
+  addManagedSeries,
+  canAssignSeriesAxis,
+  defaultAxisSettings,
+  graphAxisDomain,
+  initialGraphSeriesSettings,
+  readGraphSeriesSettings,
+  reorderManagedSeries,
+  resetSeriesColor,
+  writeGraphSeriesSettings,
+  type GraphAxisSide,
+  type GraphAxisSettings,
+  type GraphSeriesSettings,
+  type ManagedGraphSeries,
+} from "./graph-series-management";
 import {
   DEFAULT_METRIC_STYLE,
   METRIC_COLORS,
@@ -244,6 +257,261 @@ export const METRIC_VIEW_ICONS: Record<MetricView, typeof BarChart3> = {
   map: MapPin,
 };
 
+function ManageGraphSeriesPopover({
+  settings,
+  onChange,
+  open,
+  onOpenChange,
+}: {
+  settings: GraphSeriesSettings;
+  onChange: (settings: GraphSeriesSettings) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const [dragged, setDragged] = useState<string | null>(null);
+  const updateSeries = (code: string, patch: Partial<ManagedGraphSeries>) =>
+    onChange({
+      ...settings,
+      series: settings.series.map((item) => (item.code === code ? { ...item, ...patch } : item)),
+    });
+  const updateAxis = (side: GraphAxisSide, patch: Partial<GraphAxisSettings>) =>
+    onChange({
+      ...settings,
+      axes: { ...settings.axes, [side]: { ...settings.axes[side], ...patch } },
+    });
+  const assignAxis = (code: string, axis: GraphAxisSide) => {
+    if (!canAssignSeriesAxis(settings, code, axis)) {
+      toast.error(t("graphSeries.incompatibleAxis"));
+      return;
+    }
+    const target = settings.series.find((item) => item.code === code);
+    onChange({
+      ...settings,
+      series: settings.series.map((item) => (item.code === code ? { ...item, axis } : item)),
+      axes: {
+        ...settings.axes,
+        [axis]:
+          settings.axes[axis].unit || !target
+            ? settings.axes[axis]
+            : { ...settings.axes[axis], unit: target.unit },
+      },
+    });
+  };
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button type="button" className="sr-only" tabIndex={-1} aria-hidden="true" />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        side="bottom"
+        className="max-h-[min(72vh,640px)] w-[min(430px,calc(100vw-24px))] overflow-y-auto p-2"
+        data-testid="metric-manage-series"
+      >
+        <DropdownMenuLabel>{t("graphSeries.manage")}</DropdownMenuLabel>
+        {settings.series.length === 0 ? (
+          <p className="px-2 py-3 text-xs text-muted-foreground">{t("graphSeries.empty")}</p>
+        ) : (
+          <div className="space-y-1.5">
+            {settings.series.map((series) => (
+              <div
+                key={series.code}
+                draggable
+                onDragStart={() => setDragged(series.code)}
+                onDragEnd={() => setDragged(null)}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!dragged) return;
+                  onChange({
+                    ...settings,
+                    series: reorderManagedSeries(settings.series, dragged, series.code),
+                  });
+                  setDragged(null);
+                }}
+                className="grid grid-cols-[18px_28px_minmax(0,1fr)_88px_28px] items-center gap-1 rounded-md border bg-background px-1.5 py-1.5"
+                data-testid={`manage-series-row-${series.code}`}
+              >
+                <GripVertical
+                  size={14}
+                  className="cursor-grab text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <button
+                  type="button"
+                  className="rounded p-1 hover:bg-muted"
+                  aria-label={
+                    series.visible
+                      ? t("graphSeries.hide", { metric: series.label })
+                      : t("graphSeries.show", { metric: series.label })
+                  }
+                  onClick={() => updateSeries(series.code, { visible: !series.visible })}
+                >
+                  {series.visible ? <Eye size={14} /> : <EyeOff size={14} />}
+                </button>
+                <div className="min-w-0" title={`${series.label} · ${series.code}`}>
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="color"
+                      value={series.color}
+                      aria-label={t("graphSeries.color", { metric: series.label })}
+                      className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0"
+                      onChange={(event) => updateSeries(series.code, { color: event.target.value })}
+                    />
+                    <span className="truncate text-xs font-medium">{series.label}</span>
+                  </div>
+                  <div className="truncate text-[10px] text-muted-foreground">
+                    {series.unit || "—"}
+                  </div>
+                </div>
+                <select
+                  value={series.axis}
+                  aria-label={t("graphSeries.axisFor", { metric: series.label })}
+                  className="h-7 rounded border bg-background px-1 text-[11px]"
+                  onChange={(event) => assignAxis(series.code, event.target.value as GraphAxisSide)}
+                >
+                  <option value="left">{t("graphSeries.leftY")}</option>
+                  <option value="right">{t("graphSeries.rightY")}</option>
+                </select>
+                <button
+                  type="button"
+                  className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  aria-label={t("graphSeries.remove", { metric: series.label })}
+                  onClick={() =>
+                    onChange({
+                      ...settings,
+                      series: settings.series.filter((item) => item.code !== series.code),
+                    })
+                  }
+                >
+                  <Trash2 size={14} />
+                </button>
+                <div className="col-start-3 col-span-2 flex flex-wrap gap-1">
+                  {METRIC_COLORS.slice(0, 6).map((color) => (
+                    <button
+                      key={color}
+                      type="button"
+                      aria-label={`${series.label} ${color}`}
+                      className="h-3.5 w-3.5 rounded-full border"
+                      style={{
+                        backgroundColor: color,
+                        outline: series.color === color ? "1px solid currentColor" : "none",
+                      }}
+                      onClick={() => updateSeries(series.code, { color })}
+                    />
+                  ))}
+                  <button
+                    type="button"
+                    className="ml-1 text-[10px] text-muted-foreground underline"
+                    onClick={() =>
+                      onChange({
+                        ...settings,
+                        series: resetSeriesColor(settings.series, series.code),
+                      })
+                    }
+                  >
+                    {t("graphSeries.resetColor")}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <DropdownMenuSeparator />
+        <div className="grid gap-2 sm:grid-cols-2" data-testid="metric-axis-settings">
+          {(["left", "right"] as const).map((side) => {
+            const axis = settings.axes[side];
+            return (
+              <fieldset key={side} className="space-y-1 rounded-md border p-2 text-[11px]">
+                <legend className="px-1 font-semibold">
+                  {side === "left" ? t("graphSeries.leftY") : t("graphSeries.rightY")}
+                </legend>
+                <label className="flex items-center justify-between gap-2">
+                  {t("graphSeries.showAxis")}
+                  <input
+                    type="checkbox"
+                    checked={axis.visible}
+                    onChange={(event) => updateAxis(side, { visible: event.target.checked })}
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-2">
+                  {t("graphSeries.autoScale")}
+                  <input
+                    type="checkbox"
+                    checked={axis.auto}
+                    onChange={(event) => updateAxis(side, { auto: event.target.checked })}
+                  />
+                </label>
+                <div className="grid grid-cols-2 gap-1">
+                  <label>
+                    {t("graphSeries.min")}
+                    <input
+                      type="number"
+                      disabled={axis.auto}
+                      value={axis.min ?? ""}
+                      className="mt-0.5 h-7 w-full rounded border px-1"
+                      onChange={(event) =>
+                        updateAxis(side, {
+                          min: event.target.value === "" ? null : Number(event.target.value),
+                        })
+                      }
+                    />
+                  </label>
+                  <label>
+                    {t("graphSeries.max")}
+                    <input
+                      type="number"
+                      disabled={axis.auto}
+                      value={axis.max ?? ""}
+                      className="mt-0.5 h-7 w-full rounded border px-1"
+                      onChange={(event) =>
+                        updateAxis(side, {
+                          max: event.target.value === "" ? null : Number(event.target.value),
+                        })
+                      }
+                    />
+                  </label>
+                </div>
+                <label>
+                  {t("graphSeries.unit")}
+                  <input
+                    value={axis.unit}
+                    className="mt-0.5 h-7 w-full rounded border px-1"
+                    onChange={(event) => updateAxis(side, { unit: event.target.value })}
+                  />
+                </label>
+                <label className="flex items-center justify-between gap-2">
+                  {t("graphSeries.axisColor")}
+                  <input
+                    type="color"
+                    value={axis.color}
+                    onChange={(event) => updateAxis(side, { color: event.target.value })}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="text-[10px] text-muted-foreground underline"
+                  onClick={() =>
+                    updateAxis(
+                      side,
+                      defaultAxisSettings(
+                        settings.series.find((item) => item.axis === side)?.unit ?? "",
+                      ),
+                    )
+                  }
+                >
+                  {t("graphSeries.resetAxis")}
+                </button>
+              </fieldset>
+            );
+          })}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function MetricGraphCard({
   projectId,
   code,
@@ -333,12 +601,38 @@ export function MetricGraphCard({
   // Style du graphe (tracé + couleur) : mémorisé par onglet par le parent.
   const style = styleProp ?? DEFAULT_METRIC_STYLE;
   const setStyle = (next: MetricStyle) => onStyleChange?.(next);
-  // Séries ajoutées par glisser-déposer : propres à cette carte, mémorisées.
-  const [extra, setExtra] = useState<GraphSeries[]>(() => readGraphSeries(workspaceId, code));
+  const seriesSettingsId = panelId ?? code;
+  const seriesSettingsKey = `${workspaceId ?? "metrics"}:${seriesSettingsId}`;
+  const buildInitialSeriesSettings = () =>
+    readGraphSeriesSettings(workspaceId, seriesSettingsId) ??
+    initialGraphSeriesSettings(
+      { code, label, unit, color: style.color },
+      readGraphSeries(workspaceId, code),
+      readHiddenGraphSeries(workspaceId, code),
+    );
+  const [managedState, setManagedState] = useState<{
+    key: string;
+    value: GraphSeriesSettings;
+  }>(() => ({ key: seriesSettingsKey, value: buildInitialSeriesSettings() }));
+  if (managedState.key !== seriesSettingsKey) {
+    setManagedState({ key: seriesSettingsKey, value: buildInitialSeriesSettings() });
+  }
+  const seriesSettings =
+    managedState.key === seriesSettingsKey ? managedState.value : buildInitialSeriesSettings();
+  const saveSeriesSettings = (next: GraphSeriesSettings) => {
+    setManagedState({ key: seriesSettingsKey, value: next });
+    writeGraphSeriesSettings(workspaceId, seriesSettingsId, next);
+  };
   const [over, setOver] = useState(false);
-  const saveExtra = (next: GraphSeries[]) => {
-    setExtra(next);
-    writeGraphSeries(workspaceId, code, next);
+  const [seriesManagerOpen, setSeriesManagerOpen] = useState(false);
+  const seriesManagerOpenedAt = useRef(0);
+  const openSeriesManager = () => {
+    seriesManagerOpenedAt.current = performance.now();
+    setSeriesManagerOpen(true);
+  };
+  const changeSeriesManagerOpen = (next: boolean) => {
+    if (!next && performance.now() - seriesManagerOpenedAt.current < 500) return;
+    setSeriesManagerOpen(next);
   };
   const dropMetric = (raw: string) => {
     const metric = readMapMetric(raw);
@@ -347,18 +641,20 @@ export function MetricGraphCard({
       toast.error(translate("graphSeries.kpiUnsupported"));
       return;
     }
-    const result = addGraphSeries(
-      extra,
-      { code: metric.code, label: metric.label, unit: metric.unit },
-      { code, unit },
-    );
-    if (!result.ok) {
-      toast.error(
-        translate(result.reason === "duplicate" ? "graphSeries.duplicate" : "graphSeries.axis"),
-      );
+    if (seriesSettings.series.some((item) => item.code === metric.code)) {
+      toast.error(translate("graphSeries.duplicate"));
       return;
     }
-    saveExtra(result.series);
+    const result = addManagedSeries(seriesSettings, {
+      code: metric.code,
+      label: metric.label,
+      unit: metric.unit,
+    });
+    if (!result) {
+      toast.error(translate("graphSeries.axis"));
+      return;
+    }
+    saveSeriesSettings(result);
     toast.success(translate("graphSeries.added", { metric: metric.label }));
   };
   return (
@@ -454,7 +750,15 @@ export function MetricGraphCard({
                       data-testid={`metric-color-${color}`}
                       aria-label={color}
                       title={color}
-                      onClick={() => setStyle({ ...style, color })}
+                      onClick={() => {
+                        setStyle({ ...style, color });
+                        saveSeriesSettings({
+                          ...seriesSettings,
+                          series: seriesSettings.series.map((item) =>
+                            item.code === code ? { ...item, color } : item,
+                          ),
+                        });
+                      }}
                       className="h-5 w-5 rounded-sm border border-border"
                       style={{
                         background: color,
@@ -464,28 +768,16 @@ export function MetricGraphCard({
                     />
                   ))}
                 </div>
-                {extra.length > 0 && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuLabel>{translate("panel.series")}</DropdownMenuLabel>
-                    {extra.map((s) => (
-                      <DropdownMenuItem
-                        key={s.code}
-                        data-testid={`metric-series-remove-${s.code}`}
-                        onSelect={() => saveExtra(extra.filter((x) => x.code !== s.code))}
-                      >
-                        <span
-                          className="h-2.5 w-2.5 shrink-0 rounded-sm"
-                          style={{ background: s.color }}
-                        />
-                        <span className="min-w-0 flex-1 truncate">{s.label}</span>
-                        <X size={13} />
-                      </DropdownMenuItem>
-                    ))}
-                  </>
-                )}
               </DropdownMenuSubContent>
             </DropdownMenuSub>
+            {view === "graph" && (
+              <DropdownMenuItem
+                data-testid="metric-manage-series-trigger"
+                onSelect={() => window.setTimeout(openSeriesManager, 100)}
+              >
+                <SlidersHorizontal size={14} /> {translate("graphSeries.manage")}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             {view === "graph" && (
               <DropdownMenuItem
@@ -507,6 +799,14 @@ export function MetricGraphCard({
               <X size={14} /> {translate("panel.remove")}
             </DropdownMenuItem>
           </WorkspacePanelMenu>
+          {view === "graph" && (
+            <ManageGraphSeriesPopover
+              settings={seriesSettings}
+              onChange={saveSeriesSettings}
+              open={seriesManagerOpen}
+              onOpenChange={changeSeriesManagerOpen}
+            />
+          )}
         </div>
       </header>
       {view === "histogram" ? (
@@ -523,9 +823,9 @@ export function MetricGraphCard({
           code={code}
           label={label}
           unit={unit}
-          color={style.color}
           plot={style.plot}
-          extra={extra}
+          settings={seriesSettings}
+          onSettingsChange={saveSeriesSettings}
           syncId={syncId}
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
@@ -814,9 +1114,9 @@ function MetricTimePlot({
   code,
   label,
   unit,
-  color,
   plot,
-  extra,
+  settings,
+  onSettingsChange,
   syncId,
   timeAxisMode,
   eventsCaptureId,
@@ -833,9 +1133,9 @@ function MetricTimePlot({
   code: string;
   label: string;
   unit: string;
-  color: string;
   plot: MetricPlot;
-  extra: GraphSeries[];
+  settings: GraphSeriesSettings;
+  onSettingsChange: (settings: GraphSeriesSettings) => void;
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
@@ -860,15 +1160,19 @@ function MetricTimePlot({
     retry: false,
   });
   const captureId = eventsCaptureId ?? captures.data?.[0]?.capture_id;
-  // Séries de la carte : la métrique de base + celles ajoutées par dépôt.
-  const codes = useMemo(() => [code, ...extra.map((s) => s.code)], [code, extra]);
+  const codes = useMemo(
+    () => settings.series.map((item) => item.code).sort((a, b) => a.localeCompare(b)),
+    [settings.series],
+  );
   const series = useQuery({
     queryKey: ["metric-series", projectId, captureId, codes],
     queryFn: ({ signal }) => getMetricSeries(projectId, captureId as string, codes, signal),
-    enabled: !!captureId && (!batchSeries || extra.length > 0),
+    enabled:
+      !!captureId && codes.length > 0 && (!batchSeries || codes.some((item) => item !== code)),
     retry: false,
   });
-  const seriesData = extra.length === 0 && prefetchedSeries ? prefetchedSeries : series.data;
+  const baseOnly = codes.length === 1 && codes[0] === code;
+  const seriesData = baseOnly && prefetchedSeries ? prefetchedSeries : series.data;
   const numericSeries = useMemo(
     () =>
       (seriesData?.series ?? []).map((item) => ({
@@ -884,11 +1188,7 @@ function MetricTimePlot({
   // The shared timeline drives only X domain, brush and exact-time tooltips.
   // Every rendered series keeps its own source points below.
   const rows = useMemo(() => metricTimelineRows(numericSeries), [numericSeries]);
-  const units = [unit, ...extra.map((s) => s.unit)];
-  const requestedSeries = [
-    { code, label, unit, color },
-    ...extra.map((s) => ({ code: s.code, label: s.label, unit: s.unit, color: s.color })),
-  ];
+  const requestedSeries = settings.series;
   const seriesList = requestedSeries.map((requested) => {
     const api = seriesData?.series.find((item) => item.code === requested.code);
     const numeric = numericSeries.find((item) => item.code === requested.code)?.points ?? [];
@@ -901,19 +1201,15 @@ function MetricTimePlot({
       renderMode,
     };
   });
-  const axisFor = (value: string) => axisOf(units, value) ?? "left";
-  const rightAxis = seriesList.some((s) => axisFor(s.unit) === "right");
-  const leftAxisUnit = seriesList.find((s) => axisFor(s.unit) === "left")?.unit ?? "";
-  const rightAxisUnit = seriesList.find((s) => axisFor(s.unit) === "right")?.unit ?? "";
-  const [hiddenSeries, setHiddenSeries] = useState<Set<string>>(
-    () => new Set(readHiddenGraphSeries(workspaceId, code)),
-  );
+  const rightAxis = seriesList.some((item) => item.axis === "right");
   const toggleSeries = (seriesCode: string) => {
-    const next = new Set(hiddenSeries);
-    if (next.has(seriesCode)) next.delete(seriesCode);
-    else next.add(seriesCode);
-    setHiddenSeries(next);
-    writeHiddenGraphSeries(workspaceId, code, [...next]);
+    const next = {
+      ...settings,
+      series: settings.series.map((item) =>
+        item.code === seriesCode ? { ...item, visible: !item.visible } : item,
+      ),
+    };
+    onSettingsChange(next);
   };
   const effectiveZoom = normalizeMetricZoom(zoom, rows.length);
   const [visibleXMin, visibleXMax] = metricZoomDomain(rows, effectiveZoom);
@@ -1016,6 +1312,25 @@ function MetricTimePlot({
     return () => cancelAnimationFrame(frame);
   }, [captureId, code, projectId, series.data, series.dataUpdatedAt]);
 
+  if (settings.series.length === 0)
+    return (
+      <div className="kpi-chart-state" role="status" data-testid="metric-series-empty">
+        <strong>{translate("graphSeries.empty")}</strong>
+        <button
+          type="button"
+          className="kpi-button mt-2"
+          onClick={() => {
+            const input = document.querySelector<HTMLInputElement>(
+              '[data-testid="metrics-search"], input[placeholder*="Search metrics"], input[placeholder*="Rechercher"]',
+            );
+            input?.focus();
+          }}
+        >
+          {translate("graphSeries.addMetric")}
+        </button>
+      </div>
+    );
+
   if (!captureId) {
     if (captures.isPending) return <ChartSpinner label={translate("metrics.de3b78444032")} />;
     if (captures.isError)
@@ -1051,7 +1366,10 @@ function MetricTimePlot({
         onRetry={() => void series.refetch()}
       />
     );
-  if (!points.length && !categoricalPoints.length)
+  if (
+    !seriesList.some((item) => item.points.some((point) => point.value !== null)) &&
+    !categoricalPoints.length
+  )
     return (
       <div className="kpi-chart-state" role="status">
         {" "}
@@ -1124,6 +1442,13 @@ function MetricTimePlot({
       data-x-max={visibleXMax}
       data-series-count={seriesList.length}
       data-series-render={seriesList.map((item) => `${item.code}:${item.renderMode}`).join(",")}
+      data-series-order={seriesList.map((item) => item.code).join(",")}
+      data-series-visible={seriesList
+        .map((item) => `${item.code}:${item.visible ? "on" : "off"}`)
+        .join(",")}
+      data-series-axes={seriesList.map((item) => `${item.code}:${item.axis}`).join(",")}
+      data-left-axis={`${settings.axes.left.auto ? "auto" : `${settings.axes.left.min ?? "auto"}:${settings.axes.left.max ?? "auto"}`}|${settings.axes.left.unit}|${settings.axes.left.visible ? "shown" : "hidden"}`}
+      data-right-axis={`${settings.axes.right.auto ? "auto" : `${settings.axes.right.min ?? "auto"}:${settings.axes.right.max ?? "auto"}`}|${settings.axes.right.unit}|${settings.axes.right.visible ? "shown" : "hidden"}`}
     >
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
@@ -1147,10 +1472,19 @@ function MetricTimePlot({
           <YAxis
             yAxisId="left"
             width={64}
-            domain={["auto", "auto"]}
-            tick={{ fontSize: 10, fill: "#64748b" }}
-            {...(leftAxisUnit
-              ? { label: { value: leftAxisUnit, angle: -90, position: "insideLeft" } }
+            hide={!settings.axes.left.visible}
+            domain={graphAxisDomain(settings.axes.left)}
+            stroke={settings.axes.left.color}
+            tick={{ fontSize: 10, fill: settings.axes.left.color }}
+            {...(settings.axes.left.unit
+              ? {
+                  label: {
+                    value: settings.axes.left.unit,
+                    angle: -90,
+                    position: "insideLeft",
+                    fill: settings.axes.left.color,
+                  },
+                }
               : {})}
           />
           {rightAxis && (
@@ -1158,25 +1492,65 @@ function MetricTimePlot({
               yAxisId="right"
               orientation="right"
               width={64}
-              domain={["auto", "auto"]}
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              {...(rightAxisUnit
-                ? { label: { value: rightAxisUnit, angle: 90, position: "insideRight" } }
+              hide={!settings.axes.right.visible}
+              domain={graphAxisDomain(settings.axes.right)}
+              stroke={settings.axes.right.color}
+              tick={{ fontSize: 10, fill: settings.axes.right.color }}
+              {...(settings.axes.right.unit
+                ? {
+                    label: {
+                      value: settings.axes.right.unit,
+                      angle: 90,
+                      position: "insideRight",
+                      fill: settings.axes.right.color,
+                    },
+                  }
                 : {})}
             />
           )}
           {seriesList.length > 1 && (
             <Legend
               wrapperStyle={{ fontSize: 10, maxWidth: "calc(100% - 12px)" }}
-              iconSize={9}
-              formatter={(value) => {
-                const item = seriesList.find((candidate) => candidate.label === value);
-                return `${value}${item?.unit ? ` · ${item.unit}` : ""}`;
-              }}
-              onClick={(entry) => {
-                const item = seriesList.find((candidate) => candidate.label === entry.value);
-                if (item) toggleSeries(item.code);
-              }}
+              content={() => (
+                <div
+                  className="flex max-w-full flex-wrap justify-center gap-x-2 gap-y-1"
+                  data-testid="metric-series-legend"
+                >
+                  {seriesList.map((item) => (
+                    <button
+                      key={item.code}
+                      type="button"
+                      title={`${item.label} · ${item.unit || "—"}`}
+                      aria-pressed={item.visible}
+                      className={`inline-flex max-w-[220px] items-center gap-1 truncate ${item.visible ? "" : "opacity-45"}`}
+                      onClick={() => toggleSeries(item.code)}
+                      onContextMenu={(event) => {
+                        event.preventDefault();
+                        const article = event.currentTarget.closest("article");
+                        article
+                          ?.querySelector<HTMLButtonElement>('[data-testid="workspace-panel-menu"]')
+                          ?.click();
+                        requestAnimationFrame(() =>
+                          document
+                            .querySelector<HTMLButtonElement>(
+                              '[data-testid="metric-manage-series-trigger"]',
+                            )
+                            ?.click(),
+                        );
+                      }}
+                    >
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="truncate">
+                        {item.label}
+                        {item.unit ? ` · ${item.unit}` : ""}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
             />
           )}
           <Tooltip
@@ -1204,7 +1578,7 @@ function MetricTimePlot({
             s.renderMode === "bar" ? (
               <Bar
                 key={s.code}
-                yAxisId={axisFor(s.unit)}
+                yAxisId={s.axis}
                 data={s.points.filter(
                   (point): point is MetricPlotPoint & { value: number } => point.value !== null,
                 )}
@@ -1212,26 +1586,26 @@ function MetricTimePlot({
                 name={s.label}
                 fill={s.color}
                 barSize={6}
-                hide={hiddenSeries.has(s.code)}
+                hide={!s.visible}
                 isAnimationActive={false}
               />
             ) : s.renderMode === "point" ? (
               <Scatter
                 key={s.code}
-                yAxisId={axisFor(s.unit)}
+                yAxisId={s.axis}
                 data={s.points.filter(
                   (point): point is MetricPlotPoint & { value: number } => point.value !== null,
                 )}
                 dataKey="value"
                 name={s.label}
                 fill={s.color}
-                hide={hiddenSeries.has(s.code)}
+                hide={!s.visible}
                 isAnimationActive={false}
               />
             ) : (
               <Line
                 key={s.code}
-                yAxisId={axisFor(s.unit)}
+                yAxisId={s.axis}
                 type="linear"
                 data={s.points}
                 dataKey="value"
@@ -1240,7 +1614,7 @@ function MetricTimePlot({
                 strokeWidth={1.2}
                 dot={false}
                 connectNulls={false}
-                hide={hiddenSeries.has(s.code)}
+                hide={!s.visible}
                 isAnimationActive={false}
               />
             ),

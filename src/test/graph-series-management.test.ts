@@ -1,0 +1,97 @@
+import { beforeEach, describe, expect, it } from "vitest";
+import {
+  addManagedSeries,
+  canAssignSeriesAxis,
+  graphSeriesSettingsKey,
+  graphAxisDomain,
+  initialGraphSeriesSettings,
+  readGraphSeriesSettings,
+  reorderManagedSeries,
+  writeGraphSeriesSettings,
+} from "@/features/kpi/graph-series-management";
+
+describe("graph series management", () => {
+  beforeEach(() => localStorage.clear());
+
+  const base = {
+    code: "pdsch_throughput@lte-type-0",
+    label: "PDSCH throughput · PCell",
+    unit: "Mbit/s",
+    color: "#2563eb",
+  };
+
+  it("assigns compatible throughput to left and BLER to right", () => {
+    let settings = initialGraphSeriesSettings(base, [], []);
+    settings = addManagedSeries(settings, {
+      code: "nr_bler@nr-type-199",
+      label: "NR BLER · PSCell",
+      unit: "%",
+    })!;
+    settings = addManagedSeries(settings, {
+      code: "nr_thp@nr-type-199",
+      label: "NR throughput · PSCell",
+      unit: "Mbit/s",
+    })!;
+    expect(settings.series.map(({ code, axis }) => [code, axis])).toEqual([
+      [base.code, "left"],
+      ["nr_bler@nr-type-199", "right"],
+      ["nr_thp@nr-type-199", "left"],
+    ]);
+    expect(new Set(settings.series.map((item) => item.color)).size).toBe(3);
+  });
+
+  it("rejects a third incompatible unit and an incompatible manual axis", () => {
+    let settings = initialGraphSeriesSettings(base, [], []);
+    settings = addManagedSeries(settings, { code: "bler", label: "BLER", unit: "%" })!;
+    expect(addManagedSeries(settings, { code: "rsrp", label: "RSRP", unit: "dBm" })).toBeNull();
+    expect(canAssignSeriesAxis(settings, "bler", "left")).toBe(false);
+    expect(canAssignSeriesAxis(settings, "bler", "right")).toBe(true);
+  });
+
+  it("persists order, visibility, colors, axes and min/max per panel", () => {
+    let settings = initialGraphSeriesSettings(base, [], []);
+    settings = addManagedSeries(settings, { code: "bler", label: "BLER", unit: "%" })!;
+    settings = {
+      series: reorderManagedSeries(settings.series, "bler", base.code).map((item) =>
+        item.code === "bler" ? { ...item, visible: false, color: "#123456" } : item,
+      ),
+      axes: {
+        ...settings.axes,
+        right: { ...settings.axes.right, auto: false, min: 0, max: 100, color: "#654321" },
+      },
+    };
+    writeGraphSeriesSettings("workspace-a", "panel-a", settings);
+    expect(readGraphSeriesSettings("workspace-a", "panel-a")).toEqual(settings);
+    expect(localStorage.getItem(graphSeriesSettingsKey("workspace-a", "panel-a"))).not.toBeNull();
+    expect(readGraphSeriesSettings("workspace-a", "panel-b")).toBeNull();
+  });
+
+  it("keeps an empty persisted list so removing the last series does not close the graph", () => {
+    const settings = initialGraphSeriesSettings(base, [], []);
+    writeGraphSeriesSettings("workspace-a", "panel-a", { ...settings, series: [] });
+    expect(readGraphSeriesSettings("workspace-a", "panel-a")?.series).toEqual([]);
+  });
+
+  it("uses explicit min/max only when the manual domain is valid", () => {
+    expect(
+      graphAxisDomain({
+        auto: false,
+        min: 0,
+        max: 100,
+        unit: "%",
+        color: "#64748b",
+        visible: true,
+      }),
+    ).toEqual([0, 100]);
+    expect(
+      graphAxisDomain({
+        auto: false,
+        min: 100,
+        max: 0,
+        unit: "%",
+        color: "#64748b",
+        visible: true,
+      }),
+    ).toEqual(["auto", "auto"]);
+  });
+});

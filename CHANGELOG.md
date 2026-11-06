@@ -1,3 +1,9 @@
+## 1.144.2 (patch) — Gestion indépendante des séries et axes Graph — 2026-11-06 (BC1)
+
+- Ajoute « Manage Series » au menu ⋯ des Graphs pour masquer, colorer, réordonner, affecter à l’axe gauche/droit ou retirer chaque série sans fermer le panneau.
+- Persiste par panneau et Workspace les séries, couleurs, ordre, visibilité, axes, échelles Min/Max, unités et zoom, sans refetch lors d’un changement purement visuel.
+- Interdit le partage d’un axe entre unités incompatibles et conserve un état vide « Add Metric » lorsque la dernière série est retirée.
+
 ## 1.144.1 (patch) — Chargement Measurements fluide — 2026-11-06 (BC4)
 
 - Ajoute un squelette animé par transformation pendant le premier chargement du tableau, en complément de la barre de progression indéterminée.
