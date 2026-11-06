@@ -117,6 +117,7 @@
     "loadError": "This page didn’t load",
     "loadErrorDescription": "Something went wrong. Try again or return to the home page.",
     "retry": "Try again",
+    "close": "Close",
     "appDescription": "LTE/NR/EN-DC radio benchmarking platform.",
     "all": "All",
     "none": "None",

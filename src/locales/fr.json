@@ -117,6 +117,7 @@
     "loadError": "Cette page n’a pas pu être chargée",
     "loadErrorDescription": "Une erreur est survenue. Réessayez ou revenez à l’accueil.",
     "retry": "Réessayer",
+    "close": "Fermer",
     "reset": "Réinitialiser",
     "appDescription": "Plateforme de benchmark radio LTE/NR/EN-DC.",
     "all": "Tous",
