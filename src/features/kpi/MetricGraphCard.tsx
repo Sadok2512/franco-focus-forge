@@ -310,7 +310,14 @@ function ManageGraphSeriesPopover({
     });
   };
   return (
-    <Popover open={open} onOpenChange={onOpenChange}>
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        // The parent menu's focus handoff emits a spurious delayed close.
+        // Real dismissal paths are handled explicitly on the content below.
+        if (next) onOpenChange(true);
+      }}
+    >
       <PopoverTrigger asChild>
         <button type="button" className="sr-only" tabIndex={-1} aria-hidden="true" />
       </PopoverTrigger>
@@ -319,6 +326,8 @@ function ManageGraphSeriesPopover({
         side="bottom"
         className="max-h-[min(72vh,640px)] w-[min(430px,calc(100vw-24px))] overflow-y-auto p-2"
         data-testid="metric-manage-series"
+        onEscapeKeyDown={onClose}
+        onPointerDownOutside={onClose}
       >
         <DropdownMenuLabel>{t("graphSeries.manage")}</DropdownMenuLabel>
         {draft.series.length === 0 ? (
@@ -707,18 +716,8 @@ export function MetricGraphCard({
   };
   const [over, setOver] = useState(false);
   const [seriesManagerOpen, setSeriesManagerOpen] = useState(false);
-  const seriesManagerOpenedAt = useRef(0);
   const openSeriesManager = () => {
-    seriesManagerOpenedAt.current = performance.now();
     setSeriesManagerOpen(true);
-  };
-  const changeSeriesManagerOpen = (next: boolean) => {
-    // Closing the parent Dropdown transfers focus through the hidden Popover
-    // anchor. Radix emits a delayed false transition while the catalogue and
-    // graph data settle; ignore that transition, but explicit Apply/Add uses
-    // the direct onClose callback below.
-    if (!next && performance.now() - seriesManagerOpenedAt.current < 2_000) return;
-    setSeriesManagerOpen(next);
   };
   const dropMetric = (raw: string) => {
     const metric = readMapMetric(raw);
@@ -899,7 +898,7 @@ export function MetricGraphCard({
               onChange={saveSeriesSettings}
               onReset={buildDefaultSeriesSettings}
               open={seriesManagerOpen}
-              onOpenChange={changeSeriesManagerOpen}
+              onOpenChange={setSeriesManagerOpen}
               onClose={() => setSeriesManagerOpen(false)}
             />
           )}
