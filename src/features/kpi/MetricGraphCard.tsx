@@ -95,6 +95,12 @@ import {
 } from "./time-axis";
 import { usePointSync } from "./point-sync";
 import { parseMetricSelection } from "./metric-selection";
+import {
+  cdfPoints,
+  histogramRows,
+  percentilePoints,
+  type GraphAnalysisMode,
+} from "./graph-distribution";
 
 const KPI_SERIES_RENDER_DEBUG = import.meta.env["VITE_KPI_SERIES_RENDER_DEBUG"] === "1";
 
@@ -1243,6 +1249,151 @@ function MetricAggregateTable({
   );
 }
 
+type DistributionRenderSeries = ManagedGraphSeries & {
+  points: MetricPlotPoint[];
+};
+
+function MetricDistributionPlot({
+  mode,
+  series,
+}: {
+  mode: Exclude<GraphAnalysisMode, "timeline">;
+  series: DistributionRenderSeries[];
+}) {
+  const { t } = useTranslation();
+  const visible = series.filter((item) => item.visible);
+  const histogram = useMemo(
+    () =>
+      histogramRows(
+        visible.map((item) => ({
+          code: item.code,
+          values: item.points.flatMap((point) =>
+            typeof point.value === "number" ? [point.value] : [],
+          ),
+        })),
+      ),
+    [visible],
+  );
+  const curves = useMemo(
+    () =>
+      series.map((item) => {
+        const values = item.points.flatMap((point) =>
+          typeof point.value === "number" ? [point.value] : [],
+        );
+        return {
+          ...item,
+          distribution:
+            mode === "cdf"
+              ? cdfPoints(values)
+              : mode === "percentile"
+                ? percentilePoints(values)
+                : [],
+        };
+      }),
+    [mode, series],
+  );
+  const rightAxis = mode === "percentile" && series.some((item) => item.axis === "right");
+  const xLabel =
+    mode === "percentile"
+      ? t("graphSeries.percentileAxis")
+      : visible.length === 1
+        ? visible[0]?.unit
+        : t("graphSeries.valueAxis");
+  return (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart
+        data={mode === "histogram" ? histogram : []}
+        margin={{ top: 38, right: 20, left: 8, bottom: 22 }}
+      >
+        <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+        <XAxis
+          type="number"
+          dataKey="x"
+          domain={mode === "percentile" ? [0, 100] : ["dataMin", "dataMax"]}
+          tick={{ fontSize: 10, fill: "#64748b" }}
+          label={{ value: xLabel, position: "insideBottom", offset: -12, fontSize: 10 }}
+        />
+        {mode === "percentile" ? (
+          <>
+            <YAxis
+              yAxisId="left"
+              width={64}
+              tick={{ fontSize: 10, fill: "#64748b" }}
+              label={{
+                value: series.find((item) => item.axis === "left")?.unit ?? "",
+                angle: -90,
+                position: "insideLeft",
+              }}
+            />
+            {rightAxis && (
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                width={64}
+                tick={{ fontSize: 10, fill: "#64748b" }}
+                label={{
+                  value: series.find((item) => item.axis === "right")?.unit ?? "",
+                  angle: 90,
+                  position: "insideRight",
+                }}
+              />
+            )}
+          </>
+        ) : (
+          <YAxis
+            yAxisId="distribution"
+            width={58}
+            domain={mode === "cdf" ? [0, 100] : [0, "auto"]}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+            label={{
+              value: mode === "cdf" ? t("graphSeries.cumulativePercent") : t("graphSeries.count"),
+              angle: -90,
+              position: "insideLeft",
+            }}
+          />
+        )}
+        <Tooltip
+          contentStyle={{ fontSize: 11, padding: "4px 8px" }}
+          labelFormatter={(value: number) =>
+            mode === "percentile"
+              ? `${t("graphSeries.percentile")}: ${formatNumber(value, { maximumFractionDigits: 1 })}%`
+              : `${t("graphSeries.valueAxis")}: ${formatNumber(value, { maximumFractionDigits: 3 })}`
+          }
+        />
+        {series.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
+        {mode === "histogram"
+          ? series.map((item) => (
+              <Bar
+                key={item.code}
+                yAxisId="distribution"
+                dataKey={item.code}
+                name={item.label}
+                fill={item.color}
+                hide={!item.visible}
+                opacity={0.72}
+                isAnimationActive={false}
+              />
+            ))
+          : curves.map((item) => (
+              <Line
+                key={item.code}
+                yAxisId={mode === "percentile" ? item.axis : "distribution"}
+                data={item.distribution}
+                dataKey="y"
+                name={item.label}
+                stroke={item.color}
+                strokeWidth={1.6}
+                type={mode === "cdf" ? "stepAfter" : "linear"}
+                dot={false}
+                hide={!item.visible}
+                isAnimationActive={false}
+              />
+            ))}
+      </ComposedChart>
+    </ResponsiveContainer>
+  );
+}
+
 /** 1.49.3 — Courbe (seq, t_rel_s, value) via /metrics/series pour une
  *  métrique Nemo. Auto-sélection de la 1re capture qui porte la
  *  métrique (via /metrics/captures). Reuse exact du contrat existant
@@ -1574,7 +1725,7 @@ function MetricTimePlot({
   return (
     <div
       ref={plotRef}
-      className="w-full"
+      className="relative w-full"
       style={{ minHeight: "var(--kpi-panel-chart-height, 235px)" }}
       data-testid="metric-time-plot"
       data-capture-id={captureId}
@@ -1592,8 +1743,45 @@ function MetricTimePlot({
       data-series-axes={seriesList.map((item) => `${item.code}:${item.axis}`).join(",")}
       data-left-axis={`${settings.axes.left.auto ? "auto" : `${settings.axes.left.min ?? "auto"}:${settings.axes.left.max ?? "auto"}`}|${settings.axes.left.unit}|${settings.axes.left.visible ? "shown" : "hidden"}`}
       data-right-axis={`${settings.axes.right.auto ? "auto" : `${settings.axes.right.min ?? "auto"}:${settings.axes.right.max ?? "auto"}`}|${settings.axes.right.unit}|${settings.axes.right.visible ? "shown" : "hidden"}`}
+      data-analysis-mode={settings.analysisMode}
     >
-      <ResponsiveContainer width="100%" height="100%">
+      <div
+        className="absolute right-3 top-1 z-10 inline-flex rounded-md border border-border bg-background/95 p-0.5 shadow-sm"
+        data-testid="metric-distribution-controls"
+      >
+        {(["histogram", "cdf", "percentile"] as const).map((analysisMode) => (
+          <button
+            key={analysisMode}
+            type="button"
+            data-testid={`metric-analysis-${analysisMode}`}
+            aria-pressed={settings.analysisMode === analysisMode}
+            title={translate("graphSeries.distributionToggleHint")}
+            className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
+              settings.analysisMode === analysisMode
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            onClick={() =>
+              onSettingsChange({
+                ...settings,
+                analysisMode: settings.analysisMode === analysisMode ? "timeline" : analysisMode,
+              })
+            }
+          >
+            {translate(`graphSeries.${analysisMode}`)}
+          </button>
+        ))}
+      </div>
+      {settings.analysisMode !== "timeline" && (
+        <div className="absolute inset-0">
+          <MetricDistributionPlot mode={settings.analysisMode} series={seriesList} />
+        </div>
+      )}
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        className={settings.analysisMode === "timeline" ? "" : "invisible pointer-events-none"}
+      >
         <ComposedChart
           data={rows}
           margin={{ top: 10, right: 14, left: 4, bottom: 24 }}

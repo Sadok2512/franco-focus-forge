@@ -1,5 +1,6 @@
 import { METRIC_COLORS, freeColor } from "./metric-styles";
 import { normalizeUnit, type GraphSeries } from "./graph-series-drop";
+import type { GraphAnalysisMode } from "./graph-distribution";
 
 export type GraphAxisSide = "left" | "right";
 export type GraphSeriesDisplay = "point" | "line" | "point-line";
@@ -22,6 +23,7 @@ export type GraphAxisSettings = {
 export type GraphSeriesSettings = {
   series: ManagedGraphSeries[];
   axes: Record<GraphAxisSide, GraphAxisSettings>;
+  analysisMode: GraphAnalysisMode;
 };
 
 const DEFAULT_AXIS_COLOR = "#64748b";
@@ -104,6 +106,12 @@ export function readGraphSeriesSettings(
         : {};
     return {
       series,
+      analysisMode:
+        root["analysisMode"] === "histogram" ||
+        root["analysisMode"] === "cdf" ||
+        root["analysisMode"] === "percentile"
+          ? root["analysisMode"]
+          : "timeline",
       axes: {
         left: parseAxis(axes["left"], defaultAxisSettings()),
         right: parseAxis(axes["right"], defaultAxisSettings()),
@@ -154,6 +162,7 @@ export function initialGraphSeriesSettings(
   });
   return {
     series,
+    analysisMode: "timeline",
     axes: {
       left: defaultAxisSettings(series.find((item) => item.axis === "left")?.unit ?? ""),
       right: defaultAxisSettings(series.find((item) => item.axis === "right")?.unit ?? ""),

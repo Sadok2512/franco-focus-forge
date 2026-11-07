@@ -56,6 +56,7 @@ describe("graph series management", () => {
       series: reorderManagedSeries(settings.series, "bler", base.code).map((item) =>
         item.code === "bler" ? { ...item, visible: false, color: "#123456" } : item,
       ),
+      analysisMode: settings.analysisMode,
       axes: {
         ...settings.axes,
         right: { ...settings.axes.right, auto: false, min: 0, max: 100, color: "#654321" },
@@ -83,6 +84,16 @@ describe("graph series management", () => {
     const settings = initialGraphSeriesSettings(base, [], []);
     writeGraphSeriesSettings("workspace-a", "panel-a", { ...settings, series: [] });
     expect(readGraphSeriesSettings("workspace-a", "panel-a")?.series).toEqual([]);
+  });
+
+  it("persists the selected distribution mode per graph", () => {
+    const settings = {
+      ...initialGraphSeriesSettings(base, [], []),
+      analysisMode: "cdf" as const,
+    };
+    writeGraphSeriesSettings("workspace-a", "panel-a", settings);
+    expect(readGraphSeriesSettings("workspace-a", "panel-a")?.analysisMode).toBe("cdf");
+    expect(readGraphSeriesSettings("workspace-a", "panel-b")).toBeNull();
   });
 
   it("uses explicit min/max only when the manual domain is valid", () => {

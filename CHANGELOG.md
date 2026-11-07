@@ -1,3 +1,9 @@
+## 1.146.0 (minor) — Distributions Histogramme, CDF et Percentile — 2026-11-07 (BC1)
+
+- Ajoute aux Graphs trois modes statistiques calculés exclusivement depuis les points numériques déjà chargés : Histogramme, CDF et courbe Percentile complète.
+- Conserve le graphe temporel comme mode par défaut ; un second clic sur le mode actif y revient, sans requête API supplémentaire.
+- Persiste le mode par panneau et Workspace, sans modifier les valeurs, timestamps, couleurs, axes ni le DataZoom temporel.
+
 ## 1.145.3 (patch) — Manage Series compact final — 2026-11-07 (BC1)
 
 - Aligne chaque série sur une unique ligne Eye, couleur, nom catalogue, axe Y, palette et suppression, sans drag handle ni colonne implicite.
