@@ -1,3 +1,7 @@
+## 1.146.1 (patch) — Recherche Metrics déterministe — 2026-11-07 (BC4)
+
+- Réduit le délai de recherche du catalogue Metrics et applique le filtre hors transition basse priorité, afin que les résultats BLER restent réactifs avec plusieurs panneaux actifs.
+
 ## 1.146.0 (minor) — Distributions Histogramme, CDF et Percentile — 2026-11-07 (BC1)
 
 - Ajoute aux Graphs trois modes statistiques calculés exclusivement depuis les points numériques déjà chargés : Histogramme, CDF et courbe Percentile complète.

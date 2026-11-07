@@ -18,7 +18,6 @@ import {
   useMemo,
   useRef,
   useState,
-  useTransition,
   type ReactNode,
   type RefObject,
 } from "react";
@@ -62,7 +61,7 @@ const MAX_METRICS = 64;
 // A 250 ms delay still fired between ordinary 300 ms keystrokes and mounted
 // the broad `e` / `ea` result trees. Wait for a real typing pause instead;
 // the input itself remains synchronous and the eventual render interruptible.
-const SEARCH_DEBOUNCE_MS = 400;
+const SEARCH_DEBOUNCE_MS = 100;
 // 1.78.1 — strip des badges source `[PHRATE #1]`, `[CI #2]`, `[CELLMEAS #5]`...
 // bakés dans node.label par le back (le back garde la source pour sa logique
 // de binding via SOURCE_RE ; côté UI on affiche le nom nu).
@@ -545,16 +544,16 @@ export function MetricsCatalogSidebar({
   // filter is debounced.
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
-  const [isSearchPending, startSearchTransition] = useTransition();
+  const isSearchPending = search !== debouncedSearch;
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      // Filtering can expose hundreds of nested rows. Keep that render
-      // interruptible: an urgent input update must win immediately when the
-      // user resumes typing after a short pause.
-      startSearchTransition(() => setDebouncedSearch(search));
+      // The result must commit deterministically even while Graph panels are
+      // rendering. A React transition could be starved by their frequent
+      // updates and made a valid content search look broken.
+      setDebouncedSearch(search);
     }, SEARCH_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [search, startSearchTransition]);
+  }, [search]);
   const [open, setOpen] = useState<Set<string>>(new Set());
   const treeScrollRef = useRef<HTMLDivElement>(null);
   const [searchScrollTop, setSearchScrollTop] = useState(0);
