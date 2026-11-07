@@ -1,3 +1,8 @@
+## 1.147.0 (minor) — Synchronisation globale KPI Analytics — 2026-11-07 (BC4)
+
+- Remplace le switch ambigu par un sélecteur explicite `Sync ON / OFF` et synchronise, lorsque ON, le point et le temps sélectionnés entre tous les Workspaces, Graphs, Tables, Maps et Timelines du projet.
+- Conserve l'isolation entre projets et migre automatiquement une préférence de synchronisation déjà activée.
+
 ## 1.146.2 (patch) — Histogramme sur les points de série — 2026-11-07 (BC1)
 
 - L'action Histogramme du catalogue et les panneaux historiques utilisent désormais `/metrics/series` en conservant le sélecteur de cellule, au lieu de l'ancien agrégat par opérateur qui renvoyait à tort un panneau vide.

@@ -222,18 +222,33 @@ export function KpiFilters({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <label className="kpi-events-toggle" data-testid="kpi-point-sync-control">
-          <span className="flex items-center gap-2 text-xs font-medium">
-            <Link2 size={14} aria-hidden="true" />
-            <Switch
-              checked={pointSync.enabled}
-              onCheckedChange={pointSync.setEnabled}
-              aria-label={t("panel.pointSync")}
-              data-testid="kpi-point-sync-toggle"
-            />
-            {t(pointSync.enabled ? "panel.pointSyncOn" : "panel.pointSyncOff")}
-          </span>
-        </label>
+        <div
+          className="kpi-sync-control"
+          role="group"
+          aria-label={t("panel.pointSync")}
+          title={t("panel.pointSyncHelp")}
+          data-testid="kpi-point-sync-control"
+        >
+          <Link2 size={14} aria-hidden="true" />
+          <button
+            type="button"
+            className={pointSync.enabled ? "is-active" : undefined}
+            aria-pressed={pointSync.enabled}
+            onClick={() => pointSync.setEnabled(true)}
+            data-testid="kpi-point-sync-on"
+          >
+            {t("panel.pointSyncOn")}
+          </button>
+          <button
+            type="button"
+            className={!pointSync.enabled ? "is-active" : undefined}
+            aria-pressed={!pointSync.enabled}
+            onClick={() => pointSync.setEnabled(false)}
+            data-testid="kpi-point-sync-off"
+          >
+            {t("panel.pointSyncOff")}
+          </button>
+        </div>
 
         <label className="kpi-events-toggle" data-testid="kpi-header-events">
           <span className="flex items-center gap-2 text-xs font-medium">

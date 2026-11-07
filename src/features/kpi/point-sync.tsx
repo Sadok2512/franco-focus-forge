@@ -33,12 +33,12 @@ type PointSyncMessage =
 
 const PointSyncContext = createContext<PointSyncContextValue | null>(null);
 
-export function pointSyncStorageKey(projectId: string, workspaceId: string) {
-  return `bc4.kpi.pointSync.v1.${projectId}.${workspaceId}`;
+export function pointSyncStorageKey(projectId: string) {
+  return `bc4.kpi.pointSync.v2.${projectId}`;
 }
 
-export function pointSyncChannelName(projectId: string, workspaceId: string) {
-  return `bc4:kpi-point-sync:v1:${projectId}:${workspaceId}`;
+export function pointSyncChannelName(projectId: string) {
+  return `bc4:kpi-point-sync:v2:${projectId}`;
 }
 
 export function pointMatchesRange(
@@ -54,9 +54,16 @@ export function pointMatchesRange(
   return selection.seq <= seqLast && selectedLast >= seqFirst;
 }
 
-function readEnabled(projectId: string, workspaceId: string) {
+function readEnabled(projectId: string) {
   try {
-    return localStorage.getItem(pointSyncStorageKey(projectId, workspaceId)) === "true";
+    const current = localStorage.getItem(pointSyncStorageKey(projectId));
+    if (current !== null) return current === "true";
+    // Preserve an existing ON preference while moving from workspace-local
+    // synchronization to the project-wide synchronization contract.
+    const legacyPrefix = `bc4.kpi.pointSync.v1.${projectId}.`;
+    return Object.keys(localStorage).some(
+      (key) => key.startsWith(legacyPrefix) && localStorage.getItem(key) === "true",
+    );
   } catch {
     return false;
   }
@@ -64,25 +71,23 @@ function readEnabled(projectId: string, workspaceId: string) {
 
 export function PointSyncProvider({
   projectId,
-  workspaceId,
   children,
 }: {
   projectId: string;
-  workspaceId: string;
   children: ReactNode;
 }) {
-  const [enabled, setEnabledState] = useState(() => readEnabled(projectId, workspaceId));
+  const [enabled, setEnabledState] = useState(() => readEnabled(projectId));
   const [selection, setSelection] = useState<SyncedPoint | null>(null);
   const channel = useRef<BroadcastChannel | null>(null);
 
   useEffect(() => {
-    setEnabledState(readEnabled(projectId, workspaceId));
+    setEnabledState(readEnabled(projectId));
     setSelection(null);
-  }, [projectId, workspaceId]);
+  }, [projectId]);
 
   useEffect(() => {
     if (typeof BroadcastChannel === "undefined") return;
-    const next = new BroadcastChannel(pointSyncChannelName(projectId, workspaceId));
+    const next = new BroadcastChannel(pointSyncChannelName(projectId));
     channel.current = next;
     next.onmessage = (event: MessageEvent<PointSyncMessage>) => {
       const message = event.data;
@@ -90,7 +95,7 @@ export function PointSyncProvider({
         setEnabledState(message.enabled);
         try {
           localStorage.setItem(
-            pointSyncStorageKey(projectId, workspaceId),
+            pointSyncStorageKey(projectId),
             String(message.enabled),
           );
         } catch {
@@ -99,9 +104,9 @@ export function PointSyncProvider({
         if (!message.enabled) setSelection(null);
         return;
       }
-      if (message?.type !== "selection" || !readEnabled(projectId, workspaceId)) return;
+      if (message?.type !== "selection" || !readEnabled(projectId)) return;
       const value = message.selection;
-      if (value === null || (value.projectId === projectId && value.workspaceId === workspaceId)) {
+      if (value === null || value.projectId === projectId) {
         setSelection(value);
       }
     };
@@ -109,13 +114,13 @@ export function PointSyncProvider({
       channel.current = null;
       next.close();
     };
-  }, [projectId, workspaceId]);
+  }, [projectId]);
 
   const setEnabled = useCallback(
     (next: boolean) => {
       setEnabledState(next);
       try {
-        localStorage.setItem(pointSyncStorageKey(projectId, workspaceId), String(next));
+        localStorage.setItem(pointSyncStorageKey(projectId), String(next));
       } catch {
         /* storage unavailable */
       }
@@ -128,7 +133,7 @@ export function PointSyncProvider({
         } satisfies PointSyncMessage);
       }
     },
-    [projectId, workspaceId],
+    [projectId],
   );
 
   const select = useCallback(

@@ -30,7 +30,7 @@ class FakeBroadcastChannel {
   }
 }
 
-function Probe({ name }: { name: string }) {
+function Probe({ name, workspaceId = "w1" }: { name: string; workspaceId?: string }) {
   const sync = usePointSync();
   return (
     <div>
@@ -44,7 +44,7 @@ function Probe({ name }: { name: string }) {
         onClick={() =>
           sync.select({
             projectId: "p1",
-            workspaceId: "w1",
+            workspaceId,
             captureId: "c1",
             seq: 42,
             source: "map",
@@ -84,22 +84,22 @@ describe("KPI point synchronization", () => {
     expect(pointMatchesRange(point, "p1", "c2", 10, 14)).toBe(false);
   });
 
-  it("persists the toggle and broadcasts selections only inside its workspace", () => {
+  it("persists the toggle and broadcasts selections across workspaces in one project", () => {
     render(
       <>
-        <PointSyncProvider projectId="p1" workspaceId="w1">
+        <PointSyncProvider projectId="p1">
           <Probe name="a" />
         </PointSyncProvider>
-        <PointSyncProvider projectId="p1" workspaceId="w1">
-          <Probe name="b" />
+        <PointSyncProvider projectId="p1">
+          <Probe name="b" workspaceId="w2" />
         </PointSyncProvider>
       </>,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "toggle-a" }));
-    expect(localStorage.getItem(pointSyncStorageKey("p1", "w1"))).toBe("true");
+    expect(localStorage.getItem(pointSyncStorageKey("p1"))).toBe("true");
     expect(screen.getByTestId("b-enabled")).toHaveTextContent("true");
-    expect(pointSyncChannelName("p1", "w1")).toContain("p1:w1");
+    expect(pointSyncChannelName("p1")).toContain("p1");
 
     act(() => fireEvent.click(screen.getByRole("button", { name: "select-a" })));
     expect(screen.getByTestId("a-seq")).toHaveTextContent("42");
@@ -107,6 +107,25 @@ describe("KPI point synchronization", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "toggle-a" }));
     expect(screen.getByTestId("a-seq")).toHaveTextContent("none");
+    expect(screen.getByTestId("b-seq")).toHaveTextContent("none");
+  });
+
+  it("does not broadcast a project selection to another project", () => {
+    render(
+      <>
+        <PointSyncProvider projectId="p1">
+          <Probe name="a" />
+        </PointSyncProvider>
+        <PointSyncProvider projectId="p2">
+          <Probe name="b" workspaceId="w2" />
+        </PointSyncProvider>
+      </>,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "toggle-a" }));
+    fireEvent.click(screen.getByRole("button", { name: "toggle-b" }));
+    act(() => fireEvent.click(screen.getByRole("button", { name: "select-a" })));
+    expect(screen.getByTestId("a-seq")).toHaveTextContent("42");
     expect(screen.getByTestId("b-seq")).toHaveTextContent("none");
   });
 });

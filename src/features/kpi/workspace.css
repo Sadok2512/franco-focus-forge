@@ -2322,6 +2322,37 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   min-height: 28px;
   padding-inline: 3px;
 }
+.kpi-sync-control {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 3px 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--background);
+  color: var(--muted-foreground);
+}
+.kpi-sync-control button {
+  min-width: 58px;
+  height: 22px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kpi-sync-control button.is-active {
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  box-shadow: 0 1px 2px rgb(15 23 42 / 18%);
+}
+.kpi-sync-control button:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 1px;
+}
 .kpi-header-v2 > .kpi-dirty,
 .kpi-header-v2 > [role="alert"] {
   display: block;

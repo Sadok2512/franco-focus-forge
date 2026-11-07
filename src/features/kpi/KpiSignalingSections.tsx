@@ -178,12 +178,22 @@ export function KpiTimelineSection({
   const [selectedTime, setSelectedTime] = useState<number | null>(null);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const activeEvents = useActiveEvents();
-  const { select: selectPoint } = usePointSync();
+  const pointSync = usePointSync();
   useEffect(() => {
     setSelectedTime(null);
     setSelectedEventId(null);
-    selectPoint(null);
-  }, [captureId, selectPoint]);
+    pointSync.select(null);
+  }, [captureId, pointSync.select]);
+  useEffect(() => {
+    if (
+      !pointSync.enabled ||
+      pointSync.selection?.projectId !== projectId ||
+      pointSync.selection.captureId !== captureId
+    ) {
+      return;
+    }
+    setSelectedTime(pointSync.selection.tRelS ?? null);
+  }, [captureId, pointSync.enabled, pointSync.selection, projectId]);
   const selectEvent = (event: RfEvent) => {
     setSelectedEventId(event.id);
     setSelectedTime(event.t_rel_s);
@@ -197,7 +207,7 @@ export function KpiTimelineSection({
         color: eventColor(event.type),
       });
     }
-    selectPoint({
+    pointSync.select({
       projectId,
       workspaceId,
       captureId,

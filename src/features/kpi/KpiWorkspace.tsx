@@ -1055,7 +1055,7 @@ function Workspace({
   return (
     <WorkspaceTemplatesProvider value={templateContext}>
       <ActiveEventsProvider resetKey={`${currentTab.id}:${scopeIdentity}`}>
-        <PointSyncProvider projectId={projectId} workspaceId={currentTab.id}>
+        <PointSyncProvider projectId={projectId}>
           <main className="kpi-workspace" aria-label="KPI Analytics">
             <KpiFilters
               draft={draft}
