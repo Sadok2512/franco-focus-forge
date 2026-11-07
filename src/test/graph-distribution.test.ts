@@ -5,8 +5,10 @@ import {
   formatDistributionTick,
   histogramResult,
   histogramRows,
+  normalizeDistributionModes,
   percentilePoints,
   quantile,
+  toggleDistributionMode,
 } from "@/features/kpi/graph-distribution";
 
 describe("metric graph distributions", () => {
@@ -71,5 +73,27 @@ describe("metric graph distributions", () => {
 
   it("formats RF ticks without floating-point artefacts", () => {
     expect(formatDistributionTick(-129.01250000000002, "dBm", -130, -60)).toBe("-129");
+  });
+
+  it("keeps histogram bars as the base when CDF or percentiles are enabled", () => {
+    expect(normalizeDistributionModes({ histogram: false, cdf: true, percentile: true })).toEqual({
+      histogram: true,
+      cdf: true,
+      percentile: true,
+    });
+    expect(
+      toggleDistributionMode({ histogram: false, cdf: false, percentile: false }, "cdf"),
+    ).toEqual({
+      histogram: true,
+      cdf: true,
+      percentile: false,
+    });
+    expect(
+      toggleDistributionMode({ histogram: true, cdf: true, percentile: false }, "percentile"),
+    ).toEqual({
+      histogram: true,
+      cdf: true,
+      percentile: true,
+    });
   });
 });

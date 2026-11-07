@@ -1,3 +1,7 @@
+## 1.148.1 (patch) — Barres conservées avec CDF et Percentiles — 2026-11-07 (BC1)
+
+- Conserve systématiquement les barres de l’histogramme comme base lorsque CDF, CCDF ou Percentiles sont activés, y compris pour les Workspaces déjà persistés.
+
 ## 1.148.0 (minor) — Distributions RF configurables et superposables — 2026-11-07 (BC1)
 
 - Rend Histogramme, CDF/CCDF et Percentiles activables indépendamment dans un même Graph, avec axes RF lisibles sans artefacts flottants.

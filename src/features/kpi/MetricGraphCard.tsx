@@ -100,7 +100,9 @@ import {
   filterDistributionValues,
   formatDistributionTick,
   histogramResult,
+  normalizeDistributionModes,
   quantile,
+  toggleDistributionMode,
   type DistributionSettings,
   type GraphAnalysisMode,
 } from "./graph-distribution";
@@ -1860,9 +1862,14 @@ function MetricTimePlot({
   };
   const effectiveZoom = normalizeMetricZoom(zoom, rows.length);
   const [visibleXMin, visibleXMax] = metricZoomDomain(rows, effectiveZoom);
+  const effectiveDistributionModes = normalizeDistributionModes(settings.distribution.modes);
+  const effectiveDistributionSettings = {
+    ...settings.distribution,
+    modes: effectiveDistributionModes,
+  };
   const activeDistributionModes = (
-    Object.keys(settings.distribution.modes) as Array<keyof typeof settings.distribution.modes>
-  ).filter((mode) => settings.distribution.modes[mode]);
+    Object.keys(effectiveDistributionModes) as Array<keyof typeof effectiveDistributionModes>
+  ).filter((mode) => effectiveDistributionModes[mode]);
   const statisticsActive = activeDistributionModes.length > 0;
 
   const plotRef = useRef<HTMLDivElement>(null);
@@ -2111,18 +2118,15 @@ function MetricTimePlot({
             key={analysisMode}
             type="button"
             data-testid={`metric-analysis-${analysisMode}`}
-            aria-pressed={settings.distribution.modes[analysisMode]}
+            aria-pressed={effectiveDistributionModes[analysisMode]}
             title={translate("graphSeries.distributionToggleHint")}
             className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
-              settings.distribution.modes[analysisMode]
+              effectiveDistributionModes[analysisMode]
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
             onClick={() => {
-              const modes = {
-                ...settings.distribution.modes,
-                [analysisMode]: !settings.distribution.modes[analysisMode],
-              };
+              const modes = toggleDistributionMode(effectiveDistributionModes, analysisMode);
               const active = (["histogram", "cdf", "percentile"] as const).filter(
                 (mode) => modes[mode],
               );
@@ -2148,7 +2152,7 @@ function MetricTimePlot({
       </div>
       {statisticsActive && (
         <div className="absolute inset-0">
-          <MetricDistributionPlot settings={settings.distribution} series={seriesList} />
+          <MetricDistributionPlot settings={effectiveDistributionSettings} series={seriesList} />
         </div>
       )}
       <ResponsiveContainer
