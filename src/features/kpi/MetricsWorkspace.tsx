@@ -662,6 +662,11 @@ function MetricMap({
   const [driveLegendHost, setDriveLegendHost] = useState<HTMLDivElement | null>(null);
   const [selectedPoint, setSelectedPoint] = useState<SelectedDrivePoint | null>(null);
   const selectedPointRef = useRef<SelectedDrivePoint | null>(null);
+  // DriveRsrpLayer reports every externalSelection update through its normal
+  // callback. Remember the point applied from the shared cursor so that this
+  // map does not publish its single seq back and overwrite the originating
+  // table interval (which would immediately remove the table highlight).
+  const sharedSelectionSeqRef = useRef<number | null>(null);
   useEffect(() => {
     if (!settingsOpen) return;
     const outside = (event: PointerEvent) => {
@@ -926,6 +931,7 @@ function MetricMap({
     const point = data ? metricMapPointForSelection(data.map_points, shared) : undefined;
     if (!point) return;
     const next = { projectId, captureId, seq: point.seq, lng: point.lng, lat: point.lat };
+    sharedSelectionSeqRef.current = point.seq;
     selectedPointRef.current = next;
     setSelectedPoint(next);
   }, [captureId, data, pointSync.enabled, pointSync.selection, projectId]);
@@ -938,6 +944,11 @@ function MetricMap({
     (selection: SelectedDrivePoint | null) => {
       selectedPointRef.current = selection;
       setSelectedPoint(selection);
+      if (selection && sharedSelectionSeqRef.current === selection.seq) {
+        sharedSelectionSeqRef.current = null;
+        return;
+      }
+      sharedSelectionSeqRef.current = null;
       if (!selection) {
         pointSync.select(null);
         return;
