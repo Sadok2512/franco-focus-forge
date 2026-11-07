@@ -1931,6 +1931,13 @@ function MetricTimePlot({
     pointSync.selection.captureId === captureId
       ? pointSync.selection.tRelS
       : null;
+  // Different metrics do not necessarily cover the same source-time interval.
+  // Keep the synchronized cursor truthful and visible by extending only the
+  // displayed X domain; series points and RF values remain untouched.
+  const synchronizedXMin =
+    typeof selectedTime === "number" ? Math.min(visibleXMin, selectedTime) : visibleXMin;
+  const synchronizedXMax =
+    typeof selectedTime === "number" ? Math.max(visibleXMax, selectedTime) : visibleXMax;
 
   useEffect(() => {
     if (!series.data || !plotRef.current || !renderProbe.current.startedAt) return;
@@ -2102,8 +2109,8 @@ function MetricTimePlot({
       data-n-points={points.length}
       data-zoom-start={effectiveZoom?.startIndex ?? 0}
       data-zoom-end={effectiveZoom?.endIndex ?? Math.max(0, rows.length - 1)}
-      data-x-min={visibleXMin}
-      data-x-max={visibleXMax}
+      data-x-min={synchronizedXMin}
+      data-x-max={synchronizedXMax}
       data-series-count={seriesList.length}
       data-series-render={seriesList.map((item) => `${item.code}:${item.renderMode}`).join(",")}
       data-series-order={seriesList.map((item) => item.code).join(",")}
@@ -2176,7 +2183,7 @@ function MetricTimePlot({
           <XAxis
             type="number"
             dataKey="t_rel_s"
-            domain={[visibleXMin, visibleXMax]}
+            domain={[synchronizedXMin, synchronizedXMax]}
             allowDataOverflow
             tickCount={6}
             tick={{ fontSize: 10, fill: "#64748b" }}
