@@ -224,29 +224,20 @@ export function KpiFilters({
 
         <div
           className="kpi-sync-control"
-          role="group"
-          aria-label={t("panel.pointSync")}
           title={t("panel.pointSyncHelp")}
           data-testid="kpi-point-sync-control"
         >
-          <Link2 size={14} aria-hidden="true" />
           <button
             type="button"
-            className={pointSync.enabled ? "is-active" : undefined}
-            aria-pressed={pointSync.enabled}
-            onClick={() => pointSync.setEnabled(true)}
-            data-testid="kpi-point-sync-on"
+            role="switch"
+            className={pointSync.enabled ? "is-on" : "is-off"}
+            aria-label={t("panel.pointSync")}
+            aria-checked={pointSync.enabled}
+            onClick={() => pointSync.setEnabled(!pointSync.enabled)}
+            data-testid="kpi-point-sync-toggle"
           >
-            {t("panel.pointSyncOn")}
-          </button>
-          <button
-            type="button"
-            className={!pointSync.enabled ? "is-active" : undefined}
-            aria-pressed={!pointSync.enabled}
-            onClick={() => pointSync.setEnabled(false)}
-            data-testid="kpi-point-sync-off"
-          >
-            {t("panel.pointSyncOff")}
+            <Link2 size={14} aria-hidden="true" />
+            <span>{t(pointSync.enabled ? "panel.pointSyncOn" : "panel.pointSyncOff")}</span>
           </button>
         </div>
 
@@ -255,10 +246,10 @@ export function KpiFilters({
             <Switch
               checked={eventsVisible}
               onCheckedChange={onEventsVisibleChange}
-              aria-label={`Events ${eventsVisible ? "ON" : "OFF"}`}
+              aria-label={t(eventsVisible ? "panel.eventsOn" : "panel.eventsOff")}
               data-testid="kpi-events-toggle"
             />
-            {eventsVisible ? "ON" : "OFF"}
+            {t(eventsVisible ? "panel.eventsOn" : "panel.eventsOff")}
           </span>
         </label>
 

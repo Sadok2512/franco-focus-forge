@@ -9,6 +9,7 @@ import {
   installMetricMapSource,
   metricMapFeatures,
   metricMapLinkFeatures,
+  metricMapPointForSelection,
   metricMapNumericExtent,
   MetricsWorkspace,
   nearestMetricMapClickSequences,
@@ -81,6 +82,65 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
+  const mapPoint = (seq: number, tRelS: number, lat = 48, lng = 2) =>
+    ({
+      seq,
+      t_rel_s: tRelS,
+      lat,
+      lng,
+      code: "cell_rsrp@0",
+      value: -91,
+      tooltip: "",
+      neighbour_links: [],
+    });
+
+  it("prefers a map point inside the selected table sequence interval", () => {
+    const selected = metricMapPointForSelection(
+      [mapPoint(90, 10), mapPoint(103, 11.1), mapPoint(110, 11.2)],
+      {
+        projectId: "project-a",
+        workspaceId: "workspace-a",
+        captureId: "capture-a",
+        seq: 100,
+        seqLast: 105,
+        tRelS: 11,
+        source: "table",
+      },
+    );
+    expect(selected?.seq).toBe(103);
+  });
+
+  it("uses the same source-time bucket when table and map metrics use different records", () => {
+    const selected = metricMapPointForSelection(
+      [mapPoint(300, 19.8), mapPoint(400, 20.6), mapPoint(410, 21.1)],
+      {
+        projectId: "project-a",
+        workspaceId: "workspace-a",
+        captureId: "capture-a",
+        seq: 200,
+        seqLast: 210,
+        tRelS: 20.4,
+        source: "table",
+      },
+    );
+    expect(selected?.seq).toBe(400);
+  });
+
+  it("does not select an unrelated point outside the interval, time bucket, or GPS", () => {
+    const selected = metricMapPointForSelection([mapPoint(300, 22, 49, 3)], {
+      projectId: "project-a",
+      workspaceId: "workspace-a",
+      captureId: "capture-a",
+      seq: 200,
+      seqLast: 210,
+      tRelS: 20.4,
+      lat: 48,
+      lng: 2,
+      source: "table",
+    });
+    expect(selected).toBeUndefined();
+  });
+
   it("lets an adjacent rendered point replace the enlarged active point", () => {
     expect(
       nearestMetricMapClickSequences([

@@ -89,7 +89,8 @@
 }
 .signaling-cursor-line {
   stroke: var(--signaling-cursor);
-  stroke-width: 2px;
+  stroke-width: 1.5px;
+  stroke-dasharray: 5 4;
 }
 .signaling-cursor-preview {
   stroke: var(--signaling-cursor);

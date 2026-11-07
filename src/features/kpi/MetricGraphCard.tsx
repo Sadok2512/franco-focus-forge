@@ -2079,7 +2079,13 @@ function MetricTimePlot({
               <LabelList dataKey="label" position="top" fontSize={9} fill="#334155" />
             </Scatter>
             {typeof selectedTime === "number" && (
-              <ReferenceLine x={selectedTime} stroke="#2563eb" strokeWidth={2} />
+              <ReferenceLine
+                x={selectedTime}
+                stroke="#2563eb"
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                className="kpi-point-sync-line"
+              />
             )}
           </ScatterChart>
         </ResponsiveContainer>
@@ -2368,7 +2374,8 @@ function MetricTimePlot({
               yAxisId="left"
               x={selectedTime}
               stroke="#2563eb"
-              strokeWidth={2}
+              strokeWidth={1.5}
+              strokeDasharray="5 4"
               className="kpi-point-sync-line"
             />
           )}

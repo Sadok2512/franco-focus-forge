@@ -1140,6 +1140,8 @@
     "pointSyncOn": "Sync ON",
     "pointSyncOff": "Sync OFF",
     "pointSyncHelp": "ON synchronizes the selected time and point across every Workspace, Graph, Table, Map and Timeline in this project. OFF keeps panels independent.",
+    "eventsOn": "Events ON",
+    "eventsOff": "Events OFF",
     "openMapTab": "Open Map in a new tab",
     "layout": "Layout",
     "add_chronogram": "Add Chronogram",

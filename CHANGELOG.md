@@ -1,3 +1,8 @@
+## 1.148.2 (patch) — Synchronisation visuelle Table / Map / Graph / Timeline — 2026-11-07 (BC4)
+
+- Remplace les contrôles Sync redondants par un toggle unique vert `Sync ON` / rouge `Sync OFF` et distingue explicitement le contrôle `Events`.
+- Le clic sur une ligne de mesures colore la ligne, agrandit le point Map correspondant et affiche un curseur temporel pointillé commun dans les Graphs et la Timeline.
+
 ## 1.148.1 (patch) — Barres conservées avec CDF et Percentiles — 2026-11-07 (BC1)
 
 - Conserve systématiquement les barres de l’histogramme comme base lorsque CDF, CCDF ou Percentiles sont activés, y compris pour les Workspaces déjà persistés.

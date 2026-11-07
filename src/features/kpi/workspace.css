@@ -885,8 +885,9 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   height: 100%;
 }
 .kpi-metrics-table-body tbody tr[data-point-selected="true"] {
-  background: color-mix(in srgb, var(--primary, #2563eb) 14%, transparent);
-  box-shadow: inset 3px 0 0 var(--primary, #2563eb);
+  background: color-mix(in srgb, var(--primary, #2563eb) 20%, var(--card)) !important;
+  box-shadow: inset 4px 0 0 var(--primary, #2563eb) !important;
+  color: var(--foreground);
 }
 .kpi-metrics-table-body tbody tr {
   cursor: default;
@@ -2326,28 +2327,35 @@ html.app-header-floating:not(.app-fullscreen) .kpi-workspace {
   display: inline-flex;
   min-height: 28px;
   align-items: center;
-  gap: 3px;
-  padding: 2px 3px 2px 7px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--background);
-  color: var(--muted-foreground);
+  padding: 0;
 }
 .kpi-sync-control button {
-  min-width: 58px;
-  height: 22px;
-  border: 0;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 10px;
+  display: inline-flex;
+  min-width: 86px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  color: #fff;
+  font-size: 11px;
   font-weight: 700;
   cursor: pointer;
+  transition: background-color 120ms ease, box-shadow 120ms ease;
 }
-.kpi-sync-control button.is-active {
-  background: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
-  box-shadow: 0 1px 2px rgb(15 23 42 / 18%);
+.kpi-sync-control button.is-on {
+  border-color: #15803d;
+  background: #16a34a;
+  box-shadow: 0 1px 3px rgb(21 128 61 / 28%);
+}
+.kpi-sync-control button.is-off {
+  border-color: #b91c1c;
+  background: #dc2626;
+  box-shadow: 0 1px 3px rgb(185 28 28 / 24%);
+}
+.kpi-sync-control button:hover {
+  filter: brightness(0.96);
 }
 .kpi-sync-control button:focus-visible {
   outline: 2px solid hsl(var(--ring));

@@ -104,7 +104,7 @@ import {
 } from "./time-axis";
 import { parseMetricSelection } from "./metric-selection";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
-import { pointMatchesRange, usePointSync } from "./point-sync";
+import { pointMatchesRange, usePointSync, type SyncedPoint } from "./point-sync";
 import { openAuthenticatedTab } from "@/lib/api/http";
 import { RadioSnapshotPanel } from "./RadioSnapshotPanel";
 
@@ -352,6 +352,63 @@ export function nearestMetricMapClickSequences(
         .map((candidate) => candidate.seq),
     ),
   ];
+}
+
+/** Resolve a table/graph selection to a point that is actually rendered by this map.
+ *
+ * Aggregated table rows describe a sequence interval while map-capable metrics can
+ * be sampled on a different record inside the same one-second bucket. Prefer the
+ * exact interval, then the certified source-time bucket, then identical GPS
+ * coordinates. Deliberately avoid a generic "nearest" fallback: it could select
+ * an unrelated radio sample and display a false serving relation.
+ */
+export function metricMapPointForSelection(
+  points: MetricMapData["map_points"],
+  selection: SyncedPoint,
+): MetricMapData["map_points"][number] | undefined {
+  const seqLast = selection.seqLast ?? selection.seq;
+  const byTimeDistance = (
+    left: MetricMapData["map_points"][number],
+    right: MetricMapData["map_points"][number],
+  ) => {
+    if (selection.tRelS != null) {
+      const leftDistance = Math.abs((left.t_rel_s ?? Number.POSITIVE_INFINITY) - selection.tRelS);
+      const rightDistance = Math.abs(
+        (right.t_rel_s ?? Number.POSITIVE_INFINITY) - selection.tRelS,
+      );
+      if (leftDistance !== rightDistance) return leftDistance - rightDistance;
+    }
+    return left.seq - right.seq;
+  };
+
+  const exact = points
+    .filter((point) => point.seq >= selection.seq && point.seq <= seqLast)
+    .sort(byTimeDistance)[0];
+  if (exact) return exact;
+
+  if (selection.tRelS != null && Number.isFinite(selection.tRelS)) {
+    const timeBucket = Math.floor(selection.tRelS);
+    const sameBucket = points
+      .filter(
+        (point) => point.t_rel_s != null && Math.floor(point.t_rel_s) === timeBucket,
+      )
+      .sort(byTimeDistance)[0];
+    if (sameBucket) return sameBucket;
+  }
+
+  if (
+    selection.lat != null &&
+    selection.lng != null &&
+    Number.isFinite(selection.lat) &&
+    Number.isFinite(selection.lng)
+  ) {
+    return points.find(
+      (point) =>
+        Math.abs(point.lat - selection.lat!) <= 1e-7 &&
+        Math.abs(point.lng - selection.lng!) <= 1e-7,
+    );
+  }
+  return undefined;
 }
 
 /** Keep at most the serving segment for the exact point selected in this KPI map. */
@@ -866,10 +923,7 @@ function MetricMap({
       return;
     }
     if (shared.projectId !== projectId || shared.captureId !== captureId) return;
-    const sharedLast = shared.seqLast ?? shared.seq;
-    const point = data?.map_points.find(
-      (candidate) => candidate.seq >= shared.seq && candidate.seq <= sharedLast,
-    );
+    const point = data ? metricMapPointForSelection(data.map_points, shared) : undefined;
     if (!point) return;
     const next = { projectId, captureId, seq: point.seq, lng: point.lng, lat: point.lat };
     selectedPointRef.current = next;
@@ -2394,6 +2448,15 @@ export function MetricsWorkspace({
                                 : "exact fix";
                           const rowEvents = eventsAt(activeEvents.active, captureId, r.t_rel_s);
                           const hit = rowEvents[0];
+                          const rowSelected =
+                            pointSync.enabled &&
+                            pointMatchesRange(
+                              pointSync.selection,
+                              projectId,
+                              captureId,
+                              r.seq_first,
+                              r.seq_last,
+                            );
                           return (
                             <tr
                               key={`${r.seq_first}:${r.cell_arfcn ?? ""}:${r.cell_pci ?? ""}`}
@@ -2402,39 +2465,13 @@ export function MetricsWorkspace({
                                 hit ? rowEvents.map((e) => e.id).join(" ") : undefined
                               }
                               title={hit ? rowEvents.map((e) => e.label).join(" · ") : undefined}
-                              aria-selected={
-                                pointSync.enabled &&
-                                pointMatchesRange(
-                                  pointSync.selection,
-                                  projectId,
-                                  captureId,
-                                  r.seq_first,
-                                  r.seq_last,
-                                )
-                              }
-                              data-point-selected={
-                                pointSync.enabled &&
-                                pointMatchesRange(
-                                  pointSync.selection,
-                                  projectId,
-                                  captureId,
-                                  r.seq_first,
-                                  r.seq_last,
-                                )
-                                  ? "true"
-                                  : undefined
-                              }
+                              aria-selected={rowSelected}
+                              data-point-selected={rowSelected ? "true" : undefined}
+                              data-seq-first={r.seq_first}
+                              data-seq-last={r.seq_last}
                               onClick={() => {
                                 if (!pointSync.enabled) return;
-                                if (
-                                  pointMatchesRange(
-                                    pointSync.selection,
-                                    projectId,
-                                    captureId,
-                                    r.seq_first,
-                                    r.seq_last,
-                                  )
-                                ) {
+                                if (rowSelected) {
                                   pointSync.select(null);
                                   return;
                                 }
@@ -2451,7 +2488,7 @@ export function MetricsWorkspace({
                                 });
                               }}
                               style={
-                                hit
+                                hit && !rowSelected
                                   ? {
                                       boxShadow: `inset 3px 0 0 ${hit.color}`,
                                       background: `color-mix(in srgb, ${hit.color} 9%, transparent)`,
