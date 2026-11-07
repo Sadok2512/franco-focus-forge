@@ -47,7 +47,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { MAP_METRIC_MIME, readMapMetric } from "./map-metric-drop";
-import { readHiddenGraphSeries, readGraphSeries } from "./graph-series-drop";
+import { normalizeUnit, readHiddenGraphSeries, readGraphSeries } from "./graph-series-drop";
 import {
   addManagedSeries,
   canAssignSeriesAxis,
@@ -97,8 +97,11 @@ import { usePointSync } from "./point-sync";
 import { parseMetricSelection } from "./metric-selection";
 import {
   cdfPoints,
-  histogramRows,
-  percentilePoints,
+  filterDistributionValues,
+  formatDistributionTick,
+  histogramResult,
+  quantile,
+  type DistributionSettings,
   type GraphAnalysisMode,
 } from "./graph-distribution";
 
@@ -633,6 +636,281 @@ function ManageGraphSeriesPopover({
   );
 }
 
+function DistributionSettingsPopover({
+  settings,
+  onChange,
+  open,
+  onOpenChange,
+}: {
+  settings: DistributionSettings;
+  onChange: (settings: DistributionSettings) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  const patch = <K extends keyof DistributionSettings>(key: K, value: DistributionSettings[K]) =>
+    onChange({ ...settings, [key]: value });
+  const togglePercentile = (value: number) => {
+    const present = settings.percentiles.values.includes(value);
+    const values = present
+      ? settings.percentiles.values.filter((item) => item !== value)
+      : [...settings.percentiles.values, value].sort((a, b) => a - b);
+    patch("percentiles", { ...settings.percentiles, values });
+  };
+  return (
+    <Popover open={open} onOpenChange={onOpenChange}>
+      <PopoverTrigger asChild>
+        <button type="button" className="sr-only" tabIndex={-1} aria-hidden="true" />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        collisionPadding={12}
+        className="max-h-[min(78vh,680px)] w-[min(370px,calc(100vw-24px))] overflow-y-auto p-3 text-[11px]"
+        data-testid="histogram-settings"
+        onEscapeKeyDown={() => onOpenChange(false)}
+        onPointerDownOutside={() => onOpenChange(false)}
+      >
+        <div className="mb-2 flex items-center justify-between">
+          <strong>{t("graphSeries.histogramSettings")}</strong>
+          <button
+            type="button"
+            className="rounded p-1 hover:bg-muted"
+            onClick={() => onOpenChange(false)}
+          >
+            <X size={14} />
+          </button>
+        </div>
+        <fieldset className="space-y-1.5 rounded-md border p-2">
+          <legend className="px-1 font-semibold">{t("graphSeries.xRange")}</legend>
+          <label className="flex items-center justify-between">
+            {t("graphSeries.autoRange")}
+            <input
+              data-testid="histogram-range-auto"
+              type="checkbox"
+              checked={settings.range.auto}
+              onChange={(event) =>
+                patch("range", { ...settings.range, auto: event.target.checked })
+              }
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            {(["min", "max"] as const).map((bound) => (
+              <label key={bound}>
+                {t(`graphSeries.${bound}`)}
+                <input
+                  data-testid={`histogram-range-${bound}`}
+                  type="number"
+                  step="any"
+                  disabled={settings.range.auto}
+                  value={settings.range[bound] ?? ""}
+                  className="mt-0.5 h-7 w-full rounded border bg-background px-1"
+                  onChange={(event) =>
+                    patch("range", {
+                      ...settings.range,
+                      [bound]: event.target.value === "" ? null : Number(event.target.value),
+                    })
+                  }
+                />
+              </label>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="underline"
+            onClick={() => patch("range", { auto: true, min: null, max: null })}
+          >
+            {t("graphSeries.resetRange")}
+          </button>
+        </fieldset>
+        <fieldset className="mt-2 space-y-1.5 rounded-md border p-2">
+          <legend className="px-1 font-semibold">{t("graphSeries.binConfiguration")}</legend>
+          <select
+            data-testid="histogram-bin-mode"
+            value={settings.bins.mode}
+            className="h-7 w-full rounded border bg-background px-1"
+            onChange={(event) =>
+              patch("bins", {
+                ...settings.bins,
+                mode: event.target.value as DistributionSettings["bins"]["mode"],
+              })
+            }
+          >
+            <option value="auto">{t("graphSeries.autoBins")}</option>
+            <option value="width">{t("graphSeries.fixedBinWidth")}</option>
+            <option value="count">{t("graphSeries.fixedBinCount")}</option>
+          </select>
+          {settings.bins.mode === "width" && (
+            <label className="flex items-center justify-between gap-2">
+              {t("graphSeries.binWidth")}
+              <input
+                data-testid="histogram-bin-width"
+                type="number"
+                min="0.000001"
+                step="any"
+                value={settings.bins.width}
+                className="h-7 w-24 rounded border bg-background px-1"
+                onChange={(event) =>
+                  patch("bins", {
+                    ...settings.bins,
+                    width: Math.max(0.000001, Number(event.target.value)),
+                  })
+                }
+              />
+            </label>
+          )}
+          {settings.bins.mode === "count" && (
+            <label className="flex items-center justify-between gap-2">
+              {t("graphSeries.binCount")}
+              <input
+                data-testid="histogram-bin-count"
+                type="number"
+                min="1"
+                max="200"
+                value={settings.bins.count}
+                className="h-7 w-24 rounded border bg-background px-1"
+                onChange={(event) =>
+                  patch("bins", {
+                    ...settings.bins,
+                    count: Math.max(1, Math.min(200, Number(event.target.value))),
+                  })
+                }
+              />
+            </label>
+          )}
+        </fieldset>
+        <fieldset className="mt-2 space-y-1.5 rounded-md border p-2">
+          <legend className="px-1 font-semibold">{t("graphSeries.histogram")}</legend>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.yMode")}
+            <select
+              data-testid="histogram-y-mode"
+              value={settings.histogram.yMode}
+              className="h-7 rounded border bg-background px-1"
+              onChange={(event) =>
+                patch("histogram", {
+                  ...settings.histogram,
+                  yMode: event.target.value as DistributionSettings["histogram"]["yMode"],
+                })
+              }
+            >
+              <option value="count">{t("graphSeries.count")}</option>
+              <option value="percentage">{t("graphSeries.percentage")}</option>
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.opacity")}
+            <input
+              type="range"
+              min="0.1"
+              max="1"
+              step="0.05"
+              value={settings.histogram.opacity}
+              onChange={(event) =>
+                patch("histogram", { ...settings.histogram, opacity: Number(event.target.value) })
+              }
+            />
+          </label>
+        </fieldset>
+        <fieldset className="mt-2 space-y-1.5 rounded-md border p-2">
+          <legend className="px-1 font-semibold">{t("graphSeries.cdfSettings")}</legend>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.direction")}
+            <select
+              data-testid="cdf-direction"
+              value={settings.cdf.direction}
+              className="h-7 rounded border bg-background px-1"
+              onChange={(event) =>
+                patch("cdf", {
+                  ...settings.cdf,
+                  direction: event.target.value as DistributionSettings["cdf"]["direction"],
+                })
+              }
+            >
+              <option value="cdf">CDF ≤ X</option>
+              <option value="ccdf">CCDF ≥ X</option>
+            </select>
+          </label>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.lineColor")}
+            <input
+              type="color"
+              value={settings.cdf.color}
+              onChange={(event) => patch("cdf", { ...settings.cdf, color: event.target.value })}
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.lineWidth")}
+            <input
+              type="number"
+              min="1"
+              max="6"
+              step="0.5"
+              value={settings.cdf.width}
+              className="h-7 w-20 rounded border px-1"
+              onChange={(event) =>
+                patch("cdf", { ...settings.cdf, width: Number(event.target.value) })
+              }
+            />
+          </label>
+        </fieldset>
+        <fieldset className="mt-2 space-y-1.5 rounded-md border p-2">
+          <legend className="px-1 font-semibold">{t("graphSeries.percentileSettings")}</legend>
+          <div className="flex flex-wrap gap-1.5">
+            {[5, 10, 25, 50, 75, 90, 95].map((value) => (
+              <label
+                key={value}
+                className="inline-flex items-center gap-1 rounded border px-1.5 py-1"
+              >
+                <input
+                  type="checkbox"
+                  checked={settings.percentiles.values.includes(value)}
+                  onChange={() => togglePercentile(value)}
+                />{" "}
+                P{value}
+              </label>
+            ))}
+          </div>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.customPercentile")}
+            <input
+              data-testid="custom-percentile"
+              type="number"
+              min="0"
+              max="100"
+              className="h-7 w-20 rounded border px-1"
+              onKeyDown={(event) => {
+                if (event.key !== "Enter") return;
+                const value = Number(event.currentTarget.value);
+                if (
+                  Number.isFinite(value) &&
+                  value >= 0 &&
+                  value <= 100 &&
+                  !settings.percentiles.values.includes(value)
+                )
+                  patch("percentiles", {
+                    ...settings.percentiles,
+                    values: [...settings.percentiles.values, value].sort((a, b) => a - b),
+                  });
+              }}
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.lineColor")}
+            <input
+              type="color"
+              value={settings.percentiles.color}
+              onChange={(event) =>
+                patch("percentiles", { ...settings.percentiles, color: event.target.value })
+              }
+            />
+          </label>
+        </fieldset>
+        <p className="mt-2 text-[10px] text-muted-foreground">{t("graphSeries.populationHint")}</p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 export function MetricGraphCard({
   projectId,
   code,
@@ -773,7 +1051,14 @@ export function MetricGraphCard({
   // paint, so the obsolete aggregate request is never started.
   const renderedSeriesSettings =
     view === "histogram"
-      ? { ...resolvedSeriesSettings, analysisMode: "histogram" as const }
+      ? {
+          ...resolvedSeriesSettings,
+          analysisMode: "histogram" as const,
+          distribution: {
+            ...resolvedSeriesSettings.distribution,
+            modes: { ...resolvedSeriesSettings.distribution.modes, histogram: true },
+          },
+        }
       : resolvedSeriesSettings;
   useEffect(() => {
     if (view !== "histogram") return;
@@ -785,6 +1070,7 @@ export function MetricGraphCard({
   }, [view]);
   const [over, setOver] = useState(false);
   const [seriesManagerOpen, setSeriesManagerOpen] = useState(false);
+  const [distributionSettingsOpen, setDistributionSettingsOpen] = useState(false);
   const openSeriesManager = () => {
     setSeriesManagerOpen(true);
   };
@@ -940,6 +1226,14 @@ export function MetricGraphCard({
                 <SlidersHorizontal size={14} /> {translate("graphSeries.manage")}
               </DropdownMenuItem>
             )}
+            {view === "graph" && (
+              <DropdownMenuItem
+                data-testid="histogram-settings-trigger"
+                onSelect={() => window.setTimeout(() => setDistributionSettingsOpen(true), 100)}
+              >
+                <BarChart3 size={14} /> {translate("graphSeries.histogramSettings")}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             {view === "graph" && (
               <DropdownMenuItem
@@ -962,13 +1256,26 @@ export function MetricGraphCard({
             </DropdownMenuItem>
           </WorkspacePanelMenu>
           {view === "graph" && (
-            <ManageGraphSeriesPopover
-              settings={resolvedSeriesSettings}
-              onChange={saveSeriesSettings}
-              open={seriesManagerOpen}
-              onOpenChange={setSeriesManagerOpen}
-              onClose={() => setSeriesManagerOpen(false)}
-            />
+            <>
+              <ManageGraphSeriesPopover
+                settings={resolvedSeriesSettings}
+                onChange={saveSeriesSettings}
+                open={seriesManagerOpen}
+                onOpenChange={setSeriesManagerOpen}
+                onClose={() => setSeriesManagerOpen(false)}
+              />
+              <DistributionSettingsPopover
+                settings={renderedSeriesSettings.distribution}
+                onChange={(distribution) =>
+                  saveSeriesSettings({
+                    ...renderedSeriesSettings,
+                    distribution,
+                  })
+                }
+                open={distributionSettingsOpen}
+                onOpenChange={setDistributionSettingsOpen}
+              />
+            </>
           )}
         </div>
       </header>
@@ -981,6 +1288,7 @@ export function MetricGraphCard({
           plot={style.plot}
           settings={renderedSeriesSettings}
           onSettingsChange={saveSeriesSettings}
+          onOpenDistributionSettings={() => setDistributionSettingsOpen(true)}
           syncId={syncId}
           timeAxisMode={timeAxisMode}
           eventsCaptureId={eventsCaptureId}
@@ -1262,146 +1570,175 @@ function MetricAggregateTable({
 
 type DistributionRenderSeries = ManagedGraphSeries & {
   points: MetricPlotPoint[];
+  values: number[];
 };
 
 function MetricDistributionPlot({
-  mode,
+  settings,
   series,
 }: {
-  mode: Exclude<GraphAnalysisMode, "timeline">;
+  settings: DistributionSettings;
   series: DistributionRenderSeries[];
 }) {
   const { t } = useTranslation();
   const visible = series.filter((item) => item.visible);
-  const histogram = useMemo(
-    () =>
-      histogramRows(
-        visible.map((item) => ({
-          code: item.code,
-          values: item.points.flatMap((point) =>
-            typeof point.value === "number" ? [point.value] : [],
-          ),
-        })),
-      ),
-    [visible],
+  const commonUnit = visible[0]?.unit ?? "";
+  const compatible = visible.filter(
+    (item) => normalizeUnit(item.unit) === normalizeUnit(commonUnit),
   );
+  const histogram = useMemo(() => histogramResult(compatible, settings), [compatible, settings]);
   const curves = useMemo(
     () =>
-      series.map((item) => {
-        const values = item.points.flatMap((point) =>
-          typeof point.value === "number" ? [point.value] : [],
-        );
+      compatible.map((item) => {
+        const values = filterDistributionValues(item.values, settings.range);
         return {
           ...item,
-          distribution:
-            mode === "cdf"
-              ? cdfPoints(values)
-              : mode === "percentile"
-                ? percentilePoints(values)
-                : [],
+          distribution: cdfPoints(values, settings.cdf.direction),
+          percentileValues: settings.percentiles.values.flatMap((percentile) => {
+            const value = quantile(values, percentile);
+            return value === null ? [] : [{ percentile, value, population: values.length }];
+          }),
         };
       }),
-    [mode, series],
+    [compatible, settings.cdf.direction, settings.percentiles.values, settings.range],
   );
-  const rightAxis = mode === "percentile" && series.some((item) => item.axis === "right");
-  const xLabel =
-    mode === "percentile"
-      ? t("graphSeries.percentileAxis")
-      : visible.length === 1
-        ? visible[0]?.unit
-        : t("graphSeries.valueAxis");
+  const population = histogram.population;
+  if (!population) return <div className="kpi-empty">{t("graphSeries.noDistributionPoints")}</div>;
+  const yKey = settings.histogram.yMode;
+  const xLabel = commonUnit || t("graphSeries.valueAxis");
   return (
-    <ResponsiveContainer width="100%" height="100%">
-      <ComposedChart
-        data={mode === "histogram" ? histogram : []}
-        margin={{ top: 38, right: 20, left: 8, bottom: 22 }}
+    <div className="relative h-full w-full" data-testid="metric-distribution-plot">
+      <div
+        className="absolute bottom-0 left-2 z-10 rounded bg-background/85 px-1.5 py-0.5 text-[9px] text-muted-foreground"
+        data-testid="distribution-population"
+        data-included={population.included}
+        data-excluded={population.excluded}
+        data-bin-count={population.binCount}
+        data-bin-width={population.binWidth}
       >
-        <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-        <XAxis
-          type="number"
-          dataKey="x"
-          domain={mode === "percentile" ? [0, 100] : ["dataMin", "dataMax"]}
-          tick={{ fontSize: 10, fill: "#64748b" }}
-          label={{ value: xLabel, position: "insideBottom", offset: -12, fontSize: 10 }}
-        />
-        {mode === "percentile" ? (
-          <>
+        {population.binCount} {t("graphSeries.bins")} · {t("graphSeries.binWidth")}{" "}
+        {formatNumber(population.binWidth, { maximumFractionDigits: 4 })} · {population.included}{" "}
+        {t("graphSeries.included")} · {population.excluded} {t("graphSeries.excluded")}
+      </div>
+      <ResponsiveContainer width="100%" height="100%">
+        <ComposedChart
+          data={histogram.rows}
+          margin={{ top: 42, right: settings.modes.cdf ? 54 : 20, left: 8, bottom: 22 }}
+        >
+          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+          <XAxis
+            type="number"
+            dataKey="x"
+            domain={[population.min, population.max]}
+            allowDataOverflow
+            tickCount={8}
+            tick={{ fontSize: 10, fill: "#64748b" }}
+            tickFormatter={(value: number) =>
+              formatDistributionTick(value, commonUnit, population.min, population.max)
+            }
+            label={{ value: xLabel, position: "insideBottom", offset: -12, fontSize: 10 }}
+          />
+          {settings.modes.histogram && (
             <YAxis
-              yAxisId="left"
-              width={64}
+              yAxisId="histogram"
+              width={58}
+              domain={[0, "auto"]}
+              allowDecimals={settings.histogram.yMode === "percentage"}
               tick={{ fontSize: 10, fill: "#64748b" }}
+              tickFormatter={(value: number) =>
+                settings.histogram.yMode === "percentage"
+                  ? `${formatNumber(value, { maximumFractionDigits: 1 })}%`
+                  : formatNumber(value, { maximumFractionDigits: 0 })
+              }
               label={{
-                value: series.find((item) => item.axis === "left")?.unit ?? "",
+                value:
+                  settings.histogram.yMode === "percentage"
+                    ? t("graphSeries.percentage")
+                    : t("graphSeries.count"),
                 angle: -90,
                 position: "insideLeft",
               }}
             />
-            {rightAxis && (
-              <YAxis
-                yAxisId="right"
-                orientation="right"
-                width={64}
-                tick={{ fontSize: 10, fill: "#64748b" }}
-                label={{
-                  value: series.find((item) => item.axis === "right")?.unit ?? "",
-                  angle: 90,
-                  position: "insideRight",
-                }}
-              />
-            )}
-          </>
-        ) : (
-          <YAxis
-            yAxisId="distribution"
-            width={58}
-            domain={mode === "cdf" ? [0, 100] : [0, "auto"]}
-            tick={{ fontSize: 10, fill: "#64748b" }}
-            label={{
-              value: mode === "cdf" ? t("graphSeries.cumulativePercent") : t("graphSeries.count"),
-              angle: -90,
-              position: "insideLeft",
+          )}
+          {!settings.modes.histogram && <YAxis yAxisId="histogram" hide domain={[0, 100]} />}
+          {settings.modes.cdf && (
+            <YAxis
+              yAxisId="cdf"
+              orientation="right"
+              width={52}
+              domain={[0, 100]}
+              tickCount={6}
+              tick={{ fontSize: 10, fill: settings.cdf.color }}
+              tickFormatter={(value: number) => `${Math.round(value)}%`}
+              label={{
+                value: settings.cdf.direction.toUpperCase(),
+                angle: 90,
+                position: "insideRight",
+              }}
+            />
+          )}
+          {!settings.modes.cdf && <YAxis yAxisId="cdf" hide domain={[0, 100]} />}
+          <Tooltip
+            contentStyle={{ fontSize: 11, padding: "4px 8px" }}
+            labelFormatter={(_value, payload) => {
+              const row = payload?.[0]?.payload as { x0?: number; x1?: number } | undefined;
+              return row?.x0 !== undefined && row.x1 !== undefined
+                ? `${formatNumber(row.x0, { maximumFractionDigits: 3 })} – ${formatNumber(row.x1, { maximumFractionDigits: 3 })} ${commonUnit}`
+                : "";
             }}
           />
-        )}
-        <Tooltip
-          contentStyle={{ fontSize: 11, padding: "4px 8px" }}
-          labelFormatter={(value: number) =>
-            mode === "percentile"
-              ? `${t("graphSeries.percentile")}: ${formatNumber(value, { maximumFractionDigits: 1 })}%`
-              : `${t("graphSeries.valueAxis")}: ${formatNumber(value, { maximumFractionDigits: 3 })}`
-          }
-        />
-        {series.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
-        {mode === "histogram"
-          ? series.map((item) => (
+          {compatible.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
+          {settings.modes.histogram &&
+            compatible.map((item) => (
               <Bar
-                key={item.code}
-                yAxisId="distribution"
-                dataKey={item.code}
+                key={`histogram:${item.code}`}
+                yAxisId="histogram"
+                dataKey={`${item.code}__${yKey}`}
                 name={item.label}
                 fill={item.color}
-                hide={!item.visible}
-                opacity={0.72}
-                isAnimationActive={false}
-              />
-            ))
-          : curves.map((item) => (
-              <Line
-                key={item.code}
-                yAxisId={mode === "percentile" ? item.axis : "distribution"}
-                data={item.distribution}
-                dataKey="y"
-                name={item.label}
-                stroke={item.color}
-                strokeWidth={1.6}
-                type={mode === "cdf" ? "stepAfter" : "linear"}
-                dot={false}
-                hide={!item.visible}
+                opacity={settings.histogram.opacity}
                 isAnimationActive={false}
               />
             ))}
-      </ComposedChart>
-    </ResponsiveContainer>
+          {settings.modes.cdf &&
+            curves.map((item) => (
+              <Line
+                key={`cdf:${item.code}`}
+                yAxisId="cdf"
+                data={item.distribution}
+                dataKey="y"
+                name={`${item.label} · ${settings.cdf.direction.toUpperCase()}`}
+                stroke={compatible.length === 1 ? settings.cdf.color : item.color}
+                strokeWidth={settings.cdf.width}
+                type="stepAfter"
+                dot={false}
+                isAnimationActive={false}
+              />
+            ))}
+          {settings.modes.percentile &&
+            curves.flatMap((item) =>
+              item.percentileValues.map(({ percentile, value, population: n }) => (
+                <ReferenceLine
+                  key={`percentile:${item.code}:${percentile}`}
+                  x={value}
+                  yAxisId="histogram"
+                  stroke={compatible.length === 1 ? settings.percentiles.color : item.color}
+                  strokeDasharray="4 3"
+                  strokeWidth={1.2}
+                  label={{
+                    value: `P${percentile} ${formatNumber(value, { maximumFractionDigits: 2 })}`,
+                    position: "insideTopRight",
+                    fontSize: 9,
+                    fill: compatible.length === 1 ? settings.percentiles.color : item.color,
+                  }}
+                  ifOverflow="extendDomain"
+                  aria-label={`P${percentile} ${item.label} ${value} ${item.unit} n=${n}`}
+                />
+              )),
+            )}
+        </ComposedChart>
+      </ResponsiveContainer>
+    </div>
   );
 }
 
@@ -1417,6 +1754,7 @@ function MetricTimePlot({
   plot,
   settings,
   onSettingsChange,
+  onOpenDistributionSettings,
   syncId,
   timeAxisMode,
   eventsCaptureId,
@@ -1436,6 +1774,7 @@ function MetricTimePlot({
   plot: MetricPlot;
   settings: GraphSeriesSettings;
   onSettingsChange: (settings: GraphSeriesSettings) => void;
+  onOpenDistributionSettings: () => void;
   syncId?: string | undefined;
   timeAxisMode?: TimeAxisMode | undefined;
   eventsCaptureId?: string | undefined;
@@ -1503,6 +1842,9 @@ function MetricTimePlot({
         numeric,
         renderMode === "line" || renderMode === "point-line" ? "line" : "point",
       ),
+      // Statistical views always use every numeric source sample. They must
+      // not inherit the visual line downsampling used by the time graph.
+      values: numeric.map((point) => point.value),
       renderMode,
     };
   });
@@ -1518,6 +1860,10 @@ function MetricTimePlot({
   };
   const effectiveZoom = normalizeMetricZoom(zoom, rows.length);
   const [visibleXMin, visibleXMax] = metricZoomDomain(rows, effectiveZoom);
+  const activeDistributionModes = (
+    Object.keys(settings.distribution.modes) as Array<keyof typeof settings.distribution.modes>
+  ).filter((mode) => settings.distribution.modes[mode]);
+  const statisticsActive = activeDistributionModes.length > 0;
 
   const plotRef = useRef<HTMLDivElement>(null);
   const renderProbe = useRef({ updateAt: 0, startedAt: 0 });
@@ -1754,7 +2100,7 @@ function MetricTimePlot({
       data-series-axes={seriesList.map((item) => `${item.code}:${item.axis}`).join(",")}
       data-left-axis={`${settings.axes.left.auto ? "auto" : `${settings.axes.left.min ?? "auto"}:${settings.axes.left.max ?? "auto"}`}|${settings.axes.left.unit}|${settings.axes.left.visible ? "shown" : "hidden"}`}
       data-right-axis={`${settings.axes.right.auto ? "auto" : `${settings.axes.right.min ?? "auto"}:${settings.axes.right.max ?? "auto"}`}|${settings.axes.right.unit}|${settings.axes.right.visible ? "shown" : "hidden"}`}
-      data-analysis-mode={settings.analysisMode}
+      data-analysis-mode={statisticsActive ? activeDistributionModes.join("+") : "timeline"}
     >
       <div
         className="absolute right-3 top-1 z-10 inline-flex rounded-md border border-border bg-background/95 p-0.5 shadow-sm"
@@ -1765,33 +2111,50 @@ function MetricTimePlot({
             key={analysisMode}
             type="button"
             data-testid={`metric-analysis-${analysisMode}`}
-            aria-pressed={settings.analysisMode === analysisMode}
+            aria-pressed={settings.distribution.modes[analysisMode]}
             title={translate("graphSeries.distributionToggleHint")}
             className={`rounded px-2 py-1 text-[10px] font-medium transition-colors ${
-              settings.analysisMode === analysisMode
+              settings.distribution.modes[analysisMode]
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
             }`}
-            onClick={() =>
+            onClick={() => {
+              const modes = {
+                ...settings.distribution.modes,
+                [analysisMode]: !settings.distribution.modes[analysisMode],
+              };
+              const active = (["histogram", "cdf", "percentile"] as const).filter(
+                (mode) => modes[mode],
+              );
               onSettingsChange({
                 ...settings,
-                analysisMode: settings.analysisMode === analysisMode ? "timeline" : analysisMode,
-              })
-            }
+                analysisMode: active[0] ?? "timeline",
+                distribution: { ...settings.distribution, modes },
+              });
+            }}
           >
             {translate(`graphSeries.${analysisMode}`)}
           </button>
         ))}
+        <button
+          type="button"
+          data-testid="metric-analysis-settings"
+          title={translate("graphSeries.histogramSettings")}
+          className="rounded px-1.5 py-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          onClick={onOpenDistributionSettings}
+        >
+          <SlidersHorizontal size={13} />
+        </button>
       </div>
-      {settings.analysisMode !== "timeline" && (
+      {statisticsActive && (
         <div className="absolute inset-0">
-          <MetricDistributionPlot mode={settings.analysisMode} series={seriesList} />
+          <MetricDistributionPlot settings={settings.distribution} series={seriesList} />
         </div>
       )}
       <ResponsiveContainer
         width="100%"
         height="100%"
-        className={settings.analysisMode === "timeline" ? "" : "invisible pointer-events-none"}
+        className={statisticsActive ? "invisible pointer-events-none" : ""}
       >
         <ComposedChart
           data={rows}

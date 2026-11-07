@@ -57,6 +57,7 @@ describe("graph series management", () => {
         item.code === "bler" ? { ...item, visible: false, color: "#123456" } : item,
       ),
       analysisMode: settings.analysisMode,
+      distribution: settings.distribution,
       axes: {
         ...settings.axes,
         right: { ...settings.axes.right, auto: false, min: 0, max: 100, color: "#654321" },

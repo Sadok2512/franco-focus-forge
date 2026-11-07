@@ -1,6 +1,10 @@
 import { METRIC_COLORS, freeColor } from "./metric-styles";
 import { normalizeUnit, type GraphSeries } from "./graph-series-drop";
-import type { GraphAnalysisMode } from "./graph-distribution";
+import {
+  DEFAULT_DISTRIBUTION_SETTINGS,
+  type DistributionSettings,
+  type GraphAnalysisMode,
+} from "./graph-distribution";
 
 export type GraphAxisSide = "left" | "right";
 export type GraphSeriesDisplay = "point" | "line" | "point-line";
@@ -24,6 +28,7 @@ export type GraphSeriesSettings = {
   series: ManagedGraphSeries[];
   axes: Record<GraphAxisSide, GraphAxisSettings>;
   analysisMode: GraphAnalysisMode;
+  distribution: DistributionSettings;
 };
 
 const DEFAULT_AXIS_COLOR = "#64748b";
@@ -58,6 +63,89 @@ function parseAxis(value: unknown, fallback: GraphAxisSettings): GraphAxisSettin
     unit: typeof item["unit"] === "string" ? item["unit"] : fallback.unit,
     color: validColor(item["color"]) ? item["color"] : fallback.color,
     visible: typeof item["visible"] === "boolean" ? item["visible"] : fallback.visible,
+  };
+}
+
+const finite = (value: unknown, fallback: number) =>
+  typeof value === "number" && Number.isFinite(value) ? value : fallback;
+
+function parseDistribution(value: unknown, legacyMode: GraphAnalysisMode): DistributionSettings {
+  const fallback: DistributionSettings = {
+    ...DEFAULT_DISTRIBUTION_SETTINGS,
+    modes: {
+      histogram: legacyMode === "histogram",
+      cdf: legacyMode === "cdf",
+      percentile: legacyMode === "percentile",
+    },
+    range: { ...DEFAULT_DISTRIBUTION_SETTINGS.range },
+    bins: { ...DEFAULT_DISTRIBUTION_SETTINGS.bins },
+    histogram: { ...DEFAULT_DISTRIBUTION_SETTINGS.histogram },
+    cdf: { ...DEFAULT_DISTRIBUTION_SETTINGS.cdf },
+    percentiles: { ...DEFAULT_DISTRIBUTION_SETTINGS.percentiles },
+  };
+  if (!value || typeof value !== "object") return fallback;
+  const root = value as Record<string, unknown>;
+  const modes =
+    root["modes"] && typeof root["modes"] === "object"
+      ? (root["modes"] as Record<string, unknown>)
+      : {};
+  const range =
+    root["range"] && typeof root["range"] === "object"
+      ? (root["range"] as Record<string, unknown>)
+      : {};
+  const bins =
+    root["bins"] && typeof root["bins"] === "object"
+      ? (root["bins"] as Record<string, unknown>)
+      : {};
+  const histogram =
+    root["histogram"] && typeof root["histogram"] === "object"
+      ? (root["histogram"] as Record<string, unknown>)
+      : {};
+  const cdf =
+    root["cdf"] && typeof root["cdf"] === "object" ? (root["cdf"] as Record<string, unknown>) : {};
+  const percentiles =
+    root["percentiles"] && typeof root["percentiles"] === "object"
+      ? (root["percentiles"] as Record<string, unknown>)
+      : {};
+  const percentileValues = Array.isArray(percentiles["values"])
+    ? [
+        ...new Set(
+          percentiles["values"].filter(
+            (item): item is number =>
+              typeof item === "number" && Number.isFinite(item) && item >= 0 && item <= 100,
+          ),
+        ),
+      ].sort((a, b) => a - b)
+    : fallback.percentiles.values;
+  return {
+    modes: {
+      histogram: modes["histogram"] === true,
+      cdf: modes["cdf"] === true,
+      percentile: modes["percentile"] === true,
+    },
+    range: {
+      auto: range["auto"] !== false,
+      min: typeof range["min"] === "number" && Number.isFinite(range["min"]) ? range["min"] : null,
+      max: typeof range["max"] === "number" && Number.isFinite(range["max"]) ? range["max"] : null,
+    },
+    bins: {
+      mode: bins["mode"] === "width" || bins["mode"] === "count" ? bins["mode"] : "auto",
+      width: Math.max(0.000001, finite(bins["width"], fallback.bins.width)),
+      count: Math.max(1, Math.min(200, Math.round(finite(bins["count"], fallback.bins.count)))),
+    },
+    histogram: {
+      yMode: histogram["yMode"] === "percentage" ? "percentage" : "count",
+      opacity: Math.max(0.1, Math.min(1, finite(histogram["opacity"], fallback.histogram.opacity))),
+    },
+    cdf: {
+      direction: cdf["direction"] === "ccdf" ? "ccdf" : "cdf",
+      color: validColor(cdf["color"]) ? cdf["color"] : fallback.cdf.color,
+      width: Math.max(1, Math.min(6, finite(cdf["width"], fallback.cdf.width))),
+    },
+    percentiles: {
+      values: percentileValues.length ? percentileValues : fallback.percentiles.values,
+      color: validColor(percentiles["color"]) ? percentiles["color"] : fallback.percentiles.color,
+    },
   };
 }
 
@@ -104,14 +192,16 @@ export function readGraphSeriesSettings(
       root["axes"] && typeof root["axes"] === "object"
         ? (root["axes"] as Record<string, unknown>)
         : {};
+    const analysisMode =
+      root["analysisMode"] === "histogram" ||
+      root["analysisMode"] === "cdf" ||
+      root["analysisMode"] === "percentile"
+        ? root["analysisMode"]
+        : "timeline";
     return {
       series,
-      analysisMode:
-        root["analysisMode"] === "histogram" ||
-        root["analysisMode"] === "cdf" ||
-        root["analysisMode"] === "percentile"
-          ? root["analysisMode"]
-          : "timeline",
+      analysisMode,
+      distribution: parseDistribution(root["distribution"], analysisMode),
       axes: {
         left: parseAxis(axes["left"], defaultAxisSettings()),
         right: parseAxis(axes["right"], defaultAxisSettings()),
@@ -163,6 +253,17 @@ export function initialGraphSeriesSettings(
   return {
     series,
     analysisMode: "timeline",
+    distribution: {
+      ...DEFAULT_DISTRIBUTION_SETTINGS,
+      // A regular Graph opens on its time series. Histogram remains the
+      // default when a statistical view is explicitly requested.
+      modes: { histogram: false, cdf: false, percentile: false },
+      range: { ...DEFAULT_DISTRIBUTION_SETTINGS.range },
+      bins: { ...DEFAULT_DISTRIBUTION_SETTINGS.bins },
+      histogram: { ...DEFAULT_DISTRIBUTION_SETTINGS.histogram },
+      cdf: { ...DEFAULT_DISTRIBUTION_SETTINGS.cdf },
+      percentiles: { ...DEFAULT_DISTRIBUTION_SETTINGS.percentiles },
+    },
     axes: {
       left: defaultAxisSettings(series.find((item) => item.axis === "left")?.unit ?? ""),
       right: defaultAxisSettings(series.find((item) => item.axis === "right")?.unit ?? ""),

@@ -1,3 +1,9 @@
+## 1.148.0 (minor) — Distributions RF configurables et superposables — 2026-11-07 (BC1)
+
+- Rend Histogramme, CDF/CCDF et Percentiles activables indépendamment dans un même Graph, avec axes RF lisibles sans artefacts flottants.
+- Ajoute plage X, largeur ou nombre de classes, Count/%, couleurs, opacité et percentiles configurables dans un popover compact persistant par Workspace.
+- Calcule les distributions multi-KPI sur tous les points numériques de la série, avec quantiles R-7 déterministes, population incluse/hors plage et aucune conversion de `NULL` en zéro.
+
 ## 1.147.0 (minor) — Synchronisation globale KPI Analytics — 2026-11-07 (BC4)
 
 - Remplace le switch ambigu par un sélecteur explicite `Sync ON / OFF` et synchronise, lorsque ON, le point et le temps sélectionnés entre tous les Workspaces, Graphs, Tables, Maps et Timelines du projet.
