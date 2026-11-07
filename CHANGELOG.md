@@ -1,3 +1,8 @@
+## 1.148.3 (patch) — Largeur réelle des barres statistiques — 2026-11-07 (BC1)
+
+- Corrige la largeur de bande nulle calculée par Recharts sur l’axe X numérique : les barres gardent leur hauteur Count/% derrière la CDF et les marqueurs de percentiles.
+- Unifie le tooltip statistique avec plage, Count, pourcentage, CDF/CCDF et valeurs exactes des percentiles sans mélanger les unités.
+
 ## 1.148.2 (patch) — Synchronisation visuelle Table / Map / Graph / Timeline — 2026-11-07 (BC4)
 
 - Remplace les contrôles Sync redondants par un toggle unique vert `Sync ON` / rouge `Sync OFF` et distingue explicitement le contrôle `Events`.

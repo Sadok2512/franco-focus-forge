@@ -1575,6 +1575,67 @@ type DistributionRenderSeries = ManagedGraphSeries & {
   values: number[];
 };
 
+type DistributionTooltipEntry = {
+  name?: string;
+  value?: number;
+  color?: string;
+  payload?: Record<string, number>;
+};
+
+function DistributionTooltipContent({
+  active,
+  payload,
+  series,
+  curves,
+  unit,
+}: {
+  active?: boolean;
+  payload?: DistributionTooltipEntry[];
+  series: DistributionRenderSeries[];
+  curves: Array<
+    DistributionRenderSeries & {
+      percentileValues: Array<{ percentile: number; value: number; population: number }>;
+    }
+  >;
+  unit: string;
+}) {
+  if (!active || !payload?.length) return null;
+  const row = payload.find((entry) => entry.payload?.["x0"] !== undefined)?.payload;
+  const cdfEntries = payload.filter((entry) => entry.name?.includes("CDF"));
+  return (
+    <div className="rounded-md border bg-background/95 p-2 text-[10px] shadow-md">
+      {row && (
+        <strong>
+          {formatNumber(row["x0"]!, { maximumFractionDigits: 4 })} –{" "}
+          {formatNumber(row["x1"]!, { maximumFractionDigits: 4 })} {unit}
+        </strong>
+      )}
+      {row &&
+        series.map((item) => (
+          <div key={item.code} style={{ color: item.color }}>
+            {item.label}:{" "}
+            {formatNumber(row[`${item.code}__count`] ?? 0, { maximumFractionDigits: 0 })} ·{" "}
+            {formatNumber(row[`${item.code}__percentage`] ?? 0, { maximumFractionDigits: 2 })}%
+          </div>
+        ))}
+      {cdfEntries.map((entry) => (
+        <div key={entry.name} style={{ color: entry.color }}>
+          {entry.name}: {formatNumber(Number(entry.value ?? 0), { maximumFractionDigits: 2 })}%
+        </div>
+      ))}
+      {curves.flatMap((item) =>
+        item.percentileValues.map((marker) => (
+          <div key={`${item.code}:${marker.percentile}`} style={{ color: item.color }}>
+            {item.label} P{marker.percentile}:{" "}
+            {formatNumber(marker.value, { maximumFractionDigits: 4 })} {item.unit} · n=
+            {marker.population}
+          </div>
+        )),
+      )}
+    </div>
+  );
+}
+
 function MetricDistributionPlot({
   settings,
   series,
@@ -1625,6 +1686,8 @@ function MetricDistributionPlot({
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart
           data={histogram.rows}
+          barGap={2}
+          barCategoryGap="12%"
           margin={{ top: 42, right: settings.modes.cdf ? 54 : 20, left: 8, bottom: 22 }}
         >
           <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
@@ -1681,13 +1744,15 @@ function MetricDistributionPlot({
           )}
           {!settings.modes.cdf && <YAxis yAxisId="cdf" hide domain={[0, 100]} />}
           <Tooltip
-            contentStyle={{ fontSize: 11, padding: "4px 8px" }}
-            labelFormatter={(_value, payload) => {
-              const row = payload?.[0]?.payload as { x0?: number; x1?: number } | undefined;
-              return row?.x0 !== undefined && row.x1 !== undefined
-                ? `${formatNumber(row.x0, { maximumFractionDigits: 3 })} – ${formatNumber(row.x1, { maximumFractionDigits: 3 })} ${commonUnit}`
-                : "";
-            }}
+            content={(props) => (
+              <DistributionTooltipContent
+                active={props.active}
+                payload={props.payload as DistributionTooltipEntry[] | undefined}
+                series={compatible}
+                curves={curves}
+                unit={commonUnit}
+              />
+            )}
           />
           {compatible.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
           {settings.modes.histogram &&
@@ -1699,6 +1764,7 @@ function MetricDistributionPlot({
                 name={item.label}
                 fill={item.color}
                 opacity={settings.histogram.opacity}
+                barSize={Math.max(8, Math.floor(48 / compatible.length))}
                 isAnimationActive={false}
               />
             ))}

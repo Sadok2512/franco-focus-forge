@@ -75,16 +75,16 @@ describe("metric graph distributions", () => {
     expect(formatDistributionTick(-129.01250000000002, "dBm", -130, -60)).toBe("-129");
   });
 
-  it("keeps histogram bars as the base when CDF or percentiles are enabled", () => {
+  it("toggles histogram, CDF and percentiles independently", () => {
     expect(normalizeDistributionModes({ histogram: false, cdf: true, percentile: true })).toEqual({
-      histogram: true,
+      histogram: false,
       cdf: true,
       percentile: true,
     });
     expect(
       toggleDistributionMode({ histogram: false, cdf: false, percentile: false }, "cdf"),
     ).toEqual({
-      histogram: true,
+      histogram: false,
       cdf: true,
       percentile: false,
     });
@@ -95,5 +95,8 @@ describe("metric graph distributions", () => {
       cdf: true,
       percentile: true,
     });
+    expect(
+      toggleDistributionMode({ histogram: true, cdf: true, percentile: true }, "histogram"),
+    ).toEqual({ histogram: false, cdf: true, percentile: true });
   });
 });

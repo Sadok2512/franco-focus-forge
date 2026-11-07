@@ -35,24 +35,18 @@ export const DEFAULT_DISTRIBUTION_SETTINGS: DistributionSettings = {
   percentiles: { values: [10, 50, 90], color: "#dc2626" },
 };
 
-/** Histogram bars are the mandatory base of every statistical view. */
+/** Preserve each independent representation toggle exactly as selected. */
 export function normalizeDistributionModes(
   modes: DistributionSettings["modes"],
 ): DistributionSettings["modes"] {
-  const statistical = modes.histogram || modes.cdf || modes.percentile;
-  return statistical ? { ...modes, histogram: true } : { ...modes };
+  return { ...modes };
 }
 
 export function toggleDistributionMode(
   modes: DistributionSettings["modes"],
   mode: DistributionMode,
 ): DistributionSettings["modes"] {
-  const normalized = normalizeDistributionModes(modes);
-  if (mode === "histogram")
-    return normalized.histogram
-      ? { histogram: false, cdf: false, percentile: false }
-      : { histogram: true, cdf: false, percentile: false };
-  return normalizeDistributionModes({ ...normalized, [mode]: !normalized[mode] });
+  return { ...modes, [mode]: !modes[mode] };
 }
 
 const finiteSorted = (values: readonly number[]) =>
