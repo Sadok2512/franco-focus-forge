@@ -1,3 +1,8 @@
+## 1.145.3 (patch) — Manage Series compact final — 2026-11-07 (BC1)
+
+- Aligne chaque série sur une unique ligne Eye, couleur, nom catalogue, axe Y, palette et suppression, sans drag handle ni colonne implicite.
+- Replace le mode Points/Ligne/Points + ligne individuel dans la palette compacte de chaque série, en complément du sélecteur global.
+
 ## 1.145.2 (patch) — Chargement KPI et Map allégé — 2026-11-07 (BC4)
 
 - Réutilise les points géolocalisés de la Map pour cadrer le parcours sans second chargement Signaling, et attend le cadrage final avant les requêtes sites/cellules.

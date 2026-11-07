@@ -27,7 +27,6 @@ import {
   CircleDot,
   Eye,
   EyeOff,
-  GripVertical,
   MapPin,
   Maximize2,
   Palette,
@@ -56,7 +55,6 @@ import {
   graphAxisDomain,
   initialGraphSeriesSettings,
   readGraphSeriesSettings,
-  reorderManagedSeries,
   writeGraphSeriesSettings,
   type GraphAxisSide,
   type GraphAxisSettings,
@@ -270,7 +268,6 @@ function ManageGraphSeriesPopover({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const [dragged, setDragged] = useState<string | null>(null);
   const [draft, setDraft] = useState(settings);
   const draftRef = useRef(settings);
   useEffect(() => {
@@ -382,27 +379,9 @@ function ManageGraphSeriesPopover({
             {draft.series.map((series) => (
               <div
                 key={series.code}
-                draggable
-                onDragStart={() => setDragged(series.code)}
-                onDragEnd={() => setDragged(null)}
-                onDragOver={(event) => event.preventDefault()}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (!dragged) return;
-                  commit((current) => ({
-                    ...current,
-                    series: reorderManagedSeries(current.series, dragged, series.code),
-                  }));
-                  setDragged(null);
-                }}
-                className="grid h-9 grid-cols-[20px_24px_minmax(0,1fr)_58px_24px] items-center gap-1 rounded-md px-1 hover:bg-muted/55"
+                className="grid h-9 grid-cols-[24px_18px_minmax(0,1fr)_58px_24px_24px] items-center gap-1 rounded-md px-1 hover:bg-muted/55"
                 data-testid={`manage-series-row-${series.code}`}
               >
-                <GripVertical
-                  size={14}
-                  className="cursor-grab text-muted-foreground"
-                  aria-hidden="true"
-                />
                 <button
                   type="button"
                   className="rounded p-0.5 hover:bg-background"
@@ -415,13 +394,10 @@ function ManageGraphSeriesPopover({
                 >
                   {series.visible ? <Eye size={14} /> : <EyeOff size={14} />}
                 </button>
-                <input
-                  type="color"
-                  value={series.color}
-                  aria-label={t("graphSeries.color", { metric: series.label })}
-                  title={t("graphSeries.color", { metric: series.label })}
-                  className="h-5 w-5 cursor-pointer rounded-full border-0 bg-transparent p-0"
-                  onChange={(event) => updateSeries(series.code, { color: event.target.value })}
+                <span
+                  className="h-3.5 w-3.5 rounded-full border border-border"
+                  style={{ backgroundColor: series.color }}
+                  aria-hidden="true"
                 />
                 <span className="min-w-0 truncate text-[11px] font-medium" title={series.label}>
                   {series.label}
@@ -435,6 +411,70 @@ function ManageGraphSeriesPopover({
                   <option value="left">{t("graphSeries.leftY")}</option>
                   <option value="right">{t("graphSeries.rightY")}</option>
                 </select>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button
+                      type="button"
+                      className="rounded p-0.5 text-muted-foreground hover:bg-background hover:text-foreground"
+                      aria-label={t("graphSeries.color", { metric: series.label })}
+                      data-testid={`manage-series-palette-${series.code}`}
+                    >
+                      <Palette size={13} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent
+                    side="right"
+                    align="center"
+                    collisionPadding={12}
+                    className="w-[min(216px,calc(100vw-24px))] p-2"
+                    data-testid={`manage-series-options-${series.code}`}
+                  >
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {METRIC_COLORS.map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          aria-label={`${series.label} ${color}`}
+                          className="h-5 w-5 rounded-full border border-border"
+                          style={{
+                            backgroundColor: color,
+                            outline: series.color === color ? "2px solid currentColor" : "none",
+                            outlineOffset: 1,
+                          }}
+                          onClick={() => updateSeries(series.code, { color })}
+                        />
+                      ))}
+                    </div>
+                    <label className="mt-2 flex items-center justify-between gap-2 text-[10px]">
+                      {t("graphSeries.color", { metric: series.label })}
+                      <input
+                        type="color"
+                        value={series.color}
+                        className="h-6 w-8 cursor-pointer border-0 bg-transparent p-0"
+                        onChange={(event) =>
+                          updateSeries(series.code, { color: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="mt-1 flex items-center justify-between gap-2 text-[10px]">
+                      {t("graphSeries.display")}
+                      <select
+                        value={series.display}
+                        aria-label={t("graphSeries.displayFor", { metric: series.label })}
+                        className="h-6 max-w-[116px] rounded border bg-background px-1 text-[10px]"
+                        onChange={(event) =>
+                          updateSeries(series.code, {
+                            display: event.target.value as GraphSeriesDisplay,
+                          })
+                        }
+                      >
+                        <option value="point">{t("graphSeries.points")}</option>
+                        <option value="line">{t("graphSeries.line")}</option>
+                        <option value="point-line">{t("graphSeries.pointsLine")}</option>
+                      </select>
+                    </label>
+                  </PopoverContent>
+                </Popover>
                 <button
                   type="button"
                   className="rounded p-0.5 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
