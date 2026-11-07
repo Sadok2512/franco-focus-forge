@@ -764,6 +764,25 @@ export function MetricGraphCard({
     setManagedState({ key: seriesSettingsKey, value: next });
     writeGraphSeriesSettings(workspaceId, seriesSettingsId, next);
   };
+  // 1.146.2 — "Histogram" used to be a separate operator-aggregate view.
+  // The catalogue action and persisted legacy panels now migrate to the
+  // distribution mode of the regular series graph.  This keeps the exact
+  // cell selector (for example `pdsch_bitrate@lte-type-0`) and therefore
+  // reads the same `/metrics/series` points as Timeline/CDF/Percentile.
+  // Rendering below already uses the migrated settings during this first
+  // paint, so the obsolete aggregate request is never started.
+  const renderedSeriesSettings =
+    view === "histogram"
+      ? { ...resolvedSeriesSettings, analysisMode: "histogram" as const }
+      : resolvedSeriesSettings;
+  useEffect(() => {
+    if (view !== "histogram") return;
+    saveSeriesSettings(renderedSeriesSettings);
+    setView("graph");
+    // This is a one-shot migration keyed by the legacy panel view. The state
+    // writers intentionally must not make this effect repeat.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view]);
   const [over, setOver] = useState(false);
   const [seriesManagerOpen, setSeriesManagerOpen] = useState(false);
   const openSeriesManager = () => {
@@ -953,22 +972,14 @@ export function MetricGraphCard({
           )}
         </div>
       </header>
-      {view === "histogram" ? (
-        <MetricAggregatePlot
-          projectId={projectId}
-          code={code}
-          label={label}
-          unit={unit}
-          appliedFilters={appliedFilters}
-        />
-      ) : view === "graph" ? (
+      {view === "histogram" || view === "graph" ? (
         <MetricTimePlot
           projectId={projectId}
           code={code}
           label={label}
           unit={unit}
           plot={style.plot}
-          settings={resolvedSeriesSettings}
+          settings={renderedSeriesSettings}
           onSettingsChange={saveSeriesSettings}
           syncId={syncId}
           timeAxisMode={timeAxisMode}

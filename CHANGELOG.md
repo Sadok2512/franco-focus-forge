@@ -1,3 +1,7 @@
+## 1.146.2 (patch) — Histogramme sur les points de série — 2026-11-07 (BC1)
+
+- L'action Histogramme du catalogue et les panneaux historiques utilisent désormais `/metrics/series` en conservant le sélecteur de cellule, au lieu de l'ancien agrégat par opérateur qui renvoyait à tort un panneau vide.
+
 ## 1.146.1 (patch) — Recherche Metrics déterministe — 2026-11-07 (BC4)
 
 - Réduit le délai de recherche du catalogue Metrics et applique le filtre hors transition basse priorité, afin que les résultats BLER restent réactifs avec plusieurs panneaux actifs.
