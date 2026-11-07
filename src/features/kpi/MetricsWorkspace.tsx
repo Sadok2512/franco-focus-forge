@@ -918,7 +918,7 @@ function MetricMap({
         map.off("mouseleave", "metrics-v3", noPointer);
       }
     };
-  }, [captureId, data, dropContext?.workspaceId, heightKey, map, pointSync, projectId]);
+  }, [captureId, data, dropContext?.workspaceId, heightKey, map, pointSync.select, projectId]);
   useEffect(() => {
     if (!pointSync.enabled) return;
     const shared = pointSync.selection;
@@ -967,7 +967,7 @@ function MetricMap({
         source: "map",
       });
     },
-    [captureId, data, dropContext?.workspaceId, heightKey, pointSync, projectId],
+    [captureId, data, dropContext?.workspaceId, heightKey, pointSync.select, projectId],
   );
   // The metric legend lives in the Layers panel's Legend tab, like the
   // Signaling map — nothing floats over the map itself.
