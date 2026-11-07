@@ -1582,6 +1582,35 @@ type DistributionTooltipEntry = {
   payload?: Record<string, number>;
 };
 
+function DistributionBarShape({
+  x = 0,
+  y = 0,
+  height = 0,
+  fill = "#2563eb",
+  opacity = 1,
+  groupIndex,
+  groupCount,
+}: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  fill?: string;
+  opacity?: number;
+  groupIndex: number;
+  groupCount: number;
+}) {
+  // Recharts derives a zero-width categorical band when Bar shares a numeric
+  // X axis with Line. Its x value is nevertheless the correct bin centre, so
+  // render an explicit grouped rectangle around that centre.
+  const width = Math.max(8, Math.floor(48 / Math.max(1, groupCount)));
+  const groupWidth = width * groupCount;
+  const left = x - groupWidth / 2 + groupIndex * width;
+  return (
+    <rect x={left} y={y} width={width} height={Math.max(0, height)} fill={fill} opacity={opacity} />
+  );
+}
+
 function DistributionTooltipContent({
   active,
   payload,
@@ -1756,7 +1785,7 @@ function MetricDistributionPlot({
           />
           {compatible.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
           {settings.modes.histogram &&
-            compatible.map((item) => (
+            compatible.map((item, index) => (
               <Bar
                 key={`histogram:${item.code}`}
                 yAxisId="histogram"
@@ -1764,7 +1793,13 @@ function MetricDistributionPlot({
                 name={item.label}
                 fill={item.color}
                 opacity={settings.histogram.opacity}
-                barSize={Math.max(8, Math.floor(48 / compatible.length))}
+                shape={(props) => (
+                  <DistributionBarShape
+                    {...props}
+                    groupIndex={index}
+                    groupCount={compatible.length}
+                  />
+                )}
                 isAnimationActive={false}
               />
             ))}
