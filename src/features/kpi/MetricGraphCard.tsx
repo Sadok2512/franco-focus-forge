@@ -6,7 +6,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import {
-  Bar,
   Brush,
   CartesianGrid,
   ComposedChart,
@@ -102,6 +101,7 @@ import {
   histogramResult,
   normalizeDistributionModes,
   quantile,
+  percentilePoints,
   toggleDistributionMode,
   type DistributionSettings,
   type GraphAnalysisMode,
@@ -800,8 +800,20 @@ function DistributionSettingsPopover({
             </select>
           </label>
           <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.barColor")}
+            <input
+              data-testid="histogram-color"
+              type="color"
+              value={settings.histogram.color}
+              onChange={(event) =>
+                patch("histogram", { ...settings.histogram, color: event.target.value })
+              }
+            />
+          </label>
+          <label className="flex items-center justify-between gap-2">
             {t("graphSeries.opacity")}
             <input
+              data-testid="histogram-opacity"
               type="range"
               min="0.1"
               max="1"
@@ -835,6 +847,7 @@ function DistributionSettingsPopover({
           <label className="flex items-center justify-between gap-2">
             {t("graphSeries.lineColor")}
             <input
+              data-testid="cdf-color"
               type="color"
               value={settings.cdf.color}
               onChange={(event) => patch("cdf", { ...settings.cdf, color: event.target.value })}
@@ -899,6 +912,7 @@ function DistributionSettingsPopover({
           <label className="flex items-center justify-between gap-2">
             {t("graphSeries.lineColor")}
             <input
+              data-testid="percentile-color"
               type="color"
               value={settings.percentiles.color}
               onChange={(event) =>
@@ -906,6 +920,40 @@ function DistributionSettingsPopover({
               }
             />
           </label>
+          <label className="flex items-center justify-between gap-2">
+            {t("graphSeries.lineWidth")}
+            <input
+              data-testid="percentile-line-width"
+              type="number"
+              min="1"
+              max="6"
+              step="0.5"
+              value={settings.percentiles.width}
+              className="h-7 w-20 rounded border px-1"
+              onChange={(event) =>
+                patch("percentiles", {
+                  ...settings.percentiles,
+                  width: Math.max(1, Math.min(6, Number(event.target.value))),
+                })
+              }
+            />
+          </label>
+          {(["showLines", "showMarkers", "showLabels"] as const).map((key) => (
+            <label key={key} className="flex items-center justify-between gap-2">
+              {t(`graphSeries.${key}`)}
+              <input
+                data-testid={`percentile-${key}`}
+                type="checkbox"
+                checked={settings.percentiles[key]}
+                onChange={(event) =>
+                  patch("percentiles", {
+                    ...settings.percentiles,
+                    [key]: event.target.checked,
+                  })
+                }
+              />
+            </label>
+          ))}
         </fieldset>
         <p className="mt-2 text-[10px] text-muted-foreground">{t("graphSeries.populationHint")}</p>
       </PopoverContent>
@@ -1575,95 +1623,20 @@ type DistributionRenderSeries = ManagedGraphSeries & {
   values: number[];
 };
 
-type DistributionTooltipEntry = {
-  name?: string;
-  value?: number;
-  color?: string;
-  payload?: Record<string, number>;
+type DistributionTooltipParam = {
+  seriesId?: string;
+  seriesName?: string;
+  marker?: string;
+  value?: unknown;
 };
 
-function DistributionBarShape({
-  x = 0,
-  y = 0,
-  height = 0,
-  fill = "#2563eb",
-  opacity = 1,
-  groupIndex,
-  groupCount,
-}: {
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  fill?: string;
-  opacity?: number;
-  groupIndex: number;
-  groupCount: number;
-}) {
-  // Recharts derives a zero-width categorical band when Bar shares a numeric
-  // X axis with Line. Its x value is nevertheless the correct bin centre, so
-  // render an explicit grouped rectangle around that centre.
-  const width = Math.max(8, Math.floor(48 / Math.max(1, groupCount)));
-  const groupWidth = width * groupCount;
-  const left = x - groupWidth / 2 + groupIndex * width;
-  return (
-    <rect x={left} y={y} width={width} height={Math.max(0, height)} fill={fill} opacity={opacity} />
-  );
-}
-
-function DistributionTooltipContent({
-  active,
-  payload,
-  series,
-  curves,
-  unit,
-}: {
-  active?: boolean;
-  payload?: DistributionTooltipEntry[];
-  series: DistributionRenderSeries[];
-  curves: Array<
-    DistributionRenderSeries & {
-      percentileValues: Array<{ percentile: number; value: number; population: number }>;
-    }
-  >;
-  unit: string;
-}) {
-  if (!active || !payload?.length) return null;
-  const row = payload.find((entry) => entry.payload?.["x0"] !== undefined)?.payload;
-  const cdfEntries = payload.filter((entry) => entry.name?.includes("CDF"));
-  return (
-    <div className="rounded-md border bg-background/95 p-2 text-[10px] shadow-md">
-      {row && (
-        <strong>
-          {formatNumber(row["x0"]!, { maximumFractionDigits: 4 })} –{" "}
-          {formatNumber(row["x1"]!, { maximumFractionDigits: 4 })} {unit}
-        </strong>
-      )}
-      {row &&
-        series.map((item) => (
-          <div key={item.code} style={{ color: item.color }}>
-            {item.label}:{" "}
-            {formatNumber(row[`${item.code}__count`] ?? 0, { maximumFractionDigits: 0 })} ·{" "}
-            {formatNumber(row[`${item.code}__percentage`] ?? 0, { maximumFractionDigits: 2 })}%
-          </div>
-        ))}
-      {cdfEntries.map((entry) => (
-        <div key={entry.name} style={{ color: entry.color }}>
-          {entry.name}: {formatNumber(Number(entry.value ?? 0), { maximumFractionDigits: 2 })}%
-        </div>
-      ))}
-      {curves.flatMap((item) =>
-        item.percentileValues.map((marker) => (
-          <div key={`${item.code}:${marker.percentile}`} style={{ color: item.color }}>
-            {item.label} P{marker.percentile}:{" "}
-            {formatNumber(marker.value, { maximumFractionDigits: 4 })} {item.unit} · n=
-            {marker.population}
-          </div>
-        )),
-      )}
-    </div>
-  );
-}
+const escapeDistributionTooltip = (value: unknown) =>
+  String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
 
 function MetricDistributionPlot({
   settings,
@@ -1685,7 +1658,9 @@ function MetricDistributionPlot({
         const values = filterDistributionValues(item.values, settings.range);
         return {
           ...item,
+          populationSize: values.length,
           distribution: cdfPoints(values, settings.cdf.direction),
+          percentileCurve: percentilePoints(values),
           percentileValues: settings.percentiles.values.flatMap((percentile) => {
             const value = quantile(values, percentile);
             return value === null ? [] : [{ percentile, value, population: values.length }];
@@ -1695,11 +1670,296 @@ function MetricDistributionPlot({
     [compatible, settings.cdf.direction, settings.percentiles.values, settings.range],
   );
   const population = histogram.population;
-  if (!population) return <div className="kpi-empty">{t("graphSeries.noDistributionPoints")}</div>;
   const yKey = settings.histogram.yMode;
   const xLabel = commonUnit || t("graphSeries.valueAxis");
+  const host = useRef<HTMLDivElement>(null);
+  const chart = useRef<ECharts | null>(null);
+  const percentageAxis = settings.modes.cdf || settings.modes.percentile;
+  const option = useMemo<EChartsOption>(() => {
+    if (!population) return {};
+    const chartSeries: NonNullable<EChartsOption["series"]> = [];
+    if (settings.modes.histogram) {
+      compatible.forEach((item) => {
+        chartSeries.push({
+          id: `histogram:${item.code}`,
+          name: item.label,
+          type: "bar",
+          xAxisIndex: 0,
+          yAxisIndex: 0,
+          data: histogram.rows.map((row) => [
+            row.x,
+            row[`${item.code}__${yKey}`] ?? 0,
+            row[`${item.code}__count`] ?? 0,
+            row[`${item.code}__percentage`] ?? 0,
+            row.x0,
+            row.x1,
+          ]),
+          barGap: "8%",
+          barCategoryGap: "8%",
+          itemStyle: {
+            color: compatible.length === 1 ? settings.histogram.color : item.color,
+            opacity: settings.histogram.opacity,
+          },
+          emphasis: { focus: "series" },
+          z: 1,
+          animation: false,
+        });
+      });
+    }
+    if (settings.modes.cdf) {
+      curves.forEach((item) => {
+        const populationSize = item.populationSize;
+        chartSeries.push({
+          id: `cdf:${item.code}`,
+          name: `${item.label} · ${settings.cdf.direction.toUpperCase()}`,
+          type: "line",
+          xAxisIndex: 0,
+          yAxisIndex: 1,
+          data: item.distribution.map((point) => [
+            point.x,
+            point.y,
+            Math.round((point.y / 100) * populationSize),
+          ]),
+          step: "end",
+          showSymbol: false,
+          smooth: false,
+          connectNulls: false,
+          lineStyle: {
+            color: compatible.length === 1 ? settings.cdf.color : item.color,
+            width: settings.cdf.width,
+          },
+          itemStyle: { color: compatible.length === 1 ? settings.cdf.color : item.color },
+          z: 5,
+          animation: false,
+        });
+      });
+    }
+    if (settings.modes.percentile) {
+      curves.forEach((item) => {
+        const curveColor = compatible.length === 1 ? settings.percentiles.color : item.color;
+        chartSeries.push({
+          id: `percentile:${item.code}`,
+          name: `${item.label} · ${t("graphSeries.percentile")}`,
+          type: "line",
+          xAxisIndex: 0,
+          yAxisIndex: 1,
+          data: item.percentileCurve.map((point) => [point.x, point.y, item.populationSize]),
+          showSymbol: false,
+          smooth: false,
+          connectNulls: false,
+          lineStyle: { color: curveColor, width: settings.percentiles.width },
+          itemStyle: { color: curveColor },
+          ...(settings.percentiles.showLines
+            ? {
+                markLine: {
+                  silent: false,
+                  symbol: ["none", "none"],
+                  lineStyle: { color: "#dc2626", type: "dashed", width: 1.2, opacity: 0.82 },
+                  label: { show: false },
+                  data: item.percentileValues.map((marker, index) => ({
+                    name: `P${marker.percentile}`,
+                    xAxis: marker.value,
+                    tooltip: {
+                      formatter: `${escapeDistributionTooltip(item.label)} P${marker.percentile}<br/>${formatNumber(marker.value, { maximumFractionDigits: 4 })} ${escapeDistributionTooltip(item.unit)} · n=${marker.population}`,
+                    },
+                    label: settings.percentiles.showLabels
+                      ? {
+                          show: true,
+                          position: "insideEndTop",
+                          distance: 4 + (index % 3) * 12,
+                          color: "#b91c1c",
+                          fontSize: 9,
+                          formatter: `P${marker.percentile} ${formatNumber(marker.value, { maximumFractionDigits: 2 })} ${item.unit}`,
+                        }
+                      : { show: false },
+                  })),
+                },
+              }
+            : {}),
+          z: 6,
+          animation: false,
+        });
+        if (settings.percentiles.showMarkers) {
+          chartSeries.push({
+            id: `percentile-markers:${item.code}`,
+            name: `${item.label} · ${t("graphSeries.percentile")} markers`,
+            type: "scatter",
+            xAxisIndex: 0,
+            yAxisIndex: 1,
+            data: item.percentileValues.map((marker) => [
+              marker.value,
+              marker.percentile,
+              marker.population,
+            ]),
+            symbol: "circle",
+            symbolSize: 8,
+            itemStyle: { color: curveColor, borderColor: "#ffffff", borderWidth: 1.5 },
+            z: 8,
+            animation: false,
+          });
+        }
+      });
+    }
+    return {
+      animation: false,
+      // The host already has a concise localized aria-label. ECharts' generated
+      // label enumerates every distribution point and can add thousands of
+      // values to the accessibility tree for dense RF series.
+      aria: { enabled: false },
+      grid: {
+        top: 52,
+        right: percentageAxis ? 62 : 22,
+        bottom: 42,
+        left: settings.modes.histogram ? 64 : 42,
+        containLabel: false,
+      },
+      tooltip: {
+        trigger: "axis",
+        axisPointer: { type: "line", snap: false },
+        confine: true,
+        formatter: (rawParams: unknown) => {
+          const params = (
+            Array.isArray(rawParams) ? rawParams : [rawParams]
+          ) as DistributionTooltipParam[];
+          const lines: string[] = [];
+          for (const param of params) {
+            if (!Array.isArray(param.value)) continue;
+            const values = param.value.map(Number);
+            const id = param.seriesId ?? "";
+            const name = escapeDistributionTooltip(param.seriesName);
+            if (id.startsWith("histogram:")) {
+              lines.push(
+                `<strong>${name}</strong><br/>${formatNumber(values[4]!, { maximumFractionDigits: 4 })} – ${formatNumber(values[5]!, { maximumFractionDigits: 4 })} ${escapeDistributionTooltip(commonUnit)}<br/>${t("graphSeries.count")}: ${formatNumber(values[2]!, { maximumFractionDigits: 0 })} · ${t("graphSeries.percentage")}: ${formatNumber(values[3]!, { maximumFractionDigits: 2 })}%`,
+              );
+            } else if (id.startsWith("cdf:")) {
+              lines.push(
+                `${param.marker ?? ""}<strong>${name}</strong><br/>X: ${formatNumber(values[0]!, { maximumFractionDigits: 4 })} ${escapeDistributionTooltip(commonUnit)} · ${settings.cdf.direction.toUpperCase()}: ${formatNumber(values[1]!, { maximumFractionDigits: 2 })}% · ${t("graphSeries.cumulativeCount")}: ${formatNumber(values[2]!, { maximumFractionDigits: 0 })}`,
+              );
+            } else if (id.startsWith("percentile-markers:")) {
+              lines.push(
+                `${param.marker ?? ""}<strong>${name}</strong><br/>P${formatNumber(values[1]!, { maximumFractionDigits: 2 })}: ${formatNumber(values[0]!, { maximumFractionDigits: 4 })} ${escapeDistributionTooltip(commonUnit)} · n=${formatNumber(values[2]!, { maximumFractionDigits: 0 })}`,
+              );
+            } else if (id.startsWith("percentile:")) {
+              lines.push(
+                `${param.marker ?? ""}<strong>${name}</strong><br/>P${formatNumber(values[1]!, { maximumFractionDigits: 2 })}: ${formatNumber(values[0]!, { maximumFractionDigits: 4 })} ${escapeDistributionTooltip(commonUnit)} · n=${formatNumber(values[2]!, { maximumFractionDigits: 0 })}`,
+              );
+            }
+          }
+          return lines.join('<div style="height:4px"></div>');
+        },
+      },
+      xAxis: {
+        type: "value",
+        min: population.min,
+        max: population.max,
+        name: xLabel,
+        nameLocation: "middle",
+        nameGap: 27,
+        axisLabel: {
+          color: "#64748b",
+          fontSize: 10,
+          formatter: (value: number) =>
+            formatDistributionTick(value, commonUnit, population.min, population.max),
+        },
+        splitLine: { show: false },
+      },
+      yAxis: [
+        {
+          type: "value",
+          min: 0,
+          show: settings.modes.histogram,
+          name:
+            settings.histogram.yMode === "percentage"
+              ? t("graphSeries.percentage")
+              : t("graphSeries.count"),
+          nameLocation: "middle",
+          nameGap: 43,
+          ...(settings.histogram.yMode === "count" ? { minInterval: 1 } : {}),
+          axisLabel: {
+            color: "#64748b",
+            fontSize: 10,
+            formatter: (value: number) =>
+              settings.histogram.yMode === "percentage"
+                ? `${formatNumber(value, { maximumFractionDigits: 1 })}%`
+                : formatNumber(value, { maximumFractionDigits: 0 }),
+          },
+          splitLine: { lineStyle: { color: "#e2e8f0", type: "dashed" } },
+        },
+        {
+          type: "value",
+          min: 0,
+          max: 100,
+          interval: 20,
+          show: percentageAxis,
+          name: t("graphSeries.percentileAxis"),
+          nameLocation: "middle",
+          nameGap: 42,
+          axisLabel: {
+            color: settings.modes.cdf ? settings.cdf.color : settings.percentiles.color,
+            fontSize: 10,
+            formatter: (value: number) => `${Math.round(value)}%`,
+          },
+          splitLine: { show: false },
+        },
+      ],
+      series: chartSeries,
+    };
+  }, [
+    commonUnit,
+    compatible,
+    curves,
+    histogram.rows,
+    percentageAxis,
+    population,
+    settings,
+    t,
+    xLabel,
+    yKey,
+  ]);
+  const currentOption = useRef(option);
+  currentOption.current = option;
+
+  const ready = Boolean(population);
+  useEffect(() => {
+    if (!ready || !host.current) return;
+    let disposed = false;
+    let observer: ResizeObserver | undefined;
+    void import("echarts").then((echarts) => {
+      if (disposed || !host.current) return;
+      chart.current = echarts.init(host.current, undefined, { renderer: "canvas" });
+      chart.current.setOption(currentOption.current, {
+        notMerge: false,
+        replaceMerge: ["series"],
+      });
+      observer = new ResizeObserver(() => chart.current?.resize());
+      observer.observe(host.current);
+    });
+    return () => {
+      disposed = true;
+      observer?.disconnect();
+      chart.current?.dispose();
+      chart.current = null;
+    };
+  }, [ready]);
+
+  useEffect(() => {
+    chart.current?.setOption(option, { notMerge: false, replaceMerge: ["series"] });
+  }, [option]);
+
+  if (!population) return <div className="kpi-empty">{t("graphSeries.noDistributionPoints")}</div>;
   return (
-    <div className="relative h-full w-full" data-testid="metric-distribution-plot">
+    <div
+      className="relative h-full w-full"
+      data-testid="metric-distribution-plot"
+      data-histogram-series={settings.modes.histogram ? compatible.length : 0}
+      data-cdf-series={settings.modes.cdf ? compatible.length : 0}
+      data-percentile-series={settings.modes.percentile ? compatible.length : 0}
+      data-percentile-markers={
+        settings.modes.percentile && settings.percentiles.showMarkers
+          ? compatible.length * settings.percentiles.values.length
+          : 0
+      }
+    >
       <div
         className="absolute bottom-0 left-2 z-10 rounded bg-background/85 px-1.5 py-0.5 text-[9px] text-muted-foreground"
         data-testid="distribution-population"
@@ -1712,135 +1972,12 @@ function MetricDistributionPlot({
         {formatNumber(population.binWidth, { maximumFractionDigits: 4 })} · {population.included}{" "}
         {t("graphSeries.included")} · {population.excluded} {t("graphSeries.excluded")}
       </div>
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={histogram.rows}
-          barGap={2}
-          barCategoryGap="12%"
-          margin={{ top: 42, right: settings.modes.cdf ? 54 : 20, left: 8, bottom: 22 }}
-        >
-          <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            type="number"
-            dataKey="x"
-            domain={[population.min, population.max]}
-            allowDataOverflow
-            tickCount={8}
-            tick={{ fontSize: 10, fill: "#64748b" }}
-            tickFormatter={(value: number) =>
-              formatDistributionTick(value, commonUnit, population.min, population.max)
-            }
-            label={{ value: xLabel, position: "insideBottom", offset: -12, fontSize: 10 }}
-          />
-          {settings.modes.histogram && (
-            <YAxis
-              yAxisId="histogram"
-              width={58}
-              domain={[0, "auto"]}
-              allowDecimals={settings.histogram.yMode === "percentage"}
-              tick={{ fontSize: 10, fill: "#64748b" }}
-              tickFormatter={(value: number) =>
-                settings.histogram.yMode === "percentage"
-                  ? `${formatNumber(value, { maximumFractionDigits: 1 })}%`
-                  : formatNumber(value, { maximumFractionDigits: 0 })
-              }
-              label={{
-                value:
-                  settings.histogram.yMode === "percentage"
-                    ? t("graphSeries.percentage")
-                    : t("graphSeries.count"),
-                angle: -90,
-                position: "insideLeft",
-              }}
-            />
-          )}
-          {!settings.modes.histogram && <YAxis yAxisId="histogram" hide domain={[0, 100]} />}
-          {settings.modes.cdf && (
-            <YAxis
-              yAxisId="cdf"
-              orientation="right"
-              width={52}
-              domain={[0, 100]}
-              tickCount={6}
-              tick={{ fontSize: 10, fill: settings.cdf.color }}
-              tickFormatter={(value: number) => `${Math.round(value)}%`}
-              label={{
-                value: settings.cdf.direction.toUpperCase(),
-                angle: 90,
-                position: "insideRight",
-              }}
-            />
-          )}
-          {!settings.modes.cdf && <YAxis yAxisId="cdf" hide domain={[0, 100]} />}
-          <Tooltip
-            content={(props) => (
-              <DistributionTooltipContent
-                active={props.active}
-                payload={props.payload as DistributionTooltipEntry[] | undefined}
-                series={compatible}
-                curves={curves}
-                unit={commonUnit}
-              />
-            )}
-          />
-          {compatible.length > 1 && <Legend wrapperStyle={{ fontSize: 10 }} />}
-          {settings.modes.histogram &&
-            compatible.map((item, index) => (
-              <Bar
-                key={`histogram:${item.code}`}
-                yAxisId="histogram"
-                dataKey={`${item.code}__${yKey}`}
-                name={item.label}
-                fill={item.color}
-                opacity={settings.histogram.opacity}
-                shape={(props) => (
-                  <DistributionBarShape
-                    {...props}
-                    groupIndex={index}
-                    groupCount={compatible.length}
-                  />
-                )}
-                isAnimationActive={false}
-              />
-            ))}
-          {settings.modes.cdf &&
-            curves.map((item) => (
-              <Line
-                key={`cdf:${item.code}`}
-                yAxisId="cdf"
-                data={item.distribution}
-                dataKey="y"
-                name={`${item.label} · ${settings.cdf.direction.toUpperCase()}`}
-                stroke={compatible.length === 1 ? settings.cdf.color : item.color}
-                strokeWidth={settings.cdf.width}
-                type="stepAfter"
-                dot={false}
-                isAnimationActive={false}
-              />
-            ))}
-          {settings.modes.percentile &&
-            curves.flatMap((item) =>
-              item.percentileValues.map(({ percentile, value, population: n }) => (
-                <ReferenceLine
-                  key={`percentile:${item.code}:${percentile}`}
-                  x={value}
-                  yAxisId="histogram"
-                  stroke={compatible.length === 1 ? settings.percentiles.color : item.color}
-                  strokeDasharray="4 3"
-                  strokeWidth={1.2}
-                  label={{
-                    value: `P${percentile} ${formatNumber(value, { maximumFractionDigits: 2 })}`,
-                    position: "insideTopRight",
-                    fontSize: 9,
-                    fill: compatible.length === 1 ? settings.percentiles.color : item.color,
-                  }}
-                  ifOverflow="extendDomain"
-                  aria-label={`P${percentile} ${item.label} ${value} ${item.unit} n=${n}`}
-                />
-              )),
-            )}
-        </ComposedChart>
-      </ResponsiveContainer>
+      <div
+        ref={host}
+        className="absolute inset-0"
+        role="img"
+        aria-label={`${xLabel}: ${settings.modes.histogram ? t("graphSeries.histogram") : ""} ${settings.modes.cdf ? settings.cdf.direction.toUpperCase() : ""} ${settings.modes.percentile ? t("graphSeries.percentile") : ""}`}
+      />
     </div>
   );
 }

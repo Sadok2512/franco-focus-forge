@@ -8,9 +8,16 @@ export type DistributionSettings = {
   modes: Record<DistributionMode, boolean>;
   range: { auto: boolean; min: number | null; max: number | null };
   bins: { mode: BinMode; width: number; count: number };
-  histogram: { yMode: HistogramYMode; opacity: number };
+  histogram: { yMode: HistogramYMode; color: string; opacity: number };
   cdf: { direction: CdfDirection; color: string; width: number };
-  percentiles: { values: number[]; color: string };
+  percentiles: {
+    values: number[];
+    color: string;
+    width: number;
+    showLines: boolean;
+    showMarkers: boolean;
+    showLabels: boolean;
+  };
 };
 
 export type DistributionPoint = { x: number; y: number };
@@ -30,9 +37,16 @@ export const DEFAULT_DISTRIBUTION_SETTINGS: DistributionSettings = {
   modes: { histogram: true, cdf: false, percentile: false },
   range: { auto: true, min: null, max: null },
   bins: { mode: "auto", width: 5, count: 20 },
-  histogram: { yMode: "count", opacity: 0.72 },
+  histogram: { yMode: "count", color: "#2563eb", opacity: 0.72 },
   cdf: { direction: "cdf", color: "#7c3aed", width: 2 },
-  percentiles: { values: [10, 50, 90], color: "#dc2626" },
+  percentiles: {
+    values: [10, 50, 90],
+    color: "#16a34a",
+    width: 2.5,
+    showLines: true,
+    showMarkers: true,
+    showLabels: true,
+  },
 };
 
 /** Preserve each independent representation toggle exactly as selected. */
@@ -85,13 +99,13 @@ export function cdfPoints(
   return result;
 }
 
-/** Complete percentile curve retained for exports/backward compatibility. */
+/** R-7 quantile curve in chart coordinates: X = Q(p), Y = p. */
 export function percentilePoints(values: readonly number[]): DistributionPoint[] {
   const sorted = finiteSorted(values);
-  if (sorted.length === 1) return [{ x: 100, y: sorted[0]! }];
-  return sorted.map((value, index) => ({
-    x: (index / Math.max(1, sorted.length - 1)) * 100,
-    y: value,
+  if (!sorted.length) return [];
+  return Array.from({ length: 101 }, (_, percentile) => ({
+    x: quantile(sorted, percentile)!,
+    y: percentile,
   }));
 }
 

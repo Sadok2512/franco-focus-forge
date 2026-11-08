@@ -1,7 +1,9 @@
 ## 1.148.3 (patch) — Largeur réelle des barres statistiques — 2026-11-07 (BC1)
 
-- Corrige la largeur de bande nulle calculée par Recharts sur l’axe X numérique : les barres gardent leur hauteur Count/% derrière la CDF et les marqueurs de percentiles.
+- Corrige la largeur de bande nulle de l’ancienne superposition sur axe X numérique : les barres gardent leur hauteur Count/% derrière la CDF et les marqueurs de percentiles.
 - Unifie le tooltip statistique avec plage, Count, pourcentage, CDF/CCDF et valeurs exactes des percentiles sans mélanger les unités.
+- Rend les trois couches comme séries ECharts indépendantes : Histogramme bleu, CDF violette et courbe quantile verte `(Q(p), p)` sur l’axe droit 0–100 %, sans lissage ni décalage artificiel.
+- Ajoute les marqueurs verts, guides rouges P10/P50/P90, réglages lignes/marqueurs/libellés et migration du bref défaut rouge historique, tout en conservant la persistance par Workspace.
 
 ## 1.148.2 (patch) — Synchronisation visuelle Table / Map / Graph / Timeline — 2026-11-07 (BC4)
 

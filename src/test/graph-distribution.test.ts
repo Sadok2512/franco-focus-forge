@@ -21,11 +21,12 @@ describe("metric graph distributions", () => {
   });
 
   it("builds the complete percentile curve without fixed percentile presets", () => {
-    expect(percentilePoints([30, 10, 20])).toEqual([
-      { x: 0, y: 10 },
-      { x: 50, y: 20 },
-      { x: 100, y: 30 },
-    ]);
+    const curve = percentilePoints([30, 10, 20]);
+    expect(curve).toHaveLength(101);
+    expect(curve[0]).toEqual({ x: 10, y: 0 });
+    expect(curve[50]).toEqual({ x: 20, y: 50 });
+    expect(curve[100]).toEqual({ x: 30, y: 100 });
+    expect(curve.every((point, index) => index === 0 || point.x >= curve[index - 1]!.x)).toBe(true);
   });
 
   it("builds a CCDF as the percentage of values greater than or equal to X", () => {
@@ -39,6 +40,17 @@ describe("metric graph distributions", () => {
   it("uses deterministic R-7 quantiles", () => {
     expect(quantile([10, 20, 30, 40], 50)).toBe(25);
     expect(quantile([10, 20, 30, 40], 90)).toBeCloseTo(37);
+  });
+
+  it("keeps selected quantile markers coherent with the cumulative population", () => {
+    const values = [-120, -115, -110, -105, -100, -95, -90, -85, -80, -75, -70];
+    const cdf = cdfPoints(values);
+    for (const percentile of [10, 50, 90]) {
+      const value = quantile(values, percentile)!;
+      const atOrBelow = values.filter((sample) => sample <= value).length;
+      const firstCdfAtOrAbove = cdf.find((point) => point.x >= value)!;
+      expect(firstCdfAtOrAbove.y).toBeCloseTo((atOrBelow / values.length) * 100);
+    }
   });
 
   it("preserves every source value in histogram counts", () => {

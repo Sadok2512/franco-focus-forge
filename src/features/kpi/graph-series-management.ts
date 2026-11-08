@@ -135,6 +135,7 @@ function parseDistribution(value: unknown, legacyMode: GraphAnalysisMode): Distr
     },
     histogram: {
       yMode: histogram["yMode"] === "percentage" ? "percentage" : "count",
+      color: validColor(histogram["color"]) ? histogram["color"] : fallback.histogram.color,
       opacity: Math.max(0.1, Math.min(1, finite(histogram["opacity"], fallback.histogram.opacity))),
     },
     cdf: {
@@ -144,7 +145,27 @@ function parseDistribution(value: unknown, legacyMode: GraphAnalysisMode): Distr
     },
     percentiles: {
       values: percentileValues.length ? percentileValues : fallback.percentiles.values,
-      color: validColor(percentiles["color"]) ? percentiles["color"] : fallback.percentiles.color,
+      // 1.148.3 briefly used red for both guides and percentile data. Migrate
+      // that exact legacy default to the certified green curve; preserve every
+      // other workspace-selected colour.
+      color:
+        validColor(percentiles["color"]) &&
+        !(percentiles["color"].toLowerCase() === "#dc2626" && percentiles["width"] === undefined)
+          ? percentiles["color"]
+          : fallback.percentiles.color,
+      width: Math.max(1, Math.min(6, finite(percentiles["width"], fallback.percentiles.width))),
+      showLines:
+        typeof percentiles["showLines"] === "boolean"
+          ? percentiles["showLines"]
+          : fallback.percentiles.showLines,
+      showMarkers:
+        typeof percentiles["showMarkers"] === "boolean"
+          ? percentiles["showMarkers"]
+          : fallback.percentiles.showMarkers,
+      showLabels:
+        typeof percentiles["showLabels"] === "boolean"
+          ? percentiles["showLabels"]
+          : fallback.percentiles.showLabels,
     },
   };
 }

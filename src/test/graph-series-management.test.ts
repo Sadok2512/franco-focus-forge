@@ -91,10 +91,41 @@ describe("graph series management", () => {
     const settings = {
       ...initialGraphSeriesSettings(base, [], []),
       analysisMode: "cdf" as const,
+      distribution: {
+        ...initialGraphSeriesSettings(base, [], []).distribution,
+        modes: { histogram: true, cdf: true, percentile: true },
+        histogram: { yMode: "percentage" as const, color: "#123abc", opacity: 0.55 },
+        percentiles: {
+          values: [5, 10, 50, 90, 95],
+          color: "#22aa44",
+          width: 3,
+          showLines: false,
+          showMarkers: true,
+          showLabels: false,
+        },
+      },
     };
     writeGraphSeriesSettings("workspace-a", "panel-a", settings);
     expect(readGraphSeriesSettings("workspace-a", "panel-a")?.analysisMode).toBe("cdf");
+    expect(readGraphSeriesSettings("workspace-a", "panel-a")?.distribution).toEqual(
+      settings.distribution,
+    );
     expect(readGraphSeriesSettings("workspace-a", "panel-b")).toBeNull();
+  });
+
+  it("migrates the legacy red percentile default to green without changing custom colours", () => {
+    const settings = initialGraphSeriesSettings(base, [], []);
+    const legacy = {
+      ...settings,
+      distribution: {
+        ...settings.distribution,
+        percentiles: { values: [10, 50, 90], color: "#dc2626" },
+      },
+    };
+    localStorage.setItem(graphSeriesSettingsKey("workspace-a", "legacy"), JSON.stringify(legacy));
+    expect(readGraphSeriesSettings("workspace-a", "legacy")?.distribution.percentiles.color).toBe(
+      "#16a34a",
+    );
   });
 
   it("uses explicit min/max only when the manual domain is valid", () => {

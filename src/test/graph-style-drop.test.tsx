@@ -8,10 +8,7 @@ import { fireEvent, render, screen, waitFor, within } from "@testing-library/rea
 import { describe, expect, it, vi } from "vitest";
 import { MetricsWorkspace } from "@/features/kpi/MetricsWorkspace";
 import { getMetricAggregate, getMetricSeries } from "@/lib/api/metrics";
-import {
-  getMetricAnalysis,
-  getMetricSeries as getWorkspaceMetricSeries,
-} from "@/lib/api/client";
+import { getMetricAnalysis, getMetricSeries as getWorkspaceMetricSeries } from "@/lib/api/client";
 import { MAP_METRIC_MIME } from "@/features/kpi/map-metric-drop";
 import { addGraphSeries, normalizeUnit } from "@/features/kpi/graph-series-drop";
 import type { MetricViews } from "@/features/kpi/metric-views";
@@ -131,18 +128,13 @@ function openStyleMenu(card: HTMLElement) {
 }
 
 describe("style de graphe", () => {
-  it("envoie le code métrique décodé à l'agrégat histogramme", async () => {
+  it("migre l'ancien panneau histogramme vers la série exacte sans agrégat opérateur", async () => {
+    vi.mocked(getWorkspaceMetricSeries).mockClear();
+    vi.mocked(getMetricAggregate).mockClear();
     await mountedCard({ "cell_rsrp@0": "histogram" });
 
-    await waitFor(() =>
-      expect(getMetricAggregate).toHaveBeenCalledWith(
-        "4b7bfd50ddb6",
-        "cell_rsrp",
-        "operator",
-        {},
-        expect.any(AbortSignal),
-      ),
-    );
+    await waitFor(() => expect(getWorkspaceMetricSeries).toHaveBeenCalled());
+    expect(getMetricAggregate).not.toHaveBeenCalled();
   });
 
   it("ne charge pas la table d'analyse pour une carte graphique", async () => {
@@ -189,15 +181,27 @@ describe("glisser-déposer sur un graphe", () => {
         expect.any(AbortSignal),
       ),
     );
-    // writeGraphSeries ne garde que code/label/unit/couleur : kind n'est pas
-    // recopié, la série est déjà identifiée par son code.
+    const settingsKey = Object.keys(window.localStorage).find((key) =>
+      key.startsWith("bc4.graph.series-management.v1.t1."),
+    );
+    expect(settingsKey).toBeDefined();
     expect(
-      JSON.parse(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0") ?? "[]"),
-    ).toEqual([{ code: "cell_rsrq@0", label: "RSRQ", unit: "dB", color: expect.any(String) }]);
-    // La série ajoutée est retirable depuis le sous-menu Style.
-    await openStyleMenu(card);
-    fireEvent.click(await screen.findByTestId("metric-series-remove-cell_rsrq@0"));
-    expect(window.localStorage.getItem("bc4.graph.series.t1.cell_rsrp@0")).toBe("[]");
+      JSON.parse(window.localStorage.getItem(settingsKey!) ?? "{}").series.map(
+        (item: { code: string }) => item.code,
+      ),
+    ).toEqual(["cell_rsrp@0", "cell_rsrq@0"]);
+    // La série ajoutée est retirable depuis le gestionnaire de séries compact.
+    const trigger = within(card).getByTestId("workspace-panel-menu");
+    trigger.focus();
+    fireEvent.keyDown(trigger, { key: "Enter" });
+    fireEvent.click(screen.getByTestId("metric-manage-series-trigger"));
+    const addedRow = await screen.findByTestId("manage-series-row-cell_rsrq@0");
+    fireEvent.click(within(addedRow).getAllByRole("button").at(-1)!);
+    expect(
+      JSON.parse(window.localStorage.getItem(settingsKey!) ?? "{}").series.map(
+        (item: { code: string }) => item.code,
+      ),
+    ).toEqual(["cell_rsrp@0"]);
   });
 
   it("refuse la métrique déjà présente et une 3e unité (jamais une fausse échelle)", () => {
