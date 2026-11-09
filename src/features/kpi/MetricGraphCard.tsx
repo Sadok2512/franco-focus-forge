@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ECharts, EChartsOption } from "echarts";
 import {
+  Bar,
   Brush,
   CartesianGrid,
   ComposedChart,
@@ -151,53 +152,89 @@ export type MetricPlotPoint = {
 /** Keep each API series independent. Merging them into one sparse row set
  * inserts false nulls at every sample owned by another metric; Recharts then
  * breaks a line into tiny strokes when connectNulls=false. */
-export function sortedMetricPoints(points: readonly MetricNumericPoint[]): MetricNumericPoint[] {
+export function sortedMetricPoints<T extends { t_rel_s: number; seq: number }>(
+  points: readonly T[],
+): T[] {
   return [...points].sort((a, b) => a.t_rel_s - b.t_rel_s || a.seq - b.seq);
 }
 
 export function metricSeriesRenderMode(
   requested: MetricPlot,
-  points: readonly MetricNumericPoint[],
+  _points: readonly MetricNumericPoint[],
 ): MetricPlot {
-  if (requested !== "line") return requested;
-  const timestamps = new Set<number>();
-  for (const point of points) {
-    if (timestamps.has(point.t_rel_s)) return "point";
-    timestamps.add(point.t_rel_s);
-  }
-  return "line";
+  // The selected presentation remains authoritative. Duplicate timestamps
+  // are segmented in metricSeriesPlotPoints instead of silently changing a
+  // checked Line option into a point plot.
+  return requested;
 }
 
 /** Break a continuous line across a real acquisition gap without dropping or
  * interpolating observations. The null marker is presentation-only and lies
  * between two retained source samples. */
 export function metricSeriesPlotPoints(
-  points: readonly MetricNumericPoint[],
+  points: readonly MetricPlotPoint[],
   mode: MetricPlot,
 ): MetricPlotPoint[] {
   const ordered = sortedMetricPoints(points);
-  if (mode !== "line" || ordered.length < 3) return ordered;
-  const deltas = ordered
+  if (mode !== "line" || ordered.length < 2) return ordered;
+  const valid = ordered.filter((point) => point.value !== null);
+  const deltas = valid
     .slice(1)
-    .map((point, index) => point.t_rel_s - ordered[index]!.t_rel_s)
+    .map((point, index) => point.t_rel_s - valid[index]!.t_rel_s)
     .filter((delta) => delta > 0)
     .sort((a, b) => a - b);
   const median = deltas.length ? deltas[Math.floor(deltas.length / 2)]! : 0;
-  if (!(median > 0)) return ordered;
-  const gapLimit = Math.max(10, median * 5);
+  const gapLimit = median > 0 ? Math.max(10, median * 5) : Number.POSITIVE_INFINITY;
   const plotted: MetricPlotPoint[] = [];
+  let previousValid: MetricPlotPoint | undefined;
+  let brokenSincePrevious = false;
   for (const point of ordered) {
-    const previous = plotted.at(-1);
-    if (previous && previous.value !== null && point.t_rel_s - previous.t_rel_s > gapLimit) {
+    if (point.value === null) {
+      plotted.push(point);
+      brokenSincePrevious = true;
+      continue;
+    }
+    if (
+      previousValid &&
+      !brokenSincePrevious &&
+      (point.t_rel_s === previousValid.t_rel_s || point.t_rel_s - previousValid.t_rel_s > gapLimit)
+    ) {
       plotted.push({
-        seq: previous.seq,
-        t_rel_s: previous.t_rel_s + (point.t_rel_s - previous.t_rel_s) / 2,
+        seq: previousValid.seq,
+        t_rel_s:
+          point.t_rel_s === previousValid.t_rel_s
+            ? point.t_rel_s
+            : previousValid.t_rel_s + (point.t_rel_s - previousValid.t_rel_s) / 2,
         value: null,
       });
     }
     plotted.push(point);
+    previousValid = point;
+    brokenSincePrevious = false;
   }
   return plotted;
+}
+
+function displayForPlot(plot: MetricPlot): GraphSeriesDisplay {
+  return plot === "bar" ? "bar" : plot === "point" ? "point" : "line";
+}
+
+function plotForDisplay(display: GraphSeriesDisplay): MetricPlot {
+  return display === "bar" ? "bar" : display === "point" ? "point" : "line";
+}
+
+function MetricPointShape({
+  cx = 0,
+  cy = 0,
+  radius,
+  color,
+}: {
+  cx?: number;
+  cy?: number;
+  radius: number;
+  color: string;
+}) {
+  return <circle cx={cx} cy={cy} r={radius} fill={color} />;
 }
 
 export function metricTimelineRows(
@@ -381,6 +418,7 @@ function ManageGraphSeriesPopover({
             </option>
             <option value="point">{t("graphSeries.points")}</option>
             <option value="line">{t("graphSeries.line")}</option>
+            <option value="bar">{t("graphSeries.bars")}</option>
             <option value="point-line">{t("graphSeries.pointsLine")}</option>
           </select>
         </label>
@@ -482,9 +520,45 @@ function ManageGraphSeriesPopover({
                       >
                         <option value="point">{t("graphSeries.points")}</option>
                         <option value="line">{t("graphSeries.line")}</option>
+                        <option value="bar">{t("graphSeries.bars")}</option>
                         <option value="point-line">{t("graphSeries.pointsLine")}</option>
                       </select>
                     </label>
+                    {(series.display === "line" || series.display === "point-line") && (
+                      <label className="mt-1 flex items-center justify-between gap-2 text-[10px]">
+                        {t("graphSeries.lineWidth")}
+                        <input
+                          type="number"
+                          min="1"
+                          max="8"
+                          step="0.5"
+                          value={series.lineWidth}
+                          className="h-6 w-16 rounded border bg-background px-1"
+                          onChange={(event) =>
+                            updateSeries(series.code, {
+                              lineWidth: Math.max(1, Math.min(8, Number(event.target.value))),
+                            })
+                          }
+                        />
+                      </label>
+                    )}
+                    {(series.display === "point" || series.display === "point-line") && (
+                      <label className="mt-1 flex items-center justify-between gap-2 text-[10px]">
+                        {t("graphSeries.markerSize")}
+                        <input
+                          type="number"
+                          min="2"
+                          max="20"
+                          value={series.markerSize}
+                          className="h-6 w-16 rounded border bg-background px-1"
+                          onChange={(event) =>
+                            updateSeries(series.code, {
+                              markerSize: Math.max(2, Math.min(20, Number(event.target.value))),
+                            })
+                          }
+                        />
+                      </label>
+                    )}
                   </PopoverContent>
                 </Popover>
                 <button
@@ -1070,9 +1144,22 @@ export function MetricGraphCard({
       })),
       readHiddenGraphSeries(workspaceId, code),
     );
-  const buildInitialSeriesSettings = () =>
-    readGraphSeriesSettings(workspaceId, seriesSettingsId, displayName) ??
-    buildDefaultSeriesSettings();
+  const buildInitialSeriesSettings = () => {
+    const stored =
+      readGraphSeriesSettings(workspaceId, seriesSettingsId, displayName) ??
+      buildDefaultSeriesSettings();
+    // `metric-styles` was historically the state displayed by the Style menu,
+    // while the renderer read `series.display`. Reconcile that legacy split at
+    // the boundary; subsequent writes keep both stores aligned.
+    return {
+      ...stored,
+      series: stored.series.map((item) =>
+        item.code === code
+          ? { ...item, color: style.color, display: displayForPlot(style.plot) }
+          : item,
+      ),
+    };
+  };
   const [managedState, setManagedState] = useState<{
     key: string;
     value: GraphSeriesSettings;
@@ -1092,6 +1179,11 @@ export function MetricGraphCard({
   const saveSeriesSettings = (next: GraphSeriesSettings) => {
     setManagedState({ key: seriesSettingsKey, value: next });
     writeGraphSeriesSettings(workspaceId, seriesSettingsId, next);
+    const base = next.series.find((item) => item.code === code);
+    if (base) {
+      const nextStyle = { color: base.color, plot: plotForDisplay(base.display) };
+      if (nextStyle.color !== style.color || nextStyle.plot !== style.plot) setStyle(nextStyle);
+    }
   };
   // 1.146.2 — "Histogram" used to be a separate operator-aggregate view.
   // The catalogue action and persisted legacy panels now migrate to the
@@ -1222,6 +1314,10 @@ export function MetricGraphCard({
                 <DropdownMenuLabel>{translate("panel.plot")}</DropdownMenuLabel>
                 {METRIC_PLOTS.map((mode) => {
                   const Icon = METRIC_PLOT_ICONS[mode];
+                  const renderedPlot = plotForDisplay(
+                    resolvedSeriesSettings.series.find((item) => item.code === code)?.display ??
+                      displayForPlot(style.plot),
+                  );
                   return (
                     <DropdownMenuItem
                       key={mode}
@@ -1230,15 +1326,88 @@ export function MetricGraphCard({
                         // Le menu reste ouvert : la couleur se choisit juste en
                         // dessous, sans devoir tout rouvrir.
                         event.preventDefault();
-                        setStyle({ ...style, plot: mode });
+                        saveSeriesSettings({
+                          ...resolvedSeriesSettings,
+                          series: resolvedSeriesSettings.series.map((item) =>
+                            item.code === code ? { ...item, display: displayForPlot(mode) } : item,
+                          ),
+                        });
                       }}
                     >
                       <Icon size={14} />
                       {translate(`panel.plot_${mode}`)}
-                      {mode === style.plot ? " ✓" : ""}
+                      {mode === renderedPlot ? " ✓" : ""}
                     </DropdownMenuItem>
                   );
                 })}
+                {(() => {
+                  const base = resolvedSeriesSettings.series.find((item) => item.code === code);
+                  if (!base) return null;
+                  const renderedPlot = plotForDisplay(base.display);
+                  return (
+                    <>
+                      {renderedPlot === "line" && (
+                        <label className="flex items-center justify-between gap-2 px-2 py-1 text-[11px]">
+                          {translate("graphSeries.lineWidth")}
+                          <input
+                            data-testid="metric-line-width"
+                            type="number"
+                            min="1"
+                            max="8"
+                            step="0.5"
+                            value={base.lineWidth}
+                            className="h-6 w-16 rounded border bg-background px-1"
+                            onChange={(event) =>
+                              saveSeriesSettings({
+                                ...resolvedSeriesSettings,
+                                series: resolvedSeriesSettings.series.map((item) =>
+                                  item.code === code
+                                    ? {
+                                        ...item,
+                                        lineWidth: Math.max(
+                                          1,
+                                          Math.min(8, Number(event.target.value)),
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              })
+                            }
+                          />
+                        </label>
+                      )}
+                      {renderedPlot === "point" && (
+                        <label className="flex items-center justify-between gap-2 px-2 py-1 text-[11px]">
+                          {translate("graphSeries.markerSize")}
+                          <input
+                            data-testid="metric-marker-size"
+                            type="number"
+                            min="2"
+                            max="20"
+                            value={base.markerSize}
+                            className="h-6 w-16 rounded border bg-background px-1"
+                            onChange={(event) =>
+                              saveSeriesSettings({
+                                ...resolvedSeriesSettings,
+                                series: resolvedSeriesSettings.series.map((item) =>
+                                  item.code === code
+                                    ? {
+                                        ...item,
+                                        markerSize: Math.max(
+                                          2,
+                                          Math.min(20, Number(event.target.value)),
+                                        ),
+                                      }
+                                    : item,
+                                ),
+                              })
+                            }
+                          />
+                        </label>
+                      )}
+                    </>
+                  );
+                })()}
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>{translate("panel.color")}</DropdownMenuLabel>
                 <div className="grid grid-cols-4 gap-1.5 px-2 pb-1.5">
@@ -1250,10 +1419,9 @@ export function MetricGraphCard({
                       aria-label={color}
                       title={color}
                       onClick={() => {
-                        setStyle({ ...style, color });
                         saveSeriesSettings({
-                          ...seriesSettings,
-                          series: seriesSettings.series.map((item) =>
+                          ...resolvedSeriesSettings,
+                          series: resolvedSeriesSettings.series.map((item) =>
                             item.code === code ? { ...item, color } : item,
                           ),
                         });
@@ -1336,7 +1504,6 @@ export function MetricGraphCard({
           code={code}
           label={label}
           unit={unit}
-          plot={style.plot}
           settings={renderedSeriesSettings}
           onSettingsChange={saveSeriesSettings}
           onOpenDistributionSettings={() => setDistributionSettingsOpen(true)}
@@ -1992,7 +2159,6 @@ function MetricTimePlot({
   code,
   label,
   unit,
-  plot,
   settings,
   onSettingsChange,
   onOpenDistributionSettings,
@@ -2012,7 +2178,6 @@ function MetricTimePlot({
   code: string;
   label: string;
   unit: string;
-  plot: MetricPlot;
   settings: GraphSeriesSettings;
   onSettingsChange: (settings: GraphSeriesSettings) => void;
   onOpenDistributionSettings: () => void;
@@ -2073,6 +2238,13 @@ function MetricTimePlot({
     const api = seriesData?.series.find((item) => item.code === requested.code);
     const numeric = numericSeries.find((item) => item.code === requested.code)?.points ?? [];
     const renderMode = requested.display;
+    const sourcePoints: MetricPlotPoint[] = (api?.points ?? [])
+      .filter((point) => typeof point.value === "number" || point.value === null)
+      .map((point) => ({
+        seq: point.seq,
+        t_rel_s: point.t_rel_s,
+        value: typeof point.value === "number" ? point.value : null,
+      }));
     return {
       ...requested,
       // API labels describe storage fields. Visible identity always comes
@@ -2080,7 +2252,7 @@ function MetricTimePlot({
       label: requested.label,
       unit: api?.unit ?? requested.unit,
       points: metricSeriesPlotPoints(
-        numeric,
+        sourcePoints,
         renderMode === "line" || renderMode === "point-line" ? "line" : "point",
       ),
       // Statistical views always use every numeric source sample. They must
@@ -2352,6 +2524,11 @@ function MetricTimePlot({
       data-x-max={synchronizedXMax}
       data-series-count={seriesList.length}
       data-series-render={seriesList.map((item) => `${item.code}:${item.renderMode}`).join(",")}
+      data-series-colors={seriesList.map((item) => `${item.code}:${item.color}`).join(",")}
+      data-series-line-widths={seriesList.map((item) => `${item.code}:${item.lineWidth}`).join(",")}
+      data-series-marker-sizes={seriesList
+        .map((item) => `${item.code}:${item.markerSize}`)
+        .join(",")}
       data-series-order={seriesList.map((item) => item.code).join(",")}
       data-series-visible={seriesList
         .map((item) => `${item.code}:${item.visible ? "on" : "off"}`)
@@ -2548,6 +2725,7 @@ function MetricTimePlot({
                   dataKey="value"
                   name={s.label}
                   fill={s.color}
+                  shape={<MetricPointShape radius={s.markerSize / 2} color={s.color} />}
                   hide={!s.visible}
                   isAnimationActive={false}
                 />,
@@ -2563,7 +2741,7 @@ function MetricTimePlot({
                   dataKey="value"
                   name={s.label}
                   stroke={s.color}
-                  strokeWidth={1.2}
+                  strokeWidth={s.lineWidth}
                   {...GRAPH_LINE_MARKERS}
                   connectNulls={false}
                   hide={!s.visible}
@@ -2571,6 +2749,21 @@ function MetricTimePlot({
                 />,
                 <Scatter
                   key={`${s.code}:points`}
+                  yAxisId={s.axis}
+                  data={numericPoints}
+                  dataKey="value"
+                  name={s.label}
+                  fill={s.color}
+                  shape={<MetricPointShape radius={s.markerSize / 2} color={s.color} />}
+                  hide={!s.visible}
+                  isAnimationActive={false}
+                />,
+              ];
+            }
+            if (s.renderMode === "bar") {
+              return [
+                <Bar
+                  key={s.code}
                   yAxisId={s.axis}
                   data={numericPoints}
                   dataKey="value"
@@ -2590,7 +2783,7 @@ function MetricTimePlot({
                 dataKey="value"
                 name={s.label}
                 stroke={s.color}
-                strokeWidth={1.2}
+                strokeWidth={s.lineWidth}
                 {...GRAPH_LINE_MARKERS}
                 connectNulls={false}
                 hide={!s.visible}

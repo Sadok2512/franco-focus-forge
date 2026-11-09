@@ -1,3 +1,9 @@
+## 1.149.6 (patch) — Types de tracé Graph synchronisés — 2026-11-09 (BC4)
+
+- Relie le menu Style au rendu Recharts réel : Line sans marqueurs, Bars verticales et Points sans ligne.
+- Conserve type, couleur, épaisseur et taille de marqueur par série, panneau et Workspace, y compris après zoom et rafraîchissement.
+- Coupe les lignes sur les valeurs invalides, les gaps temporels significatifs et les timestamps dupliqués sans modifier les échantillons source.
+
 ## 1.149.5 (patch) — Style Line sans point de survol — 2026-11-09 (BC4)
 
 - Supprime le marqueur actif implicite de Recharts en mode Line, y compris au survol.

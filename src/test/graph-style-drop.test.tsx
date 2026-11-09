@@ -159,6 +159,31 @@ describe("style de graphe", () => {
       "cell_rsrp@0": { plot: "bar", color: "#0f766e" },
     });
   });
+
+  it("propage immédiatement Line, Points, Bars, couleur et tailles au moteur de rendu", async () => {
+    const card = await mountedCard({ "cell_rsrp@0": "graph" });
+    const plot = await within(card).findByTestId("metric-time-plot");
+
+    expect(plot.dataset["seriesRender"]).toContain("cell_rsrp@0:line");
+    expect(plot.dataset["seriesLineWidths"]).toContain("cell_rsrp@0:2");
+    openStyleMenu(card);
+
+    fireEvent.click(screen.getByTestId("metric-plot-point"));
+    await waitFor(() => expect(plot.dataset["seriesRender"]).toContain("cell_rsrp@0:point"));
+    fireEvent.change(screen.getByTestId("metric-marker-size"), { target: { value: "10" } });
+    await waitFor(() => expect(plot.dataset["seriesMarkerSizes"]).toContain("cell_rsrp@0:10"));
+
+    fireEvent.click(screen.getByTestId("metric-plot-bar"));
+    await waitFor(() => expect(plot.dataset["seriesRender"]).toContain("cell_rsrp@0:bar"));
+
+    fireEvent.click(screen.getByTestId("metric-plot-line"));
+    await waitFor(() => expect(plot.dataset["seriesRender"]).toContain("cell_rsrp@0:line"));
+    fireEvent.change(screen.getByTestId("metric-line-width"), { target: { value: "3" } });
+    await waitFor(() => expect(plot.dataset["seriesLineWidths"]).toContain("cell_rsrp@0:3"));
+
+    fireEvent.click(screen.getByTestId("metric-color-#0f766e"));
+    await waitFor(() => expect(plot.dataset["seriesColors"]).toContain("cell_rsrp@0:#0f766e"));
+  });
 });
 
 describe("glisser-déposer sur un graphe", () => {

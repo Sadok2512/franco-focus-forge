@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  DEFAULT_GRAPH_LINE_WIDTH,
+  DEFAULT_GRAPH_MARKER_SIZE,
   GRAPH_LINE_MARKERS,
   addManagedSeries,
   canAssignSeriesAxis,
@@ -41,7 +43,11 @@ describe("graph series management", () => {
       ["nr_bler@nr-type-199", "right"],
       ["nr_thp@nr-type-199", "left"],
     ]);
-    expect(settings.series.every((item) => item.display === "point")).toBe(true);
+    expect(settings.series.every((item) => item.display === "line")).toBe(true);
+    expect(settings.series.every((item) => item.lineWidth === DEFAULT_GRAPH_LINE_WIDTH)).toBe(true);
+    expect(settings.series.every((item) => item.markerSize === DEFAULT_GRAPH_MARKER_SIZE)).toBe(
+      true,
+    );
     expect(new Set(settings.series.map((item) => item.color)).size).toBe(3);
   });
 
@@ -83,6 +89,42 @@ describe("graph series management", () => {
       })),
     });
     expect(readGraphSeriesSettings("workspace-a", "panel-b")).toBeNull();
+  });
+
+  it("persists independent plot type and sizes for every series", () => {
+    let settings = initialGraphSeriesSettings(base, [], []);
+    settings = addManagedSeries(settings, { code: "bler", label: "BLER", unit: "%" })!;
+    settings = {
+      ...settings,
+      series: settings.series.map((item) =>
+        item.code === base.code
+          ? { ...item, display: "bar" as const }
+          : { ...item, display: "point" as const, markerSize: 11, lineWidth: 4 },
+      ),
+    };
+    writeGraphSeriesSettings("workspace-a", "mixed", settings);
+    expect(
+      readGraphSeriesSettings("workspace-a", "mixed")?.series.map(
+        ({ code, display, lineWidth, markerSize }) => ({ code, display, lineWidth, markerSize }),
+      ),
+    ).toEqual([
+      { code: base.code, display: "bar", lineWidth: 2, markerSize: 6 },
+      { code: "bler", display: "point", lineWidth: 4, markerSize: 11 },
+    ]);
+  });
+
+  it("restores each workspace plot configuration independently", () => {
+    const baseSettings = initialGraphSeriesSettings(base, [], []);
+    writeGraphSeriesSettings("workspace-a", "panel-a", {
+      ...baseSettings,
+      series: baseSettings.series.map((item) => ({ ...item, display: "bar" as const })),
+    });
+    writeGraphSeriesSettings("workspace-b", "panel-a", {
+      ...baseSettings,
+      series: baseSettings.series.map((item) => ({ ...item, display: "point" as const })),
+    });
+    expect(readGraphSeriesSettings("workspace-a", "panel-a")?.series[0]?.display).toBe("bar");
+    expect(readGraphSeriesSettings("workspace-b", "panel-a")?.series[0]?.display).toBe("point");
   });
 
   it("keeps an empty persisted list so removing the last series does not close the graph", () => {

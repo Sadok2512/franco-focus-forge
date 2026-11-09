@@ -11,13 +11,18 @@ import {
 } from "./graph-distribution";
 
 export type GraphAxisSide = "left" | "right";
-export type GraphSeriesDisplay = "point" | "line" | "point-line";
+export type GraphSeriesDisplay = "point" | "line" | "bar" | "point-line";
 
 export type ManagedGraphSeries = GraphSeries & {
   visible: boolean;
   axis: GraphAxisSide;
   display: GraphSeriesDisplay;
+  lineWidth: number;
+  markerSize: number;
 };
+
+export const DEFAULT_GRAPH_LINE_WIDTH = 2;
+export const DEFAULT_GRAPH_MARKER_SIZE = 6;
 
 export type GraphAxisSettings = {
   auto: boolean;
@@ -207,9 +212,16 @@ export function readGraphSeriesSettings(
           visible: item["visible"] !== false,
           axis: item["axis"] === "right" ? "right" : "left",
           display:
-            item["display"] === "line" || item["display"] === "point-line"
+            item["display"] === "line" ||
+            item["display"] === "bar" ||
+            item["display"] === "point-line"
               ? item["display"]
               : "point",
+          lineWidth: Math.max(1, Math.min(8, finite(item["lineWidth"], DEFAULT_GRAPH_LINE_WIDTH))),
+          markerSize: Math.max(
+            2,
+            Math.min(20, finite(item["markerSize"], DEFAULT_GRAPH_MARKER_SIZE)),
+          ),
         },
       ];
     });
@@ -272,7 +284,9 @@ export function initialGraphSeriesSettings(
       color: item.color || freeColor(all.slice(0, index).map((entry) => entry.color)),
       visible: !hidden.includes(item.code),
       axis: units.indexOf(normalized) === 1 ? "right" : "left",
-      display: "point",
+      display: "line",
+      lineWidth: DEFAULT_GRAPH_LINE_WIDTH,
+      markerSize: DEFAULT_GRAPH_MARKER_SIZE,
     };
   });
   return {
@@ -311,7 +325,18 @@ export function addManagedSeries(
   const color = freeColor(settings.series.map((item) => item.color));
   return {
     ...settings,
-    series: [...settings.series, { ...added, color, visible: true, axis, display: "point" }],
+    series: [
+      ...settings.series,
+      {
+        ...added,
+        color,
+        visible: true,
+        axis,
+        display: "line",
+        lineWidth: DEFAULT_GRAPH_LINE_WIDTH,
+        markerSize: DEFAULT_GRAPH_MARKER_SIZE,
+      },
+    ],
     axes: {
       ...settings.axes,
       [axis]: settings.axes[axis].unit

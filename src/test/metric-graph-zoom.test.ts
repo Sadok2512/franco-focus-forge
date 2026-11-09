@@ -59,13 +59,17 @@ describe("Metric graph independent overlay series", () => {
     ).toEqual([1, 2, 3, 4]);
   });
 
-  it("uses points for duplicate timestamps instead of drawing a vertical segment", () => {
-    expect(
-      metricSeriesRenderMode("line", [
-        { seq: 1, t_rel_s: 1, value: 10 },
-        { seq: 2, t_rel_s: 1, value: 20 },
-      ]),
-    ).toBe("point");
+  it("keeps Line selected and inserts a break between duplicate timestamps", () => {
+    const duplicates = [
+      { seq: 1, t_rel_s: 1, value: 10 },
+      { seq: 2, t_rel_s: 1, value: 20 },
+    ];
+    expect(metricSeriesRenderMode("line", duplicates)).toBe("line");
+    expect(metricSeriesPlotPoints(duplicates, "line")).toEqual([
+      duplicates[0],
+      { seq: 1, t_rel_s: 1, value: null },
+      duplicates[1],
+    ]);
   });
 
   it("keeps source samples and inserts only a null break across a real gap", () => {
@@ -78,5 +82,14 @@ describe("Metric graph independent overlay series", () => {
     const plotted = metricSeriesPlotPoints(source, "line");
     expect(plotted.filter((point) => point.value !== null)).toEqual(source);
     expect(plotted.filter((point) => point.value === null)).toHaveLength(1);
+  });
+
+  it("never connects through an explicit invalid value", () => {
+    const source = [
+      { seq: 1, t_rel_s: 0, value: -100 },
+      { seq: 2, t_rel_s: 1, value: null },
+      { seq: 3, t_rel_s: 2, value: -102 },
+    ];
+    expect(metricSeriesPlotPoints(source, "line")).toEqual(source);
   });
 });
