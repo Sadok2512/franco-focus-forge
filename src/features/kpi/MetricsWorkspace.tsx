@@ -599,12 +599,12 @@ export function installMetricMapSource(
     type: "circle",
     source: "metrics-v3",
     paint: {
-      // Same look as the Signaling drive points: solid fill, thin dark outline.
+      // Ordinary measurements use only their data colour. Selection has its
+      // own dedicated ring and must remain the only outlined point.
       "circle-radius": metricRadiusExpression(pointSize),
       "circle-opacity": 1,
       "circle-color": metricColorExpression(minValue, maxValue, palette),
-      "circle-stroke-color": "rgba(15,23,42,0.55)",
-      "circle-stroke-width": 0.5,
+      "circle-stroke-width": 0,
     },
   });
 }
@@ -765,8 +765,7 @@ function MetricMap({
         "circle-radius",
         metricRadiusExpression(preferences.pointSize),
       );
-      map.setPaintProperty("metrics-v3", "circle-stroke-width", 0.5);
-      map.setPaintProperty("metrics-v3", "circle-stroke-color", "rgba(15,23,42,0.55)");
+      map.setPaintProperty("metrics-v3", "circle-stroke-width", 0);
     } else {
       installMetricMapSource(
         map,

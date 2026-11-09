@@ -1,3 +1,8 @@
+## 1.148.4 (patch) — Points Map sans cerclage sombre — 2026-11-09 (BC4)
+
+- Supprime le contour noir des points de mesure dans les cartes KPI Analytics et Metrics, sans modifier leur couleur, leur position ni leur taille.
+- Conserve l'anneau distinct du point sélectionné pour préserver la synchronisation et les interactions Map.
+
 ## 1.148.3 (patch) — Largeur réelle des barres statistiques — 2026-11-07 (BC1)
 
 - Corrige la largeur de bande nulle de l’ancienne superposition sur axe X numérique : les barres gardent leur hauteur Count/% derrière la CDF et les marqueurs de percentiles.

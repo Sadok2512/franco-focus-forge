@@ -15,6 +15,7 @@ const getSites = vi.fn().mockResolvedValue({
   reason: null,
 });
 const fitBounds = vi.fn();
+const addLayer = vi.fn();
 vi.mock("@/lib/api/sites", () => ({ getSites: (...a: unknown[]) => getSites(...a) }));
 
 vi.mock("@/lib/api/kpi-timeseries", () => ({
@@ -27,9 +28,12 @@ vi.mock("maplibre-gl", () => {
     handlers = new Map<string, Array<(...a: unknown[]) => void>>();
     addControl() {}
     addSource() {}
-    addLayer() {}
+    addLayer(layer: unknown) {
+      addLayer(layer);
+    }
     moveLayer() {}
-    getSource() {
+    getSource(id?: string) {
+      if (id === "kpi-measures") return undefined;
       return { setData: vi.fn() };
     }
     getLayer() {
@@ -122,6 +126,22 @@ function renderMap() {
 }
 
 describe("KpiMeasurementMap — couche Sites", () => {
+  it("affiche les points KPI sans cercle noir", async () => {
+    addLayer.mockClear();
+    renderMap();
+
+    await waitFor(() =>
+      expect(
+        addLayer.mock.calls.find(([layer]) => (layer as { id?: string }).id === "kpi-measures"),
+      ).toBeDefined(),
+    );
+    const layer = addLayer.mock.calls.find(
+      ([candidate]) => (candidate as { id?: string }).id === "kpi-measures",
+    )?.[0] as { paint: Record<string, unknown> };
+    expect(layer.paint["circle-stroke-width"]).toBe(0);
+    expect(layer.paint["circle-stroke-color"]).toBeUndefined();
+  });
+
   it("affiche le bouton Sites ON/OFF et charge les sites de la bbox visible", async () => {
     window.localStorage.setItem(
       "bc4.map.sitesLayer.v4",

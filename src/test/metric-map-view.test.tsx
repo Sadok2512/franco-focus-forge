@@ -297,6 +297,8 @@ describe("Map selection keeps its own panel", () => {
     expect(source.data.features).toHaveLength(4_935);
     expect(map.addLayer.mock.calls.map(([layer]) => layer.id)).toEqual(["metrics-v3"]);
     expect(map.addLayer.mock.calls[0]?.[0].paint["circle-color"][0]).toBe("interpolate");
+    expect(map.addLayer.mock.calls[0]?.[0].paint["circle-stroke-width"]).toBe(0);
+    expect(map.addLayer.mock.calls[0]?.[0].paint["circle-stroke-color"]).toBeUndefined();
 
     const dimension = {
       ...fixture,

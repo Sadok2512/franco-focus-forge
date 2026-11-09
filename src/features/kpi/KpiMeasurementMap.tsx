@@ -160,13 +160,13 @@ export function KpiMeasurementMap({
         type: "circle",
         source: KPI_MEASURES_LAYER,
         paint: {
-          // Same look as the Signaling drive points: solid fill in the legend
-          // colour, thin dark outline so light basemaps never wash it out.
+          // Keep measurement points as a plain solid fill. A separate ring is
+          // reserved for selection, so ordinary points never look enclosed in
+          // a dark circle.
           "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4, 14, 6, 18, 9],
           "circle-color": ["get", "color"],
           "circle-opacity": 1,
-          "circle-stroke-color": "rgba(15,23,42,0.55)",
-          "circle-stroke-width": 0.5,
+          "circle-stroke-width": 0,
         },
       });
     }
