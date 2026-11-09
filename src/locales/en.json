@@ -1689,6 +1689,22 @@
     "lowerIsBetter": "Lower is better",
     "color": "Color {{n}}"
   },
+  "dtReports": {
+    "nav": {
+      "summary": "DT Summary",
+      "rrc": "RRC / RAB Report",
+      "service": "Service Report",
+      "throughput": "Throughput Report",
+      "investigation": "Throughput Investigation",
+      "radio": "Radio Quality Report",
+      "fails": "Fails & Dropped Calls",
+      "tasks": "Task / NEM Report",
+      "operatorBenchmark": "Operator vs Operator",
+      "streamBenchmark": "Stream vs Stream",
+      "custom": "Custom Report"
+    },
+    "actions": { "save": "Save Template", "open": "Open Template" }
+  },
   "procedures": {
     "title": "Procedures — {{name}}",
     "description": "{{count}} reconstructed procedures. Each row retains its capture, sequence and source evidence.",

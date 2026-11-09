@@ -1688,6 +1688,22 @@
     "lowerIsBetter": "Plus bas est meilleur",
     "color": "Couleur {{n}}"
   },
+  "dtReports": {
+    "nav": {
+      "summary": "Synthèse DT",
+      "rrc": "Rapport RRC / RAB",
+      "service": "Rapport services",
+      "throughput": "Rapport débits",
+      "investigation": "Investigation débits",
+      "radio": "Rapport qualité radio",
+      "fails": "Échecs et appels coupés",
+      "tasks": "Rapport tâches / NEM",
+      "operatorBenchmark": "Opérateur vs opérateur",
+      "streamBenchmark": "Flux vs flux",
+      "custom": "Rapport personnalisé"
+    },
+    "actions": { "save": "Enregistrer le modèle", "open": "Ouvrir le modèle" }
+  },
   "procedures": {
     "title": "Procédures — {{name}}",
     "description": "{{count}} procédures reconstruites. Chaque ligne conserve sa capture, sa séquence et ses événements sources.",

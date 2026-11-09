@@ -23,6 +23,7 @@ import { Route as AppSignalingRouteImport } from './routes/_app.signaling'
 import { Route as AppSignalingV2RouteImport } from './routes/_app.signaling-v2'
 import { Route as AppProjectsProjectIdRouteImport } from './routes/_app.projects.$projectId'
 import { Route as AppResultsResultIdRouteImport } from './routes/_app.results.$resultId'
+import { Route as AppRfReportsRouteImport } from './routes/_app.rf_.reports'
 import { Route as AppSettingsIndexRouteImport } from './routes/_app.settings.index'
 import { Route as AppSettingsAboutRouteImport } from './routes/_app.settings.about'
 import { Route as AppSettingsAiRouteImport } from './routes/_app.settings.ai'
@@ -103,6 +104,11 @@ const AppResultsResultIdRoute = AppResultsResultIdRouteImport.update({
   path: '/results/$resultId',
   getParentRoute: () => AppRoute,
 } as any)
+const AppRfReportsRoute = AppRfReportsRouteImport.update({
+  id: '/rf_/reports',
+  path: '/rf/reports',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsIndexRoute = AppSettingsIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -170,6 +176,7 @@ export interface FileRoutesByFullPath {
   '/signaling-v2': typeof AppSignalingV2Route
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/results/$resultId': typeof AppResultsResultIdRoute
+  '/rf/reports': typeof AppRfReportsRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -194,6 +201,7 @@ export interface FileRoutesByTo {
   '/signaling-v2': typeof AppSignalingV2Route
   '/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/results/$resultId': typeof AppResultsResultIdRoute
+  '/rf/reports': typeof AppRfReportsRoute
   '/settings/about': typeof AppSettingsAboutRoute
   '/settings/ai': typeof AppSettingsAiRoute
   '/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -221,6 +229,7 @@ export interface FileRoutesById {
   '/_app/signaling-v2': typeof AppSignalingV2Route
   '/_app/projects/$projectId': typeof AppProjectsProjectIdRoute
   '/_app/results/$resultId': typeof AppResultsResultIdRoute
+  '/_app/rf_/reports': typeof AppRfReportsRoute
   '/_app/settings/about': typeof AppSettingsAboutRoute
   '/_app/settings/ai': typeof AppSettingsAiRoute
   '/_app/settings/appearance': typeof AppSettingsAppearanceRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/signaling-v2'
     | '/projects/$projectId'
     | '/results/$resultId'
+    | '/rf/reports'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
@@ -272,6 +282,7 @@ export interface FileRouteTypes {
     | '/signaling-v2'
     | '/projects/$projectId'
     | '/results/$resultId'
+    | '/rf/reports'
     | '/settings/about'
     | '/settings/ai'
     | '/settings/appearance'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/_app/signaling-v2'
     | '/_app/projects/$projectId'
     | '/_app/results/$resultId'
+    | '/_app/rf_/reports'
     | '/_app/settings/about'
     | '/_app/settings/ai'
     | '/_app/settings/appearance'
@@ -414,6 +426,13 @@ declare module '@tanstack/react-router' {
       path: '/results/$resultId'
       fullPath: '/results/$resultId'
       preLoaderRoute: typeof AppResultsResultIdRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/rf_/reports': {
+      id: '/_app/rf_/reports'
+      path: '/rf/reports'
+      fullPath: '/rf/reports'
+      preLoaderRoute: typeof AppRfReportsRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/settings/': {
@@ -542,6 +561,7 @@ interface AppRouteChildren {
   AppSignalingRoute: typeof AppSignalingRoute
   AppSignalingV2Route: typeof AppSignalingV2Route
   AppResultsResultIdRoute: typeof AppResultsResultIdRoute
+  AppRfReportsRoute: typeof AppRfReportsRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
@@ -555,6 +575,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppSignalingRoute: AppSignalingRoute,
   AppSignalingV2Route: AppSignalingV2Route,
   AppResultsResultIdRoute: AppResultsResultIdRoute,
+  AppRfReportsRoute: AppRfReportsRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

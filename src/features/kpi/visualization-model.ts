@@ -5,6 +5,7 @@ import type { Statistic } from "./workspace-model";
 export type VisualizationType =
   "histogram" | "graph" | "table" | "map" | "task_series" | "task_scatter" | "chronogram";
 export type CurveType = "points" | "line" | "line_points";
+export const DEFAULT_KPI_CURVE_TYPE: CurveType = "line";
 export type ChartConfig = {
   // API templates may omit the field; explicit `undefined` is accepted by
   // Zod-inferred objects under exactOptionalPropertyTypes.

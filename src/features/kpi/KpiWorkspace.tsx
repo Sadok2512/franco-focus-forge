@@ -9,7 +9,12 @@ import { useTranslation } from "react-i18next";
 import { setCaptureContext, useCaptureContext } from "@/lib/capture-context";
 import { analysisScopeSearch, type AnalysisScope } from "@/lib/analysis-scope";
 import { VisualizationItems } from "./VisualizationMenu";
-import { defaultConfig, type ChartConfig, type VisualizationType } from "./visualization-model";
+import {
+  DEFAULT_KPI_CURVE_TYPE,
+  defaultConfig,
+  type ChartConfig,
+  type VisualizationType,
+} from "./visualization-model";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useSearch } from "@tanstack/react-router";
@@ -872,7 +877,17 @@ function Workspace({
         activeCode: code,
       }),
     );
-    updateConfig(code, { ...configFor(code), visualization });
+    const current = configFor(code);
+    updateConfig(code, {
+      ...current,
+      visualization,
+      // A newly opened KPI graph is a line chart. Older persisted
+      // configurations may omit curveType; keeping it undefined made the
+      // settings say "Line" while KpiPlot rendered the historical point mode.
+      ...(visualization === "graph" && !current.curveType
+        ? { curveType: DEFAULT_KPI_CURVE_TYPE }
+        : {}),
+    });
   };
   const move = (code: string, direction: -1 | 1) => {
     const nextCodes = [...codes],

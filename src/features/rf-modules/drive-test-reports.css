@@ -1,0 +1,7 @@
+.dt-action { display:inline-flex; height:1.75rem; align-items:center; gap:.25rem; border:1px solid #DCE4EF; border-radius:.375rem; padding:0 .5rem; font-size:.6875rem; background:#fff; white-space:nowrap; }
+.dt-action:hover,.dt-icon:hover { background:#F4F7FB; }
+.dt-action svg { width:.75rem; height:.75rem; }
+.dt-icon { display:inline-flex; width:1.75rem; height:1.75rem; align-items:center; justify-content:center; border:1px solid #DCE4EF; border-radius:.375rem; background:#fff; }
+.dt-icon svg { width:.8rem; height:.8rem; }
+.app-header-floating .dt-report-shell { padding-top: 3.5rem; }
+@media print { .app-header, aside, .sticky { display:none !important; } main { overflow:visible !important; } .dt-action,.dt-icon { display:none !important; } }

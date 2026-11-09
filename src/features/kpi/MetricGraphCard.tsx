@@ -51,6 +51,7 @@ import {
   addManagedSeries,
   canAssignSeriesAxis,
   defaultAxisSettings,
+  GRAPH_LINE_MARKERS,
   graphAxisDomain,
   initialGraphSeriesSettings,
   readGraphSeriesSettings,
@@ -2563,7 +2564,7 @@ function MetricTimePlot({
                   name={s.label}
                   stroke={s.color}
                   strokeWidth={1.2}
-                  dot={false}
+                  {...GRAPH_LINE_MARKERS}
                   connectNulls={false}
                   hide={!s.visible}
                   isAnimationActive={false}
@@ -2590,7 +2591,7 @@ function MetricTimePlot({
                 name={s.label}
                 stroke={s.color}
                 strokeWidth={1.2}
-                dot={false}
+                {...GRAPH_LINE_MARKERS}
                 connectNulls={false}
                 hide={!s.visible}
                 isAnimationActive={false}

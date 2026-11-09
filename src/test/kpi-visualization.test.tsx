@@ -8,7 +8,11 @@ beforeEach(async () => {
 import { fireEvent, render, screen, cleanup } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { KpiChartSettings } from "@/features/kpi/KpiChartSettings";
-import { defaultConfig } from "@/features/kpi/visualization-model";
+import { kpiPlotSeriesPresentation } from "@/features/kpi/KpiGraphCard";
+import {
+  DEFAULT_KPI_CURVE_TYPE,
+  defaultConfig,
+} from "@/features/kpi/visualization-model";
 
 afterEach(cleanup);
 describe("KPI chart configuration", () => {
@@ -95,4 +99,17 @@ it("applies curve style only on Apply and preserves temporal axes", () => {
       kpiCode: "TEST",
     }),
   );
+});
+
+it("defaults a KPI graph to line mode instead of the historical point mode", () => {
+  expect(DEFAULT_KPI_CURVE_TYPE).toBe("line");
+  expect(kpiPlotSeriesPresentation("graph")).toEqual({ type: "line", showSymbol: false });
+  expect(kpiPlotSeriesPresentation("graph", "line")).toEqual({
+    type: "line",
+    showSymbol: false,
+  });
+  expect(kpiPlotSeriesPresentation("graph", "line_points")).toEqual({
+    type: "line",
+    showSymbol: true,
+  });
 });

@@ -1,3 +1,36 @@
+## 1.149.5 (patch) — Style Line sans point de survol — 2026-11-09 (BC4)
+
+- Supprime le marqueur actif implicite de Recharts en mode Line, y compris au survol.
+- Conserve les points uniquement dans les styles Points et Points + Line.
+
+## 1.149.4 (patch) — Valeurs colorées dans les résumés de rapports — 2026-11-09 (BC4)
+
+- Ajoute des couleurs sémantiques discrètes aux cartes et tableaux Summary, y compris aux comparaisons par opérateur ou stream.
+- Réserve le vert aux succès, le rouge aux échecs et conserve les valeurs indisponibles en gris sans suggérer de résultat inexistant.
+
+## 1.149.3 (patch) — Graphiques KPI en ligne par défaut — 2026-11-09 (BC4)
+
+- Ouvre les graphiques KPI en mode Ligne sans marqueurs lorsque aucun style historique n'est enregistré.
+- Aligne le rendu réel sur le sélecteur de type de graphique et conserve explicitement le choix Ligne à l'ouverture.
+
+## 1.149.2 (patch) — Comparaison côte à côte des splits — 2026-11-09 (BC4)
+
+- Remplace les sections successives par des tableaux pivotés où opérateurs ou streams apparaissent côte à côte.
+- Superpose tous les splits dans les mêmes graphes avec couleurs et légendes cohérentes pour les séries temporelles, distributions, CDF et corrélations.
+- Affiche les populations de chaque split et conserve les agrégats backend exacts dans le tableau KPI.
+
+## 1.149.1 (patch) — Rapports séparés par opérateur ou stream — 2026-11-09 (BC4)
+
+- Ajoute le contrôle global `Split report` avec les modes Operator et Stream, appliqué lors de la génération.
+- Génère une section complète par groupe avec KPI, population, sources, tableaux et graphes issus du même périmètre filtré.
+- Propage le groupe dans les exports Excel/CSV et dans les modèles de rapport.
+
+## 1.149.0 (minor) — Drive Test Reports — 2026-11-09 (BC4)
+
+- Ajoute l’entrée **Drive Test Reports** dans RF Modules et la route `/rf/reports` en mode clair professionnel.
+- Ajoute les rapports Summary, Service, Throughput Investigation, Radio, Fails, Task/NEM, Benchmark et Custom sur un jeu de données filtré commun.
+- Ajoute les exports PDF, Excel et CSV, les modèles de rapports, les populations/échantillons et les états `N/A` explicites sans métrique synthétique.
+
 ## 1.148.4 (patch) — Points Map sans cerclage sombre — 2026-11-09 (BC4)
 
 - Supprime le contour noir des points de mesure dans les cartes KPI Analytics et Metrics, sans modifier leur couleur, leur position ni leur taille.

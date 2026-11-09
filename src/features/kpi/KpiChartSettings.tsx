@@ -3,6 +3,7 @@ import { useState } from "react";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import {
   GROUP_LABELS,
+  DEFAULT_KPI_CURVE_TYPE,
   XY_UNAVAILABLE,
   type ChartConfig,
   type CurveType,
@@ -48,7 +49,11 @@ export function KpiChartSettings({
         {translate("kpi.8d1d4c5be066")}{" "}
         <select
           aria-label={translate("kpi.8d1d4c5be066")}
-          value={draft.visualization === "histogram" ? "histogram" : (draft.curveType ?? "line")}
+          value={
+            draft.visualization === "histogram"
+              ? "histogram"
+              : (draft.curveType ?? DEFAULT_KPI_CURVE_TYPE)
+          }
           onChange={(e) =>
             e.target.value === "histogram"
               ? setDraft({ ...draft, visualization: "histogram" })

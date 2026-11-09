@@ -16,8 +16,10 @@
 // - Operator color stripe seulement si groupé par operator (sinon accent).
 // -----------------------------------------------------------------------
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   AlertTriangle,
+  BarChart3,
   CheckCircle2,
   ChevronDown,
   ChevronRight,
@@ -163,6 +165,15 @@ export function RfModulesPage() {
           </div>
         </div>
         <nav aria-label="Modules" className="px-1.5 py-1.5">
+          <Link
+            to="/rf/reports"
+            search={(search) => search}
+            className="mb-2 flex h-9 items-center gap-2 rounded-md border border-primary/25 bg-primary/5 px-2 text-[12px] font-semibold text-primary hover:bg-primary/10"
+          >
+            <BarChart3 className="h-3.5 w-3.5" />
+            <span className="flex-1">Drive Test Reports</span>
+            <ChevronRight className="h-3.5 w-3.5" />
+          </Link>
           {filteredModules.map((m) => {
             const open = openMods.has(m.module_id);
             const nAvail = m.subviews.filter((s) => s.available).length;

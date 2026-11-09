@@ -1,4 +1,8 @@
 import { METRIC_COLORS, freeColor } from "./metric-styles";
+
+/** Recharts otherwise renders a default active dot while hovering a Line,
+ * even when its persistent dots are disabled. */
+export const GRAPH_LINE_MARKERS = { dot: false, activeDot: false } as const;
 import { normalizeUnit, type GraphSeries } from "./graph-series-drop";
 import {
   DEFAULT_DISTRIBUTION_SETTINGS,

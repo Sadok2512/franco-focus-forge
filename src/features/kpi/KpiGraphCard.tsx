@@ -10,7 +10,12 @@ import type { KpiQueryFilters } from "@/lib/api/project-kpi-schemas";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { KpiChartSettings } from "./KpiChartSettings";
 import { VisualizationItems } from "./VisualizationMenu";
-import { GROUP_LABELS, type ChartConfig, type CurveType } from "./visualization-model";
+import {
+  DEFAULT_KPI_CURVE_TYPE,
+  GROUP_LABELS,
+  type ChartConfig,
+  type CurveType,
+} from "./visualization-model";
 import type { KpiGroupBy } from "@/lib/api/project-kpi-schemas";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -58,6 +63,16 @@ import {
   techLabel,
 } from "./workspace-model";
 
+export function kpiPlotSeriesPresentation(
+  mode: "histogram" | "graph",
+  curveType: CurveType = DEFAULT_KPI_CURVE_TYPE,
+) {
+  return {
+    type: mode === "graph" ? (curveType === "points" ? "scatter" : "line") : "bar",
+    showSymbol: mode === "graph" && curveType === "line_points",
+  } as const;
+}
+
 export function KpiPlot({
   rows,
   selectedRows,
@@ -65,7 +80,7 @@ export function KpiPlot({
   height = 235,
   onReady,
   mode = "histogram",
-  curveType = "points",
+  curveType = DEFAULT_KPI_CURVE_TYPE,
 }: {
   rows: AnalyticRow[];
   selectedRows: Set<string>;
@@ -129,8 +144,7 @@ export function KpiPlot({
       },
       series: [
         {
-          type: mode === "graph" ? (curveType === "points" ? "scatter" : "line") : "bar",
-          showSymbol: curveType === "line_points",
+          ...kpiPlotSeriesPresentation(mode, curveType),
           connectNulls: false,
           smooth: false,
           symbolSize: 12,
@@ -368,7 +382,7 @@ export function KpiGraphCard({
         // auto-sélectionne la première capture connue via /metrics/captures
         // (règle du mandat #2 — ne pas demander de sélection manuelle).
         <MetricVsTimeChart
-          curveType={config.curveType ?? "line"}
+          curveType={config.curveType ?? DEFAULT_KPI_CURVE_TYPE}
           projectId={projectId}
           captureId={captureId}
           onCaptureChange={onCaptureChange}
@@ -395,7 +409,7 @@ export function KpiGraphCard({
         />
       ) : taskView && !blockedReason ? (
         <TaskAnalytics
-          curveType={config.curveType ?? "line"}
+          curveType={config.curveType ?? DEFAULT_KPI_CURVE_TYPE}
           key={JSON.stringify(appliedFilters)}
           ref={taskPanel}
           projectId={projectId}
@@ -451,7 +465,7 @@ export function KpiGraphCard({
         </div>
       ) : (
         <KpiPlot
-          curveType={config.curveType ?? "points"}
+          curveType={config.curveType ?? "line"}
           rows={rows}
           onReady={setPlot}
           mode={config.visualization === "graph" ? "graph" : "histogram"}

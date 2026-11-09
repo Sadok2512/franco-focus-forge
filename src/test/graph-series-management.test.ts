@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  GRAPH_LINE_MARKERS,
   addManagedSeries,
   canAssignSeriesAxis,
   graphSeriesSettingsKey,
@@ -11,6 +12,9 @@ import {
 } from "@/features/kpi/graph-series-management";
 
 describe("graph series management", () => {
+  it("keeps line rendering free of persistent and hover points", () => {
+    expect(GRAPH_LINE_MARKERS).toEqual({ dot: false, activeDot: false });
+  });
   beforeEach(() => localStorage.clear());
 
   const base = {
