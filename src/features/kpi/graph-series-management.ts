@@ -9,6 +9,11 @@ import {
 export type GraphAxisSide = "left" | "right";
 export type GraphSeriesDisplay = "point" | "line" | "point-line";
 
+/** Recharts creates a hover marker by default even when `dot={false}`.
+ * Lines never own markers: point-line mode renders them with its dedicated
+ * Scatter series, while line mode remains a strictly marker-free curve. */
+export const GRAPH_LINE_MARKERS = { dot: false, activeDot: false } as const;
+
 export type ManagedGraphSeries = GraphSeries & {
   visible: boolean;
   axis: GraphAxisSide;

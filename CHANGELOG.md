@@ -1,3 +1,8 @@
+## 1.148.5 (patch) — Courbes Line sans point résiduel — 2026-11-09 (BC4)
+
+- Supprime le marqueur actif affiché par Recharts au survol d'une série en mode Line.
+- Conserve les points uniquement dans les modes Points et Points + Line, sans modifier les valeurs ni les axes.
+
 ## 1.148.4 (patch) — Points Map sans cerclage sombre — 2026-11-09 (BC4)
 
 - Supprime le contour noir des points de mesure dans les cartes KPI Analytics et Metrics, sans modifier leur couleur, leur position ni leur taille.

@@ -58,6 +58,7 @@ import {
   type GraphAxisSide,
   type GraphAxisSettings,
   type GraphSeriesDisplay,
+  GRAPH_LINE_MARKERS,
   type GraphSeriesSettings,
   type ManagedGraphSeries,
 } from "./graph-series-management";
@@ -2563,7 +2564,7 @@ function MetricTimePlot({
                   name={s.label}
                   stroke={s.color}
                   strokeWidth={1.2}
-                  dot={false}
+                  {...GRAPH_LINE_MARKERS}
                   connectNulls={false}
                   hide={!s.visible}
                   isAnimationActive={false}
@@ -2590,7 +2591,7 @@ function MetricTimePlot({
                 name={s.label}
                 stroke={s.color}
                 strokeWidth={1.2}
-                dot={false}
+                {...GRAPH_LINE_MARKERS}
                 connectNulls={false}
                 hide={!s.visible}
                 isAnimationActive={false}

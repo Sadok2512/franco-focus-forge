@@ -4,6 +4,7 @@ import {
   canAssignSeriesAxis,
   graphSeriesSettingsKey,
   graphAxisDomain,
+  GRAPH_LINE_MARKERS,
   initialGraphSeriesSettings,
   readGraphSeriesSettings,
   reorderManagedSeries,
@@ -19,6 +20,10 @@ describe("graph series management", () => {
     unit: "Mbit/s",
     color: "#2563eb",
   };
+
+  it("keeps Line free of persistent and hover points", () => {
+    expect(GRAPH_LINE_MARKERS).toEqual({ dot: false, activeDot: false });
+  });
 
   it("assigns compatible throughput to left and BLER to right", () => {
     let settings = initialGraphSeriesSettings(base, [], []);
