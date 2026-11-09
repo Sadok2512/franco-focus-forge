@@ -47,11 +47,24 @@ export function pointMatchesRange(
   captureId: string,
   seqFirst: number,
   seqLast = seqFirst,
+  tRelS?: number | null,
 ) {
   if (!selection || selection.projectId !== projectId || selection.captureId !== captureId)
     return false;
   const selectedLast = selection.seqLast ?? selection.seq;
-  return selection.seq <= seqLast && selectedLast >= seqFirst;
+  if (selection.seq <= seqLast && selectedLast >= seqFirst) return true;
+  // Graph and map points keep their exact source seq while the measurements
+  // table exposes one aggregated row per source-time second.  Different KPI
+  // samples in that truthful bucket can therefore have disjoint seq ranges.
+  // Match only the same capture and exact one-second bucket; never fall back
+  // to an arbitrary nearest row.
+  return (
+    selection.tRelS != null &&
+    Number.isFinite(selection.tRelS) &&
+    tRelS != null &&
+    Number.isFinite(tRelS) &&
+    Math.floor(selection.tRelS) === Math.floor(tRelS)
+  );
 }
 
 function readEnabled(projectId: string) {
@@ -94,10 +107,7 @@ export function PointSyncProvider({
       if (message?.type === "enabled") {
         setEnabledState(message.enabled);
         try {
-          localStorage.setItem(
-            pointSyncStorageKey(projectId),
-            String(message.enabled),
-          );
+          localStorage.setItem(pointSyncStorageKey(projectId), String(message.enabled));
         } catch {
           /* storage unavailable */
         }

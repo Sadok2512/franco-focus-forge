@@ -373,9 +373,7 @@ export function metricMapPointForSelection(
   ) => {
     if (selection.tRelS != null) {
       const leftDistance = Math.abs((left.t_rel_s ?? Number.POSITIVE_INFINITY) - selection.tRelS);
-      const rightDistance = Math.abs(
-        (right.t_rel_s ?? Number.POSITIVE_INFINITY) - selection.tRelS,
-      );
+      const rightDistance = Math.abs((right.t_rel_s ?? Number.POSITIVE_INFINITY) - selection.tRelS);
       if (leftDistance !== rightDistance) return leftDistance - rightDistance;
     }
     return left.seq - right.seq;
@@ -389,9 +387,7 @@ export function metricMapPointForSelection(
   if (selection.tRelS != null && Number.isFinite(selection.tRelS)) {
     const timeBucket = Math.floor(selection.tRelS);
     const sameBucket = points
-      .filter(
-        (point) => point.t_rel_s != null && Math.floor(point.t_rel_s) === timeBucket,
-      )
+      .filter((point) => point.t_rel_s != null && Math.floor(point.t_rel_s) === timeBucket)
       .sort(byTimeDistance)[0];
     if (sameBucket) return sameBucket;
   }
@@ -409,6 +405,52 @@ export function metricMapPointForSelection(
     );
   }
   return undefined;
+}
+
+type MetricTablePage = {
+  page: number;
+  total_pages: number;
+  rows: Array<{ seq_first: number; seq_last: number; t_rel_s: number }>;
+};
+
+/** Locate a synchronized graph/map point in the server-paginated table.
+ *
+ * Table rows are ordered capture-local seconds. Move by the measured temporal
+ * span of the current page, then refine after the requested page arrives. This
+ * avoids downloading every preceding page and remains correct for sparse KPI
+ * series because every step uses the actual first/last row returned by the API.
+ */
+export function metricTablePageForSelection(selection: SyncedPoint, data: MetricTablePage): number {
+  if (
+    data.rows.some((row) =>
+      pointMatchesRange(
+        selection,
+        selection.projectId,
+        selection.captureId,
+        row.seq_first,
+        row.seq_last,
+        row.t_rel_s,
+      ),
+    )
+  )
+    return data.page;
+  if (selection.tRelS == null || !Number.isFinite(selection.tRelS) || !data.rows.length)
+    return data.page;
+  const times = data.rows.map((row) => row.t_rel_s).filter(Number.isFinite);
+  if (!times.length) return data.page;
+  const first = Math.min(...times);
+  const last = Math.max(...times);
+  const pageSpan = Math.max(1, Math.floor(last) - Math.floor(first) + 1);
+  const target = Math.floor(selection.tRelS);
+  const firstBucket = Math.floor(first);
+  const lastBucket = Math.floor(last);
+  const deltaPages =
+    target < firstBucket
+      ? -Math.ceil((firstBucket - target) / pageSpan)
+      : target > lastBucket
+        ? Math.ceil((target - lastBucket) / pageSpan)
+        : 0;
+  return Math.max(1, Math.min(data.total_pages, data.page + deltaPages));
 }
 
 /** Keep at most the serving segment for the exact point selected in this KPI map. */
@@ -941,6 +983,11 @@ function MetricMap({
   const first = data?.map_points[0];
   const onDriveSelection = useCallback(
     (selection: SelectedDrivePoint | null) => {
+      const previous = selectedPointRef.current;
+      // DriveRsrpLayer reports its initial null state on mount. The metric map
+      // owns the interactive point layer, so this is not a user deselection
+      // and must not erase a Graph/Table selection already on the shared bus.
+      if (!selection && !previous) return;
       selectedPointRef.current = selection;
       setSelectedPoint(selection);
       if (selection && sharedSelectionSeqRef.current === selection.seq) {
@@ -1655,6 +1702,31 @@ export function MetricsWorkspace({
   });
   const data = query.data;
   const refreshing = query.isPlaceholderData && query.isFetching;
+  useEffect(() => {
+    const selection = pointSync.selection;
+    if (
+      !pointSync.enabled ||
+      !selection ||
+      selection.source === "table" ||
+      selection.projectId !== projectId ||
+      selection.captureId !== captureId ||
+      pane !== "table" ||
+      !data ||
+      query.isPlaceholderData
+    )
+      return;
+    const targetPage = metricTablePageForSelection(selection, data);
+    if (targetPage !== page) setPage(targetPage);
+  }, [
+    captureId,
+    data,
+    page,
+    pane,
+    pointSync.enabled,
+    pointSync.selection,
+    projectId,
+    query.isPlaceholderData,
+  ]);
   // The table request is intentionally dormant in a graph-only workspace.
   // Restore the same certified clock from the lean series response instead
   // of falling back to 0/1000/2000 seconds after navigation.
@@ -2466,6 +2538,7 @@ export function MetricsWorkspace({
                               captureId,
                               r.seq_first,
                               r.seq_last,
+                              r.t_rel_s,
                             );
                           return (
                             <tr

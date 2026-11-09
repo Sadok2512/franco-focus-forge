@@ -1,3 +1,9 @@
+## 1.149.7 (patch) — Synchronisation Graph / Tableau / Carte — 2026-11-09 (BC4)
+
+- Graph/Carte → Tableau : la sélection conserve le `seq` exact et reconnaît la ligne agrégée du même bucket temporel d'une seconde.
+- Carte : l'état `null` initial de la couche RF ne supprime plus une sélection partagée existante.
+- Aucun changement des données KPI, filtres, axes, zooms ou contrats backend.
+
 ## 1.149.6 (patch) — Types de tracé Graph synchronisés — 2026-11-09 (BC4)
 
 - Relie le menu Style au rendu Recharts réel : Line sans marqueurs, Bars verticales et Points sans ligne.

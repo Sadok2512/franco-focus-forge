@@ -84,6 +84,20 @@ describe("KPI point synchronization", () => {
     expect(pointMatchesRange(point, "p1", "c2", 10, 14)).toBe(false);
   });
 
+  it("matches an aggregated table row by its exact source-time bucket", () => {
+    const graphPoint: SyncedPoint = {
+      projectId: "p1",
+      workspaceId: "w1",
+      captureId: "c1",
+      seq: 52_051,
+      tRelS: 928.767,
+      source: "graph",
+    };
+    expect(pointMatchesRange(graphPoint, "p1", "c1", 52_000, 52_010, 928)).toBe(true);
+    expect(pointMatchesRange(graphPoint, "p1", "c1", 52_000, 52_010, 929)).toBe(false);
+    expect(pointMatchesRange(graphPoint, "p1", "c2", 52_000, 52_010, 928)).toBe(false);
+  });
+
   it("persists the toggle and broadcasts selections across workspaces in one project", () => {
     render(
       <>

@@ -10,6 +10,7 @@ import {
   metricMapFeatures,
   metricMapLinkFeatures,
   metricMapPointForSelection,
+  metricTablePageForSelection,
   metricMapNumericExtent,
   MetricsWorkspace,
   nearestMetricMapClickSequences,
@@ -82,17 +83,16 @@ vi.mock("@/lib/api/client", async () => {
 });
 
 describe("Map selection keeps its own panel", () => {
-  const mapPoint = (seq: number, tRelS: number, lat = 48, lng = 2) =>
-    ({
-      seq,
-      t_rel_s: tRelS,
-      lat,
-      lng,
-      code: "cell_rsrp@0",
-      value: -91,
-      tooltip: "",
-      neighbour_links: [],
-    });
+  const mapPoint = (seq: number, tRelS: number, lat = 48, lng = 2) => ({
+    seq,
+    t_rel_s: tRelS,
+    lat,
+    lng,
+    code: "cell_rsrp@0",
+    value: -91,
+    tooltip: "",
+    neighbour_links: [],
+  });
 
   it("prefers a map point inside the selected table sequence interval", () => {
     const selected = metricMapPointForSelection(
@@ -139,6 +139,35 @@ describe("Map selection keeps its own panel", () => {
       source: "table",
     });
     expect(selected).toBeUndefined();
+  });
+
+  it("moves the paginated table toward a synchronized graph point", () => {
+    const selection = {
+      projectId: "project-a",
+      workspaceId: "workspace-a",
+      captureId: "capture-a",
+      seq: 52_051,
+      tRelS: 928.767,
+      source: "graph" as const,
+    };
+    expect(
+      metricTablePageForSelection(selection, {
+        page: 1,
+        total_pages: 169,
+        rows: Array.from({ length: 25 }, (_, second) => ({
+          seq_first: second,
+          seq_last: second,
+          t_rel_s: second,
+        })),
+      }),
+    ).toBe(38);
+    expect(
+      metricTablePageForSelection(selection, {
+        page: 38,
+        total_pages: 169,
+        rows: [{ seq_first: 51_900, seq_last: 52_000, t_rel_s: 928 }],
+      }),
+    ).toBe(38);
   });
 
   it("lets an adjacent rendered point replace the enlarged active point", () => {
