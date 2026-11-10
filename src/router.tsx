@@ -7,9 +7,11 @@ import { routeTree } from "./routeTree.gen";
 if (typeof window !== "undefined") {
   const KEY = "bc4.chunkReload";
   const reloadOnce = () => {
-    const last = Number(sessionStorage.getItem(KEY) || 0);
-    if (Date.now() - last < 10_000) return;
-    sessionStorage.setItem(KEY, String(Date.now()));
+    // A stale HTML document can recover after one reload. If the chunk is
+    // still unavailable after that reload, retrying every 10s creates a
+    // permanent refresh loop and makes the app appear unusable/heavy.
+    if (sessionStorage.getItem(KEY) === "1") return;
+    sessionStorage.setItem(KEY, "1");
     window.location.reload();
   };
   window.addEventListener("vite:preloadError", (event) => {
