@@ -133,7 +133,18 @@ export async function proxyApiRequest(request: Request): Promise<Response> {
   if (isCellReferenceUpload(source.pathname, request.method)) {
     init.timeout = CELL_REFERENCE_UPLOAD_TIMEOUT_MS;
   }
-  const upstream = await fetch(target, init);
+  let upstream: Response;
+  try {
+    upstream = await fetch(target, init);
+  } catch (error) {
+    // Upstream unreachable (tunnel down / DNS gone): answer 502 instead of
+    // crashing the request into an opaque 500.
+    console.error("BC4 API unreachable:", error);
+    return new Response(JSON.stringify({ detail: "BC4 server unreachable", code: "upstream_unreachable" }), {
+      status: 502,
+      headers: { "content-type": "application/json" },
+    });
+  }
   return proxyResponse(request, upstream);
 }
 
