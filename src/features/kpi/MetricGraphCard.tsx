@@ -240,10 +240,10 @@ function MetricPointShape({
 export function metricTimelineRows(
   series: ReadonlyArray<{ code: string; points: readonly MetricNumericPoint[] }>,
 ) {
-  const rows = new Map<number, { seq: number; t_rel_s: number } & Record<string, number>>();
+  const rows = new Map<number, Record<string, number> & { seq: number; t_rel_s: number }>();
   for (const item of series) {
     for (const point of sortedMetricPoints(item.points)) {
-      const row = rows.get(point.t_rel_s) ?? { seq: point.seq, t_rel_s: point.t_rel_s };
+      const row: Record<string, number> & { seq: number; t_rel_s: number } = rows.get(point.t_rel_s) ?? { seq: point.seq, t_rel_s: point.t_rel_s };
       row[item.code] = point.value;
       rows.set(point.t_rel_s, row);
     }
