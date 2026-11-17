@@ -175,10 +175,15 @@ function SummaryValue({
     rendered = t(`projectImport.task.${String(cell.value)}`, { defaultValue: String(cell.value) });
   else if (["rach_fail", "call_setup_fail", "voice_drop", "session_fail"].includes(code))
     rendered = `${cell.value} / ${cell.n}`;
-  else
-    rendered = Number(cell.value).toLocaleString(i18n.language, {
-      maximumFractionDigits: code === "mos" ? 2 : 1,
+  else {
+    const numericValue = Number(cell.value);
+    rendered = numericValue.toLocaleString(i18n.language, {
+      // Preserve small but non-zero radio rates (for example a PHRATE test
+      // capture at 0.0014 Mbit/s); one decimal would misleadingly show zero.
+      maximumFractionDigits:
+        code === "mos" ? 2 : Math.abs(numericValue) > 0 && Math.abs(numericValue) < 0.1 ? 4 : 1,
     });
+  }
   const details = [
     `${t("projectImport.summary.source")}: ${cell.source_event}`,
     cell.n == null ? null : `n = ${cell.n}`,
@@ -313,6 +318,9 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
 
   const technosFromProject = sortByCountDesc(project.technos_seen ?? undefined);
   const operatorsFromProject = sortByCountDesc(project.operators_plmn ?? undefined);
+  const decoderLabels = Array.from(
+    new Set((q.data?.by_file ?? []).map((file) => file.decoder_version).filter(Boolean)),
+  );
 
   return (
     <div className="space-y-4 bg-muted/30 p-4">
@@ -372,8 +380,11 @@ export function ProjectRowDetails({ project, open }: { project: Project; open: b
           <p className="text-xs text-muted-foreground">
             N/D{" "}
             <span className="italic">
-              (le décodeur <span className="font-mono">bc4-decoder 1.0.0</span> n&apos;expose pas de
-              PLMN pour ce projet)
+              (aucun PLMN exposé dans ces fichiers
+              {decoderLabels.length > 0 ? (
+                <> — décodeur <span className="font-mono">{decoderLabels.join(", ")}</span></>
+              ) : null}
+              )
             </span>
           </p>
         ) : (

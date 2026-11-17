@@ -49,7 +49,7 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
-function mount(captureId = "cap-a", onVisualization = vi.fn()) {
+function mount(captureId = "cap-a", onVisualization = vi.fn(), selections = ["cell_rsrp@0"]) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const view = render(
     <QueryClientProvider client={client}>
@@ -57,7 +57,7 @@ function mount(captureId = "cap-a", onVisualization = vi.fn()) {
         projectId="project-a"
         captureId={captureId}
         onCaptureChange={() => {}}
-        selections={["cell_rsrp@0"]}
+        selections={selections}
         catalog={[]}
         filters={{}}
         onClear={() => {}}
@@ -88,6 +88,15 @@ describe("Measurements table request states", () => {
     request.resolve(response("cap-a"));
     expect(await screen.findByTestId("metrics-table-panel")).toBeVisible();
     expect(screen.queryByTestId("metrics-table-loading")).toBeNull();
+  });
+
+  it("shows an empty state instead of loading forever when no metric is selected", async () => {
+    mount("cap-a", vi.fn(), []);
+    expect(await screen.findByTestId("metrics-empty-state")).toHaveTextContent(
+      "No measurements for this selection",
+    );
+    expect(screen.queryByTestId("metrics-table-loading")).toBeNull();
+    expect(api.analysis).not.toHaveBeenCalled();
   });
 
   it("renders an empty compact state without backend instructions or a blank table", async () => {

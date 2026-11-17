@@ -2296,7 +2296,20 @@ export function MetricsWorkspace({
         ) : (
           <div className="kpi-chart-state">{translate("metrics.568f4197970b")}</div>
         )
-      ) : pane !== "table" ? null : query.isPending ? (
+      ) : pane !== "table" ? null : selections.length === 0 ? (
+        <div
+          role="status"
+          className="kpi-measurements-empty"
+          data-testid="metrics-empty-state"
+          style={{ order: TABLE_PANEL_ORDER }}
+        >
+          <Inbox aria-hidden="true" />
+          <span>
+            <strong>{translate("metrics.emptyTitle")}</strong>
+            <small>{translate("metrics.emptyDescription")}</small>
+          </span>
+        </div>
+      ) : query.isPending ? (
         <div
           className="kpi-measurements-loading"
           role="status"

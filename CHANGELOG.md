@@ -1,3 +1,17 @@
+## 1.149.9 (patch) — fin du chargement Mesures sans sélection — 2026-11-17 (BC4)
+
+- Le panneau Mesures affiche immédiatement son état vide lorsqu'aucune
+  métrique n'est sélectionnée. La requête restant volontairement désactivée,
+  il ne confond plus cet état avec un chargement en cours infini.
+- Ajoute une régression ciblée qui exige l'état vide, l'absence du chargeur et
+  l'absence d'appel d'analyse dans ce cas.
+
+## 1.149.8 (patch) — Provenance opérateur exacte — 2026-11-17 (BC4)
+
+- Remplace la mention figée `bc4-decoder 1.0.0` par la version réellement
+  rapportée pour les fichiers quand aucun PLMN n'est disponible.
+- Distingue explicitement l'absence de PLMN d'un échec de décodage.
+
 ## 1.149.7 (patch) — Synchronisation Graph / Tableau / Carte — 2026-11-09 (BC4)
 
 - Graph/Carte → Tableau : la sélection conserve le `seq` exact et reconnaît la ligne agrégée du même bucket temporel d'une seconde.
