@@ -470,7 +470,11 @@ export function applyReferenceHierarchy(response: MetricCatalogResponse): Metric
   const stillKept: MetricCatalogNode[] = [];
   for (const leaf of keptLeaves) {
     const tech = originalTechOf(leaf);
-    if (tech === "LTE" || tech === "NR") continue;
+    // TTI_NSPLUS is a documented producer extension, not an NFF oracle
+    // metric.  It therefore has no static tree.html mapping, but dropping it
+    // here would make a successfully decoded 1 ms series disappear from the
+    // Metrics UI. Keep its original LTE hierarchy and API selector intact.
+    if ((tech === "LTE" || tech === "NR") && leaf.event !== "TTI_NSPLUS") continue;
     // Oracle has 0 KPI entries under EN-DC (only STRUCT / DIM in the
     // reference). The onlyKpi view therefore shows no EN-DC branch at
     // all — hide any backend-origin EN-DC leaves to keep the Metrics

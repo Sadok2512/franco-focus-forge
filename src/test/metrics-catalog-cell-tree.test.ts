@@ -7,6 +7,7 @@ import {
 } from "@/features/kpi/MetricsCatalogSidebar";
 import type { MetricCatalogNode, SimpleTreeEntry } from "@/lib/api/metrics-schemas";
 import { metricsCatalogQuery, metricsCatalogRawQuery } from "@/lib/analytics-bootstrap";
+import { applyReferenceHierarchy } from "@/features/kpi/metrics-tree-reference";
 
 const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
   node_id: "rsrp-pcell",
@@ -37,6 +38,65 @@ const leaf = (overrides: Partial<MetricCatalogNode>): MetricCatalogNode => ({
   selectable: true,
   reason: null,
   ...overrides,
+});
+
+it("keeps the documented TTI_NSPLUS extension outside the static NFF oracle", () => {
+  const tech = leaf({
+    node_id: "tech_LTE",
+    parent_id: null,
+    label: "LTE",
+    node_type: "tech",
+    selection: null,
+    selectable: false,
+  });
+  const category = leaf({
+    node_id: "cat_LTE_allocation_mcs",
+    parent_id: "tech_LTE",
+    label: "Allocation & MCS",
+    node_type: "category",
+    selection: null,
+    selectable: false,
+  });
+  const event = leaf({
+    node_id: "ev_tti_nsplus",
+    parent_id: "cat_LTE_allocation_mcs",
+    label: "TTI_NSPLUS · 1 ms",
+    node_type: "event",
+    event: "TTI_NSPLUS",
+    selection: null,
+    selectable: false,
+  });
+  const tti = leaf({
+    node_id: "lf_tti_mcs",
+    parent_id: "ev_tti_nsplus",
+    label: "PDSCH MCS index per transport block",
+    metric_id: "tti_mcs",
+    selection: "tti_mcs",
+    event: "TTI_NSPLUS",
+    source_column: "tti_mcs",
+    cell: null,
+    cell_label: null,
+    raw_cell_type: null,
+    n: 3278,
+  });
+
+  const transformed = applyReferenceHierarchy({
+    catalogue_version: "2.68.6",
+    title: "Nemo metrics",
+    header: "LTE",
+    decoder_version: "1.12.0",
+    reason: "from_catalog_release",
+    metrics: [],
+    nodes: [tech, category, event, tti],
+  });
+
+  expect(transformed.nodes.find((node) => node.node_id === "lf_tti_mcs")).toMatchObject({
+    parent_id: "ev_tti_nsplus",
+    selection: "tti_mcs",
+    selectable: true,
+    n: 3278,
+  });
+  expect(transformed.nodes.some((node) => node.node_id === "ev_tti_nsplus")).toBe(true);
 });
 
 describe("Simplified Metrics tree", () => {

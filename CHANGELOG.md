@@ -1,3 +1,10 @@
+## 1.150.0 — TTI_NSPLUS 1 ms dans Métriques — 2026-11-17 (BC4)
+
+- Conserve l'extension documentée `TTI_NSPLUS` dans l'arbre Métriques avancé
+  même si elle n'existe pas dans l'oracle NFF statique.
+- Rend les sélecteurs MCS, PRB, TBS, CRC, HARQ, RV, SFN et subframe visibles
+  sans modifier ni inventer les observations brutes du décodeur.
+
 ## 1.149.9 (patch) — fin du chargement Mesures sans sélection — 2026-11-17 (BC4)
 
 - Le panneau Mesures affiche immédiatement son état vide lorsqu'aucune
